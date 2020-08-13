@@ -103,8 +103,6 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
-		warningCaches:                  newThresholdCaches(vbNumBits),
-		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
 
 	// Create a genesis block node and block index index populated with it

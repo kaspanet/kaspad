@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"math"
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
@@ -13,6 +14,9 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
+// The current block version
+const blockVersion = 0x10000000
+
 // BlockForMining returns a block with the given transactions
 // that points to the current DAG tips, that is valid from
 // all aspects except proof of work.
@@ -21,13 +25,6 @@ import (
 func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*domainmessage.MsgBlock, error) {
 	blockTimestamp := dag.NextBlockTime()
 	requiredDifficulty := dag.NextRequiredDifficulty(blockTimestamp)
-
-	// Calculate the next expected block version based on the state of the
-	// rule change deployments.
-	nextBlockVersion, err := dag.CalcNextBlockVersion()
-	if err != nil {
-		return nil, err
-	}
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := BuildHashMerkleTreeStore(transactions)
@@ -46,7 +43,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*domainmessage.Msg
 	}
 
 	msgBlock.Header = domainmessage.BlockHeader{
-		Version:              nextBlockVersion,
+		Version:              blockVersion,
 		ParentHashes:         dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
@@ -126,4 +123,16 @@ func (dag *BlockDAG) NextBlockTime() mstime.Time {
 	}
 
 	return newTimestamp
+}
+
+// CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
+func (dag *BlockDAG) CurrentBits() uint32 {
+	tips := dag.virtual.tips()
+	minBits := uint32(math.MaxUint32)
+	for tip := range tips {
+		if minBits > tip.Header().Bits {
+			minBits = tip.Header().Bits
+		}
+	}
+	return minBits
 }

@@ -6,7 +6,6 @@ package dagconfig
 
 import (
 	"github.com/kaspanet/kaspad/util/network"
-	"math"
 	"math/big"
 	"time"
 
@@ -161,7 +160,6 @@ type Params struct {
 	// on.
 	RuleChangeActivationThreshold uint64
 	MinerConfirmationWindow       uint64
-	Deployments                   [DefinedDeployments]ConsensusDeployment
 
 	// Mempool parameters
 	RelayNonStdTxs bool
@@ -215,13 +213,6 @@ var MainnetParams = Params{
 	//   target proof of work timespan / target proof of work spacing
 	RuleChangeActivationThreshold: 1916, // 95% of MinerConfirmationWindow
 	MinerConfirmationWindow:       2016, //
-	Deployments: [DefinedDeployments]ConsensusDeployment{
-		DeploymentTestDummy: {
-			BitNumber:  28,
-			StartTime:  1199145601000, // January 1, 2008 UTC
-			ExpireTime: 1230767999000, // December 31, 2008 UTC
-		},
-	},
 
 	// Mempool parameters
 	RelayNonStdTxs: false,
@@ -270,13 +261,6 @@ var RegressionNetParams = Params{
 	//   target proof of work timespan / target proof of work spacing
 	RuleChangeActivationThreshold: 108, // 75%  of MinerConfirmationWindow
 	MinerConfirmationWindow:       144,
-	Deployments: [DefinedDeployments]ConsensusDeployment{
-		DeploymentTestDummy: {
-			BitNumber:  28,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		},
-	},
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
@@ -323,13 +307,6 @@ var TestnetParams = Params{
 	//   target proof of work timespan / target proof of work spacing
 	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
 	MinerConfirmationWindow:       2016,
-	Deployments: [DefinedDeployments]ConsensusDeployment{
-		DeploymentTestDummy: {
-			BitNumber:  28,
-			StartTime:  1199145601000, // January 1, 2008 UTC
-			ExpireTime: 1230767999000, // December 31, 2008 UTC
-		},
-	},
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
@@ -382,13 +359,6 @@ var SimnetParams = Params{
 	//   target proof of work timespan / target proof of work spacing
 	RuleChangeActivationThreshold: 75, // 75% of MinerConfirmationWindow
 	MinerConfirmationWindow:       100,
-	Deployments: [DefinedDeployments]ConsensusDeployment{
-		DeploymentTestDummy: {
-			BitNumber:  28,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		},
-	},
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
@@ -433,13 +403,6 @@ var DevnetParams = Params{
 	//   target proof of work timespan / target proof of work spacing
 	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
 	MinerConfirmationWindow:       2016,
-	Deployments: [DefinedDeployments]ConsensusDeployment{
-		DeploymentTestDummy: {
-			BitNumber:  28,
-			StartTime:  1199145601000, // January 1, 2008 UTC
-			ExpireTime: 1230767999000, // December 31, 2008 UTC
-		},
-	},
 
 	// Mempool parameters
 	RelayNonStdTxs: true,

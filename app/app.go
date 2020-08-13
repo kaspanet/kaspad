@@ -195,11 +195,10 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 			MaxTxVersion:    1,
 		},
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
-			return dag.CalcSequenceLockNoLock(tx, utxoSet, true)
+			return dag.CalcSequenceLockNoLock(tx, utxoSet)
 		},
-		IsDeploymentActive: dag.IsDeploymentActive,
-		SigCache:           sigCache,
-		DAG:                dag,
+		SigCache: sigCache,
+		DAG:      dag,
 	}
 
 	return mempool.New(&mempoolConfig)

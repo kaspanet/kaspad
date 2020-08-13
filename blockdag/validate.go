@@ -6,13 +6,11 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 	"math"
 	"sort"
-	"time"
-
-	"github.com/kaspanet/kaspad/util/mstime"
-
-	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/dagconfig"
 	"github.com/kaspanet/kaspad/domainmessage"
@@ -128,13 +126,55 @@ func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane. These checks are context free.
 func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
-	isCoinbase := tx.IsCoinBase()
-	// A transaction must have at least one input.
+	err := checkTransactionInputCount(tx)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionAmountRanges(tx)
+	if err != nil {
+		return err
+	}
+	err = checkDuplicateTransactionInputs(tx)
+	if err != nil {
+		return err
+	}
+	err = checkCoinbaseLength(tx)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionPayloadHash(tx)
+	if err != nil {
+		return err
+	}
+	err = checkGasInBuiltInOrNativeTransactions(tx)
+	if err != nil {
+		return err
+	}
+	err = checkSubnetworkRegistryTransaction(tx)
+	if err != nil {
+		return err
+	}
+	err = checkNativeTransactionPayload(tx)
+	if err != nil {
+		return err
+	}
+	err = checkTransactionSubnetwork(tx, subnetworkID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkTransactionInputCount(tx *util.Tx) error {
+	// A non-coinbase transaction must have at least one input.
 	msgTx := tx.MsgTx()
-	if !isCoinbase && len(msgTx.TxIn) == 0 {
+	if !tx.IsCoinBase() && len(msgTx.TxIn) == 0 {
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
+	return nil
+}
 
+func checkTransactionAmountRanges(tx *util.Tx) error {
 	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
@@ -142,7 +182,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// as a sompi. One kaspa is a quantity of sompi as defined by the
 	// SompiPerKaspa constant.
 	var totalSompi uint64
-	for _, txOut := range msgTx.TxOut {
+	for _, txOut := range tx.MsgTx().TxOut {
 		sompi := txOut.Value
 		if sompi > util.MaxSompi {
 			str := fmt.Sprintf("transaction output value of %d is "+
@@ -170,20 +210,25 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
+	return nil
+}
 
-	// Check for duplicate transaction inputs.
+func checkDuplicateTransactionInputs(tx *util.Tx) error {
 	existingTxOut := make(map[domainmessage.Outpoint]struct{})
-	for _, txIn := range msgTx.TxIn {
+	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
 		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
 	}
+	return nil
+}
 
+func checkCoinbaseLength(tx *util.Tx) error {
 	// Coinbase payload length must not exceed the max length.
-	if isCoinbase {
-		payloadLen := len(msgTx.Payload)
+	if tx.IsCoinBase() {
+		payloadLen := len(tx.MsgTx().Payload)
 		if payloadLen > MaxCoinbasePayloadLen {
 			str := fmt.Sprintf("coinbase transaction payload length "+
 				"of %d is out of range (max: %d)",
@@ -193,7 +238,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	} else {
 		// Previous transaction outputs referenced by the inputs to this
 		// transaction must not be null.
-		for _, txIn := range msgTx.TxIn {
+		for _, txIn := range tx.MsgTx().TxIn {
 			if isNullOutpoint(&txIn.PreviousOutpoint) {
 				return ruleError(ErrBadTxInput, "transaction "+
 					"input refers to previous output that "+
@@ -201,8 +246,11 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			}
 		}
 	}
+	return nil
+}
 
-	// Check payload's hash
+func checkTransactionPayloadHash(tx *util.Tx) error {
+	msgTx := tx.MsgTx()
 	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash := daghash.DoubleHashH(msgTx.Payload)
 		if !msgTx.PayloadHash.IsEqual(&payloadHash) {
@@ -211,29 +259,44 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	} else if msgTx.PayloadHash != nil {
 		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
+	return nil
+}
 
+func checkGasInBuiltInOrNativeTransactions(tx *util.Tx) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
-	if msgTx.SubnetworkID.IsBuiltInOrNative() && msgTx.Gas > 0 {
+	msgTx := tx.MsgTx()
+	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsBuiltIn()) &&
+		msgTx.Gas > 0 {
+
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
+	return nil
+}
 
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
-		err := validateSubnetworkRegistryTransaction(msgTx)
+func checkSubnetworkRegistryTransaction(tx *util.Tx) error {
+	if tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+		err := validateSubnetworkRegistryTransaction(tx.MsgTx())
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
-		len(msgTx.Payload) > 0 {
-
-		return ruleError(ErrInvalidPayload,
-			"transaction in the native subnetwork includes a payload")
+func checkNativeTransactionPayload(tx *util.Tx) error {
+	msgTx := tx.MsgTx()
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload, "transaction in the native subnetwork includes a payload")
 	}
+	return nil
+}
 
+func checkTransactionSubnetwork(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
+	msgTx := tx.MsgTx()
 	isLocalNodeFull := subnetworkID == nil
 	shouldTxBeFull := msgTx.SubnetworkID.IsBuiltIn() ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
@@ -242,7 +305,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			"transaction that was expected to be partial has a payload "+
 				"with length > 0")
 	}
-
 	return nil
 }
 
@@ -390,37 +452,28 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFlags) (delay time.Duration, err error) {
+func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFlags) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
 	header := &block.MsgBlock().Header
-	err = dag.checkProofOfWork(header, flags)
+	err := dag.checkProofOfWork(header, flags)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if len(header.ParentHashes) == 0 {
 		if !header.BlockHash().IsEqual(dag.Params.GenesisHash) {
-			return 0, ruleError(ErrNoParents, "block has no parents")
+			return ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
 		err = checkBlockParentsOrder(header)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	// Ensure the block time is not too far in the future. If it's too far, return
-	// the duration of time that should be waited before the block becomes valid.
-	// This check needs to be last as it does not return an error but rather marks the
-	// header as delayed (and valid).
-	maxTimestamp := dag.Now().Add(time.Duration(dag.TimestampDeviationTolerance) * dag.Params.TargetTimePerBlock)
-	if header.Timestamp.After(maxTimestamp) {
-		return header.Timestamp.Sub(maxTimestamp), nil
-	}
-
-	return 0, nil
+	return nil
 }
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
@@ -443,56 +496,56 @@ func checkBlockParentsOrder(header *domainmessage.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (time.Duration, error) {
-	delay, err := dag.checkBlockHeaderSanity(block, flags)
+func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) error {
+	err := dag.checkBlockHeaderSanity(block, flags)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsAtLeastOneTransaction(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsLessThanMaxBlockMassTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkFirstBlockTransactionIsCoinbase(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockContainsOnlyOneCoinbase(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockTransactionOrder(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkNoNonNativeTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockTransactionSanity(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = dag.checkBlockHashMerkleRoot(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	// The following check will be fairly quick since the transaction IDs
 	// are already cached due to building the merkle tree above.
 	err = dag.checkBlockDuplicateTransactions(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	err = dag.checkBlockDoubleSpends(block)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return delay, nil
+	return nil
 }
 
 func (dag *BlockDAG) checkBlockContainsAtLeastOneTransaction(block *util.Block) error {
@@ -715,11 +768,16 @@ func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, par
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) error {
+	parents, err := lookupParentNodes(block, dag)
+	if err != nil {
+		return dag.handleLookupParentNodesError(block, err)
+	}
+
 	bluestParent := parents.bluest()
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
-	err := dag.validateParents(&block.MsgBlock().Header, parents)
+	err = dag.validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}
@@ -733,10 +791,26 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flag
 	return nil
 }
 
-func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode, bluestParent *blockNode) error {
+func (dag *BlockDAG) handleLookupParentNodesError(block *util.Block, err error) error {
+	var ruleErr RuleError
+	if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
+		err := dag.addNodeToIndexWithInvalidAncestor(block)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
+	if fastAdd {
+		return nil
+	}
+
 	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
-		blockTime = bluestParent.PastMedianTime(dag)
+		blockTime = node.selectedParent.PastMedianTime(dag)
 	}
 
 	// Ensure all transactions in the block are finalized.
@@ -977,7 +1051,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			// A transaction can only be included within a block
 			// once the sequence locks of *all* its inputs are
 			// active.
-			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx, false)
+			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
 			if err != nil {
 				return nil, err
 			}
@@ -1002,6 +1076,18 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	return feeData, nil
 }
 
+func (node *blockNode) validateUTXOCommitment(multiset *secp256k1.MultiSet) error {
+	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
+	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", node.hash,
+			node.utxoCommitment, calculatedMultisetHash)
+		return ruleError(ErrBadUTXOCommitment, str)
+	}
+
+	return nil
+}
+
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement.
@@ -1023,21 +1109,17 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	header := block.MsgBlock().Header
 
-	delay, err := dag.checkBlockSanity(block, flags)
+	err := dag.checkBlockSanity(block, flags)
 	if err != nil {
 		return err
 	}
 
-	if delay != 0 {
+	_, isDelayed := dag.shouldBlockBeDelayed(block)
+	if isDelayed {
 		return errors.Errorf("Block timestamp is too far in the future")
 	}
 
-	parents, err := lookupParentNodes(block, dag)
-	if err != nil {
-		return err
-	}
-
-	err = dag.checkBlockContext(block, parents, flags)
+	err = dag.checkBlockContext(block, flags)
 	if err != nil {
 		return err
 	}
@@ -1048,4 +1130,25 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		dag.UTXOSet(), block.Transactions(), false)
 
 	return err
+}
+
+func (dag *BlockDAG) checkDuplicateBlock(blockHash *daghash.Hash, flags BehaviorFlags) error {
+	wasBlockStored := flags&BFWasStored == BFWasStored
+	if dag.IsInDAG(blockHash) && !wasBlockStored {
+		str := fmt.Sprintf("already have block %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	// The block must not already exist as an orphan.
+	if _, exists := dag.orphans[*blockHash]; exists {
+		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	if dag.isKnownDelayedBlock(blockHash) {
+		str := fmt.Sprintf("already have block (delayed) %s", blockHash)
+		return ruleError(ErrDuplicateBlock, str)
+	}
+
+	return nil
 }

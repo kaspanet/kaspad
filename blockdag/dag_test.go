@@ -305,7 +305,6 @@ func TestCalcSequenceLock(t *testing.T) {
 		name    string
 		tx      *domainmessage.MsgTx
 		utxoSet UTXOSet
-		mempool bool
 		want    *SequenceLock
 	}{
 		// A transaction with a single input with max sequence number.
@@ -462,7 +461,6 @@ func TestCalcSequenceLock(t *testing.T) {
 			name:    "single input, unconfirmed, lock-time in blocks",
 			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}}, nil),
 			utxoSet: utxoSet,
-			mempool: true,
 			want: &SequenceLock{
 				Milliseconds:   -1,
 				BlockBlueScore: int64(nextBlockBlueScore) + 1,
@@ -475,7 +473,6 @@ func TestCalcSequenceLock(t *testing.T) {
 			name:    "single input, unconfirmed, lock-time in milliseoncds",
 			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
-			mempool: true,
 			want: &SequenceLock{
 				Milliseconds:   nextMedianTime + 1048575,
 				BlockBlueScore: -1,
@@ -486,7 +483,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for _, test := range tests {
 		utilTx := util.NewTx(test.tx)
-		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet, test.mempool)
+		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet)
 		if err != nil {
 			t.Fatalf("test '%s', unable to calc sequence lock: %v", test.name, err)
 		}
@@ -1121,21 +1118,6 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
 		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
-	}
-}
-
-func TestIsDAGCurrentMaxDiff(t *testing.T) {
-	netParams := []*dagconfig.Params{
-		&dagconfig.MainnetParams,
-		&dagconfig.TestnetParams,
-		&dagconfig.DevnetParams,
-		&dagconfig.RegressionNetParams,
-		&dagconfig.SimnetParams,
-	}
-	for _, params := range netParams {
-		if params.FinalityDuration < isDAGCurrentMaxDiff*params.TargetTimePerBlock {
-			t.Errorf("in %s, a DAG can be considered current even if it's below the finality point", params.Name)
-		}
 	}
 }
 
