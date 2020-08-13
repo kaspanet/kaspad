@@ -31,6 +31,9 @@ const MaxMassPerTx = MaxMassPerBlock / 2
 // possibly fit into a block.
 const MaxTxPerBlock = (MaxMassPerBlock / minTxPayload) + 1
 
+// MaxBlockParents is the maximum allowed number of parents for block.
+const MaxBlockParents = 10
+
 // TxLoc holds locator data for the offset and length of where a transaction is
 // located within a MsgBlock data buffer.
 type TxLoc struct {
