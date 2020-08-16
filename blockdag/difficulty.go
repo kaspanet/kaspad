@@ -15,7 +15,7 @@ import (
 // block given its bluest parent.
 func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime mstime.Time) uint32 {
 	// Genesis block.
-	if bluestParent == nil || bluestParent.blueScore < dag.difficultyAdjustmentWindowSize+1 {
+	if dag.Params.DisableDifficultyAdjustment || bluestParent == nil || bluestParent.blueScore < dag.difficultyAdjustmentWindowSize+1 {
 		return dag.powMaxBits
 	}
 

@@ -6,10 +6,11 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -212,10 +213,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	}
 
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
-	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsBuiltIn()) &&
-		msgTx.Gas > 0 {
-
+	if msgTx.SubnetworkID.IsBuiltInOrNative() && msgTx.Gas > 0 {
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}

@@ -178,6 +178,9 @@ type Params struct {
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks bool
+
+	// DisableDifficultyAdjustment determine whether to use difficulty
+	DisableDifficultyAdjustment bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -189,7 +192,7 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
 	K:           ghostdagK,
-	Name:        "mainnet",
+	Name:        "kaspa-mainnet",
 	Net:         domainmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
@@ -235,6 +238,8 @@ var MainnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // RegressionNetParams defines the network parameters for the regression test
@@ -242,7 +247,7 @@ var MainnetParams = Params{
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
 	K:           ghostdagK,
-	Name:        "regtest",
+	Name:        "kaspa-regtest",
 	Net:         domainmessage.Regtest,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
@@ -288,12 +293,14 @@ var RegressionNetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           ghostdagK,
-	Name:        "testnet",
+	Name:        "kaspa-testnet",
 	Net:         domainmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
@@ -339,6 +346,8 @@ var TestnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -350,7 +359,7 @@ var TestnetParams = Params{
 // just turn into another public testnet.
 var SimnetParams = Params{
 	K:           ghostdagK,
-	Name:        "simnet",
+	Name:        "kaspa-simnet",
 	Net:         domainmessage.Simnet,
 	RPCPort:     "16510",
 	DefaultPort: "16511",
@@ -394,12 +403,14 @@ var SimnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: true,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
 var DevnetParams = Params{
 	K:           ghostdagK,
-	Name:        "devnet",
+	Name:        "kaspa-devnet",
 	Net:         domainmessage.Devnet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
@@ -445,6 +456,8 @@ var DevnetParams = Params{
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
+
+	DisableDifficultyAdjustment: false,
 }
 
 var (

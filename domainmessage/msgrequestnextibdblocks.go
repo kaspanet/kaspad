@@ -5,7 +5,9 @@ package domainmessage
 // more blocks.
 //
 // This message has no payload.
-type MsgRequestNextIBDBlocks struct{}
+type MsgRequestNextIBDBlocks struct {
+	baseMessage
+}
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.

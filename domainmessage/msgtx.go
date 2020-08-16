@@ -268,6 +268,7 @@ func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
 // Use the AddTxIn and AddTxOut functions to build up the list of transaction
 // inputs and outputs.
 type MsgTx struct {
+	baseMessage
 	Version      int32
 	TxIn         []*TxIn
 	TxOut        []*TxOut

@@ -77,8 +77,8 @@ func TestIBDBlockEncoding(t *testing.T) {
 	}{
 		// Latest protocol version.
 		{
-			&MsgIBDBlock{&blockOne},
-			&MsgIBDBlock{&blockOne},
+			&MsgIBDBlock{MsgBlock: &blockOne},
+			&MsgIBDBlock{MsgBlock: &blockOne},
 			blockOneBytes,
 			blockOneTxLocs,
 			ProtocolVersion,

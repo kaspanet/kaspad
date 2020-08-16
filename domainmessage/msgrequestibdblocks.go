@@ -12,6 +12,7 @@ import (
 // RequestIBDBlocks message. It is used to request a list of blocks starting after the
 // low hash and until the high hash.
 type MsgRequestIBDBlocks struct {
+	baseMessage
 	LowHash  *daghash.Hash
 	HighHash *daghash.Hash
 }
