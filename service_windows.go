@@ -17,7 +17,7 @@ import (
 	"github.com/btcsuite/winsvc/svc"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/signal"
-	"github.com/kaspanet/kaspad/infrastructure/version"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (
