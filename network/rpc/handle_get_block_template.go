@@ -13,7 +13,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mining"
-	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
