@@ -1047,3 +1047,37 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		}
 	}
 }
+
+func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestTipsAfterReindexIntervalsEarlierThanReindexRoot", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Set the reindex window to a low number to make this test run fast
+	originalReachabilityReindexWindow := reachabilityReindexWindow
+	reachabilityReindexWindow = 10
+	defer func() {
+		reachabilityReindexWindow = originalReachabilityReindexWindow
+	}()
+
+	// Add a chain of reachabilityReindexWindow + 1 blocks above the genesis.
+	// This will set the reindex root to the child of genesis
+	chainTipHash := dag.Params.GenesisHash
+	for i := uint64(0); i < reachabilityReindexWindow+1; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chainTipHash}, nil)
+		chainTipHash = block.BlockHash()
+	}
+
+	// Add another block above the genesis block. This will trigger an
+	// earlier-than-reindex-root reindex
+	sideBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.Params.GenesisHash}, nil)
+
+	// Add a block whose parents are the chain tip and the side block.
+	// We expect this not to fail
+	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{chainTipHash, sideBlock.BlockHash()}, nil)
+}

@@ -268,6 +268,12 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
+	// Temporarily set the child's interval to be empty, at
+	// the start of rtn's remaining interval. This is done
+	// so that child-of-rtn checks (e.g.
+	// findAncestorAmongChildren) will not fail for rtn.
+	child.interval = newReachabilityInterval(remaining.start, remaining.start-1)
+
 	// Handle rtn not being a descendant of the reindex root.
 	// Note that we check rtn here instead of child because
 	// at this point we don't yet know child's interval.

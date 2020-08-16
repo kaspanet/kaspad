@@ -13,7 +13,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mining"
-	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
@@ -70,18 +69,6 @@ func newGbtWorkState() *gbtWorkState {
 	return &gbtWorkState{
 		notifyMap: make(map[string]map[int64]chan struct{}),
 	}
-}
-
-// builderScript is a convenience function which is used for hard-coded scripts
-// built with the script builder. Any errors are converted to a panic since it
-// is only, and must only, be used with hard-coded, and therefore, known good,
-// scripts.
-func builderScript(builder *txscript.ScriptBuilder) []byte {
-	script, err := builder.Script()
-	if err != nil {
-		panic(err)
-	}
-	return script
 }
 
 // handleGetBlockTemplate implements the getBlockTemplate command.
