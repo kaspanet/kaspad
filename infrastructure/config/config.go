@@ -25,10 +25,10 @@ import (
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/version"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (

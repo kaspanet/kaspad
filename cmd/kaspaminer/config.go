@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/infrastructure/version"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (

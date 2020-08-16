@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"os"
 
-	"github.com/kaspanet/kaspad/infrastructure/version"
+	"github.com/kaspanet/kaspad/version"
 
 	"github.com/pkg/errors"
 

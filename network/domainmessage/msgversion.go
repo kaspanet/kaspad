@@ -6,7 +6,7 @@ package domainmessage
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/version"
+	"github.com/kaspanet/kaspad/version"
 	"strings"
 
 	"github.com/kaspanet/kaspad/network/netadapter/id"
