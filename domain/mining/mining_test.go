@@ -32,13 +32,15 @@ func TestIncestousNewBlockTemplate(t *testing.T) {
 	t.Logf("heldBlock: %s", heldBlock.BlockHash())
 
 	// Add a chain with size `chainSize` over the genesis
-	const chainSize = 1010
+	const chainSize = 201
 	chainTipHash := dag.Params.GenesisHash
 	for i := 0; i < chainSize; i++ {
 		block, err := PrepareBlockForTest(dag, []*daghash.Hash{chainTipHash}, []*domainmessage.MsgTx{}, false)
 		if err != nil {
 			t.Fatalf("unexpected error in PrepareBlockForTest: %s", err)
 		}
+		t.Logf("chain block: %s", block.BlockHash())
+
 		isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("block #%d unexpectedly got an error in ProcessBlock: %s", i, err)
@@ -65,21 +67,11 @@ func TestIncestousNewBlockTemplate(t *testing.T) {
 		t.Fatalf("held block is unexpectedly delayed")
 	}
 
-	// Create and add a block whose parents are the last chain block and heldBlock.
+	// Create a block whose parents are the last chain block and heldBlock.
 	// We expect this not to fail.
-	block, err := PrepareBlockForTest(dag, []*daghash.Hash{chainTipHash, heldBlock.BlockHash()},
+	_, err = PrepareBlockForTest(dag, []*daghash.Hash{chainTipHash, heldBlock.BlockHash()},
 		[]*domainmessage.MsgTx{}, false)
 	if err != nil {
 		t.Fatalf("unexpected error in PrepareBlockForTest: %s", err)
-	}
-	isOrphan, isDelayed, err = dag.ProcessBlock(util.NewBlock(block), blockdag.BFNoPoWCheck)
-	if err != nil {
-		t.Fatalf("unexpected error in ProcessBlock: %s", err)
-	}
-	if isOrphan {
-		t.Fatalf("held block is unexpectedly an orphan")
-	}
-	if isDelayed {
-		t.Fatalf("held block is unexpectedly delayed")
 	}
 }
