@@ -247,3 +247,23 @@ func (node blockNode) String() string {
 func (node *blockNode) time() mstime.Time {
 	return mstime.UnixMilliseconds(node.timestamp)
 }
+
+func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
+	if node.isGenesis() {
+		return node
+	}
+
+	requiredBlueScore := node.blueScore - depth
+	previous := node
+	current := node.selectedParent
+
+	for current.blueScore > requiredBlueScore {
+		if current.isGenesis() {
+			return current
+		}
+		previous = current
+		current = current.selectedParent
+	}
+
+	return previous
+}
