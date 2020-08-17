@@ -275,3 +275,8 @@ func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
 func (node *blockNode) finalityPoint() *blockNode {
 	return node.blockAtDepth(node.dag.FinalityInterval())
 }
+
+func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (bool, error) {
+	finalityPoint := node.finalityPoint()
+	return node.dag.reachabilityTree.isReachabilityTreeAncestorOf(other, finalityPoint)
+}
