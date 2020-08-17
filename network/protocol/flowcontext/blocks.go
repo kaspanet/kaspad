@@ -39,8 +39,10 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 	for i, tx := range transactionsAcceptedToMempool {
 		txIDsToBroadcast[i] = tx.ID()
 	}
-
-	copy(txIDsToBroadcast[len(transactionsAcceptedToMempool):], txIDsToBroadcast)
+	offset := len(transactionsAcceptedToMempool)
+	for i, tx := range txIDsToRebroadcast {
+		txIDsToBroadcast[offset+i] = tx
+	}
 
 	if len(txIDsToBroadcast) == 0 {
 		return nil
@@ -61,6 +63,10 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
 	_, _, err := f.DAG().ProcessBlock(block, flags)
+	if err != nil {
+		return err
+	}
+	err = f.OnNewBlock(block)
 	if err != nil {
 		return err
 	}
