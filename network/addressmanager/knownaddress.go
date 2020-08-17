@@ -5,7 +5,7 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 

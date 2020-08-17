@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 )

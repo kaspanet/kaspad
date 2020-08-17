@@ -1,9 +1,9 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 

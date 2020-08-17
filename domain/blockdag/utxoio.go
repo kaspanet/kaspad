@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"

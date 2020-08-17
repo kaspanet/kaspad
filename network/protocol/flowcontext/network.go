@@ -1,7 +1,7 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/network/connmanager"
 	"github.com/kaspanet/kaspad/network/netadapter"
 	"github.com/kaspanet/kaspad/network/protocol/common"

@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/appmessage"
+import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_RequestSelectedTip) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.MsgRequestSelectedTip{}, nil

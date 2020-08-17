@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 const (

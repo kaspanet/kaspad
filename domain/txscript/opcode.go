@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 

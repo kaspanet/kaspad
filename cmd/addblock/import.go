@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 

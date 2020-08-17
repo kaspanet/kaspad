@@ -1,7 +1,7 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 func (x *KaspadMessage_Reject) toWireMessage() (appmessage.Message, error) {

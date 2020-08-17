@@ -2,7 +2,7 @@ package netadapter
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/pkg/errors"
 

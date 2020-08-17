@@ -8,6 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
@@ -16,7 +17,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/connmanager"
 	"github.com/kaspanet/kaspad/network/dnsseed"
 	"github.com/kaspanet/kaspad/network/netadapter"

@@ -3,8 +3,8 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"

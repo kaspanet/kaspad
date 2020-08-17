@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
 

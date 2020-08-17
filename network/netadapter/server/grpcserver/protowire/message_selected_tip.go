@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/appmessage"
+import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_SelectedTip) toAppMessage() (appmessage.Message, error) {
 	hash, err := x.SelectedTip.SelectedTipHash.toWire()

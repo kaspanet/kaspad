@@ -6,7 +6,7 @@ package addressmanager
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"io/ioutil"
 	"net"
 	"reflect"

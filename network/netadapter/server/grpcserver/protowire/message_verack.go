@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/appmessage"
+import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_Verack) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.MsgVerAck{}, nil

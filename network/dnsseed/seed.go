@@ -6,7 +6,7 @@ package dnsseed
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"math/rand"
 	"net"
 	"strconv"

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter/router"

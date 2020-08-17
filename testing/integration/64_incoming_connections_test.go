@@ -8,7 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/locks"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 func Test64IncomingConnections(t *testing.T) {

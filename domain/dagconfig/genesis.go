@@ -5,7 +5,7 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"

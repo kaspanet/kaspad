@@ -3,7 +3,7 @@ package router
 import (
 	"sync"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
 

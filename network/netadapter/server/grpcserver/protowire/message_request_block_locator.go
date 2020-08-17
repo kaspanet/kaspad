@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/appmessage"
+import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_RequestBlockLocator) toAppMessage() (appmessage.Message, error) {
 	lowHash, err := x.RequestBlockLocator.LowHash.toWire()

@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
 	"github.com/kaspanet/kaspad/util/locks"

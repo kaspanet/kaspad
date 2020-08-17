@@ -14,11 +14,11 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"

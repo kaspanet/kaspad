@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/appmessage"
+import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_IbdBlock) toAppMessage() (appmessage.Message, error) {
 	msgBlock, err := x.IbdBlock.toAppMessage()

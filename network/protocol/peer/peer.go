@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"

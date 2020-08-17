@@ -4,8 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/network/protocol/flows/rejects"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/network/addressmanager"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/flows/addressexchange"

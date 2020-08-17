@@ -22,8 +22,8 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 

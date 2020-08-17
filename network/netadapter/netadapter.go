@@ -6,8 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/netadapter/server"

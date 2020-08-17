@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 

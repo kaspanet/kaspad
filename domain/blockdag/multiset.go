@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/network/appmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
 
