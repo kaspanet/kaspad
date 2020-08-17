@@ -281,7 +281,7 @@ func (node *blockNode) finalityPoint() *blockNode {
 
 func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (bool, error) {
 	finalityPoint := node.finalityPoint()
-	return node.dag.reachabilityTree.isReachabilityTreeAncestorOf(other, finalityPoint)
+	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
 }
 
 func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
@@ -312,4 +312,30 @@ func (node *blockNode) isInPastOfAny(blocks []*blockNode) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (node *blockNode) checkObjectiveFinality() error {
+	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
+	if err != nil {
+		return err
+	}
+
+	finalityPoint := node.finalityPoint()
+	for _, red := range node.reds {
+		doesRedHaveFinalityPointInPast, err := node.dag.isInPast(finalityPoint, red)
+		if err != nil {
+			return err
+		}
+
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := red.isInPastOfAny(nonFinalityViolatingBlues)
+		if err != nil {
+			return err
+		}
+
+		if !doesRedHaveFinalityPointInPast && !isRedInPastOfAnyNonFinalityViolatingBlue {
+			return ruleError(ErrViolatingObjectiveFinality, "block is violating objective finality")
+		}
+	}
+
+	return nil
 }

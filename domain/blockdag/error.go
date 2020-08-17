@@ -210,6 +210,10 @@ const (
 	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
 	// BFDisallowOrphans flag raised.
 	ErrOrphanBlockIsNotAllowed
+
+	// ErrViolatingObjectiveFinality indicates that a block is violating finality from
+	// it's own point of view
+	ErrViolatingObjectiveFinality
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
