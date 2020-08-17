@@ -12,7 +12,7 @@ import (
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/network/domainmessage"

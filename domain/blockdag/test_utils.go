@@ -14,8 +14,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/kaspanet/kaspad/infrastructure/database/ffldb/ldb"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ffldb/ldb"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"

@@ -14,7 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/network/connmanager"
 	"github.com/kaspanet/kaspad/network/dnsseed"

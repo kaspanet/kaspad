@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 

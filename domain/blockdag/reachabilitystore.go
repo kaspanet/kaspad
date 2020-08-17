@@ -2,8 +2,8 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/infrastructure/database"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"

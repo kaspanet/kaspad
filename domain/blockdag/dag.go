@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/pkg/errors"
 

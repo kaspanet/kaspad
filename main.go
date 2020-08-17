@@ -15,7 +15,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/config"
