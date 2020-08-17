@@ -211,3 +211,9 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+// doUpgrades performs upgrades to kaspad as new versions require it.
+// currently it's a placeholder we got from kaspad upstream, that does nothing
+func doUpgrades() error {
+	return nil
+}
