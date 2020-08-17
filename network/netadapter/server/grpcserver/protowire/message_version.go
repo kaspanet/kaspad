@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-func (x *KaspadMessage_Version) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
 	// Address is optional for non-listening nodes
 	var address *appmessage.NetAddress
 	if x.Version.Address != nil {
@@ -46,7 +46,7 @@ func (x *KaspadMessage_Version) toDomainMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_Version) fromDomainMessage(msgVersion *appmessage.MsgVersion) error {
+func (x *KaspadMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion) error {
 	err := appmessage.ValidateUserAgent(msgVersion.UserAgent)
 	if err != nil {
 		return err

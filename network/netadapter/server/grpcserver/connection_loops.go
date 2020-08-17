@@ -48,7 +48,7 @@ func (c *gRPCConnection) sendLoop() error {
 			return spew.Sdump(message)
 		}))
 
-		messageProto, err := protowire.FromDomainMessage(message)
+		messageProto, err := protowire.FromAppMessage(message)
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,7 @@ func (c *gRPCConnection) receiveLoop() error {
 			}
 			return err
 		}
-		message, err := protoMessage.ToDomainMessage()
+		message, err := protoMessage.ToAppMessage()
 		if err != nil {
 			c.onInvalidMessageHandler(err)
 			return err

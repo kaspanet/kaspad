@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BlockLocator) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_BlockLocator) toAppMessage() (appmessage.Message, error) {
 	if len(x.BlockLocator.Hashes) > appmessage.MaxBlockLocatorsPerMsg {
 		return nil, errors.Errorf("too many block locator hashes for message "+
 			"[count %d, max %d]", len(x.BlockLocator.Hashes), appmessage.MaxBlockLocatorsPerMsg)
@@ -17,7 +17,7 @@ func (x *KaspadMessage_BlockLocator) toDomainMessage() (appmessage.Message, erro
 	return &appmessage.MsgBlockLocator{BlockLocatorHashes: hashes}, nil
 }
 
-func (x *KaspadMessage_BlockLocator) fromDomainMessage(msgBlockLocator *appmessage.MsgBlockLocator) error {
+func (x *KaspadMessage_BlockLocator) fromAppMessage(msgBlockLocator *appmessage.MsgBlockLocator) error {
 	if len(msgBlockLocator.BlockLocatorHashes) > appmessage.MaxBlockLocatorsPerMsg {
 		return errors.Errorf("too many block locator hashes for message "+
 			"[count %d, max %d]", len(msgBlockLocator.BlockLocatorHashes), appmessage.MaxBlockLocatorsPerMsg)

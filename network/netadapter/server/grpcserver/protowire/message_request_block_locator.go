@@ -2,7 +2,7 @@ package protowire
 
 import "github.com/kaspanet/kaspad/network/appmessage"
 
-func (x *KaspadMessage_RequestBlockLocator) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_RequestBlockLocator) toAppMessage() (appmessage.Message, error) {
 	lowHash, err := x.RequestBlockLocator.LowHash.toWire()
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func (x *KaspadMessage_RequestBlockLocator) toDomainMessage() (appmessage.Messag
 	}, nil
 }
 
-func (x *KaspadMessage_RequestBlockLocator) fromDomainMessage(msgGetBlockLocator *appmessage.MsgRequestBlockLocator) error {
+func (x *KaspadMessage_RequestBlockLocator) fromAppMessage(msgGetBlockLocator *appmessage.MsgRequestBlockLocator) error {
 	x.RequestBlockLocator = &RequestBlockLocatorMessage{
 		LowHash:  wireHashToProto(msgGetBlockLocator.LowHash),
 		HighHash: wireHashToProto(msgGetBlockLocator.HighHash),

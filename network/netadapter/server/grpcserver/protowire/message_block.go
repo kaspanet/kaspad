@@ -6,16 +6,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Block) toDomainMessage() (appmessage.Message, error) {
-	return x.Block.toDomainMessage()
+func (x *KaspadMessage_Block) toAppMessage() (appmessage.Message, error) {
+	return x.Block.toAppMessage()
 }
 
-func (x *KaspadMessage_Block) fromDomainMessage(msgBlock *appmessage.MsgBlock) error {
+func (x *KaspadMessage_Block) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
 	x.Block = new(BlockMessage)
-	return x.Block.fromDomainMessage(msgBlock)
+	return x.Block.fromAppMessage(msgBlock)
 }
 
-func (x *BlockMessage) toDomainMessage() (appmessage.Message, error) {
+func (x *BlockMessage) toAppMessage() (appmessage.Message, error) {
 	if len(x.Transactions) > appmessage.MaxTxPerBlock {
 		return nil, errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(x.Transactions), appmessage.MaxTxPerBlock)
@@ -59,7 +59,7 @@ func (x *BlockMessage) toDomainMessage() (appmessage.Message, error) {
 
 	transactions := make([]*appmessage.MsgTx, len(x.Transactions))
 	for i, protoTx := range x.Transactions {
-		msgTx, err := protoTx.toDomainMessage()
+		msgTx, err := protoTx.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (x *BlockMessage) toDomainMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *BlockMessage) fromDomainMessage(msgBlock *appmessage.MsgBlock) error {
+func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
 	if len(msgBlock.Transactions) > appmessage.MaxTxPerBlock {
 		return errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(msgBlock.Transactions), appmessage.MaxTxPerBlock)
@@ -92,7 +92,7 @@ func (x *BlockMessage) fromDomainMessage(msgBlock *appmessage.MsgBlock) error {
 	protoTransactions := make([]*TransactionMessage, len(msgBlock.Transactions))
 	for i, tx := range msgBlock.Transactions {
 		protoTx := new(TransactionMessage)
-		protoTx.fromDomainMessage(tx)
+		protoTx.fromAppMessage(tx)
 		protoTransactions[i] = protoTx
 	}
 	*x = BlockMessage{

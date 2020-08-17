@@ -2,7 +2,7 @@ package protowire
 
 import "github.com/kaspanet/kaspad/network/appmessage"
 
-func (x *KaspadMessage_RequestIBDBlocks) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
 	lowHash, err := x.RequestIBDBlocks.LowHash.toWire()
 	if err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func (x *KaspadMessage_RequestIBDBlocks) toDomainMessage() (appmessage.Message, 
 	}, nil
 }
 
-func (x *KaspadMessage_RequestIBDBlocks) fromDomainMessage(msgGetBlocks *appmessage.MsgRequestIBDBlocks) error {
+func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgGetBlocks *appmessage.MsgRequestIBDBlocks) error {
 	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
 		LowHash:  wireHashToProto(msgGetBlocks.LowHash),
 		HighHash: wireHashToProto(msgGetBlocks.HighHash),

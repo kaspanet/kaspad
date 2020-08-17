@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Addresses) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_Addresses) toAppMessage() (appmessage.Message, error) {
 	protoAddresses := x.Addresses
 	if len(x.Addresses.AddressList) > appmessage.MaxAddressesPerMsg {
 		return nil, errors.Errorf("too many addresses for message "+
@@ -31,7 +31,7 @@ func (x *KaspadMessage_Addresses) toDomainMessage() (appmessage.Message, error) 
 	}, nil
 }
 
-func (x *KaspadMessage_Addresses) fromDomainMessage(msgAddresses *appmessage.MsgAddresses) error {
+func (x *KaspadMessage_Addresses) fromAppMessage(msgAddresses *appmessage.MsgAddresses) error {
 	if len(msgAddresses.AddrList) > appmessage.MaxAddressesPerMsg {
 		return errors.Errorf("too many addresses for message "+
 			"[count %d, max %d]", len(msgAddresses.AddrList), appmessage.MaxAddressesPerMsg)

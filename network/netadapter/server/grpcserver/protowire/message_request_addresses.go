@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/network/appmessage"
 )
 
-func (x *KaspadMessage_RequestAddresses) toDomainMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_RequestAddresses) toAppMessage() (appmessage.Message, error) {
 	protoGetAddresses := x.RequestAddresses
 	subnetworkID, err := protoGetAddresses.SubnetworkID.toWire()
 	if err != nil {
@@ -17,7 +17,7 @@ func (x *KaspadMessage_RequestAddresses) toDomainMessage() (appmessage.Message, 
 	}, nil
 }
 
-func (x *KaspadMessage_RequestAddresses) fromDomainMessage(msgGetAddresses *appmessage.MsgRequestAddresses) error {
+func (x *KaspadMessage_RequestAddresses) fromAppMessage(msgGetAddresses *appmessage.MsgRequestAddresses) error {
 	x.RequestAddresses = &RequestAddressesMessage{
 		IncludeAllSubnetworks: msgGetAddresses.IncludeAllSubnetworks,
 		SubnetworkID:          wireSubnetworkIDToProto(msgGetAddresses.SubnetworkID),
