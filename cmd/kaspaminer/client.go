@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/network/rpc/client"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"io/ioutil"

@@ -7,7 +7,7 @@ package appmessage
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"

@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 
-	rpcclient "github.com/kaspanet/kaspad/network/rpc/client"
+	rpcclient "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 )
 
 type rpcClient struct {

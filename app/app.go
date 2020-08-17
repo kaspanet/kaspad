@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/network/addressmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
@@ -17,11 +17,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/network/connmanager"
-	"github.com/kaspanet/kaspad/network/dnsseed"
-	"github.com/kaspanet/kaspad/network/netadapter"
-	"github.com/kaspanet/kaspad/network/rpc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )

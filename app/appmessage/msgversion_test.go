@@ -6,7 +6,7 @@ package appmessage
 
 import (
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"net"
 	"reflect"

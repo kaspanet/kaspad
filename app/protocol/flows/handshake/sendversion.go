@@ -3,7 +3,7 @@ package handshake
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
-	"github.com/kaspanet/kaspad/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 )
 

@@ -8,9 +8,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/network/addressmanager"
-	"github.com/kaspanet/kaspad/network/connmanager"
-	"github.com/kaspanet/kaspad/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/util"
 )
 

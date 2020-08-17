@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
-	clientpkg "github.com/kaspanet/kaspad/network/rpc/client"
+	clientpkg "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"

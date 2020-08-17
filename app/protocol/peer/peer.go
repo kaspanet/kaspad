@@ -1,13 +1,13 @@
 package peer
 
 import (
-	"github.com/kaspanet/kaspad/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"

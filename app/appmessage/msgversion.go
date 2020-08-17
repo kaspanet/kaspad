@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/version"
 	"strings"
 
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/util/daghash"

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 )

@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/network/rpc/model"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
