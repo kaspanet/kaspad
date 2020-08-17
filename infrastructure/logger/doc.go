@@ -20,4 +20,4 @@ are recognized:
   shortfile: Include the filename and line number in all log messages.
   Overrides longfile.
 */
-package logs
+package logger
