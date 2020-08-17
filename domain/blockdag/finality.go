@@ -18,12 +18,6 @@ func (dag *BlockDAG) FinalityInterval() uint64 {
 	return uint64(dag.Params.FinalityDuration / dag.Params.TargetTimePerBlock)
 }
 
-// pruningDepth is used to determine the depth from the virtual block where the pruning point is set once updated.
-func (dag *BlockDAG) pruningDepth() uint64 {
-	k := uint64(dag.Params.K)
-	return 2*dag.FinalityInterval() + 4*mergeSetSizeLimit*k + 2*k + 2
-}
-
 // checkFinalityViolation checks the new block does not violate the finality rules
 // specifically - the new block selectedParent chain should contain the old finality point.
 func (dag *BlockDAG) checkFinalityViolation(newNode *blockNode) error {
