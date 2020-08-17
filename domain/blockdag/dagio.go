@@ -484,6 +484,25 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 	}
 
+	redsCount, err := domainmessage.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.reds = make([]*blockNode, redsCount)
+	for i := uint64(0); i < redsCount; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+
+		var ok bool
+		node.reds[i], ok = dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
+		}
+	}
+
 	bluesAnticoneSizesLen, err := domainmessage.ReadVarInt(buffer)
 	if err != nil {
 		return nil, err
@@ -562,6 +581,18 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = domainmessage.WriteVarInt(w, uint64(len(node.reds)))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, red := range node.reds {
+		_, err = w.Write(red.hash[:])
 		if err != nil {
 			return nil, err
 		}

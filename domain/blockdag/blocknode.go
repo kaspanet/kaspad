@@ -86,6 +86,9 @@ type blockNode struct {
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
 
+	// blues are all red blocks in this block's worldview that are in its selected parent anticone
+	reds []*blockNode
+
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
