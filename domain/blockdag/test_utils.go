@@ -23,7 +23,7 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -121,30 +121,30 @@ type txSubnetworkData struct {
 	Payload      []byte
 }
 
-func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *domainmessage.MsgTx {
-	txIns := []*domainmessage.TxIn{}
-	txOuts := []*domainmessage.TxOut{}
+func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *appmessage.MsgTx {
+	txIns := []*appmessage.TxIn{}
+	txOuts := []*appmessage.TxOut{}
 
 	for i := uint32(0); i < numInputs; i++ {
-		txIns = append(txIns, &domainmessage.TxIn{
-			PreviousOutpoint: *domainmessage.NewOutpoint(&daghash.TxID{}, i),
+		txIns = append(txIns, &appmessage.TxIn{
+			PreviousOutpoint: *appmessage.NewOutpoint(&daghash.TxID{}, i),
 			SignatureScript:  []byte{},
-			Sequence:         domainmessage.MaxTxInSequenceNum,
+			Sequence:         appmessage.MaxTxInSequenceNum,
 		})
 	}
 
 	for i := uint32(0); i < numOutputs; i++ {
-		txOuts = append(txOuts, &domainmessage.TxOut{
+		txOuts = append(txOuts, &appmessage.TxOut{
 			ScriptPubKey: OpTrueScript,
 			Value:        outputValue,
 		})
 	}
 
 	if subnetworkData != nil {
-		return domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
+		return appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
 	}
 
-	return domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)
+	return appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
 }
 
 // VirtualForTest is an exported version for virtualBlock, so that it can be returned by exported test_util methods
@@ -186,7 +186,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 // LoadBlocks reads files containing kaspa gzipped block data from disk
 // and returns them as an array of util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
-	var network = domainmessage.Mainnet
+	var network = appmessage.Mainnet
 	var dr io.Reader
 	var fi io.ReadCloser
 
@@ -244,7 +244,7 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) (*domainmessage.MsgBlock, error) {
+func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) (*appmessage.MsgBlock, error) {
 	parents := newBlockSet()
 	for _, hash := range parentHashes {
 		parent, ok := dag.index.LookupNode(hash)
@@ -310,13 +310,13 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	// Create a new block ready to be solved.
 	hashMerkleTree := BuildHashMerkleTreeStore(blockTransactions)
 
-	var msgBlock domainmessage.MsgBlock
+	var msgBlock appmessage.MsgBlock
 	for _, tx := range blockTransactions {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	timestamp := node.parents.bluest().PastMedianTime(dag)
-	msgBlock.Header = domainmessage.BlockHeader{
+	msgBlock.Header = appmessage.BlockHeader{
 		Version:              blockVersion,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       hashMerkleTree.Root(),
@@ -331,7 +331,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
 // hashes and process it.
-func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx) *domainmessage.MsgBlock {
+func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {

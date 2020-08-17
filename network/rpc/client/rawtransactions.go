@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -41,7 +41,7 @@ func (r FutureSendRawTransactionResult) Receive() (*daghash.TxID, error) {
 // the returned instance.
 //
 // See SendRawTransaction for the blocking version and more details.
-func (c *Client) SendRawTransactionAsync(tx *domainmessage.MsgTx, allowHighFees bool) FutureSendRawTransactionResult {
+func (c *Client) SendRawTransactionAsync(tx *appmessage.MsgTx, allowHighFees bool) FutureSendRawTransactionResult {
 	txHex := ""
 	if tx != nil {
 		// Serialize the transaction and convert to hex string.
@@ -58,6 +58,6 @@ func (c *Client) SendRawTransactionAsync(tx *domainmessage.MsgTx, allowHighFees 
 
 // SendRawTransaction submits the encoded transaction to the server which will
 // then relay it to the network.
-func (c *Client) SendRawTransaction(tx *domainmessage.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
+func (c *Client) SendRawTransaction(tx *appmessage.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
 	return c.SendRawTransactionAsync(tx, allowHighFees).Receive()
 }

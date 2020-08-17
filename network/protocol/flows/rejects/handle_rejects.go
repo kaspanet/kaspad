@@ -1,7 +1,7 @@
 package rejects
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
 )
@@ -31,7 +31,7 @@ func (flow *handleRejectsFlow) start() error {
 	if err != nil {
 		return err
 	}
-	rejectMessage := message.(*domainmessage.MsgReject)
+	rejectMessage := message.(*appmessage.MsgReject)
 
 	const maxReasonLength = 255
 	if len(rejectMessage.Reason) > maxReasonLength {

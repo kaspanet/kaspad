@@ -3,7 +3,7 @@ package relaytransactions
 import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
@@ -20,23 +20,23 @@ type TransactionsRelayContext interface {
 	DAG() *blockdag.BlockDAG
 	SharedRequestedTransactions() *SharedRequestedTransactions
 	TxPool() *mempool.TxPool
-	Broadcast(message domainmessage.Message) error
+	Broadcast(message appmessage.Message) error
 }
 
 type handleRelayedTransactionsFlow struct {
 	TransactionsRelayContext
 	incomingRoute, outgoingRoute *router.Route
-	invsQueue                    []*domainmessage.MsgInvTransaction
+	invsQueue                    []*appmessage.MsgInvTransaction
 }
 
-// HandleRelayedTransactions listens to domainmessage.MsgInvTransaction messages, requests their corresponding transactions if they
+// HandleRelayedTransactions listens to appmessage.MsgInvTransaction messages, requests their corresponding transactions if they
 // are missing, adds them to the mempool and propagates them to the rest of the network.
 func HandleRelayedTransactions(context TransactionsRelayContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
 	flow := &handleRelayedTransactionsFlow{
 		TransactionsRelayContext: context,
 		incomingRoute:            incomingRoute,
 		outgoingRoute:            outgoingRoute,
-		invsQueue:                make([]*domainmessage.MsgInvTransaction, 0),
+		invsQueue:                make([]*appmessage.MsgInvTransaction, 0),
 	}
 	return flow.start()
 }
@@ -61,7 +61,7 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 }
 
 func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
-	inv *domainmessage.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
+	inv *appmessage.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
 
 	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDs))
 	for _, txID := range inv.TxIDs {
@@ -79,7 +79,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 		return idsToRequest, nil
 	}
 
-	msgGetTransactions := domainmessage.NewMsgRequestTransactions(idsToRequest)
+	msgGetTransactions := appmessage.NewMsgRequestTransactions(idsToRequest)
 	err = flow.outgoingRoute.Enqueue(msgGetTransactions)
 	if err != nil {
 		flow.SharedRequestedTransactions().removeMany(idsToRequest)
@@ -103,7 +103,7 @@ func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID
 	// checked because the vast majority of transactions consist of
 	// two outputs where one is some form of "pay-to-somebody-else"
 	// and the other is a change output.
-	prevOut := domainmessage.Outpoint{TxID: *txID}
+	prevOut := appmessage.Outpoint{TxID: *txID}
 	for i := uint32(0); i < 2; i++ {
 		prevOut.Index = i
 		_, ok := flow.DAG().GetUTXOEntry(prevOut)
@@ -114,9 +114,9 @@ func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID
 	return false
 }
 
-func (flow *handleRelayedTransactionsFlow) readInv() (*domainmessage.MsgInvTransaction, error) {
+func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransaction, error) {
 	if len(flow.invsQueue) > 0 {
-		var inv *domainmessage.MsgInvTransaction
+		var inv *appmessage.MsgInvTransaction
 		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
 		return inv, nil
 	}
@@ -126,7 +126,7 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*domainmessage.MsgInvTrans
 		return nil, err
 	}
 
-	inv, ok := msg.(*domainmessage.MsgInvTransaction)
+	inv, ok := msg.(*appmessage.MsgInvTransaction)
 	if !ok {
 		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay flow while "+
 			"expecting an inv message", msg.Command())
@@ -139,7 +139,7 @@ func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(accepte
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
-	inv := domainmessage.NewMsgInvTransaction(idsToBroadcast)
+	inv := appmessage.NewMsgInvTransaction(idsToBroadcast)
 	return flow.Broadcast(inv)
 }
 
@@ -148,7 +148,7 @@ func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(accepte
 //
 // and populates invsQueue with any inv messages that meanwhile arrive.
 func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
-	msgTx *domainmessage.MsgTx, msgNotFound *domainmessage.MsgTransactionNotFound, err error) {
+	msgTx *appmessage.MsgTx, msgNotFound *appmessage.MsgTransactionNotFound, err error) {
 
 	for {
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
@@ -157,11 +157,11 @@ func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
 		}
 
 		switch message := message.(type) {
-		case *domainmessage.MsgInvTransaction:
+		case *appmessage.MsgInvTransaction:
 			flow.invsQueue = append(flow.invsQueue, message)
-		case *domainmessage.MsgTx:
+		case *appmessage.MsgTx:
 			return message, nil, nil
-		case *domainmessage.MsgTransactionNotFound:
+		case *appmessage.MsgTransactionNotFound:
 			return nil, message, nil
 		default:
 			return nil, nil, errors.Errorf("unexpected message %s", message.Command())

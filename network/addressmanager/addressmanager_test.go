@@ -6,7 +6,7 @@ package addressmanager
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"io/ioutil"
 	"net"
 	"reflect"
@@ -24,7 +24,7 @@ import (
 // naTest is used to describe a test to be performed against the NetAddressKey
 // method.
 type naTest struct {
-	in   domainmessage.NetAddress
+	in   appmessage.NetAddress
 	want AddressKey
 }
 
@@ -98,7 +98,7 @@ func addNaTests() {
 
 func addNaTest(ip string, port uint16, want AddressKey) {
 	nip := net.ParseIP(ip)
-	na := *domainmessage.NewNetAddressIPPort(nip, port, domainmessage.SFNodeNetwork)
+	na := *appmessage.NewNetAddressIPPort(nip, port, appmessage.SFNodeNetwork)
 	test := naTest{na, want}
 	naTests = append(naTests, test)
 }
@@ -193,37 +193,37 @@ func TestAddAddressByIP(t *testing.T) {
 
 func TestAddLocalAddress(t *testing.T) {
 	var tests = []struct {
-		address  domainmessage.NetAddress
+		address  appmessage.NetAddress
 		priority AddressPriority
 		valid    bool
 	}{
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("192.168.0.100")},
+			appmessage.NetAddress{IP: net.ParseIP("192.168.0.100")},
 			InterfacePrio,
 			false,
 		},
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("204.124.1.1")},
+			appmessage.NetAddress{IP: net.ParseIP("204.124.1.1")},
 			InterfacePrio,
 			true,
 		},
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("204.124.1.1")},
+			appmessage.NetAddress{IP: net.ParseIP("204.124.1.1")},
 			BoundPrio,
 			true,
 		},
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("::1")},
+			appmessage.NetAddress{IP: net.ParseIP("::1")},
 			InterfacePrio,
 			false,
 		},
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("fe80::1")},
+			appmessage.NetAddress{IP: net.ParseIP("fe80::1")},
 			InterfacePrio,
 			false,
 		},
 		{
-			domainmessage.NetAddress{IP: net.ParseIP("2620:100::1")},
+			appmessage.NetAddress{IP: net.ParseIP("2620:100::1")},
 			InterfacePrio,
 			true,
 		},
@@ -297,7 +297,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 	if !b {
 		t.Errorf("Expected that we need more addresses")
 	}
-	addrs := make([]*domainmessage.NetAddress, addrsToAdd)
+	addrs := make([]*appmessage.NetAddress, addrsToAdd)
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
@@ -308,7 +308,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 		}
 	}
 
-	srcAddr := domainmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	srcAddr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
 	amgr.AddAddresses(addrs, srcAddr, nil)
 	numAddrs := amgr.TotalNumAddresses()
@@ -326,7 +326,7 @@ func TestGood(t *testing.T) {
 	amgr, teardown := newAddrManagerForTest(t, "TestGood", nil)
 	defer teardown()
 	addrsToAdd := 64 * 64
-	addrs := make([]*domainmessage.NetAddress, addrsToAdd)
+	addrs := make([]*appmessage.NetAddress, addrsToAdd)
 	subnetworkCount := 32
 	subnetworkIDs := make([]*subnetworkid.SubnetworkID, subnetworkCount)
 
@@ -343,7 +343,7 @@ func TestGood(t *testing.T) {
 		subnetworkIDs[i] = &subnetworkid.SubnetworkID{0xff - byte(i)}
 	}
 
-	srcAddr := domainmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	srcAddr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
 	amgr.AddAddresses(addrs, srcAddr, nil)
 	for i, addr := range addrs {
@@ -373,9 +373,9 @@ func TestGood(t *testing.T) {
 func TestGoodChangeSubnetworkID(t *testing.T) {
 	amgr, teardown := newAddrManagerForTest(t, "TestGoodChangeSubnetworkID", nil)
 	defer teardown()
-	addr := domainmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	addr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 	addrKey := NetAddressKey(addr)
-	srcAddr := domainmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	srcAddr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
 	oldSubnetwork := subnetworkid.SubnetworkIDNative
 	amgr.AddAddress(addr, srcAddr, oldSubnetwork)
@@ -514,7 +514,7 @@ func TestGetAddress(t *testing.T) {
 }
 
 func TestGetBestLocalAddress(t *testing.T) {
-	localAddrs := []domainmessage.NetAddress{
+	localAddrs := []appmessage.NetAddress{
 		{IP: net.ParseIP("192.168.0.100")},
 		{IP: net.ParseIP("::1")},
 		{IP: net.ParseIP("fe80::1")},
@@ -522,43 +522,43 @@ func TestGetBestLocalAddress(t *testing.T) {
 	}
 
 	var tests = []struct {
-		remoteAddr domainmessage.NetAddress
-		want0      domainmessage.NetAddress
-		want1      domainmessage.NetAddress
-		want2      domainmessage.NetAddress
-		want3      domainmessage.NetAddress
+		remoteAddr appmessage.NetAddress
+		want0      appmessage.NetAddress
+		want1      appmessage.NetAddress
+		want2      appmessage.NetAddress
+		want3      appmessage.NetAddress
 	}{
 		{
 			// Remote connection from public IPv4
-			domainmessage.NetAddress{IP: net.ParseIP("204.124.8.1")},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
-			domainmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
+			appmessage.NetAddress{IP: net.ParseIP("204.124.8.1")},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
+			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
 		},
 		{
 			// Remote connection from private IPv4
-			domainmessage.NetAddress{IP: net.ParseIP("172.16.0.254")},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.ParseIP("172.16.0.254")},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.IPv4zero},
 		},
 		{
 			// Remote connection from public IPv6
-			domainmessage.NetAddress{IP: net.ParseIP("2602:100:abcd::102")},
-			domainmessage.NetAddress{IP: net.IPv6zero},
-			domainmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
-			domainmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
-			domainmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
+			appmessage.NetAddress{IP: net.ParseIP("2602:100:abcd::102")},
+			appmessage.NetAddress{IP: net.IPv6zero},
+			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
+			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
+			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
 		},
 		/* XXX
 		{
 			// Remote connection from Tor
-			domainmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43::100")},
-			domainmessage.NetAddress{IP: net.IPv4zero},
-			domainmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
-			domainmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
+			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43::100")},
+			appmessage.NetAddress{IP: net.IPv4zero},
+			appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
+			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
 		},
 		*/
 	}
@@ -591,7 +591,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 	}
 
 	// Add a public IP to the list of local addresses.
-	localAddr := domainmessage.NetAddress{IP: net.ParseIP("204.124.8.100")}
+	localAddr := appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")}
 	amgr.AddLocalAddress(&localAddr, InterfacePrio)
 
 	// Test against want2
@@ -605,7 +605,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 	}
 	/*
 		// Add a Tor generated IP address
-		localAddr = domainmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")}
+		localAddr = appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")}
 		amgr.AddLocalAddress(&localAddr, ManualPrio)
 		// Test against want3
 		for x, test := range tests {

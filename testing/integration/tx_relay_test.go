@@ -8,7 +8,7 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -21,8 +21,8 @@ func TestTxRelay(t *testing.T) {
 	connect(t, payer, mediator)
 	connect(t, mediator, payee)
 
-	payeeBlockAddedChan := make(chan *domainmessage.BlockHeader)
-	setOnBlockAddedHandler(t, payee, func(header *domainmessage.BlockHeader) {
+	payeeBlockAddedChan := make(chan *appmessage.BlockHeader)
+	setOnBlockAddedHandler(t, payee, func(header *appmessage.BlockHeader) {
 		payeeBlockAddedChan <- header
 	})
 	// skip the first block because it's paying to genesis script
@@ -70,7 +70,7 @@ func TestTxRelay(t *testing.T) {
 	}
 }
 
-func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *domainmessage.BlockHeader) {
+func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.BlockHeader) {
 	select {
 	case <-payeeBlockAddedChan:
 	case <-time.After(defaultTimeout):
@@ -78,9 +78,9 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *domainme
 	}
 }
 
-func generateTx(t *testing.T, firstBlockCoinbase *domainmessage.MsgTx, payer, payee *appHarness) *domainmessage.MsgTx {
-	txIns := make([]*domainmessage.TxIn, 1)
-	txIns[0] = domainmessage.NewTxIn(domainmessage.NewOutpoint(firstBlockCoinbase.TxID(), 0), []byte{})
+func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee *appHarness) *appmessage.MsgTx {
+	txIns := make([]*appmessage.TxIn, 1)
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(firstBlockCoinbase.TxID(), 0), []byte{})
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
@@ -91,11 +91,11 @@ func generateTx(t *testing.T, firstBlockCoinbase *domainmessage.MsgTx, payer, pa
 		t.Fatalf("Error generating script: %+v", err)
 	}
 
-	txOuts := []*domainmessage.TxOut{domainmessage.NewTxOut(firstBlockCoinbase.TxOut[0].Value-1, toScript)}
+	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.TxOut[0].Value-1, toScript)}
 
 	fromScript := firstBlockCoinbase.TxOut[0].ScriptPubKey
 
-	tx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {

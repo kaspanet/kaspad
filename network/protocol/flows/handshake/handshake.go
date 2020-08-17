@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
 	"github.com/kaspanet/kaspad/util/locks"
@@ -47,7 +47,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 
 	peer = peerpkg.New(netConnection)
 
-	var peerAddress *domainmessage.NetAddress
+	var peerAddress *appmessage.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
 		defer wg.Done()
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)

@@ -3,7 +3,7 @@ package rpc
 import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -51,7 +51,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 					continue
 				}
 
-				op := domainmessage.Outpoint{
+				op := appmessage.Outpoint{
 					TxID:  *tx.ID(),
 					Index: uint32(i),
 				}

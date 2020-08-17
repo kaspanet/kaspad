@@ -2,7 +2,7 @@ package netadapter
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/pkg/errors"
 
@@ -81,8 +81,8 @@ func (c *NetConnection) IsOutbound() bool {
 }
 
 // NetAddress returns the NetAddress associated with this connection
-func (c *NetConnection) NetAddress() *domainmessage.NetAddress {
-	return domainmessage.NewNetAddress(c.connection.Address(), 0)
+func (c *NetConnection) NetAddress() *appmessage.NetAddress {
+	return appmessage.NewNetAddress(c.connection.Address(), 0)
 }
 
 func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {

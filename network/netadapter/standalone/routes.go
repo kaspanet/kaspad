@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 )
 
@@ -21,7 +21,7 @@ type Routes struct {
 
 // WaitForMessageOfType waits for a message of requested type up to `timeout`, skipping all messages of any other type
 // received while waiting
-func (r *Routes) WaitForMessageOfType(command domainmessage.MessageCommand, timeout time.Duration) (domainmessage.Message, error) {
+func (r *Routes) WaitForMessageOfType(command appmessage.MessageCommand, timeout time.Duration) (appmessage.Message, error) {
 	timeoutTime := time.Now().Add(timeout)
 	for {
 		message, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))

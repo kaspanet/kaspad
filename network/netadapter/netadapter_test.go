@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
@@ -17,7 +17,7 @@ import (
 func routerInitializerForTest(t *testing.T, routes *sync.Map,
 	routeName string, wg *sync.WaitGroup) func(*router.Router, *NetConnection) {
 	return func(router *router.Router, connection *NetConnection) {
-		route, err := router.AddIncomingRoute([]domainmessage.MessageCommand{domainmessage.CmdPing})
+		route, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdPing})
 		if err != nil {
 			t.Fatalf("TestNetAdapter: AddIncomingRoute failed: %+v", err)
 		}
@@ -102,7 +102,7 @@ func TestNetAdapter(t *testing.T) {
 
 	// Ensure all connected peers have received broadcasted message
 	connections := adapterA.Connections()
-	err = adapterA.Broadcast(connections, domainmessage.NewMsgPing(1))
+	err = adapterA.Broadcast(connections, appmessage.NewMsgPing(1))
 	if err != nil {
 		t.Fatalf("TestNetAdapter: broadcast failed: %+v", err)
 	}
@@ -120,10 +120,10 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: dequeuing message failed: %+v", err)
 	}
 
-	if command := msg.Command(); command != domainmessage.CmdPing {
+	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			domainmessage.MessageCommandToString[domainmessage.CmdPing],
-			domainmessage.MessageCommandToString[command])
+			appmessage.MessageCommandToString[appmessage.CmdPing],
+			appmessage.MessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {
@@ -140,10 +140,10 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: dequeuing message failed: %+v", err)
 	}
 
-	if command := msg.Command(); command != domainmessage.CmdPing {
+	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			domainmessage.MessageCommandToString[domainmessage.CmdPing],
-			domainmessage.MessageCommandToString[command])
+			appmessage.MessageCommandToString[appmessage.CmdPing],
+			appmessage.MessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {

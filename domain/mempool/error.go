@@ -150,7 +150,7 @@ func extractRejectCode(err error) (RejectCode, bool) {
 }
 
 // ErrToRejectErr examines the underlying type of the error and returns a reject
-// code and string appropriate to be sent in a domainmessage.MsgReject message.
+// code and string appropriate to be sent in a appmessage.MsgReject message.
 func ErrToRejectErr(err error) (RejectCode, string) {
 	// Return the reject code along with the error text if it can be
 	// extracted from the error.

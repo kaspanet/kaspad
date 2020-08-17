@@ -2,7 +2,7 @@ package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
 	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
@@ -14,7 +14,7 @@ type RelayBlockRequestsContext interface {
 	DAG() *blockdag.BlockDAG
 }
 
-// HandleRelayBlockRequests listens to domainmessage.MsgRequestRelayBlocks messages and sends
+// HandleRelayBlockRequests listens to appmessage.MsgRequestRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
 func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
@@ -24,7 +24,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		if err != nil {
 			return err
 		}
-		getRelayBlocksMessage := message.(*domainmessage.MsgRequestRelayBlocks)
+		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
 			block, err := context.DAG().BlockByHash(hash)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/pkg/errors"
 )
 
@@ -29,7 +29,7 @@ type onCapacityReachedHandler func()
 
 // Route represents an incoming or outgoing Router route
 type Route struct {
-	channel chan domainmessage.Message
+	channel chan appmessage.Message
 	// closed and closeLock are used to protect us from writing to a closed channel
 	// reads use the channel's built-in mechanism to check if the channel is closed
 	closed    bool
@@ -45,13 +45,13 @@ func NewRoute() *Route {
 
 func newRouteWithCapacity(capacity int) *Route {
 	return &Route{
-		channel: make(chan domainmessage.Message, capacity),
+		channel: make(chan appmessage.Message, capacity),
 		closed:  false,
 	}
 }
 
 // Enqueue enqueues a message to the Route
-func (r *Route) Enqueue(message domainmessage.Message) error {
+func (r *Route) Enqueue(message appmessage.Message) error {
 	r.closeLock.Lock()
 	defer r.closeLock.Unlock()
 
@@ -66,7 +66,7 @@ func (r *Route) Enqueue(message domainmessage.Message) error {
 }
 
 // Dequeue dequeues a message from the Route
-func (r *Route) Dequeue() (domainmessage.Message, error) {
+func (r *Route) Dequeue() (appmessage.Message, error) {
 	message, isOpen := <-r.channel
 	if !isOpen {
 		return nil, errors.WithStack(ErrRouteClosed)
@@ -76,7 +76,7 @@ func (r *Route) Dequeue() (domainmessage.Message, error) {
 
 // DequeueWithTimeout attempts to dequeue a message from the Route
 // and returns an error if the given timeout expires first.
-func (r *Route) DequeueWithTimeout(timeout time.Duration) (domainmessage.Message, error) {
+func (r *Route) DequeueWithTimeout(timeout time.Duration) (appmessage.Message, error) {
 	select {
 	case <-time.After(timeout):
 		return nil, errors.Wrapf(ErrTimeout, "got timeout after %s", timeout)

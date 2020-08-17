@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -21,7 +21,7 @@ func main() {
 	// for notifications. See the documentation of the rpcclient
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := client.NotificationHandlers{
-		OnFilteredBlockAdded: func(blueScore uint64, header *domainmessage.BlockHeader, txns []*util.Tx) {
+		OnFilteredBlockAdded: func(blueScore uint64, header *appmessage.BlockHeader, txns []*util.Tx) {
 			log.Printf("Block added: %s (%d) %s",
 				header.BlockHash(), blueScore, header.Timestamp)
 		},

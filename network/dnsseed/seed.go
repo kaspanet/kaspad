@@ -6,7 +6,7 @@ package dnsseed
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"math/rand"
 	"net"
 	"strconv"
@@ -34,13 +34,13 @@ const (
 
 // OnSeed is the signature of the callback function which is invoked when DNS
 // seeding is successful.
-type OnSeed func(addrs []*domainmessage.NetAddress)
+type OnSeed func(addrs []*appmessage.NetAddress)
 
 // LookupFunc is the signature of the DNS lookup function.
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices domainmessage.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
@@ -52,7 +52,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices dom
 
 	for _, dnsseed := range dnsSeeds {
 		var host string
-		if reqServices == domainmessage.SFNodeNetwork {
+		if reqServices == appmessage.SFNodeNetwork {
 			host = dnsseed
 		} else {
 			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed)
@@ -81,11 +81,11 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices dom
 			if numPeers == 0 {
 				return
 			}
-			addresses := make([]*domainmessage.NetAddress, len(seedPeers))
+			addresses := make([]*appmessage.NetAddress, len(seedPeers))
 			// if this errors then we have *real* problems
 			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
 			for i, peer := range seedPeers {
-				addresses[i] = domainmessage.NewNetAddressTimestamp(
+				addresses[i] = appmessage.NewNetAddressTimestamp(
 					// seed with addresses from a time randomly selected
 					// between 3 and 7 days ago.
 					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+

@@ -11,7 +11,7 @@ import (
 	"encoding/gob"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
@@ -92,7 +92,7 @@ type PeersStateForSerialization struct {
 }
 
 type localAddress struct {
-	netAddress *domainmessage.NetAddress
+	netAddress *appmessage.NetAddress
 	score      AddressPriority
 }
 
@@ -208,7 +208,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *Address
 
 // updateAddress is a helper function to either update an address already known
 // to the address manager, or to add the address if not already known.
-func (am *AddressManager) updateAddress(netAddress, sourceAddress *domainmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter out non-routable addresses. Note that non-routable
 	// also includes invalid and local addresses.
 	if !am.IsRoutable(netAddress) {
@@ -371,7 +371,7 @@ func (am *AddressManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, buc
 	return oldest, oldestIndex
 }
 
-func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *domainmessage.NetAddress) int {
+func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *appmessage.NetAddress) int {
 	// doublesha256(key + sourcegroup + int64(doublesha256(key + group + sourcegroup))%bucket_per_source_group) % num_new_buckets
 
 	data1 := []byte{}
@@ -392,7 +392,7 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *domainme
 	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
 }
 
-func (am *AddressManager) triedAddressBucketIndex(netAddress *domainmessage.NetAddress) int {
+func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddress) int {
 	// doublesha256(key + group + truncate_to_64bits(doublesha256(key)) % buckets_per_group) % num_buckets
 	data1 := []byte{}
 	data1 = append(data1, am.key[:]...)
@@ -705,8 +705,8 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 	return nil
 }
 
-// DeserializeNetAddress converts a given address string to a *domainmessage.NetAddress
-func (am *AddressManager) DeserializeNetAddress(addressKey AddressKey) (*domainmessage.NetAddress, error) {
+// DeserializeNetAddress converts a given address string to a *appmessage.NetAddress
+func (am *AddressManager) DeserializeNetAddress(addressKey AddressKey) (*appmessage.NetAddress, error) {
 	host, portString, err := net.SplitHostPort(string(addressKey))
 	if err != nil {
 		return nil, err
@@ -716,7 +716,7 @@ func (am *AddressManager) DeserializeNetAddress(addressKey AddressKey) (*domainm
 		return nil, err
 	}
 
-	return am.HostToNetAddress(host, uint16(port), domainmessage.SFNodeNetwork)
+	return am.HostToNetAddress(host, uint16(port), appmessage.SFNodeNetwork)
 }
 
 // Start begins the core address handler which manages a pool of known
@@ -758,7 +758,7 @@ func (am *AddressManager) Stop() error {
 // AddAddresses adds new addresses to the address manager. It enforces a max
 // number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
-func (am *AddressManager) AddAddresses(addresses []*domainmessage.NetAddress, sourceAddress *domainmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) AddAddresses(addresses []*appmessage.NetAddress, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -770,7 +770,7 @@ func (am *AddressManager) AddAddresses(addresses []*domainmessage.NetAddress, so
 // AddAddress adds a new address to the address manager. It enforces a max
 // number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
-func (am *AddressManager) AddAddress(address, sourceAddress *domainmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -778,14 +778,14 @@ func (am *AddressManager) AddAddress(address, sourceAddress *domainmessage.NetAd
 }
 
 // AddAddressByIP adds an address where we are given an ip:port and not a
-// domainmessage.NetAddress.
+// appmessage.NetAddress.
 func (am *AddressManager) AddAddressByIP(addressIP string, subnetworkID *subnetworkid.SubnetworkID) error {
 	// Split IP and port
 	ipString, portString, err := net.SplitHostPort(addressIP)
 	if err != nil {
 		return err
 	}
-	// Put it in domainmessage.Netaddress
+	// Put it in appmessage.Netaddress
 	ip := net.ParseIP(ipString)
 	if ip == nil {
 		return errors.Errorf("invalid ip %s", ipString)
@@ -794,7 +794,7 @@ func (am *AddressManager) AddAddressByIP(addressIP string, subnetworkID *subnetw
 	if err != nil {
 		return errors.Errorf("invalid port %s: %s", portString, err)
 	}
-	netAddress := domainmessage.NewNetAddressIPPort(ip, uint16(port), 0)
+	netAddress := appmessage.NewNetAddressIPPort(ip, uint16(port), 0)
 	am.AddAddress(netAddress, netAddress, subnetworkID) // XXX use correct src address
 	return nil
 }
@@ -843,7 +843,7 @@ func (am *AddressManager) NeedMoreAddresses() bool {
 
 // AddressCache returns the current address cache. It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
-func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*domainmessage.NetAddress {
+func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -851,7 +851,7 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 		return nil
 	}
 
-	allAddresses := []*domainmessage.NetAddress{}
+	allAddresses := []*appmessage.NetAddress{}
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range am.addressIndex {
 		if includeAllSubnetworks || v.SubnetworkID().IsEqual(subnetworkID) {
@@ -907,7 +907,7 @@ func (am *AddressManager) reset() {
 
 // HostToNetAddress returns a netaddress given a host address. If
 // the host is not an IP address it will be resolved.
-func (am *AddressManager) HostToNetAddress(host string, port uint16, services domainmessage.ServiceFlag) (*domainmessage.NetAddress, error) {
+func (am *AddressManager) HostToNetAddress(host string, port uint16, services appmessage.ServiceFlag) (*appmessage.NetAddress, error) {
 	ip := net.ParseIP(host)
 	if ip == nil {
 		ips, err := am.lookupFunc(host)
@@ -920,12 +920,12 @@ func (am *AddressManager) HostToNetAddress(host string, port uint16, services do
 		ip = ips[0]
 	}
 
-	return domainmessage.NewNetAddressIPPort(ip, port, services), nil
+	return appmessage.NewNetAddressIPPort(ip, port, services), nil
 }
 
 // NetAddressKey returns a key in the form of ip:port for IPv4 addresses
 // or [ip]:port for IPv6 addresses for use as keys in maps.
-func NetAddressKey(netAddress *domainmessage.NetAddress) AddressKey {
+func NetAddressKey(netAddress *appmessage.NetAddress) AddressKey {
 	port := strconv.FormatUint(uint64(netAddress.Port), 10)
 
 	return AddressKey(net.JoinHostPort(netAddress.IP.String(), port))
@@ -1031,13 +1031,13 @@ func (tb *triedAddressBucketArray) name() string {
 	return "tried"
 }
 
-func (am *AddressManager) knownAddress(address *domainmessage.NetAddress) *KnownAddress {
+func (am *AddressManager) knownAddress(address *appmessage.NetAddress) *KnownAddress {
 	return am.addressIndex[NetAddressKey(address)]
 }
 
 // Attempt increases the given address' attempt counter and updates
 // the last attempt time.
-func (am *AddressManager) Attempt(address *domainmessage.NetAddress) {
+func (am *AddressManager) Attempt(address *appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -1055,7 +1055,7 @@ func (am *AddressManager) Attempt(address *domainmessage.NetAddress) {
 // Connected Marks the given address as currently connected and working at the
 // current time. The address must already be known to AddressManager else it will
 // be ignored.
-func (am *AddressManager) Connected(address *domainmessage.NetAddress) {
+func (am *AddressManager) Connected(address *appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -1078,7 +1078,7 @@ func (am *AddressManager) Connected(address *domainmessage.NetAddress) {
 // Good marks the given address as good. To be called after a successful
 // connection and version exchange. If the address is unknown to the address
 // manager it will be ignored.
-func (am *AddressManager) Good(address *domainmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) Good(address *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -1254,7 +1254,7 @@ func (am *AddressManager) incrementTriedAddressCount(subnetworkID *subnetworkid.
 
 // AddLocalAddress adds netAddress to the list of known local addresses to advertise
 // with the given priority.
-func (am *AddressManager) AddLocalAddress(netAddress *domainmessage.NetAddress, priority AddressPriority) error {
+func (am *AddressManager) AddLocalAddress(netAddress *appmessage.NetAddress, priority AddressPriority) error {
 	if !am.IsRoutable(netAddress) {
 		return errors.Errorf("address %s is not routable", netAddress.IP)
 	}
@@ -1279,7 +1279,7 @@ func (am *AddressManager) AddLocalAddress(netAddress *domainmessage.NetAddress, 
 
 // getReachabilityFrom returns the relative reachability of the provided local
 // address to the provided remote address.
-func (am *AddressManager) getReachabilityFrom(localAddress, remoteAddress *domainmessage.NetAddress) int {
+func (am *AddressManager) getReachabilityFrom(localAddress, remoteAddress *appmessage.NetAddress) int {
 	const (
 		Unreachable = 0
 		Default     = iota
@@ -1346,13 +1346,13 @@ func (am *AddressManager) getReachabilityFrom(localAddress, remoteAddress *domai
 
 // GetBestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
-func (am *AddressManager) GetBestLocalAddress(remoteAddress *domainmessage.NetAddress) *domainmessage.NetAddress {
+func (am *AddressManager) GetBestLocalAddress(remoteAddress *appmessage.NetAddress) *appmessage.NetAddress {
 	am.localAddressesLock.Lock()
 	defer am.localAddressesLock.Unlock()
 
 	bestReach := 0
 	var bestScore AddressPriority
-	var bestAddress *domainmessage.NetAddress
+	var bestAddress *appmessage.NetAddress
 	for _, localAddress := range am.localAddresses {
 		reach := am.getReachabilityFrom(localAddress.netAddress, remoteAddress)
 		if reach > bestReach ||
@@ -1376,24 +1376,24 @@ func (am *AddressManager) GetBestLocalAddress(remoteAddress *domainmessage.NetAd
 		} else {
 			ip = net.IPv4zero
 		}
-		services := domainmessage.SFNodeNetwork | domainmessage.SFNodeBloom
-		bestAddress = domainmessage.NewNetAddressIPPort(ip, 0, services)
+		services := appmessage.SFNodeNetwork | appmessage.SFNodeBloom
+		bestAddress = appmessage.NewNetAddressIPPort(ip, 0, services)
 	}
 
 	return bestAddress
 }
 
 // Ban marks the given address as banned
-func (am *AddressManager) Ban(address *domainmessage.NetAddress) error {
+func (am *AddressManager) Ban(address *appmessage.NetAddress) error {
 	return am.setBanned(address, true, mstime.Now())
 }
 
 // Unban marks the given address as not banned
-func (am *AddressManager) Unban(address *domainmessage.NetAddress) error {
+func (am *AddressManager) Unban(address *appmessage.NetAddress) error {
 	return am.setBanned(address, false, mstime.Time{})
 }
 
-func (am *AddressManager) setBanned(address *domainmessage.NetAddress, isBanned bool, bannedTime mstime.Time) error {
+func (am *AddressManager) setBanned(address *appmessage.NetAddress, isBanned bool, bannedTime mstime.Time) error {
 	am.localAddressesLock.Lock()
 	defer am.localAddressesLock.Unlock()
 
@@ -1408,7 +1408,7 @@ func (am *AddressManager) setBanned(address *domainmessage.NetAddress, isBanned 
 }
 
 // IsBanned returns whether the given address is banned
-func (am *AddressManager) IsBanned(address *domainmessage.NetAddress) (bool, error) {
+func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error) {
 	am.localAddressesLock.Lock()
 	defer am.localAddressesLock.Unlock()
 

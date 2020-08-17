@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -45,10 +45,10 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 	if len(txIDsToBroadcast) == 0 {
 		return nil
 	}
-	if len(txIDsToBroadcast) > domainmessage.MaxInvPerTxInvMsg {
-		txIDsToBroadcast = txIDsToBroadcast[:domainmessage.MaxInvPerTxInvMsg]
+	if len(txIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
+		txIDsToBroadcast = txIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
 	}
-	inv := domainmessage.NewMsgInvTransaction(txIDsToBroadcast)
+	inv := appmessage.NewMsgInvTransaction(txIDsToBroadcast)
 	return f.Broadcast(inv)
 }
 
@@ -64,5 +64,5 @@ func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) 
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(domainmessage.NewMsgInvBlock(block.Hash()))
+	return f.Broadcast(appmessage.NewMsgInvBlock(block.Hash()))
 }

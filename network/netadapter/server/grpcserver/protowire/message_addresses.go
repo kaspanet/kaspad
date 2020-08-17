@@ -1,15 +1,15 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Addresses) toDomainMessage() (domainmessage.Message, error) {
+func (x *KaspadMessage_Addresses) toDomainMessage() (appmessage.Message, error) {
 	protoAddresses := x.Addresses
-	if len(x.Addresses.AddressList) > domainmessage.MaxAddressesPerMsg {
+	if len(x.Addresses.AddressList) > appmessage.MaxAddressesPerMsg {
 		return nil, errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(x.Addresses.AddressList), domainmessage.MaxAddressesPerMsg)
+			"[count %d, max %d]", len(x.Addresses.AddressList), appmessage.MaxAddressesPerMsg)
 	}
 
 	subnetworkID, err := protoAddresses.SubnetworkID.toWire()
@@ -17,24 +17,24 @@ func (x *KaspadMessage_Addresses) toDomainMessage() (domainmessage.Message, erro
 		return nil, err
 	}
 
-	addressList := make([]*domainmessage.NetAddress, len(protoAddresses.AddressList))
+	addressList := make([]*appmessage.NetAddress, len(protoAddresses.AddressList))
 	for i, address := range protoAddresses.AddressList {
 		addressList[i], err = address.toWire()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &domainmessage.MsgAddresses{
+	return &appmessage.MsgAddresses{
 		IncludeAllSubnetworks: protoAddresses.IncludeAllSubnetworks,
 		SubnetworkID:          subnetworkID,
 		AddrList:              addressList,
 	}, nil
 }
 
-func (x *KaspadMessage_Addresses) fromDomainMessage(msgAddresses *domainmessage.MsgAddresses) error {
-	if len(msgAddresses.AddrList) > domainmessage.MaxAddressesPerMsg {
+func (x *KaspadMessage_Addresses) fromDomainMessage(msgAddresses *appmessage.MsgAddresses) error {
+	if len(msgAddresses.AddrList) > appmessage.MaxAddressesPerMsg {
 		return errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(msgAddresses.AddrList), domainmessage.MaxAddressesPerMsg)
+			"[count %d, max %d]", len(msgAddresses.AddrList), appmessage.MaxAddressesPerMsg)
 	}
 
 	addressList := make([]*NetAddress, len(msgAddresses.AddrList))

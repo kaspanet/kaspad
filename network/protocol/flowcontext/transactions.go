@@ -2,7 +2,7 @@ package flowcontext
 
 import (
 	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -25,7 +25,7 @@ func (f *FlowContext) AddTransaction(tx *util.Tx) error {
 	}
 
 	f.transactionsToRebroadcast[*tx.ID()] = tx
-	inv := domainmessage.NewMsgInvTransaction([]*daghash.TxID{tx.ID()})
+	inv := appmessage.NewMsgInvTransaction([]*daghash.TxID{tx.ID()})
 	return f.Broadcast(inv)
 }
 

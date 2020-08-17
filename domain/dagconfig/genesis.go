@@ -5,13 +5,13 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-var genesisTxOuts = []*domainmessage.TxOut{}
+var genesisTxOuts = []*appmessage.TxOut{}
 
 var genesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -23,7 +23,7 @@ var genesisTxPayload = []byte{
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network.
-var genesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
+var genesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
 // genesisHash is the hash of the first block in the block DAG for the main
 // network (genesis block).
@@ -45,8 +45,8 @@ var genesisMerkleRoot = daghash.Hash{
 
 // genesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the main network.
-var genesisBlock = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var genesisBlock = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &genesisMerkleRoot,
@@ -56,10 +56,10 @@ var genesisBlock = domainmessage.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x1,
 	},
-	Transactions: []*domainmessage.MsgTx{genesisCoinbaseTx},
+	Transactions: []*appmessage.MsgTx{genesisCoinbaseTx},
 }
 
-var devnetGenesisTxOuts = []*domainmessage.TxOut{}
+var devnetGenesisTxOuts = []*appmessage.TxOut{}
 
 var devnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -72,7 +72,7 @@ var devnetGenesisTxPayload = []byte{
 
 // devnetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the development network.
-var devnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, devnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, devnetGenesisTxPayload)
+var devnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, devnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, devnetGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
@@ -94,8 +94,8 @@ var devnetGenesisMerkleRoot = daghash.Hash{
 
 // devnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var devnetGenesisBlock = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var devnetGenesisBlock = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &devnetGenesisMerkleRoot,
@@ -105,10 +105,10 @@ var devnetGenesisBlock = domainmessage.MsgBlock{
 		Bits:                 0x1e7fffff,
 		Nonce:                0x10bb,
 	},
-	Transactions: []*domainmessage.MsgTx{devnetGenesisCoinbaseTx},
+	Transactions: []*appmessage.MsgTx{devnetGenesisCoinbaseTx},
 }
 
-var regtestGenesisTxOuts = []*domainmessage.TxOut{}
+var regtestGenesisTxOuts = []*appmessage.TxOut{}
 
 var regtestGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -121,7 +121,7 @@ var regtestGenesisTxPayload = []byte{
 
 // regtestGenesisCoinbaseTx is the coinbase transaction for
 // the genesis blocks for the regtest network.
-var regtestGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, regtestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regtestGenesisTxPayload)
+var regtestGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, regtestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regtestGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
@@ -143,8 +143,8 @@ var regtestGenesisMerkleRoot = daghash.Hash{
 
 // regtestGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var regtestGenesisBlock = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var regtestGenesisBlock = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &regtestGenesisMerkleRoot,
@@ -154,10 +154,10 @@ var regtestGenesisBlock = domainmessage.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x0,
 	},
-	Transactions: []*domainmessage.MsgTx{regtestGenesisCoinbaseTx},
+	Transactions: []*appmessage.MsgTx{regtestGenesisCoinbaseTx},
 }
 
-var simnetGenesisTxOuts = []*domainmessage.TxOut{}
+var simnetGenesisTxOuts = []*appmessage.TxOut{}
 
 var simnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -169,7 +169,7 @@ var simnetGenesisTxPayload = []byte{
 }
 
 // simnetGenesisCoinbaseTx is the coinbase transaction for the simnet genesis block.
-var simnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, simnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, simnetGenesisTxPayload)
+var simnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, simnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, simnetGenesisTxPayload)
 
 // simnetGenesisHash is the hash of the first block in the block DAG for
 // the simnet (genesis block).
@@ -191,8 +191,8 @@ var simnetGenesisMerkleRoot = daghash.Hash{
 
 // simnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var simnetGenesisBlock = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var simnetGenesisBlock = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &simnetGenesisMerkleRoot,
@@ -202,10 +202,10 @@ var simnetGenesisBlock = domainmessage.MsgBlock{
 		Bits:                 0x207fffff,
 		Nonce:                0x0,
 	},
-	Transactions: []*domainmessage.MsgTx{simnetGenesisCoinbaseTx},
+	Transactions: []*appmessage.MsgTx{simnetGenesisCoinbaseTx},
 }
 
-var testnetGenesisTxOuts = []*domainmessage.TxOut{}
+var testnetGenesisTxOuts = []*appmessage.TxOut{}
 
 var testnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -215,7 +215,7 @@ var testnetGenesisTxPayload = []byte{
 }
 
 // testnetGenesisCoinbaseTx is the coinbase transaction for the testnet genesis block.
-var testnetGenesisCoinbaseTx = domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, testnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
+var testnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, testnetGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
 
 // testnetGenesisHash is the hash of the first block in the block DAG for the test
 // network (genesis block).
@@ -237,8 +237,8 @@ var testnetGenesisMerkleRoot = daghash.Hash{
 
 // testnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for testnet.
-var testnetGenesisBlock = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var testnetGenesisBlock = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{},
 		HashMerkleRoot:       &testnetGenesisMerkleRoot,
@@ -248,5 +248,5 @@ var testnetGenesisBlock = domainmessage.MsgBlock{
 		Bits:                 0x1e7fffff,
 		Nonce:                0x162ca,
 	},
-	Transactions: []*domainmessage.MsgTx{testnetGenesisCoinbaseTx},
+	Transactions: []*appmessage.MsgTx{testnetGenesisCoinbaseTx},
 }

@@ -1,14 +1,14 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-func (x *KaspadMessage_Version) toDomainMessage() (domainmessage.Message, error) {
+func (x *KaspadMessage_Version) toDomainMessage() (appmessage.Message, error) {
 	// Address is optional for non-listening nodes
-	var address *domainmessage.NetAddress
+	var address *appmessage.NetAddress
 	if x.Version.Address != nil {
 		var err error
 		address, err = x.Version.Address.toWire()
@@ -27,15 +27,15 @@ func (x *KaspadMessage_Version) toDomainMessage() (domainmessage.Message, error)
 		return nil, err
 	}
 
-	err = domainmessage.ValidateUserAgent(x.Version.UserAgent)
+	err = appmessage.ValidateUserAgent(x.Version.UserAgent)
 	if err != nil {
 		return nil, err
 	}
 
-	return &domainmessage.MsgVersion{
+	return &appmessage.MsgVersion{
 		ProtocolVersion: x.Version.ProtocolVersion,
 		Network:         x.Version.Network,
-		Services:        domainmessage.ServiceFlag(x.Version.Services),
+		Services:        appmessage.ServiceFlag(x.Version.Services),
 		Timestamp:       mstime.UnixMilliseconds(x.Version.Timestamp),
 		Address:         address,
 		ID:              id.FromBytes(x.Version.Id),
@@ -46,8 +46,8 @@ func (x *KaspadMessage_Version) toDomainMessage() (domainmessage.Message, error)
 	}, nil
 }
 
-func (x *KaspadMessage_Version) fromDomainMessage(msgVersion *domainmessage.MsgVersion) error {
-	err := domainmessage.ValidateUserAgent(msgVersion.UserAgent)
+func (x *KaspadMessage_Version) fromDomainMessage(msgVersion *appmessage.MsgVersion) error {
+	err := appmessage.ValidateUserAgent(msgVersion.UserAgent)
 	if err != nil {
 		return err
 	}

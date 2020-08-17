@@ -3,10 +3,10 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 )
 
-func addUTXOToMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *domainmessage.Outpoint) (*secp256k1.MultiSet, error) {
+func addUTXOToMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *appmessage.Outpoint) (*secp256k1.MultiSet, error) {
 	w := &bytes.Buffer{}
 	err := serializeUTXO(w, entry, outpoint)
 	if err != nil {
@@ -16,7 +16,7 @@ func addUTXOToMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *domai
 	return ms, nil
 }
 
-func removeUTXOFromMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *domainmessage.Outpoint) (*secp256k1.MultiSet, error) {
+func removeUTXOFromMultiset(ms *secp256k1.MultiSet, entry *UTXOEntry, outpoint *appmessage.Outpoint) (*secp256k1.MultiSet, error) {
 	w := &bytes.Buffer{}
 	err := serializeUTXO(w, entry, outpoint)
 	if err != nil {

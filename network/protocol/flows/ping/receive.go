@@ -1,7 +1,7 @@
 package ping
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 )
 
@@ -31,9 +31,9 @@ func (flow *receivePingsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		pingMessage := message.(*domainmessage.MsgPing)
+		pingMessage := message.(*appmessage.MsgPing)
 
-		pongMessage := domainmessage.NewMsgPong(pingMessage.Nonce)
+		pongMessage := appmessage.NewMsgPong(pingMessage.Nonce)
 		err = flow.outgoingRoute.Enqueue(pongMessage)
 		if err != nil {
 			return err

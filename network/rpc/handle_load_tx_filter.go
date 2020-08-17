@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -13,7 +13,7 @@ import (
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd := icmd.(*model.LoadTxFilterCmd)
 
-	outpoints := make([]domainmessage.Outpoint, len(cmd.Outpoints))
+	outpoints := make([]appmessage.Outpoint, len(cmd.Outpoints))
 	for i := range cmd.Outpoints {
 		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
@@ -22,7 +22,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 				Message: err.Error(),
 			}
 		}
-		outpoints[i] = domainmessage.Outpoint{
+		outpoints[i] = appmessage.Outpoint{
 			TxID:  *txID,
 			Index: cmd.Outpoints[i].Index,
 		}

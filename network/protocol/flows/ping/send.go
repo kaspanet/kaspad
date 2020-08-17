@@ -3,7 +3,7 @@ package ping
 import (
 	"time"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
@@ -46,7 +46,7 @@ func (flow *sendPingsFlow) start() error {
 		}
 		flow.peer.SetPingPending(nonce)
 
-		pingMessage := domainmessage.NewMsgPing(nonce)
+		pingMessage := appmessage.NewMsgPing(nonce)
 		err = flow.outgoingRoute.Enqueue(pingMessage)
 		if err != nil {
 			return err
@@ -56,7 +56,7 @@ func (flow *sendPingsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		pongMessage := message.(*domainmessage.MsgPong)
+		pongMessage := message.(*appmessage.MsgPong)
 		if pongMessage.Nonce != pingMessage.Nonce {
 			return protocolerrors.New(true, "nonce mismatch between ping and pong")
 		}

@@ -1,7 +1,7 @@
 package handshake
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
@@ -16,7 +16,7 @@ var (
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = domainmessage.ProtocolVersion
+	minAcceptableProtocolVersion = appmessage.ProtocolVersion
 )
 
 type receiveVersionFlow struct {
@@ -28,7 +28,7 @@ type receiveVersionFlow struct {
 // ReceiveVersion waits for the peer to send a version message, sends a
 // verack in response, and updates its info accordingly.
 func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer) (*domainmessage.NetAddress, error) {
+	peer *peerpkg.Peer) (*appmessage.NetAddress, error) {
 
 	flow := &receiveVersionFlow{
 		HandleHandshakeContext: context,
@@ -40,13 +40,13 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 	return flow.start()
 }
 
-func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
+func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
 
-	msgVersion, ok := message.(*domainmessage.MsgVersion)
+	msgVersion, ok := message.(*appmessage.MsgVersion)
 	if !ok {
 		return nil, protocolerrors.New(true, "a version message must precede all others")
 	}
@@ -64,7 +64,7 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 	// too old.
 	//
 	// NOTE: If minAcceptableProtocolVersion is raised to be higher than
-	// domainmessage.RejectVersion, this should send a reject packet before
+	// appmessage.RejectVersion, this should send a reject packet before
 	// disconnecting.
 	if msgVersion.ProtocolVersion < minAcceptableProtocolVersion {
 		return nil, protocolerrors.Errorf(false, "protocol version must be %d or greater",
@@ -90,7 +90,7 @@ func (flow *receiveVersionFlow) start() (*domainmessage.NetAddress, error) {
 	}
 
 	flow.peer.UpdateFieldsFromMsgVersion(msgVersion)
-	err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgVerAck())
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgVerAck())
 	if err != nil {
 		return nil, err
 	}

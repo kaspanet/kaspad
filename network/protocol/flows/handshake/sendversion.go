@@ -1,7 +1,7 @@
 package handshake
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	"github.com/kaspanet/kaspad/version"
@@ -18,11 +18,11 @@ var (
 
 	// defaultServices describes the default services that are supported by
 	// the server.
-	defaultServices = domainmessage.SFNodeNetwork | domainmessage.SFNodeBloom | domainmessage.SFNodeCF
+	defaultServices = appmessage.SFNodeNetwork | appmessage.SFNodeBloom | appmessage.SFNodeCF
 
 	// defaultRequiredServices describes the default services that are
 	// required to be supported by outbound peers.
-	defaultRequiredServices = domainmessage.SFNodeNetwork
+	defaultRequiredServices = appmessage.SFNodeNetwork
 )
 
 type sendVersionFlow struct {
@@ -49,7 +49,7 @@ func (flow *sendVersionFlow) start() error {
 	if err != nil {
 		return err
 	}
-	msg := domainmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
+	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
 		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
@@ -57,7 +57,7 @@ func (flow *sendVersionFlow) start() error {
 	msg.Services = defaultServices
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = domainmessage.ProtocolVersion
+	msg.ProtocolVersion = appmessage.ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly

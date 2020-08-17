@@ -16,9 +16,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/connmanager"
 	"github.com/kaspanet/kaspad/network/dnsseed"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/netadapter"
 	"github.com/kaspanet/kaspad/network/protocol"
 	"github.com/kaspanet/kaspad/network/rpc"
@@ -143,8 +143,8 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 
 func (a *App) maybeSeedFromDNS() {
 	if !a.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, domainmessage.SFNodeNetwork, false, nil,
-			a.cfg.Lookup, func(addresses []*domainmessage.NetAddress) {
+		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
+			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.

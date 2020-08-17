@@ -120,7 +120,7 @@ type Response struct {
 // caller wants to construct raw responses for some reason.
 //
 // Typically callers will instead want to create the fully marshalled JSON-RPC
-// response to send over the domainmessage with the MarshalResponse function.
+// response to send over the appmessage with the MarshalResponse function.
 func NewResponse(id interface{}, marshalledResult []byte, rpcErr *RPCError) (*Response, error) {
 	if !IsValidIDType(id) {
 		str := fmt.Sprintf("the id of type '%T' is invalid", id)

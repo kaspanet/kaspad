@@ -3,7 +3,7 @@ package ibd
 import (
 	"errors"
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -66,12 +66,12 @@ func (flow *handleRequestBlocksFlow) start() error {
 				return err
 			}
 
-			if _, ok := message.(*domainmessage.MsgRequestNextIBDBlocks); !ok {
+			if _, ok := message.(*appmessage.MsgRequestNextIBDBlocks); !ok {
 				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", domainmessage.CmdRequestNextIBDBlocks, message.Command())
+					"expected: %s, got: %s", appmessage.CmdRequestNextIBDBlocks, message.Command())
 			}
 		}
-		err = flow.outgoingRoute.Enqueue(domainmessage.NewMsgDoneIBDBlocks())
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDBlocks())
 		if err != nil {
 			return err
 		}
@@ -85,15 +85,15 @@ func receiveRequestIBDBlocks(incomingRoute *router.Route) (lowHash *daghash.Hash
 	if err != nil {
 		return nil, nil, err
 	}
-	msgRequestIBDBlocks := message.(*domainmessage.MsgRequestIBDBlocks)
+	msgRequestIBDBlocks := message.(*appmessage.MsgRequestIBDBlocks)
 
 	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
 }
 
 func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
-	highHash *daghash.Hash) ([]*domainmessage.MsgIBDBlock, error) {
+	highHash *daghash.Hash) ([]*appmessage.MsgIBDBlock, error) {
 
-	const maxHashesInMsgIBDBlocks = domainmessage.MaxInvPerMsg
+	const maxHashesInMsgIBDBlocks = appmessage.MaxInvPerMsg
 	blockHashes, err := flow.DAG().AntiPastHashesBetween(lowHash, highHash, maxHashesInMsgIBDBlocks)
 	if err != nil {
 		if errors.Is(err, blockdag.ErrInvalidParameter) {
@@ -103,19 +103,19 @@ func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *daghash.Hash,
 		return nil, err
 	}
 
-	msgIBDBlocks := make([]*domainmessage.MsgIBDBlock, len(blockHashes))
+	msgIBDBlocks := make([]*appmessage.MsgIBDBlock, len(blockHashes))
 	for i, blockHash := range blockHashes {
 		block, err := flow.DAG().BlockByHash(blockHash)
 		if err != nil {
 			return nil, err
 		}
-		msgIBDBlocks[i] = domainmessage.NewMsgIBDBlock(block.MsgBlock())
+		msgIBDBlocks[i] = appmessage.NewMsgIBDBlock(block.MsgBlock())
 	}
 
 	return msgIBDBlocks, nil
 }
 
-func (flow *handleRequestBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*domainmessage.MsgIBDBlock) error {
+func (flow *handleRequestBlocksFlow) sendMsgIBDBlocks(msgIBDBlocks []*appmessage.MsgIBDBlock) error {
 	for _, msgIBDBlock := range msgIBDBlocks {
 		err := flow.outgoingRoute.Enqueue(msgIBDBlock)
 		if err != nil {

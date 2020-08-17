@@ -1086,7 +1086,7 @@ type ConnConfig struct {
 	// DisableTLS specifies whether transport layer security should be
 	// disabled. It is recommended to always use TLS if the RPC server
 	// supports it as otherwise your username and password is sent across
-	// the domainmessage in cleartext.
+	// the appmessage in cleartext.
 	DisableTLS bool
 
 	// Certificates are the bytes for a PEM-encoded certificate chain used

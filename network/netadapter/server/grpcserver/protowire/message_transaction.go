@@ -1,36 +1,36 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Transaction) toDomainMessage() (domainmessage.Message, error) {
+func (x *KaspadMessage_Transaction) toDomainMessage() (appmessage.Message, error) {
 	return x.Transaction.toDomainMessage()
 }
 
-func (x *KaspadMessage_Transaction) fromDomainMessage(msgTx *domainmessage.MsgTx) error {
+func (x *KaspadMessage_Transaction) fromDomainMessage(msgTx *appmessage.MsgTx) error {
 	x.Transaction = new(TransactionMessage)
 	x.Transaction.fromDomainMessage(msgTx)
 	return nil
 }
 
-func (x *TransactionMessage) toDomainMessage() (domainmessage.Message, error) {
-	inputs := make([]*domainmessage.TxIn, len(x.Inputs))
+func (x *TransactionMessage) toDomainMessage() (appmessage.Message, error) {
+	inputs := make([]*appmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
 		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toWire()
 		if err != nil {
 			return nil, err
 		}
 
-		outpoint := domainmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
-		inputs[i] = domainmessage.NewTxIn(outpoint, protoInput.SignatureScript)
+		outpoint := appmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
+		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript)
 	}
 
-	outputs := make([]*domainmessage.TxOut, len(x.Outputs))
+	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
-		outputs[i] = &domainmessage.TxOut{
+		outputs[i] = &appmessage.TxOut{
 			Value:        protoOutput.Value,
 			ScriptPubKey: protoOutput.ScriptPubKey,
 		}
@@ -53,7 +53,7 @@ func (x *TransactionMessage) toDomainMessage() (domainmessage.Message, error) {
 		}
 	}
 
-	return &domainmessage.MsgTx{
+	return &appmessage.MsgTx{
 		Version:      x.Version,
 		TxIn:         inputs,
 		TxOut:        outputs,
@@ -65,7 +65,7 @@ func (x *TransactionMessage) toDomainMessage() (domainmessage.Message, error) {
 	}, nil
 }
 
-func (x *TransactionMessage) fromDomainMessage(msgTx *domainmessage.MsgTx) {
+func (x *TransactionMessage) fromDomainMessage(msgTx *appmessage.MsgTx) {
 	protoInputs := make([]*TransactionInput, len(msgTx.TxIn))
 	for i, input := range msgTx.TxIn {
 		protoInputs[i] = &TransactionInput{

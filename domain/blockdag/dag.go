@@ -6,7 +6,7 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
@@ -210,7 +210,7 @@ func (dag *BlockDAG) selectedTip() *blockNode {
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) SelectedTipHeader() *domainmessage.BlockHeader {
+func (dag *BlockDAG) SelectedTipHeader() *appmessage.BlockHeader {
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
 		return nil
@@ -247,7 +247,7 @@ func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
+func (dag *BlockDAG) GetUTXOEntry(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
@@ -298,11 +298,11 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
-func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*domainmessage.BlockHeader, error) {
+func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*appmessage.BlockHeader, error) {
 	node, ok := dag.index.LookupNode(hash)
 	if !ok {
 		err := errors.Errorf("block %s is not known", hash)
-		return &domainmessage.BlockHeader{}, err
+		return &appmessage.BlockHeader{}, err
 	}
 
 	return node.Header(), nil
@@ -345,8 +345,8 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
 }
 
-// GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
-func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
+// GetTopHeaders returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
+func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
@@ -355,7 +355,7 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*domainmessage.BlockHeader, 0, highNode.blueScore)
+	headers := make([]*appmessage.BlockHeader, 0, highNode.blueScore)
 	queue := newDownHeap()
 	queue.pushSet(highNode.parents)
 

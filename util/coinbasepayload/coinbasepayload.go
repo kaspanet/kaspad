@@ -3,7 +3,7 @@ package coinbasepayload
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
 )
@@ -17,7 +17,7 @@ func SerializeCoinbasePayload(blueScore uint64, scriptPubKey []byte, extraData [
 	if err != nil {
 		return nil, err
 	}
-	err = domainmessage.WriteVarInt(w, uint64(len(scriptPubKey)))
+	err = appmessage.WriteVarInt(w, uint64(len(scriptPubKey)))
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +36,13 @@ func SerializeCoinbasePayload(blueScore uint64, scriptPubKey []byte, extraData [
 var ErrIncorrectScriptPubKeyLen = errors.New("incorrect script pub key length")
 
 // DeserializeCoinbasePayload deserializes the coinbase payload to its component (scriptPubKey and extra data).
-func DeserializeCoinbasePayload(tx *domainmessage.MsgTx) (blueScore uint64, scriptPubKey []byte, extraData []byte, err error) {
+func DeserializeCoinbasePayload(tx *appmessage.MsgTx) (blueScore uint64, scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
 	blueScore, err = binaryserializer.Uint64(r, byteOrder)
 	if err != nil {
 		return 0, nil, nil, err
 	}
-	scriptPubKeyLen, err := domainmessage.ReadVarInt(r)
+	scriptPubKeyLen, err := appmessage.ReadVarInt(r)
 	if err != nil {
 		return 0, nil, nil, err
 	}

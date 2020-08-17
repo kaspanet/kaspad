@@ -3,7 +3,7 @@ package addressexchange
 import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/network/addressmanager"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
@@ -25,7 +25,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	subnetworkID := peer.SubnetworkID()
-	msgGetAddresses := domainmessage.NewMsgRequestAddresses(false, subnetworkID)
+	msgGetAddresses := appmessage.NewMsgRequestAddresses(false, subnetworkID)
 	err := outgoingRoute.Enqueue(msgGetAddresses)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 		return err
 	}
 
-	msgAddresses := message.(*domainmessage.MsgAddresses)
+	msgAddresses := message.(*appmessage.MsgAddresses)
 	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
 		return protocolerrors.Errorf(true, "address count excceeded %d", addressmanager.GetAddressesMax)
 	}

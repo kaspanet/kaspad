@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -57,7 +57,7 @@ func rpcNoTxInfoError(txID *daghash.TxID) *model.RPCError {
 
 // msgTxToHex serializes a transaction using the latest protocol version and
 // returns a hex-encoded string of the result.
-func msgTxToHex(msgTx *domainmessage.MsgTx) (string, error) {
+func msgTxToHex(msgTx *appmessage.MsgTx) (string, error) {
 	var buf bytes.Buffer
 	if err := msgTx.KaspaEncode(&buf, maxProtocolVersion); err != nil {
 		context := fmt.Sprintf("Failed to encode msg of type %T", msgTx)
@@ -69,7 +69,7 @@ func msgTxToHex(msgTx *domainmessage.MsgTx) (string, error) {
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
-func createVinList(mtx *domainmessage.MsgTx) []model.Vin {
+func createVinList(mtx *appmessage.MsgTx) []model.Vin {
 	vinList := make([]model.Vin, len(mtx.TxIn))
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
@@ -92,7 +92,7 @@ func createVinList(mtx *domainmessage.MsgTx) []model.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *domainmessage.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []model.Vout {
+func createVoutList(mtx *appmessage.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []model.Vout {
 	voutList := make([]model.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
@@ -139,8 +139,8 @@ func createVoutList(mtx *domainmessage.MsgTx, dagParams *dagconfig.Params, filte
 
 // createTxRawResult converts the passed transaction and associated parameters
 // to a raw transaction JSON object.
-func createTxRawResult(dagParams *dagconfig.Params, mtx *domainmessage.MsgTx,
-	txID string, blkHeader *domainmessage.BlockHeader, blkHash string,
+func createTxRawResult(dagParams *dagconfig.Params, mtx *appmessage.MsgTx,
+	txID string, blkHeader *appmessage.BlockHeader, blkHash string,
 	acceptingBlock *daghash.Hash, isInMempool bool) (*model.TxRawResult, error) {
 
 	mtxHex, err := msgTxToHex(mtx)

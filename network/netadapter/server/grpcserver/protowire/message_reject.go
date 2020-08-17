@@ -1,16 +1,16 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 )
 
-func (x *KaspadMessage_Reject) toWireMessage() (domainmessage.Message, error) {
-	return &domainmessage.MsgReject{
+func (x *KaspadMessage_Reject) toWireMessage() (appmessage.Message, error) {
+	return &appmessage.MsgReject{
 		Reason: x.Reject.Reason,
 	}, nil
 }
 
-func (x *KaspadMessage_Reject) fromWireMessage(msgReject *domainmessage.MsgReject) error {
+func (x *KaspadMessage_Reject) fromWireMessage(msgReject *appmessage.MsgReject) error {
 	x.Reject = &RejectMessage{
 		Reason: msgReject.Reason,
 	}

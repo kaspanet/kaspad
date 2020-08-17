@@ -11,7 +11,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -65,7 +65,7 @@ type BlockTemplate struct {
 	// Block is a block that is ready to be solved by miners. Thus, it is
 	// completely valid with the exception of satisfying the proof-of-work
 	// requirement.
-	Block *domainmessage.MsgBlock
+	Block *appmessage.MsgBlock
 
 	// TxMasses contains the mass of each transaction in the generated
 	// template performs.
@@ -213,7 +213,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address, extraNonc
 // consensus rules. Finally, it will update the target difficulty if needed
 // based on the new time for the test networks since their target difficulty can
 // change based upon time.
-func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *domainmessage.MsgBlock) error {
+func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *appmessage.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the DAG consensus
 	// rules.

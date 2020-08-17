@@ -1,21 +1,21 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/pkg/errors"
 )
 
 type converter interface {
-	toDomainMessage() (domainmessage.Message, error)
+	toDomainMessage() (appmessage.Message, error)
 }
 
-// ToDomainMessage converts a KaspadMessage to its domainmessage.Message representation
-func (x *KaspadMessage) ToDomainMessage() (domainmessage.Message, error) {
+// ToDomainMessage converts a KaspadMessage to its appmessage.Message representation
+func (x *KaspadMessage) ToDomainMessage() (appmessage.Message, error) {
 	return x.Payload.(converter).toDomainMessage()
 }
 
-// FromDomainMessage creates a KaspadMessage from a domainmessage.Message
-func FromDomainMessage(message domainmessage.Message) (*KaspadMessage, error) {
+// FromDomainMessage creates a KaspadMessage from a appmessage.Message
+func FromDomainMessage(message appmessage.Message) (*KaspadMessage, error) {
 	payload, err := toPayload(message)
 	if err != nil {
 		return nil, err
@@ -25,149 +25,149 @@ func FromDomainMessage(message domainmessage.Message) (*KaspadMessage, error) {
 	}, nil
 }
 
-func toPayload(message domainmessage.Message) (isKaspadMessage_Payload, error) {
+func toPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 	switch message := message.(type) {
-	case *domainmessage.MsgAddresses:
+	case *appmessage.MsgAddresses:
 		payload := new(KaspadMessage_Addresses)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgBlock:
+	case *appmessage.MsgBlock:
 		payload := new(KaspadMessage_Block)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestBlockLocator:
+	case *appmessage.MsgRequestBlockLocator:
 		payload := new(KaspadMessage_RequestBlockLocator)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgBlockLocator:
+	case *appmessage.MsgBlockLocator:
 		payload := new(KaspadMessage_BlockLocator)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestAddresses:
+	case *appmessage.MsgRequestAddresses:
 		payload := new(KaspadMessage_RequestAddresses)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestIBDBlocks:
+	case *appmessage.MsgRequestIBDBlocks:
 		payload := new(KaspadMessage_RequestIBDBlocks)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestNextIBDBlocks:
+	case *appmessage.MsgRequestNextIBDBlocks:
 		payload := new(KaspadMessage_RequestNextIBDBlocks)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgDoneIBDBlocks:
+	case *appmessage.MsgDoneIBDBlocks:
 		payload := new(KaspadMessage_DoneIBDBlocks)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestRelayBlocks:
+	case *appmessage.MsgRequestRelayBlocks:
 		payload := new(KaspadMessage_RequestRelayBlocks)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestSelectedTip:
+	case *appmessage.MsgRequestSelectedTip:
 		payload := new(KaspadMessage_RequestSelectedTip)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgRequestTransactions:
+	case *appmessage.MsgRequestTransactions:
 		payload := new(KaspadMessage_RequestTransactions)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgTransactionNotFound:
+	case *appmessage.MsgTransactionNotFound:
 		payload := new(KaspadMessage_TransactionNotFound)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgIBDBlock:
+	case *appmessage.MsgIBDBlock:
 		payload := new(KaspadMessage_IbdBlock)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgInvRelayBlock:
+	case *appmessage.MsgInvRelayBlock:
 		payload := new(KaspadMessage_InvRelayBlock)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgInvTransaction:
+	case *appmessage.MsgInvTransaction:
 		payload := new(KaspadMessage_InvTransactions)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgPing:
+	case *appmessage.MsgPing:
 		payload := new(KaspadMessage_Ping)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgPong:
+	case *appmessage.MsgPong:
 		payload := new(KaspadMessage_Pong)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgSelectedTip:
+	case *appmessage.MsgSelectedTip:
 		payload := new(KaspadMessage_SelectedTip)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgTx:
+	case *appmessage.MsgTx:
 		payload := new(KaspadMessage_Transaction)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgVerAck:
+	case *appmessage.MsgVerAck:
 		payload := new(KaspadMessage_Verack)
 		err := payload.fromDomainMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *domainmessage.MsgVersion:
+	case *appmessage.MsgVersion:
 		payload := new(KaspadMessage_Version)
 		err := payload.fromDomainMessage(message)
 		if err != nil {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -64,7 +64,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
-		out := domainmessage.Outpoint{TxID: *txID, Index: c.Vout}
+		out := appmessage.Outpoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.dag.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txID)

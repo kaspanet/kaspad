@@ -2,7 +2,7 @@ package selectedtip
 
 import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -46,16 +46,16 @@ func (flow *handleRequestSelectedTipFlow) receiveGetSelectedTip() error {
 	if err != nil {
 		return err
 	}
-	_, ok := message.(*domainmessage.MsgRequestSelectedTip)
+	_, ok := message.(*appmessage.MsgRequestSelectedTip)
 	if !ok {
 		return errors.Errorf("received unexpected message type. "+
-			"expected: %s, got: %s", domainmessage.CmdRequestSelectedTip, message.Command())
+			"expected: %s, got: %s", appmessage.CmdRequestSelectedTip, message.Command())
 	}
 
 	return nil
 }
 
 func (flow *handleRequestSelectedTipFlow) sendSelectedTipHash() error {
-	msgSelectedTip := domainmessage.NewMsgSelectedTip(flow.DAG().SelectedTipHash())
+	msgSelectedTip := appmessage.NewMsgSelectedTip(flow.DAG().SelectedTipHash())
 	return flow.outgoingRoute.Enqueue(msgSelectedTip)
 }

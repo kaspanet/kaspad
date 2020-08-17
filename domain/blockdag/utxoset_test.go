@@ -6,7 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -14,10 +14,10 @@ import (
 func TestUTXOCollection(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outpoint0 := *domainmessage.NewOutpoint(txID0, 0)
-	outpoint1 := *domainmessage.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
+	outpoint0 := *appmessage.NewOutpoint(txID0, 0)
+	outpoint1 := *appmessage.NewOutpoint(txID1, 0)
+	utxoEntry0 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedStringWithMultiset
@@ -73,10 +73,10 @@ func TestUTXOCollection(t *testing.T) {
 func TestUTXODiff(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outpoint0 := *domainmessage.NewOutpoint(txID0, 0)
-	outpoint1 := *domainmessage.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
+	outpoint0 := *appmessage.NewOutpoint(txID0, 0)
+	outpoint1 := *appmessage.NewOutpoint(txID1, 0)
+	utxoEntry0 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// Test utxoDiff creation
 
@@ -119,9 +119,9 @@ func TestUTXODiff(t *testing.T) {
 // Each test case represents a cell in the two tables outlined in the documentation for utxoDiff.
 func TestUTXODiffRules(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	outpoint0 := *domainmessage.NewOutpoint(txID0, 0)
-	utxoEntry1 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 10)
-	utxoEntry2 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 20)
+	outpoint0 := *appmessage.NewOutpoint(txID0, 0)
+	utxoEntry1 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 10)
+	utxoEntry2 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 20)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
@@ -630,10 +630,10 @@ func (dus *DiffUTXOSet) equal(other *DiffUTXOSet) bool {
 func TestFullUTXOSet(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outpoint0 := *domainmessage.NewOutpoint(txID0, 0)
-	outpoint1 := *domainmessage.NewOutpoint(txID1, 0)
-	txOut0 := &domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}
-	txOut1 := &domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}
+	outpoint0 := *appmessage.NewOutpoint(txID0, 0)
+	outpoint1 := *appmessage.NewOutpoint(txID1, 0)
+	txOut0 := &appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}
+	txOut1 := &appmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := &UTXODiff{
@@ -661,8 +661,8 @@ func TestFullUTXOSet(t *testing.T) {
 	}
 
 	// Test fullUTXOSet addTx
-	txIn0 := &domainmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: domainmessage.Outpoint{TxID: *txID0, Index: 0}, Sequence: 0}
-	transaction0 := domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{txIn0}, []*domainmessage.TxOut{txOut0})
+	txIn0 := &appmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: appmessage.Outpoint{TxID: *txID0, Index: 0}, Sequence: 0}
+	transaction0 := appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{txIn0}, []*appmessage.TxOut{txOut0})
 	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("AddTx unexpectedly failed: %s", err)
 	} else if isAccepted {
@@ -694,10 +694,10 @@ func TestFullUTXOSet(t *testing.T) {
 func TestDiffUTXOSet(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outpoint0 := *domainmessage.NewOutpoint(txID0, 0)
-	outpoint1 := *domainmessage.NewOutpoint(txID1, 0)
-	txOut0 := &domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}
-	txOut1 := &domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}
+	outpoint0 := *appmessage.NewOutpoint(txID0, 0)
+	outpoint1 := *appmessage.NewOutpoint(txID1, 0)
+	txOut0 := &appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}
+	txOut1 := &appmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := &UTXODiff{
@@ -946,29 +946,29 @@ func TestUTXOSetDiffRules(t *testing.T) {
 
 // TestDiffUTXOSet_addTx makes sure that diffUTXOSet addTx works as expected
 func TestDiffUTXOSet_addTx(t *testing.T) {
-	txOut0 := &domainmessage.TxOut{ScriptPubKey: []byte{0}, Value: 10}
+	txOut0 := &appmessage.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
-	coinbaseTX := domainmessage.NewSubnetworkMsgTx(1, []*domainmessage.TxIn{}, []*domainmessage.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
+	coinbaseTX := appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, []*appmessage.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
 	// transaction1 spends coinbaseTX
 	id1 := coinbaseTX.TxID()
-	outpoint1 := *domainmessage.NewOutpoint(id1, 0)
-	txIn1 := &domainmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint1, Sequence: 0}
-	txOut1 := &domainmessage.TxOut{ScriptPubKey: []byte{1}, Value: 20}
+	outpoint1 := *appmessage.NewOutpoint(id1, 0)
+	txIn1 := &appmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint1, Sequence: 0}
+	txOut1 := &appmessage.TxOut{ScriptPubKey: []byte{1}, Value: 20}
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
-	transaction1 := domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{txIn1}, []*domainmessage.TxOut{txOut1})
+	transaction1 := appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{txIn1}, []*appmessage.TxOut{txOut1})
 
 	// transaction2 spends transaction1
 	id2 := transaction1.TxID()
-	outpoint2 := *domainmessage.NewOutpoint(id2, 0)
-	txIn2 := &domainmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint2, Sequence: 0}
-	txOut2 := &domainmessage.TxOut{ScriptPubKey: []byte{2}, Value: 30}
+	outpoint2 := *appmessage.NewOutpoint(id2, 0)
+	txIn2 := &appmessage.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint2, Sequence: 0}
+	txOut2 := &appmessage.TxOut{ScriptPubKey: []byte{2}, Value: 30}
 	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
-	transaction2 := domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{txIn2}, []*domainmessage.TxOut{txOut2})
+	transaction2 := appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{txIn2}, []*appmessage.TxOut{txOut2})
 
 	// outpoint3 is the outpoint for transaction2
 	id3 := transaction2.TxID()
-	outpoint3 := *domainmessage.NewOutpoint(id3, 0)
+	outpoint3 := *appmessage.NewOutpoint(id3, 0)
 
 	// For each of the following test cases, we will:
 	// 1. startSet.addTx() all the transactions in toAdd, in order, with the initial block height startHeight
@@ -977,14 +977,14 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		name        string
 		startSet    *DiffUTXOSet
 		startHeight uint64
-		toAdd       []*domainmessage.MsgTx
+		toAdd       []*appmessage.MsgTx
 		expectedSet *DiffUTXOSet
 	}{
 		{
 			name:        "add coinbase transaction to empty set",
 			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
-			toAdd:       []*domainmessage.MsgTx{coinbaseTX},
+			toAdd:       []*appmessage.MsgTx{coinbaseTX},
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
 				UTXODiff: &UTXODiff{
@@ -997,7 +997,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			name:        "add regular transaction to empty set",
 			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
-			toAdd:       []*domainmessage.MsgTx{transaction1},
+			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
 				UTXODiff: &UTXODiff{
@@ -1016,7 +1016,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 				},
 			},
 			startHeight: 1,
-			toAdd:       []*domainmessage.MsgTx{transaction1},
+			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
@@ -1035,7 +1035,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 				},
 			},
 			startHeight: 1,
-			toAdd:       []*domainmessage.MsgTx{transaction1},
+			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
@@ -1054,7 +1054,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 				},
 			},
 			startHeight: 1,
-			toAdd:       []*domainmessage.MsgTx{transaction1},
+			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
@@ -1073,7 +1073,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 				},
 			},
 			startHeight: 1,
-			toAdd:       []*domainmessage.MsgTx{transaction1, transaction2},
+			toAdd:       []*appmessage.MsgTx{transaction1, transaction2},
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
@@ -1125,16 +1125,16 @@ func (dus *DiffUTXOSet) collection() (utxoCollection, error) {
 func TestUTXOSetAddEntry(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outpoint0 := domainmessage.NewOutpoint(txID0, 0)
-	outpoint1 := domainmessage.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
+	outpoint0 := appmessage.NewOutpoint(txID0, 0)
+	outpoint1 := appmessage.NewOutpoint(txID1, 0)
+	utxoEntry0 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	utxoDiff := NewUTXODiff()
 
 	tests := []struct {
 		name             string
-		outpointToAdd    *domainmessage.Outpoint
+		outpointToAdd    *appmessage.Outpoint
 		utxoEntryToAdd   *UTXOEntry
 		expectedUTXODiff *UTXODiff
 		expectedError    string

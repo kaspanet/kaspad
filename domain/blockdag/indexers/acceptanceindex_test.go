@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -21,19 +21,19 @@ import (
 func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 	// Create test data
 	hash, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	txIn1 := &domainmessage.TxIn{SignatureScript: []byte{1}, PreviousOutpoint: domainmessage.Outpoint{Index: 1}, Sequence: 0}
-	txIn2 := &domainmessage.TxIn{SignatureScript: []byte{2}, PreviousOutpoint: domainmessage.Outpoint{Index: 2}, Sequence: 0}
-	txOut1 := &domainmessage.TxOut{ScriptPubKey: []byte{1}, Value: 10}
-	txOut2 := &domainmessage.TxOut{ScriptPubKey: []byte{2}, Value: 20}
+	txIn1 := &appmessage.TxIn{SignatureScript: []byte{1}, PreviousOutpoint: appmessage.Outpoint{Index: 1}, Sequence: 0}
+	txIn2 := &appmessage.TxIn{SignatureScript: []byte{2}, PreviousOutpoint: appmessage.Outpoint{Index: 2}, Sequence: 0}
+	txOut1 := &appmessage.TxOut{ScriptPubKey: []byte{1}, Value: 10}
+	txOut2 := &appmessage.TxOut{ScriptPubKey: []byte{2}, Value: 20}
 	blockTxsAcceptanceData := blockdag.BlockTxsAcceptanceData{
 		BlockHash: *hash,
 		TxAcceptanceData: []blockdag.TxAcceptanceData{
 			{
-				Tx:         util.NewTx(domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn1}, []*domainmessage.TxOut{txOut1})),
+				Tx:         util.NewTx(appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn1}, []*appmessage.TxOut{txOut1})),
 				IsAccepted: true,
 			},
 			{
-				Tx:         util.NewTx(domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn2}, []*domainmessage.TxOut{txOut2})),
+				Tx:         util.NewTx(appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn2}, []*appmessage.TxOut{txOut2})),
 				IsAccepted: false,
 			},
 		},

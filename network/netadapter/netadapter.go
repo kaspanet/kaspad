@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	routerpkg "github.com/kaspanet/kaspad/network/netadapter/router"
 	"github.com/kaspanet/kaspad/network/netadapter/server"
@@ -143,7 +143,7 @@ func (na *NetAdapter) ID() *id.ID {
 
 // Broadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
-func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message domainmessage.Message) error {
+func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message appmessage.Message) error {
 	na.connectionsLock.RLock()
 	defer na.connectionsLock.RUnlock()
 
@@ -162,7 +162,7 @@ func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message domainm
 
 // GetBestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
-func (na *NetAdapter) GetBestLocalAddress() (*domainmessage.NetAddress, error) {
+func (na *NetAdapter) GetBestLocalAddress() (*appmessage.NetAddress, error) {
 	if len(na.cfg.ExternalIPs) > 0 {
 		host, portString, err := net.SplitHostPort(na.cfg.ExternalIPs[0])
 		if err != nil {
@@ -184,7 +184,7 @@ func (na *NetAdapter) GetBestLocalAddress() (*domainmessage.NetAddress, error) {
 				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
 			}
 		}
-		return domainmessage.NewNetAddressIPPort(ip, uint16(portInt), domainmessage.SFNodeNetwork), nil
+		return appmessage.NewNetAddressIPPort(ip, uint16(portInt), appmessage.SFNodeNetwork), nil
 
 	}
 	listenAddress := na.cfg.Listeners[0]
@@ -209,7 +209,7 @@ func (na *NetAdapter) GetBestLocalAddress() (*domainmessage.NetAddress, error) {
 			continue
 		}
 
-		return domainmessage.NewNetAddressIPPort(ip, uint16(portInt), domainmessage.SFNodeNetwork), nil
+		return appmessage.NewNetAddressIPPort(ip, uint16(portInt), appmessage.SFNodeNetwork), nil
 	}
 	return nil, errors.New("no address was found")
 }

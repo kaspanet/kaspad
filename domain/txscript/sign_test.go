@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -53,7 +53,7 @@ func mkGetScript(scripts map[string][]byte) ScriptDB {
 	})
 }
 
-func checkScripts(msg string, tx *domainmessage.MsgTx, idx int, sigScript, scriptPubKey []byte) error {
+func checkScripts(msg string, tx *appmessage.MsgTx, idx int, sigScript, scriptPubKey []byte) error {
 	tx.TxIn[idx].SignatureScript = sigScript
 	var flags ScriptFlags
 	vm, err := NewEngine(scriptPubKey, tx, idx,
@@ -72,7 +72,7 @@ func checkScripts(msg string, tx *domainmessage.MsgTx, idx int, sigScript, scrip
 	return nil
 }
 
-func signAndCheck(msg string, tx *domainmessage.MsgTx, idx int, scriptPubKey []byte,
+func signAndCheck(msg string, tx *appmessage.MsgTx, idx int, scriptPubKey []byte,
 	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
 
@@ -99,30 +99,30 @@ func TestSignTxOutput(t *testing.T) {
 		SigHashNone | SigHashAnyOneCanPay,
 		SigHashSingle | SigHashAnyOneCanPay,
 	}
-	txIns := []*domainmessage.TxIn{
+	txIns := []*appmessage.TxIn{
 		{
-			PreviousOutpoint: domainmessage.Outpoint{
+			PreviousOutpoint: appmessage.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 0,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutpoint: domainmessage.Outpoint{
+			PreviousOutpoint: appmessage.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 1,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutpoint: domainmessage.Outpoint{
+			PreviousOutpoint: appmessage.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 2,
 			},
 			Sequence: 4294967295,
 		},
 	}
-	txOuts := []*domainmessage.TxOut{
+	txOuts := []*appmessage.TxOut{
 		{
 			Value: 1,
 		},
@@ -133,7 +133,7 @@ func TestSignTxOutput(t *testing.T) {
 			Value: 3,
 		},
 	}
-	tx := domainmessage.NewNativeMsgTx(1, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(1, txIns, txOuts)
 
 	// Pay to Pubkey Hash (uncompressed)
 	for _, hashType := range hashTypes {
@@ -703,7 +703,7 @@ func TestSignTxOutput(t *testing.T) {
 }
 
 type tstInput struct {
-	txout              *domainmessage.TxOut
+	txout              *appmessage.TxOut
 	sigscriptGenerates bool
 	inputValidates     bool
 	indexOutOfRange    bool
@@ -717,7 +717,7 @@ type tstSigScript struct {
 	scriptAtWrongIndex bool
 }
 
-var coinbaseOutpoint = &domainmessage.Outpoint{
+var coinbaseOutpoint = &appmessage.Outpoint{
 	Index: (1 << 32) - 1,
 }
 
@@ -748,7 +748,7 @@ var sigScriptTests = []tstSigScript{
 		name: "one input uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -762,13 +762,13 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -782,7 +782,7 @@ var sigScriptTests = []tstSigScript{
 		name: "one input compressed",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -796,13 +796,13 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs compressed",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal+fee, compressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal+fee, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -816,7 +816,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashNone",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -830,7 +830,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashSingle",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -844,7 +844,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAll | SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -858,7 +858,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -872,7 +872,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType non-exist",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -886,7 +886,7 @@ var sigScriptTests = []tstSigScript{
 		name: "invalid compression",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -900,7 +900,7 @@ var sigScriptTests = []tstSigScript{
 		name: "short ScriptPubKey",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, shortScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, shortScriptPubKey),
 				sigscriptGenerates: false,
 				indexOutOfRange:    false,
 			},
@@ -913,13 +913,13 @@ var sigScriptTests = []tstSigScript{
 		name: "valid script at wrong index",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -933,13 +933,13 @@ var sigScriptTests = []tstSigScript{
 		name: "index out of range",
 		inputs: []tstInput{
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              domainmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -963,13 +963,13 @@ func TestSignatureScript(t *testing.T) {
 
 nexttest:
 	for i := range sigScriptTests {
-		txOuts := []*domainmessage.TxOut{domainmessage.NewTxOut(500, []byte{OpReturn})}
+		txOuts := []*appmessage.TxOut{appmessage.NewTxOut(500, []byte{OpReturn})}
 
-		txIns := []*domainmessage.TxIn{}
+		txIns := []*appmessage.TxIn{}
 		for range sigScriptTests[i].inputs {
-			txIns = append(txIns, domainmessage.NewTxIn(coinbaseOutpoint, nil))
+			txIns = append(txIns, appmessage.NewTxIn(coinbaseOutpoint, nil))
 		}
-		tx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, txIns, txOuts)
+		tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
 
 		var script []byte
 		var err error

@@ -1,17 +1,17 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/network/domainmessage"
+import "github.com/kaspanet/kaspad/network/appmessage"
 
-func (x *KaspadMessage_InvRelayBlock) toDomainMessage() (domainmessage.Message, error) {
+func (x *KaspadMessage_InvRelayBlock) toDomainMessage() (appmessage.Message, error) {
 	hash, err := x.InvRelayBlock.Hash.toWire()
 	if err != nil {
 		return nil, err
 	}
 
-	return &domainmessage.MsgInvRelayBlock{Hash: hash}, nil
+	return &appmessage.MsgInvRelayBlock{Hash: hash}, nil
 }
 
-func (x *KaspadMessage_InvRelayBlock) fromDomainMessage(msgInvRelayBlock *domainmessage.MsgInvRelayBlock) error {
+func (x *KaspadMessage_InvRelayBlock) fromDomainMessage(msgInvRelayBlock *appmessage.MsgInvRelayBlock) error {
 	x.InvRelayBlock = &InvRelayBlockMessage{
 		Hash: wireHashToProto(msgInvRelayBlock.Hash),
 	}

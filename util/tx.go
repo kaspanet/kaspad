@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -22,20 +22,20 @@ const TxIndexUnknown = -1
 // transaction on its first access so subsequent accesses don't have to repeat
 // the relatively expensive hashing operations.
 type Tx struct {
-	msgTx   *domainmessage.MsgTx // Underlying MsgTx
-	txHash  *daghash.Hash        // Cached transaction hash
-	txID    *daghash.TxID        // Cached transaction ID
-	txIndex int                  // Position within a block or TxIndexUnknown
+	msgTx   *appmessage.MsgTx // Underlying MsgTx
+	txHash  *daghash.Hash     // Cached transaction hash
+	txID    *daghash.TxID     // Cached transaction ID
+	txIndex int               // Position within a block or TxIndexUnknown
 }
 
-// MsgTx returns the underlying domainmessage.MsgTx for the transaction.
-func (t *Tx) MsgTx() *domainmessage.MsgTx {
+// MsgTx returns the underlying appmessage.MsgTx for the transaction.
+func (t *Tx) MsgTx() *appmessage.MsgTx {
 	// Return the cached transaction.
 	return t.msgTx
 }
 
 // Hash returns the hash of the transaction. This is equivalent to
-// calling TxHash on the underlying domainmessage.MsgTx, however it caches the
+// calling TxHash on the underlying appmessage.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) Hash() *daghash.Hash {
 	// Return the cached hash if it has already been generated.
@@ -50,7 +50,7 @@ func (t *Tx) Hash() *daghash.Hash {
 }
 
 // ID returns the id of the transaction. This is equivalent to
-// calling TxID on the underlying domainmessage.MsgTx, however it caches the
+// calling TxID on the underlying appmessage.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
 func (t *Tx) ID() *daghash.TxID {
 	// Return the cached hash if it has already been generated.
@@ -85,8 +85,8 @@ func (t *Tx) IsCoinBase() bool {
 }
 
 // NewTx returns a new instance of a kaspa transaction given an underlying
-// domainmessage.MsgTx. See Tx.
-func NewTx(msgTx *domainmessage.MsgTx) *Tx {
+// appmessage.MsgTx. See Tx.
+func NewTx(msgTx *appmessage.MsgTx) *Tx {
 	return &Tx{
 		msgTx:   msgTx,
 		txIndex: TxIndexUnknown,
@@ -104,7 +104,7 @@ func NewTxFromBytes(serializedTx []byte) (*Tx, error) {
 // Reader to deserialize the transaction. See Tx.
 func NewTxFromReader(r io.Reader) (*Tx, error) {
 	// Deserialize the bytes into a MsgTx.
-	var msgTx domainmessage.MsgTx
+	var msgTx appmessage.MsgTx
 	err := msgTx.Deserialize(r)
 	if err != nil {
 		return nil, err

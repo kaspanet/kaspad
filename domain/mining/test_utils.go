@@ -8,7 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -36,8 +36,8 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, transactions []*domainmessage.MsgTx, forceTransactions bool,
-) (*domainmessage.MsgBlock, error) {
+func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx, forceTransactions bool,
+) (*appmessage.MsgBlock, error) {
 
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
@@ -76,7 +76,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, parentHashes []*daghash.Hash, t
 		return nil, err
 	}
 
-	txsToAdd := make([]*domainmessage.MsgTx, 0)
+	txsToAdd := make([]*appmessage.MsgTx, 0)
 	for _, tx := range transactions {
 		found := false
 		for _, blockTx := range template.Block.Transactions {

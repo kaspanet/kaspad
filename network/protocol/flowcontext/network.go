@@ -1,8 +1,8 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/connmanager"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/network/netadapter"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/network/protocol/peer"
@@ -47,7 +47,7 @@ func (f *FlowContext) readyPeerConnections() []*netadapter.NetConnection {
 }
 
 // Broadcast broadcast the given message to all the ready peers.
-func (f *FlowContext) Broadcast(message domainmessage.Message) error {
+func (f *FlowContext) Broadcast(message appmessage.Message) error {
 	return f.netAdapter.Broadcast(f.readyPeerConnections(), message)
 }
 

@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -17,12 +17,12 @@ import (
 //  diff		 | UTXODiff  | The diff data's diff
 func serializeBlockUTXODiffData(w io.Writer, diffData *blockUTXODiffData) error {
 	hasDiffChild := diffData.diffChild != nil
-	err := domainmessage.WriteElement(w, hasDiffChild)
+	err := appmessage.WriteElement(w, hasDiffChild)
 	if err != nil {
 		return err
 	}
 	if hasDiffChild {
-		err := domainmessage.WriteElement(w, diffData.diffChild.hash)
+		err := appmessage.WriteElement(w, diffData.diffChild.hash)
 		if err != nil {
 			return err
 		}
@@ -41,14 +41,14 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffData 
 	r := bytes.NewBuffer(serializedDiffData)
 
 	var hasDiffChild bool
-	err := domainmessage.ReadElement(r, &hasDiffChild)
+	err := appmessage.ReadElement(r, &hasDiffChild)
 	if err != nil {
 		return nil, err
 	}
 
 	if hasDiffChild {
 		hash := &daghash.Hash{}
-		err := domainmessage.ReadElement(r, hash)
+		err := appmessage.ReadElement(r, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +86,7 @@ func deserializeUTXODiff(r io.Reader) (*UTXODiff, error) {
 }
 
 func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
-	count, err := domainmessage.ReadVarInt(r)
+	count, err := appmessage.ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func deserializeUTXOCollection(r io.Reader) (utxoCollection, error) {
 	return collection, nil
 }
 
-func deserializeUTXO(r io.Reader) (*UTXOEntry, *domainmessage.Outpoint, error) {
+func deserializeUTXO(r io.Reader) (*UTXOEntry, *appmessage.Outpoint, error) {
 	outpoint, err := deserializeOutpoint(r)
 	if err != nil {
 		return nil, nil, err
@@ -134,7 +134,7 @@ func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
 // the utxo entries and serializing them and their corresponding outpoint
 // prefixed by a varint that indicates their size.
 func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
-	err := domainmessage.WriteVarInt(w, uint64(len(collection)))
+	err := appmessage.WriteVarInt(w, uint64(len(collection)))
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 }
 
 // serializeUTXO serializes a utxo entry-outpoint pair
-func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *domainmessage.Outpoint) error {
+func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *appmessage.Outpoint) error {
 	err := serializeOutpoint(w, outpoint)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *domainmessage.Outpoi
 
 // p2pkhUTXOEntrySerializeSize is the serialized size for a P2PKH UTXO entry.
 // 8 bytes (header code) + 8 bytes (amount) + varint for script pub key length of 25 (for P2PKH) + 25 bytes for P2PKH script.
-var p2pkhUTXOEntrySerializeSize = 8 + 8 + domainmessage.VarIntSerializeSize(25) + 25
+var p2pkhUTXOEntrySerializeSize = 8 + 8 + appmessage.VarIntSerializeSize(25) + 25
 
 // serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
 // The compression format is described in detail above.
@@ -185,7 +185,7 @@ func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
 		return err
 	}
 
-	err = domainmessage.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))
+	err = appmessage.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func deserializeUTXOEntry(r io.Reader) (*UTXOEntry, error) {
 		return nil, err
 	}
 
-	scriptPubKeyLen, err := domainmessage.ReadVarInt(r)
+	scriptPubKeyLen, err := appmessage.ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@ package addressexchange
 
 import (
 	"github.com/kaspanet/kaspad/network/addressmanager"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 	"math/rand"
 )
@@ -20,10 +20,10 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 		return err
 	}
 
-	msgGetAddresses := message.(*domainmessage.MsgRequestAddresses)
+	msgGetAddresses := message.(*appmessage.MsgRequestAddresses)
 	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
 		msgGetAddresses.SubnetworkID)
-	msgAddresses := domainmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
+	msgAddresses := appmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {
 		return err
@@ -33,14 +33,14 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 }
 
 // shuffleAddresses randomizes the given addresses sent if there are more than the maximum allowed in one message.
-func shuffleAddresses(addresses []*domainmessage.NetAddress) []*domainmessage.NetAddress {
+func shuffleAddresses(addresses []*appmessage.NetAddress) []*appmessage.NetAddress {
 	addressCount := len(addresses)
 
-	if addressCount < domainmessage.MaxAddressesPerMsg {
+	if addressCount < appmessage.MaxAddressesPerMsg {
 		return addresses
 	}
 
-	shuffleAddresses := make([]*domainmessage.NetAddress, addressCount)
+	shuffleAddresses := make([]*appmessage.NetAddress, addressCount)
 	copy(shuffleAddresses, addresses)
 
 	rand.Shuffle(addressCount, func(i, j int) {
@@ -48,6 +48,6 @@ func shuffleAddresses(addresses []*domainmessage.NetAddress) []*domainmessage.Ne
 	})
 
 	// Truncate it to the maximum size.
-	shuffleAddresses = shuffleAddresses[:domainmessage.MaxAddressesPerMsg]
+	shuffleAddresses = shuffleAddresses[:appmessage.MaxAddressesPerMsg]
 	return shuffleAddresses
 }

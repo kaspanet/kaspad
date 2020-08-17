@@ -5,7 +5,7 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 
@@ -15,8 +15,8 @@ import (
 // KnownAddress tracks information about a known network address that is used
 // to determine how viable an address is.
 type KnownAddress struct {
-	netAddress     *domainmessage.NetAddress
-	sourceAddress  *domainmessage.NetAddress
+	netAddress     *appmessage.NetAddress
+	sourceAddress  *appmessage.NetAddress
 	attempts       int
 	lastAttempt    mstime.Time
 	lastSuccess    mstime.Time
@@ -27,9 +27,9 @@ type KnownAddress struct {
 	bannedTime     mstime.Time
 }
 
-// NetAddress returns the underlying domainmessage.NetAddress associated with the
+// NetAddress returns the underlying appmessage.NetAddress associated with the
 // known address.
-func (ka *KnownAddress) NetAddress() *domainmessage.NetAddress {
+func (ka *KnownAddress) NetAddress() *appmessage.NetAddress {
 	return ka.netAddress
 }
 

@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/network/netadapter/id"
 	"github.com/kaspanet/kaspad/network/protocol/common"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/netadapter/router"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
@@ -90,9 +90,9 @@ func (*MinimalNetAdapter) handlePingPong(routes *Routes) error {
 			return err
 		}
 
-		pingMessage := message.(*domainmessage.MsgPing)
+		pingMessage := message.(*appmessage.MsgPing)
 
-		err = routes.OutgoingRoute.Enqueue(&domainmessage.MsgPong{Nonce: pingMessage.Nonce})
+		err = routes.OutgoingRoute.Enqueue(&appmessage.MsgPong{Nonce: pingMessage.Nonce})
 		if err != nil {
 			return err
 		}
@@ -105,12 +105,12 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		return err
 	}
 
-	versionMessage, ok := msg.(*domainmessage.MsgVersion)
+	versionMessage, ok := msg.(*appmessage.MsgVersion)
 	if !ok {
-		return errors.Errorf("expected first message to be of type %s, but got %s", domainmessage.CmdVersion, msg.Command())
+		return errors.Errorf("expected first message to be of type %s, but got %s", appmessage.CmdVersion, msg.Command())
 	}
 
-	err = routes.OutgoingRoute.Enqueue(&domainmessage.MsgVersion{
+	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgVersion{
 		ProtocolVersion: versionMessage.ProtocolVersion,
 		Network:         mna.cfg.ActiveNetParams.Name,
 		Services:        versionMessage.Services,
@@ -131,12 +131,12 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		return err
 	}
 
-	_, ok = msg.(*domainmessage.MsgVerAck)
+	_, ok = msg.(*appmessage.MsgVerAck)
 	if !ok {
-		return errors.Errorf("expected second message to be of type %s, but got %s", domainmessage.CmdVerAck, msg.Command())
+		return errors.Errorf("expected second message to be of type %s, but got %s", appmessage.CmdVerAck, msg.Command())
 	}
 
-	err = routes.OutgoingRoute.Enqueue(&domainmessage.MsgVerAck{})
+	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgVerAck{})
 	if err != nil {
 		return err
 	}
@@ -145,11 +145,11 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 }
 
 func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
-	cmdsWithBuiltInRoutes := []domainmessage.MessageCommand{domainmessage.CmdVerAck, domainmessage.CmdVersion, domainmessage.CmdPing}
+	cmdsWithBuiltInRoutes := []appmessage.MessageCommand{appmessage.CmdVerAck, appmessage.CmdVersion, appmessage.CmdPing}
 
-	everythingElse := make([]domainmessage.MessageCommand, 0, len(domainmessage.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
+	everythingElse := make([]appmessage.MessageCommand, 0, len(appmessage.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
 outerLoop:
-	for command := range domainmessage.MessageCommandToString {
+	for command := range appmessage.MessageCommandToString {
 		for _, cmdWithBuiltInRoute := range cmdsWithBuiltInRoutes {
 			if command == cmdWithBuiltInRoute {
 				continue outerLoop
@@ -162,11 +162,11 @@ outerLoop:
 	routesChan := make(chan *Routes)
 
 	routeInitializer := func(router *router.Router, netConnection *netadapter.NetConnection) {
-		handshakeRoute, err := router.AddIncomingRoute([]domainmessage.MessageCommand{domainmessage.CmdVersion, domainmessage.CmdVerAck})
+		handshakeRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering handshake route"))
 		}
-		pingRoute, err := router.AddIncomingRoute([]domainmessage.MessageCommand{domainmessage.CmdPing})
+		pingRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdPing})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering ping route"))
 		}

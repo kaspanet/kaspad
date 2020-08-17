@@ -3,11 +3,11 @@ package router
 import (
 	"sync"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/pkg/errors"
 )
 
-const outgoingRouteMaxMessages = domainmessage.MaxInvPerMsg + DefaultMaxMessages
+const outgoingRouteMaxMessages = appmessage.MaxInvPerMsg + DefaultMaxMessages
 
 // OnRouteCapacityReachedHandler is a function that is to
 // be called when one of the routes reaches capacity.
@@ -16,7 +16,7 @@ type OnRouteCapacityReachedHandler func()
 // Router routes messages by type to their respective
 // input channels
 type Router struct {
-	incomingRoutes     map[domainmessage.MessageCommand]*Route
+	incomingRoutes     map[appmessage.MessageCommand]*Route
 	incomingRoutesLock sync.RWMutex
 
 	outgoingRoute *Route
@@ -27,7 +27,7 @@ type Router struct {
 // NewRouter creates a new empty router
 func NewRouter() *Router {
 	router := Router{
-		incomingRoutes: make(map[domainmessage.MessageCommand]*Route),
+		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
 		outgoingRoute:  newRouteWithCapacity(outgoingRouteMaxMessages),
 	}
 	router.outgoingRoute.setOnCapacityReachedHandler(func() {
@@ -44,7 +44,7 @@ func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler 
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
 // be routed to the given `route`
-func (r *Router) AddIncomingRoute(messageTypes []domainmessage.MessageCommand) (*Route, error) {
+func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Route, error) {
 	route := NewRoute()
 	for _, messageType := range messageTypes {
 		if r.doesIncomingRouteExist(messageType) {
@@ -60,7 +60,7 @@ func (r *Router) AddIncomingRoute(messageTypes []domainmessage.MessageCommand) (
 
 // RemoveRoute unregisters the messages of types `messageTypes` from
 // the router
-func (r *Router) RemoveRoute(messageTypes []domainmessage.MessageCommand) error {
+func (r *Router) RemoveRoute(messageTypes []appmessage.MessageCommand) error {
 	for _, messageType := range messageTypes {
 		if !r.doesIncomingRouteExist(messageType) {
 			return errors.Errorf("a route for '%s' does not exist", messageType)
@@ -72,7 +72,7 @@ func (r *Router) RemoveRoute(messageTypes []domainmessage.MessageCommand) error 
 
 // EnqueueIncomingMessage enqueues the given message to the
 // appropriate route
-func (r *Router) EnqueueIncomingMessage(message domainmessage.Message) error {
+func (r *Router) EnqueueIncomingMessage(message appmessage.Message) error {
 	route, ok := r.incomingRoute(message.Command())
 	if !ok {
 		return errors.Errorf("a route for '%s' does not exist", message.Command())
@@ -101,7 +101,7 @@ func (r *Router) Close() {
 	r.outgoingRoute.Close()
 }
 
-func (r *Router) incomingRoute(messageType domainmessage.MessageCommand) (*Route, bool) {
+func (r *Router) incomingRoute(messageType appmessage.MessageCommand) (*Route, bool) {
 	r.incomingRoutesLock.RLock()
 	defer r.incomingRoutesLock.RUnlock()
 
@@ -109,7 +109,7 @@ func (r *Router) incomingRoute(messageType domainmessage.MessageCommand) (*Route
 	return route, ok
 }
 
-func (r *Router) doesIncomingRouteExist(messageType domainmessage.MessageCommand) bool {
+func (r *Router) doesIncomingRouteExist(messageType appmessage.MessageCommand) bool {
 	r.incomingRoutesLock.RLock()
 	defer r.incomingRoutesLock.RUnlock()
 
@@ -117,14 +117,14 @@ func (r *Router) doesIncomingRouteExist(messageType domainmessage.MessageCommand
 	return ok
 }
 
-func (r *Router) setIncomingRoute(messageType domainmessage.MessageCommand, route *Route) {
+func (r *Router) setIncomingRoute(messageType appmessage.MessageCommand, route *Route) {
 	r.incomingRoutesLock.Lock()
 	defer r.incomingRoutesLock.Unlock()
 
 	r.incomingRoutes[messageType] = route
 }
 
-func (r *Router) deleteIncomingRoute(messageType domainmessage.MessageCommand) {
+func (r *Router) deleteIncomingRoute(messageType appmessage.MessageCommand) {
 	r.incomingRoutesLock.Lock()
 	defer r.incomingRoutesLock.Unlock()
 

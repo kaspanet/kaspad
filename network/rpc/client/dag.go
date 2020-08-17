@@ -13,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/appmessage"
 	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -61,7 +61,7 @@ type FutureGetBlockResult chan *response
 
 // Receive waits for the response promised by the future and returns the raw
 // block requested from the server given its hash.
-func (r FutureGetBlockResult) Receive() (*domainmessage.MsgBlock, error) {
+func (r FutureGetBlockResult) Receive() (*appmessage.MsgBlock, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (r FutureGetBlockResult) Receive() (*domainmessage.MsgBlock, error) {
 	}
 
 	// Deserialize the block and return it.
-	var msgBlock domainmessage.MsgBlock
+	var msgBlock appmessage.MsgBlock
 	err = msgBlock.Deserialize(bytes.NewReader(serializedBlock))
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) Fu
 //
 // See GetBlockVerbose to retrieve a data structure with information about the
 // block instead.
-func (c *Client) GetBlock(blockHash *daghash.Hash, subnetworkID *string) (*domainmessage.MsgBlock, error) {
+func (c *Client) GetBlock(blockHash *daghash.Hash, subnetworkID *string) (*appmessage.MsgBlock, error) {
 	return c.GetBlockAsync(blockHash, subnetworkID).Receive()
 }
 
@@ -391,7 +391,7 @@ type FutureGetBlockHeaderResult chan *response
 
 // Receive waits for the response promised by the future and returns the
 // blockheader requested from the server given its hash.
-func (r FutureGetBlockHeaderResult) Receive() (*domainmessage.BlockHeader, error) {
+func (r FutureGetBlockHeaderResult) Receive() (*appmessage.BlockHeader, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -410,7 +410,7 @@ func (r FutureGetBlockHeaderResult) Receive() (*domainmessage.BlockHeader, error
 	}
 
 	// Deserialize the blockheader and return it.
-	var bh domainmessage.BlockHeader
+	var bh appmessage.BlockHeader
 	err = bh.Deserialize(bytes.NewReader(serializedBH))
 	if err != nil {
 		return nil, err
@@ -438,7 +438,7 @@ func (c *Client) GetBlockHeaderAsync(blockHash *daghash.Hash) FutureGetBlockHead
 //
 // See GetBlockHeaderVerbose to retrieve a data structure with information about the
 // block instead.
-func (c *Client) GetBlockHeader(blockHash *daghash.Hash) (*domainmessage.BlockHeader, error) {
+func (c *Client) GetBlockHeader(blockHash *daghash.Hash) (*appmessage.BlockHeader, error) {
 	return c.GetBlockHeaderAsync(blockHash).Receive()
 }
 
