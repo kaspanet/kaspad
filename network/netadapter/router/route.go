@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"

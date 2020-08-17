@@ -22,9 +22,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/network/addressmanager"
 	"github.com/kaspanet/kaspad/network/connmanager"
-	"github.com/kaspanet/kaspad/network/protocol"
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
