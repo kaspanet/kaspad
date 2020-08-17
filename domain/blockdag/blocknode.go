@@ -280,3 +280,19 @@ func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (
 	finalityPoint := node.finalityPoint()
 	return node.dag.reachabilityTree.isReachabilityTreeAncestorOf(other, finalityPoint)
 }
+
+func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
+	nonFinalityViolatingBlues := []*blockNode{}
+
+	for _, blueNode := range node.blues {
+		notViolatingFinality, err := node.hasFinalityPointInOthersSelectedChain(blueNode)
+		if err != nil {
+			return nil, err
+		}
+		if notViolatingFinality {
+			nonFinalityViolatingBlues = append(nonFinalityViolatingBlues, blueNode)
+		}
+	}
+
+	return nonFinalityViolatingBlues, nil
+}
