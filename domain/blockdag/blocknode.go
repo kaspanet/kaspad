@@ -70,6 +70,9 @@ type blockNode struct {
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
+	// dag is the blockDAG in which this node resides
+	dag *BlockDAG
+
 	// parents is the parent blocks for this node.
 	parents blockSet
 
@@ -120,6 +123,7 @@ type blockNode struct {
 // This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *domainmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
+		dag:                dag,
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
@@ -217,8 +221,8 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) PastMedianTime(dag *BlockDAG) mstime.Time {
-	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
+func (node *blockNode) PastMedianTime() mstime.Time {
+	window := blueBlockWindow(node, 2*node.dag.TimestampDeviationTolerance-1)
 	medianTimestamp, err := window.medianTimestamp()
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
@@ -266,4 +270,8 @@ func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
 	}
 
 	return previous
+}
+
+func (node *blockNode) finalityPoint() *blockNode {
+	return node.blockAtDepth(node.dag.FinalityInterval())
 }
