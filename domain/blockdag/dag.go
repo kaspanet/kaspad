@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"sync"
 
 	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 
@@ -239,7 +240,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
-	return dag.virtual.tips().bluest().PastMedianTime(dag)
+	return dag.virtual.tips().bluest().PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned

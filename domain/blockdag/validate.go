@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/go-secp256k1"
 	"math"
 	"sort"
+
+	"github.com/kaspanet/go-secp256k1"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
@@ -690,18 +691,18 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *domainmessage.BlockHeader, 
 			return err
 		}
 
-		if err := validateMedianTime(dag, header, bluestParent); err != nil {
+		if err := validateMedianTime(header, bluestParent); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateMedianTime(dag *BlockDAG, header *domainmessage.BlockHeader, bluestParent *blockNode) error {
+func validateMedianTime(header *domainmessage.BlockHeader, bluestParent *blockNode) error {
 	if !header.IsGenesis() {
 		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := bluestParent.PastMedianTime(dag)
+		medianTime := bluestParent.PastMedianTime()
 		if header.Timestamp.Before(medianTime) {
 			str := fmt.Sprintf("block timestamp of %s is not after expected %s", header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
@@ -812,7 +813,7 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 
 	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
-		blockTime = node.selectedParent.PastMedianTime(dag)
+		blockTime = node.selectedParent.PastMedianTime()
 	}
 
 	// Ensure all transactions in the block are finalized.
@@ -1043,7 +1044,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// in order to determine if transactions in the current block are final.
 		medianTime := block.Header().Timestamp
 		if !block.isGenesis() {
-			medianTime = block.selectedParent.PastMedianTime(dag)
+			medianTime = block.selectedParent.PastMedianTime()
 		}
 
 		// We also enforce the relative sequence number based

@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -97,7 +98,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			for blockNode.selectedParent.blueScore > inputBlueScore {
 				blockNode = blockNode.selectedParent
 			}
-			medianTime := blockNode.PastMedianTime(dag)
+			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks have a time granularity of
 			// domainmessage.SequenceLockTimeGranularity, so we shift left by this

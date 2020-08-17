@@ -417,6 +417,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	}
 
 	node := &blockNode{
+		dag:                  dag,
 		hash:                 header.BlockHash(),
 		version:              header.Version,
 		bits:                 header.Bits,
