@@ -26,6 +26,11 @@ func (x *BlockMessage) toDomainMessage() (domainmessage.Message, error) {
 		return nil, errors.New("block header field cannot be nil")
 	}
 
+	if len(protoBlockHeader.ParentHashes) > domainmessage.MaxBlockParents {
+		return nil, errors.Errorf("block header has %d parents, but the maximum allowed amount "+
+			"is %d", len(protoBlockHeader.ParentHashes), domainmessage.MaxBlockParents)
+	}
+
 	parentHashes, err := protoHashesToWire(protoBlockHeader.ParentHashes)
 	if err != nil {
 		return nil, err
@@ -76,6 +81,11 @@ func (x *BlockMessage) fromDomainMessage(msgBlock *domainmessage.MsgBlock) error
 	if len(msgBlock.Transactions) > domainmessage.MaxTxPerBlock {
 		return errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(msgBlock.Transactions), domainmessage.MaxTxPerBlock)
+	}
+
+	if len(msgBlock.Header.ParentHashes) > domainmessage.MaxBlockParents {
+		return errors.Errorf("block header has %d parents, but the maximum allowed amount "+
+			"is %d", len(msgBlock.Header.ParentHashes), domainmessage.MaxBlockParents)
 	}
 
 	header := msgBlock.Header

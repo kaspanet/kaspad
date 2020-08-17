@@ -32,6 +32,18 @@ const (
 	// statusInvalidAncestor indicates that one of the block's ancestors has
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
+
+	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
+	statusUTXONotVerified
+
+	// statusViolatedFinality indicates that the block violated finality.
+	statusViolatedFinality
+
+	// statusManuallyRejected indicates the the block was manually rejected.
+	statusManuallyRejected
+
+	// statusDisqualifiedFromChain indicates that the block is not eligible to be a selected parent.
+	statusDisqualifiedFromChain
 )
 
 // KnownValid returns whether the block is known to be valid. This will return
