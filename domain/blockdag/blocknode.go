@@ -36,8 +36,8 @@ const (
 	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
 	statusUTXONotVerified
 
-	// statusViolatedFinality indicates that the block violated finality.
-	statusViolatedFinality
+	// statusViolatedSubjectiveFinality indicates that the block violated subjective finality.
+	statusViolatedSubjectiveFinality
 
 	// statusManuallyRejected indicates the the block was manually rejected.
 	statusManuallyRejected
@@ -338,4 +338,25 @@ func (node *blockNode) checkObjectiveFinality() error {
 	}
 
 	return nil
+}
+
+func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
+	for parent := range node.parents {
+		if parent.status == statusViolatedSubjectiveFinality {
+			return true, nil
+		}
+	}
+
+	if node.dag.virtual.less(node) {
+		isVirtualFinalityPointInNodesSelectedChain, err :=
+			node.dag.isInSelectedParentChainOf(node.dag.virtual.finalityPoint(), node)
+		if err != nil {
+			return false, err
+		}
+		if !isVirtualFinalityPointInNodesSelectedChain {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
