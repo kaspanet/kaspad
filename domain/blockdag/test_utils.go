@@ -317,8 +317,10 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 	timestamp := node.parents.bluest().PastMedianTime(dag)
 	msgBlock.Header = domainmessage.BlockHeader{
-		Version:              blockVersion,
-		ParentHashes:         parentHashes,
+		Version: blockVersion,
+
+		// We use parents.hashes() and not parentHashes because parents.hashes() is sorted.
+		ParentHashes:         parents.hashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: calculatedAccepetedIDMerkleRoot,
 		UTXOCommitment:       &calculatedMultisetHash,
