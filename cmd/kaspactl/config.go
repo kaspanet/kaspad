@@ -6,7 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/rpc/model"
+	"github.com/kaspanet/kaspad/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 )
 

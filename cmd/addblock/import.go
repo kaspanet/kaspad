@@ -6,15 +6,15 @@ package main
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/blockdag/indexers"
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"io"
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/domainmessage"
+	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 

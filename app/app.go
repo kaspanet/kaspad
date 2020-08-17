@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/addressmanager"
+	"github.com/kaspanet/kaspad/network/addressmanager"
 
-	"github.com/kaspanet/kaspad/netadapter/id"
+	"github.com/kaspanet/kaspad/network/netadapter/id"
 
-	"github.com/kaspanet/kaspad/blockdag"
-	"github.com/kaspanet/kaspad/blockdag/indexers"
-	"github.com/kaspanet/kaspad/config"
-	"github.com/kaspanet/kaspad/connmanager"
-	"github.com/kaspanet/kaspad/dbaccess"
-	"github.com/kaspanet/kaspad/dnsseed"
-	"github.com/kaspanet/kaspad/domainmessage"
-	"github.com/kaspanet/kaspad/mempool"
-	"github.com/kaspanet/kaspad/mining"
-	"github.com/kaspanet/kaspad/netadapter"
-	"github.com/kaspanet/kaspad/protocol"
-	"github.com/kaspanet/kaspad/rpc"
-	"github.com/kaspanet/kaspad/signal"
-	"github.com/kaspanet/kaspad/txscript"
+	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
+	"github.com/kaspanet/kaspad/domain/mempool"
+	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/signal"
+	"github.com/kaspanet/kaspad/network/connmanager"
+	"github.com/kaspanet/kaspad/network/dnsseed"
+	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/network/netadapter"
+	"github.com/kaspanet/kaspad/network/protocol"
+	"github.com/kaspanet/kaspad/network/rpc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )
@@ -62,11 +62,11 @@ func (a *App) Start() {
 }
 
 // Stop gracefully shuts down all the kaspad services.
-func (a *App) Stop() error {
+func (a *App) Stop() {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&a.shutdown, 1) != 1 {
 		log.Infof("Kaspad is already in the process of shutting down")
-		return nil
+		return
 	}
 
 	log.Warnf("Kaspad shutting down")
@@ -86,7 +86,12 @@ func (a *App) Stop() error {
 		}
 	}
 
-	return nil
+	err = a.addressManager.Stop()
+	if err != nil {
+		log.Errorf("Error stopping address manager: %s", err)
+	}
+
+	return
 }
 
 // New returns a new App instance configured to listen on addr for the
@@ -190,11 +195,10 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 			MaxTxVersion:    1,
 		},
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
-			return dag.CalcSequenceLockNoLock(tx, utxoSet, true)
+			return dag.CalcSequenceLockNoLock(tx, utxoSet)
 		},
-		IsDeploymentActive: dag.IsDeploymentActive,
-		SigCache:           sigCache,
-		DAG:                dag,
+		SigCache: sigCache,
+		DAG:      dag,
 	}
 
 	return mempool.New(&mempoolConfig)
@@ -240,10 +244,4 @@ func (a *App) P2PNodeID() *id.ID {
 // AddressManager returns the AddressManager associated with this App
 func (a *App) AddressManager() *addressmanager.AddressManager {
 	return a.addressManager
-}
-
-// WaitForShutdown blocks until the main listener and peer handlers are stopped.
-func (a *App) WaitForShutdown() {
-	// TODO(libp2p)
-	// a.p2pServer.WaitForShutdown()
 }

@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	flags "github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/config"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"os"
