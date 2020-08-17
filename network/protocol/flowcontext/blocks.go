@@ -40,8 +40,8 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 		txIDsToBroadcast[i] = tx.ID()
 	}
 	offset := len(transactionsAcceptedToMempool)
-	for i, tx := range txIDsToRebroadcast {
-		txIDsToBroadcast[offset+i] = tx
+	for i, txID := range txIDsToRebroadcast {
+		txIDsToBroadcast[offset+i] = txID
 	}
 
 	if len(txIDsToBroadcast) == 0 {
