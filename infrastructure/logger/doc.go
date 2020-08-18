@@ -1,5 +1,5 @@
 /*
-Package logs defines an interface and default implementation for subsystem
+Package logger defines an interface and default implementation for subsystem
 logging.
 
 Log level verbosity may be modified at runtime for each individual subsystem
