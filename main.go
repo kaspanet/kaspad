@@ -15,12 +15,12 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/limits"
-	"github.com/kaspanet/kaspad/infrastructure/signal"
+	"github.com/kaspanet/kaspad/infrastructure/os/limits"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
@@ -210,4 +210,10 @@ func main() {
 	if err := kaspadMain(nil); err != nil {
 		os.Exit(1)
 	}
+}
+
+// doUpgrades performs upgrades to kaspad as new versions require it.
+// currently it's a placeholder we got from kaspad upstream, that does nothing
+func doUpgrades() error {
+	return nil
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
 type appHarness struct {

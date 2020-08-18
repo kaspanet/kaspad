@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 func TestIntegrationBasicSync(t *testing.T) {
@@ -16,19 +16,19 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	app2OnBlockAddedChan := make(chan *domainmessage.BlockHeader)
-	setOnBlockAddedHandler(t, appHarness2, func(header *domainmessage.BlockHeader) {
+	app2OnBlockAddedChan := make(chan *appmessage.BlockHeader)
+	setOnBlockAddedHandler(t, appHarness2, func(header *appmessage.BlockHeader) {
 		app2OnBlockAddedChan <- header
 	})
 
-	app3OnBlockAddedChan := make(chan *domainmessage.BlockHeader)
-	setOnBlockAddedHandler(t, appHarness3, func(header *domainmessage.BlockHeader) {
+	app3OnBlockAddedChan := make(chan *appmessage.BlockHeader)
+	setOnBlockAddedHandler(t, appHarness3, func(header *appmessage.BlockHeader) {
 		app3OnBlockAddedChan <- header
 	})
 
 	block := mineNextBlock(t, appHarness1)
 
-	var header *domainmessage.BlockHeader
+	var header *appmessage.BlockHeader
 	select {
 	case header = <-app2OnBlockAddedChan:
 	case <-time.After(defaultTimeout):

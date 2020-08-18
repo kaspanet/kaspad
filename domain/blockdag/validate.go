@@ -16,7 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -47,7 +47,7 @@ const (
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
 // is set.
-func isNullOutpoint(outpoint *domainmessage.Outpoint) bool {
+func isNullOutpoint(outpoint *appmessage.Outpoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.TxID == daghash.ZeroTxID {
 		return true
 	}
@@ -216,7 +216,7 @@ func checkTransactionAmountRanges(tx *util.Tx) error {
 }
 
 func checkDuplicateTransactionInputs(tx *util.Tx) error {
-	existingTxOut := make(map[domainmessage.Outpoint]struct{})
+	existingTxOut := make(map[appmessage.Outpoint]struct{})
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
@@ -314,7 +314,7 @@ func checkTransactionSubnetwork(tx *util.Tx, subnetworkID *subnetworkid.Subnetwo
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (dag *BlockDAG) checkProofOfWork(header *domainmessage.BlockHeader, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkProofOfWork(header *appmessage.BlockHeader, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -354,9 +354,9 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	if err != nil {
 		return err
 	}
-	if txMass > domainmessage.MaxMassPerBlock {
+	if txMass > appmessage.MaxMassPerBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
-			"allowed limit of %d", tx.ID(), txMass, domainmessage.MaxMassPerBlock)
+			"allowed limit of %d", tx.ID(), txMass, appmessage.MaxMassPerBlock)
 		return ruleError(ErrTxMassTooHigh, str)
 	}
 	return nil
@@ -380,9 +380,9 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 
 		// We could potentially overflow the accumulator so check for
 		// overflow as well.
-		if totalMass < txMass || totalMass > domainmessage.MaxMassPerBlock {
+		if totalMass < txMass || totalMass > appmessage.MaxMassPerBlock {
 			str := fmt.Sprintf("block has total mass %d, which is "+
-				"above the allowed limit of %d", totalMass, domainmessage.MaxMassPerBlock)
+				"above the allowed limit of %d", totalMass, appmessage.MaxMassPerBlock)
 			return 0, ruleError(ErrBlockMassTooHigh, str)
 		}
 	}
@@ -476,7 +476,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(block *util.Block, flags BehaviorFla
 }
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
-func checkBlockParentsOrder(header *domainmessage.BlockHeader) error {
+func checkBlockParentsOrder(header *appmessage.BlockHeader) error {
 	sortedHashes := make([]*daghash.Hash, header.NumParentBlocks())
 	for i, hash := range header.ParentHashes {
 		sortedHashes[i] = hash
@@ -562,9 +562,9 @@ func (dag *BlockDAG) checkBlockContainsLessThanMaxBlockMassTransactions(block *u
 	// else it is certainly over the block mass limit.
 	transactions := block.Transactions()
 	numTx := len(transactions)
-	if numTx > domainmessage.MaxMassPerBlock {
+	if numTx > appmessage.MaxMassPerBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, domainmessage.MaxMassPerBlock)
+			"got %d, max %d", numTx, appmessage.MaxMassPerBlock)
 		return ruleError(ErrBlockMassTooHigh, str)
 	}
 	return nil
@@ -658,7 +658,7 @@ func (dag *BlockDAG) checkBlockDuplicateTransactions(block *util.Block) error {
 }
 
 func (dag *BlockDAG) checkBlockDoubleSpends(block *util.Block) error {
-	usedOutpoints := make(map[domainmessage.Outpoint]*daghash.TxID)
+	usedOutpoints := make(map[appmessage.Outpoint]*daghash.TxID)
 	transactions := block.Transactions()
 	for _, tx := range transactions {
 		for _, txIn := range tx.MsgTx().TxIn {
@@ -681,7 +681,7 @@ func (dag *BlockDAG) checkBlockDoubleSpends(block *util.Block) error {
 //  - BFFastAdd: No checks are performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *domainmessage.BlockHeader, bluestParent *blockNode, fastAdd bool) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *appmessage.BlockHeader, bluestParent *blockNode, fastAdd bool) error {
 	if !fastAdd {
 		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
@@ -694,7 +694,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *domainmessage.BlockHeader, 
 	return nil
 }
 
-func validateMedianTime(dag *BlockDAG, header *domainmessage.BlockHeader, bluestParent *blockNode) error {
+func validateMedianTime(dag *BlockDAG, header *appmessage.BlockHeader, bluestParent *blockNode) error {
 	if !header.IsGenesis() {
 		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
@@ -708,7 +708,7 @@ func validateMedianTime(dag *BlockDAG, header *domainmessage.BlockHeader, bluest
 	return nil
 }
 
-func (dag *BlockDAG) validateDifficulty(header *domainmessage.BlockHeader, bluestParent *blockNode) error {
+func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestParent *blockNode) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
@@ -724,7 +724,7 @@ func (dag *BlockDAG) validateDifficulty(header *domainmessage.BlockHeader, blues
 }
 
 // validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
-func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, parents blockSet) error {
+func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parents blockSet) error {
 	for parentA := range parents {
 		// isFinalized might be false-negative because node finality status is
 		// updated in a separate goroutine. This is why later the block is
@@ -836,9 +836,9 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
-	fetchSet := make(map[domainmessage.Outpoint]struct{})
+	fetchSet := make(map[appmessage.Outpoint]struct{})
 	for _, tx := range transactions {
-		prevOut := domainmessage.Outpoint{TxID: *tx.ID()}
+		prevOut := appmessage.Outpoint{TxID: *tx.ID()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			fetchSet[prevOut] = struct{}{}
@@ -945,7 +945,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	return txFeeInSompi, nil
 }
 
-func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *domainmessage.TxIn) error {
+func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *appmessage.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
 	// yet reached the required coinbase maturity.
 	if entry.IsCoinbase() {

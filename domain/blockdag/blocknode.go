@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -106,7 +106,7 @@ type blockNode struct {
 // anticone of its selected parent (parent with highest blue score).
 // selectedParentAnticone is used to update reachability data we store for future reachability queries.
 // This function is NOT safe for concurrent access.
-func (dag *BlockDAG) newBlockNode(blockHeader *domainmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
+func (dag *BlockDAG) newBlockNode(blockHeader *appmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
 		parents:            parents,
 		children:           make(blockSet),
@@ -160,9 +160,9 @@ func (node *blockNode) less(other *blockNode) bool {
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Header() *domainmessage.BlockHeader {
+func (node *blockNode) Header() *appmessage.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	return &domainmessage.BlockHeader{
+	return &appmessage.BlockHeader{
 		Version:              node.version,
 		ParentHashes:         node.ParentHashes(),
 		HashMerkleRoot:       node.hashMerkleRoot,

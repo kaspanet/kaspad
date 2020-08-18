@@ -40,10 +40,8 @@ recommended that `GOPATH` is set to a directory in your home directory such as
 ```bash
 $ git clone https://github.com/kaspanet/kaspad $GOPATH/src/github.com/kaspanet/kaspad
 $ cd $GOPATH/src/github.com/kaspanet/kaspad
-$ ./test.sh
 $ go install . ./cmd/...
 ```
-`./test.sh` tests can be skipped, but some things might not run correctly on your system if tests fail.
 
 - Kaspad (and utilities) should now be installed in `$GOPATH/bin`. If you did
   not already add the bin directory to your system path during Go installation,

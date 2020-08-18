@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -79,14 +79,14 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// mask in order to obtain the time lock delta required before
 		// this input can be spent.
 		sequenceNum := txIn.Sequence
-		relativeLock := int64(sequenceNum & domainmessage.SequenceLockTimeMask)
+		relativeLock := int64(sequenceNum & appmessage.SequenceLockTimeMask)
 
 		switch {
 		// Relative time locks are disabled for this input, so we can
 		// skip any further calculation.
-		case sequenceNum&domainmessage.SequenceLockTimeDisabled == domainmessage.SequenceLockTimeDisabled:
+		case sequenceNum&appmessage.SequenceLockTimeDisabled == appmessage.SequenceLockTimeDisabled:
 			continue
-		case sequenceNum&domainmessage.SequenceLockTimeIsSeconds == domainmessage.SequenceLockTimeIsSeconds:
+		case sequenceNum&appmessage.SequenceLockTimeIsSeconds == appmessage.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
@@ -100,11 +100,11 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			medianTime := blockNode.PastMedianTime(dag)
 
 			// Time based relative time-locks have a time granularity of
-			// domainmessage.SequenceLockTimeGranularity, so we shift left by this
+			// appmessage.SequenceLockTimeGranularity, so we shift left by this
 			// amount to convert to the proper relative time-lock. We also
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock << domainmessage.SequenceLockTimeGranularity) - 1
+			timeLockMilliseconds := (relativeLock << appmessage.SequenceLockTimeGranularity) - 1
 			timeLock := medianTime.UnixMilliseconds() + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock
@@ -138,6 +138,6 @@ func LockTimeToSequence(isMilliseconds bool, locktime uint64) uint64 {
 	// shift the locktime over by 19 since the time granularity is in
 	// 524288-millisecond intervals (2^19). This results in a max lock-time of
 	// 34,359,214,080 seconds, or 1.1 years.
-	return domainmessage.SequenceLockTimeIsSeconds |
-		locktime>>domainmessage.SequenceLockTimeGranularity
+	return appmessage.SequenceLockTimeIsSeconds |
+		locktime>>appmessage.SequenceLockTimeGranularity
 }

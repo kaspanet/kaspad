@@ -3,7 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"

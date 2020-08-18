@@ -13,11 +13,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/testtools"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -125,7 +125,7 @@ func TestFinality(t *testing.T) {
 		t.Errorf("NextBlockCoinbaseTransaction: %s", err)
 	}
 	merkleRoot := blockdag.BuildHashMerkleTreeStore([]*util.Tx{fakeCoinbaseTx}).Root()
-	beforeFinalityBlock := domainmessage.NewMsgBlock(&domainmessage.BlockHeader{
+	beforeFinalityBlock := appmessage.NewMsgBlock(&appmessage.BlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*daghash.Hash{genesis.Hash()},
 		HashMerkleRoot:       merkleRoot,
@@ -164,7 +164,7 @@ func TestFinality(t *testing.T) {
 }
 
 // TestFinalityInterval tests that the finality interval is
-// smaller then domainmessage.MaxInvPerMsg, so when a peer receives
+// smaller then appmessage.MaxInvPerMsg, so when a peer receives
 // a getblocks message it should always be able to send
 // all the necessary invs.
 func TestFinalityInterval(t *testing.T) {
@@ -185,8 +185,8 @@ func TestFinalityInterval(t *testing.T) {
 			}
 			defer teardownFunc()
 
-			if dag.FinalityInterval() > domainmessage.MaxInvPerMsg {
-				t.Errorf("FinalityInterval in %s should be lower or equal to domainmessage.MaxInvPerMsg", params.Name)
+			if dag.FinalityInterval() > appmessage.MaxInvPerMsg {
+				t.Errorf("FinalityInterval in %s should be lower or equal to appmessage.MaxInvPerMsg", params.Name)
 			}
 		}()
 	}
@@ -253,34 +253,34 @@ func TestChainedTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to build signature script: %s", err)
 	}
-	txIn := &domainmessage.TxIn{
-		PreviousOutpoint: domainmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
+	txIn := &appmessage.TxIn{
+		PreviousOutpoint: appmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+		Sequence:         appmessage.MaxTxInSequenceNum,
 	}
-	txOut := &domainmessage.TxOut{
+	txOut := &appmessage.TxOut{
 		ScriptPubKey: blockdag.OpTrueScript,
 		Value:        uint64(1),
 	}
-	tx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
+	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
 
-	chainedTxIn := &domainmessage.TxIn{
-		PreviousOutpoint: domainmessage.Outpoint{TxID: *tx.TxID(), Index: 0},
+	chainedTxIn := &appmessage.TxIn{
+		PreviousOutpoint: appmessage.Outpoint{TxID: *tx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+		Sequence:         appmessage.MaxTxInSequenceNum,
 	}
 
 	scriptPubKey, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		t.Fatalf("Failed to build public key script: %s", err)
 	}
-	chainedTxOut := &domainmessage.TxOut{
+	chainedTxOut := &appmessage.TxOut{
 		ScriptPubKey: scriptPubKey,
 		Value:        uint64(1),
 	}
-	chainedTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{chainedTxIn}, []*domainmessage.TxOut{chainedTxOut})
+	chainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{chainedTxIn}, []*appmessage.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*domainmessage.MsgTx{tx}, false)
+	block2, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{tx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -315,18 +315,18 @@ func TestChainedTransactions(t *testing.T) {
 		t.Errorf("ProcessBlock: block2 got unexpectedly orphaned")
 	}
 
-	nonChainedTxIn := &domainmessage.TxIn{
-		PreviousOutpoint: domainmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
+	nonChainedTxIn := &appmessage.TxIn{
+		PreviousOutpoint: appmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+		Sequence:         appmessage.MaxTxInSequenceNum,
 	}
-	nonChainedTxOut := &domainmessage.TxOut{
+	nonChainedTxOut := &appmessage.TxOut{
 		ScriptPubKey: scriptPubKey,
 		Value:        uint64(1),
 	}
-	nonChainedTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{nonChainedTxIn}, []*domainmessage.TxOut{nonChainedTxOut})
+	nonChainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonChainedTxIn}, []*appmessage.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*domainmessage.MsgTx{nonChainedTx}, false)
+	block3, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{nonChainedTx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -363,23 +363,23 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 
 	createBlock := func(previousBlock *util.Block) *util.Block {
 		// Prepare a transaction that spends the previous block's coinbase transaction
-		var txs []*domainmessage.MsgTx
+		var txs []*appmessage.MsgTx
 		if !previousBlock.IsGenesis() {
 			previousCoinbaseTx := previousBlock.MsgBlock().Transactions[0]
 			signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
 			if err != nil {
 				t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to build signature script: %s", err)
 			}
-			txIn := &domainmessage.TxIn{
-				PreviousOutpoint: domainmessage.Outpoint{TxID: *previousCoinbaseTx.TxID(), Index: 0},
+			txIn := &appmessage.TxIn{
+				PreviousOutpoint: appmessage.Outpoint{TxID: *previousCoinbaseTx.TxID(), Index: 0},
 				SignatureScript:  signatureScript,
-				Sequence:         domainmessage.MaxTxInSequenceNum,
+				Sequence:         appmessage.MaxTxInSequenceNum,
 			}
-			txOut := &domainmessage.TxOut{
+			txOut := &appmessage.TxOut{
 				ScriptPubKey: blockdag.OpTrueScript,
 				Value:        uint64(1),
 			}
-			txs = append(txs, domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut}))
+			txs = append(txs, appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut}))
 		}
 
 		// Create the block
@@ -438,7 +438,7 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("could not register network: %s", err)
 	}
 
-	cbTxs := []*domainmessage.MsgTx{}
+	cbTxs := []*appmessage.MsgTx{}
 	for i := 0; i < 4; i++ {
 		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), nil, false)
 		if err != nil {
@@ -469,30 +469,30 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("Failed to build public key script: %s", err)
 	}
 
-	tx1In := &domainmessage.TxIn{
-		PreviousOutpoint: *domainmessage.NewOutpoint(cbTxs[0].TxID(), 0),
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+	tx1In := &appmessage.TxIn{
+		PreviousOutpoint: *appmessage.NewOutpoint(cbTxs[0].TxID(), 0),
+		Sequence:         appmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
-	tx1Out := &domainmessage.TxOut{
+	tx1Out := &appmessage.TxOut{
 		Value:        cbTxs[0].TxOut[0].Value,
 		ScriptPubKey: scriptPubKey,
 	}
-	tx1 := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{tx1In}, []*domainmessage.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
+	tx1 := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{tx1In}, []*appmessage.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
-	tx2In := &domainmessage.TxIn{
-		PreviousOutpoint: *domainmessage.NewOutpoint(cbTxs[1].TxID(), 0),
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+	tx2In := &appmessage.TxIn{
+		PreviousOutpoint: *appmessage.NewOutpoint(cbTxs[1].TxID(), 0),
+		Sequence:         appmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
-	tx2Out := &domainmessage.TxOut{
+	tx2Out := &appmessage.TxOut{
 		Value:        cbTxs[1].TxOut[0].Value,
 		ScriptPubKey: scriptPubKey,
 	}
-	tx2 := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{tx2In}, []*domainmessage.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
+	tx2 := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{tx2In}, []*appmessage.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*domainmessage.MsgTx{tx1, tx2}, true)
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1, tx2}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -514,20 +514,20 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
 	}
 
-	overflowGasTxIn := &domainmessage.TxIn{
-		PreviousOutpoint: *domainmessage.NewOutpoint(cbTxs[2].TxID(), 0),
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+	overflowGasTxIn := &appmessage.TxIn{
+		PreviousOutpoint: *appmessage.NewOutpoint(cbTxs[2].TxID(), 0),
+		Sequence:         appmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
-	overflowGasTxOut := &domainmessage.TxOut{
+	overflowGasTxOut := &appmessage.TxOut{
 		Value:        cbTxs[2].TxOut[0].Value,
 		ScriptPubKey: scriptPubKey,
 	}
-	overflowGasTx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{overflowGasTxIn}, []*domainmessage.TxOut{overflowGasTxOut},
+	overflowGasTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{overflowGasTxIn}, []*appmessage.TxOut{overflowGasTxOut},
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*domainmessage.MsgTx{tx1, overflowGasTx}, true)
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -549,19 +549,19 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	nonExistentSubnetwork := &subnetworkid.SubnetworkID{123}
-	nonExistentSubnetworkTxIn := &domainmessage.TxIn{
-		PreviousOutpoint: *domainmessage.NewOutpoint(cbTxs[3].TxID(), 0),
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+	nonExistentSubnetworkTxIn := &appmessage.TxIn{
+		PreviousOutpoint: *appmessage.NewOutpoint(cbTxs[3].TxID(), 0),
+		Sequence:         appmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
-	nonExistentSubnetworkTxOut := &domainmessage.TxOut{
+	nonExistentSubnetworkTxOut := &appmessage.TxOut{
 		Value:        cbTxs[3].TxOut[0].Value,
 		ScriptPubKey: scriptPubKey,
 	}
-	nonExistentSubnetworkTx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{nonExistentSubnetworkTxIn},
-		[]*domainmessage.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
+	nonExistentSubnetworkTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonExistentSubnetworkTxIn},
+		[]*appmessage.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*domainmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
+	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -582,7 +582,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*domainmessage.MsgTx{tx1}, true)
+	validBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

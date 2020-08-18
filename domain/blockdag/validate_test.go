@@ -14,8 +14,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -190,8 +190,8 @@ func TestCheckBlockSanity(t *testing.T) {
 			" %v, err %s", ruleErr.ErrorCode, err)
 	}
 
-	var invalidParentsOrderBlock = domainmessage.MsgBlock{
-		Header: domainmessage.BlockHeader{
+	var invalidParentsOrderBlock = appmessage.MsgBlock{
+		Header: appmessage.BlockHeader{
 			Version: 0x10000000,
 			ParentHashes: []*daghash.Hash{
 				{
@@ -229,12 +229,12 @@ func TestCheckBlockSanity(t *testing.T) {
 			Bits:      0x207fffff,
 			Nonce:     0x1,
 		},
-		Transactions: []*domainmessage.MsgTx{
+		Transactions: []*appmessage.MsgTx{
 			{
 				Version: 1,
-				TxIn: []*domainmessage.TxIn{
+				TxIn: []*appmessage.TxIn{
 					{
-						PreviousOutpoint: domainmessage.Outpoint{
+						PreviousOutpoint: appmessage.Outpoint{
 							TxID:  daghash.TxID{},
 							Index: 0xffffffff,
 						},
@@ -246,7 +246,7 @@ func TestCheckBlockSanity(t *testing.T) {
 						Sequence: math.MaxUint64,
 					},
 				},
-				TxOut: []*domainmessage.TxOut{
+				TxOut: []*appmessage.TxOut{
 					{
 						Value: 0x12a05f200, // 5000000000
 						ScriptPubKey: []byte{
@@ -259,9 +259,9 @@ func TestCheckBlockSanity(t *testing.T) {
 			},
 			{
 				Version: 1,
-				TxIn: []*domainmessage.TxIn{
+				TxIn: []*appmessage.TxIn{
 					{
-						PreviousOutpoint: domainmessage.Outpoint{
+						PreviousOutpoint: appmessage.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 								0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -296,7 +296,7 @@ func TestCheckBlockSanity(t *testing.T) {
 						Sequence: math.MaxUint64,
 					},
 				},
-				TxOut: []*domainmessage.TxOut{
+				TxOut: []*appmessage.TxOut{
 					{
 						Value: 0x2123e300, // 556000000
 						ScriptPubKey: []byte{
@@ -329,9 +329,9 @@ func TestCheckBlockSanity(t *testing.T) {
 			},
 			{
 				Version: 1,
-				TxIn: []*domainmessage.TxIn{
+				TxIn: []*appmessage.TxIn{
 					{
-						PreviousOutpoint: domainmessage.Outpoint{
+						PreviousOutpoint: appmessage.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 								0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -365,7 +365,7 @@ func TestCheckBlockSanity(t *testing.T) {
 						Sequence: math.MaxUint64,
 					},
 				},
-				TxOut: []*domainmessage.TxOut{
+				TxOut: []*appmessage.TxOut{
 					{
 						Value: 0xf4240, // 1000000
 						ScriptPubKey: []byte{
@@ -398,9 +398,9 @@ func TestCheckBlockSanity(t *testing.T) {
 			},
 			{
 				Version: 1,
-				TxIn: []*domainmessage.TxIn{
+				TxIn: []*appmessage.TxIn{
 					{
-						PreviousOutpoint: domainmessage.Outpoint{
+						PreviousOutpoint: appmessage.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 								0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -435,7 +435,7 @@ func TestCheckBlockSanity(t *testing.T) {
 						Sequence: math.MaxUint64,
 					},
 				},
-				TxOut: []*domainmessage.TxOut{
+				TxOut: []*appmessage.TxOut{
 					{
 						Value: 0xf4240, // 1000000
 						ScriptPubKey: []byte{
@@ -542,7 +542,7 @@ func TestValidateParents(t *testing.T) {
 	bNode := nodeByMsgBlock(t, dag, b)
 	cNode := nodeByMsgBlock(t, dag, c)
 
-	fakeBlockHeader := &domainmessage.BlockHeader{
+	fakeBlockHeader := &appmessage.BlockHeader{
 		HashMerkleRoot:       &daghash.ZeroHash,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
@@ -575,7 +575,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 		outputValue            uint64
 		nodeSubnetworkID       subnetworkid.SubnetworkID
 		txSubnetworkData       *txSubnetworkData
-		extraModificationsFunc func(*domainmessage.MsgTx)
+		extraModificationsFunc func(*appmessage.MsgTx)
 		expectedErr            error
 	}{
 		{"good one", 1, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
@@ -594,7 +594,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"duplicate inputs", 2, 1, 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
-			func(tx *domainmessage.MsgTx) { tx.TxIn[1].PreviousOutpoint.Index = 0 },
+			func(tx *appmessage.MsgTx) { tx.TxIn[1].PreviousOutpoint.Index = 0 },
 			ruleError(ErrDuplicateTxInputs, "")},
 		{"1 input coinbase",
 			1,
@@ -648,14 +648,14 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"invalid payload hash", 1, 1, 0,
 			subnetworkid.SubnetworkID{123},
 			&txSubnetworkData{&subnetworkid.SubnetworkID{123}, 0, []byte{1}},
-			func(tx *domainmessage.MsgTx) {
+			func(tx *appmessage.MsgTx) {
 				tx.PayloadHash = &daghash.Hash{}
 			},
 			ruleError(ErrInvalidPayloadHash, "")},
 		{"invalid payload hash in native subnetwork", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
-			func(tx *domainmessage.MsgTx) {
+			func(tx *appmessage.MsgTx) {
 				tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
 			},
 			ruleError(ErrInvalidPayloadHash, "")},
@@ -678,8 +678,8 @@ func TestCheckTransactionSanity(t *testing.T) {
 
 // Block100000 defines block 100,000 of the block DAG. It is used to
 // test Block operations.
-var Block100000 = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var Block100000 = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version: 0x10000000,
 		ParentHashes: []*daghash.Hash{
 			{
@@ -712,12 +712,12 @@ var Block100000 = domainmessage.MsgBlock{
 		Bits:           0x207fffff,
 		Nonce:          1,
 	},
-	Transactions: []*domainmessage.MsgTx{
+	Transactions: []*appmessage.MsgTx{
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x9b, 0x22, 0x59, 0x44, 0x66, 0xf0, 0xbe, 0x50,
 							0x7c, 0x1c, 0x8a, 0xf6, 0x06, 0x27, 0xe6, 0x33,
@@ -730,7 +730,7 @@ var Block100000 = domainmessage.MsgBlock{
 					Sequence:        math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					ScriptPubKey: []byte{
@@ -752,9 +752,9 @@ var Block100000 = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 							0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -766,7 +766,7 @@ var Block100000 = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 							0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -782,9 +782,9 @@ var Block100000 = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -819,7 +819,7 @@ var Block100000 = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
 					ScriptPubKey: []byte{
@@ -852,9 +852,9 @@ var Block100000 = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -888,7 +888,7 @@ var Block100000 = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{
@@ -921,9 +921,9 @@ var Block100000 = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -958,7 +958,7 @@ var Block100000 = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{
@@ -980,8 +980,8 @@ var Block100000 = domainmessage.MsgBlock{
 }
 
 // BlockWithWrongTxOrder defines invalid block 100,000 of the block DAG.
-var BlockWithWrongTxOrder = domainmessage.MsgBlock{
-	Header: domainmessage.BlockHeader{
+var BlockWithWrongTxOrder = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
 		Version: 1,
 		ParentHashes: []*daghash.Hash{
 			{
@@ -1019,12 +1019,12 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 		Bits:      0x207fffff,
 		Nonce:     1,
 	},
-	Transactions: []*domainmessage.MsgTx{
+	Transactions: []*appmessage.MsgTx{
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x9b, 0x22, 0x59, 0x44, 0x66, 0xf0, 0xbe, 0x50,
 							0x7c, 0x1c, 0x8a, 0xf6, 0x06, 0x27, 0xe6, 0x33,
@@ -1037,7 +1037,7 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 					Sequence:        math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					ScriptPubKey: []byte{
@@ -1059,9 +1059,9 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 							0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -1073,7 +1073,7 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID{
 							0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 							0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -1089,9 +1089,9 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -1126,7 +1126,7 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
 					ScriptPubKey: []byte{
@@ -1161,9 +1161,9 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -1197,7 +1197,7 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{
@@ -1230,9 +1230,9 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 		},
 		{
 			Version: 1,
-			TxIn: []*domainmessage.TxIn{
+			TxIn: []*appmessage.TxIn{
 				{
-					PreviousOutpoint: domainmessage.Outpoint{
+					PreviousOutpoint: appmessage.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -1267,7 +1267,7 @@ var BlockWithWrongTxOrder = domainmessage.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*domainmessage.TxOut{
+			TxOut: []*appmessage.TxOut{
 				{
 					Value: 0xf4240, // 1000000
 					ScriptPubKey: []byte{

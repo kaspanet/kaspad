@@ -6,8 +6,8 @@ package mempool
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -102,47 +102,47 @@ func TestDust(t *testing.T) {
 
 	tests := []struct {
 		name     string // test description
-		txOut    domainmessage.TxOut
+		txOut    appmessage.TxOut
 		relayFee util.Amount // minimum relay transaction fee.
 		isDust   bool
 	}{
 		{
 			// Any value is allowed with a zero relay fee.
 			"zero value with zero relay fee",
-			domainmessage.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
 			0,
 			false,
 		},
 		{
 			// Zero value is dust with any relay fee"
 			"zero value with very small tx fee",
-			domainmessage.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
 			1,
 			true,
 		},
 		{
 			"38 byte public key script with value 584",
-			domainmessage.TxOut{Value: 584, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: 584, ScriptPubKey: scriptPubKey},
 			1000,
 			true,
 		},
 		{
 			"38 byte public key script with value 585",
-			domainmessage.TxOut{Value: 585, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: 585, ScriptPubKey: scriptPubKey},
 			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max sompi amount is never dust",
-			domainmessage.TxOut{Value: util.MaxSompi, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: util.MaxSompi, ScriptPubKey: scriptPubKey},
 			util.MaxSompi,
 			false,
 		},
 		{
 			// Maximum int64 value causes overflow.
 			"maximum int64 value",
-			domainmessage.TxOut{Value: 1<<63 - 1, ScriptPubKey: scriptPubKey},
+			appmessage.TxOut{Value: 1<<63 - 1, ScriptPubKey: scriptPubKey},
 			1<<63 - 1,
 			true,
 		},
@@ -150,7 +150,7 @@ func TestDust(t *testing.T) {
 			// Unspendable scriptPubKey due to an invalid public key
 			// script.
 			"unspendable scriptPubKey",
-			domainmessage.TxOut{Value: 5000, ScriptPubKey: []byte{0x01}},
+			appmessage.TxOut{Value: 5000, ScriptPubKey: []byte{0x01}},
 			0, // no relay fee
 			true,
 		},
@@ -172,12 +172,12 @@ func TestCheckTransactionStandard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := domainmessage.Outpoint{TxID: *prevOutTxID, Index: 1}
+	dummyPrevOut := appmessage.Outpoint{TxID: *prevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
-	dummyTxIn := domainmessage.TxIn{
+	dummyTxIn := appmessage.TxIn{
 		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+		Sequence:         appmessage.MaxTxInSequenceNum,
 	}
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
@@ -188,45 +188,45 @@ func TestCheckTransactionStandard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
-	dummyTxOut := domainmessage.TxOut{
+	dummyTxOut := appmessage.TxOut{
 		Value:        100000000, // 1 KAS
 		ScriptPubKey: dummyScriptPubKey,
 	}
 
 	tests := []struct {
 		name       string
-		tx         *domainmessage.MsgTx
+		tx         *appmessage.MsgTx
 		height     uint64
 		isStandard bool
 		code       RejectCode
 	}{
 		{
 			name:       "Typical pay-to-pubkey-hash transaction",
-			tx:         domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{&dummyTxOut}),
+			tx:         appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: true,
 		},
 		{
 			name:       "Transaction version too high",
-			tx:         domainmessage.NewNativeMsgTx(domainmessage.TxVersion+1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{&dummyTxOut}),
+			tx:         appmessage.NewNativeMsgTx(appmessage.TxVersion+1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
 		{
 			name: "Transaction is not finalized",
-			tx: domainmessage.NewNativeMsgTxWithLocktime(1, []*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTxWithLocktime(1, []*appmessage.TxIn{{
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript:  dummySigScript,
 				Sequence:         0,
-			}}, []*domainmessage.TxOut{&dummyTxOut}, 300001),
+			}}, []*appmessage.TxOut{&dummyTxOut}, 300001),
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
 		{
 			name: "Transaction size is too large",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{{
 				Value: 0,
 				ScriptPubKey: bytes.Repeat([]byte{0x00},
 					MaxStandardTxSize+1),
@@ -237,31 +237,31 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Signature script size is too large",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: bytes.Repeat([]byte{0x00},
 					maxStandardSigScriptSize+1),
-				Sequence: domainmessage.MaxTxInSequenceNum,
-			}}, []*domainmessage.TxOut{&dummyTxOut}),
+				Sequence: appmessage.MaxTxInSequenceNum,
+			}}, []*appmessage.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
 		{
 			name: "Signature script that does more than push data",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: []byte{
 					txscript.OpCheckSigVerify},
-				Sequence: domainmessage.MaxTxInSequenceNum,
-			}}, []*domainmessage.TxOut{&dummyTxOut}),
+				Sequence: appmessage.MaxTxInSequenceNum,
+			}}, []*appmessage.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
 		{
 			name: "Valid but non standard public key script",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{{
 				Value:        100000000,
 				ScriptPubKey: []byte{txscript.OpTrue},
 			}}),
@@ -271,7 +271,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Dust output",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{{
 				Value:        0,
 				ScriptPubKey: dummyScriptPubKey,
 			}}),
@@ -281,7 +281,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Nulldata transaction",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{&dummyTxIn}, []*domainmessage.TxOut{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{&dummyTxIn}, []*appmessage.TxOut{{
 				Value:        0,
 				ScriptPubKey: []byte{txscript.OpReturn},
 			}}),

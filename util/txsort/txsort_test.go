@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/txsort"
 )
 
@@ -76,7 +76,7 @@ func TestSort(t *testing.T) {
 				test.name, err)
 			continue
 		}
-		var tx domainmessage.MsgTx
+		var tx appmessage.MsgTx
 		err = tx.Deserialize(bytes.NewReader(txBytes))
 		if err != nil {
 			t.Errorf("Deserialize (%s): unexpected error %v",

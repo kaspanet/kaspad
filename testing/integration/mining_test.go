@@ -4,14 +4,14 @@ import (
 	"math/rand"
 	"testing"
 
-	clientpkg "github.com/kaspanet/kaspad/network/rpc/client"
+	clientpkg "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-func solveBlock(block *util.Block) *domainmessage.MsgBlock {
+func solveBlock(block *util.Block) *appmessage.MsgBlock {
 	msgBlock := block.MsgBlock()
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
 	initialNonce := rand.Uint64()

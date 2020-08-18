@@ -12,8 +12,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/kaspanet/kaspad/infrastructure/logs"
 )
 
 // Loggers per subsystem. A single backend logger is created and all subsytem
@@ -26,7 +24,7 @@ import (
 // InitLog.
 var (
 	// BackendLog is the logging backend used to create all subsystem loggers.
-	BackendLog = logs.NewBackend()
+	BackendLog = NewBackend()
 
 	adxrLog = BackendLog.Logger("ADXR")
 	amgrLog = BackendLog.Logger("AMGR")
@@ -114,7 +112,7 @@ var SubsystemTags = struct {
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]*logs.Logger{
+var subsystemLoggers = map[string]*Logger{
 	SubsystemTags.ADXR: adxrLog,
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
@@ -145,14 +143,14 @@ var subsystemLoggers = map[string]*logs.Logger{
 
 // InitLog attaches log file and error log file to the backend log.
 func InitLog(logFile, errLogFile string) {
-	err := BackendLog.AddLogFileWithCustomRotator(logFile, logs.LevelTrace, 100*1024, 4)
+	err := BackendLog.AddLogFileWithCustomRotator(logFile, LevelTrace, 100*1024, 4)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, logs.LevelTrace, err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, LevelTrace, err)
 		os.Exit(1)
 	}
-	err = BackendLog.AddLogFile(errLogFile, logs.LevelWarn)
+	err = BackendLog.AddLogFile(errLogFile, LevelWarn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, logs.LevelWarn, err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, LevelWarn, err)
 		os.Exit(1)
 	}
 }
@@ -168,7 +166,7 @@ func SetLogLevel(subsystemID string, logLevel string) {
 	}
 
 	// Defaults to info if the log level is invalid.
-	level, _ := logs.LevelFromString(logLevel)
+	level, _ := LevelFromString(logLevel)
 	logger.SetLevel(level)
 }
 
@@ -216,7 +214,7 @@ func SupportedSubsystems() []string {
 }
 
 // Get returns a logger of a specific sub system
-func Get(tag string) (logger *logs.Logger, ok bool) {
+func Get(tag string) (logger *Logger, ok bool) {
 	logger, ok = subsystemLoggers[tag]
 	return
 }

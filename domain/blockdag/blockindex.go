@@ -6,7 +6,7 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"sync"
 

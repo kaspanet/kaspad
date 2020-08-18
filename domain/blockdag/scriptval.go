@@ -9,15 +9,15 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
 type txValidateItem struct {
 	txInIndex int
-	txIn      *domainmessage.TxIn
+	txIn      *appmessage.TxIn
 	tx        *util.Tx
 }
 

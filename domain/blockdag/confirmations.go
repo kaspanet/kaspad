@@ -1,7 +1,7 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -38,7 +38,7 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 // in the DAG's UTXO set.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) UTXOConfirmations(outpoint *domainmessage.Outpoint) (uint64, bool) {
+func (dag *BlockDAG) UTXOConfirmations(outpoint *appmessage.Outpoint) (uint64, bool) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
