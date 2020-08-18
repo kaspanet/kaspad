@@ -92,7 +92,6 @@ func (dag *BlockDAG) getBluesFeeData(node *blockNode) (map[daghash.Hash]compactF
 }
 
 // The following functions deal with building and validating the coinbase transaction
-
 func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
 	if node.isGenesis() {
 		return nil

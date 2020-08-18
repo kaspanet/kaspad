@@ -170,8 +170,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	dag.index.SetVerificationFlag(newNode, statusUTXONotVerified)
-
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return dag.handleConnectBlockError(err, newNode)
@@ -244,6 +242,18 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 
 	if err := dag.validateGasLimit(block); err != nil {
 		return nil, err
+	}
+
+	isViolatingSubjectiveFinality, err := node.isViolatingSubjectiveFinality()
+	if err != nil {
+		return nil, err
+	}
+	if isViolatingSubjectiveFinality {
+		dag.index.SetVerificationFlag(node, statusViolatedSubjectiveFinality)
+	}
+
+	if node.less(dag.selectedTip()) {
+		dag.index.SetVerificationFlag(node, statusUTXONotVerified)
 	}
 
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
