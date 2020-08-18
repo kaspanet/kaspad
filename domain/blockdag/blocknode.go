@@ -86,7 +86,7 @@ type blockNode struct {
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
 
-	// blues are all red blocks in this block's worldview that are in its selected parent anticone
+	// reds are all red blocks in this block's worldview that are in its selected parent anticone
 	reds []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
@@ -256,23 +256,18 @@ func (node *blockNode) time() mstime.Time {
 }
 
 func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
-	if node.isGenesis() {
-		return node
-	}
+	current := node
 
 	requiredBlueScore := node.blueScore - depth
-	previous := node
-	current := node.selectedParent
 
-	for current.blueScore > requiredBlueScore {
+	for current.blueScore >= requiredBlueScore {
 		if current.isGenesis() {
 			return current
 		}
-		previous = current
 		current = current.selectedParent
 	}
 
-	return previous
+	return current
 }
 
 func (node *blockNode) finalityPoint() *blockNode {
