@@ -60,6 +60,16 @@ func (status blockStatus) KnownInvalid() bool {
 	return status&(statusValidateFailed|statusInvalidAncestor) != 0
 }
 
+// ManuallyRejected returns true for a block that was manually rejected
+func (status blockStatus) ManuallyRejected() bool {
+	return status&(statusManuallyRejected) != 0
+}
+
+// ViolatedSubjectiveFinality returns true for a block that was found as violating subjective finality
+func (status blockStatus) ViolatedSubjectiveFinality() bool {
+	return status&(statusViolatedSubjectiveFinality) != 0
+}
+
 // blockNode represents a block within the block DAG. The DAG is stored into
 // the block database.
 type blockNode struct {
@@ -320,7 +330,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 
 func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	for parent := range node.parents {
-		if parent.status == statusViolatedSubjectiveFinality {
+		if parent.status.ViolatedSubjectiveFinality() {
 			return true, nil
 		}
 	}
