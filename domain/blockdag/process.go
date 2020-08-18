@@ -249,11 +249,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 	if isViolatingSubjectiveFinality {
-		dag.index.SetVerificationFlag(node, statusViolatedSubjectiveFinality)
+		dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
 	}
 
 	if node.less(dag.selectedTip()) {
-		dag.index.SetVerificationFlag(node, statusUTXONotVerified)
+		dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
 	}
 
 	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
@@ -340,7 +340,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 		return nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
-	dag.index.SetStatusFlags(node, statusValid)
+	dag.index.SetBlockNodeStatus(node, statusValid)
 
 	return virtualUTXODiff, chainUpdates, nil
 }
@@ -431,7 +431,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 
 func (dag *BlockDAG) handleConnectBlockError(err error, newNode *blockNode) error {
 	if errors.As(err, &RuleError{}) {
-		dag.index.SetStatusFlags(newNode, statusValidateFailed)
+		dag.index.SetBlockNodeStatus(newNode, statusValidateFailed)
 
 		dbTx, err := dag.databaseContext.NewTx()
 		if err != nil {

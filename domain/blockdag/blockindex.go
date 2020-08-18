@@ -89,38 +89,13 @@ func (bi *blockIndex) NodeStatus(node *blockNode) blockStatus {
 	return status
 }
 
-// SetVerificationFlag set's the block's advanced verification flag.
-// It first unsets from the block's status any verification flags, then sets `verificationFlag`
+// SetBlockNodeStatus changes the status of a blockNode
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) SetVerificationFlag(node *blockNode, verificationFlag blockStatus) {
+func (bi *blockIndex) SetBlockNodeStatus(node *blockNode, newStatus blockStatus) {
 	bi.Lock()
 	defer bi.Unlock()
-	node.status &^= statusAllVerificationFlags
-	node.status |= verificationFlag
-	bi.dirty[node] = struct{}{}
-}
-
-// SetStatusFlags flips the provided status flags on the block node to on,
-// regardless of whether they were on or off previously. This does not unset any
-// flags currently on.
-//
-// This function is safe for concurrent access.
-func (bi *blockIndex) SetStatusFlags(node *blockNode, flags blockStatus) {
-	bi.Lock()
-	defer bi.Unlock()
-	node.status |= flags
-	bi.dirty[node] = struct{}{}
-}
-
-// UnsetStatusFlags flips the provided status flags on the block node to off,
-// regardless of whether they were on or off previously.
-//
-// This function is safe for concurrent access.
-func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
-	bi.Lock()
-	defer bi.Unlock()
-	node.status &^= flags
+	node.status = newStatus
 	bi.dirty[node] = struct{}{}
 }
 

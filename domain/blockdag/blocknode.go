@@ -16,12 +16,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// blockStatus is a bit field representing the validation state of the block.
+// blockStatus is representing the validation state of the block.
 type blockStatus byte
 
 const (
 	// statusDataStored indicates that the block's payload is stored on disk.
-	statusDataStored blockStatus = 1 << iota
+	statusDataStored blockStatus = iota
 
 	// statusValid indicates that the block has been fully validated.
 	statusValid
@@ -46,17 +46,10 @@ const (
 	statusDisqualifiedFromChain
 )
 
-// statusAllVerificationFlags is a set of status flags that are mutually exclusive in regards to the block's
-// advenced verification process
-const statusAllVerificationFlags = statusUTXONotVerified |
-	statusViolatedSubjectiveFinality |
-	statusManuallyRejected |
-	statusDisqualifiedFromChain
-
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
-	return status&statusValid != 0
+	return status == statusValid
 }
 
 // KnownInvalid returns whether the block is known to be invalid. This may be
@@ -64,12 +57,7 @@ func (status blockStatus) KnownValid() bool {
 // invalid. This will return false for invalid blocks that have not been proven
 // invalid yet.
 func (status blockStatus) KnownInvalid() bool {
-	return status&(statusValidateFailed|statusInvalidAncestor) != 0
-}
-
-// VerificationFlag returns advanced verification status of a block
-func (status blockStatus) VerificationFlag() blockStatus {
-	return status & statusAllVerificationFlags
+	return status == statusValidateFailed || status == statusInvalidAncestor
 }
 
 // blockNode represents a block within the block DAG. The DAG is stored into
@@ -332,7 +320,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 
 func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	for parent := range node.parents {
-		if parent.status.VerificationFlag() == statusViolatedSubjectiveFinality {
+		if parent.status == statusViolatedSubjectiveFinality {
 			return true, nil
 		}
 	}
