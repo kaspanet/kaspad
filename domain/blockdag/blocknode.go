@@ -344,6 +344,7 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 
 func (node *blockNode) checkMergeLimit() error {
 	mergeSetSize := len(node.reds) + len(node.blues)
+
 	if mergeSetSize > mergeSetSizeLimit {
 		return ruleError(ErrViolatingMergeLimit,
 			fmt.Sprintf("The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit))
