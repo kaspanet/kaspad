@@ -19,6 +19,7 @@ type testBlockData struct {
 	expectedScore          uint64
 	expectedSelectedParent string
 	expectedBlues          []string
+	expectedReds           []string
 }
 
 // TestGHOSTDAG iterates over several dag simulations, and checks
@@ -42,6 +43,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"B"},
@@ -49,6 +51,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          2,
 					expectedSelectedParent: "B",
 					expectedBlues:          []string{"B"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"A"},
@@ -56,6 +59,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"C", "D"},
@@ -63,6 +67,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          4,
 					expectedSelectedParent: "C",
 					expectedBlues:          []string{"C", "D"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"A"},
@@ -70,6 +75,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"F"},
@@ -77,6 +83,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          2,
 					expectedSelectedParent: "F",
 					expectedBlues:          []string{"F"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"A"},
@@ -84,6 +91,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"A"},
@@ -91,6 +99,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"E", "G"},
@@ -98,6 +107,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          5,
 					expectedSelectedParent: "E",
 					expectedBlues:          []string{"E"},
+					expectedReds:           []string{"F", "G"},
 				},
 				{
 					parents:                []string{"J"},
@@ -105,6 +115,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          6,
 					expectedSelectedParent: "J",
 					expectedBlues:          []string{"J"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"I", "K"},
@@ -112,6 +123,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          7,
 					expectedSelectedParent: "K",
 					expectedBlues:          []string{"K"},
+					expectedReds:           []string{"I"},
 				},
 				{
 					parents:                []string{"L"},
@@ -119,6 +131,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          8,
 					expectedSelectedParent: "L",
 					expectedBlues:          []string{"L"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"M"},
@@ -126,6 +139,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          9,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"M"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"M"},
@@ -133,6 +147,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          9,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"M"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"M"},
@@ -140,6 +155,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          9,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"M"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"M"},
@@ -147,6 +163,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          9,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"M"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"M"},
@@ -154,6 +171,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          9,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"M"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"R"},
@@ -161,6 +179,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          10,
 					expectedSelectedParent: "R",
 					expectedBlues:          []string{"R"},
+					expectedReds:           []string{},
 				},
 				{
 					parents:                []string{"N", "O", "P", "Q", "S"},
@@ -168,6 +187,7 @@ func TestGHOSTDAG(t *testing.T) {
 					expectedScore:          13,
 					expectedSelectedParent: "S",
 					expectedBlues:          []string{"S", "Q", "N"},
+					expectedReds:           []string{"P", "O"},
 				},
 			},
 		},
@@ -225,9 +245,16 @@ func TestGHOSTDAG(t *testing.T) {
 				idByBlockMap[node] = blockData.id
 
 				bluesIDs := make([]string, 0, len(node.blues))
+				redsIDs := make([]string, 0, len(node.reds))
+
 				for _, blue := range node.blues {
 					bluesIDs = append(bluesIDs, idByBlockMap[blue])
 				}
+
+				for _, red := range node.reds {
+					redsIDs = append(redsIDs, idByBlockMap[red])
+				}
+
 				selectedParentID := idByBlockMap[node.selectedParent]
 				fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
 					bluesIDs, selectedParentID, node.blueScore)
@@ -242,6 +269,10 @@ func TestGHOSTDAG(t *testing.T) {
 				if !reflect.DeepEqual(blockData.expectedBlues, bluesIDs) {
 					t.Errorf("Test %d: Block %v expected to have blues %v but got %v (fulldata: %v)",
 						i, blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
+				}
+				if !reflect.DeepEqual(blockData.expectedReds, redsIDs) {
+					t.Errorf("Test %d: Block %v expected to have reds %v but got %v (fulldata: %v)",
+						i, blockData.id, blockData.expectedReds, redsIDs, fullDataStr)
 				}
 			}
 

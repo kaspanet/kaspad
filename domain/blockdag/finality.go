@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -56,14 +57,14 @@ func (dag *BlockDAG) updateFinalityPoint() {
 	}
 	// We are looking for a new finality point only if the new block's finality score is higher
 	// by 2 than the existing finality point's
-	if selectedTip.finalityScore(dag) < dag.lastFinalityPoint.finalityScore(dag)+2 {
+	if selectedTip.finalityScore() < dag.lastFinalityPoint.finalityScore()+2 {
 		return
 	}
 
 	var currentNode *blockNode
 	for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
 		// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
-		if currentNode.selectedParent.finalityScore(dag) == dag.lastFinalityPoint.finalityScore(dag) {
+		if currentNode.selectedParent.finalityScore() == dag.lastFinalityPoint.finalityScore() {
 			break
 		}
 	}

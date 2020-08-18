@@ -488,7 +488,7 @@ func TestPastMedianTime(t *testing.T) {
 	node := newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag))
+		tip.PastMedianTime())
 
 	header := node.Header()
 	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
@@ -501,7 +501,7 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag).Add(time.Second))
+		tip.PastMedianTime().Add(time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
@@ -514,7 +514,7 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		0,
-		tip.PastMedianTime(dag).Add(-time.Second))
+		tip.PastMedianTime().Add(-time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)

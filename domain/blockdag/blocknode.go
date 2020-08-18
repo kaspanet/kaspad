@@ -36,8 +36,8 @@ const (
 	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
 	statusUTXONotVerified
 
-	// statusViolatedFinality indicates that the block violated finality.
-	statusViolatedFinality
+	// statusViolatedSubjectiveFinality indicates that the block violated subjective finality.
+	statusViolatedSubjectiveFinality
 
 	// statusManuallyRejected indicates the the block was manually rejected.
 	statusManuallyRejected
@@ -70,6 +70,9 @@ type blockNode struct {
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
+	// dag is the blockDAG in which this node resides
+	dag *BlockDAG
+
 	// parents is the parent blocks for this node.
 	parents blockSet
 
@@ -82,6 +85,9 @@ type blockNode struct {
 
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
+
+	// reds are all red blocks in this block's worldview that are in its selected parent anticone
+	reds []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
@@ -120,6 +126,7 @@ type blockNode struct {
 // This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *domainmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
+		dag:                dag,
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
@@ -217,8 +224,8 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) PastMedianTime(dag *BlockDAG) mstime.Time {
-	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
+func (node *blockNode) PastMedianTime() mstime.Time {
+	window := blueBlockWindow(node, 2*node.dag.TimestampDeviationTolerance-1)
 	medianTimestamp, err := window.medianTimestamp()
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
@@ -235,8 +242,8 @@ func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
-func (node *blockNode) finalityScore(dag *BlockDAG) uint64 {
-	return node.blueScore / uint64(dag.FinalityInterval())
+func (node *blockNode) finalityScore() uint64 {
+	return node.blueScore / node.dag.FinalityInterval()
 }
 
 // String returns a string that contains the block hash.
@@ -246,4 +253,116 @@ func (node blockNode) String() string {
 
 func (node *blockNode) time() mstime.Time {
 	return mstime.UnixMilliseconds(node.timestamp)
+}
+
+func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
+	current := node
+
+	requiredBlueScore := node.blueScore - depth
+
+	for current.blueScore >= requiredBlueScore {
+		if current.isGenesis() {
+			return current
+		}
+		current = current.selectedParent
+	}
+
+	return current
+}
+
+func (node *blockNode) finalityPoint() *blockNode {
+	return node.blockAtDepth(node.dag.FinalityInterval())
+}
+
+func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (bool, error) {
+	finalityPoint := node.finalityPoint()
+	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
+}
+
+func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
+	nonFinalityViolatingBlues := []*blockNode{}
+
+	for _, blueNode := range node.blues {
+		notViolatingFinality, err := node.hasFinalityPointInOthersSelectedChain(blueNode)
+		if err != nil {
+			return nil, err
+		}
+		if notViolatingFinality {
+			nonFinalityViolatingBlues = append(nonFinalityViolatingBlues, blueNode)
+		}
+	}
+
+	return nonFinalityViolatingBlues, nil
+}
+
+func (node *blockNode) checkObjectiveFinality() error {
+	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
+	if err != nil {
+		return err
+	}
+
+	finalityPoint := node.finalityPoint()
+	for _, red := range node.reds {
+		doesRedHaveFinalityPointInPast, err := node.dag.isInPast(finalityPoint, red)
+		if err != nil {
+			return err
+		}
+
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := node.dag.isInPastOfAny(red, nonFinalityViolatingBlues)
+		if err != nil {
+			return err
+		}
+
+		if !doesRedHaveFinalityPointInPast && !isRedInPastOfAnyNonFinalityViolatingBlue {
+			return ruleError(ErrViolatingObjectiveFinality, "block is violating objective finality")
+		}
+	}
+
+	return nil
+}
+
+func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
+	for parent := range node.parents {
+		if parent.status == statusViolatedSubjectiveFinality {
+			return true, nil
+		}
+	}
+
+	if node.dag.virtual.less(node) {
+		isVirtualFinalityPointInNodesSelectedChain, err :=
+			node.dag.isInSelectedParentChainOf(node.dag.virtual.finalityPoint(), node)
+		if err != nil {
+			return false, err
+		}
+		if !isVirtualFinalityPointInNodesSelectedChain {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (node *blockNode) checkMergeLimit() error {
+	mergeSetSize := len(node.reds) + len(node.blues)
+
+	if mergeSetSize > mergeSetSizeLimit {
+		return ruleError(ErrViolatingMergeLimit,
+			fmt.Sprintf("The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit))
+	}
+
+	return nil
+}
+
+func (node *blockNode) checkDAGRelations() error {
+	err := node.checkMergeLimit()
+	if err != nil {
+		return err
+	}
+
+	err = node.checkObjectiveFinality()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
