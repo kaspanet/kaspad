@@ -360,3 +360,27 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 
 	return false, nil
 }
+
+func (node *blockNode) checkMergeLimit() error {
+	mergeSetSize := len(node.reds) + len(node.blues)
+	if mergeSetSize > mergeSetSizeLimit {
+		return ruleError(ErrViolatingMergeLimit,
+			fmt.Sprintf("The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit))
+	}
+
+	return nil
+}
+
+func (node *blockNode) checkDAGRelations() error {
+	err := node.checkMergeLimit()
+	if err != nil {
+		return err
+	}
+
+	err = node.checkObjectiveFinality()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
