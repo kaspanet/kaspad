@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -79,38 +80,50 @@ func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.
 	return nil
 }
 
+type utxoVerificationOutput struct {
+	newBlockUTXO      UTXOSet
+	txsAcceptanceData MultiBlockTxsAcceptanceData
+	newBlockFeeData   compactFeeData
+	newBlockMultiset  *secp256k1.MultiSet
+	virtualUTXODiff   *UTXODiff
+}
+
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data, the compactFeeData
 // for the new block and its multiset.
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
+	*utxoVerificationOutput, error) {
 
 	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	err = node.validateUTXOCommitment(multiset)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	return pastUTXO, txsAcceptanceData, feeData, multiset, nil
+	return &utxoVerificationOutput{
+		newBlockUTXO:      pastUTXO,
+		txsAcceptanceData: txsAcceptanceData,
+		newBlockFeeData:   feeData,
+		newBlockMultiset:  multiset}, nil
 }
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
@@ -252,13 +265,6 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	}
 
 	return nil
-}
-
-// updateParents adds this block to the children sets of its parents
-// and updates the diff of any parent whose DiffChild is this block
-func (node *blockNode) updateParents(dag *BlockDAG, newBlockUTXO UTXOSet) error {
-	node.updateParentsChildren()
-	return node.updateParentsDiffs(dag, newBlockUTXO)
 }
 
 // updateParentsDiffs updates the diff of any parent whose DiffChild is this block

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -252,23 +251,28 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
 	}
 
-	if node.less(dag.selectedTip()) {
+	isNewSelectedTip := node.less(dag.selectedTip())
+	if !isNewSelectedTip {
 		dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
 	}
 
-	newBlockPastUTXO, txsAcceptanceData, newBlockFeeData, newBlockMultiSet, err :=
-		node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
-	if err != nil {
-		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
+	var utxoVerificationData *utxoVerificationOutput
+	if isNewSelectedTip && !isViolatingSubjectiveFinality {
+		utxoVerificationData, err =
+			node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
+		if err != nil {
+			return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
+		}
+
+		err = node.validateCoinbaseTransaction(dag, block, utxoVerificationData.txsAcceptanceData)
+		if err != nil {
+			return nil, err
+		}
+
+		dag.index.SetBlockNodeStatus(node, statusValid)
 	}
 
-	err = node.validateCoinbaseTransaction(dag, block, txsAcceptanceData)
-	if err != nil {
-		return nil, err
-	}
-
-	virtualUTXODiff, chainUpdates, err :=
-		dag.applyDAGChanges(node, newBlockPastUTXO, newBlockMultiSet, selectedParentAnticone)
+	chainUpdates, err := dag.applyDAGChanges(node, utxoVerificationData, selectedParentAnticone)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -277,7 +281,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		panic(err)
 	}
 
-	err = dag.saveChangesFromBlock(block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(block, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -301,52 +305,63 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
-	newBlockMultiset *secp256k1.MultiSet, selectedParentAnticone []*blockNode) (
-	virtualUTXODiff *UTXODiff, chainUpdates *chainUpdates, err error) {
+func (dag *BlockDAG) applyDAGChanges(node *blockNode,
+	utxoVerificationData *utxoVerificationOutput, selectedParentAnticone []*blockNode) (
+	chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability tree
 	err = dag.reachabilityTree.addBlock(node, selectedParentAnticone)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed adding block to the reachability tree")
+		return nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
-	dag.multisetStore.setMultiset(node, newBlockMultiset)
-
-	if err = node.updateParents(dag, newBlockPastUTXO); err != nil {
-		return nil, nil, errors.Wrapf(err, "failed updating parents of %s", node)
-	}
+	node.updateParentsChildren()
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
 
+	if utxoVerificationData != nil {
+		err := dag.applyUTXOSetChange(node, utxoVerificationData)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return chainUpdates, nil
+}
+
+func (dag *BlockDAG) applyUTXOSetChange(node *blockNode, utxoVerificationData *utxoVerificationOutput) error {
+	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
+
+	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockUTXO); err != nil {
+		return errors.Wrapf(err, "failed updating parents of %s", node)
+	}
+
 	// Build a UTXO set for the new virtual block
 	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not restore past UTXO for virtual")
+		return errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed updating the tips' UTXO")
+		return errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	virtualUTXODiff = diffSet.UTXODiff
+	utxoVerificationData.virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed melding the virtual UTXO")
+		return errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
-	dag.index.SetBlockNodeStatus(node, statusValid)
-
-	return virtualUTXODiff, chainUpdates, nil
+	return nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
+func (dag *BlockDAG) saveChangesFromBlock(block *util.Block,
+	utxoVerificationData *utxoVerificationOutput) error {
 
 	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
@@ -384,13 +399,6 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	// Update the UTXO set using the diffSet that was melded into the
-	// full UTXO set.
-	err = updateUTXOSet(dbTx, virtualUTXODiff)
-	if err != nil {
-		return err
-	}
-
 	// Scan all accepted transactions and register any subnetwork registry
 	// transaction. If any subnetwork registry transaction is not well-formed,
 	// fail the entire block.
@@ -399,20 +407,11 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 		return err
 	}
 
-	// Allow the index manager to call each of the currently active
-	// optional indexes with the block being connected so they can
-	// update themselves accordingly.
-	if dag.indexManager != nil {
-		err := dag.indexManager.ConnectBlock(dbTx, block.Hash(), txsAcceptanceData)
-		if err != nil {
-			return err
+	if utxoVerificationData != nil {
+		err2 := dag.saveUTXOChangesFromBlock(block, utxoVerificationData, dbTx)
+		if err2 != nil {
+			return err2
 		}
-	}
-
-	// Apply the fee data into the database
-	err = dbaccess.StoreFeeData(dbTx, block.Hash(), feeData)
-	if err != nil {
-		return err
 	}
 
 	err = dbTx.Commit()
@@ -426,6 +425,34 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	dag.reachabilityTree.store.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
 
+	return nil
+}
+
+func (dag *BlockDAG) saveUTXOChangesFromBlock(
+	block *util.Block, utxoVerificationData *utxoVerificationOutput, dbTx *dbaccess.TxContext) error {
+
+	// Update the UTXO set using the diffSet that was melded into the
+	// full UTXO set.
+	err := updateUTXOSet(dbTx, utxoVerificationData.virtualUTXODiff)
+	if err != nil {
+		return err
+	}
+
+	// Allow the index manager to call each of the currently active
+	// optional indexes with the block being connected so they can
+	// update themselves accordingly.
+	if dag.indexManager != nil {
+		err := dag.indexManager.ConnectBlock(dbTx, block.Hash(), utxoVerificationData.txsAcceptanceData)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Apply the fee data into the database
+	err = dbaccess.StoreFeeData(dbTx, block.Hash(), utxoVerificationData.newBlockFeeData)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
