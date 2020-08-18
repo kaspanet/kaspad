@@ -1,10 +1,11 @@
 package standalone
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/util/mstime"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
