@@ -736,7 +736,7 @@ func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, par
 	}
 
 	for parent := range parents {
-		if parent.status.ManuallyRejected() {
+		if parent.status.VerificationFlag() == statusManuallyRejected {
 			return ruleError(ErrTooManyParents,
 				fmt.Sprintf("block %s points to %s which was manually rejected",
 					blockHeader.BlockHash(), parent.hash))

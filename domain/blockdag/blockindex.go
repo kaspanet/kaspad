@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/util"
-	"sync"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -86,6 +87,18 @@ func (bi *blockIndex) NodeStatus(node *blockNode) blockStatus {
 	defer bi.RUnlock()
 	status := node.status
 	return status
+}
+
+// SetVerificationFlag set's the block's advanced verification flag.
+// It first unsets from the block's status any verification flags, then sets `verificationFlag`
+//
+// This function is safe for concurrent access.
+func (bi *blockIndex) SetVerificationFlag(node *blockNode, verificationFlag blockStatus) {
+	bi.Lock()
+	defer bi.Unlock()
+	node.status &^= statusAllVerificationFlags
+	node.status |= verificationFlag
+	bi.dirty[node] = struct{}{}
 }
 
 // SetStatusFlags flips the provided status flags on the block node to on,

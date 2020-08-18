@@ -46,6 +46,13 @@ const (
 	statusDisqualifiedFromChain
 )
 
+// statusAllVerificationFlags is a set of status flags that are mutually exclusive in regards to the block's
+// advenced verification process
+const statusAllVerificationFlags = statusUTXONotVerified |
+	statusViolatedSubjectiveFinality |
+	statusManuallyRejected |
+	statusDisqualifiedFromChain
+
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
@@ -60,14 +67,9 @@ func (status blockStatus) KnownInvalid() bool {
 	return status&(statusValidateFailed|statusInvalidAncestor) != 0
 }
 
-// ManuallyRejected returns true for a block that was manually rejected
-func (status blockStatus) ManuallyRejected() bool {
-	return status&(statusManuallyRejected) != 0
-}
-
-// ViolatedSubjectiveFinality returns true for a block that was found as violating subjective finality
-func (status blockStatus) ViolatedSubjectiveFinality() bool {
-	return status&(statusViolatedSubjectiveFinality) != 0
+// VerificationFlag returns advanced verification status of a block
+func (status blockStatus) VerificationFlag() blockStatus {
+	return status & statusAllVerificationFlags
 }
 
 // blockNode represents a block within the block DAG. The DAG is stored into
@@ -330,7 +332,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 
 func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	for parent := range node.parents {
-		if parent.status.ViolatedSubjectiveFinality() {
+		if parent.status.VerificationFlag() == statusViolatedSubjectiveFinality {
 			return true, nil
 		}
 	}

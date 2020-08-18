@@ -170,6 +170,8 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
+	dag.index.SetVerificationFlag(newNode, statusUTXONotVerified)
+
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return dag.handleConnectBlockError(err, newNode)
