@@ -349,17 +349,3 @@ func (node *blockNode) checkMergeLimit() error {
 
 	return nil
 }
-
-func (node *blockNode) checkDAGRelations() error {
-	err := node.checkMergeLimit()
-	if err != nil {
-		return err
-	}
-
-	err = node.checkObjectiveFinality()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

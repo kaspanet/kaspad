@@ -800,6 +800,20 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 	return nil
 }
 
+func (node *blockNode) checkDAGRelations() error {
+	err := node.checkMergeLimit()
+	if err != nil {
+		return err
+	}
+
+	err = node.checkObjectiveFinality()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (dag *BlockDAG) handleLookupParentNodesError(block *util.Block, err error) error {
 	var ruleErr RuleError
 	if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {

@@ -165,6 +165,11 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
+	err = newNode.checkDAGRelations()
+	if err != nil {
+		return err
+	}
+
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return dag.handleConnectBlockError(err, newNode)
