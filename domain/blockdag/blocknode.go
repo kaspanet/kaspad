@@ -115,9 +115,6 @@ type blockNode struct {
 	// only be accessed using the concurrent-safe NodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
-
-	// isFinalized determines whether the node is below the finality point.
-	isFinalized bool
 }
 
 // newBlockNode returns a new block node for the given block header and parents, and the

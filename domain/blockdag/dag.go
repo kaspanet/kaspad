@@ -88,8 +88,6 @@ type BlockDAG struct {
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
-	lastFinalityPoint *blockNode
-
 	utxoDiffStore *utxoDiffStore
 	multisetStore *multisetStore
 

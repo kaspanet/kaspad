@@ -2,12 +2,13 @@ package blockdag
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // chainUpdates represents the updates made to the selected parent chain after
@@ -234,10 +235,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
-	if err = dag.checkFinalityViolation(node); err != nil {
-		return nil, err
-	}
-
 	if err := dag.validateGasLimit(block); err != nil {
 		return nil, err
 	}
@@ -328,9 +325,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, newBlockPastUTXO UTXOSet,
 
 	dag.index.SetStatusFlags(node, statusValid)
 
-	// And now we can update the finality point of the DAG (if required)
-	dag.updateFinalityPoint()
-
 	return virtualUTXODiff, chainUpdates, nil
 }
 
@@ -366,7 +360,6 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, virtualUTXODiff *UT
 	// Update DAG state.
 	state := &dagState{
 		TipHashes:         dag.TipHashes(),
-		LastFinalityPoint: dag.lastFinalityPoint.hash,
 		LocalSubnetworkID: dag.subnetworkID,
 	}
 	err = saveDAGState(dbTx, state)
