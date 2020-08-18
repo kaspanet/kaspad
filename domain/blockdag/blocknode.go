@@ -295,20 +295,6 @@ func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
 	return nonFinalityViolatingBlues, nil
 }
 
-func (node *blockNode) isInPastOfAny(blocks []*blockNode) (bool, error) {
-	for _, block := range blocks {
-		isInPast, err := node.dag.isInPast(node, block)
-		if err != nil {
-			return false, err
-		}
-		if isInPast {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 func (node *blockNode) checkObjectiveFinality() error {
 	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
 	if err != nil {
@@ -322,7 +308,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 			return err
 		}
 
-		isRedInPastOfAnyNonFinalityViolatingBlue, err := red.isInPastOfAny(nonFinalityViolatingBlues)
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := node.dag.isInPastOfAny(red, nonFinalityViolatingBlues)
 		if err != nil {
 			return err
 		}

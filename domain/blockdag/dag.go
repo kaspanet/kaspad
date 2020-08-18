@@ -346,6 +346,20 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
 }
 
+func (dag *BlockDAG) isInPastOfAny(this *blockNode, others []*blockNode) (bool, error) {
+	for _, other := range others {
+		isInPast, err := dag.isInPast(this, other)
+		if err != nil {
+			return false, err
+		}
+		if isInPast {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
