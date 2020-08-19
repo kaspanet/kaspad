@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
+	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
@@ -30,6 +31,12 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {
+		// If the disconnection didn't came because of a network error and not because of the application layer, we
+		// need to close the router as well.
+		if atomic.AddUint32(&netConnection.isConnected, 1) == 1 {
+			netConnection.router.Close()
+		}
+
 		close(netConnection.invalidMessageChan)
 		netConnection.onDisconnectedHandler()
 	})
@@ -90,7 +97,9 @@ func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.On
 
 // Disconnect disconnects the given connection
 func (c *NetConnection) Disconnect() {
-	c.router.Close()
+	if atomic.AddUint32(&c.isConnected, 1) == 1 {
+		c.router.Close()
+	}
 }
 
 // DequeueInvalidMessage dequeues the next invalid message
