@@ -365,8 +365,9 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*
 	return chainUpdates, nil
 }
 
-func (dag *BlockDAG) applyUTXOSetChange(node *blockNode, utxoVerificationData *utxoVerificationOutput) (
+func (dag *BlockDAG) applyUTXOSetChanges(node *blockNode, utxoVerificationData *utxoVerificationOutput) (
 	virtualUTXODiff *UTXODiff, err error) {
+
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
 
 	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockUTXO); err != nil {
