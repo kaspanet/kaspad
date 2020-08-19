@@ -33,6 +33,14 @@ func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
 	return nil
 }
 
+// RemoveFromPeers remove this peer from the peers list.
+func (f *FlowContext) RemoveFromPeers(peer *peerpkg.Peer) {
+	f.peersMutex.Lock()
+	defer f.peersMutex.Unlock()
+
+	delete(f.peers, peer.ID())
+}
+
 // readyPeerConnections returns the NetConnections of all the ready peers.
 func (f *FlowContext) readyPeerConnections() []*netadapter.NetConnection {
 	f.peersMutex.RLock()

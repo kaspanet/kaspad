@@ -68,6 +68,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			m.handleError(err, netConnection, router.OutgoingRoute())
 			return
 		}
+		defer m.context.RemoveFromPeers(peer)
 
 		removeHandshakeRoutes(router)
 
