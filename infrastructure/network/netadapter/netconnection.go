@@ -31,7 +31,7 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {
-		// If the disconnection didn't came because of a network error and not because of the application layer, we
+		// If the disconnection came because of a network error and not because of the application layer, we
 		// need to close the router as well.
 		if atomic.AddUint32(&netConnection.isConnected, 1) == 1 {
 			netConnection.router.Close()
