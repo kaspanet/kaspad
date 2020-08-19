@@ -30,7 +30,6 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {
-		router.Close()
 		close(netConnection.invalidMessageChan)
 		netConnection.onDisconnectedHandler()
 	})
@@ -91,7 +90,7 @@ func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.On
 
 // Disconnect disconnects the given connection
 func (c *NetConnection) Disconnect() {
-	c.connection.Disconnect()
+	c.router.Close()
 }
 
 // DequeueInvalidMessage dequeues the next invalid message
