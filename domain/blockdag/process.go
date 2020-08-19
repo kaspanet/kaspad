@@ -264,9 +264,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	if isNewSelectedTip && !isViolatingSubjectiveFinality {
-		updates, err2, done := dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
-		if done {
-			return updates, err2
+		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -294,46 +294,60 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(
-	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) (*chainUpdates, error, bool) {
+	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+
+	err := dag.resolveSelectedParentStatus(node.selectedParent, flags, dbTx)
+	if err != nil {
+		return err
+	}
+
+	if dag.index.NodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
+		dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
+		return nil
+	}
 
 	utxoVerificationData, err :=
 		node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
 	if err != nil {
-		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node), true
+		return errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
 	err = node.validateCoinbaseTransaction(dag, block, utxoVerificationData.txsAcceptanceData)
 	if err != nil {
-		return nil, err, true
+		return err
 	}
 
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
 	err = dag.applyUTXOSetChange(node, utxoVerificationData)
 	if err != nil {
-		return nil, err, true
+		return err
 	}
 
 	err = dag.saveUTXOChangesFromBlock(block, utxoVerificationData, dbTx)
 	if err != nil {
-		return nil, err, true
+		return err
 	}
-	return nil, nil, false
+	return nil
 }
 
-// applyDAGChanges does the following:
-// 1. Connects each of the new block's parents to the block.
-// 2. Adds the new block to the DAG's tips.
-// 3. Updates the DAG's full UTXO set.
-// 4. Updates each of the tips' utxoDiff.
-// 5. Applies the new virtual's blue score to all the unaccepted UTXOs
-// 6. Adds the block to the reachability structures
-// 7. Adds the multiset of the block to the multiset store.
-// 8. Updates the finality point of the DAG (if required).
-//
-// It returns the diff in the virtual block's UTXO set.
-//
-// This function MUST be called with the DAG state lock held (for writes).
+func (dag *BlockDAG) resolveSelectedParentStatus(
+	selectedParent *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+
+	if dag.index.NodeStatus(selectedParent) == statusUTXONotVerified {
+		selectedParentBlock, err := dag.fetchBlockByHash(selectedParent.hash)
+		if err != nil {
+			return err
+		}
+
+		err = dag.validateAndApplyUTXOSet(selectedParent, selectedParentBlock, flags, dbTx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode) (
 	chainUpdates *chainUpdates, err error) {
 
