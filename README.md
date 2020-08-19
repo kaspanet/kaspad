@@ -74,4 +74,3 @@ The documentation is a work-in-progress. It is located in the [docs](https://git
 ## License
 
 Kaspad is licensed under the copyfree [ISC License](https://choosealicense.com/licenses/isc/).
-
