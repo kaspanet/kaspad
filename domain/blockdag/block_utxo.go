@@ -85,7 +85,6 @@ type utxoVerificationOutput struct {
 	txsAcceptanceData MultiBlockTxsAcceptanceData
 	newBlockFeeData   compactFeeData
 	newBlockMultiset  *secp256k1.MultiSet
-	virtualUTXODiff   *UTXODiff
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO

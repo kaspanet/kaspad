@@ -319,12 +319,12 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
-	err = dag.applyUTXOSetChange(node, utxoVerificationData)
+	virtualUTXODiff, err := dag.applyUTXOSetChange(node, utxoVerificationData)
 	if err != nil {
 		return err
 	}
 
-	err = dag.saveUTXOChangesFromBlock(block, utxoVerificationData, dbTx)
+	err = dag.saveUTXOChangesFromBlock(block, utxoVerificationData, virtualUTXODiff, dbTx)
 	if err != nil {
 		return err
 	}
@@ -365,34 +365,35 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*
 	return chainUpdates, nil
 }
 
-func (dag *BlockDAG) applyUTXOSetChange(node *blockNode, utxoVerificationData *utxoVerificationOutput) error {
+func (dag *BlockDAG) applyUTXOSetChange(node *blockNode, utxoVerificationData *utxoVerificationOutput) (
+	virtualUTXODiff *UTXODiff, err error) {
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
 
 	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockUTXO); err != nil {
-		return errors.Wrapf(err, "failed updating parents of %s", node)
+		return nil, errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	// Build a UTXO set for the new virtual block
 	newVirtualUTXO, _, _, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return errors.Wrap(err, "could not restore past UTXO for virtual")
+		return nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return errors.Wrap(err, "failed updating the tips' UTXO")
+		return nil, errors.Wrap(err, "failed updating the tips' UTXO")
 	}
 
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	utxoVerificationData.virtualUTXODiff = diffSet.UTXODiff
+	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return errors.Wrap(err, "failed melding the virtual UTXO")
+		return nil, errors.Wrap(err, "failed melding the virtual UTXO")
 	}
 
-	return nil
+	return virtualUTXODiff, nil
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxContext) error {
@@ -445,12 +446,12 @@ func (dag *BlockDAG) clearDirtyEntries() {
 	dag.multisetStore.clearNewEntries()
 }
 
-func (dag *BlockDAG) saveUTXOChangesFromBlock(
-	block *util.Block, utxoVerificationData *utxoVerificationOutput, dbTx *dbaccess.TxContext) error {
+func (dag *BlockDAG) saveUTXOChangesFromBlock(block *util.Block, utxoVerificationData *utxoVerificationOutput,
+	virtualUTXODiff *UTXODiff, dbTx *dbaccess.TxContext) error {
 
 	// Update the UTXO set using the diffSet that was melded into the
 	// full UTXO set.
-	err := updateUTXOSet(dbTx, utxoVerificationData.virtualUTXODiff)
+	err := updateUTXOSet(dbTx, virtualUTXODiff)
 	if err != nil {
 		return err
 	}
