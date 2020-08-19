@@ -190,8 +190,8 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 		return nil, nil, err
 	}
 	newNode, selectedParentAnticone = dag.newBlockNode(&block.MsgBlock().Header, parents)
-	newNode.status = statusDataStored
 	dag.index.AddNode(newNode)
+	dag.index.SetBlockNodeStatus(newNode, statusDataStored)
 
 	// Insert the block into the database if it's not already there. Even
 	// though it is possible the block will ultimately fail to connect, it
@@ -301,7 +301,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 		return err
 	}
 
-	if dag.index.NodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
+	if dag.index.BlockNodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
 		dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
 		return nil
 	}
@@ -319,7 +319,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
-	virtualUTXODiff, err := dag.applyUTXOSetChange(node, utxoVerificationData)
+	virtualUTXODiff, err := dag.applyUTXOSetChanges(node, utxoVerificationData)
 	if err != nil {
 		return err
 	}
@@ -334,7 +334,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 func (dag *BlockDAG) resolveSelectedParentStatus(
 	selectedParent *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
 
-	if dag.index.NodeStatus(selectedParent) == statusUTXONotVerified {
+	if dag.index.BlockNodeStatus(selectedParent) == statusUTXONotVerified {
 		selectedParentBlock, err := dag.fetchBlockByHash(selectedParent.hash)
 		if err != nil {
 			return err

@@ -79,10 +79,10 @@ func (bi *blockIndex) addNode(node *blockNode) {
 	bi.index[*node.hash] = node
 }
 
-// NodeStatus provides concurrent-safe access to the status field of a node.
+// BlockNodeStatus provides concurrent-safe access to the status field of a node.
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) NodeStatus(node *blockNode) blockStatus {
+func (bi *blockIndex) BlockNodeStatus(node *blockNode) blockStatus {
 	bi.RLock()
 	defer bi.RUnlock()
 	status := node.status
@@ -153,7 +153,7 @@ func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
 		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
 			return nil, ruleError(ErrParentBlockUnknown, str)
-		} else if dag.index.NodeStatus(node).KnownInvalid() {
+		} else if dag.index.BlockNodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}

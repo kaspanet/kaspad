@@ -70,7 +70,7 @@ func TestProcessOrphans(t *testing.T) {
 	if !ok {
 		t.Fatalf("TestProcessOrphans: child block missing from block index")
 	}
-	if !dag.index.NodeStatus(node).KnownInvalid() {
+	if !dag.index.BlockNodeStatus(node).KnownInvalid() {
 		t.Fatalf("TestProcessOrphans: child block erroneously not marked as invalid")
 	}
 }

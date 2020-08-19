@@ -669,7 +669,7 @@ func TestAcceptingInInit(t *testing.T) {
 		t.Fatalf("block %s does not exist in the DAG", testBlock.Hash())
 	}
 
-	if testNode.status&statusValid == 0 {
+	if testNode.status != statusValid {
 		t.Fatalf("testNode is unexpectedly invalid")
 	}
 }
@@ -945,7 +945,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockNode wasn't added to the block index as expected")
 	}
-	if invalidBlockNode.status&statusValidateFailed != statusValidateFailed {
+	if invalidBlockNode.status != statusValidateFailed {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", statusValidateFailed, invalidBlockNode.status)
 	}
 
@@ -974,7 +974,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockChild wasn't added to the block index as expected")
 	}
-	if invalidBlockChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+	if invalidBlockChildNode.status != statusInvalidAncestor {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
 	}
 
@@ -1002,7 +1002,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
 	}
-	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+	if invalidBlockGrandChildNode.status != statusInvalidAncestor {
 		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
 	}
 }

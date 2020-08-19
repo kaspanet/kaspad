@@ -112,7 +112,7 @@ type blockNode struct {
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
-	// only be accessed using the concurrent-safe NodeStatus method on
+	// only be accessed using the concurrent-safe BlockNodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
 }
@@ -320,7 +320,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 
 func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	for parent := range node.parents {
-		if parent.status == statusViolatedSubjectiveFinality {
+		if node.dag.index.BlockNodeStatus(parent) == statusViolatedSubjectiveFinality {
 			return true, nil
 		}
 	}
