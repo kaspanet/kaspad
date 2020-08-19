@@ -39,6 +39,12 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		netAddress := address.NetAddress()
 		tcpAddress := netAddress.TCPAddress()
 		addressString := tcpAddress.String()
+
+		if c.connectionExists(addressString) {
+			log.Debugf("Fetched address %s from address manager but it's already connected. Skipping...", addressString)
+			continue
+		}
+
 		isBanned, err := c.addressManager.IsBanned(netAddress)
 		if err != nil {
 			log.Infof("Couldn't resolve whether %s is banned: %s", addressString, err)
@@ -49,6 +55,8 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		}
 
 		c.addressManager.Attempt(netAddress)
+		log.Debugf("Connecting to %s because we have %d outgoing connections and the target is "+
+			"%d", addressString, len(c.activeOutgoing), c.targetOutgoing)
 		err = c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
