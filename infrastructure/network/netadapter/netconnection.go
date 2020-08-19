@@ -18,7 +18,7 @@ type NetConnection struct {
 	router                *routerpkg.Router
 	invalidMessageChan    chan error
 	onDisconnectedHandler server.OnDisconnectedHandler
-	isConnected           uint32
+	isRouterClosed        uint32
 }
 
 func newNetConnection(connection server.Connection, routerInitializer RouterInitializer) *NetConnection {
@@ -33,7 +33,7 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	netConnection.connection.SetOnDisconnectedHandler(func() {
 		// If the disconnection came because of a network error and not because of the application layer, we
 		// need to close the router as well.
-		if atomic.AddUint32(&netConnection.isConnected, 1) == 1 {
+		if atomic.AddUint32(&netConnection.isRouterClosed, 1) == 1 {
 			netConnection.router.Close()
 		}
 
@@ -97,7 +97,7 @@ func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.On
 
 // Disconnect disconnects the given connection
 func (c *NetConnection) Disconnect() {
-	if atomic.AddUint32(&c.isConnected, 1) == 1 {
+	if atomic.AddUint32(&c.isRouterClosed, 1) == 1 {
 		c.router.Close()
 	}
 }
