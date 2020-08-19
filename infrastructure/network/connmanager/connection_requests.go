@@ -89,20 +89,22 @@ func (c *ConnectionManager) AddConnectionRequest(address string, isPermanent boo
 	// spawn goroutine so that caller doesn't wait in case connectionManager is in the midst of handling
 	// connection requests
 	spawn("ConnectionManager.AddConnectionRequest", func() {
-		c.connectionRequestsLock.Lock()
-		defer c.connectionRequestsLock.Unlock()
-
-		if _, ok := c.activeRequested[address]; ok {
-			return
-		}
-
-		c.pendingRequested[address] = &connectionRequest{
-			address:     address,
-			isPermanent: isPermanent,
-		}
-
+		c.addConnectionRequest(address, isPermanent)
 		c.run()
 	})
+}
+
+func (c *ConnectionManager) addConnectionRequest(address string, isPermanent bool) {
+	c.connectionRequestsLock.Lock()
+	defer c.connectionRequestsLock.Unlock()
+	if _, ok := c.activeRequested[address]; ok {
+		return
+	}
+
+	c.pendingRequested[address] = &connectionRequest{
+		address:     address,
+		isPermanent: isPermanent,
+	}
 }
 
 // RemoveConnection disconnects the connection for the given address
