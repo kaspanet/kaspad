@@ -243,6 +243,18 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return nil, err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	// If the new block is not the selected tip - it's currently red from the PoV of virtual, therefore it's
+	isNewSelectedTip := node.less(dag.selectedTip())
+	if !isNewSelectedTip {
+		dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
+	}
+
 	isViolatingSubjectiveFinality, err := node.isViolatingSubjectiveFinality()
 	if err != nil {
 		return nil, err
@@ -251,45 +263,62 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
 	}
 
-	isNewSelectedTip := node.less(dag.selectedTip())
-	if !isNewSelectedTip {
-		dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
-	}
-
-	var utxoVerificationData *utxoVerificationOutput
 	if isNewSelectedTip && !isViolatingSubjectiveFinality {
-		utxoVerificationData, err =
-			node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
-		if err != nil {
-			return nil, errors.Wrapf(err, "error verifying UTXO for %s", node)
+		updates, err2, done := dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
+		if done {
+			return updates, err2
 		}
-
-		err = node.validateCoinbaseTransaction(dag, block, utxoVerificationData.txsAcceptanceData)
-		if err != nil {
-			return nil, err
-		}
-
-		dag.index.SetBlockNodeStatus(node, statusValid)
 	}
 
-	chainUpdates, err := dag.applyDAGChanges(node, utxoVerificationData, selectedParentAnticone)
-	if err != nil {
-		// Since all validation logic has already ran, if applyDAGChanges errors out,
-		// this means we have a problem in the internal structure of the DAG - a problem which is
-		// irrecoverable, and it would be a bad idea to attempt adding any more blocks to the DAG.
-		// Therefore - in such cases we panic.
-		panic(err)
-	}
-
-	err = dag.saveChangesFromBlock(block, nil)
+	chainUpdates, err := dag.applyDAGChanges(node, selectedParentAnticone)
 	if err != nil {
 		return nil, err
 	}
+
+	err = dag.saveChangesFromBlock(block, dbTx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	dag.clearDirtyEntries()
 
 	dag.addBlockProcessingTimestamp()
 	dag.blockCount++
 
 	return chainUpdates, nil
+}
+
+func (dag *BlockDAG) validateAndApplyUTXOSet(
+	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) (*chainUpdates, error, bool) {
+
+	utxoVerificationData, err :=
+		node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
+	if err != nil {
+		return nil, errors.Wrapf(err, "error verifying UTXO for %s", node), true
+	}
+
+	err = node.validateCoinbaseTransaction(dag, block, utxoVerificationData.txsAcceptanceData)
+	if err != nil {
+		return nil, err, true
+	}
+
+	dag.index.SetBlockNodeStatus(node, statusValid)
+
+	err = dag.applyUTXOSetChange(node, utxoVerificationData)
+	if err != nil {
+		return nil, err, true
+	}
+
+	err = dag.saveUTXOChangesFromBlock(block, utxoVerificationData, dbTx)
+	if err != nil {
+		return nil, err, true
+	}
+	return nil, nil, false
 }
 
 // applyDAGChanges does the following:
@@ -305,8 +334,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 // It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) applyDAGChanges(node *blockNode,
-	utxoVerificationData *utxoVerificationOutput, selectedParentAnticone []*blockNode) (
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode) (
 	chainUpdates *chainUpdates, err error) {
 
 	// Add the block to the reachability tree
@@ -319,13 +347,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode,
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
 	chainUpdates = dag.virtual.AddTip(node)
-
-	if utxoVerificationData != nil {
-		err := dag.applyUTXOSetChange(node, utxoVerificationData)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	return chainUpdates, nil
 }
@@ -360,16 +381,8 @@ func (dag *BlockDAG) applyUTXOSetChange(node *blockNode, utxoVerificationData *u
 	return nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(block *util.Block,
-	utxoVerificationData *utxoVerificationOutput) error {
-
-	dbTx, err := dag.databaseContext.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
-	err = dag.index.flushToDB(dbTx)
+func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxContext) error {
+	err := dag.index.flushToDB(dbTx)
 	if err != nil {
 		return err
 	}
@@ -407,25 +420,15 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block,
 		return err
 	}
 
-	if utxoVerificationData != nil {
-		err2 := dag.saveUTXOChangesFromBlock(block, utxoVerificationData, dbTx)
-		if err2 != nil {
-			return err2
-		}
-	}
+	return nil
+}
 
-	err = dbTx.Commit()
-	if err != nil {
-		return err
-	}
-
+func (dag *BlockDAG) clearDirtyEntries() {
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
 	dag.utxoDiffStore.clearOldEntries()
 	dag.reachabilityTree.store.clearDirtyEntries()
 	dag.multisetStore.clearNewEntries()
-
-	return nil
 }
 
 func (dag *BlockDAG) saveUTXOChangesFromBlock(
