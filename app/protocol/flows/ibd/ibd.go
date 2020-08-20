@@ -2,6 +2,7 @@ package ibd
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
@@ -173,7 +174,6 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 }
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
-
 	block := util.NewBlock(msgIBDBlock.MsgBlock)
 	if flow.DAG().IsInDAG(block.Hash()) {
 		return nil
@@ -191,6 +191,10 @@ func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) 
 			"during IBD", block.Hash())
 	}
 	err = flow.OnNewBlock(block)
+	if err != nil {
+		return err
+	}
+	err = blocklogger.LogBlock(block)
 	if err != nil {
 		return err
 	}
