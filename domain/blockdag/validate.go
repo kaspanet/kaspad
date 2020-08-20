@@ -393,6 +393,23 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	return totalMass, nil
 }
 
+func CalcTxMassFromInputsWithReferencedEntries(
+	tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) uint64 {
+
+	if tx.IsCoinBase() {
+		return CalcTxMass(tx, nil)
+	}
+
+	previousScriptPubKeys := make([][]byte, 0, len(tx.MsgTx().TxIn))
+
+	for _, inputWithReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+		entry := inputWithReferencedUTXOEntry.utxoEntry
+
+		previousScriptPubKeys = append(previousScriptPubKeys, entry.ScriptPubKey())
+	}
+	return CalcTxMass(tx, previousScriptPubKeys)
+}
+
 // CalcTxMassFromUTXOSet calculates the transaction mass based on the
 // UTXO set in its past.
 //
@@ -1101,7 +1118,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 		return 0, 0, err
 	}
 
-	accumulatedMassAfter, err = dag.checkTxMass(tx, pastUTXO, accumulatedMassBefore)
+	accumulatedMassAfter, err = dag.checkTxMass(tx, inputsWithReferencedUTXOEntries, accumulatedMassBefore)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1241,13 +1258,11 @@ func (dag *BlockDAG) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (dag *BlockDAG) checkTxMass(
-	tx *util.Tx, pastUTXO UTXOSet, accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
+func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry,
+	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
 
-	txMass, err := CalcTxMassFromUTXOSet(tx, pastUTXO)
-	if err != nil {
-		return 0, err
-	}
+	txMass := CalcTxMassFromInputsWithReferencedEntries(tx, inputsWithReferencedUTXOEntries)
+
 	accumulatedMassAfter = accumulatedMassBefore + txMass
 
 	// We could potentially overflow the accumulator so check for
