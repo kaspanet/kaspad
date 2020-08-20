@@ -1042,11 +1042,14 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOS
 	accumulatedMass uint64, requireAllTransactionsValid bool) (
 	acceptedTransactions []*util.Tx, feeData compactFeeData, err error) {
 
+	medianTime := node.selectedParentMedianTime()
+
 	totalFee := uint64(0)
 	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
-		txFee, accumulatedMassAfter, err := dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, accumulatedMass)
+		txFee, accumulatedMassAfter, err :=
+			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, accumulatedMass, medianTime)
 
 		if err != nil {
 			// If all transactions are required to be valid - forward error no matter what
@@ -1070,7 +1073,7 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOS
 			return nil, nil, err
 		}
 
-		totalFee, err := dag.checkTotalFee(totalFee, txFee)
+		totalFee, err = dag.checkTotalFee(totalFee, txFee)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1120,19 +1123,26 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 
 	txFee = totalSompiIn - totalSompiOut
 
-	err = dag.checkTxSequenceLock(node, tx, pastUTXO, medianTime)
+	err = dag.checkTxSequenceLock(node, tx, inputsWithReferencedUTXOEntries, medianTime)
 	if err != nil {
 		return 0, 0, nil
 	}
 
 	err = ValidateTransactionScripts(tx, pastUTXO, txscript.ScriptNoFlags, nil)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return txFee, accumulatedMassAfter, nil
 }
 
-func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx, pastUTXO UTXOSet, medianTime mstime.Time) error {
+func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
+	inputsWithReferencedEntries []*txInputAndReferencedUTXOEntry, medianTime mstime.Time) error {
+
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
 	// active.
-	sequenceLock, err := dag.calcSequenceLock(node, pastUTXO, tx)
+	sequenceLock, err := dag.calcTxSequenceLockFromInputsWithReferencedEntries(node, tx, inputsWithReferencedEntries)
 	if err != nil {
 		return err
 	}
@@ -1251,14 +1261,14 @@ func (dag *BlockDAG) checkTxMass(
 	return accumulatedMassAfter, nil
 }
 
-func (dag *BlockDAG) GetReferencedUTXOEntries(tx *util.Tx, pastUTXO UTXOSet) (
+func (dag *BlockDAG) GetReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
 	[]*txInputAndReferencedUTXOEntry, error) {
 
 	txIns := tx.MsgTx().TxIn
 	inputsWithReferencedUTXOEntries := make([]*txInputAndReferencedUTXOEntry, 0, len(txIns))
 
 	for txInIndex, txIn := range txIns {
-		utxoEntry, ok := pastUTXO.Get(txIn.PreviousOutpoint)
+		utxoEntry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s input %d either does not exist or "+
@@ -1373,7 +1383,7 @@ func (dag *BlockDAG) checkSequenceLock(block *blockNode, pastUTXO UTXOSet, trans
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
+		sequenceLock, err := dag.calcTxSequenceLock(block, tx, pastUTXO)
 		if err != nil {
 			return err
 		}
