@@ -1,8 +1,6 @@
 package blockdag
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -59,25 +57,6 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	return newVirtualUTXODiffSet.meldToBase()
-}
-
-// checkDoubleSpendsWithBlockPast checks that each block transaction
-// has a corresponding UTXO in the block pastUTXO.
-func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.Tx) error {
-	for _, tx := range blockTransactions {
-		if tx.IsCoinBase() {
-			continue
-		}
-
-		for _, txIn := range tx.MsgTx().TxIn {
-			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
-				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
-					"output %s in the utxo set", txIn.PreviousOutpoint))
-			}
-		}
-	}
-
-	return nil
 }
 
 type utxoVerificationOutput struct {

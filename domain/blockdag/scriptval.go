@@ -7,7 +7,6 @@ package blockdag
 import (
 	"fmt"
 	"runtime"
-	"time"
 
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/network/domainmessage"
@@ -195,38 +194,4 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 	// Validate all of the inputs.
 	validator := newTxValidator(utxoSet, flags, sigCache)
 	return validator.Validate(txValItems)
-}
-
-// checkBlockScripts executes and validates the scripts for all transactions in
-// the passed block using multiple goroutines.
-func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.Tx, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
-	// Collect all of the transaction inputs and required information for
-	// validation for all transactions in the block into a single slice.
-	numInputs := 0
-	for _, tx := range transactions {
-		numInputs += len(tx.MsgTx().TxIn)
-	}
-	txValItems := make([]*txValidateItem, 0, numInputs)
-	for _, tx := range transactions {
-		for txInIdx, txIn := range tx.MsgTx().TxIn {
-			txVI := &txValidateItem{
-				txInIndex: txInIdx,
-				txIn:      txIn,
-				tx:        tx,
-			}
-			txValItems = append(txValItems, txVI)
-		}
-	}
-
-	// Validate all of the inputs.
-	validator := newTxValidator(utxoSet, scriptFlags, sigCache)
-	start := time.Now()
-	if err := validator.Validate(txValItems); err != nil {
-		return err
-	}
-	elapsed := time.Since(start)
-
-	log.Tracef("block %s took %s to verify", block.hash, elapsed)
-
-	return nil
 }
