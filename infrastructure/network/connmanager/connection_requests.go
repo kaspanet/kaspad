@@ -63,6 +63,7 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 		}
 
 		// try to initiate connection
+		log.Debugf("Connecting to connection request %s", connReq.address)
 		err := c.initiateConnection(connReq.address)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", address, err)

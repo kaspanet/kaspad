@@ -53,7 +53,7 @@ func (c *gRPCConnection) Start(router *router.Router) {
 	spawn("gRPCConnection.Start-connectionLoops", func() {
 		err := c.connectionLoops()
 		if err != nil {
-			log.Errorf("error from connectionLoops for %s: %+v", c.address, err)
+			log.Errorf("error from connectionLoops for %s: %s", c.address, err)
 		}
 	})
 }
