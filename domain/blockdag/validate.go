@@ -1055,44 +1055,34 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 	return nil
 }
 
-func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx,
-	accumulatedMass uint64, requireAllTransactionsValid bool) (
-	acceptedTransactions []*util.Tx, feeData compactFeeData, err error) {
+func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (
+	feeData compactFeeData, err error) {
 
-	medianTime := node.selectedParentMedianTime()
+	selectedParentMedianTime := node.selectedParentMedianTime()
 
 	totalFee := uint64(0)
 	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
-		txFee, accumulatedMassAfter, err :=
-			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, accumulatedMass, medianTime)
+		txFee, _, err :=
+			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, 0, selectedParentMedianTime)
 
 		if err != nil {
-			// If all transactions are required to be valid - forward error no matter what
-			if requireAllTransactionsValid {
-				return nil, nil, err
-			}
-			// If all transactions are not required to be valid - forward error only if it's a rule error
 			if ruleErr := &(RuleError{}); !errors.As(err, ruleErr) {
-				return nil, nil, err
+				return nil, err
 			}
 
 			continue
 		}
 
-		accumulatedMass = accumulatedMassAfter
-
-		acceptedTransactions = append(acceptedTransactions, tx)
-
 		err = compactFeeFactory.add(txFee)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		totalFee, err = dag.checkTotalFee(totalFee, txFee)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -1105,7 +1095,7 @@ type txInputAndReferencedUTXOEntry struct {
 }
 
 func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
-	node *blockNode, tx *util.Tx, pastUTXO UTXOSet, accumulatedMassBefore uint64, medianTime mstime.Time) (
+	node *blockNode, tx *util.Tx, pastUTXO UTXOSet, accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
 	txFee uint64, accumulatedMassAfter uint64, err error) {
 
 	err = checkTxIsNotDuplicate(tx, pastUTXO)
@@ -1140,7 +1130,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 
 	txFee = totalSompiIn - totalSompiOut
 
-	err = dag.checkTxSequenceLock(node, tx, inputsWithReferencedUTXOEntries, medianTime)
+	err = dag.checkTxSequenceLock(node, tx, inputsWithReferencedUTXOEntries, selectedParentMedianTime)
 	if err != nil {
 		return 0, 0, nil
 	}
