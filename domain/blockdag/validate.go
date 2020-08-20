@@ -1145,7 +1145,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 		return 0, 0, nil
 	}
 
-	err = ValidateTransactionScripts(tx, pastUTXO, txscript.ScriptNoFlags, nil)
+	err = ValidateTransactionScripts(tx, pastUTXO, txscript.ScriptNoFlags, dag.sigCache)
 	if err != nil {
 		return 0, 0, err
 	}
