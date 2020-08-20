@@ -103,7 +103,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, err
 	}
 
-	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	feeData, err := dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +146,9 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
+	selectedParentMedianTime := node.selectedParentMedianTime()
+	accumulatedMass := uint64(0)
+
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
 	// is so that anyone who iterates over it would process blocks (and transactions)
 	// in their order of appearance in the DAG.
@@ -158,7 +161,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		}
 		isSelectedParent := i == 0
 
-		for j, tx := range blueBlock.Transactions() {
+		for j, tx := range transactions {
 			var isAccepted bool
 
 			// Coinbase transaction outputs are added to the UTXO
@@ -166,9 +169,21 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 			if !isSelectedParent && tx.IsCoinBase() {
 				isAccepted = false
 			} else {
-				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+				_, accumulatedMassAfter, err := node.dag.checkConnectTransactionToPastUTXO(
+					node, tx, pastUTXO, accumulatedMass, selectedParentMedianTime)
+
 				if err != nil {
-					return nil, nil, err
+					if !errors.As(err, &(RuleError{})) {
+						return nil, nil, err
+					}
+					isAccepted = false
+				} else {
+					accumulatedMass = accumulatedMassAfter
+
+					_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+					if err != nil {
+						return nil, nil, err
+					}
 				}
 			}
 			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
