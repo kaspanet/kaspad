@@ -16,12 +16,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// blockStatus is a bit field representing the validation state of the block.
+// blockStatus is representing the validation state of the block.
 type blockStatus byte
 
 const (
 	// statusDataStored indicates that the block's payload is stored on disk.
-	statusDataStored blockStatus = 1 << iota
+	statusDataStored blockStatus = iota
 
 	// statusValid indicates that the block has been fully validated.
 	statusValid
@@ -49,7 +49,7 @@ const (
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
-	return status&statusValid != 0
+	return status == statusValid
 }
 
 // KnownInvalid returns whether the block is known to be invalid. This may be
@@ -57,7 +57,7 @@ func (status blockStatus) KnownValid() bool {
 // invalid. This will return false for invalid blocks that have not been proven
 // invalid yet.
 func (status blockStatus) KnownInvalid() bool {
-	return status&(statusValidateFailed|statusInvalidAncestor) != 0
+	return status == statusValidateFailed || status == statusInvalidAncestor
 }
 
 // blockNode represents a block within the block DAG. The DAG is stored into
@@ -112,7 +112,7 @@ type blockNode struct {
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
-	// only be accessed using the concurrent-safe NodeStatus method on
+	// only be accessed using the concurrent-safe BlockNodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
 }
@@ -320,7 +320,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 
 func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	for parent := range node.parents {
-		if parent.status == statusViolatedSubjectiveFinality {
+		if node.dag.index.BlockNodeStatus(parent) == statusViolatedSubjectiveFinality {
 			return true, nil
 		}
 	}
@@ -345,20 +345,6 @@ func (node *blockNode) checkMergeLimit() error {
 	if mergeSetSize > mergeSetSizeLimit {
 		return ruleError(ErrViolatingMergeLimit,
 			fmt.Sprintf("The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit))
-	}
-
-	return nil
-}
-
-func (node *blockNode) checkDAGRelations() error {
-	err := node.checkMergeLimit()
-	if err != nil {
-		return err
-	}
-
-	err = node.checkObjectiveFinality()
-	if err != nil {
-		return err
 	}
 
 	return nil

@@ -736,7 +736,7 @@ func (dag *BlockDAG) validateParents(blockHeader *domainmessage.BlockHeader, par
 	}
 
 	for parent := range parents {
-		if parent.status == statusManuallyRejected {
+		if dag.index.BlockNodeStatus(parent) == statusManuallyRejected {
 			return ruleError(ErrTooManyParents,
 				fmt.Sprintf("block %s points to %s which was manually rejected",
 					blockHeader.BlockHash(), parent.hash))
@@ -800,6 +800,20 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 	return nil
 }
 
+func (node *blockNode) checkDAGRelations() error {
+	err := node.checkMergeLimit()
+	if err != nil {
+		return err
+	}
+
+	err = node.checkObjectiveFinality()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (dag *BlockDAG) handleLookupParentNodesError(block *util.Block, err error) error {
 	var ruleErr RuleError
 	if ok := errors.As(err, &ruleErr); ok && ruleErr.ErrorCode == ErrInvalidAncestorBlock {
@@ -812,7 +826,7 @@ func (dag *BlockDAG) handleLookupParentNodesError(block *util.Block, err error) 
 }
 
 func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.BlockNodeStatus(node).KnownValid()
 	if fastAdd {
 		return nil
 	}
