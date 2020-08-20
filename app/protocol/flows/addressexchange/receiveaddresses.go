@@ -38,7 +38,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 
 	msgAddresses := message.(*appmessage.MsgAddresses)
 	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
-		return protocolerrors.Errorf(true, "address count excceeded %d", addressmanager.GetAddressesMax)
+		return protocolerrors.Errorf(true, "address count exceeded %d", addressmanager.GetAddressesMax)
 	}
 
 	if msgAddresses.IncludeAllSubnetworks {

@@ -1,8 +1,6 @@
 package netadapter
 
 import (
-	"net"
-	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -158,58 +156,4 @@ func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message appmess
 		}
 	}
 	return nil
-}
-
-// GetBestLocalAddress returns the most appropriate local address to use
-// for the given remote address.
-func (na *NetAdapter) GetBestLocalAddress() (*appmessage.NetAddress, error) {
-	if len(na.cfg.ExternalIPs) > 0 {
-		host, portString, err := net.SplitHostPort(na.cfg.ExternalIPs[0])
-		if err != nil {
-			portString = na.cfg.NetParams().DefaultPort
-		}
-		portInt, err := strconv.Atoi(portString)
-		if err != nil {
-			return nil, err
-		}
-
-		ip := net.ParseIP(host)
-		if ip == nil {
-			hostAddrs, err := net.LookupHost(host)
-			if err != nil {
-				return nil, err
-			}
-			ip = net.ParseIP(hostAddrs[0])
-			if ip == nil {
-				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
-			}
-		}
-		return appmessage.NewNetAddressIPPort(ip, uint16(portInt), appmessage.SFNodeNetwork), nil
-
-	}
-	listenAddress := na.cfg.Listeners[0]
-	_, portString, err := net.SplitHostPort(listenAddress)
-	if err != nil {
-		portString = na.cfg.NetParams().DefaultPort
-	}
-
-	portInt, err := strconv.Atoi(portString)
-	if err != nil {
-		return nil, err
-	}
-
-	addresses, err := net.InterfaceAddrs()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, address := range addresses {
-		ip, _, err := net.ParseCIDR(address.String())
-		if err != nil {
-			continue
-		}
-
-		return appmessage.NewNetAddressIPPort(ip, uint16(portInt), appmessage.SFNodeNetwork), nil
-	}
-	return nil, errors.New("no address was found")
 }
