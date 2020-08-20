@@ -892,7 +892,8 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+func CheckTransactionInputsAndCalulateFee(
+	tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSompi uint64, err error) {
 
 	// Coinbase transactions have no standard inputs to validate.
@@ -903,14 +904,9 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	txID := tx.ID()
 	var totalSompiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
-		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
-		if !ok {
-			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s input %d either does not exist or "+
-				"has already been spent", txIn.PreviousOutpoint,
-				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
+		entry, err := checkReferencedInputsAreAvailable(tx, utxoSet, txIn, txInIndex)
+		if err != nil {
+			return 0, err
 		}
 
 		if !fastAdd {
@@ -919,40 +915,25 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 			}
 		}
 
-		// Ensure the transaction amounts are in range. Each of the
-		// output values of the input transactions must not be negative
-		// or more than the max allowed per transaction. All amounts in
-		// a transaction are in a unit value known as a sompi. One
-		// kaspa is a quantity of sompi as defined by the
-		// SompiPerKaspa constant.
-		originTxSompi := entry.Amount()
-		if originTxSompi > util.MaxSompi {
-			str := fmt.Sprintf("transaction output value of %s is "+
-				"higher than max allowed value of %d",
-				util.Amount(originTxSompi),
-				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
-		}
-
-		// The total of all outputs must not be more than the max
-		// allowed per transaction. Also, we could potentially overflow
-		// the accumulator so check for overflow.
-		lastSompiIn := totalSompiIn
-		totalSompiIn += originTxSompi
-		if totalSompiIn < lastSompiIn ||
-			totalSompiIn > util.MaxSompi {
-			str := fmt.Sprintf("total value of all transaction "+
-				"inputs is %d which is higher than max "+
-				"allowed value of %d", totalSompiIn,
-				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
+		totalSompiIn, err = checkEntryAmounts(entry, totalSompiIn)
+		if err != nil {
+			return 0, err
 		}
 	}
 
+	totalSompiOut, err := checkOutputsAmounts(tx, totalSompiIn, txID)
+	if err != nil {
+		return 0, err
+	}
+
+	txFeeInSompi = totalSompiIn - totalSompiOut
+	return txFeeInSompi, nil
+}
+
+func checkOutputsAmounts(tx *util.Tx, totalSompiIn uint64, txID *daghash.TxID) (totalSompiOut uint64, err error) {
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionSanity.
-	var totalSompiOut uint64
 	for _, txOut := range tx.MsgTx().TxOut {
 		totalSompiOut += txOut.Value
 	}
@@ -964,9 +945,54 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 			"spent of %d", txID, totalSompiIn, totalSompiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
+	return totalSompiOut, nil
+}
 
-	txFeeInSompi = totalSompiIn - totalSompiOut
-	return txFeeInSompi, nil
+func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+	// Ensure the transaction amounts are in range. Each of the
+	// output values of the input transactions must not be negative
+	// or more than the max allowed per transaction. All amounts in
+	// a transaction are in a unit value known as a sompi. One
+	// kaspa is a quantity of sompi as defined by the
+	// SompiPerKaspa constant.
+	originTxSompi := entry.Amount()
+	if originTxSompi > util.MaxSompi {
+		str := fmt.Sprintf("transaction output value of %s is "+
+			"higher than max allowed value of %d",
+			util.Amount(originTxSompi),
+			util.MaxSompi)
+		return 0, ruleError(ErrBadTxOutValue, str)
+	}
+
+	// The total of all outputs must not be more than the max
+	// allowed per transaction. Also, we could potentially overflow
+	// the accumulator so check for overflow.
+	lastSompiIn := totalSompiInBefore
+	totalSompiInAfter = totalSompiInBefore + originTxSompi
+	if totalSompiInBefore < lastSompiIn ||
+		totalSompiInBefore > util.MaxSompi {
+		str := fmt.Sprintf("total value of all transaction "+
+			"inputs is %d which is higher than max "+
+			"allowed value of %d", totalSompiInBefore,
+			util.MaxSompi)
+		return 0, ruleError(ErrBadTxOutValue, str)
+	}
+	return totalSompiInAfter, nil
+}
+
+func checkReferencedInputsAreAvailable(tx *util.Tx, utxoSet UTXOSet, txIn *domainmessage.TxIn, txInIndex int) (
+	*UTXOEntry, error) {
+
+	// Ensure the referenced input transaction is available.
+	entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+	if !ok {
+		str := fmt.Sprintf("output %s referenced from "+
+			"transaction %s input %d either does not exist or "+
+			"has already been spent", txIn.PreviousOutpoint,
+			tx.ID(), txInIndex)
+		return nil, ruleError(ErrMissingTxOut, str)
+	}
+	return entry, nil
 }
 
 func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *domainmessage.TxIn) error {
@@ -1038,13 +1064,9 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
-		// Sum the total fees and ensure we don't overflow the
-		// accumulator.
-		lastTotalFees := totalFees
-		totalFees += txFee
-		if totalFees < lastTotalFees {
-			return nil, ruleError(ErrBadFees, "total fees for block "+
-				"overflows accumulator")
+		err = dag.checkTotalFee(totalFees, txFee)
+		if err != nil {
+			return nil, err
 		}
 
 		err = compactFeeFactory.add(txFee)
@@ -1052,6 +1074,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, errors.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
+
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
 		return nil, errors.Errorf("error getting bytes of fee data: %s", err)
@@ -1060,43 +1083,64 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	if !fastAdd {
 		scriptFlags := txscript.ScriptNoFlags
 
-		// We obtain the MTP of the *previous* block (unless it's genesis block)
-		// in order to determine if transactions in the current block are final.
-		medianTime := block.Header().Timestamp
-		if !block.isGenesis() {
-			medianTime = block.selectedParent.PastMedianTime()
-		}
-
-		// We also enforce the relative sequence number based
-		// lock-times within the inputs of all transactions in this
-		// candidate block.
-		for _, tx := range transactions {
-			// A transaction can only be included within a block
-			// once the sequence locks of *all* its inputs are
-			// active.
-			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
-			if err != nil {
-				return nil, err
-			}
-			if !SequenceLockActive(sequenceLock, block.blueScore,
-				medianTime) {
-				str := fmt.Sprintf("block contains " +
-					"transaction whose input sequence " +
-					"locks are not met")
-				return nil, ruleError(ErrUnfinalizedTx, str)
-			}
+		err := dag.checkSequenceLock(block, pastUTXO, transactions)
+		if err != nil {
+			return nil, err
 		}
 
 		// Now that the inexpensive checks are done and have passed, verify the
 		// transactions are actually allowed to spend the coins by running the
 		// expensive SCHNORR signature check scripts. Doing this last helps
 		// prevent CPU exhaustion attacks.
-		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
+		err = checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	return feeData, nil
+}
+
+func (dag *BlockDAG) checkSequenceLock(block *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) error {
+	// We obtain the MTP of the *previous* block (unless it's genesis block)
+	// in order to determine if transactions in the current block are final.
+	medianTime := block.Header().Timestamp
+	if !block.isGenesis() {
+		medianTime = block.selectedParent.PastMedianTime()
+	}
+
+	// We also enforce the relative sequence number based
+	// lock-times within the inputs of all transactions in this
+	// candidate block.
+	for _, tx := range transactions {
+		// A transaction can only be included within a block
+		// once the sequence locks of *all* its inputs are
+		// active.
+		sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
+		if err != nil {
+			return err
+		}
+		if !SequenceLockActive(sequenceLock, block.blueScore,
+			medianTime) {
+			str := fmt.Sprintf("block contains " +
+				"transaction whose input sequence " +
+				"locks are not met")
+			return ruleError(ErrUnfinalizedTx, str)
+		}
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) error {
+	// Sum the total fees and ensure we don't overflow the
+	// accumulator.
+	lastTotalFees := totalFees
+	totalFees += txFee
+	if totalFees < lastTotalFees {
+		return ruleError(ErrBadFees, "total fees for block overflows accumulator")
+	}
+	return nil
 }
 
 func (node *blockNode) validateUTXOCommitment(multiset *secp256k1.MultiSet) error {
