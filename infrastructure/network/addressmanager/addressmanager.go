@@ -222,8 +222,6 @@ func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.Ne
 		return
 	}
 
-	fmt.Printf("CCCCCCCCCC updateAddress\n")
-
 	addressKey := NetAddressKey(netAddress)
 	knownAddress := am.knownAddress(netAddress)
 	if knownAddress != nil {
@@ -856,13 +854,9 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	fmt.Printf("BBB AddressCache len(am.addressIndex) = %d\n", len(am.addressIndex))
-
 	if len(am.addressIndex) == 0 {
 		return nil
 	}
-
-	fmt.Printf("BBBBBBBB\n")
 
 	allAddresses := []*appmessage.NetAddress{}
 	// Iteration order is undefined here, but we randomise it anyway.
@@ -871,8 +865,6 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 			allAddresses = append(allAddresses, v.netAddress)
 		}
 	}
-
-	fmt.Printf("BBBBBBBB allAddresses %d\n", len(allAddresses))
 
 	numAddresses := len(allAddresses) * getAddrPercent / 100
 	if numAddresses > GetAddressesMax {
@@ -885,8 +877,6 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 		numAddresses = getAddrMin
 	}
 
-	fmt.Printf("BBBssfddsfBBBBB allAddresses %d\n", len(allAddresses))
-
 	// Fisher-Yates shuffle the array. We only need to do the first
 	// `numAddresses' since we are throwing the rest.
 	for i := 0; i < numAddresses; i++ {
@@ -894,8 +884,6 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 		j := rand.Intn(len(allAddresses)-i) + i
 		allAddresses[i], allAddresses[j] = allAddresses[j], allAddresses[i]
 	}
-
-	fmt.Printf("BBBssfddsfBfdshjfkdshgBBBB allAddresses %d\n", len(allAddresses))
 
 	// slice off the limit we are willing to share.
 	return allAddresses[0:numAddresses]
