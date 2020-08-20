@@ -19,7 +19,7 @@ var (
 
 	// defaultServices describes the default services that are supported by
 	// the server.
-	defaultServices = appmessage.SFNodeNetwork | appmessage.SFNodeBloom | appmessage.SFNodeCF
+	defaultServices = appmessage.DefaultServices
 
 	// defaultRequiredServices describes the default services that are
 	// required to be supported by outbound peers.

@@ -114,13 +114,14 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addressmanager.New(cfg, databaseContext)
-
+	addressManager, err := addressmanager.New(cfg, databaseContext)
+	if err != nil {
+		return nil, err
+	}
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
-
 	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err

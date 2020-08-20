@@ -14,6 +14,10 @@ import (
 const (
 	// ProtocolVersion is the latest protocol version this package supports.
 	ProtocolVersion uint32 = 1
+
+	// defaultServices describes the default services that are supported by
+	// the server.
+	DefaultServices = SFNodeNetwork | SFNodeBloom | SFNodeCF
 )
 
 // ServiceFlag identifies services supported by a kaspa peer.

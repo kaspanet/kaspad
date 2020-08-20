@@ -123,7 +123,10 @@ func newAddrManagerForTest(t *testing.T, testName string,
 		t.Fatalf("error creating db: %s", err)
 	}
 
-	addressManager = New(cfg, databaseContext)
+	addressManager, err = New(cfg, databaseContext)
+	if err != nil {
+		t.Fatalf("error creating address manager: %s", err)
+	}
 
 	return addressManager, func() {
 		err := databaseContext.Close()

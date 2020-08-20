@@ -18,7 +18,9 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -193,7 +195,7 @@ const (
 var ErrAddressNotFound = errors.New("address not found")
 
 // New returns a new Kaspa address manager.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *AddressManager {
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) (*AddressManager, error) {
 	addressManager := AddressManager{
 		cfg:               cfg,
 		databaseContext:   databaseContext,
@@ -203,8 +205,12 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) *Address
 		localAddresses:    make(map[AddressKey]*localAddress),
 		localSubnetworkID: cfg.SubnetworkID,
 	}
+	err := addressManager.initListeners()
+	if err != nil {
+		return nil, err
+	}
 	addressManager.reset()
-	return &addressManager
+	return &addressManager, nil
 }
 
 // updateAddress is a helper function to either update an address already known
@@ -1432,3 +1438,189 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	}
 	return knownAddress.isBanned, nil
 }
+
+// initListeners initializes the configured net listeners and adds any bound
+// addresses to the address manager. Returns the listeners and a NAT interface,
+// which is non-nil if UPnP is in use.
+func (am *AddressManager) initListeners() error {
+	if len(am.cfg.ExternalIPs) != 0 {
+		defaultPort, err := strconv.ParseUint(am.cfg.NetParams().DefaultPort, 10, 16)
+		if err != nil {
+			log.Errorf("Can not parse default port %s for active DAG: %s",
+				am.cfg.NetParams().DefaultPort, err)
+			return err
+		}
+
+		for _, sip := range am.cfg.ExternalIPs {
+			eport := uint16(defaultPort)
+			host, portstr, err := net.SplitHostPort(sip)
+			if err != nil {
+				// no port, use default.
+				host = sip
+			} else {
+				port, err := strconv.ParseUint(portstr, 10, 16)
+				if err != nil {
+					log.Warnf("Can not parse port from %s for "+
+						"externalip: %s", sip, err)
+					continue
+				}
+				eport = uint16(port)
+			}
+			na, err := am.HostToNetAddress(host, eport, appmessage.DefaultServices)
+			if err != nil {
+				log.Warnf("Not adding %s as externalip: %s", sip, err)
+				continue
+			}
+
+			err = am.AddLocalAddress(na, ManualPrio)
+			if err != nil {
+				log.Warnf("Skipping specified external IP: %s", err)
+			}
+		}
+	} else {
+		// Listen for TCP connections at the configured addresses
+		netAddrs, err := parseListeners(am.cfg.Listeners)
+		if err != nil {
+			return err
+		}
+
+		// Add bound addresses to address manager to be advertised to peers.
+		for _, addr := range netAddrs {
+			listener, err := net.Listen(addr.Network(), addr.String())
+			if err != nil {
+				log.Warnf("Can't listen on %s: %s", addr, err)
+				continue
+			}
+			addr := listener.Addr().String()
+			err = listener.Close()
+			if err != nil {
+				return err
+			}
+			err = am.addLocalAddress(addr)
+			if err != nil {
+				log.Warnf("Skipping bound address %s: %s", addr, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// parseListeners determines whether each listen address is IPv4 and IPv6 and
+// returns a slice of appropriate net.Addrs to listen on with TCP. It also
+// properly detects addresses which apply to "all interfaces" and adds the
+// address as both IPv4 and IPv6.
+func parseListeners(addrs []string) ([]net.Addr, error) {
+	netAddrs := make([]net.Addr, 0, len(addrs)*2)
+	for _, addr := range addrs {
+		host, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			// Shouldn't happen due to already being normalized.
+			return nil, err
+		}
+
+		// Empty host or host of * on plan9 is both IPv4 and IPv6.
+		if host == "" || (host == "*" && runtime.GOOS == "plan9") {
+			netAddrs = append(netAddrs, simpleAddr{net: "tcp4", addr: addr})
+			netAddrs = append(netAddrs, simpleAddr{net: "tcp6", addr: addr})
+			continue
+		}
+
+		// Strip IPv6 zone id if present since net.ParseIP does not
+		// handle it.
+		zoneIndex := strings.LastIndex(host, "%")
+		if zoneIndex > 0 {
+			host = host[:zoneIndex]
+		}
+
+		// Parse the IP.
+		ip := net.ParseIP(host)
+		if ip == nil {
+			hostAddrs, err := net.LookupHost(host)
+			if err != nil {
+				return nil, err
+			}
+			ip = net.ParseIP(hostAddrs[0])
+			if ip == nil {
+				return nil, errors.Errorf("Cannot resolve IP address for host '%s'", host)
+			}
+		}
+
+		// To4 returns nil when the IP is not an IPv4 address, so use
+		// this determine the address type.
+		if ip.To4() == nil {
+			netAddrs = append(netAddrs, simpleAddr{net: "tcp6", addr: addr})
+		} else {
+			netAddrs = append(netAddrs, simpleAddr{net: "tcp4", addr: addr})
+		}
+	}
+	return netAddrs, nil
+}
+
+// addLocalAddress adds an address that this node is listening on to the
+// address manager so that it may be relayed to peers.
+func (am *AddressManager) addLocalAddress(addr string) error {
+	host, portStr, err := net.SplitHostPort(addr)
+	if err != nil {
+		return err
+	}
+	port, err := strconv.ParseUint(portStr, 10, 16)
+	if err != nil {
+		return err
+	}
+
+	if ip := net.ParseIP(host); ip != nil && ip.IsUnspecified() {
+		// If bound to unspecified address, advertise all local interfaces
+		addrs, err := net.InterfaceAddrs()
+		if err != nil {
+			return err
+		}
+
+		for _, addr := range addrs {
+			ifaceIP, _, err := net.ParseCIDR(addr.String())
+			if err != nil {
+				continue
+			}
+
+			// If bound to 0.0.0.0, do not add IPv6 interfaces and if bound to
+			// ::, do not add IPv4 interfaces.
+			if (ip.To4() == nil) != (ifaceIP.To4() == nil) {
+				continue
+			}
+
+			netAddr := appmessage.NewNetAddressIPPort(ifaceIP, uint16(port), appmessage.DefaultServices)
+			am.AddLocalAddress(netAddr, BoundPrio)
+		}
+	} else {
+		netAddr, err := am.HostToNetAddress(host, uint16(port), appmessage.DefaultServices)
+		if err != nil {
+			return err
+		}
+
+		am.AddLocalAddress(netAddr, BoundPrio)
+	}
+
+	return nil
+}
+
+// simpleAddr implements the net.Addr interface with two struct fields
+type simpleAddr struct {
+	net, addr string
+}
+
+// String returns the address.
+//
+// This is part of the net.Addr interface.
+func (a simpleAddr) String() string {
+	return a.addr
+}
+
+// Network returns the network.
+//
+// This is part of the net.Addr interface.
+func (a simpleAddr) Network() string {
+	return a.net
+}
+
+// Ensure simpleAddr implements the net.Addr interface.
+var _ net.Addr = simpleAddr{}
