@@ -157,6 +157,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 					}
 					isAccepted = false
 				} else {
+					isAccepted = true
 					accumulatedMass = accumulatedMassAfter
 
 					_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
