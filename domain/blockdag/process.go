@@ -249,18 +249,24 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	// If the new block is not the selected tip - it's currently red from the PoV of virtual, therefore it's
-	isNewSelectedTip := node.less(dag.selectedTip())
-	if !isNewSelectedTip {
-		dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
-	}
+	var isNewSelectedTip, isViolatingSubjectiveFinality bool
+	if node.isGenesis() {
+		isNewSelectedTip = true
+		isViolatingSubjectiveFinality = false
+	} else {
+		// If the new block is not the selected tip - it's currently red from the PoV of virtual, therefore it's
+		isNewSelectedTip = node.less(dag.selectedTip())
+		if !isNewSelectedTip {
+			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
+		}
 
-	isViolatingSubjectiveFinality, err := node.isViolatingSubjectiveFinality()
-	if err != nil {
-		return nil, err
-	}
-	if isViolatingSubjectiveFinality {
-		dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
+		isViolatingSubjectiveFinality, err = node.isViolatingSubjectiveFinality()
+		if err != nil {
+			return nil, err
+		}
+		if isViolatingSubjectiveFinality {
+			dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
+		}
 	}
 
 	if isNewSelectedTip && !isViolatingSubjectiveFinality {
@@ -296,14 +302,16 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 func (dag *BlockDAG) validateAndApplyUTXOSet(
 	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
 
-	err := dag.resolveSelectedParentStatus(node.selectedParent, flags, dbTx)
-	if err != nil {
-		return err
-	}
+	if !node.isGenesis() {
+		err := dag.resolveSelectedParentStatus(node.selectedParent, flags, dbTx)
+		if err != nil {
+			return err
+		}
 
-	if dag.index.BlockNodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
-		dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
-		return nil
+		if dag.index.BlockNodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
+			dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
+			return nil
+		}
 	}
 
 	utxoVerificationData, err :=
