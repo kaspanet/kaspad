@@ -124,6 +124,8 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
+	// We obtain the median time of the selected parent block (unless it's genesis block)
+	// in order to determine if transactions in the current block are final.
 	selectedParentMedianTime := node.selectedParentMedianTime()
 	accumulatedMass := uint64(0)
 
