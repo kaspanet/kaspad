@@ -376,25 +376,6 @@ func mustRegister(params *Params) {
 	}
 }
 
-// newHashFromStr converts the passed big-endian hex string into a
-// daghash.Hash. It only differs from the one available in daghash in that
-// it panics on an error since it will only (and must only) be called with
-// hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *daghash.Hash {
-	hash, err := daghash.NewHashFromStr(hexStr)
-	if err != nil {
-		// Ordinarily I don't like panics in library code since it
-		// can take applications down without them having a chance to
-		// recover which is extremely annoying, however an exception is
-		// being made in this case because the only way this can panic
-		// is if there is an error in the hard-coded hashes. Thus it
-		// will only ever potentially panic on init and therefore is
-		// 100% predictable.
-		panic(err)
-	}
-	return hash
-}
-
 func init() {
 	// Register all default networks when the package is initialized.
 	mustRegister(&MainnetParams)
