@@ -366,6 +366,10 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	return nil
 }
 
+func calcCoinbaseTxMass(tx *util.Tx) uint64 {
+	return CalcTxMass(tx, [][]byte{})
+}
+
 func calcTxMassFromInputsWithReferencedEntries(
 	tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) uint64 {
 
