@@ -60,6 +60,7 @@ func TestTxRelay(t *testing.T) {
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
 			close(txAddedToMempoolChan)
+			return
 		}
 	})
 
