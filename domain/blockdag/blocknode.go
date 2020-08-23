@@ -261,14 +261,12 @@ func (node *blockNode) time() mstime.Time {
 }
 
 func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
-	current := node
-
-	var requiredBlueScore uint64
-	if node.blueScore < depth {
-		requiredBlueScore = 0
-	} else {
-		requiredBlueScore = node.blueScore - depth
+	if node.blueScore <= depth {
+		return node.dag.genesis
 	}
+
+	current := node
+	requiredBlueScore := node.blueScore - depth
 
 	for current.blueScore >= requiredBlueScore {
 		if current.isGenesis() {
