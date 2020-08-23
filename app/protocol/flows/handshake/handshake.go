@@ -60,7 +60,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 
 	spawn("HandleHandshake-SendVersion", func() {
 		defer wg.Done()
-		err := SendVersion(context, sendVersionRoute, outgoingRoute)
+		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return

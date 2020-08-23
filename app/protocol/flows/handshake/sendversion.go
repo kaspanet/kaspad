@@ -3,6 +3,7 @@ package handshake
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 )
@@ -18,7 +19,7 @@ var (
 
 	// defaultServices describes the default services that are supported by
 	// the server.
-	defaultServices = appmessage.SFNodeNetwork | appmessage.SFNodeBloom | appmessage.SFNodeCF
+	defaultServices = appmessage.DefaultServices
 
 	// defaultRequiredServices describes the default services that are
 	// required to be supported by outbound peers.
@@ -28,14 +29,18 @@ var (
 type sendVersionFlow struct {
 	HandleHandshakeContext
 	incomingRoute, outgoingRoute *router.Route
+	peer                         *peerpkg.Peer
 }
 
 // SendVersion sends a version to a peer and waits for verack.
-func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route, peer *peerpkg.Peer) error {
+
 	flow := &sendVersionFlow{
 		HandleHandshakeContext: context,
 		incomingRoute:          incomingRoute,
 		outgoingRoute:          outgoingRoute,
+		peer:                   peer,
 	}
 	return flow.start()
 }
@@ -45,10 +50,7 @@ func (flow *sendVersionFlow) start() error {
 	subnetworkID := flow.Config().SubnetworkID
 
 	// Version message.
-	localAddress, err := flow.NetAdapter().GetBestLocalAddress()
-	if err != nil {
-		return err
-	}
+	localAddress := flow.AddressManager().GetBestLocalAddress(flow.peer.Connection().NetAddress())
 	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
 		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
@@ -62,7 +64,7 @@ func (flow *sendVersionFlow) start() error {
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly
 
-	err = flow.outgoingRoute.Enqueue(msg)
+	err := flow.outgoingRoute.Enqueue(msg)
 	if err != nil {
 		return err
 	}

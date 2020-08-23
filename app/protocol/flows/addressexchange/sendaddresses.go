@@ -14,7 +14,6 @@ type SendAddressesContext interface {
 
 // SendAddresses sends addresses to a peer that requests it.
 func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
-
 	message, err := incomingRoute.Dequeue()
 	if err != nil {
 		return err
