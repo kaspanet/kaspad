@@ -123,18 +123,6 @@ func NewLoadTxFilterCmd(reload bool, addresses []string, outpoints []Outpoint) *
 	}
 }
 
-// RescanBlocksCmd defines the rescan JSON-RPC command.
-type RescanBlocksCmd struct {
-	// Block hashes as a string array.
-	BlockHashes []string
-}
-
-// NewRescanBlocksCmd returns a new instance which can be used to issue a rescan
-// JSON-RPC command.
-func NewRescanBlocksCmd(blockHashes []string) *RescanBlocksCmd {
-	return &RescanBlocksCmd{BlockHashes: blockHashes}
-}
-
 func init() {
 	// The commands in this file are only usable by websockets.
 	flags := UFWebsocketOnly
@@ -148,5 +136,4 @@ func init() {
 	MustRegisterCommand("stopNotifyBlocks", (*StopNotifyBlocksCmd)(nil), flags)
 	MustRegisterCommand("stopNotifyChainChanges", (*StopNotifyChainChangesCmd)(nil), flags)
 	MustRegisterCommand("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
-	MustRegisterCommand("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
 }

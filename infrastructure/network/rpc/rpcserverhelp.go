@@ -522,19 +522,10 @@ var helpDescsEnUS = map[string]string{
 	"outpoint-index": "The index of the outpoint",
 
 	// LoadTxFilterCmd help.
-	"loadTxFilter--synopsis": "Load, add to, or reload a websocket client's transaction filter for mempool transactions, new blocks and rescanBlocks.",
+	"loadTxFilter--synopsis": "Load, add to, or reload a websocket client's transaction filter for mempool transactions and new blocks.",
 	"loadTxFilter-reload":    "Load a new filter instead of adding data to an existing one",
 	"loadTxFilter-addresses": "Array of addresses to add to the transaction filter",
 	"loadTxFilter-outpoints": "Array of outpoints to add to the transaction filter",
-
-	// RescanBlocks help.
-	"rescanBlocks--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",
-	"rescanBlocks-blockHashes": "List of hashes to rescan. Each next block must be a child of the previous.",
-	"rescanBlocks--result0":    "List of matching blocks.",
-
-	// RescannedBlock help.
-	"rescannedBlock-hash":         "Hash of the matching block.",
-	"rescannedBlock-transactions": "List of matching transactions, serialized and hex-encoded.",
 
 	// Uptime help.
 	"uptime--synopsis": "Returns the total uptime of the server.",
@@ -604,7 +595,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"rescanBlocks":              {(*[]model.RescannedBlock)(nil)},
 }
 
 // helpCacher provides a concurrent safe type that provides help and usage for

@@ -157,20 +157,6 @@ func TestRPCServerWebsocketCommands(t *testing.T) {
 				Outpoints: []model.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
 			},
 		},
-		{
-			name: "rescanBlocks",
-			newCmd: func() (interface{}, error) {
-				return model.NewCommand("rescanBlocks", `["0000000000000000000000000000000000000000000000000000000000000123"]`)
-			},
-			staticCmd: func() interface{} {
-				blockhashes := []string{"0000000000000000000000000000000000000000000000000000000000000123"}
-				return model.NewRescanBlocksCmd(blockhashes)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"rescanBlocks","params":[["0000000000000000000000000000000000000000000000000000000000000123"]],"id":1}`,
-			unmarshalled: &model.RescanBlocksCmd{
-				BlockHashes: []string{"0000000000000000000000000000000000000000000000000000000000000123"},
-			},
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))

@@ -73,7 +73,6 @@ var wsHandlersBeforeInit = map[string]wsCommandHandler{
 	"stopNotifyBlocks":          handleStopNotifyBlocks,
 	"stopNotifyChainChanges":    handleStopNotifyChainChanges,
 	"stopNotifyNewTransactions": handleStopNotifyNewTransactions,
-	"rescanBlocks":              handleRescanBlocks,
 }
 
 // WebsocketHandler handles a new websocket client by creating a new wsClient,
