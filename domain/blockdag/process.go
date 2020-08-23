@@ -254,8 +254,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		isNewSelectedTip = true
 		isViolatingSubjectiveFinality = false
 	} else {
-		// If the new block is not the selected tip - it's currently red from the PoV of virtual, therefore it's
-		isNewSelectedTip = node.less(dag.selectedTip())
+		// If the new block is not the selected tip - it's not in virtual's selectedParentChain, therefore it's
+		// not going to be utxo-verified at this point
+		isNewSelectedTip = dag.selectedTip().less(node)
 		if !isNewSelectedTip {
 			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
 		}
