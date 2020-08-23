@@ -755,7 +755,7 @@ func checkTransactionMassSanity(tx *util.Tx) error {
 	serializedTxSize := tx.MsgTx().SerializeSize()
 	if serializedTxSize*blockdag.MassPerTxByte > domainmessage.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, domainmessage.MaxMassPerBlock)
+			"%d, max %d", serializedTxSize, domainmessage.MaxMassAcceptedByBlock)
 		return txRuleError(RejectInvalid, str)
 	}
 	return nil

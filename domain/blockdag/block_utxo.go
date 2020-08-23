@@ -1,11 +1,10 @@
 package blockdag
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
 
@@ -61,25 +60,6 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	return newVirtualUTXODiffSet.meldToBase()
 }
 
-// checkDoubleSpendsWithBlockPast checks that each block transaction
-// has a corresponding UTXO in the block pastUTXO.
-func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.Tx) error {
-	for _, tx := range blockTransactions {
-		if tx.IsCoinBase() {
-			continue
-		}
-
-		for _, txIn := range tx.MsgTx().TxIn {
-			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
-				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
-					"output %s in the utxo set", txIn.PreviousOutpoint))
-			}
-		}
-	}
-
-	return nil
-}
-
 type utxoVerificationOutput struct {
 	newBlockUTXO      UTXOSet
 	txsAcceptanceData MultiBlockTxsAcceptanceData
@@ -90,9 +70,7 @@ type utxoVerificationOutput struct {
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data, the compactFeeData
 // for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	*utxoVerificationOutput, error) {
-
+func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx) (*utxoVerificationOutput, error) {
 	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
@@ -103,7 +81,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, err
 	}
 
-	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	feeData, err := dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +124,11 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
+	// We obtain the median time of the selected parent block (unless it's genesis block)
+	// in order to determine if transactions in the current block are final.
+	selectedParentMedianTime := node.selectedParentMedianTime()
+	accumulatedMass := uint64(0)
+
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
 	// is so that anyone who iterates over it would process blocks (and transactions)
 	// in their order of appearance in the DAG.
@@ -158,25 +141,56 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		}
 		isSelectedParent := i == 0
 
-		for j, tx := range blueBlock.Transactions() {
+		for j, tx := range transactions {
 			var isAccepted bool
-
-			// Coinbase transaction outputs are added to the UTXO
-			// only if they are in the selected parent chain.
-			if !isSelectedParent && tx.IsCoinBase() {
-				isAccepted = false
-			} else {
-				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
-				if err != nil {
-					return nil, nil, err
-				}
+			isAccepted, accumulatedMass, err = node.checkIsAccepted(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+			if err != nil {
+				return nil, nil, err
 			}
+
 			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
 		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
 
 	return pastUTXO, multiBlockTxsAcceptanceData, nil
+}
+
+func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
+	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
+	isAccepted bool, accumulatedMassAfter uint64, err error) {
+
+	accumulatedMass := accumulatedMassBefore
+
+	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
+	if tx.IsCoinBase() {
+		isAccepted = isSelectedParent
+		if isAccepted {
+			txMass := CalcTxMass(tx, nil)
+			accumulatedMass += txMass
+		}
+		return isAccepted, accumulatedMass, nil
+	}
+
+	_, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
+		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
+
+	if err != nil {
+		if !errors.As(err, &(RuleError{})) {
+			return false, 0, err
+		}
+
+		isAccepted = false
+	} else {
+		isAccepted = true
+		accumulatedMass = accumulatedMassAfter
+
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return false, 0, err
+		}
+	}
+	return isAccepted, accumulatedMass, nil
 }
 
 // pastUTXO returns the UTXO of a given block's past
@@ -249,6 +263,10 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	for tip := range dag.virtual.parents {
+		if dag.index.BlockNodeStatus(tip) == statusUTXONotVerified {
+			continue
+		}
+
 		tipPastUTXO, err := dag.restorePastUTXO(tip)
 		if err != nil {
 			return err
@@ -279,6 +297,10 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 	}
 
 	for parent := range node.parents {
+		if node.dag.index.BlockNodeStatus(parent) == statusUTXONotVerified {
+			continue
+		}
+
 		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err

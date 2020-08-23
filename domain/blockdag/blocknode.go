@@ -230,6 +230,14 @@ func (node *blockNode) PastMedianTime() mstime.Time {
 	return mstime.UnixMilliseconds(medianTimestamp)
 }
 
+func (node *blockNode) selectedParentMedianTime() mstime.Time {
+	medianTime := node.Header().Timestamp
+	if !node.isGenesis() {
+		medianTime = node.selectedParent.PastMedianTime()
+	}
+	return medianTime
+}
+
 func (node *blockNode) ParentHashes() []*daghash.Hash {
 	return node.parents.hashes()
 }
@@ -253,8 +261,11 @@ func (node *blockNode) time() mstime.Time {
 }
 
 func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
-	current := node
+	if node.blueScore <= depth {
+		return node.dag.genesis
+	}
 
+	current := node
 	requiredBlueScore := node.blueScore - depth
 
 	for current.blueScore >= requiredBlueScore {
@@ -326,8 +337,8 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	}
 
 	if node.dag.virtual.less(node) {
-		isVirtualFinalityPointInNodesSelectedChain, err :=
-			node.dag.isInSelectedParentChainOf(node.dag.virtual.finalityPoint(), node)
+		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
+			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
 		if err != nil {
 			return false, err
 		}

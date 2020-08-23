@@ -358,39 +358,29 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	if err != nil {
 		return err
 	}
-	if txMass > domainmessage.MaxMassPerBlock {
+	if txMass > domainmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
-			"allowed limit of %d", tx.ID(), txMass, domainmessage.MaxMassPerBlock)
+			"allowed limit of %d", tx.ID(), txMass, domainmessage.MaxMassAcceptedByBlock)
 		return ruleError(ErrTxMassTooHigh, str)
 	}
 	return nil
 }
 
-func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
-	_, err := CalcBlockMass(pastUTXO, transactions)
-	return err
-}
+func calcTxMassFromInputsWithReferencedEntries(
+	tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) uint64 {
 
-// CalcBlockMass sums up and returns the "mass" of a block. See CalcTxMass
-// for further details.
-func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
-	totalMass := uint64(0)
-	for _, tx := range transactions {
-		txMass, err := CalcTxMassFromUTXOSet(tx, pastUTXO)
-		if err != nil {
-			return 0, err
-		}
-		totalMass += txMass
-
-		// We could potentially overflow the accumulator so check for
-		// overflow as well.
-		if totalMass < txMass || totalMass > domainmessage.MaxMassPerBlock {
-			str := fmt.Sprintf("block has total mass %d, which is "+
-				"above the allowed limit of %d", totalMass, domainmessage.MaxMassPerBlock)
-			return 0, ruleError(ErrBlockMassTooHigh, str)
-		}
+	if tx.IsCoinBase() {
+		return CalcTxMass(tx, nil)
 	}
-	return totalMass, nil
+
+	previousScriptPubKeys := make([][]byte, 0, len(tx.MsgTx().TxIn))
+
+	for _, inputWithReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+		utxoEntry := inputWithReferencedUTXOEntry.utxoEntry
+
+		previousScriptPubKeys = append(previousScriptPubKeys, utxoEntry.ScriptPubKey())
+	}
+	return CalcTxMass(tx, previousScriptPubKeys)
 }
 
 // CalcTxMassFromUTXOSet calculates the transaction mass based on the
@@ -566,9 +556,9 @@ func (dag *BlockDAG) checkBlockContainsLessThanMaxBlockMassTransactions(block *u
 	// else it is certainly over the block mass limit.
 	transactions := block.Transactions()
 	numTx := len(transactions)
-	if numTx > domainmessage.MaxMassPerBlock {
+	if numTx > domainmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, domainmessage.MaxMassPerBlock)
+			"got %d, max %d", numTx, domainmessage.MaxMassAcceptedByBlock)
 		return ruleError(ErrBlockMassTooHigh, str)
 	}
 	return nil
@@ -882,6 +872,30 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 	return nil
 }
 
+func checkTxIsNotDuplicate(tx *util.Tx, utxoSet UTXOSet) error {
+	fetchSet := make(map[domainmessage.Outpoint]struct{})
+
+	// Fetch utxos for all of the ouputs in this transaction.
+	// Typically, there will not be any utxos for any of the outputs.
+	prevOut := domainmessage.Outpoint{TxID: *tx.ID()}
+	for txOutIdx := range tx.MsgTx().TxOut {
+		prevOut.Index = uint32(txOutIdx)
+		fetchSet[prevOut] = struct{}{}
+	}
+
+	// Duplicate transactions are only allowed if the previous transaction
+	// is fully spent.
+	for outpoint := range fetchSet {
+		if _, ok := utxoSet.Get(outpoint); ok {
+			str := fmt.Sprintf("tried to overwrite transaction %s "+
+				"that is not fully spent", outpoint.TxID)
+			return ruleError(ErrOverwriteTx, str)
+		}
+	}
+
+	return nil
+}
+
 // CheckTransactionInputsAndCalulateFee performs a series of checks on the inputs to a
 // transaction to ensure they are valid. An example of some of the checks
 // include verifying all inputs exist, ensuring the block reward seasoning
@@ -892,7 +906,8 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+func CheckTransactionInputsAndCalulateFee(
+	tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSompi uint64, err error) {
 
 	// Coinbase transactions have no standard inputs to validate.
@@ -903,14 +918,9 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	txID := tx.ID()
 	var totalSompiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
-		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
-		if !ok {
-			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s input %d either does not exist or "+
-				"has already been spent", txIn.PreviousOutpoint,
-				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
+		entry, err := checkReferencedOutputsAreAvailable(tx, utxoSet, txIn, txInIndex)
+		if err != nil {
+			return 0, err
 		}
 
 		if !fastAdd {
@@ -919,40 +929,25 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 			}
 		}
 
-		// Ensure the transaction amounts are in range. Each of the
-		// output values of the input transactions must not be negative
-		// or more than the max allowed per transaction. All amounts in
-		// a transaction are in a unit value known as a sompi. One
-		// kaspa is a quantity of sompi as defined by the
-		// SompiPerKaspa constant.
-		originTxSompi := entry.Amount()
-		if originTxSompi > util.MaxSompi {
-			str := fmt.Sprintf("transaction output value of %s is "+
-				"higher than max allowed value of %d",
-				util.Amount(originTxSompi),
-				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
-		}
-
-		// The total of all outputs must not be more than the max
-		// allowed per transaction. Also, we could potentially overflow
-		// the accumulator so check for overflow.
-		lastSompiIn := totalSompiIn
-		totalSompiIn += originTxSompi
-		if totalSompiIn < lastSompiIn ||
-			totalSompiIn > util.MaxSompi {
-			str := fmt.Sprintf("total value of all transaction "+
-				"inputs is %d which is higher than max "+
-				"allowed value of %d", totalSompiIn,
-				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
+		totalSompiIn, err = checkEntryAmounts(entry, totalSompiIn)
+		if err != nil {
+			return 0, err
 		}
 	}
 
+	totalSompiOut, err := checkOutputsAmounts(tx, totalSompiIn, txID)
+	if err != nil {
+		return 0, err
+	}
+
+	txFeeInSompi = totalSompiIn - totalSompiOut
+	return txFeeInSompi, nil
+}
+
+func checkOutputsAmounts(tx *util.Tx, totalSompiIn uint64, txID *daghash.TxID) (totalSompiOut uint64, err error) {
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionSanity.
-	var totalSompiOut uint64
 	for _, txOut := range tx.MsgTx().TxOut {
 		totalSompiOut += txOut.Value
 	}
@@ -964,9 +959,39 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 			"spent of %d", txID, totalSompiIn, totalSompiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
+	return totalSompiOut, nil
+}
 
-	txFeeInSompi = totalSompiIn - totalSompiOut
-	return txFeeInSompi, nil
+func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+	// The total of all outputs must not be more than the max
+	// allowed per transaction. Also, we could potentially overflow
+	// the accumulator so check for overflow.
+	lastSompiIn := totalSompiInBefore
+	originTxSompi := entry.Amount()
+	totalSompiInAfter = totalSompiInBefore + originTxSompi
+	if totalSompiInBefore < lastSompiIn ||
+		totalSompiInBefore > util.MaxSompi {
+		str := fmt.Sprintf("total value of all transaction "+
+			"inputs is %d which is higher than max "+
+			"allowed value of %d", totalSompiInBefore,
+			util.MaxSompi)
+		return 0, ruleError(ErrBadTxOutValue, str)
+	}
+	return totalSompiInAfter, nil
+}
+
+func checkReferencedOutputsAreAvailable(
+	tx *util.Tx, utxoSet UTXOSet, txIn *domainmessage.TxIn, txInIndex int) (*UTXOEntry, error) {
+
+	entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+	if !ok {
+		str := fmt.Sprintf("output %s referenced from "+
+			"transaction %s input %d either does not exist or "+
+			"has already been spent", txIn.PreviousOutpoint,
+			tx.ID(), txInIndex)
+		return nil, ruleError(ErrMissingTxOut, str)
+	}
+	return entry, nil
 }
 
 func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *domainmessage.TxIn) error {
@@ -988,115 +1013,256 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 	return nil
 }
 
-// checkConnectToPastUTXO performs several checks to confirm connecting the passed
-// block to the DAG represented by the passed view does not violate any rules.
-//
-// An example of some of the checks performed are ensuring connecting the block
-// would not cause any duplicate transaction hashes for old transactions that
-// aren't already fully spent, double spends, exceeding the maximum allowed
-// signature operations per block, invalid values in relation to the expected
-// block subsidy, or fail transaction script validation.
-//
-// It also returns the feeAccumulator for this block.
-//
-// This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
-	transactions []*util.Tx, fastAdd bool) (compactFeeData, error) {
+func (dag *BlockDAG) checkConnectBlockToPastUTXO(
+	node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (feeData compactFeeData, err error) {
 
-	if !fastAdd {
-		err := ensureNoDuplicateTx(pastUTXO, transactions)
-		if err != nil {
-			return nil, err
-		}
+	selectedParentMedianTime := node.selectedParentMedianTime()
 
-		err = checkDoubleSpendsWithBlockPast(pastUTXO, transactions)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := validateBlockMass(pastUTXO, transactions); err != nil {
-			return nil, err
-		}
-	}
-
-	// Perform several checks on the inputs for each transaction. Also
-	// accumulate the total fees. This could technically be combined with
-	// the loop above instead of running another loop over the transactions,
-	// but by separating it we can avoid running the more expensive (though
-	// still relatively cheap as compared to running the scripts) checks
-	// against all the inputs when the signature operations are out of
-	// bounds.
-	// In addition - add all fees into a fee accumulator, to be stored and checked
-	// when validating descendants' coinbase transactions.
-	var totalFees uint64
+	totalFee := uint64(0)
 	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.blueScore, pastUTXO,
-			dag.Params, fastAdd)
-		if err != nil {
-			return nil, err
-		}
+		txFee, _, err :=
+			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, 0, selectedParentMedianTime)
 
-		// Sum the total fees and ensure we don't overflow the
-		// accumulator.
-		lastTotalFees := totalFees
-		totalFees += txFee
-		if totalFees < lastTotalFees {
-			return nil, ruleError(ErrBadFees, "total fees for block "+
-				"overflows accumulator")
+		if err != nil {
+			if ruleErr := &(RuleError{}); !errors.As(err, ruleErr) {
+				return nil, err
+			}
+
+			continue
 		}
 
 		err = compactFeeFactory.add(txFee)
 		if err != nil {
-			return nil, errors.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
-		}
-	}
-	feeData, err := compactFeeFactory.data()
-	if err != nil {
-		return nil, errors.Errorf("error getting bytes of fee data: %s", err)
-	}
-
-	if !fastAdd {
-		scriptFlags := txscript.ScriptNoFlags
-
-		// We obtain the MTP of the *previous* block (unless it's genesis block)
-		// in order to determine if transactions in the current block are final.
-		medianTime := block.Header().Timestamp
-		if !block.isGenesis() {
-			medianTime = block.selectedParent.PastMedianTime()
+			return nil, err
 		}
 
-		// We also enforce the relative sequence number based
-		// lock-times within the inputs of all transactions in this
-		// candidate block.
-		for _, tx := range transactions {
-			// A transaction can only be included within a block
-			// once the sequence locks of *all* its inputs are
-			// active.
-			sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx)
-			if err != nil {
-				return nil, err
-			}
-			if !SequenceLockActive(sequenceLock, block.blueScore,
-				medianTime) {
-				str := fmt.Sprintf("block contains " +
-					"transaction whose input sequence " +
-					"locks are not met")
-				return nil, ruleError(ErrUnfinalizedTx, str)
-			}
-		}
-
-		// Now that the inexpensive checks are done and have passed, verify the
-		// transactions are actually allowed to spend the coins by running the
-		// expensive SCHNORR signature check scripts. Doing this last helps
-		// prevent CPU exhaustion attacks.
-		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
+		totalFee, err = dag.checkTotalFee(totalFee, txFee)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	feeData, err = compactFeeFactory.data()
+	if err != nil {
+		return nil, err
+	}
+
 	return feeData, nil
+}
+
+type txInputAndReferencedUTXOEntry struct {
+	txIn      *domainmessage.TxIn
+	utxoEntry *UTXOEntry
+}
+
+func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
+	node *blockNode, tx *util.Tx, pastUTXO UTXOSet, accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
+	txFee uint64, accumulatedMassAfter uint64, err error) {
+
+	err = checkTxIsNotDuplicate(tx, pastUTXO)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	inputsWithReferencedUTXOEntries, err := dag.GetReferencedUTXOEntries(tx, pastUTXO)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	accumulatedMassAfter, err = dag.checkTxMass(tx, inputsWithReferencedUTXOEntries, accumulatedMassBefore)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	err = dag.checkTxCoinbaseMaturity(node, inputsWithReferencedUTXOEntries)
+	if err != nil {
+		return 0, 0, nil
+	}
+
+	totalSompiIn, err := dag.checkTxInputAmounts(inputsWithReferencedUTXOEntries)
+	if err != nil {
+		return 0, 0, nil
+	}
+
+	totalSompiOut, err := dag.checkTxOutputAmounts(tx, totalSompiIn)
+	if err != nil {
+		return 0, 0, nil
+	}
+
+	txFee = totalSompiIn - totalSompiOut
+
+	err = dag.checkTxSequenceLock(node, tx, inputsWithReferencedUTXOEntries, selectedParentMedianTime)
+	if err != nil {
+		return 0, 0, nil
+	}
+
+	err = ValidateTransactionScripts(tx, pastUTXO, txscript.ScriptNoFlags, dag.sigCache)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return txFee, accumulatedMassAfter, nil
+}
+
+func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
+	inputsWithReferencedEntries []*txInputAndReferencedUTXOEntry, medianTime mstime.Time) error {
+
+	// A transaction can only be included within a block
+	// once the sequence locks of *all* its inputs are
+	// active.
+	sequenceLock, err := dag.calcTxSequenceLockFromInputsWithReferencedEntries(node, tx, inputsWithReferencedEntries)
+	if err != nil {
+		return err
+	}
+	if !SequenceLockActive(sequenceLock, node.blueScore, medianTime) {
+		str := fmt.Sprintf("block contains " +
+			"transaction whose input sequence " +
+			"locks are not met")
+		return ruleError(ErrUnfinalizedTx, str)
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) checkTxOutputAmounts(tx *util.Tx, totalSompiIn uint64) (uint64, error) {
+	totalSompiOut := uint64(0)
+	// Calculate the total output amount for this transaction. It is safe
+	// to ignore overflow and out of range errors here because those error
+	// conditions would have already been caught by checkTransactionSanity.
+	for _, txOut := range tx.MsgTx().TxOut {
+		totalSompiOut += txOut.Value
+	}
+
+	// Ensure the transaction does not spend more than its inputs.
+	if totalSompiIn < totalSompiOut {
+		str := fmt.Sprintf("total value of all transaction inputs for "+
+			"transaction %s is %d which is less than the amount "+
+			"spent of %d", tx.ID(), totalSompiIn, totalSompiOut)
+		return 0, ruleError(ErrSpendTooHigh, str)
+	}
+	return totalSompiOut, nil
+}
+
+func (dag *BlockDAG) checkTxInputAmounts(
+	inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) (totalSompiIn uint64, err error) {
+
+	totalSompiIn = 0
+
+	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
+
+		// Ensure the transaction amounts are in range. Each of the
+		// output values of the input transactions must not be negative
+		// or more than the max allowed per transaction. All amounts in
+		// a transaction are in a unit value known as a sompi. One
+		// kaspa is a quantity of sompi as defined by the
+		// SompiPerKaspa constant.
+		originTxSompi := utxoEntry.Amount()
+		if originTxSompi > util.MaxSompi {
+			str := fmt.Sprintf("transaction output value of %s is "+
+				"higher than max allowed value of %d",
+				util.Amount(originTxSompi),
+				util.MaxSompi)
+			return 0, ruleError(ErrBadTxOutValue, str)
+		}
+
+		// The total of all outputs must not be more than the max
+		// allowed per transaction. Also, we could potentially overflow
+		// the accumulator so check for overflow.
+		totalSompiInAfter := totalSompiIn + originTxSompi
+		if totalSompiInAfter < totalSompiIn || totalSompiInAfter > util.MaxSompi {
+			str := fmt.Sprintf("total value of all transaction "+
+				"inputs is %d which is higher than max "+
+				"allowed value of %d", totalSompiInAfter, util.MaxSompi)
+			return 0, ruleError(ErrBadTxOutValue, str)
+		}
+		totalSompiIn = totalSompiInAfter
+	}
+
+	return totalSompiIn, nil
+}
+
+func (dag *BlockDAG) checkTxCoinbaseMaturity(
+	node *blockNode, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) error {
+	txBlueScore := node.blueScore
+	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+		txIn := txInAndReferencedUTXOEntry.txIn
+		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
+
+		if utxoEntry.IsCoinbase() {
+			originBlueScore := utxoEntry.BlockBlueScore()
+			blueScoreSincePrev := txBlueScore - originBlueScore
+			if blueScoreSincePrev < dag.Params.BlockCoinbaseMaturity {
+				str := fmt.Sprintf("tried to spend coinbase "+
+					"transaction output %s from blue score %d "+
+					"to blue score %d before required maturity "+
+					"of %d", txIn.PreviousOutpoint,
+					originBlueScore, txBlueScore,
+					dag.Params.BlockCoinbaseMaturity)
+
+				return ruleError(ErrImmatureSpend, str)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry,
+	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
+
+	txMass := calcTxMassFromInputsWithReferencedEntries(tx, inputsWithReferencedUTXOEntries)
+
+	accumulatedMassAfter = accumulatedMassBefore + txMass
+
+	// We could potentially overflow the accumulator so check for
+	// overflow as well.
+	if accumulatedMassAfter < txMass || accumulatedMassAfter > domainmessage.MaxMassAcceptedByBlock {
+		str := fmt.Sprintf("block accepts transactions with accumulated mass higher then allowed limit of %d",
+			domainmessage.MaxMassAcceptedByBlock)
+		return 0, ruleError(ErrBlockMassTooHigh, str)
+	}
+
+	return accumulatedMassAfter, nil
+}
+
+func (dag *BlockDAG) GetReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
+	[]*txInputAndReferencedUTXOEntry, error) {
+
+	txIns := tx.MsgTx().TxIn
+	inputsWithReferencedUTXOEntries := make([]*txInputAndReferencedUTXOEntry, 0, len(txIns))
+
+	for txInIndex, txIn := range txIns {
+		utxoEntry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+		if !ok {
+			str := fmt.Sprintf("output %s referenced from "+
+				"transaction %s input %d either does not exist or "+
+				"has already been spent", txIn.PreviousOutpoint,
+				tx.ID(), txInIndex)
+			return nil, ruleError(ErrMissingTxOut, str)
+		}
+
+		inputsWithReferencedUTXOEntries = append(inputsWithReferencedUTXOEntries, &txInputAndReferencedUTXOEntry{
+			txIn:      txIn,
+			utxoEntry: utxoEntry,
+		})
+	}
+
+	return inputsWithReferencedUTXOEntries, nil
+}
+
+func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) (uint64, error) {
+	// Sum the total fees and ensure we don't overflow the
+	// accumulator.
+	lastTotalFees := totalFees
+	totalFees += txFee
+	if totalFees < lastTotalFees || totalFees > util.MaxSompi {
+		str := fmt.Sprintf("total fees are higher then max allowed value of %d", util.MaxSompi)
+		return 0, ruleError(ErrBadFees, str)
+	}
+	return totalFees, nil
 }
 
 func (node *blockNode) validateUTXOCommitment(multiset *secp256k1.MultiSet) error {
@@ -1126,7 +1292,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement. The block must connect to the current tip of the main dag.
 func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
-
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
 
@@ -1149,8 +1314,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	templateNode, _ := dag.newBlockNode(&header, dag.virtual.tips())
 
-	_, err = dag.checkConnectToPastUTXO(templateNode,
-		dag.UTXOSet(), block.Transactions(), false)
+	_, err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 
 	return err
 }
