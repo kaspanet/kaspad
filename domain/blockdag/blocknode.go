@@ -231,8 +231,6 @@ func (node *blockNode) PastMedianTime() mstime.Time {
 }
 
 func (node *blockNode) selectedParentMedianTime() mstime.Time {
-	// We obtain the MTP of the *previous* block (unless it's genesis block)
-	// in order to determine if transactions in the current block are final.
 	medianTime := node.Header().Timestamp
 	if !node.isGenesis() {
 		medianTime = node.selectedParent.PastMedianTime()
