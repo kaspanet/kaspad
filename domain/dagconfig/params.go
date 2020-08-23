@@ -27,10 +27,6 @@ var (
 	// have for the main network. It is the value 2^255 - 1.
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// regressionPowMax is the highest proof of work value a Kaspa block
-	// can have for the regression test network. It is the value 2^255 - 1.
-	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
-
 	// testnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the test network. It is the value 2^239 - 1.
 	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
@@ -51,37 +47,6 @@ const (
 	timestampDeviationTolerance    = 132
 	finalityDuration               = 24 * time.Hour
 	targetTimePerBlock             = 1 * time.Second
-)
-
-// ConsensusDeployment defines details related to a specific consensus rule
-// change that is voted in. This is part of BIP0009.
-type ConsensusDeployment struct {
-	// BitNumber defines the specific bit number within the block version
-	// this particular soft-fork deployment refers to.
-	BitNumber uint8
-
-	// StartTime is the median block time after which voting on the
-	// deployment starts.
-	StartTime uint64
-
-	// ExpireTime is the median block time after which the attempted
-	// deployment expires.
-	ExpireTime uint64
-}
-
-// Constants that define the deployment offset in the deployments field of the
-// parameters for each deployment. This is useful to be able to get the details
-// of a specific deployment by name.
-const (
-	// DeploymentTestDummy defines the rule change deployment ID for testing
-	// purposes.
-	DeploymentTestDummy = iota
-
-	// NOTE: DefinedDeployments must always come last since it is used to
-	// determine how many defined deployments there currently are.
-
-	// DefinedDeployments is the number of currently defined deployments.
-	DefinedDeployments
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
@@ -225,54 +190,6 @@ var MainnetParams = Params{
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
-
-	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
-	EnableNonNativeSubnetworks: false,
-
-	DisableDifficultyAdjustment: false,
-}
-
-// RegressionNetParams defines the network parameters for the regression test
-// Kaspa network. Not to be confused with the test Kaspa network (version
-// 3), this network is sometimes simply called "testnet".
-var RegressionNetParams = Params{
-	K:           ghostdagK,
-	Name:        "kaspa-regtest",
-	Net:         appmessage.Regtest,
-	RPCPort:     "16210",
-	DefaultPort: "16211",
-	DNSSeeds:    []string{},
-
-	// DAG parameters
-	GenesisBlock:                   &regtestGenesisBlock,
-	GenesisHash:                    &regtestGenesisHash,
-	PowMax:                         regressionPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       150,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
-
-	// Consensus rule change deployments.
-	//
-	// The miner confirmation window is defined as:
-	//   target proof of work timespan / target proof of work spacing
-	RuleChangeActivationThreshold: 108, // 75%  of MinerConfirmationWindow
-	MinerConfirmationWindow:       144,
-
-	// Mempool parameters
-	RelayNonStdTxs: true,
-
-	// AcceptUnroutable specifies whether this network accepts unroutable
-	// IP addresses, such as 10.0.0.0/8
-	AcceptUnroutable: false,
-
-	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaReg,
-
-	// Address encoding magics
-	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
@@ -482,6 +399,5 @@ func init() {
 	// Register all default networks when the package is initialized.
 	mustRegister(&MainnetParams)
 	mustRegister(&TestnetParams)
-	mustRegister(&RegressionNetParams)
 	mustRegister(&SimnetParams)
 }

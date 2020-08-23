@@ -34,11 +34,6 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 				{
-					name:   "duplicate regtest",
-					params: &RegressionNetParams,
-					err:    ErrDuplicateNet,
-				},
-				{
 					name:   "duplicate testnet",
 					params: &TestnetParams,
 					err:    ErrDuplicateNet,
@@ -66,11 +61,6 @@ func TestRegister(t *testing.T) {
 				{
 					name:   "duplicate mainnet",
 					params: &MainnetParams,
-					err:    ErrDuplicateNet,
-				},
-				{
-					name:   "duplicate regtest",
-					params: &RegressionNetParams,
 					err:    ErrDuplicateNet,
 				},
 				{

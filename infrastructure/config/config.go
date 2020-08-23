@@ -262,7 +262,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	cfg = &Config{
 		Flags: cfgFlags,
 	}
-	if !(preCfg.RegressionTest || preCfg.Simnet) || preCfg.ConfigFile !=
+	if !preCfg.Simnet || preCfg.ConfigFile !=
 		defaultConfigFile {
 
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
@@ -283,11 +283,6 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 			}
 			configFileError = err
 		}
-	}
-
-	// Don't add peers from the config file when in regression test mode.
-	if preCfg.RegressionTest && len(cfg.AddPeers) > 0 {
-		cfg.AddPeers = nil
 	}
 
 	// Parse command line options again to ensure they take precedence.
