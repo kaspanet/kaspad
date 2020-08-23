@@ -380,9 +380,9 @@ func calcTxMassFromInputsWithReferencedEntries(
 	previousScriptPubKeys := make([][]byte, 0, len(tx.MsgTx().TxIn))
 
 	for _, inputWithReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
-		entry := inputWithReferencedUTXOEntry.utxoEntry
+		utxoEntry := inputWithReferencedUTXOEntry.utxoEntry
 
-		previousScriptPubKeys = append(previousScriptPubKeys, entry.ScriptPubKey())
+		previousScriptPubKeys = append(previousScriptPubKeys, utxoEntry.ScriptPubKey())
 	}
 	return CalcTxMass(tx, previousScriptPubKeys)
 }
