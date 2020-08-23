@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
 
@@ -142,36 +143,50 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 
 		for j, tx := range transactions {
 			var isAccepted bool
-
-			// Coinbase transaction outputs are added to the UTXO
-			// only if they are in the selected parent chain.
-			if !isSelectedParent && tx.IsCoinBase() {
-				isAccepted = false
-			} else {
-				_, accumulatedMassAfter, err := node.dag.checkConnectTransactionToPastUTXO(
-					node, tx, pastUTXO, accumulatedMass, selectedParentMedianTime)
-
-				if err != nil {
-					if !errors.As(err, &(RuleError{})) {
-						return nil, nil, err
-					}
-					isAccepted = false
-				} else {
-					isAccepted = true
-					accumulatedMass = accumulatedMassAfter
-
-					_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
-					if err != nil {
-						return nil, nil, err
-					}
-				}
+			isAccepted, accumulatedMass, err = node.checkIsAccepted(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+			if err != nil {
+				return nil, nil, err
 			}
+
 			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
 		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
 
 	return pastUTXO, multiBlockTxsAcceptanceData, nil
+}
+
+func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
+	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
+	isAccepted bool, accumulatedMassAfter uint64, err error) {
+
+	accumulatedMass := accumulatedMassBefore
+
+	// Coinbase transaction outputs are added to the UTXO
+	// only if they are in the selected parent chain.
+	if tx.IsCoinBase() {
+		isAccepted = isSelectedParent
+	} else {
+		_, accumulatedMassAfter, err := node.dag.checkConnectTransactionToPastUTXO(
+			node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
+
+		if err != nil {
+			if !errors.As(err, &(RuleError{})) {
+				return false, 0, err
+			}
+
+			isAccepted = false
+		} else {
+			isAccepted = true
+			accumulatedMass = accumulatedMassAfter
+
+			_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+			if err != nil {
+				return false, 0, err
+			}
+		}
+	}
+	return isAccepted, accumulatedMass, nil
 }
 
 // pastUTXO returns the UTXO of a given block's past
