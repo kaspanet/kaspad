@@ -963,25 +963,11 @@ func checkOutputsAmounts(tx *util.Tx, totalSompiIn uint64, txID *daghash.TxID) (
 }
 
 func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
-	// Ensure the transaction amounts are in range. Each of the
-	// output values of the input transactions must not be negative
-	// or more than the max allowed per transaction. All amounts in
-	// a transaction are in a unit value known as a sompi. One
-	// kaspa is a quantity of sompi as defined by the
-	// SompiPerKaspa constant.
-	originTxSompi := entry.Amount()
-	if originTxSompi > util.MaxSompi {
-		str := fmt.Sprintf("transaction output value of %s is "+
-			"higher than max allowed value of %d",
-			util.Amount(originTxSompi),
-			util.MaxSompi)
-		return 0, ruleError(ErrBadTxOutValue, str)
-	}
-
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
 	lastSompiIn := totalSompiInBefore
+	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInBefore < lastSompiIn ||
 		totalSompiInBefore > util.MaxSompi {
