@@ -50,7 +50,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 				Message: "Failed to fetch block: " + err.Error(),
 			}
 		}
-		if lastBlockHash != nil && !block.MsgBlock().Header.ParentHashes[0].IsEqual(lastBlockHash) { // TODO: (Stas) This is likely wrong. Modified to satisfy compilation.
+		if lastBlockHash != nil && !block.MsgBlock().Header.ParentHashes[0].IsEqual(lastBlockHash) {
 			return nil, &model.RPCError{
 				Code: model.ErrRPCInvalidParameter,
 				Message: fmt.Sprintf("Block %s is not a child of %s",

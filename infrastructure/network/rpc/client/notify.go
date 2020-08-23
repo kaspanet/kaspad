@@ -439,9 +439,6 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*model.TxRawRes
 		return nil, err
 	}
 
-	// TODO: change txacceptedverbose notification callbacks to use nicer
-	// types for all details about the transaction (i.e. decoding hashes
-	// from their string encoding).
 	return &rawTx, nil
 }
 
