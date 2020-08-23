@@ -174,6 +174,13 @@ func toPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.MsgReject:
+		payload := new(KaspadMessage_Reject)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, errors.Errorf("unknown message type %T", message)
 	}
