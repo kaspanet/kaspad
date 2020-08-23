@@ -166,7 +166,7 @@ func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastU
 	if tx.IsCoinBase() {
 		isAccepted = isSelectedParent
 		if isAccepted {
-			txMass := calcCoinbaseTxMass(tx)
+			txMass := CalcTxMass(tx, nil)
 			accumulatedMass += txMass
 		}
 		return isAccepted, accumulatedMass, nil
