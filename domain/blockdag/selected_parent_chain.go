@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
@@ -77,11 +78,7 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, err
 }
 
 // isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
+// Returns true in the edge case where node==other
 func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
-	// By definition, a node is not in the selected parent chain of itself.
-	if node == other {
-		return false, nil
-	}
-
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }

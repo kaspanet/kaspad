@@ -265,7 +265,12 @@ func (node *blockNode) time() mstime.Time {
 func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
 	current := node
 
-	requiredBlueScore := node.blueScore - depth
+	var requiredBlueScore uint64
+	if node.blueScore < depth {
+		requiredBlueScore = 0
+	} else {
+		requiredBlueScore = node.blueScore - depth
+	}
 
 	for current.blueScore >= requiredBlueScore {
 		if current.isGenesis() {
@@ -336,8 +341,8 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	}
 
 	if node.dag.virtual.less(node) {
-		isVirtualFinalityPointInNodesSelectedChain, err :=
-			node.dag.isInSelectedParentChainOf(node.dag.virtual.finalityPoint(), node)
+		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
+			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
 		if err != nil {
 			return false, err
 		}

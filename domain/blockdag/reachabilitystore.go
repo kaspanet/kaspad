@@ -2,12 +2,13 @@ package blockdag
 
 import (
 	"bytes"
+	"io"
+
 	"github.com/kaspanet/kaspad/infrastructure/database"
 	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
-	"io"
 )
 
 type reachabilityData struct {
