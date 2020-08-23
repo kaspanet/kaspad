@@ -782,28 +782,6 @@ func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddre
 	am.updateAddress(address, sourceAddress, subnetworkID)
 }
 
-// AddAddressByIP adds an address where we are given an ip:port and not a
-// appmessage.NetAddress.
-func (am *AddressManager) AddAddressByIP(addressIP string, subnetworkID *subnetworkid.SubnetworkID) error {
-	// Split IP and port
-	ipString, portString, err := net.SplitHostPort(addressIP)
-	if err != nil {
-		return err
-	}
-	// Put it in appmessage.Netaddress
-	ip := net.ParseIP(ipString)
-	if ip == nil {
-		return errors.Errorf("invalid ip %s", ipString)
-	}
-	port, err := strconv.ParseUint(portString, 10, 0)
-	if err != nil {
-		return errors.Errorf("invalid port %s: %s", portString, err)
-	}
-	netAddress := appmessage.NewNetAddressIPPort(ip, uint16(port), 0)
-	am.AddAddress(netAddress, netAddress, subnetworkID)
-	return nil
-}
-
 // numAddresses returns the number of addresses that belongs to a specific subnetwork id
 // which are known to the address manager.
 func (am *AddressManager) numAddresses(subnetworkID *subnetworkid.SubnetworkID) int {

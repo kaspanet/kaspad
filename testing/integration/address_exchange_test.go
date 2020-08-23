@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"testing"
 )
 
@@ -9,7 +10,7 @@ func TestAddressExchange(t *testing.T) {
 	defer teardown()
 
 	testAddress := "1.2.3.4:6789"
-	err := appHarness1.app.AddressManager().AddAddressByIP(testAddress, nil)
+	err := addressmanager.AddAddressByIP(appHarness1.app.AddressManager(), testAddress, nil)
 	if err != nil {
 		t.Fatalf("Error adding address to addressManager: %+v", err)
 	}
