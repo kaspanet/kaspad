@@ -42,7 +42,7 @@ func (dag *BlockDAG) UTXOConfirmations(outpoint *appmessage.Outpoint) (uint64, b
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	utxoEntry, ok := dag.GetUTXOEntry(*outpoint)
+	utxoEntry, ok := dag.virtual.utxoSet.get(*outpoint)
 	if !ok {
 		return 0, false
 	}

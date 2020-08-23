@@ -248,6 +248,8 @@ func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
 func (dag *BlockDAG) GetUTXOEntry(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
+	dag.RLock()
+	defer dag.RUnlock()
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
