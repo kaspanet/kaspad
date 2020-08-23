@@ -16,7 +16,7 @@ import (
 )
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
-// the main network, regression test network, and test network.
+// the main network and test network.
 var genesisCoinbaseTxIns = []*TxIn{
 	{
 		PreviousOutpoint: Outpoint{

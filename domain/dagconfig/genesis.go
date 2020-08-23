@@ -108,55 +108,6 @@ var devnetGenesisBlock = appmessage.MsgBlock{
 	Transactions: []*appmessage.MsgTx{devnetGenesisCoinbaseTx},
 }
 
-var regtestGenesisTxOuts = []*appmessage.TxOut{}
-
-var regtestGenesisTxPayload = []byte{
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
-	0x17,                                           // Varint
-	0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49, // OP-TRUE p2sh
-	0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
-	0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x72, 0x65, 0x67, 0x74, 0x65, 0x73, 0x74, // kaspa-regtest
-}
-
-// regtestGenesisCoinbaseTx is the coinbase transaction for
-// the genesis blocks for the regtest network.
-var regtestGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, regtestGenesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, regtestGenesisTxPayload)
-
-// devGenesisHash is the hash of the first block in the block DAG for the development
-// network (genesis block).
-var regtestGenesisHash = daghash.Hash{
-	0xda, 0x23, 0x61, 0x5e, 0xf6, 0x2a, 0x95, 0x27,
-	0x7f, 0x5a, 0x40, 0xd5, 0x91, 0x97, 0x1c, 0xef,
-	0xd5, 0x86, 0xac, 0xac, 0x82, 0xb3, 0xc9, 0x43,
-	0xd3, 0x49, 0x5f, 0x7e, 0x93, 0x0b, 0x35, 0x2d,
-}
-
-// regtestGenesisMerkleRoot is the hash of the first transaction in the genesis block
-// for the regtest.
-var regtestGenesisMerkleRoot = daghash.Hash{
-	0x1e, 0x08, 0xae, 0x1f, 0x43, 0xf5, 0xfc, 0x24,
-	0xe6, 0xec, 0x54, 0x5b, 0xf7, 0x52, 0x99, 0xe4,
-	0xcc, 0x4c, 0xa0, 0x79, 0x41, 0xfc, 0xbe, 0x76,
-	0x72, 0x4c, 0x7e, 0xd8, 0xa3, 0x43, 0x65, 0x94,
-}
-
-// regtestGenesisBlock defines the genesis block of the block DAG which serves as the
-// public transaction ledger for the development network.
-var regtestGenesisBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
-		Version:              0x10000000,
-		ParentHashes:         []*daghash.Hash{},
-		HashMerkleRoot:       &regtestGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &daghash.Hash{},
-		UTXOCommitment:       &daghash.ZeroHash,
-		Timestamp:            mstime.UnixMilliseconds(0x1730a958ac4),
-		Bits:                 0x207fffff,
-		Nonce:                0x0,
-	},
-	Transactions: []*appmessage.MsgTx{regtestGenesisCoinbaseTx},
-}
-
 var simnetGenesisTxOuts = []*appmessage.TxOut{}
 
 var simnetGenesisTxPayload = []byte{

@@ -12,10 +12,6 @@ import (
 )
 
 var (
-	// ErrChecksumMismatch describes an error where decoding failed due
-	// to a bad checksum.
-	ErrChecksumMismatch = errors.New("checksum mismatch")
-
 	// ErrUnknownAddressType describes an error where an address can not
 	// decoded as a specific address type due to the string encoding
 	// begining with an identifier byte unknown to any standard or
@@ -46,9 +42,6 @@ const (
 	// Prefix for the dev network.
 	Bech32PrefixKaspaDev
 
-	// Prefix for the regression test network.
-	Bech32PrefixKaspaReg
-
 	// Prefix for the test network.
 	Bech32PrefixKaspaTest
 
@@ -60,7 +53,6 @@ const (
 var stringsToBech32Prefixes = map[string]Bech32Prefix{
 	"kaspa":     Bech32PrefixKaspa,
 	"kaspadev":  Bech32PrefixKaspaDev,
-	"kaspareg":  Bech32PrefixKaspaReg,
 	"kaspatest": Bech32PrefixKaspaTest,
 	"kaspasim":  Bech32PrefixKaspaSim,
 }

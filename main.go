@@ -165,9 +165,6 @@ func removeDatabase(cfg *config.Config) error {
 	return os.RemoveAll(dbPath)
 }
 
-// removeRegressionDB removes the existing regression test database if running
-// in regression test mode and it already exists.
-
 // dbPath returns the path to the block database given a database type.
 func blockDbPath(cfg *config.Config) string {
 	// The database name is based on the database type.

@@ -41,6 +41,17 @@ func TestNewHashFromStr(t *testing.T) {
 	}
 }
 
+// newHashFromStr converts the passed big-endian hex string into a
+// daghash.Hash. It only differs from the one available in daghash in that
+// it panics on an error since it will only be called from tests.
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return hash
+}
+
 // TestMustRegisterPanic ensures the mustRegister function panics when used to
 // register an invalid network.
 func TestMustRegisterPanic(t *testing.T) {

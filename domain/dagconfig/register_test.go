@@ -34,11 +34,6 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 				{
-					name:   "duplicate regtest",
-					params: &RegressionNetParams,
-					err:    ErrDuplicateNet,
-				},
-				{
 					name:   "duplicate testnet",
 					params: &TestnetParams,
 					err:    ErrDuplicateNet,
@@ -69,11 +64,6 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 				{
-					name:   "duplicate regtest",
-					params: &RegressionNetParams,
-					err:    ErrDuplicateNet,
-				},
-				{
 					name:   "duplicate testnet",
 					params: &TestnetParams,
 					err:    ErrDuplicateNet,
@@ -93,12 +83,12 @@ func TestRegister(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, regtest := range test.register {
-			err := Register(regtest.params)
+		for _, network := range test.register {
+			err := Register(network.params)
 
-			if err != regtest.err {
+			if err != network.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
-					test.name, regtest.name, err, regtest.err)
+					network.name, network.name, err, network.err)
 			}
 		}
 	}
