@@ -68,13 +68,13 @@ func (dag *BlockDAG) calcTxSequenceLockFromInputsWithReferencedEntries(
 
 	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
 		txIn := txInAndReferencedUTXOEntry.txIn
-		entry := txInAndReferencedUTXOEntry.utxoEntry
+		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputBlueScore := entry.BlockBlueScore()
-		if entry.IsUnaccepted() {
+		inputBlueScore := utxoEntry.BlockBlueScore()
+		if utxoEntry.IsUnaccepted() {
 			inputBlueScore = dag.virtual.blueScore
 		}
 
