@@ -34,35 +34,32 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if c.IncludeMempool != nil {
 		includeMempool = *c.IncludeMempool
 	}
-	// TODO: This is racy. It should attempt to fetch it directly and check
-	// the error.
-	if includeMempool && s.txMempool.HaveTransaction(txID) {
+
+	if includeMempool {
 		tx, ok := s.txMempool.FetchTransaction(txID)
-		if !ok {
-			return nil, rpcNoTxInfoError(txID)
-		}
-
-		mtx := tx.MsgTx()
-		if c.Vout > uint32(len(mtx.TxOut)-1) {
-			return nil, &model.RPCError{
-				Code: model.ErrRPCInvalidTxVout,
-				Message: "Output index number (vout) does not " +
-					"exist for transaction.",
+		if ok {
+			mtx := tx.MsgTx()
+			if c.Vout > uint32(len(mtx.TxOut)-1) {
+				return nil, &model.RPCError{
+					Code: model.ErrRPCInvalidTxVout,
+					Message: "Output index number (vout) does not " +
+						"exist for transaction.",
+				}
 			}
-		}
 
-		txOut := mtx.TxOut[c.Vout]
-		if txOut == nil {
-			errStr := fmt.Sprintf("Output index: %d for txid: %s "+
-				"does not exist", c.Vout, txID)
-			return nil, internalRPCError(errStr, "")
-		}
+			txOut := mtx.TxOut[c.Vout]
+			if txOut == nil {
+				errStr := fmt.Sprintf("Output index: %d for txid: %s "+
+					"does not exist", c.Vout, txID)
+				return nil, internalRPCError(errStr, "")
+			}
 
-		selectedTipHash = s.dag.SelectedTipHash().String()
-		value = txOut.Value
-		scriptPubKey = txOut.ScriptPubKey
-		isCoinbase = mtx.IsCoinBase()
-		isInMempool = true
+			selectedTipHash = s.dag.SelectedTipHash().String()
+			value = txOut.Value
+			scriptPubKey = txOut.ScriptPubKey
+			isCoinbase = mtx.IsCoinBase()
+			isInMempool = true
+		}
 	} else {
 		out := appmessage.Outpoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.dag.GetUTXOEntry(out)
