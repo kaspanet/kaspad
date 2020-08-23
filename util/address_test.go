@@ -321,6 +321,16 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address's prefix could not be parsed",
 		},
 		{
+			"kaspasim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zaf",
+			util.Bech32PrefixKaspaSim,
+			"unknown address type",
+		},
+		{
+			"kaspasim:raskzcg58mth0an",
+			util.Bech32PrefixKaspaSim,
+			"decoded address is of unknown size",
+		},
+		{
 			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
 			util.Bech32PrefixKaspa,
 			"decoded address is of wrong network",
