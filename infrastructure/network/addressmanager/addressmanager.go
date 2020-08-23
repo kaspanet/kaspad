@@ -1427,8 +1427,7 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 }
 
 // initListeners initializes the configured net listeners and adds any bound
-// addresses to the address manager. Returns the listeners and a NAT interface,
-// which is non-nil if UPnP is in use.
+// addresses to the address manager
 func (am *AddressManager) initListeners() error {
 	if len(am.cfg.ExternalIPs) != 0 {
 		defaultPort, err := strconv.ParseUint(am.cfg.NetParams().DefaultPort, 10, 16)
