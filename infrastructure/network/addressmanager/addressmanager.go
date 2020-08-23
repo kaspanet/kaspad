@@ -224,7 +224,6 @@ func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.Ne
 	addressKey := NetAddressKey(netAddress)
 	knownAddress := am.knownAddress(netAddress)
 	if knownAddress != nil {
-		// TODO: only update addresses periodically.
 		// Update the last seen time and services.
 		// note that to prevent causing excess garbage on getaddr
 		// messages the netaddresses in addrmaanger are *immutable*,
