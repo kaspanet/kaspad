@@ -68,7 +68,6 @@ the following constants:
 
     appmessage.Mainnet
     appmessage.Testnet (Test network)
-    appmessage.Regtest (Regression test network)
     appmessage.Simnet  (Simulation test network)
     appmessage.Devnet  (Development network)
 

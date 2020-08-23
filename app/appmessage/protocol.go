@@ -107,9 +107,6 @@ const (
 	// Testnet represents the test network.
 	Testnet KaspaNet = 0xddb8af8f
 
-	// Regtest represents the regression test network.
-	Regtest KaspaNet = 0xf396cdd6
-
 	// Simnet represents the simulation test network.
 	Simnet KaspaNet = 0x374dcf1c
 
@@ -122,7 +119,6 @@ const (
 var bnStrings = map[KaspaNet]string{
 	Mainnet: "Mainnet",
 	Testnet: "Testnet",
-	Regtest: "Regtest",
 	Simnet:  "Simnet",
 	Devnet:  "Devnet",
 }

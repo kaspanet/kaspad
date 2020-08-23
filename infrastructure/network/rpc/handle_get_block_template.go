@@ -102,8 +102,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 func handleGetBlockTemplateRequest(s *Server, request *model.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
 	// Return an error if there are no peers connected since there is no
 	// way to relay a found block or receive transactions to work on.
-	// However, allow this state when running in the regression test or
-	// simulation test mode.
+	// However, allow this state when running in the simulation test mode.
 	if !s.cfg.Simnet && s.connectionManager.ConnectionCount() == 0 {
 
 		return nil, &model.RPCError{

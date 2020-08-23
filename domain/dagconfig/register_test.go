@@ -83,12 +83,12 @@ func TestRegister(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, regtest := range test.register {
-			err := Register(regtest.params)
+		for _, test := range test.register {
+			err := Register(test.params)
 
-			if err != regtest.err {
+			if err != test.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
-					test.name, regtest.name, err, regtest.err)
+					test.name, test.name, err, test.err)
 			}
 		}
 	}

@@ -171,8 +171,8 @@ func (b *ScriptBuilder) addData(data []byte) *ScriptBuilder {
 // AddFullData should not typically be used by ordinary users as it does not
 // include the checks which prevent data pushes larger than the maximum allowed
 // sizes which leads to scripts that can't be executed. This is provided for
-// testing purposes such as regression tests where sizes are intentionally made
-// larger than allowed.
+// testing purposes such as tests where sizes are intentionally made larger
+// than allowed.
 //
 // Use AddData instead.
 func (b *ScriptBuilder) AddFullData(data []byte) *ScriptBuilder {
