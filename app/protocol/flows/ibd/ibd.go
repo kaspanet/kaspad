@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/pkg/errors"
 )
 
 // HandleIBDContext is the interface for the context needed for the HandleIBD flow.
@@ -180,7 +181,12 @@ func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) 
 	}
 	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
-		return err
+		if !errors.As(err, &blockdag.RuleError{}) {
+			return errors.Wrapf(err, "failed to process block %s during IBD", block.Hash())
+		}
+		log.Infof("Rejected block %s from %s during IBD: %s", block.Hash(), flow.peer, err)
+
+		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", block.Hash())
 	}
 	if isOrphan {
 		return protocolerrors.Errorf(true, "received orphan block %s "+
