@@ -800,7 +800,7 @@ func (am *AddressManager) AddAddressByIP(addressIP string, subnetworkID *subnetw
 		return errors.Errorf("invalid port %s: %s", portString, err)
 	}
 	netAddress := appmessage.NewNetAddressIPPort(ip, uint16(port), 0)
-	am.AddAddress(netAddress, netAddress, subnetworkID) // XXX use correct src address
+	am.AddAddress(netAddress, netAddress, subnetworkID)
 	return nil
 }
 

@@ -555,15 +555,6 @@ func TestGetBestLocalAddress(t *testing.T) {
 			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
 			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
 		},
-		/* XXX
-		{
-			// Remote connection from Tor
-			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43::100")},
-			appmessage.NetAddress{IP: net.IPv4zero},
-			appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
-			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
-		},
-		*/
 	}
 
 	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress", nil)
