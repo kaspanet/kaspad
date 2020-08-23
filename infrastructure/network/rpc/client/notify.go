@@ -439,9 +439,6 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*model.TxRawRes
 		return nil, err
 	}
 
-	// TODO: change txacceptedverbose notification callbacks to use nicer
-	// types for all details about the transaction (i.e. decoding hashes
-	// from their string encoding).
 	return &rawTx, nil
 }
 
@@ -613,7 +610,7 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 
 // LoadTxFilter loads, reloads, or adds data to a websocket client's transaction
 // filter. The filter is consistently updated based on inspected transactions
-// during mempool acceptance, block acceptance, and for all rescanned blocks.
+// during mempool acceptance, and for block acceptance.
 func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []appmessage.Outpoint) error {
 	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
 }

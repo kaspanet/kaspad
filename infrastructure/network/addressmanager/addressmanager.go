@@ -224,7 +224,6 @@ func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.Ne
 	addressKey := NetAddressKey(netAddress)
 	knownAddress := am.knownAddress(netAddress)
 	if knownAddress != nil {
-		// TODO: only update addresses periodically.
 		// Update the last seen time and services.
 		// note that to prevent causing excess garbage on getaddr
 		// messages the netaddresses in addrmaanger are *immutable*,
@@ -781,28 +780,6 @@ func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddre
 	defer am.mutex.Unlock()
 
 	am.updateAddress(address, sourceAddress, subnetworkID)
-}
-
-// AddAddressByIP adds an address where we are given an ip:port and not a
-// appmessage.NetAddress.
-func (am *AddressManager) AddAddressByIP(addressIP string, subnetworkID *subnetworkid.SubnetworkID) error {
-	// Split IP and port
-	ipString, portString, err := net.SplitHostPort(addressIP)
-	if err != nil {
-		return err
-	}
-	// Put it in appmessage.Netaddress
-	ip := net.ParseIP(ipString)
-	if ip == nil {
-		return errors.Errorf("invalid ip %s", ipString)
-	}
-	port, err := strconv.ParseUint(portString, 10, 0)
-	if err != nil {
-		return errors.Errorf("invalid port %s: %s", portString, err)
-	}
-	netAddress := appmessage.NewNetAddressIPPort(ip, uint16(port), 0)
-	am.AddAddress(netAddress, netAddress, subnetworkID) // XXX use correct src address
-	return nil
 }
 
 // numAddresses returns the number of addresses that belongs to a specific subnetwork id

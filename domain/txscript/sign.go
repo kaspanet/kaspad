@@ -108,10 +108,6 @@ func sign(dagParams *dagconfig.Params, tx *appmessage.MsgTx, idx int,
 func mergeScripts(dagParams *dagconfig.Params, tx *appmessage.MsgTx, idx int,
 	class ScriptClass, sigScript, prevScript []byte) ([]byte, error) {
 
-	// TODO: the scripthash and multisig paths here are overly
-	// inefficient in that they will recompute already known data.
-	// some internal refactoring could probably make this avoid needless
-	// extra calculations.
 	switch class {
 	case ScriptHashTy:
 		// Remove the last push in the script and then recurse.
@@ -210,7 +206,6 @@ func SignTxOutput(dagParams *dagconfig.Params, tx *appmessage.MsgTx, idx int,
 	}
 
 	if class == ScriptHashTy {
-		// TODO keep the sub addressed and pass down to merge.
 		realSigScript, _, _, err := sign(dagParams, tx, idx,
 			sigScript, hashType, kdb, sdb)
 		if err != nil {
@@ -223,7 +218,6 @@ func SignTxOutput(dagParams *dagconfig.Params, tx *appmessage.MsgTx, idx int,
 		builder.AddData(sigScript)
 
 		sigScript, _ = builder.Script()
-		// TODO keep a copy of the script for merging.
 	}
 
 	// Merge scripts. with any previous data, if any.

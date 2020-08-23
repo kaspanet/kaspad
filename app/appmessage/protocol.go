@@ -10,12 +10,11 @@ import (
 	"strings"
 )
 
-// XXX pedro: we will probably need to bump this.
 const (
 	// ProtocolVersion is the latest protocol version this package supports.
 	ProtocolVersion uint32 = 1
 
-	// defaultServices describes the default services that are supported by
+	// DefaultServices describes the default services that are supported by
 	// the server.
 	DefaultServices = SFNodeNetwork | SFNodeBloom | SFNodeCF
 )

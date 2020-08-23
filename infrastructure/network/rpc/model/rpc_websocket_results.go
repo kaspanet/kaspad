@@ -9,10 +9,3 @@ package model
 type SessionResult struct {
 	SessionID uint64 `json:"sessionId"`
 }
-
-// RescannedBlock contains the hash and all discovered transactions of a single
-// rescanned block.
-type RescannedBlock struct {
-	Hash         string   `json:"hash"`
-	Transactions []string `json:"transactions"`
-}

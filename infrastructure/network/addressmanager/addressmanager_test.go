@@ -177,7 +177,7 @@ func TestAddAddressByIP(t *testing.T) {
 	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
 	defer teardown()
 	for i, test := range tests {
-		err := amgr.AddAddressByIP(test.addrIP, nil)
+		err := AddAddressByIP(amgr, test.addrIP, nil)
 		if test.err != nil && err == nil {
 			t.Errorf("TestAddAddressByIP test %d failed expected an error and got none", i)
 			continue
@@ -253,7 +253,7 @@ func TestAttempt(t *testing.T) {
 	defer teardown()
 
 	// Add a new address and get it
-	err := amgr.AddAddressByIP(someIP+":8333", nil)
+	err := AddAddressByIP(amgr, someIP+":8333", nil)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -276,7 +276,7 @@ func TestConnected(t *testing.T) {
 	defer teardown()
 
 	// Add a new address and get it
-	err := amgr.AddAddressByIP(someIP+":8333", nil)
+	err := AddAddressByIP(amgr, someIP+":8333", nil)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -454,7 +454,7 @@ func TestGetAddress(t *testing.T) {
 	}
 
 	// Add a new address and get it
-	err := amgr.AddAddressByIP(someIP+":8332", localSubnetworkID)
+	err := AddAddressByIP(amgr, someIP+":8332", localSubnetworkID)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -481,7 +481,7 @@ func TestGetAddress(t *testing.T) {
 	// Now we repeat the same process, but now the address has the expected subnetwork ID.
 
 	// Add a new address and get it
-	err = amgr.AddAddressByIP(someIP+":8333", localSubnetworkID)
+	err = AddAddressByIP(amgr, someIP+":8333", localSubnetworkID)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -555,15 +555,6 @@ func TestGetBestLocalAddress(t *testing.T) {
 			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
 			appmessage.NetAddress{IP: net.ParseIP("2001:470::1")},
 		},
-		/* XXX
-		{
-			// Remote connection from Tor
-			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43::100")},
-			appmessage.NetAddress{IP: net.IPv4zero},
-			appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")},
-			appmessage.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")},
-		},
-		*/
 	}
 
 	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress", nil)
@@ -633,5 +624,4 @@ func TestNetAddressKey(t *testing.T) {
 			continue
 		}
 	}
-
 }
