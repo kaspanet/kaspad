@@ -447,6 +447,57 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 	return nil
 }
 
+func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, error) {
+	potentiallyKosherizingBlocks, err := node.nonFinalityViolatingBlues()
+	if err != nil {
+		return nil, err
+	}
+	badReds := []*blockNode{}
+
+	finalityPoint := node.finalityPoint()
+	for _, redBlock := range node.reds {
+		isFinalityPointInPast, err := dag.isInPast(finalityPoint, redBlock)
+		if err != nil {
+			return nil, err
+		}
+		if !isFinalityPointInPast {
+			isKosherized := false
+			for _, potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
+				isKosherized, err = dag.isInPast(redBlock, potentiallyKosherizingBlock)
+				if err != nil {
+					return nil, err
+				}
+				if isKosherized {
+					break
+				}
+			}
+
+			if !isKosherized {
+				badReds = append(badReds, redBlock)
+			}
+		}
+	}
+
+	boundedMergeBreakingParents := newBlockSet()
+	for parent := range node.parents {
+		isBadRedInPast := false
+		for _, badRedBlock := range badReds {
+			isBadRedInPast, err = dag.isInPast(badRedBlock, parent)
+			if err != nil {
+				return nil, err
+			}
+			if isBadRedInPast {
+				break
+			}
+		}
+
+		if isBadRedInPast {
+			boundedMergeBreakingParents.add(parent)
+		}
+	}
+	return boundedMergeBreakingParents, nil
+}
+
 func (dag *BlockDAG) clearDirtyEntries() {
 	dag.index.clearDirtyEntries()
 	dag.utxoDiffStore.clearDirtyEntries()
