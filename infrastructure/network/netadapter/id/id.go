@@ -27,7 +27,7 @@ func GenerateID() (*ID, error) {
 
 // IsEqual returns whether id equals to other.
 func (id *ID) IsEqual(other *ID) bool {
-	return bytes.Equal(id.bytes[:], other.bytes[:])
+	return *id == *other
 }
 
 func (id *ID) String() string {
