@@ -49,22 +49,22 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 
 	var peerAddress *appmessage.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
-		defer wg.Done()
 		address, err := ReceiveVersion(context, receiveVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			handleError(err, "ReceiveVersion", &isStopping, errChan)
 			return
 		}
 		peerAddress = address
+		wg.Done()
 	})
 
 	spawn("HandleHandshake-SendVersion", func() {
-		defer wg.Done()
 		err := SendVersion(context, sendVersionRoute, outgoingRoute, peer)
 		if err != nil {
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
+		wg.Done()
 	})
 
 	select {
