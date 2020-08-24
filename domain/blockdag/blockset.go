@@ -115,3 +115,17 @@ func (bs blockSet) bluest() *blockNode {
 	}
 	return bluestNode
 }
+
+func (bs blockSet) isEqual(other blockSet) bool {
+	if len(bs) != len(other) {
+		return false
+	}
+
+	for block := range bs {
+		if !other.contains(block) {
+			return false
+		}
+	}
+
+	return true
+}
