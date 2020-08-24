@@ -308,9 +308,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*chainUpdates, error) {
-	didVirtualParentsChanged, virtualSelectedParentChainUpdates, err := dag.addTip(node)
+	didVirtualParentsChange, virtualSelectedParentChainUpdates, err := dag.addTip(node)
 
-	if didVirtualParentsChanged {
+	if didVirtualParentsChange {
 		// Build a UTXO set for the new virtual block
 		newVirtualUTXO, _, _, err := dag.pastUTXO(dag.virtual.blockNode)
 		if err != nil {
