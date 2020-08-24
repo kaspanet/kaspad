@@ -52,7 +52,7 @@ func (c *gRPCConnection) sendLoop() error {
 			return err
 		}
 
-		err = c.stream.Send(messageProto)
+		err = c.send(messageProto)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func (c *gRPCConnection) sendLoop() error {
 func (c *gRPCConnection) receiveLoop() error {
 	messageNumber := uint64(0)
 	for c.IsConnected() {
-		protoMessage, err := c.stream.Recv()
+		protoMessage, err := c.receive()
 		if err != nil {
 			if err == io.EOF {
 				err = nil
