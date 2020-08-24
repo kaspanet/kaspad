@@ -477,7 +477,11 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 
 	newVirtualParents, err := dag.selectVirtualParents(newTips)
 	if err != nil {
-		return false, nil, err
+		virtualSelectedParentChainUpdates := &chainUpdates{
+			removedChainBlockHashes: []*daghash.Hash{},
+			addedChainBlockHashes:   []*daghash.Hash{},
+		}
+		return false, virtualSelectedParentChainUpdates, err
 	}
 
 	dag.tips = newTips
