@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"net"
+	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
@@ -17,6 +18,13 @@ type gRPCConnection struct {
 	isOutbound bool
 	stream     grpcStream
 	router     *router.Router
+
+	// streamLock protects concurrent access to stream.
+	// Note that it's an RWMutex. Despite what the name
+	// implies, we use it to RLock() send() and receive() because
+	// they can work perfectly fine in parallel, and Lock()
+	// closeSend() because it must run alone.
+	streamLock sync.RWMutex
 
 	stopChan                chan struct{}
 	clientConn              grpc.ClientConn
@@ -91,8 +99,7 @@ func (c *gRPCConnection) Disconnect() {
 	close(c.stopChan)
 
 	if c.isOutbound {
-		clientStream := c.stream.(protowire.P2P_MessageStreamClient)
-		_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+		c.closeSend()
 		log.Debugf("Disconnected from %s", c)
 	}
 
@@ -104,4 +111,32 @@ func (c *gRPCConnection) Disconnect() {
 
 func (c *gRPCConnection) Address() *net.TCPAddr {
 	return c.address
+}
+
+func (c *gRPCConnection) receive() (*protowire.KaspadMessage, error) {
+	// We use RLock here and in send() because they can work
+	// in parallel. closeSend(), however, must not have either
+	// receive() nor send() running while it's running.
+	c.streamLock.RLock()
+	defer c.streamLock.RUnlock()
+
+	return c.stream.Recv()
+}
+
+func (c *gRPCConnection) send(message *protowire.KaspadMessage) error {
+	// We use RLock here and in receive() because they can work
+	// in parallel. closeSend(), however, must not have either
+	// receive() nor send() running while it's running.
+	c.streamLock.RLock()
+	defer c.streamLock.RUnlock()
+
+	return c.stream.Send(message)
+}
+
+func (c *gRPCConnection) closeSend() {
+	c.streamLock.Lock()
+	defer c.streamLock.Unlock()
+
+	clientStream := c.stream.(protowire.P2P_MessageStreamClient)
+	_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
 }
