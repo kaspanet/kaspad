@@ -25,8 +25,6 @@ type virtualBlock struct {
 	// blocks that belong the the chain of selected parents from the
 	// virtual block.
 	selectedParentChainSlice []*blockNode
-
-	tips blockSet
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
