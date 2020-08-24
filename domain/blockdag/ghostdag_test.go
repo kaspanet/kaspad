@@ -1,7 +1,10 @@
 package blockdag
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -13,12 +16,19 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-type testBlockData struct {
-	parents                []string
-	id                     string // id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
-	expectedScore          uint64
-	expectedSelectedParent string
-	expectedBlues          []string
+type block struct {
+	ID                     string // id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
+	ExpectedScore          uint64
+	ExpectedSelectedParent string
+	ExpectedBlues          []string
+	Parents                []string
+}
+
+type testData struct {
+	K            dagconfig.KType
+	GenesisID    string
+	ExpectedReds []string
+	Blocks       []block
 }
 
 // TestGHOSTDAG iterates over several dag simulations, and checks
@@ -26,158 +36,26 @@ type testBlockData struct {
 // block are calculated as expected.
 func TestGHOSTDAG(t *testing.T) {
 	dagParams := dagconfig.SimnetParams
+	err := filepath.Walk("./testdata/dags/", func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		var test testData
+		file, err := os.Open(path)
+		if err != nil {
+			t.Fatalf("TestGHOSTDAG: failed opening file: %s", path)
+		}
+		decoder := json.NewDecoder(file)
+		decoder.DisallowUnknownFields()
+		err = decoder.Decode(&test)
+		if err != nil {
+			t.Fatalf("TestGHOSTDAG: test: %s, failed decoding json: %v", info.Name(), err)
+		}
 
-	tests := []struct {
-		k            dagconfig.KType
-		expectedReds []string
-		dagData      []*testBlockData
-	}{
-		{
-			k:            3,
-			expectedReds: []string{"F", "G", "H", "I", "O", "P"},
-			dagData: []*testBlockData{
-				{
-					parents:                []string{"A"},
-					id:                     "B",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"B"},
-					id:                     "C",
-					expectedScore:          2,
-					expectedSelectedParent: "B",
-					expectedBlues:          []string{"B"},
-				},
-				{
-					parents:                []string{"A"},
-					id:                     "D",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"C", "D"},
-					id:                     "E",
-					expectedScore:          4,
-					expectedSelectedParent: "C",
-					expectedBlues:          []string{"C", "D"},
-				},
-				{
-					parents:                []string{"A"},
-					id:                     "F",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"F"},
-					id:                     "G",
-					expectedScore:          2,
-					expectedSelectedParent: "F",
-					expectedBlues:          []string{"F"},
-				},
-				{
-					parents:                []string{"A"},
-					id:                     "H",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"A"},
-					id:                     "I",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"E", "G"},
-					id:                     "J",
-					expectedScore:          5,
-					expectedSelectedParent: "E",
-					expectedBlues:          []string{"E"},
-				},
-				{
-					parents:                []string{"J"},
-					id:                     "K",
-					expectedScore:          6,
-					expectedSelectedParent: "J",
-					expectedBlues:          []string{"J"},
-				},
-				{
-					parents:                []string{"I", "K"},
-					id:                     "L",
-					expectedScore:          7,
-					expectedSelectedParent: "K",
-					expectedBlues:          []string{"K"},
-				},
-				{
-					parents:                []string{"L"},
-					id:                     "M",
-					expectedScore:          8,
-					expectedSelectedParent: "L",
-					expectedBlues:          []string{"L"},
-				},
-				{
-					parents:                []string{"M"},
-					id:                     "N",
-					expectedScore:          9,
-					expectedSelectedParent: "M",
-					expectedBlues:          []string{"M"},
-				},
-				{
-					parents:                []string{"M"},
-					id:                     "O",
-					expectedScore:          9,
-					expectedSelectedParent: "M",
-					expectedBlues:          []string{"M"},
-				},
-				{
-					parents:                []string{"M"},
-					id:                     "P",
-					expectedScore:          9,
-					expectedSelectedParent: "M",
-					expectedBlues:          []string{"M"},
-				},
-				{
-					parents:                []string{"M"},
-					id:                     "Q",
-					expectedScore:          9,
-					expectedSelectedParent: "M",
-					expectedBlues:          []string{"M"},
-				},
-				{
-					parents:                []string{"M"},
-					id:                     "R",
-					expectedScore:          9,
-					expectedSelectedParent: "M",
-					expectedBlues:          []string{"M"},
-				},
-				{
-					parents:                []string{"R"},
-					id:                     "S",
-					expectedScore:          10,
-					expectedSelectedParent: "R",
-					expectedBlues:          []string{"R"},
-				},
-				{
-					parents:                []string{"N", "O", "P", "Q", "S"},
-					id:                     "T",
-					expectedScore:          13,
-					expectedSelectedParent: "S",
-					expectedBlues:          []string{"S", "Q", "N"},
-				},
-			},
-		},
-	}
-
-	for i, test := range tests {
 		func() {
 			resetExtraNonceForTest()
-			dagParams.K = test.k
-			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG%d", i), true, Config{
+			dagParams.K = test.K
+			dag, teardownFunc, err := DAGSetup(fmt.Sprintf("TestGHOSTDAG %s", info.Name()), true, Config{
 				DAGParams: &dagParams,
 			})
 			if err != nil {
@@ -188,32 +66,33 @@ func TestGHOSTDAG(t *testing.T) {
 			genesisNode := dag.genesis
 			blockByIDMap := make(map[string]*blockNode)
 			idByBlockMap := make(map[*blockNode]string)
-			blockByIDMap["A"] = genesisNode
-			idByBlockMap[genesisNode] = "A"
+			blockByIDMap[test.GenesisID] = genesisNode
+			idByBlockMap[genesisNode] = test.GenesisID
 
-			for _, blockData := range test.dagData {
+			for _, blockData := range test.Blocks {
 				parents := blockSet{}
-				for _, parentID := range blockData.parents {
+				for _, parentID := range blockData.Parents {
 					parent := blockByIDMap[parentID]
 					parents.add(parent)
 				}
 
 				block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
+					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %v", blockData.ID,
+						err)
 				}
 
 				utilBlock := util.NewBlock(block)
 				isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
+					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %s: %v", blockData.ID, err)
 				}
 				if isDelayed {
 					t.Fatalf("TestGHOSTDAG: block %s "+
-						"is too far in the future", blockData.id)
+						"is too far in the future", blockData.ID)
 				}
 				if isOrphan {
-					t.Fatalf("TestGHOSTDAG: block %v was unexpectedly orphan", blockData.id)
+					t.Fatalf("TestGHOSTDAG: block %s was unexpectedly orphan", blockData.ID)
 				}
 
 				node, ok := dag.index.LookupNode(utilBlock.Hash())
@@ -221,8 +100,8 @@ func TestGHOSTDAG(t *testing.T) {
 					t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
 				}
 
-				blockByIDMap[blockData.id] = node
-				idByBlockMap[node] = blockData.id
+				blockByIDMap[blockData.ID] = node
+				idByBlockMap[node] = blockData.ID
 
 				bluesIDs := make([]string, 0, len(node.blues))
 				for _, blue := range node.blues {
@@ -231,17 +110,17 @@ func TestGHOSTDAG(t *testing.T) {
 				selectedParentID := idByBlockMap[node.selectedParent]
 				fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
 					bluesIDs, selectedParentID, node.blueScore)
-				if blockData.expectedScore != node.blueScore {
-					t.Errorf("Test %d: Block %v expected to have score %v but got %v (fulldata: %v)",
-						i, blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
+				if blockData.ExpectedScore != node.blueScore {
+					t.Errorf("Test %s: Block %s expected to have score %v but got %v (fulldata: %v)",
+						info.Name(), blockData.ID, blockData.ExpectedScore, node.blueScore, fullDataStr)
 				}
-				if blockData.expectedSelectedParent != selectedParentID {
-					t.Errorf("Test %d: Block %v expected to have selected parent %v but got %v (fulldata: %v)",
-						i, blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
+				if blockData.ExpectedSelectedParent != selectedParentID {
+					t.Errorf("Test %s: Block %s expected to have selected parent %v but got %v (fulldata: %v)",
+						info.Name(), blockData.ID, blockData.ExpectedSelectedParent, selectedParentID, fullDataStr)
 				}
-				if !reflect.DeepEqual(blockData.expectedBlues, bluesIDs) {
-					t.Errorf("Test %d: Block %v expected to have blues %v but got %v (fulldata: %v)",
-						i, blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
+				if !reflect.DeepEqual(blockData.ExpectedBlues, bluesIDs) {
+					t.Errorf("Test %s: Block %s expected to have blues %v but got %v (fulldata: %v)",
+						info.Name(), blockData.ID, blockData.ExpectedBlues, bluesIDs, fullDataStr)
 				}
 			}
 
@@ -259,16 +138,22 @@ func TestGHOSTDAG(t *testing.T) {
 					delete(reds, blueID)
 				}
 			}
-			if !checkReds(test.expectedReds, reds) {
+			if !checkReds(test.ExpectedReds, reds) {
 				redsIDs := make([]string, 0, len(reds))
 				for id := range reds {
 					redsIDs = append(redsIDs, id)
 				}
 				sort.Strings(redsIDs)
-				sort.Strings(test.expectedReds)
-				t.Errorf("Test %d: Expected reds %v but got %v", i, test.expectedReds, redsIDs)
+				sort.Strings(test.ExpectedReds)
+				t.Errorf("Test %s: Expected reds %v but got %v", info.Name(), test.ExpectedReds, redsIDs)
 			}
 		}()
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
