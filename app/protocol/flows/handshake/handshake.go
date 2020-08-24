@@ -34,7 +34,7 @@ type HandleHandshakeContext interface {
 // version message, as well as a verack for the sent version
 func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
 	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
-) (peer *peerpkg.Peer, err error) {
+) (*peerpkg.Peer, error) {
 
 	// For HandleHandshake to finish, we need to get from the other node
 	// a version and verack messages, so we increase the wait group by 2
@@ -45,7 +45,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	isStopping := uint32(0)
 	errChan := make(chan error)
 
-	peer = peerpkg.New(netConnection)
+	peer := peerpkg.New(netConnection)
 
 	var peerAddress *appmessage.NetAddress
 	spawn("HandleHandshake-ReceiveVersion", func() {
@@ -76,7 +76,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
 	}
 
-	err = context.AddToPeers(peer)
+	err := context.AddToPeers(peer)
 	if err != nil {
 		if errors.As(err, &common.ErrPeerWithSameIDExists) {
 			return nil, protocolerrors.Wrap(false, err, "peer already exists")
