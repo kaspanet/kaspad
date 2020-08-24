@@ -54,10 +54,13 @@ func (flow *handleIBDFlow) runIBD() error {
 	defer flow.FinishIBD()
 
 	peerSelectedTipHash := flow.peer.SelectedTipHash()
+	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, peerSelectedTipHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
 	if err != nil {
 		return err
 	}
+
+	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 	if flow.DAG().IsKnownFinalizedBlock(highestSharedBlockHash) {
 		return protocolerrors.Errorf(false, "cannot initiate "+
 			"IBD with peer %s because the highest shared chain block (%s) is "+
@@ -177,6 +180,7 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
 	block := util.NewBlock(msgIBDBlock.MsgBlock)
 	if flow.DAG().IsInDAG(block.Hash()) {
+		log.Debugf("IBD block %s is already in the DAG. Skipping...", block.Hash())
 		return nil
 	}
 	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
