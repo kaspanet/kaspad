@@ -285,6 +285,17 @@ func (dag *BlockDAG) SelectedTipBlueScore() uint64 {
 	return dag.selectedTip().blueScore
 }
 
+// VirtualBlueHashes returns the blue of the current virtual block
+func (dag *BlockDAG) VirtualBlueHashes() []*daghash.Hash {
+	dag.RLock()
+	defer dag.RUnlock()
+	hashes := make([]*daghash.Hash, len(dag.virtual.blues))
+	for i, blue := range dag.virtual.blues {
+		hashes[i] = blue.hash
+	}
+	return hashes
+}
+
 // VirtualBlueScore returns the blue score of the current virtual block
 func (dag *BlockDAG) VirtualBlueScore() uint64 {
 	return dag.virtual.blueScore
