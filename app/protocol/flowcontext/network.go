@@ -24,11 +24,11 @@ func (f *FlowContext) AddToPeers(peer *peerpkg.Peer) error {
 	f.peersMutex.Lock()
 	defer f.peersMutex.Unlock()
 
-	if _, ok := f.peers[peer.ID()]; ok {
+	if _, ok := f.peers[*peer.ID()]; ok {
 		return errors.Wrapf(common.ErrPeerWithSameIDExists, "peer with ID %s already exists", peer.ID())
 	}
 
-	f.peers[peer.ID()] = peer
+	f.peers[*peer.ID()] = peer
 
 	return nil
 }
@@ -38,7 +38,7 @@ func (f *FlowContext) RemoveFromPeers(peer *peerpkg.Peer) {
 	f.peersMutex.Lock()
 	defer f.peersMutex.Unlock()
 
-	delete(f.peers, peer.ID())
+	delete(f.peers, *peer.ID())
 }
 
 // readyPeerConnections returns the NetConnections of all the ready peers.

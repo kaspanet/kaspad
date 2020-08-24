@@ -39,7 +39,7 @@ type FlowContext struct {
 	startIBDMutex sync.Mutex
 	ibdPeer       *peerpkg.Peer
 
-	peers      map[*id.ID]*peerpkg.Peer
+	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex
 }
 
@@ -57,7 +57,7 @@ func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmana
 		txPool:                      txPool,
 		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
-		peers:                       make(map[*id.ID]*peerpkg.Peer),
+		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[daghash.TxID]*util.Tx),
 	}
 }
