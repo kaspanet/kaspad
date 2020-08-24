@@ -308,10 +308,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*chainUpdates, error) {
-	if dag.index.BlockNodeStatus(node) == statusDisqualifiedFromChain {
-		return nil, nil
-	}
-	// Update the virtual block's parents (the DAG tips) to include the new block.
 	didVirtualParentsChanged, virtualSelectedParentChainUpdates, err := dag.addTip(node)
 
 	if didVirtualParentsChanged {
@@ -579,6 +575,25 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 	tipsHeap := newDownHeap()
 	for tip := range tips {
 		tipsHeap.Push(tip)
+	}
+
+	// If the first candidate has been disqualified from the chain - he cannot be a virtualParentCandidate, since it
+	// will make him selectedParent - making virtual itself disqualified.
+	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
+	// it's parents that have no other children
+	for {
+		firstCandidate := tipsHeap.pop()
+
+		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
+			tipsHeap.Push(firstCandidate)
+			break
+		}
+
+		for parent := range firstCandidate.parents {
+			if len(parent.children) == 1 {
+				tipsHeap.Push(parent)
+			}
+		}
 	}
 
 	for {
