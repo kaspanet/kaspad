@@ -211,6 +211,8 @@ func (dag *BlockDAG) selectedTip() *blockNode {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) SelectedTipHeader() *appmessage.BlockHeader {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
 		return nil
