@@ -27,6 +27,9 @@ message KaspadMessage {
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
+
+    GetCurrentNetworkMessage getCurrentNetwork = 1001;
+    GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
   }
 }
 
@@ -221,5 +224,24 @@ message RejectMessage{
 // RejectMessage end
 
 service P2P {
+  rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
+}
+
+//
+// RPC
+//
+
+// GetCurrentNetworkMessage start
+message GetCurrentNetworkMessage{
+}
+// GetCurrentNetworkMessage end
+
+// GetCurrentNetworkResponseMessage start
+message GetCurrentNetworkResponseMessage{
+  string currentNetwork = 1;
+}
+// GetCurrentNetworkResponseMessage end
+
+service RPC {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
 }

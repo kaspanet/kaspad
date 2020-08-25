@@ -120,3 +120,111 @@ var _P2P_serviceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "messages.proto",
 }
+
+// RPCClient is the client API for RPC service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RPCClient interface {
+	MessageStream(ctx context.Context, opts ...grpc.CallOption) (RPC_MessageStreamClient, error)
+}
+
+type rPCClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRPCClient(cc grpc.ClientConnInterface) RPCClient {
+	return &rPCClient{cc}
+}
+
+func (c *rPCClient) MessageStream(ctx context.Context, opts ...grpc.CallOption) (RPC_MessageStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_RPC_serviceDesc.Streams[0], "/protowire.RPC/MessageStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &rPCMessageStreamClient{stream}
+	return x, nil
+}
+
+type RPC_MessageStreamClient interface {
+	Send(*KaspadMessage) error
+	Recv() (*KaspadMessage, error)
+	grpc.ClientStream
+}
+
+type rPCMessageStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *rPCMessageStreamClient) Send(m *KaspadMessage) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *rPCMessageStreamClient) Recv() (*KaspadMessage, error) {
+	m := new(KaspadMessage)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// RPCServer is the server API for RPC service.
+// All implementations must embed UnimplementedRPCServer
+// for forward compatibility
+type RPCServer interface {
+	MessageStream(RPC_MessageStreamServer) error
+	mustEmbedUnimplementedRPCServer()
+}
+
+// UnimplementedRPCServer must be embedded to have forward compatible implementations.
+type UnimplementedRPCServer struct {
+}
+
+func (*UnimplementedRPCServer) MessageStream(RPC_MessageStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
+}
+func (*UnimplementedRPCServer) mustEmbedUnimplementedRPCServer() {}
+
+func RegisterRPCServer(s *grpc.Server, srv RPCServer) {
+	s.RegisterService(&_RPC_serviceDesc, srv)
+}
+
+func _RPC_MessageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RPCServer).MessageStream(&rPCMessageStreamServer{stream})
+}
+
+type RPC_MessageStreamServer interface {
+	Send(*KaspadMessage) error
+	Recv() (*KaspadMessage, error)
+	grpc.ServerStream
+}
+
+type rPCMessageStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *rPCMessageStreamServer) Send(m *KaspadMessage) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *rPCMessageStreamServer) Recv() (*KaspadMessage, error) {
+	m := new(KaspadMessage)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+var _RPC_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "protowire.RPC",
+	HandlerType: (*RPCServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "MessageStream",
+			Handler:       _RPC_MessageStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "messages.proto",
+}

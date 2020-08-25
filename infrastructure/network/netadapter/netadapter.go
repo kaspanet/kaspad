@@ -42,14 +42,19 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	s, err := grpcserver.NewP2PServer(cfg.Listeners)
+	p2pServer, err := grpcserver.NewP2PServer(cfg.Listeners)
+	if err != nil {
+		return nil, err
+	}
+	rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
 		cfg:       cfg,
 		id:        netAdapterID,
-		p2pServer: s,
+		p2pServer: p2pServer,
+		rpcServer: rpcServer,
 
 		connections: make(map[*NetConnection]struct{}),
 	}
