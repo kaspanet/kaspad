@@ -158,7 +158,7 @@ var maxBlueScoreDifferenceToKeepLoaded uint64 = 100
 
 // clearOldEntries removes entries whose blue score is lower than
 // virtual.blueScore - maxBlueScoreDifferenceToKeepLoaded.
-// Note that parents of virtual are not removed either even
+// Note that parents of virtual are not removed even
 // if their blue score is lower than the above.
 func (diffStore *utxoDiffStore) clearOldEntries() {
 	diffStore.mtx.HighPriorityWriteLock()
