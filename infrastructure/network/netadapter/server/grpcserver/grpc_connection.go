@@ -137,6 +137,6 @@ func (c *gRPCConnection) closeSend() {
 	c.streamLock.Lock()
 	defer c.streamLock.Unlock()
 
-	clientStream := c.stream.(protowire.P2P_MessageStreamClient)
+	clientStream := c.stream.(grpc.ClientStream)
 	_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
 }
