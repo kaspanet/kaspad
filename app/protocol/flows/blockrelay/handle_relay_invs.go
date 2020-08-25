@@ -55,6 +55,8 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 
+		log.Debugf("Got relay inv for block %s", inv.Hash)
+
 		if flow.DAG().IsKnownBlock(inv.Hash) {
 			if flow.DAG().IsKnownInvalid(inv.Hash) {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
@@ -114,6 +116,11 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 			continue
 		}
 
+		// The block can become known from another peer in the process of orphan resolution
+		if flow.DAG().IsKnownBlock(hash) {
+			continue
+		}
+
 		pendingBlocks[*hash] = struct{}{}
 		filteredHashesToRequest = append(filteredHashesToRequest, hash)
 	}
@@ -153,7 +160,6 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 
 		delete(pendingBlocks, *blockHash)
 		flow.SharedRequestedBlocks().remove(blockHash)
-
 	}
 	return nil
 }
@@ -190,7 +196,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrapf(true, err, "got invalid block %s", blockHash)
+		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 
 	if isDelayed {
