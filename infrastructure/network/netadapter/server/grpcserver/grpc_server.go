@@ -1,11 +1,13 @@
 package grpcserver
 
 import (
+	"context"
 	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 	"net"
 )
 
@@ -68,4 +70,28 @@ func (s *gRPCServer) Stop() error {
 // function for the server
 func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnectedHandler) {
 	s.onConnectedHandler = onConnectedHandler
+}
+
+func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStream) error {
+	peerInfo, ok := peer.FromContext(ctx)
+	if !ok {
+		return errors.Errorf("Error getting stream peer info from context")
+	}
+	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
+	if !ok {
+		return errors.Errorf("non-tcp connections are not supported")
+	}
+
+	connection := newConnection(s, tcpAddress, false, stream)
+
+	err := s.onConnectedHandler(connection)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Incoming connection from %s", peerInfo.Addr)
+
+	<-connection.stopChan
+
+	return nil
 }

@@ -28,27 +28,7 @@ func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
 func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) error {
 	defer panics.HandlePanic(log, "p2pServer.MessageStream", nil)
 
-	peerInfo, ok := peer.FromContext(stream.Context())
-	if !ok {
-		return errors.Errorf("Error getting stream peer info from context")
-	}
-	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
-	if !ok {
-		return errors.Errorf("non-tcp connections are not supported")
-	}
-
-	connection := newConnection(&p.gRPCServer, tcpAddress, false, stream)
-
-	err := p.onConnectedHandler(connection)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Incoming connection from %s", peerInfo.Addr)
-
-	<-connection.stopChan
-
-	return nil
+	return p.handleInboundConnection(stream.Context(), stream)
 }
 
 // Connect connects to the given address
