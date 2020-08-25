@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -41,7 +39,3 @@ type Connection interface {
 	SetOnInvalidMessageHandler(onInvalidMessageHandler OnInvalidMessageHandler)
 	Address() *net.TCPAddr
 }
-
-// ErrNetwork is an error related to the internals of the connection, and not an error that
-// came from outside (e.g. from OnDisconnectedHandler).
-var ErrNetwork = errors.New("network error")

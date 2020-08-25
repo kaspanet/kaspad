@@ -1,0 +1,26 @@
+syntax = "proto3";
+package protorpc;
+
+option go_package = "github.com/kaspanet/kaspad/protorpc";
+
+message RPCMessage {
+  oneof payload {
+    GetCurrentNetworkMessage getCurrentNetwork = 1;
+    GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 2;
+  }
+}
+
+// GetCurrentNetworkMessage start
+message GetCurrentNetworkMessage{
+}
+// GetCurrentNetworkMessage end
+
+// GetCurrentNetworkResponseMessage start
+message GetCurrentNetworkResponseMessage{
+  string currentNetwork = 1;
+}
+// GetCurrentNetworkResponseMessage end
+
+service RPC {
+  rpc MessageStream (stream RPCMessage) returns (stream RPCMessage) {}
+}
