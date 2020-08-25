@@ -27,6 +27,8 @@ type NetAdapter struct {
 	id                   *id.ID
 	p2pServer            server.P2PServer
 	p2pRouterInitializer RouterInitializer
+	rpcServer            server.Server
+	rpcRouterInitializer RouterInitializer
 	stop                 uint32
 
 	connections     map[*NetConnection]struct{}
