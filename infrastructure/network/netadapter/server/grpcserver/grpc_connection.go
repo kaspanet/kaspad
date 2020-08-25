@@ -34,6 +34,11 @@ type gRPCConnection struct {
 	isConnected uint32
 }
 
+type grpcStream interface {
+	Send(*protowire.KaspadMessage) error
+	Recv() (*protowire.KaspadMessage, error)
+}
+
 func newConnection(server *gRPCServer, address *net.TCPAddr, isOutbound bool, stream grpcStream) *gRPCConnection {
 	connection := &gRPCConnection{
 		server:      server,
