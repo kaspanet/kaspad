@@ -40,7 +40,7 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
-	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, _, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
 	return txsAcceptanceData, err
 }
 
@@ -262,7 +262,7 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
-	for tip := range dag.virtual.parents {
+	for tip := range dag.tips {
 		if dag.index.BlockNodeStatus(tip) == statusUTXONotVerified {
 			continue
 		}

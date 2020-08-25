@@ -1312,7 +1312,16 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	templateNode, _ := dag.newBlockNode(&header, dag.virtual.tips())
+	templateParents := newBlockSet()
+	for _, parentHash := range header.ParentHashes {
+		parent, ok := dag.index.LookupNode(parentHash)
+		if !ok {
+			return errors.Errorf("Couldn't find parent of templates with hash `%s`", parentHash)
+		}
+		templateParents.add(parent)
+	}
+
+	templateNode, _ := dag.newBlockNode(&header, templateParents)
 
 	_, err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 

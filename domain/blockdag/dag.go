@@ -95,6 +95,8 @@ type BlockDAG struct {
 
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
+
+	tips blockSet
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -238,7 +240,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
-	return dag.virtual.tips().bluest().PastMedianTime()
+	return dag.virtual.selectedParent.PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -292,7 +294,7 @@ func (dag *BlockDAG) BlockCount() uint64 {
 
 // TipHashes returns the hashes of the DAG's tips
 func (dag *BlockDAG) TipHashes() []*daghash.Hash {
-	return dag.virtual.tips().hashes()
+	return dag.tips.hashes()
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -346,8 +348,8 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 }
 
 // isInPastOfAny returns true if this is in the past of any of others
-func (dag *BlockDAG) isInPastOfAny(this *blockNode, others []*blockNode) (bool, error) {
-	for _, other := range others {
+func (dag *BlockDAG) isInPastOfAny(this *blockNode, others blockSet) (bool, error) {
+	for other := range others {
 		isInPast, err := dag.isInPast(this, other)
 		if err != nil {
 			return false, err
@@ -362,7 +364,7 @@ func (dag *BlockDAG) isInPastOfAny(this *blockNode, others []*blockNode) (bool, 
 
 // GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*domainmessage.BlockHeader, error) {
-	highNode := &dag.virtual.blockNode
+	highNode := dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
 		highNode, ok = dag.index.LookupNode(highHash)
@@ -444,4 +446,39 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 		return false
 	}
 	return dag.index.BlockNodeStatus(node).KnownInvalid()
+}
+
+func (dag *BlockDAG) addTip(tip *blockNode) (
+	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
+
+	newTips := dag.tips.clone()
+	for parent := range tip.parents {
+		newTips.remove(parent)
+	}
+
+	return dag.setTips(newTips)
+}
+
+func (dag *BlockDAG) setTips(newTips blockSet) (
+	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
+
+	newVirtualParents, err := dag.selectVirtualParents(newTips)
+	if err != nil {
+		virtualSelectedParentChainUpdates := &chainUpdates{
+			removedChainBlockHashes: []*daghash.Hash{},
+			addedChainBlockHashes:   []*daghash.Hash{},
+		}
+		return false, virtualSelectedParentChainUpdates, err
+	}
+
+	dag.tips = newTips
+
+	oldVirtualParents := dag.virtual.parents
+	didVirtualParentsChange = !oldVirtualParents.isEqual(newVirtualParents)
+
+	oldSelectedParent := dag.virtual.selectedParent
+	dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
+	chainUpdates := dag.virtual.updateSelectedParentSet(oldSelectedParent)
+
+	return didVirtualParentsChange, chainUpdates, nil
 }
