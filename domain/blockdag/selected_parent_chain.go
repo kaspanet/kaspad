@@ -78,7 +78,8 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, err
 }
 
 // isInSelectedParentChainOf returns whether `node` is in the selected parent chain of `other`.
-// Returns true in the edge case where node==other
+//
+// Note: this method will return true if node == other
 func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }
