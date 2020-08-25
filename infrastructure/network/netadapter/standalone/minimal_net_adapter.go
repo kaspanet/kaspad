@@ -57,7 +57,7 @@ func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 	mna.lock.Lock()
 	defer mna.lock.Unlock()
 
-	err := mna.netAdapter.Connect(address)
+	err := mna.netAdapter.P2PConnect(address)
 	if err != nil {
 		return nil, err
 	}

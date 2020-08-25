@@ -85,24 +85,24 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
 	}
 
-	err = adapterA.Connect(addressB)
+	err = adapterA.P2PConnect(addressB)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: connection to %s failed: %+v", addressB, err)
 	}
 
-	err = adapterA.Connect(addressC)
+	err = adapterA.P2PConnect(addressC)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: connection to %s failed: %+v", addressC, err)
 	}
 
 	// Ensure adapter has two connections
-	if count := adapterA.ConnectionCount(); count != 2 {
+	if count := adapterA.P2PConnectionCount(); count != 2 {
 		t.Fatalf("TestNetAdapter: expected 2 connections, got - %d", count)
 	}
 
 	// Ensure all connected peers have received broadcasted message
-	connections := adapterA.Connections()
-	err = adapterA.Broadcast(connections, appmessage.NewMsgPing(1))
+	connections := adapterA.P2PConnections()
+	err = adapterA.P2PBroadcast(connections, appmessage.NewMsgPing(1))
 	if err != nil {
 		t.Fatalf("TestNetAdapter: broadcast failed: %+v", err)
 	}

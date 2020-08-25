@@ -56,7 +56,7 @@ func (f *FlowContext) readyPeerConnections() []*netadapter.NetConnection {
 
 // Broadcast broadcast the given message to all the ready peers.
 func (f *FlowContext) Broadcast(message appmessage.Message) error {
-	return f.netAdapter.Broadcast(f.readyPeerConnections(), message)
+	return f.netAdapter.P2PBroadcast(f.readyPeerConnections(), message)
 }
 
 // Peers returns the currently active peers
