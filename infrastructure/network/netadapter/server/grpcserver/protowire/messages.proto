@@ -28,7 +28,7 @@ message KaspadMessage {
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
 
-    GetCurrentNetworkMessage getCurrentNetwork = 1001;
+    GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
   }
 }
@@ -231,10 +231,10 @@ service P2P {
 // RPC
 //
 
-// GetCurrentNetworkMessage start
-message GetCurrentNetworkMessage{
+// GetCurrentNetworkRequestMessage start
+message GetCurrentNetworkRequestMessage{
 }
-// GetCurrentNetworkMessage end
+// GetCurrentNetworkRequestMessage end
 
 // GetCurrentNetworkResponseMessage start
 message GetCurrentNetworkResponseMessage{
