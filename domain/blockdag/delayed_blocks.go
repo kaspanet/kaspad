@@ -12,6 +12,7 @@ import (
 type delayedBlock struct {
 	block       *util.Block
 	processTime mstime.Time
+	flags       BehaviorFlags
 }
 
 func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {
@@ -19,12 +20,13 @@ func (dag *BlockDAG) isKnownDelayedBlock(hash *daghash.Hash) bool {
 	return exists
 }
 
-func (dag *BlockDAG) addDelayedBlock(block *util.Block, delay time.Duration) error {
+func (dag *BlockDAG) addDelayedBlock(block *util.Block, flags BehaviorFlags, delay time.Duration) error {
 	processTime := dag.Now().Add(delay)
 	log.Debugf("Adding block to delayed blocks queue (block hash: %s, process time: %s)", block.Hash().String(), processTime)
 	delayedBlock := &delayedBlock{
 		block:       block,
 		processTime: processTime,
+		flags:       flags,
 	}
 
 	dag.delayedBlocks[*block.Hash()] = delayedBlock
@@ -42,7 +44,7 @@ func (dag *BlockDAG) processDelayedBlocks() error {
 			break
 		}
 		delayedBlock := dag.popDelayedBlock()
-		_, _, err := dag.processBlockNoLock(delayedBlock.block, BFAfterDelay)
+		_, _, err := dag.processBlockNoLock(delayedBlock.block, delayedBlock.flags|BFAfterDelay)
 		if err != nil {
 			log.Errorf("Error while processing delayed block (block %s): %s", delayedBlock.block.Hash().String(), err)
 			// Rule errors should not be propagated as they refer only to the delayed block,
