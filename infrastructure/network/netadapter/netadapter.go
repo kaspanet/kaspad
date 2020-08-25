@@ -23,11 +23,11 @@ type RouterInitializer func(*routerpkg.Router, *NetConnection)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
-	cfg               *config.Config
-	id                *id.ID
-	server            server.Server
-	routerInitializer RouterInitializer
-	stop              uint32
+	cfg                  *config.Config
+	id                   *id.ID
+	p2pServer            server.P2PServer
+	p2pRouterInitializer RouterInitializer
+	stop                 uint32
 
 	connections     map[*NetConnection]struct{}
 	connectionsLock sync.RWMutex
@@ -40,30 +40,30 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	s, err := grpcserver.NewGRPCServer(cfg.Listeners)
+	s, err := grpcserver.NewP2PServer(cfg.Listeners)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
-		cfg:    cfg,
-		id:     netAdapterID,
-		server: s,
+		cfg:       cfg,
+		id:        netAdapterID,
+		p2pServer: s,
 
 		connections: make(map[*NetConnection]struct{}),
 	}
 
-	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
+	adapter.p2pServer.SetOnConnectedHandler(adapter.onConnectedHandler)
 
 	return &adapter, nil
 }
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
-	if na.routerInitializer == nil {
-		return errors.New("routerInitializer was not set")
+	if na.p2pRouterInitializer == nil {
+		return errors.New("p2pRouterInitializer was not set")
 	}
 
-	err := na.server.Start()
+	err := na.p2pServer.Start()
 	if err != nil {
 		return err
 	}
@@ -76,13 +76,13 @@ func (na *NetAdapter) Stop() error {
 	if atomic.AddUint32(&na.stop, 1) != 1 {
 		return errors.New("net adapter stopped more than once")
 	}
-	return na.server.Stop()
+	return na.p2pServer.Stop()
 }
 
-// Connect tells the NetAdapter's underlying server to initiate a connection
+// Connect tells the NetAdapter's underlying p2p server to initiate a connection
 // to the given address
 func (na *NetAdapter) Connect(address string) error {
-	_, err := na.server.Connect(address)
+	_, err := na.p2pServer.Connect(address)
 	return err
 }
 
@@ -109,7 +109,7 @@ func (na *NetAdapter) ConnectionCount() int {
 }
 
 func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	netConnection := newNetConnection(connection, na.routerInitializer)
+	netConnection := newNetConnection(connection, na.p2pRouterInitializer)
 
 	na.connectionsLock.Lock()
 	defer na.connectionsLock.Unlock()
@@ -128,10 +128,10 @@ func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
 	return nil
 }
 
-// SetRouterInitializer sets the routerInitializer function
+// SetP2PRouterInitializer sets the p2pRouterInitializer function
 // for the net adapter
-func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
-	na.routerInitializer = routerInitializer
+func (na *NetAdapter) SetP2PRouterInitializer(routerInitializer RouterInitializer) {
+	na.p2pRouterInitializer = routerInitializer
 }
 
 // ID returns this netAdapter's ID in the network

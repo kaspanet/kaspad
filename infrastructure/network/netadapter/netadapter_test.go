@@ -55,7 +55,7 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: NetAdapter instantiation failed: %+v", err)
 	}
 
-	adapterA.SetRouterInitializer(func(router *router.Router, connection *NetConnection) {})
+	adapterA.SetP2PRouterInitializer(func(router *router.Router, connection *NetConnection) {})
 	err = adapterA.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
@@ -67,7 +67,7 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	initializer := routerInitializerForTest(t, routes, "B", wg)
-	adapterB.SetRouterInitializer(initializer)
+	adapterB.SetP2PRouterInitializer(initializer)
 	err = adapterB.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
@@ -79,7 +79,7 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	initializer = routerInitializerForTest(t, routes, "C", wg)
-	adapterC.SetRouterInitializer(initializer)
+	adapterC.SetP2PRouterInitializer(initializer)
 	err = adapterC.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)

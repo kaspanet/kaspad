@@ -27,7 +27,7 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapt
 	manager := Manager{
 		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter, connectionManager),
 	}
-	netAdapter.SetRouterInitializer(manager.routerInitializer)
+	netAdapter.SetP2PRouterInitializer(manager.routerInitializer)
 	return &manager, nil
 }
 

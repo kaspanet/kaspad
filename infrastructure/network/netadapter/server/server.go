@@ -20,15 +20,20 @@ type OnDisconnectedHandler func()
 // was received from a connection.
 type OnInvalidMessageHandler func(err error)
 
-// Server represents a p2p server.
+// Server represents a server.
 type Server interface {
-	Connect(address string) (Connection, error)
 	Start() error
 	Stop() error
 	SetOnConnectedHandler(onConnectedHandler OnConnectedHandler)
 }
 
-// Connection represents a p2p server connection.
+// P2PServer represents a p2p server.
+type P2PServer interface {
+	Server
+	Connect(address string) (Connection, error)
+}
+
+// Connection represents a server connection.
 type Connection interface {
 	fmt.Stringer
 	Start(router *router.Router)

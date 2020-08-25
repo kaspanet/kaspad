@@ -35,7 +35,7 @@ func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 
 	routerInitializer, routesChan := generateRouteInitializer()
 
-	netAdapter.SetRouterInitializer(routerInitializer)
+	netAdapter.SetP2PRouterInitializer(routerInitializer)
 	err = netAdapter.Start()
 	if err != nil {
 		return nil, errors.Wrap(err, "Error starting netAdapter")
