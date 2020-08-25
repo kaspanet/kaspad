@@ -86,7 +86,7 @@ func (dag *BlockDAG) checkBlockDelay(block *util.Block, flags BehaviorFlags) (is
 	}
 
 	if isDelayed {
-		err := dag.addDelayedBlock(block, delay)
+		err := dag.addDelayedBlock(block, flags, delay)
 		if err != nil {
 			return false, err
 		}
@@ -114,7 +114,7 @@ func (dag *BlockDAG) checkMissingParents(block *util.Block, flags BehaviorFlags)
 	if isParentDelayed {
 		// Add Millisecond to ensure that parent process time will be after its child.
 		delay += time.Millisecond
-		err := dag.addDelayedBlock(block, delay)
+		err := dag.addDelayedBlock(block, flags, delay)
 		if err != nil {
 			return false, false, err
 		}
