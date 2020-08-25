@@ -343,6 +343,8 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 }
 
 // isInPast returns true if this is in the past of other
+//
+// Note: this method will return true if this == other
 func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
 }
