@@ -337,7 +337,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 			return nil, err
 		}
 	}
-	return virtualSelectedParentChainUpdates, err
+	return virtualSelectedParentChainUpdates, nil
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(
@@ -598,13 +598,6 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 	for {
 		candidateTip := tipsHeap.pop()
 
-		if len(selected) == 0 {
-			// Sanity check to make sure that selectedTip is valid.
-			if dag.index.BlockNodeStatus(candidateTip) != statusValid {
-				return nil, errors.Errorf("First candidate tip has non-valid status",
-					dag.index.BlockNodeStatus(candidateTip))
-			}
-		}
 		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
 		if err != nil {
 			return nil, err
