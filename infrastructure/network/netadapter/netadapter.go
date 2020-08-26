@@ -73,9 +73,9 @@ func (na *NetAdapter) Start() error {
 	if na.p2pRouterInitializer == nil {
 		return errors.New("p2pRouterInitializer was not set")
 	}
-	//if na.rpcRouterInitializer == nil {
-	//	return errors.New("rpcRouterInitializer was not set")
-	//}
+	if na.rpcRouterInitializer == nil {
+		return errors.New("rpcRouterInitializer was not set")
+	}
 
 	err := na.p2pServer.Start()
 	if err != nil {
@@ -151,6 +151,9 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 }
 
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
+	netConnection := newNetConnection(connection, na.rpcRouterInitializer)
+	netConnection.start()
+
 	return nil
 }
 

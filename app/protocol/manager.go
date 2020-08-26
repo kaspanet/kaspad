@@ -31,16 +31,6 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapt
 	return &manager, nil
 }
 
-// Start starts the p2p protocol
-func (m *Manager) Start() error {
-	return m.context.NetAdapter().Start()
-}
-
-// Stop stops the p2p protocol
-func (m *Manager) Stop() error {
-	return m.context.NetAdapter().Stop()
-}
-
 // Peers returns the currently active peers
 func (m *Manager) Peers() []*peerpkg.Peer {
 	return m.context.Peers()

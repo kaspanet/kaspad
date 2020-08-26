@@ -10,6 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
+	rpc2 "github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
@@ -32,6 +33,7 @@ type App struct {
 	rpcServer         *rpc.Server
 	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
+	rpcManager        *rpc2.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
 
@@ -47,9 +49,9 @@ func (a *App) Start() {
 
 	log.Trace("Starting kaspad")
 
-	err := a.protocolManager.Start()
+	err := a.netAdapter.Start()
 	if err != nil {
-		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
+		panics.Exit(log, fmt.Sprintf("Error starting the net adapter: %+v", err))
 	}
 
 	a.maybeSeedFromDNS()
@@ -73,9 +75,9 @@ func (a *App) Stop() {
 
 	a.connectionManager.Stop()
 
-	err := a.protocolManager.Stop()
+	err := a.netAdapter.Stop()
 	if err != nil {
-		log.Errorf("Error stopping the p2p protocol: %+v", err)
+		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
 	// Shutdown the RPC server if it's not disabled.
@@ -126,6 +128,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
+	rpcManager := rpc2.NewManager(netAdapter)
 	rpcServer, err := setupRPC(
 		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
 	if err != nil {
@@ -136,6 +139,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 		cfg:               cfg,
 		rpcServer:         rpcServer,
 		protocolManager:   protocolManager,
+		rpcManager:        rpcManager,
 		connectionManager: connectionManager,
 		netAdapter:        netAdapter,
 		addressManager:    addressManager,
