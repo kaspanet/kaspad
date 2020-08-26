@@ -1,20 +1,20 @@
 package appmessage
 
-// GetCurrentVersionResponseMessage is an appmessage corresponding to
+// GetCurrentNetworkResponseMessage is an appmessage corresponding to
 // its respective RPC message
-type GetCurrentVersionResponseMessage struct {
+type GetCurrentNetworkResponseMessage struct {
 	baseMessage
-	currentNetwork string
+	CurrentNetwork string
 }
 
 // Command returns the protocol command string for the message
-func (msg *GetCurrentVersionResponseMessage) Command() MessageCommand {
-	return CmdGetCurrentVersionResponseMessage
+func (msg *GetCurrentNetworkResponseMessage) Command() MessageCommand {
+	return CmdGetCurrentNetworkResponseMessage
 }
 
-// GetCurrentVersionResponseMessage returns a instance of the message
-func NewGetCurrentVersionResponseMessage(currentNetwork string) *GetCurrentVersionResponseMessage {
-	return &GetCurrentVersionResponseMessage{
-		currentNetwork: currentNetwork,
+// GetCurrentNetworkResponseMessage returns a instance of the message
+func NewGetCurrentVersionResponseMessage(currentNetwork string) *GetCurrentNetworkResponseMessage {
+	return &GetCurrentNetworkResponseMessage{
+		CurrentNetwork: currentNetwork,
 	}
 }

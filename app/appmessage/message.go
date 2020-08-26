@@ -51,8 +51,8 @@ const (
 	CmdReject
 
 	// rpc
-	CmdGetCurrentVersionRequestMessage
-	CmdGetCurrentVersionResponseMessage
+	CmdGetCurrentNetworkRequestMessage
+	CmdGetCurrentNetworkResponseMessage
 )
 
 // MessageCommandToString maps all MessageCommands to their string representation
@@ -82,8 +82,8 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdReject:               "Reject",
 
 	// rpc
-	CmdGetCurrentVersionRequestMessage:  "GetCurrentVersionRequest",
-	CmdGetCurrentVersionResponseMessage: "GetCurrentVersionResponse",
+	CmdGetCurrentNetworkRequestMessage:  "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage: "GetCurrentNetworkResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

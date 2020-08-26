@@ -208,8 +208,15 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 
 func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 	switch message := message.(type) {
-	case *appmessage.MsgAddresses:
-		payload := new(KaspadMessage_Addresses)
+	case *appmessage.GetCurrentNetworkRequestMessage:
+		payload := new(KaspadMessage_GetCurrentNetworkRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetCurrentNetworkResponseMessage:
+		payload := new(KaspadMessage_GetCurrentNetworkResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
