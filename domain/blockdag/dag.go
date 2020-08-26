@@ -453,6 +453,11 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 func (dag *BlockDAG) addTip(tip *blockNode) (
 	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
 
+	tipStatus := dag.index.BlockNodeStatus(tip)
+	if tipStatus == statusViolatedSubjectiveFinality || tipStatus == statusManuallyRejected {
+		return false, &chainUpdates{}, nil
+	}
+
 	newTips := dag.tips.clone()
 	for parent := range tip.parents {
 		newTips.remove(parent)
