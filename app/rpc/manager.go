@@ -1,18 +1,21 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 )
 
 type Manager struct {
-	context *context
+	context *rpccontext.Context
 }
 
 func NewManager(netAdapter *netadapter.NetAdapter, dag *blockdag.BlockDAG) *Manager {
-	context := newContext(netAdapter, dag)
 	manager := Manager{
-		context: context,
+		context: rpccontext.NewContext(
+			netAdapter,
+			dag,
+		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
 

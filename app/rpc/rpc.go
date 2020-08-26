@@ -2,17 +2,19 @@ package rpc
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-type handler func(context *context, outgoingRoute *routerpkg.Route) error
+type handler func(context *rpccontext.Context, outgoingRoute *router.Route) error
 
 var handlers = map[appmessage.MessageCommand]handler{
-	appmessage.CmdGetCurrentNetworkRequestMessage: handleGetCurrentNetwork,
+	appmessage.CmdGetCurrentNetworkRequestMessage: rpchandlers.HandleGetCurrentNetwork,
 }
 
-func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
+func (m *Manager) routerInitializer(router *router.Router, _ *netadapter.NetConnection) {
 	messageTypes := make([]appmessage.MessageCommand, 0, len(handlers))
 	for messageType := range handlers {
 		messageTypes = append(messageTypes, messageType)
@@ -26,7 +28,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	})
 }
 
-func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *routerpkg.Route) {
+func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Route) {
 	for {
 		message, err := incomingRoute.Dequeue()
 		if err != nil {
@@ -41,12 +43,4 @@ func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *routerpkg
 			panic(err) // TODO
 		}
 	}
-}
-
-func handleGetCurrentNetwork(context *context, outgoingRoute *routerpkg.Route) error {
-	log.Warnf("GOT CURRENT NET REQUEST")
-	log.Warnf("HERE'S THE CURRENT NET: %s", context.dag.Params.Name)
-
-	message := appmessage.NewGetCurrentVersionResponseMessage(context.dag.Params.Name)
-	return outgoingRoute.Enqueue(message)
 }
