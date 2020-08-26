@@ -1,6 +1,8 @@
 package netadapter
 
 import (
+	"fmt"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 
@@ -46,7 +48,8 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners)
+	//rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners)
+	rpcServer, err := grpcserver.NewRPCServer([]string{fmt.Sprintf("0.0.0.0:%d", 60000+rand.Int31n(5000))})
 	if err != nil {
 		return nil, err
 	}
