@@ -26,6 +26,7 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
+	// protocol
 	CmdVersion MessageCommand = iota
 	CmdVerAck
 	CmdRequestAddresses
@@ -48,10 +49,15 @@ const (
 	CmdDoneIBDBlocks
 	CmdTransactionNotFound
 	CmdReject
+
+	// rpc
+	CmdGetCurrentVersionRequestMessage
+	CmdGetCurrentVersionResponseMessage
 )
 
 // MessageCommandToString maps all MessageCommands to their string representation
 var MessageCommandToString = map[MessageCommand]string{
+	// protocol
 	CmdVersion:              "Version",
 	CmdVerAck:               "VerAck",
 	CmdRequestAddresses:     "RequestAddresses",
@@ -74,6 +80,10 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdDoneIBDBlocks:        "DoneIBDBlocks",
 	CmdTransactionNotFound:  "TransactionNotFound",
 	CmdReject:               "Reject",
+
+	// rpc
+	CmdGetCurrentVersionRequestMessage:  "GetCurrentVersionRequest",
+	CmdGetCurrentVersionResponseMessage: "GetCurrentVersionResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
