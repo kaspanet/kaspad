@@ -21,7 +21,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	if err != nil {
 		panic(err) // TODO
 	}
-	spawn("routerInitializer", func() {
+	spawn("routerInitializer-handleIncomingMessages", func() {
 		handleIncomingMessages(incomingRoute, router.OutgoingRoute())
 	})
 }
