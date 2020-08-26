@@ -13,7 +13,7 @@ func (msg *GetCurrentNetworkResponseMessage) Command() MessageCommand {
 }
 
 // GetCurrentNetworkResponseMessage returns a instance of the message
-func NewGetCurrentVersionResponseMessage(currentNetwork string) *GetCurrentNetworkResponseMessage {
+func NewGetCurrentNetworkResponseMessage(currentNetwork string) *GetCurrentNetworkResponseMessage {
 	return &GetCurrentNetworkResponseMessage{
 		CurrentNetwork: currentNetwork,
 	}

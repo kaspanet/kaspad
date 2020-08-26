@@ -12,6 +12,6 @@ func (msg *GetCurrentNetworkRequestMessage) Command() MessageCommand {
 }
 
 // GetCurrentNetworkRequestMessage returns a instance of the message
-func NewGetCurrentVersionRequestMessage() *GetCurrentNetworkRequestMessage {
+func NewGetCurrentNetworkRequestMessage() *GetCurrentNetworkRequestMessage {
 	return &GetCurrentNetworkRequestMessage{}
 }

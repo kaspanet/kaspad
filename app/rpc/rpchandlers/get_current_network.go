@@ -11,6 +11,6 @@ func HandleGetCurrentNetwork(context *rpccontext.Context, outgoingRoute *router.
 	log.Warnf("GOT CURRENT NET REQUEST")
 	log.Warnf("HERE'S THE CURRENT NET: %s", context.DAG.Params.Net)
 
-	message := appmessage.NewGetCurrentVersionResponseMessage(context.DAG.Params.Net.String())
+	message := appmessage.NewGetCurrentNetworkResponseMessage(context.DAG.Params.Net.String())
 	return outgoingRoute.Enqueue(message)
 }
