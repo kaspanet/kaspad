@@ -17,6 +17,7 @@ type configFlags struct {
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
+	RequestJSON string `description:"The request in JSON format"`
 	config.NetworkFlags
 }
 
@@ -25,7 +26,7 @@ func parseConfig() (*configFlags, error) {
 		RPCServer: defaultRPCServer,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
-	_, err := parser.Parse()
+	args, err := parser.Parse()
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +49,11 @@ func parseConfig() (*configFlags, error) {
 	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--rpccert should be omitted if --notls is used")
 	}
+
+	if len(args) != 1 {
+		return nil, errors.New("the last parameter must be the request in JSON format")
+	}
+	cfg.RequestJSON = args[0]
 
 	return cfg, nil
 }

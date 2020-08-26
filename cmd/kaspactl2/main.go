@@ -16,7 +16,7 @@ func main() {
 	}
 	defer client.disconnect()
 
-	requestString := "{\"getCurrentNetworkRequest\": {}}"
+	requestString := cfg.RequestJSON
 	responseString := client.post(requestString)
 
 	fmt.Print(responseString)
