@@ -192,7 +192,7 @@ func checkIntersection(collection1 utxoCollection, collection2 utxoCollection) b
 }
 
 // checkIntersectionWithRule checks if there is an intersection between two utxoCollections satisfying arbitrary rule
-func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoCollection, extraRule func(domainmessage.Outpoint, *UTXOEntry, *UTXOEntry) bool) bool {
+func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoCollection, extraRule func(appmessage.Outpoint, *UTXOEntry, *UTXOEntry) bool) bool {
 	for outpoint, utxoEntry := range collection1 {
 		if diffEntry, ok := collection2.get(outpoint); ok {
 			if extraRule(outpoint, utxoEntry, diffEntry) {
@@ -309,7 +309,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// - if utxoEntry is in d.toRemove and other.toAdd
 
 	// check that NOT (entries with unequal blue scores AND utxoEntry is in d.toAdd and/or other.toRemove) -> Error
-	isNotAddedOutputRemovedWithBlueScore := func(outpoint domainmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+	isNotAddedOutputRemovedWithBlueScore := func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
 			(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
 				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
@@ -320,7 +320,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	}
 
 	//check that NOT (entries with unequal blue score AND utxoEntry is in d.toRemove and/or other.toAdd) -> Error
-	isNotRemovedOutputAddedWithBlueScore := func(outpoint domainmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+	isNotRemovedOutputAddedWithBlueScore := func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
 			(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
 				other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
@@ -333,7 +333,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// if have the same entry in d.toRemove and other.toRemove
 	// and existing entry is with different blue score, in this case - this is an error
 	if checkIntersectionWithRule(d.toRemove, other.toRemove,
-		func(outpoint domainmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+		func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
 			return utxoEntry.blockBlueScore != diffEntry.blockBlueScore
 		}) {
 		return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
@@ -374,7 +374,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 // first d, and than diff were applied to the same base
 func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 	if checkIntersectionWithRule(diff.toRemove, d.toRemove,
-		func(outpoint domainmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
+		func(outpoint appmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
 			return !d.toAdd.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore)
 
 		}) {
@@ -383,7 +383,7 @@ func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
 	}
 
 	if checkIntersectionWithRule(diff.toAdd, d.toAdd,
-		func(outpoint domainmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
+		func(outpoint appmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
 			return !diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)
 		}) {
 		return errors.New(

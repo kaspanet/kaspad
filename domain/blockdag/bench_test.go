@@ -4,16 +4,16 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-func generateNewUTXOEntry(index uint64) (domainmessage.Outpoint, *UTXOEntry) {
+func generateNewUTXOEntry(index uint64) (appmessage.Outpoint, *UTXOEntry) {
 	txSuffix := strconv.FormatUint(index, 10)
 	txStr := "0000000000000000000000000000000000000000000000000000000000000000"
 	txID, _ := daghash.NewTxIDFromStr(txStr[0:len(txStr)-len(txSuffix)] + txSuffix)
-	outpoint := *domainmessage.NewOutpoint(txID, 0)
-	utxoEntry := NewUTXOEntry(&domainmessage.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
+	outpoint := *appmessage.NewOutpoint(txID, 0)
+	utxoEntry := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
 
 	return outpoint, utxoEntry
 }
