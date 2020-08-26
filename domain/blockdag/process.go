@@ -308,9 +308,15 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*chainUpdates, error) {
-	didVirtualParentsChange, virtualSelectedParentChainUpdates, err := dag.addTip(node)
-	if err != nil {
-		return nil, err
+	nodeStatus := dag.index.BlockNodeStatus(node)
+	var didVirtualParentsChange bool
+	var virtualSelectedParentChainUpdates *chainUpdates
+	if nodeStatus != statusViolatedSubjectiveFinality && nodeStatus != statusManuallyRejected {
+		var err error
+		didVirtualParentsChange, virtualSelectedParentChainUpdates, err = dag.addTip(node)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if didVirtualParentsChange {
@@ -457,6 +463,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 	state := &dagState{
 		TipHashes:         dag.TipHashes(),
 		LocalSubnetworkID: dag.subnetworkID,
+		FinalityConflicts: dag.finalityConflicts,
 	}
 	err = saveDAGState(dbTx, state)
 	if err != nil {

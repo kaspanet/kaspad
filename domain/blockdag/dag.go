@@ -97,6 +97,8 @@ type BlockDAG struct {
 	startTime                       mstime.Time
 
 	tips blockSet
+
+	finalityConflicts []*FinalityConflict
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -342,17 +344,17 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-// isInPast returns true if this is in the past of other
+// isInPast returns true if `node` is in the past of `other`
 //
-// Note: this method will return true if this == other
-func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
-	return dag.reachabilityTree.isInPast(this, other)
+// Note: this method will return true if `node == other`
+func (dag *BlockDAG) isInPast(node *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isInPast(node, other)
 }
 
-// isInPastOfAny returns true if this is in the past of any of others
-func (dag *BlockDAG) isInPastOfAny(this *blockNode, others blockSet) (bool, error) {
+// isInPastOfAny returns true if `node` is in the past of any of `others`
+func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, error) {
 	for other := range others {
-		isInPast, err := dag.isInPast(this, other)
+		isInPast, err := dag.isInPast(node, other)
 		if err != nil {
 			return false, err
 		}
@@ -362,6 +364,24 @@ func (dag *BlockDAG) isInPastOfAny(this *blockNode, others blockSet) (bool, erro
 	}
 
 	return false, nil
+}
+
+// isInPastOfAny returns true if any one of `nodes` is in the past of any of `others`
+func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, error) {
+	isAnyInPastOfOther := false
+
+	for node := range nodes {
+		isInPast, err := dag.isInPast(node, other)
+		if err != nil {
+			return false, err
+		}
+		if isInPast {
+			isAnyInPastOfOther = true
+			break
+		}
+	}
+
+	return isAnyInPastOfOther, nil
 }
 
 // GetTopHeaders returns the top domainmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
@@ -453,11 +473,6 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 func (dag *BlockDAG) addTip(tip *blockNode) (
 	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
 
-	tipStatus := dag.index.BlockNodeStatus(tip)
-	if tipStatus == statusViolatedSubjectiveFinality || tipStatus == statusManuallyRejected {
-		return false, &chainUpdates{}, nil
-	}
-
 	newTips := dag.tips.clone()
 	for parent := range tip.parents {
 		newTips.remove(parent)
@@ -471,11 +486,7 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 
 	newVirtualParents, err := dag.selectVirtualParents(newTips)
 	if err != nil {
-		virtualSelectedParentChainUpdates := &chainUpdates{
-			removedChainBlockHashes: []*daghash.Hash{},
-			addedChainBlockHashes:   []*daghash.Hash{},
-		}
-		return false, virtualSelectedParentChainUpdates, err
+		return false, nil, err
 	}
 
 	dag.tips = newTips

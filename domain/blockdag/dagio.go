@@ -128,6 +128,7 @@ func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LocalSubnetworkID *subnetworkid.SubnetworkID
+	FinalityConflicts []*FinalityConflict
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -166,6 +167,7 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 	return saveDAGState(dag.databaseContext, &dagState{
 		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
 		LocalSubnetworkID: localSubnetworkID,
+		FinalityConflicts: nil,
 	})
 }
 
@@ -229,6 +231,8 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
+
+	dag.finalityConflicts = dagState.FinalityConflicts
 
 	log.Debugf("Processing unprocessed blockNodes...")
 	err = dag.processUnprocessedBlockNodes(unprocessedBlockNodes)

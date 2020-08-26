@@ -588,6 +588,20 @@ type GetPeerAddressesCmd struct {
 // getPeerAddresses command.
 func NewGetPeerAddressesCmd() *GetPeerAddressesCmd { return new(GetPeerAddressesCmd) }
 
+type GetFinalityConflictsCmd struct{}
+
+// NewGetFinalityConflictsCmd returns a new instance which can be used to issue a JSON-RPC
+// getFinalityConflicts command.
+func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinalityConflictsCmd) }
+
+type InvalidateAnticoneCmd struct {
+	blockHash string
+}
+
+// NewInvalidateAnticoneCmd returns a new instance which can be used to issue a JSON-RPC
+// invalidateAnticoneCmd command.
+func NewInvalidateAnticoneCmd() *InvalidateAnticoneCmd { return new(InvalidateAnticoneCmd) }
+
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -630,4 +644,6 @@ func init() {
 	MustRegisterCommand("getHeaders", (*GetHeadersCmd)(nil), flags)
 	MustRegisterCommand("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
 	MustRegisterCommand("version", (*VersionCmd)(nil), flags)
+	MustRegisterCommand("getFinalityConflicts", (*GetFinalityConflictsCmd)(nil), flags)
+	MustRegisterCommand("invalidateAnticoneCmd", (*InvalidateAnticoneCmd)(nil), flags)
 }

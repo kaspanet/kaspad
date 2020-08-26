@@ -83,3 +83,17 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) (bool, err
 func (dag *BlockDAG) isInSelectedParentChainOf(node *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isReachabilityTreeAncestorOf(node, other)
 }
+
+// areAllInSelectedPArentChainOf returns true if all `nodes` are in the selected parent chain of `other`
+func (dag *BlockDAG) areAllInSelectedParentChainOf(nodes blockSet, other *blockNode) (bool, error) {
+	for node := range nodes {
+		isInSelectedParentChain, err := dag.isInSelectedParentChainOf(node, other)
+		if err != nil {
+			return false, err
+		}
+		if !isInSelectedParentChain {
+			return false, nil
+		}
+	}
+	return true, nil
+}
