@@ -2,24 +2,13 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/util"
-	"path/filepath"
-
 	"github.com/pkg/errors"
 
 	"github.com/jessevdk/go-flags"
 )
 
-const (
-	defaultLogFilename    = "kaspactl2.log"
-	defaultErrLogFilename = "kaspactl2_err.log"
-)
-
 var (
-	defaultHomeDir    = util.AppDataDir("kaspactl2", false)
-	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
-	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
-	defaultRPCServer  = "localhost"
+	defaultRPCServer = "localhost"
 )
 
 type configFlags struct {
@@ -59,8 +48,6 @@ func parseConfig() (*configFlags, error) {
 	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--rpccert should be omitted if --notls is used")
 	}
-
-	initLog(defaultLogFile, defaultErrLogFile)
 
 	return cfg, nil
 }

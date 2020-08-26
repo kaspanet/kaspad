@@ -21,7 +21,8 @@ func (m *Manager) routerInitializer(router *router.Router, _ *netadapter.NetConn
 	}
 	incomingRoute, err := router.AddIncomingRoute(messageTypes)
 	if err != nil {
-		panic(err) // TODO
+		log.Warnf("a %s", err) // TODO
+		return
 	}
 	spawn("routerInitializer-handleIncomingMessages", func() {
 		m.handleIncomingMessages(incomingRoute, router.OutgoingRoute())
@@ -32,15 +33,18 @@ func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Ro
 	for {
 		message, err := incomingRoute.Dequeue()
 		if err != nil {
-			panic(err) // TODO
+			log.Warnf("a %s", err) // TODO
+			return
 		}
 		handler, ok := handlers[message.Command()]
 		if !ok {
-			panic(err) // TODO
+			log.Warnf("a %s", err) // TODO
+			return
 		}
 		err = handler(m.context, outgoingRoute)
 		if err != nil {
-			panic(err) // TODO
+			log.Warnf("a %s", err) // TODO
+			return
 		}
 	}
 }
