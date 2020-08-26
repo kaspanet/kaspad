@@ -6,9 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"sync"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
@@ -96,6 +97,8 @@ type BlockDAG struct {
 
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
+
+	maxUTXOCacheSize int64
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -119,6 +122,7 @@ func New(config *Config) (*BlockDAG, error) {
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
 		startTime:                      mstime.Now(),
+		maxUTXOCacheSize:               config.MaxUTXOCacheSize,
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)

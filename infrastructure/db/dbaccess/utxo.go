@@ -36,6 +36,18 @@ func RemoveFromUTXOSet(context Context, outpointKey []byte) error {
 	return accessor.Delete(key)
 }
 
+// GetFromUTXOSet return the given outpoint from the
+// database's UTXO set.
+func GetFromUTXOSet(context Context, outpointKey []byte) ([]byte, error) {
+	accessor, err := context.accessor()
+	if err != nil {
+		return nil, err
+	}
+
+	key := utxoKey(outpointKey)
+	return accessor.Get(key)
+}
+
 // UTXOSetCursor opens a cursor over all the UTXO entries
 // that have been previously added to the database.
 func UTXOSetCursor(context Context) (database.Cursor, error) {

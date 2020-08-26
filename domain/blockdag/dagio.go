@@ -202,12 +202,6 @@ func (dag *BlockDAG) initDAGState() error {
 		return err
 	}
 
-	log.Debugf("Loading UTXO set...")
-	fullUTXOCollection, err := dag.initUTXOSet()
-	if err != nil {
-		return err
-	}
-
 	log.Debugf("Loading reachability data...")
 	err = dag.reachabilityTree.init(dag.databaseContext)
 	if err != nil {
@@ -220,11 +214,8 @@ func (dag *BlockDAG) initDAGState() error {
 		return err
 	}
 
-	log.Debugf("Applying the loaded utxoCollection to the virtual block...")
-	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
-	if err != nil {
-		return errors.Wrap(err, "Error loading UTXOSet")
-	}
+	log.Debugf("Setting the FullUTXOSet to the virtual block...")
+	dag.virtual.utxoSet = NewFullUTXOSetFromContext(dag.databaseContext, dag.maxUTXOCacheSize)
 
 	log.Debugf("Applying the stored tips to the virtual block...")
 	err = dag.initVirtualBlockTips(dagState)
@@ -313,41 +304,6 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 		dag.blockCount++
 	}
 	return unprocessedBlockNodes, nil
-}
-
-func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error) {
-	fullUTXOCollection = make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dag.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close()
-
-	for cursor.Next() {
-		// Deserialize the outpoint
-		key, err := cursor.Key()
-		if err != nil {
-			return nil, err
-		}
-		outpoint, err := deserializeOutpoint(bytes.NewReader(key.Suffix()))
-		if err != nil {
-			return nil, err
-		}
-
-		// Deserialize the utxo entry
-		value, err := cursor.Value()
-		if err != nil {
-			return nil, err
-		}
-		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
-		if err != nil {
-			return nil, err
-		}
-
-		fullUTXOCollection[*outpoint] = entry
-	}
-
-	return fullUTXOCollection, nil
 }
 
 func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
