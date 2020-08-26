@@ -26,6 +26,26 @@ func FromAppMessage(message appmessage.Message) (*KaspadMessage, error) {
 }
 
 func toPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
+	p2pPayload, err := toP2PPayload(message)
+	if err != nil {
+		return nil, err
+	}
+	if p2pPayload != nil {
+		return p2pPayload, nil
+	}
+
+	rpcPayload, err := toRPCPayload(message)
+	if err != nil {
+		return nil, err
+	}
+	if rpcPayload != nil {
+		return rpcPayload, nil
+	}
+
+	return nil, errors.Errorf("unknown message type %T", message)
+}
+
+func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 	switch message := message.(type) {
 	case *appmessage.MsgAddresses:
 		payload := new(KaspadMessage_Addresses)
@@ -182,6 +202,20 @@ func toPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 	default:
-		return nil, errors.Errorf("unknown message type %T", message)
+		return nil, nil
+	}
+}
+
+func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
+	switch message := message.(type) {
+	case *appmessage.MsgAddresses:
+		payload := new(KaspadMessage_Addresses)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	default:
+		return nil, nil
 	}
 }
