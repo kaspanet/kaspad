@@ -6,7 +6,7 @@ import (
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-type handler func(outgoingRoute *routerpkg.Route)
+type handler func(context *context, outgoingRoute *routerpkg.Route) error
 
 var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetCurrentNetworkRequestMessage: handleGetCurrentNetwork,
@@ -22,11 +22,11 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		panic(err) // TODO
 	}
 	spawn("routerInitializer-handleIncomingMessages", func() {
-		handleIncomingMessages(incomingRoute, router.OutgoingRoute())
+		m.handleIncomingMessages(incomingRoute, router.OutgoingRoute())
 	})
 }
 
-func handleIncomingMessages(incomingRoute, outgoingRoute *routerpkg.Route) {
+func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *routerpkg.Route) {
 	for {
 		message, err := incomingRoute.Dequeue()
 		if err != nil {
@@ -36,10 +36,17 @@ func handleIncomingMessages(incomingRoute, outgoingRoute *routerpkg.Route) {
 		if !ok {
 			panic(err) // TODO
 		}
-		handler(outgoingRoute)
+		err = handler(m.context, outgoingRoute)
+		if err != nil {
+			panic(err) // TODO
+		}
 	}
 }
 
-func handleGetCurrentNetwork(outgoingRoute *routerpkg.Route) {
+func handleGetCurrentNetwork(context *context, outgoingRoute *routerpkg.Route) error {
 	log.Warnf("GOT CURRENT NET REQUEST")
+	log.Warnf("HERE'S THE CURRENT NET: %s", context.dag.Params.Name)
+
+	message := appmessage.NewGetCurrentVersionResponseMessage(context.dag.Params.Name)
+	return outgoingRoute.Enqueue(message)
 }
