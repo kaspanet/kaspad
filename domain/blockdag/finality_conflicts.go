@@ -9,15 +9,15 @@ import (
 )
 
 type FinalityConflict struct {
-	ID                     uint
-	ConflictTime           *time.Time
+	ID                     int
+	ConflictTime           time.Time
 	CurrentSelectedTipHash *daghash.Hash
 	ViolatingBlockHash     *daghash.Hash
 
 	ResolutionTime *time.Time
 }
 
-func (dag *BlockDAG) finalityConflictByID(id uint) (*FinalityConflict, bool) {
+func (dag *BlockDAG) finalityConflictByID(id int) (*FinalityConflict, bool) {
 	for _, finalityConflict := range dag.finalityConflicts {
 		if finalityConflict.ID == id {
 			return finalityConflict, true
@@ -26,16 +26,37 @@ func (dag *BlockDAG) finalityConflictByID(id uint) (*FinalityConflict, bool) {
 	return nil, false
 }
 
-func (dag *BlockDAG) resolveFinalityConflict(id uint, validBlockHashes, invalidBlockHashes []*daghash.Hash) (*chainUpdates, error) {
+func (dag *BlockDAG) addFinalityConflict(node *blockNode) {
+	topFinalityConflictID := 0
+	for _, finalityConfict := range dag.finalityConflicts {
+		if finalityConfict.ID > topFinalityConflictID {
+			topFinalityConflictID = finalityConfict.ID
+		}
+	}
+
+	finalityConflict := &FinalityConflict{
+		ID:                     topFinalityConflictID + 1,
+		ConflictTime:           time.Now(),
+		CurrentSelectedTipHash: dag.SelectedTipHash(),
+		ViolatingBlockHash:     node.hash,
+	}
+
+	dag.finalityConflicts = append(dag.finalityConflicts, finalityConflict)
+
+	dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{FinalityConflict: finalityConflict})
+}
+
+func (dag *BlockDAG) resolveFinalityConflict(id int, validBlockHashes, invalidBlockHashes []*daghash.Hash) (
+	selectedParentChainUpdates *chainUpdates, areAllResolved bool, err error) {
 	finalityConflict, ok := dag.finalityConflictByID(id)
 	if !ok {
-		return nil, errors.Errorf("No finality conflict with ID %d found", id)
+		return nil, false, errors.Errorf("No finality conflict with ID %d found", id)
 	}
 
 	currentSelectedTip, violatingBlock, validBlocks, invalidBlocks, err :=
 		dag.lookupFinalityConflictBlocks(finalityConflict, validBlockHashes, invalidBlockHashes)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	violatingBranchStart, currentSelectedTipBranchStart :=
@@ -44,17 +65,17 @@ func (dag *BlockDAG) resolveFinalityConflict(id uint, validBlockHashes, invalidB
 	isSwitchingBranches, err := dag.checkIfSwitchingBranches(currentSelectedTipBranchStart, violatingBranchStart,
 		currentSelectedTip, violatingBlock, validBlocks, invalidBlocks)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if !isSwitchingBranches {
 		isKeepingBranches, err := dag.checkIfKeepingBranches(currentSelectedTipBranchStart, violatingBranchStart,
 			currentSelectedTip, violatingBlock, validBlocks, invalidBlocks)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if !isKeepingBranches {
-			return nil, errors.Errorf("neither Switching Branches not Keeping Branches conditions were met")
+			return nil, false, errors.Errorf("neither Switching Branches not Keeping Branches conditions were met")
 		}
 	}
 
@@ -73,8 +94,28 @@ func (dag *BlockDAG) resolveFinalityConflict(id uint, validBlockHashes, invalidB
 
 	removedTips, rehabilitatedBlocks, err := dag.updateInvalidBlocksFuture(invalidBlocks, validBranchStart)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
+
+	addedTipsFromRehabilitateBlocks := dag.rehabilitateBlocks(rehabilitatedBlocks)
+	addedTips.addSet(addedTipsFromRehabilitateBlocks)
+
+	virtualSelectedParentChainUpdates, err :=
+		dag.updateTipsAfterFinalityConflictResolution(removedTips, addedTips)
+	if err != nil {
+		return nil, false, err
+	}
+
+	areAllResolved, err = dag.updateFinalityConflictResolution(finalityConflict)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return virtualSelectedParentChainUpdates, areAllResolved, nil
+}
+
+func (dag *BlockDAG) rehabilitateBlocks(rehabilitatedBlocks blockSet) (addedTips blockSet) {
+	addedTips = newBlockSet()
 
 	for rehabilitatedBlock := range rehabilitatedBlocks {
 		hasNonManuallyRejectedChildren := false
@@ -89,13 +130,7 @@ func (dag *BlockDAG) resolveFinalityConflict(id uint, validBlockHashes, invalidB
 		}
 	}
 
-	virtualSelectedParentChainUpdates, err :=
-		dag.updateTipsAfterFinalityConflictResolution(removedTips, addedTips)
-	if err != nil {
-		return nil, err
-	}
-
-	return virtualSelectedParentChainUpdates, nil
+	return addedTips
 }
 
 func (dag *BlockDAG) updateInvalidBlocksFuture(

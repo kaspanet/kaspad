@@ -263,6 +263,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		}
 		if isViolatingSubjectiveFinality {
 			dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
+			dag.addFinalityConflict(node)
 		}
 	}
 
@@ -460,12 +461,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 	}
 
 	// Update DAG state.
-	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LocalSubnetworkID: dag.subnetworkID,
-		FinalityConflicts: dag.finalityConflicts,
-	}
-	err = saveDAGState(dbTx, state)
+	err = dag.saveState(dbTx)
 	if err != nil {
 		return err
 	}

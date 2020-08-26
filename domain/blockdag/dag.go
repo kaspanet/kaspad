@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -499,4 +500,37 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 	chainUpdates := dag.virtual.updateSelectedParentSet(oldSelectedParent)
 
 	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) updateFinalityConflictResolution(
+	resolvedFinalityConflict *FinalityConflict) (areAllResolved bool, err error) {
+
+	resolutionTime := time.Now()
+	resolvedFinalityConflict.ResolutionTime = &resolutionTime
+
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return false, err
+	}
+	err = dag.saveState(dbTx)
+	if err != nil {
+		return false, err
+	}
+
+	for _, finalityConflict := range dag.finalityConflicts {
+		if finalityConflict.ResolutionTime == nil {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
+	state := &dagState{
+		TipHashes:         dag.TipHashes(),
+		LocalSubnetworkID: dag.subnetworkID,
+		FinalityConflicts: dag.finalityConflicts,
+	}
+	return saveDAGState(dbTx, state)
 }
