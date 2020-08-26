@@ -152,6 +152,7 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.rpcRouterInitializer)
+	netConnection.setOnDisconnectedHandler(func() {})
 	netConnection.start()
 
 	return nil

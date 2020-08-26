@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"os"
@@ -22,5 +24,24 @@ func main() {
 	}
 	defer client.disconnect()
 
-	log.Infof("Done!")
+	getCurrentNetworkRequest := appmessage.GetCurrentNetworkRequestMessage{}
+	rawRequest, err := protowire.FromAppMessage(&getCurrentNetworkRequest)
+	if err != nil {
+		panic(err)
+	}
+	err = client.stream.Send(rawRequest)
+	if err != nil {
+		panic(err)
+	}
+	rawResponse, err := client.stream.Recv()
+	if err != nil {
+		panic(err)
+	}
+	response, err := rawResponse.ToAppMessage()
+	if err != nil {
+		panic(err)
+	}
+	getCurrentNetworkResponse := response.(*appmessage.GetCurrentNetworkResponseMessage)
+
+	log.Infof("Done! %s", getCurrentNetworkResponse.CurrentNetwork)
 }
