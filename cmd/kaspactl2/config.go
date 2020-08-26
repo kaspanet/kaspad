@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	defaultLogFilename    = "kaspacoatl.log"
-	defaultErrLogFilename = "kaspacoatl_err.log"
+	defaultLogFilename    = "kaspactl2.log"
+	defaultErrLogFilename = "kaspactl2_err.log"
 )
 
 var (
-	defaultHomeDir    = util.AppDataDir("kaspacoatl", false)
+	defaultHomeDir    = util.AppDataDir("kaspactl2", false)
 	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
 	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
 	defaultRPCServer  = "localhost"

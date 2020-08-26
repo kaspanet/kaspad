@@ -21,4 +21,6 @@ func main() {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
 	defer client.disconnect()
+
+	log.Infof("Done!")
 }
