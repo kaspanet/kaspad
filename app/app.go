@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/network/addressmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
-	"github.com/kaspanet/kaspad/network/netadapter/id"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
-	"github.com/kaspanet/kaspad/infrastructure/signal"
-	"github.com/kaspanet/kaspad/network/connmanager"
-	"github.com/kaspanet/kaspad/network/dnsseed"
-	"github.com/kaspanet/kaspad/network/domainmessage"
-	"github.com/kaspanet/kaspad/network/netadapter"
-	"github.com/kaspanet/kaspad/network/protocol"
-	"github.com/kaspanet/kaspad/network/rpc"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )
@@ -114,13 +114,14 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	addressManager := addressmanager.New(cfg, databaseContext)
-
+	addressManager, err := addressmanager.New(cfg, databaseContext)
+	if err != nil {
+		return nil, err
+	}
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
-
 	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err
@@ -143,8 +144,8 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 
 func (a *App) maybeSeedFromDNS() {
 	if !a.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, domainmessage.SFNodeNetwork, false, nil,
-			a.cfg.Lookup, func(addresses []*domainmessage.NetAddress) {
+		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
+			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.

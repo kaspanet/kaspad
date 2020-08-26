@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/crypto/ripemd160"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -1148,7 +1148,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The lock time feature can also be disabled, thereby bypassing
 	// OP_CHECKLOCKTIMEVERIFY, if every transaction input has been finalized by
-	// setting its sequence to the maximum value (domainmessage.MaxTxInSequenceNum). This
+	// setting its sequence to the maximum value (appmessage.MaxTxInSequenceNum). This
 	// condition would result in the transaction being allowed into the blockDAG
 	// making the opcode ineffective.
 	//
@@ -1160,7 +1160,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// NOTE: This implies that even if the transaction is not finalized due to
 	// another input being unlocked, the opcode execution will still fail when the
 	// input being used by the opcode is locked.
-	if vm.tx.TxIn[vm.txIdx].Sequence == domainmessage.MaxTxInSequenceNum {
+	if vm.tx.TxIn[vm.txIdx].Sequence == appmessage.MaxTxInSequenceNum {
 		return scriptError(ErrUnsatisfiedLockTime,
 			"transaction input is finalized")
 	}
@@ -1204,7 +1204,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&uint64(domainmessage.SequenceLockTimeDisabled) != 0 {
+	if sequence&uint64(appmessage.SequenceLockTimeDisabled) != 0 {
 		return nil
 	}
 
@@ -1213,17 +1213,17 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// number does not have this bit set prevents using this property
 	// to get around a CHECKSEQUENCEVERIFY check.
 	txSequence := vm.tx.TxIn[vm.txIdx].Sequence
-	if txSequence&domainmessage.SequenceLockTimeDisabled != 0 {
+	if txSequence&appmessage.SequenceLockTimeDisabled != 0 {
 		str := fmt.Sprintf("transaction sequence has sequence "+
 			"locktime disabled bit set: 0x%x", txSequence)
 		return scriptError(ErrUnsatisfiedLockTime, str)
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := uint64(domainmessage.SequenceLockTimeIsSeconds |
-		domainmessage.SequenceLockTimeMask)
+	lockTimeMask := uint64(appmessage.SequenceLockTimeIsSeconds |
+		appmessage.SequenceLockTimeMask)
 	return verifyLockTime(txSequence&lockTimeMask,
-		domainmessage.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
+		appmessage.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it

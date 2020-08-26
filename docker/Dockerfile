@@ -29,7 +29,6 @@ RUN GOOS=linux go build -a -installsuffix cgo -o kaspad .
 
 # Remove the line below and uncomment the line after it for testing with coverage
 RUN go test ./...
-# RUN ./test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine

@@ -11,7 +11,7 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -27,7 +27,7 @@ import (
 // The function should only be used if the caller is creating the transaction or
 // is otherwise 100% positive mutating will not cause adverse affects due to
 // other dependencies.
-func InPlaceSort(tx *domainmessage.MsgTx) {
+func InPlaceSort(tx *appmessage.MsgTx) {
 	sort.Sort(sortableInputSlice(tx.TxIn))
 	sort.Sort(sortableOutputSlice(tx.TxOut))
 }
@@ -35,7 +35,7 @@ func InPlaceSort(tx *domainmessage.MsgTx) {
 // Sort returns a new transaction with the inputs and outputs sorted based on
 // BIP 69. The passed transaction is not modified and the new transaction
 // might have a different hash if any sorting was done.
-func Sort(tx *domainmessage.MsgTx) *domainmessage.MsgTx {
+func Sort(tx *appmessage.MsgTx) *appmessage.MsgTx {
 	txCopy := tx.Copy()
 	sort.Sort(sortableInputSlice(txCopy.TxIn))
 	sort.Sort(sortableOutputSlice(txCopy.TxOut))
@@ -44,7 +44,7 @@ func Sort(tx *domainmessage.MsgTx) *domainmessage.MsgTx {
 
 // IsSorted checks whether tx has inputs and outputs sorted according to BIP
 // 69.
-func IsSorted(tx *domainmessage.MsgTx) bool {
+func IsSorted(tx *appmessage.MsgTx) bool {
 	if !sort.IsSorted(sortableInputSlice(tx.TxIn)) {
 		return false
 	}
@@ -54,8 +54,8 @@ func IsSorted(tx *domainmessage.MsgTx) bool {
 	return true
 }
 
-type sortableInputSlice []*domainmessage.TxIn
-type sortableOutputSlice []*domainmessage.TxOut
+type sortableInputSlice []*appmessage.TxIn
+type sortableOutputSlice []*appmessage.TxOut
 
 // For SortableInputSlice and SortableOutputSlice, three functions are needed
 // to make it sortable with sort.Sort() -- Len, Less, and Swap

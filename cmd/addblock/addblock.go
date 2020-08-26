@@ -5,11 +5,11 @@
 package main
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"runtime"
 
-	"github.com/kaspanet/kaspad/infrastructure/limits"
-	"github.com/kaspanet/kaspad/infrastructure/logs"
+	"github.com/kaspanet/kaspad/infrastructure/os/limits"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
@@ -20,7 +20,7 @@ const (
 
 var (
 	cfg   *ConfigFlags
-	log   *logs.Logger
+	log   *logger.Logger
 	spawn func(string, func())
 )
 
@@ -35,7 +35,7 @@ func realMain() error {
 	cfg = tcfg
 
 	// Setup logging.
-	backendLogger := logs.NewBackend()
+	backendLogger := logger.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
 	spawn = panics.GoroutineWrapperFunc(log)

@@ -15,15 +15,15 @@ import (
 
 	"github.com/kaspanet/kaspad/app"
 
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/limits"
-	"github.com/kaspanet/kaspad/infrastructure/signal"
-	"github.com/kaspanet/kaspad/infrastructure/version"
+	"github.com/kaspanet/kaspad/infrastructure/os/limits"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/kaspanet/kaspad/version"
 )
 
 const (
@@ -165,9 +165,6 @@ func removeDatabase(cfg *config.Config) error {
 	return os.RemoveAll(dbPath)
 }
 
-// removeRegressionDB removes the existing regression test database if running
-// in regression test mode and it already exists.
-
 // dbPath returns the path to the block database given a database type.
 func blockDbPath(cfg *config.Config) string {
 	// The database name is based on the database type.
@@ -210,4 +207,10 @@ func main() {
 	if err := kaspadMain(nil); err != nil {
 		os.Exit(1)
 	}
+}
+
+// doUpgrades performs upgrades to kaspad as new versions require it.
+// currently it's a placeholder we got from kaspad upstream, that does nothing
+func doUpgrades() error {
+	return nil
 }

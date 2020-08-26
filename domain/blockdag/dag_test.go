@@ -14,12 +14,12 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -255,7 +255,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below. This utxo is added such that it has an
 	// age of 4 blocks.
-	msgTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, nil, []*domainmessage.TxOut{{ScriptPubKey: nil, Value: 10}})
+	msgTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, nil, []*appmessage.TxOut{{ScriptPubKey: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
 	blueScore := uint64(numBlocksToGenerate) - 4
@@ -270,7 +270,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// that the sequence lock heights are always calculated from the same
 	// point of view that they were originally calculated from for a given
 	// utxo. That is to say, the height prior to it.
-	utxo := domainmessage.Outpoint{
+	utxo := appmessage.Outpoint{
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
@@ -290,8 +290,8 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
-	unConfTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, nil, []*domainmessage.TxOut{{ScriptPubKey: nil, Value: 5}})
-	unConfUtxo := domainmessage.Outpoint{
+	unConfTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, nil, []*appmessage.TxOut{{ScriptPubKey: nil, Value: 5}})
+	unConfUtxo := appmessage.Outpoint{
 		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
@@ -303,7 +303,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		tx      *domainmessage.MsgTx
+		tx      *appmessage.MsgTx
 		utxoSet UTXOSet
 		want    *SequenceLock
 	}{
@@ -312,7 +312,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// should be disabled.
 		{
 			name:    "single input, max sequence number",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: utxo, Sequence: domainmessage.MaxTxInSequenceNum}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: appmessage.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   -1,
@@ -327,7 +327,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// the targeted block.
 		{
 			name:    "single input, milliseconds lock time below time granularity",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   medianTime - 1,
@@ -339,7 +339,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// milliseconds after the median past time of the DAG.
 		{
 			name:    "single input, 1048575 milliseconds after median time",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   medianTime + 1048575,
@@ -354,8 +354,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// latest lock that isn't disabled.
 		{
 			name: "multiple varied inputs",
-			tx: domainmessage.NewNativeMsgTx(1,
-				[]*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1,
+				[]*appmessage.TxIn{{
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
@@ -364,12 +364,12 @@ func TestCalcSequenceLock(t *testing.T) {
 				}, {
 					PreviousOutpoint: utxo,
 					Sequence: LockTimeToSequence(false, 5) |
-						domainmessage.SequenceLockTimeDisabled,
+						appmessage.SequenceLockTimeDisabled,
 				}},
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Milliseconds:   medianTime + (5 << domainmessage.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (5 << appmessage.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 3,
 			},
 		},
@@ -379,7 +379,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// height of 2 meaning it can be included at height 3.
 		{
 			name:    "single input, lock-time in blocks",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   -1,
@@ -391,7 +391,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// be the time further in the future.
 		{
 			name: "two inputs, lock-times in seconds",
-			tx: domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{
 				PreviousOutpoint: utxo,
 				Sequence:         LockTimeToSequence(true, 5242880),
 			}, {
@@ -400,7 +400,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Milliseconds:   medianTime + (10 << domainmessage.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (10 << appmessage.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: -1,
 			},
 		},
@@ -410,8 +410,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// indicating it can be included at height 11.
 		{
 			name: "two inputs, lock-times in blocks",
-			tx: domainmessage.NewNativeMsgTx(1,
-				[]*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1,
+				[]*appmessage.TxIn{{
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(false, 1),
 				}, {
@@ -430,8 +430,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// further into the future for both inputs should be chosen.
 		{
 			name: "four inputs, two lock-times in time, two lock-times in blocks",
-			tx: domainmessage.NewNativeMsgTx(1,
-				[]*domainmessage.TxIn{{
+			tx: appmessage.NewNativeMsgTx(1,
+				[]*appmessage.TxIn{{
 					PreviousOutpoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
@@ -447,7 +447,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Milliseconds:   medianTime + (13 << domainmessage.SequenceLockTimeGranularity) - 1,
+				Milliseconds:   medianTime + (13 << appmessage.SequenceLockTimeGranularity) - 1,
 				BlockBlueScore: int64(prevUtxoBlueScore) + 8,
 			},
 		},
@@ -459,7 +459,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// after that.
 		{
 			name:    "single input, unconfirmed, lock-time in blocks",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   -1,
@@ -471,7 +471,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// MTP of the *next* block.
 		{
 			name:    "single input, unconfirmed, lock-time in milliseoncds",
-			tx:      domainmessage.NewNativeMsgTx(1, []*domainmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   nextMedianTime + 1048575,
@@ -698,7 +698,7 @@ func TestConfirmations(t *testing.T) {
 	}
 
 	// Add a chain of blocks
-	chainBlocks := make([]*domainmessage.MsgBlock, 5)
+	chainBlocks := make([]*appmessage.MsgBlock, 5)
 	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i < 5; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
@@ -718,7 +718,7 @@ func TestConfirmations(t *testing.T) {
 		}
 	}
 
-	branchingBlocks := make([]*domainmessage.MsgBlock, 2)
+	branchingBlocks := make([]*appmessage.MsgBlock, 2)
 	// Add two branching blocks
 	branchingBlocks[0] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[1])
 	branchingBlocks[1] = prepareAndProcessBlockByParentMsgBlocks(t, dag, branchingBlocks[0])
@@ -791,7 +791,7 @@ func TestAcceptingBlock(t *testing.T) {
 	defer teardownFunc()
 	dag.TestSetCoinbaseMaturity(0)
 
-	acceptingBlockByMsgBlock := func(block *domainmessage.MsgBlock) (*blockNode, error) {
+	acceptingBlockByMsgBlock := func(block *appmessage.MsgBlock) (*blockNode, error) {
 		node := nodeByMsgBlock(t, dag, block)
 		return dag.acceptingBlock(node)
 	}
@@ -807,7 +807,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 
 	numChainBlocks := uint32(10)
-	chainBlocks := make([]*domainmessage.MsgBlock, numChainBlocks)
+	chainBlocks := make([]*appmessage.MsgBlock, numChainBlocks)
 	chainBlocks[0] = dag.Params.GenesisBlock
 	for i := uint32(1); i <= numChainBlocks-1; i++ {
 		chainBlocks[i] = prepareAndProcessBlockByParentMsgBlocks(t, dag, chainBlocks[i-1])
@@ -1027,11 +1027,11 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	invalidCbTx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{}, []*domainmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
+	invalidCbTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{}, []*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
 	txs := []*util.Tx{util.NewTx(invalidCbTx)}
 	hashMerkleRoot := BuildHashMerkleTreeStore(txs).Root()
-	invalidMsgBlock := domainmessage.NewMsgBlock(
-		domainmessage.NewBlockHeader(
+	invalidMsgBlock := appmessage.NewMsgBlock(
+		appmessage.NewBlockHeader(
 			1,
 			[]*daghash.Hash{params.GenesisHash}, hashMerkleRoot,
 			&daghash.Hash{},
@@ -1063,8 +1063,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", statusValidateFailed, invalidBlockNode.status)
 	}
 
-	invalidMsgBlockChild := domainmessage.NewMsgBlock(
-		domainmessage.NewBlockHeader(1, []*daghash.Hash{
+	invalidMsgBlockChild := appmessage.NewMsgBlock(
+		appmessage.NewBlockHeader(1, []*daghash.Hash{
 			invalidBlock.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
@@ -1092,8 +1092,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
 	}
 
-	invalidMsgBlockGrandChild := domainmessage.NewMsgBlock(
-		domainmessage.NewBlockHeader(1, []*daghash.Hash{
+	invalidMsgBlockGrandChild := appmessage.NewMsgBlock(
+		appmessage.NewBlockHeader(1, []*daghash.Hash{
 			invalidBlockChild.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
@@ -1121,7 +1121,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 }
 
-func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *domainmessage.MsgBlock, expectedRuleErr error) {
+func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 
 	err = checkRuleError(err, expectedRuleErr)
@@ -1157,24 +1157,24 @@ func TestDoubleSpends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to build signature script: %s", err)
 	}
-	txIn := &domainmessage.TxIn{
-		PreviousOutpoint: domainmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
+	txIn := &appmessage.TxIn{
+		PreviousOutpoint: appmessage.Outpoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+		Sequence:         appmessage.MaxTxInSequenceNum,
 	}
-	txOut := &domainmessage.TxOut{
+	txOut := &appmessage.TxOut{
 		ScriptPubKey: OpTrueScript,
 		Value:        uint64(1),
 	}
-	tx1 := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
+	tx1 := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
 
-	doubleSpendTxOut := &domainmessage.TxOut{
+	doubleSpendTxOut := &appmessage.TxOut{
 		ScriptPubKey: OpTrueScript,
 		Value:        uint64(2),
 	}
-	doubleSpendTx1 := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{doubleSpendTxOut})
+	doubleSpendTx1 := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{doubleSpendTxOut})
 
-	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*domainmessage.MsgTx{tx1})
+	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{tx1})
 
 	// Check that a block will be rejected if it has a transaction that already exists in its past.
 	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
@@ -1209,7 +1209,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleError(ErrMissingTxOut, ""))
 
-	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*domainmessage.MsgTx{doubleSpendTx1})
+	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{doubleSpendTx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -1264,7 +1264,7 @@ func TestUTXOCommitment(t *testing.T) {
 
 	resetExtraNonceForTest()
 
-	createTx := func(txToSpend *domainmessage.MsgTx) *domainmessage.MsgTx {
+	createTx := func(txToSpend *appmessage.MsgTx) *appmessage.MsgTx {
 		scriptPubKey, err := txscript.PayToScriptHashScript(OpTrueScript)
 		if err != nil {
 			t.Fatalf("TestUTXOCommitment: failed to build script pub key: %s", err)
@@ -1273,16 +1273,16 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestUTXOCommitment: failed to build signature script: %s", err)
 		}
-		txIn := &domainmessage.TxIn{
-			PreviousOutpoint: domainmessage.Outpoint{TxID: *txToSpend.TxID(), Index: 0},
+		txIn := &appmessage.TxIn{
+			PreviousOutpoint: appmessage.Outpoint{TxID: *txToSpend.TxID(), Index: 0},
 			SignatureScript:  signatureScript,
-			Sequence:         domainmessage.MaxTxInSequenceNum,
+			Sequence:         appmessage.MaxTxInSequenceNum,
 		}
-		txOut := &domainmessage.TxOut{
+		txOut := &appmessage.TxOut{
 			ScriptPubKey: scriptPubKey,
 			Value:        uint64(1),
 		}
-		return domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
+		return appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
 	}
 
 	// Build the following DAG:
@@ -1298,12 +1298,12 @@ func TestUTXOCommitment(t *testing.T) {
 
 	// Block C:
 	txSpendBlockACoinbase := createTx(blockA.Transactions[0])
-	blockCTxs := []*domainmessage.MsgTx{txSpendBlockACoinbase}
+	blockCTxs := []*appmessage.MsgTx{txSpendBlockACoinbase}
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockA.BlockHash()}, blockCTxs)
 
 	// Block D:
 	txSpendTxInBlockC := createTx(txSpendBlockACoinbase)
-	blockDTxs := []*domainmessage.MsgTx{txSpendTxInBlockC}
+	blockDTxs := []*appmessage.MsgTx{txSpendTxInBlockC}
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
 
 	// Get the pastUTXO of blockD

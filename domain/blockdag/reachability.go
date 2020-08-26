@@ -2,7 +2,7 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/pkg/errors"
 	"math"
 	"strings"
@@ -267,6 +267,12 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	// Set the parent-child relationship
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
+
+	// Temporarily set the child's interval to be empty, at
+	// the start of rtn's remaining interval. This is done
+	// so that child-of-rtn checks (e.g.
+	// findAncestorAmongChildren) will not fail for rtn.
+	child.interval = newReachabilityInterval(remaining.start, remaining.start-1)
 
 	// Handle rtn not being a descendant of the reindex root.
 	// Note that we check rtn here instead of child because

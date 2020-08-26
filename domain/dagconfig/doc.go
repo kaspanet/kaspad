@@ -6,7 +6,6 @@ of monetary value, there also exists the following standard networks:
   * testnet
   * simnet
   * devnet
-  * regression test
 These networks are incompatible with each other (each sharing a different
 genesis block) and software should handle errors where input intended for
 one network is used on an application instance running on a different

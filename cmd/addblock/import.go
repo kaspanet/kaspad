@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -68,10 +68,10 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 	if err := binary.Read(bi.r, binary.LittleEndian, &blockLen); err != nil {
 		return nil, err
 	}
-	if blockLen > domainmessage.MaxMessagePayload {
+	if blockLen > appmessage.MaxMessagePayload {
 		return nil, errors.Errorf("block payload of %d bytes is larger "+
 			"than the max allowed %d bytes", blockLen,
-			domainmessage.MaxMessagePayload)
+			appmessage.MaxMessagePayload)
 	}
 
 	serializedBlock := make([]byte, blockLen)

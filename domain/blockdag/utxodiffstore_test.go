@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -42,8 +42,8 @@ func TestUTXODiffStore(t *testing.T) {
 	// Add node's diff data to the utxoDiffStore and check if it's checked correctly.
 	node := createNode()
 	diff := NewUTXODiff()
-	diff.toAdd.add(domainmessage.Outpoint{TxID: daghash.TxID{0x01}, Index: 0}, &UTXOEntry{amount: 1, scriptPubKey: []byte{0x01}})
-	diff.toRemove.add(domainmessage.Outpoint{TxID: daghash.TxID{0x02}, Index: 0}, &UTXOEntry{amount: 2, scriptPubKey: []byte{0x02}})
+	diff.toAdd.add(appmessage.Outpoint{TxID: daghash.TxID{0x01}, Index: 0}, &UTXOEntry{amount: 1, scriptPubKey: []byte{0x01}})
+	diff.toRemove.add(appmessage.Outpoint{TxID: daghash.TxID{0x02}, Index: 0}, &UTXOEntry{amount: 2, scriptPubKey: []byte{0x02}})
 	if err := dag.utxoDiffStore.setBlockDiff(node, diff); err != nil {
 		t.Fatalf("setBlockDiff: unexpected error: %s", err)
 	}

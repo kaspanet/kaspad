@@ -2,9 +2,9 @@ package blockdag
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/infrastructure/database"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"io"
@@ -108,7 +108,6 @@ func (store *reachabilityStore) clearDirtyEntries() {
 }
 
 func (store *reachabilityStore) init(dbContext dbaccess.Context) error {
-	// TODO: (Stas) This is a quick and dirty hack.
 	// We iterate over the entire bucket twice:
 	// * First, populate the loaded set with all entries
 	// * Second, connect the parent/children pointers in each entry
@@ -225,20 +224,20 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 	if treeNode.parent != nil {
 		parentHash = treeNode.parent.blockNode.hash
 	}
-	err = domainmessage.WriteElement(w, parentHash)
+	err = appmessage.WriteElement(w, parentHash)
 	if err != nil {
 		return err
 	}
 
 	// Serialize the amount of children
-	err = domainmessage.WriteVarInt(w, uint64(len(treeNode.children)))
+	err = appmessage.WriteVarInt(w, uint64(len(treeNode.children)))
 	if err != nil {
 		return err
 	}
 
 	// Serialize the children
 	for _, child := range treeNode.children {
-		err = domainmessage.WriteElement(w, child.blockNode.hash)
+		err = appmessage.WriteElement(w, child.blockNode.hash)
 		if err != nil {
 			return err
 		}
@@ -249,13 +248,13 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 
 func (store *reachabilityStore) serializeReachabilityInterval(w io.Writer, interval *reachabilityInterval) error {
 	// Serialize start
-	err := domainmessage.WriteElement(w, interval.start)
+	err := appmessage.WriteElement(w, interval.start)
 	if err != nil {
 		return err
 	}
 
 	// Serialize end
-	err = domainmessage.WriteElement(w, interval.end)
+	err = appmessage.WriteElement(w, interval.end)
 	if err != nil {
 		return err
 	}
@@ -265,14 +264,14 @@ func (store *reachabilityStore) serializeReachabilityInterval(w io.Writer, inter
 
 func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCoveringSet futureCoveringTreeNodeSet) error {
 	// Serialize the set size
-	err := domainmessage.WriteVarInt(w, uint64(len(futureCoveringSet)))
+	err := appmessage.WriteVarInt(w, uint64(len(futureCoveringSet)))
 	if err != nil {
 		return err
 	}
 
 	// Serialize each node in the set
 	for _, node := range futureCoveringSet {
-		err = domainmessage.WriteElement(w, node.blockNode.hash)
+		err = appmessage.WriteElement(w, node.blockNode.hash)
 		if err != nil {
 			return err
 		}
@@ -312,7 +311,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	// Deserialize the parent
 	// If this is the zero hash, this node is the genesis and as such doesn't have a parent
 	parentHash := &daghash.Hash{}
-	err = domainmessage.ReadElement(r, parentHash)
+	err = appmessage.ReadElement(r, parentHash)
 	if err != nil {
 		return err
 	}
@@ -325,7 +324,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	}
 
 	// Deserialize the amount of children
-	childCount, err := domainmessage.ReadVarInt(r)
+	childCount, err := appmessage.ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -334,7 +333,7 @@ func (store *reachabilityStore) deserializeTreeNode(r io.Reader, destination *re
 	children := make([]*reachabilityTreeNode, childCount)
 	for i := uint64(0); i < childCount; i++ {
 		childHash := &daghash.Hash{}
-		err = domainmessage.ReadElement(r, childHash)
+		err = appmessage.ReadElement(r, childHash)
 		if err != nil {
 			return err
 		}
@@ -354,7 +353,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 
 	// Deserialize start
 	start := uint64(0)
-	err := domainmessage.ReadElement(r, &start)
+	err := appmessage.ReadElement(r, &start)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +361,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 
 	// Deserialize end
 	end := uint64(0)
-	err = domainmessage.ReadElement(r, &end)
+	err = appmessage.ReadElement(r, &end)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +372,7 @@ func (store *reachabilityStore) deserializeReachabilityInterval(r io.Reader) (*r
 
 func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destination *reachabilityData) error {
 	// Deserialize the set size
-	setSize, err := domainmessage.ReadVarInt(r)
+	setSize, err := appmessage.ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -382,7 +381,7 @@ func (store *reachabilityStore) deserializeFutureCoveringSet(r io.Reader, destin
 	futureCoveringSet := make(futureCoveringTreeNodeSet, setSize)
 	for i := uint64(0); i < setSize; i++ {
 		blockHash := &daghash.Hash{}
-		err = domainmessage.ReadElement(r, blockHash)
+		err = appmessage.ReadElement(r, blockHash)
 		if err != nil {
 			return err
 		}

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -252,29 +252,29 @@ func canonicalPush(pop parsedOpcode) bool {
 // calculating the signature hash. It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
-func shallowCopyTx(tx *domainmessage.MsgTx) domainmessage.MsgTx {
+func shallowCopyTx(tx *appmessage.MsgTx) appmessage.MsgTx {
 	// As an additional memory optimization, use contiguous backing arrays
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays. This avoids a lot of small
 	// allocations.
-	// Specifically avoid using domainmessage.NewMsgTx() to prevent correcting errors by
+	// Specifically avoid using appmessage.NewMsgTx() to prevent correcting errors by
 	// auto-generating various fields.
-	txCopy := domainmessage.MsgTx{
+	txCopy := appmessage.MsgTx{
 		Version:      tx.Version,
-		TxIn:         make([]*domainmessage.TxIn, len(tx.TxIn)),
-		TxOut:        make([]*domainmessage.TxOut, len(tx.TxOut)),
+		TxIn:         make([]*appmessage.TxIn, len(tx.TxIn)),
+		TxOut:        make([]*appmessage.TxOut, len(tx.TxOut)),
 		LockTime:     tx.LockTime,
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
 		PayloadHash:  tx.PayloadHash,
 		Payload:      tx.Payload,
 	}
-	txIns := make([]domainmessage.TxIn, len(tx.TxIn))
+	txIns := make([]appmessage.TxIn, len(tx.TxIn))
 	for i, oldTxIn := range tx.TxIn {
 		txIns[i] = *oldTxIn
 		txCopy.TxIn[i] = &txIns[i]
 	}
-	txOuts := make([]domainmessage.TxOut, len(tx.TxOut))
+	txOuts := make([]appmessage.TxOut, len(tx.TxOut))
 	for i, oldTxOut := range tx.TxOut {
 		txOuts[i] = *oldTxOut
 		txCopy.TxOut[i] = &txOuts[i]
@@ -285,7 +285,7 @@ func shallowCopyTx(tx *domainmessage.MsgTx) domainmessage.MsgTx {
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *domainmessage.MsgTx, idx int) (*daghash.Hash, error) {
+func CalcSignatureHash(script []byte, hashType SigHashType, tx *appmessage.MsgTx, idx int) (*daghash.Hash, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
@@ -296,7 +296,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *domainmessage.Ms
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *domainmessage.MsgTx, idx int) (*daghash.Hash, error) {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *appmessage.MsgTx, idx int) (*daghash.Hash, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//

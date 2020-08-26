@@ -11,7 +11,7 @@ import (
 	"net/http"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/kaspanet/kaspad/network/rpc/model"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 )
 
 // newHTTPClient returns a new HTTP client that is configured according to the

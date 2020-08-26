@@ -10,7 +10,6 @@ func TestIsDAGCurrentMaxDiff(t *testing.T) {
 		&dagconfig.MainnetParams,
 		&dagconfig.TestnetParams,
 		&dagconfig.DevnetParams,
-		&dagconfig.RegressionNetParams,
 		&dagconfig.SimnetParams,
 	}
 	for _, params := range netParams {

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/gob"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -113,7 +113,7 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 }
 
 type serializableTxAcceptanceData struct {
-	MsgTx      domainmessage.MsgTx
+	MsgTx      appmessage.MsgTx
 	IsAccepted bool
 }
 

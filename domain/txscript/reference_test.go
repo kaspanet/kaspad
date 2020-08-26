@@ -8,14 +8,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logs"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -210,17 +210,17 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
-func createSpendingTx(sigScript, scriptPubKey []byte) *domainmessage.MsgTx {
+func createSpendingTx(sigScript, scriptPubKey []byte) *appmessage.MsgTx {
 
-	outpoint := domainmessage.NewOutpoint(&daghash.TxID{}, ^uint32(0))
-	txIn := domainmessage.NewTxIn(outpoint, []byte{Op0, Op0})
-	txOut := domainmessage.NewTxOut(0, scriptPubKey)
-	coinbaseTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
+	outpoint := appmessage.NewOutpoint(&daghash.TxID{}, ^uint32(0))
+	txIn := appmessage.NewTxIn(outpoint, []byte{Op0, Op0})
+	txOut := appmessage.NewTxOut(0, scriptPubKey)
+	coinbaseTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
 
-	outpoint = domainmessage.NewOutpoint(coinbaseTx.TxID(), 0)
-	txIn = domainmessage.NewTxIn(outpoint, sigScript)
-	txOut = domainmessage.NewTxOut(0, nil)
-	spendingTx := domainmessage.NewNativeMsgTx(domainmessage.TxVersion, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut})
+	outpoint = appmessage.NewOutpoint(coinbaseTx.TxID(), 0)
+	txIn = appmessage.NewTxIn(outpoint, sigScript)
+	txOut = appmessage.NewTxOut(0, nil)
+	spendingTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
 
 	return spendingTx
 }
@@ -364,7 +364,7 @@ func TestScripts(t *testing.T) {
 
 	// Disable non-test logs
 	logLevel := log.Level()
-	log.SetLevel(logs.LevelOff)
+	log.SetLevel(logger.LevelOff)
 	defer log.SetLevel(logLevel)
 
 	// Run all script tests with and without the signature cache.

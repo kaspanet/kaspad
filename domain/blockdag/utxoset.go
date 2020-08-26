@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 const (
@@ -78,7 +78,7 @@ const (
 )
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *domainmessage.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
+func NewUTXOEntry(txOut *appmessage.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:         txOut.Value,
 		scriptPubKey:   txOut.ScriptPubKey,
@@ -93,7 +93,7 @@ func NewUTXOEntry(txOut *domainmessage.TxOut, isCoinbase bool, blockBlueScore ui
 }
 
 // utxoCollection represents a set of UTXOs indexed by their outpoints
-type utxoCollection map[domainmessage.Outpoint]*UTXOEntry
+type utxoCollection map[appmessage.Outpoint]*UTXOEntry
 
 func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, len(uc))
@@ -112,7 +112,7 @@ func (uc utxoCollection) String() string {
 }
 
 // add adds a new UTXO entry to this collection
-func (uc utxoCollection) add(outpoint domainmessage.Outpoint, entry *UTXOEntry) {
+func (uc utxoCollection) add(outpoint appmessage.Outpoint, entry *UTXOEntry) {
 	uc[outpoint] = entry
 }
 
@@ -124,7 +124,7 @@ func (uc utxoCollection) addMultiple(collectionToAdd utxoCollection) {
 }
 
 // remove removes a UTXO entry from this collection if it exists
-func (uc utxoCollection) remove(outpoint domainmessage.Outpoint) {
+func (uc utxoCollection) remove(outpoint appmessage.Outpoint) {
 	delete(uc, outpoint)
 }
 
@@ -137,20 +137,20 @@ func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
 
 // get returns the UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said UTXOEntry is in the set or not
-func (uc utxoCollection) get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
+func (uc utxoCollection) get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	entry, ok := uc[outpoint]
 	return entry, ok
 }
 
 // contains returns a boolean value indicating whether a UTXO entry is in the set
-func (uc utxoCollection) contains(outpoint domainmessage.Outpoint) bool {
+func (uc utxoCollection) contains(outpoint appmessage.Outpoint) bool {
 	_, ok := uc[outpoint]
 	return ok
 }
 
 // containsWithBlueScore returns a boolean value indicating whether a UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
-func (uc utxoCollection) containsWithBlueScore(outpoint domainmessage.Outpoint, blueScore uint64) bool {
+func (uc utxoCollection) containsWithBlueScore(outpoint appmessage.Outpoint, blueScore uint64) bool {
 	entry, ok := uc.get(outpoint)
 	return ok && entry.blockBlueScore == blueScore
 }
@@ -431,7 +431,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 //
 // If d.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (d *UTXODiff) AddEntry(outpoint domainmessage.Outpoint, entry *UTXOEntry) error {
+func (d *UTXODiff) AddEntry(outpoint appmessage.Outpoint, entry *UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if _, exists := d.toAdd[outpoint]; exists {
@@ -446,7 +446,7 @@ func (d *UTXODiff) AddEntry(outpoint domainmessage.Outpoint, entry *UTXOEntry) e
 //
 // If d.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (d *UTXODiff) RemoveEntry(outpoint domainmessage.Outpoint, entry *UTXOEntry) error {
+func (d *UTXODiff) RemoveEntry(outpoint appmessage.Outpoint, entry *UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if _, exists := d.toRemove[outpoint]; exists {
@@ -477,9 +477,9 @@ type UTXOSet interface {
 	fmt.Stringer
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
-	AddTx(tx *domainmessage.MsgTx, blockBlueScore uint64) (ok bool, err error)
+	AddTx(tx *appmessage.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
-	Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool)
+	Get(outpoint appmessage.Outpoint) (*UTXOEntry, bool)
 }
 
 // FullUTXOSet represents a full list of transaction outputs and their values
@@ -534,7 +534,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // necessarily means there's an error).
 //
 // This function MUST be called with the DAG lock held.
-func (fus *FullUTXOSet) AddTx(tx *domainmessage.MsgTx, blueScore uint64) (isAccepted bool, err error) {
+func (fus *FullUTXOSet) AddTx(tx *appmessage.MsgTx, blueScore uint64) (isAccepted bool, err error) {
 	if !fus.containsInputs(tx) {
 		return false, nil
 	}
@@ -545,7 +545,7 @@ func (fus *FullUTXOSet) AddTx(tx *domainmessage.MsgTx, blueScore uint64) (isAcce
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *appmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
 		fus.add(outpoint, entry)
 	}
@@ -553,9 +553,9 @@ func (fus *FullUTXOSet) AddTx(tx *domainmessage.MsgTx, blueScore uint64) (isAcce
 	return true, nil
 }
 
-func (fus *FullUTXOSet) containsInputs(tx *domainmessage.MsgTx) bool {
+func (fus *FullUTXOSet) containsInputs(tx *appmessage.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outpoint := *domainmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
+		outpoint := *appmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 		if !fus.contains(outpoint) {
 			return false
 		}
@@ -570,7 +570,7 @@ func (fus *FullUTXOSet) clone() UTXOSet {
 }
 
 // Get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
-func (fus *FullUTXOSet) Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
+func (fus *FullUTXOSet) Get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outpoint]
 	return utxoEntry, ok
 }
@@ -618,7 +618,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 //
 // If dus.UTXODiff.useMultiset is true, this function MUST be
 // called with the DAG lock held.
-func (dus *DiffUTXOSet) AddTx(tx *domainmessage.MsgTx, blockBlueScore uint64) (bool, error) {
+func (dus *DiffUTXOSet) AddTx(tx *appmessage.MsgTx, blockBlueScore uint64) (bool, error) {
 	if !dus.containsInputs(tx) {
 		return false, nil
 	}
@@ -631,7 +631,7 @@ func (dus *DiffUTXOSet) AddTx(tx *domainmessage.MsgTx, blockBlueScore uint64) (b
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *domainmessage.MsgTx, blockBlueScore uint64) error {
+func (dus *DiffUTXOSet) appendTx(tx *appmessage.MsgTx, blockBlueScore uint64) error {
 	for _, txIn := range tx.TxIn {
 		entry, ok := dus.Get(txIn.PreviousOutpoint)
 		if !ok {
@@ -645,7 +645,7 @@ func (dus *DiffUTXOSet) appendTx(tx *domainmessage.MsgTx, blockBlueScore uint64)
 
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
-		outpoint := *domainmessage.NewOutpoint(tx.TxID(), uint32(i))
+		outpoint := *appmessage.NewOutpoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		err := dus.UTXODiff.AddEntry(outpoint, entry)
@@ -656,9 +656,9 @@ func (dus *DiffUTXOSet) appendTx(tx *domainmessage.MsgTx, blockBlueScore uint64)
 	return nil
 }
 
-func (dus *DiffUTXOSet) containsInputs(tx *domainmessage.MsgTx) bool {
+func (dus *DiffUTXOSet) containsInputs(tx *appmessage.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outpoint := *domainmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
+		outpoint := *appmessage.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 		isInBase := dus.base.contains(outpoint)
 		isInDiffToAdd := dus.UTXODiff.toAdd.contains(outpoint)
 		isInDiffToRemove := dus.UTXODiff.toRemove.contains(outpoint)
@@ -704,7 +704,7 @@ func (dus *DiffUTXOSet) cloneWithoutBase() UTXOSet {
 
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
-func (dus *DiffUTXOSet) Get(outpoint domainmessage.Outpoint) (*UTXOEntry, bool) {
+func (dus *DiffUTXOSet) Get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	if toRemoveEntry, ok := dus.UTXODiff.toRemove.get(outpoint); ok {
 		// An exception is made for entries with unequal blue scores
 		// These are just "updates" to accepted blue score

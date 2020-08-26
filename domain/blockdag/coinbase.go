@@ -6,8 +6,8 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/kaspanet/kaspad/infrastructure/dbaccess"
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/coinbasepayload"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -124,8 +124,8 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 		return nil, err
 	}
 
-	txIns := []*domainmessage.TxIn{}
-	txOuts := []*domainmessage.TxOut{}
+	txIns := []*appmessage.TxIn{}
+	txOuts := []*appmessage.TxOut{}
 
 	for _, blue := range node.blues {
 		txOut, err := coinbaseOutputForBlueBlock(dag, blue, txsAcceptanceData, bluesFeeData)
@@ -140,7 +140,7 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx := domainmessage.NewSubnetworkMsgTx(domainmessage.TxVersion, txIns, txOuts, subnetworkid.SubnetworkIDCoinbase, 0, payload)
+	coinbaseTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, txIns, txOuts, subnetworkid.SubnetworkIDCoinbase, 0, payload)
 	sortedCoinbaseTx := txsort.Sort(coinbaseTx)
 	return util.NewTx(sortedCoinbaseTx), nil
 }
@@ -148,7 +148,7 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
 func coinbaseOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
-	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (*domainmessage.TxOut, error) {
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (*appmessage.TxOut, error) {
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData.FindAcceptanceData(blueBlock.hash)
 	if !ok {
@@ -190,7 +190,7 @@ func coinbaseOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 		return nil, err
 	}
 
-	txOut := &domainmessage.TxOut{
+	txOut := &appmessage.TxOut{
 		Value:        totalReward,
 		ScriptPubKey: scriptPubKey,
 	}

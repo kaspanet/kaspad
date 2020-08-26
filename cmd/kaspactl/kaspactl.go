@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kaspanet/kaspad/network/rpc/model"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 )
 
 const (

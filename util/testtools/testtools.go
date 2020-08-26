@@ -11,15 +11,15 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
 func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
-	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*domainmessage.MsgTx) (*util.Block, error) {
+	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*appmessage.MsgTx) (*util.Block, error) {
 		msgBlock, err := mining.PrepareBlockForTest(dag, parentHashes, txs, false)
 		if err != nil {
 			return nil, err
@@ -46,7 +46,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	// Create a block in order to fund later transactions
-	fundsBlock, err := buildNextBlock(dag.TipHashes(), []*domainmessage.MsgTx{})
+	fundsBlock, err := buildNextBlock(dag.TipHashes(), []*appmessage.MsgTx{})
 	if err != nil {
 		return nil, errors.Errorf("could not build funds block: %s", err)
 	}
@@ -63,9 +63,9 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	if err != nil {
 		return nil, errors.Errorf("Failed to build signature script: %s", err)
 	}
-	txIn := &domainmessage.TxIn{
-		PreviousOutpoint: *domainmessage.NewOutpoint(fundsBlockCbTx.TxID(), 0),
-		Sequence:         domainmessage.MaxTxInSequenceNum,
+	txIn := &appmessage.TxIn{
+		PreviousOutpoint: *appmessage.NewOutpoint(fundsBlockCbTx.TxID(), 0),
+		Sequence:         appmessage.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 
@@ -73,14 +73,14 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	if err != nil {
 		return nil, err
 	}
-	txOut := &domainmessage.TxOut{
+	txOut := &appmessage.TxOut{
 		ScriptPubKey: scriptPubKey,
 		Value:        fundsBlockCbTx.TxOut[0].Value,
 	}
-	registryTx := domainmessage.NewRegistryMsgTx(1, []*domainmessage.TxIn{txIn}, []*domainmessage.TxOut{txOut}, gasLimit)
+	registryTx := appmessage.NewRegistryMsgTx(1, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut}, gasLimit)
 
 	// Add it to the DAG
-	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*domainmessage.MsgTx{registryTx})
+	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*appmessage.MsgTx{registryTx})
 	if err != nil {
 		return nil, errors.Errorf("could not build registry block: %s", err)
 	}

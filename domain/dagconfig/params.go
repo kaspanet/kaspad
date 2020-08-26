@@ -5,7 +5,7 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/network/domainmessage"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/network"
 	"math/big"
 	"time"
@@ -26,10 +26,6 @@ var (
 	// mainPowMax is the highest proof of work value a Kaspa block can
 	// have for the main network. It is the value 2^255 - 1.
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
-
-	// regressionPowMax is the highest proof of work value a Kaspa block
-	// can have for the regression test network. It is the value 2^255 - 1.
-	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the test network. It is the value 2^239 - 1.
@@ -53,37 +49,6 @@ const (
 	targetTimePerBlock             = 1 * time.Second
 )
 
-// ConsensusDeployment defines details related to a specific consensus rule
-// change that is voted in. This is part of BIP0009.
-type ConsensusDeployment struct {
-	// BitNumber defines the specific bit number within the block version
-	// this particular soft-fork deployment refers to.
-	BitNumber uint8
-
-	// StartTime is the median block time after which voting on the
-	// deployment starts.
-	StartTime uint64
-
-	// ExpireTime is the median block time after which the attempted
-	// deployment expires.
-	ExpireTime uint64
-}
-
-// Constants that define the deployment offset in the deployments field of the
-// parameters for each deployment. This is useful to be able to get the details
-// of a specific deployment by name.
-const (
-	// DeploymentTestDummy defines the rule change deployment ID for testing
-	// purposes.
-	DeploymentTestDummy = iota
-
-	// NOTE: DefinedDeployments must always come last since it is used to
-	// determine how many defined deployments there currently are.
-
-	// DefinedDeployments is the number of currently defined deployments.
-	DefinedDeployments
-)
-
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
 type KType uint8
 
@@ -99,7 +64,7 @@ type Params struct {
 	Name string
 
 	// Net defines the magic bytes used to identify the network.
-	Net domainmessage.KaspaNet
+	Net appmessage.KaspaNet
 
 	// RPCPort defines the rpc server port
 	RPCPort string
@@ -112,7 +77,7 @@ type Params struct {
 	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
-	GenesisBlock *domainmessage.MsgBlock
+	GenesisBlock *appmessage.MsgBlock
 
 	// GenesisHash is the starting block hash.
 	GenesisHash *daghash.Hash
@@ -190,7 +155,7 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 var MainnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-mainnet",
-	Net:         domainmessage.Mainnet,
+	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
 	DNSSeeds:    []string{"dnsseed.kas.pa"},
@@ -232,59 +197,11 @@ var MainnetParams = Params{
 	DisableDifficultyAdjustment: false,
 }
 
-// RegressionNetParams defines the network parameters for the regression test
-// Kaspa network. Not to be confused with the test Kaspa network (version
-// 3), this network is sometimes simply called "testnet".
-var RegressionNetParams = Params{
-	K:           ghostdagK,
-	Name:        "kaspa-regtest",
-	Net:         domainmessage.Regtest,
-	RPCPort:     "16210",
-	DefaultPort: "16211",
-	DNSSeeds:    []string{},
-
-	// DAG parameters
-	GenesisBlock:                   &regtestGenesisBlock,
-	GenesisHash:                    &regtestGenesisHash,
-	PowMax:                         regressionPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       150,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
-
-	// Consensus rule change deployments.
-	//
-	// The miner confirmation window is defined as:
-	//   target proof of work timespan / target proof of work spacing
-	RuleChangeActivationThreshold: 108, // 75%  of MinerConfirmationWindow
-	MinerConfirmationWindow:       144,
-
-	// Mempool parameters
-	RelayNonStdTxs: true,
-
-	// AcceptUnroutable specifies whether this network accepts unroutable
-	// IP addresses, such as 10.0.0.0/8
-	AcceptUnroutable: false,
-
-	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaReg,
-
-	// Address encoding magics
-	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
-
-	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
-	EnableNonNativeSubnetworks: false,
-
-	DisableDifficultyAdjustment: false,
-}
-
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-testnet",
-	Net:         domainmessage.Testnet,
+	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
 	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
@@ -336,7 +253,7 @@ var TestnetParams = Params{
 var SimnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-simnet",
-	Net:         domainmessage.Simnet,
+	Net:         appmessage.Simnet,
 	RPCPort:     "16510",
 	DefaultPort: "16511",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
@@ -380,7 +297,7 @@ var SimnetParams = Params{
 var DevnetParams = Params{
 	K:           ghostdagK,
 	Name:        "kaspa-devnet",
-	Net:         domainmessage.Devnet,
+	Net:         appmessage.Devnet,
 	RPCPort:     "16610",
 	DefaultPort: "16611",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
@@ -430,7 +347,7 @@ var (
 )
 
 var (
-	registeredNets = make(map[domainmessage.KaspaNet]struct{})
+	registeredNets = make(map[appmessage.KaspaNet]struct{})
 )
 
 // Register registers the network parameters for a Kaspa network. This may
@@ -459,29 +376,9 @@ func mustRegister(params *Params) {
 	}
 }
 
-// newHashFromStr converts the passed big-endian hex string into a
-// daghash.Hash. It only differs from the one available in daghash in that
-// it panics on an error since it will only (and must only) be called with
-// hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *daghash.Hash {
-	hash, err := daghash.NewHashFromStr(hexStr)
-	if err != nil {
-		// Ordinarily I don't like panics in library code since it
-		// can take applications down without them having a chance to
-		// recover which is extremely annoying, however an exception is
-		// being made in this case because the only way this can panic
-		// is if there is an error in the hard-coded hashes. Thus it
-		// will only ever potentially panic on init and therefore is
-		// 100% predictable.
-		panic(err)
-	}
-	return hash
-}
-
 func init() {
 	// Register all default networks when the package is initialized.
 	mustRegister(&MainnetParams)
 	mustRegister(&TestnetParams)
-	mustRegister(&RegressionNetParams)
 	mustRegister(&SimnetParams)
 }

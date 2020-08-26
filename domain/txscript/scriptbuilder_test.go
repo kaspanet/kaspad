@@ -247,7 +247,7 @@ func TestScriptBuilderAddData(t *testing.T) {
 
 		// Additional tests for the PushFullData function that
 		// intentionally allows data pushes to exceed the limit for
-		// regression testing purposes.
+		// testing purposes.
 
 		// 3-byte data push via OP_PUSHDATA_2.
 		{
