@@ -696,7 +696,7 @@ func (state *gbtWorkState) blockTemplateResult(s *Server) (*model.GetBlockTempla
 		CurTime:              header.Timestamp.UnixMilliseconds(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		MassLimit:            appmessage.MaxMassPerBlock,
+		MassLimit:            appmessage.MaxMassAcceptedByBlock,
 		Transactions:         transactions,
 		HashMerkleRoot:       header.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
