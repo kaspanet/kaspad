@@ -46,7 +46,8 @@ func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Ro
 		response, err := handler(m.context, request)
 		if err != nil {
 			if rpcErr := &(rpcerrors.RPCError{}); errors.As(err, &rpcErr) {
-				// TODO: enqueue RPC error
+				errorMessage := appmessage.NewRPCErrorMessage(rpcErr.Message)
+				return outgoingRoute.Enqueue(errorMessage)
 			}
 			return err
 		}
