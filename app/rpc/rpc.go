@@ -3,13 +3,14 @@ package rpc
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
-type handler func(context *rpccontext.Context, outgoingRoute *router.Route) error
+type handler func(context *rpccontext.Context, request appmessage.Message) (appmessage.Message, error)
 
 var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetCurrentNetworkRequestMessage: rpchandlers.HandleGetCurrentNetwork,
@@ -34,15 +35,22 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 
 func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Route) error {
 	for {
-		message, err := incomingRoute.Dequeue()
+		request, err := incomingRoute.Dequeue()
 		if err != nil {
 			return err
 		}
-		handler, ok := handlers[message.Command()]
+		handler, ok := handlers[request.Command()]
 		if !ok {
 			return err
 		}
-		err = handler(m.context, outgoingRoute)
+		response, err := handler(m.context, request)
+		if err != nil {
+			if rpcErr := &(rpcerrors.RPCError{}); errors.As(err, &rpcErr) {
+				// TODO: enqueue RPC error
+			}
+			return err
+		}
+		err = outgoingRoute.Enqueue(response)
 		if err != nil {
 			return err
 		}

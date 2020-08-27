@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type SubmitBlockRequestMessage struct {
 	baseMessage
+	BlockHex string
 }
 
 // Command returns the protocol command string for the message
@@ -12,8 +13,10 @@ func (msg *SubmitBlockRequestMessage) Command() MessageCommand {
 }
 
 // SubmitBlockRequestMessage returns a instance of the message
-func NewSubmitBlockRequestMessage() *SubmitBlockRequestMessage {
-	return &SubmitBlockRequestMessage{}
+func NewSubmitBlockRequestMessage(blockHex string) *SubmitBlockRequestMessage {
+	return &SubmitBlockRequestMessage{
+		BlockHex: blockHex,
+	}
 }
 
 // SubmitBlockResponseMessage is an appmessage corresponding to
