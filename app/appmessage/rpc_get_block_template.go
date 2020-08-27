@@ -5,6 +5,7 @@ package appmessage
 type GetBlockTemplateRequestMessage struct {
 	baseMessage
 	PayAddress string
+	LongPollID string
 }
 
 // Command returns the protocol command string for the message
