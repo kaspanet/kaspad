@@ -138,8 +138,8 @@ func NewRescanBlocksCmd(blockHashes []string) *RescanBlocksCmd {
 // NotifyFinalityConflictCmd defines the notifyFinalityConflicts JSON-RPC command.
 type NotifyFinalityConflictCmd struct{}
 
-// NewNotifyNewTransactionsCmd returns a new instance which can be used to issue
-// a notifyNewTransactions JSON-RPC command.
+// NewNotifyFinalityConflictsCmd returns a new instance which can be used to issue
+// a notifyFinalityConflicts JSON-RPC command.
 func NewNotifyFinalityConflictsCmd() *NotifyFinalityConflictCmd {
 	return &NotifyFinalityConflictCmd{}
 }
@@ -147,8 +147,8 @@ func NewNotifyFinalityConflictsCmd() *NotifyFinalityConflictCmd {
 // StopNotifyFinalityConflictCmd defines the stopNotifyFinalityConflicts JSON-RPC command.
 type StopNotifyFinalityConflictCmd struct{}
 
-// NewStopNotifyNewTransactionsCmd returns a new instance which can be used to issue
-// a stopNotifyNewTransactions JSON-RPC command.
+// NewStopNotifyFinalityConflictsCmd returns a new instance which can be used to issue
+// a stopNotifyFinalityConflicts JSON-RPC command.
 func NewStopNotifyFinalityConflictsCmd() *NotifyFinalityConflictCmd {
 	return &NotifyFinalityConflictCmd{}
 }

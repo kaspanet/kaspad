@@ -475,6 +475,7 @@ type VersionResult struct {
 	BuildMetadata string `json:"buildMetadata"`
 }
 
+// GetFinalityConflictsResult models the data returned from the getFinalityConflicts command.
 type GetFinalityConflictsResult []struct {
 	ID                     int    `json:"id"`
 	ConflictTime           int64  `json:"conflictTime"`

@@ -1066,7 +1066,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 		return 0, 0, err
 	}
 
-	inputsWithReferencedUTXOEntries, err := dag.GetReferencedUTXOEntries(tx, pastUTXO)
+	inputsWithReferencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, pastUTXO)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1228,7 +1228,7 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []
 	return accumulatedMassAfter, nil
 }
 
-func (dag *BlockDAG) GetReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
+func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
 	[]*txInputAndReferencedUTXOEntry, error) {
 
 	txIns := tx.MsgTx().TxIn

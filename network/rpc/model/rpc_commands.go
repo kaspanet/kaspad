@@ -588,12 +588,14 @@ type GetPeerAddressesCmd struct {
 // getPeerAddresses command.
 func NewGetPeerAddressesCmd() *GetPeerAddressesCmd { return new(GetPeerAddressesCmd) }
 
+// GetFinalityConflictsCmd  defines the getFinalityConflicts JSON-RPC command.
 type GetFinalityConflictsCmd struct{}
 
 // NewGetFinalityConflictsCmd returns a new instance which can be used to issue a JSON-RPC
 // getFinalityConflicts command.
 func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinalityConflictsCmd) }
 
+// ResolveFinalityConflictCmd  defines the resolveFinalityConflict JSON-RPC command.
 type ResolveFinalityConflictCmd struct {
 	FinalityConflictID int      `json:"finalityConflictID"`
 	ValidBlockHashes   []string `json:"validBlockHashes"`

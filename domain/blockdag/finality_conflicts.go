@@ -8,12 +8,14 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// FinalityConflict represents an entry in the finality conflicts event log of the DAG
 type FinalityConflict struct {
 	ID                     int
 	ConflictTime           mstime.Time
 	CurrentSelectedTipHash *daghash.Hash
 	ViolatingBlockHash     *daghash.Hash
 
+	// Only resolved FinalityConflict will have non-null ResolutionTime
 	ResolutionTime *mstime.Time
 }
 
@@ -97,7 +99,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 
 	addedTips := newBlockSet()
 	if isSwitchingBranches {
-		addedTipsFromValidBlocksFuture := dag.UpdateValidBlocksFuture(validBlocks)
+		addedTipsFromValidBlocksFuture := dag.updateValidBlocksFuture(validBlocks)
 		addedTips.addSet(addedTipsFromValidBlocksFuture)
 	}
 
@@ -183,7 +185,7 @@ func (dag *BlockDAG) updateInvalidBlocksFuture(
 	return removedTips, rehabilitatedBlocks, nil
 }
 
-func (dag *BlockDAG) UpdateValidBlocksFuture(validBlocks blockSet) (addedTips blockSet) {
+func (dag *BlockDAG) updateValidBlocksFuture(validBlocks blockSet) (addedTips blockSet) {
 	addedTips = newBlockSet()
 
 	queue := newUpHeap()
