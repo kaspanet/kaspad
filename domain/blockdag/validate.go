@@ -366,31 +366,8 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	return nil
 }
 
-func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
-	_, err := CalcBlockMass(pastUTXO, transactions)
-	return err
-}
-
-// CalcBlockMass sums up and returns the "mass" of a block. See CalcTxMass
-// for further details.
-func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
-	totalMass := uint64(0)
-	for _, tx := range transactions {
-		txMass, err := CalcTxMassFromUTXOSet(tx, pastUTXO)
-		if err != nil {
-			return 0, err
-		}
-		totalMass += txMass
-
-		// We could potentially overflow the accumulator so check for
-		// overflow as well.
-		if totalMass < txMass || totalMass > appmessage.MaxMassPerBlock {
-			str := fmt.Sprintf("block has total mass %d, which is "+
-				"above the allowed limit of %d", totalMass, appmessage.MaxMassPerBlock)
-			return 0, ruleError(ErrBlockMassTooHigh, str)
-		}
-	}
-	return totalMass, nil
+func calcCoinbaseTxMass(tx *util.Tx) uint64 {
+	return CalcTxMass(tx, [][]byte{})
 }
 
 func calcTxMassFromInputsWithReferencedEntries(
@@ -416,7 +393,7 @@ func calcTxMassFromInputsWithReferencedEntries(
 // See CalcTxMass for more details.
 func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 	if tx.IsCoinBase() {
-		return CalcTxMass(tx, nil), nil
+		return calcCoinbaseTxMass(tx), nil
 	}
 	previousScriptPubKeys := make([][]byte, len(tx.MsgTx().TxIn))
 	for txInIndex, txIn := range tx.MsgTx().TxIn {

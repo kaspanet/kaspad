@@ -160,28 +160,32 @@ func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastU
 
 	accumulatedMass := accumulatedMassBefore
 
-	// Coinbase transaction outputs are added to the UTXO
-	// only if they are in the selected parent chain.
+	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
 	if tx.IsCoinBase() {
 		isAccepted = isSelectedParent
+		if isAccepted {
+			txMass := calcCoinbaseTxMass(tx)
+			accumulatedMass += txMass
+		}
+		return isAccepted, accumulatedMass, nil
+	}
+
+	_, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
+		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
+
+	if err != nil {
+		if !errors.As(err, &(RuleError{})) {
+			return false, 0, err
+		}
+
+		isAccepted = false
 	} else {
-		_, accumulatedMassAfter, err := node.dag.checkConnectTransactionToPastUTXO(
-			node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
+		isAccepted = true
+		accumulatedMass = accumulatedMassAfter
 
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
-			if !errors.As(err, &(RuleError{})) {
-				return false, 0, err
-			}
-
-			isAccepted = false
-		} else {
-			isAccepted = true
-			accumulatedMass = accumulatedMassAfter
-
-			_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
-			if err != nil {
-				return false, 0, err
-			}
+			return false, 0, err
 		}
 	}
 	return isAccepted, accumulatedMass, nil
