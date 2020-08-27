@@ -268,6 +268,9 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
+	modifiedNodes[rtn] = struct{}{}
+	modifiedNodes[child] = struct{}{}
+
 	// Temporarily set the child's interval to be empty, at
 	// the start of rtn's remaining interval. This is done
 	// so that child-of-rtn checks (e.g.
@@ -312,8 +315,6 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 		return err
 	}
 	child.interval = allocated
-	modifiedNodes[rtn] = struct{}{}
-	modifiedNodes[child] = struct{}{}
 	return nil
 }
 
