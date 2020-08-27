@@ -40,7 +40,7 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
-	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, _, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
 	return txsAcceptanceData, err
 }
 

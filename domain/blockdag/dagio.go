@@ -345,11 +345,16 @@ func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
 		tip, ok := dag.index.LookupNode(tipHash)
 		if !ok {
 			return errors.Errorf("cannot find "+
-				"DAG tip %s in block index", state.TipHashes)
+				"DAG tip %s in block index", tipHash)
 		}
 		tips.add(tip)
 	}
-	dag.virtual.SetTips(tips)
+
+	_, _, err := dag.setTips(tips)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
