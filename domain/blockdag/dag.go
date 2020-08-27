@@ -475,7 +475,7 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 }
 
 func (dag *BlockDAG) addTip(tip *blockNode) (
-	didVirtualParentsChange bool, chainUpdates *chainUpdates, err error) {
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
 	newTips := dag.tips.clone()
 	for parent := range tip.parents {
@@ -486,7 +486,7 @@ func (dag *BlockDAG) addTip(tip *blockNode) (
 }
 
 func (dag *BlockDAG) setTips(newTips blockSet) (
-	didVirtualParentsChange bool, chainUpdates *chainUpdates, err error) {
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
 	newVirtualParents, err := dag.selectVirtualParents(newTips)
 	if err != nil {

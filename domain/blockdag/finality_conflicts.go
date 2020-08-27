@@ -326,7 +326,7 @@ func (dag *BlockDAG) checkIfKeepingBranches(
 }
 
 func (dag *BlockDAG) updateTipsAfterFinalityConflictResolution(
-	removedTips, addedTips blockSet) (chainUpdates *chainUpdates, err error) {
+	removedTips, addedTips blockSet) (chainUpdates *selectedParentChainUpdates, err error) {
 
 	newTips := dag.tips.clone()
 	for removedTip := range removedTips {
