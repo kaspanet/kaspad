@@ -1263,7 +1263,7 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
 	if accumulatedMassAfter < txMass || accumulatedMassAfter > appmessage.MaxMassPerBlock {
-		str := fmt.Sprintf("block accepts transactions with accumulated mass higher then allowed limit of %s",
+		str := fmt.Sprintf("block accepts transactions with accumulated mass higher then allowed limit of %d",
 			appmessage.MaxMassPerBlock)
 		return 0, ruleError(ErrBlockMassTooHigh, str)
 	}
