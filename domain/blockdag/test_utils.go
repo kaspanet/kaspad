@@ -169,7 +169,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(dag, parents)
 
-	pastUTXO, _, _, err := dag.pastUTXO(&virtual.blockNode)
+	pastUTXO, _, _, err := dag.pastUTXO(virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual.utxoSet = diffUTXO.base
 
-	return VirtualForTest(virtual), nil
+	return virtual, nil
 }
 
 // LoadBlocks reads files containing kaspa gzipped block data from disk

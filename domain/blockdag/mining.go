@@ -60,7 +60,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*appmessage.MsgBlo
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
-	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +127,8 @@ func (dag *BlockDAG) NextBlockTime() mstime.Time {
 
 // CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
 func (dag *BlockDAG) CurrentBits() uint32 {
-	tips := dag.virtual.tips()
 	minBits := uint32(math.MaxUint32)
-	for tip := range tips {
+	for tip := range dag.tips {
 		if minBits > tip.Header().Bits {
 			minBits = tip.Header().Bits
 		}
