@@ -203,6 +203,12 @@ const (
 	// is also an ancestor of another parent
 	ErrInvalidParentsRelation
 
+	// ErrTooManyParents indicates that a block points to more then `MaxNumParentBlocks` parents
+	ErrTooManyParents
+
+	// ErrParentManuallyRejected indicates that a block points to a block that was manually rejected
+	ErrParentManuallyRejected
+
 	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
 	// submitted with BFDisallowDelay flag raised.
 	ErrDelayedBlockIsNotAllowed
