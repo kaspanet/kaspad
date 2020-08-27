@@ -495,6 +495,8 @@ func (dag *BlockDAG) addTip(tip *blockNode) (
 		newTips.remove(parent)
 	}
 
+	newTips.add(tip)
+
 	return dag.setTips(newTips)
 }
 
