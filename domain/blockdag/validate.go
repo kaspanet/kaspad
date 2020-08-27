@@ -393,7 +393,7 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	return totalMass, nil
 }
 
-func CalcTxMassFromInputsWithReferencedEntries(
+func calcTxMassFromInputsWithReferencedEntries(
 	tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) uint64 {
 
 	if tx.IsCoinBase() {
@@ -1086,7 +1086,12 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOS
 		}
 	}
 
-	return
+	feeData, err = compactFeeFactory.data()
+	if err != nil {
+		return nil, err
+	}
+
+	return feeData, nil
 }
 
 type txInputAndReferencedUTXOEntry struct {
@@ -1251,7 +1256,7 @@ func (dag *BlockDAG) checkTxCoinbaseMaturity(
 func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry,
 	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
 
-	txMass := CalcTxMassFromInputsWithReferencedEntries(tx, inputsWithReferencedUTXOEntries)
+	txMass := calcTxMassFromInputsWithReferencedEntries(tx, inputsWithReferencedUTXOEntries)
 
 	accumulatedMassAfter = accumulatedMassBefore + txMass
 
@@ -1289,119 +1294,6 @@ func (dag *BlockDAG) GetReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
 	}
 
 	return inputsWithReferencedUTXOEntries, nil
-}
-
-// checkConnectToPastUTXO performs several checks to confirm connecting the passed
-// block to the DAG represented by the passed view does not violate any rules.
-//
-// An example of some of the checks performed are ensuring connecting the block
-// would not cause any duplicate transaction hashes for old transactions that
-// aren't already fully spent, double spends, exceeding the maximum allowed
-// signature operations per block, invalid values in relation to the expected
-// block subsidy, or fail transaction script validation.
-//
-// It also returns the feeAccumulator for this block.
-//
-// This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
-	transactions []*util.Tx, fastAdd bool) (compactFeeData, error) {
-
-	if !fastAdd {
-		err := ensureNoDuplicateTx(pastUTXO, transactions)
-		if err != nil {
-			return nil, err
-		}
-
-		err = checkDoubleSpendsWithBlockPast(pastUTXO, transactions)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := validateBlockMass(pastUTXO, transactions); err != nil {
-			return nil, err
-		}
-	}
-
-	// Perform several checks on the inputs for each transaction. Also
-	// accumulate the total fees. This could technically be combined with
-	// the loop above instead of running another loop over the transactions,
-	// but by separating it we can avoid running the more expensive (though
-	// still relatively cheap as compared to running the scripts) checks
-	// against all the inputs when the signature operations are out of
-	// bounds.
-	// In addition - add all fees into a fee accumulator, to be stored and checked
-	// when validating descendants' coinbase transactions.
-	var totalFees uint64
-	compactFeeFactory := newCompactFeeFactory()
-
-	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.blueScore, pastUTXO,
-			dag.Params, fastAdd)
-		if err != nil {
-			return nil, err
-		}
-
-		totalFees, err = dag.checkTotalFee(totalFees, txFee)
-		if err != nil {
-			return nil, err
-		}
-
-		err = compactFeeFactory.add(txFee)
-		if err != nil {
-			return nil, errors.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
-		}
-	}
-
-	feeData, err := compactFeeFactory.data()
-	if err != nil {
-		return nil, errors.Errorf("error getting bytes of fee data: %s", err)
-	}
-
-	if !fastAdd {
-		scriptFlags := txscript.ScriptNoFlags
-
-		err := dag.checkSequenceLock(block, pastUTXO, transactions)
-		if err != nil {
-			return nil, err
-		}
-
-		// Now that the inexpensive checks are done and have passed, verify the
-		// transactions are actually allowed to spend the coins by running the
-		// expensive SCHNORR signature check scripts. Doing this last helps
-		// prevent CPU exhaustion attacks.
-		err = checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return feeData, nil
-}
-
-func (dag *BlockDAG) checkSequenceLock(block *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) error {
-	medianTime := block.selectedParentMedianTime()
-
-	// We also enforce the relative sequence number based
-	// lock-times within the inputs of all transactions in this
-	// candidate block.
-	for _, tx := range transactions {
-		// A transaction can only be included within a block
-		// once the sequence locks of *all* its inputs are
-		// active.
-		sequenceLock, err := dag.calcTxSequenceLock(block, tx, pastUTXO)
-		if err != nil {
-			return err
-		}
-		if !SequenceLockActive(sequenceLock, block.blueScore,
-			medianTime) {
-			str := fmt.Sprintf("block contains " +
-				"transaction whose input sequence " +
-				"locks are not met")
-			return ruleError(ErrUnfinalizedTx, str)
-		}
-	}
-
-	return nil
 }
 
 func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) (uint64, error) {
@@ -1443,7 +1335,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement. The block must connect to the current tip of the main dag.
 func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
-
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
 
@@ -1466,8 +1357,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	templateNode, _ := dag.newBlockNode(&header, dag.virtual.tips())
 
-	_, err = dag.checkConnectToPastUTXO(templateNode,
-		dag.UTXOSet(), block.Transactions(), false)
+	_, err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 
 	return err
 }
