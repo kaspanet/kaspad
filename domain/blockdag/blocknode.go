@@ -261,8 +261,8 @@ func (node *blockNode) time() mstime.Time {
 }
 
 func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
-	if node.blueScore <= depth {
-		return node.dag.genesis
+	if node.blueScore <= depth { // to prevent overflow of requiredBlueScore
+		depth = node.blueScore
 	}
 
 	current := node
