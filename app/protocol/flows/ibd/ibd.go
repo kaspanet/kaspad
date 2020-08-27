@@ -61,11 +61,6 @@ func (flow *handleIBDFlow) runIBD() error {
 	}
 
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-	if flow.DAG().IsKnownFinalizedBlock(highestSharedBlockHash) {
-		return protocolerrors.Errorf(false, "cannot initiate "+
-			"IBD with peer %s because the highest shared chain block (%s) is "+
-			"below the finality point", flow.peer, highestSharedBlockHash)
-	}
 
 	return flow.downloadBlocks(highestSharedBlockHash, peerSelectedTipHash)
 }

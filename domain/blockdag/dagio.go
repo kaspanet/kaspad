@@ -127,7 +127,6 @@ func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 
 type dagState struct {
 	TipHashes         []*daghash.Hash
-	LastFinalityPoint *daghash.Hash
 	LocalSubnetworkID *subnetworkid.SubnetworkID
 }
 
@@ -166,7 +165,6 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dag.databaseContext, &dagState{
 		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
-		LastFinalityPoint: dag.Params.GenesisHash,
 		LocalSubnetworkID: localSubnetworkID,
 	})
 }
@@ -231,15 +229,6 @@ func (dag *BlockDAG) initDAGState() error {
 	if err != nil {
 		return err
 	}
-
-	log.Debugf("Setting the last finality point...")
-	var ok bool
-	dag.lastFinalityPoint, ok = dag.index.LookupNode(dagState.LastFinalityPoint)
-	if !ok {
-		return errors.Errorf("finality point block %s "+
-			"does not exist in the DAG", dagState.LastFinalityPoint)
-	}
-	dag.finalizeNodesBelowFinalityPoint(false)
 
 	log.Debugf("Processing unprocessed blockNodes...")
 	err = dag.processUnprocessedBlockNodes(unprocessedBlockNodes)
