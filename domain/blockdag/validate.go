@@ -730,14 +730,6 @@ func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestPa
 // validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
 func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parents blockSet) error {
 	for parentA := range parents {
-		// isFinalized might be false-negative because node finality status is
-		// updated in a separate goroutine. This is why later the block is
-		// checked more thoroughly on the finality rules in dag.checkFinalityViolation.
-		if parentA.isFinalized {
-			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized "+
-				"parent of block %s", parentA.hash, blockHeader.BlockHash()))
-		}
-
 		for parentB := range parents {
 			if parentA == parentB {
 				continue

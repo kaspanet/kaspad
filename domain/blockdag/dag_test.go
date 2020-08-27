@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -901,119 +900,6 @@ func TestAcceptingBlock(t *testing.T) {
 	if sideChainTipAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for sideChainTip. "+
 			"Want: nil, got: %s", intersectionAcceptingBlock.hash)
-	}
-}
-
-func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
-	testFinalizeNodesBelowFinalityPoint(t, true)
-	testFinalizeNodesBelowFinalityPoint(t, false)
-}
-
-func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
-	params := dagconfig.SimnetParams
-	params.K = 1
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", true, Config{
-		DAGParams: &params,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup DAG instance: %v", err)
-	}
-	defer teardownFunc()
-
-	blockVersion := int32(0x10000000)
-	blockTime := dag.genesis.Header().Timestamp
-
-	flushUTXODiffStore := func() {
-		dbTx, err := dag.databaseContext.NewTx()
-		if err != nil {
-			t.Fatalf("Failed to open database transaction: %s", err)
-		}
-		defer dbTx.RollbackUnlessClosed()
-		err = dag.utxoDiffStore.flushToDB(dbTx)
-		if err != nil {
-			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
-		}
-		dag.utxoDiffStore.clearDirtyEntries()
-		err = dbTx.Commit()
-		if err != nil {
-			t.Fatalf("Failed to commit database transaction: %s", err)
-		}
-	}
-
-	addNode := func(parent *blockNode) *blockNode {
-		blockTime = blockTime.Add(time.Second)
-		node := newTestNode(dag, blockSetFromSlice(parent), blockVersion, 0, blockTime)
-		node.updateParentsChildren()
-		dag.index.AddNode(node)
-
-		// Put dummy diff data in dag.utxoDiffStore
-		err := dag.utxoDiffStore.setBlockDiff(node, NewUTXODiff())
-		if err != nil {
-			t.Fatalf("setBlockDiff: %s", err)
-		}
-		flushUTXODiffStore()
-		return node
-	}
-	finalityInterval := dag.FinalityInterval()
-	nodes := make([]*blockNode, 0, finalityInterval)
-	currentNode := dag.genesis
-	nodes = append(nodes, currentNode)
-	for i := uint64(0); i <= finalityInterval*2; i++ {
-		currentNode = addNode(currentNode)
-		nodes = append(nodes, currentNode)
-	}
-
-	// Manually set the last finality point
-	dag.lastFinalityPoint = nodes[finalityInterval-1]
-
-	// Don't unload diffData
-	currentDifference := maxBlueScoreDifferenceToKeepLoaded
-	maxBlueScoreDifferenceToKeepLoaded = math.MaxUint64
-	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
-
-	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
-	flushUTXODiffStore()
-
-	for _, node := range nodes[:finalityInterval-1] {
-		if !node.isFinalized {
-			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
-		}
-		if _, ok := dag.utxoDiffStore.loaded[node]; deleteDiffData && ok {
-			t.Errorf("The diff data of node with blue score %d should have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		} else if !deleteDiffData && !ok {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		}
-
-		_, err := dag.utxoDiffStore.diffDataFromDB(node.hash)
-		exists := !dbaccess.IsNotFoundError(err)
-		if exists && err != nil {
-			t.Errorf("diffDataFromDB: %s", err)
-			continue
-		}
-
-		if deleteDiffData && exists {
-			t.Errorf("The diff data of node with blue score %d should have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-			continue
-		}
-
-		if !deleteDiffData && !exists {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-			continue
-		}
-	}
-
-	for _, node := range nodes[finalityInterval-1:] {
-		if node.isFinalized {
-			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
-		}
-		if _, ok := dag.utxoDiffStore.loaded[node]; !ok {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded", node.blueScore)
-		}
-		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
-			t.Errorf("diffDataFromDB: %s", err)
-		} else if diffData == nil {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database", node.blueScore)
-		}
 	}
 }
 
