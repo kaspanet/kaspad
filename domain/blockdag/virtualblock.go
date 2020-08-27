@@ -5,8 +5,9 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
+
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // virtualBlock is a virtual block whose parents are the tips of the DAG.
@@ -24,6 +25,8 @@ type virtualBlock struct {
 	// blocks that belong the the chain of selected parents from the
 	// virtual block.
 	selectedParentChainSlice []*blockNode
+
+	validTips []*blockNode
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
