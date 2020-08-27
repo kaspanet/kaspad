@@ -340,3 +340,33 @@ func (dag *BlockDAG) updateTipsAfterFinalityConflictResolution(
 
 	return chainUpdates, err
 }
+
+func (dag *BlockDAG) updateFinalityConflictResolution(resolvedFinalityConflict *FinalityConflict) (err error) {
+	resolutionTime := mstime.Now()
+	resolvedFinalityConflict.ResolutionTime = &resolutionTime
+
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	err = dag.saveState(dbTx)
+	if err != nil {
+		return err
+	}
+
+	areAllResolved := true
+	for _, finalityConflict := range dag.finalityConflicts {
+		if finalityConflict.ResolutionTime == nil {
+			areAllResolved = false
+			break
+		}
+	}
+
+	dag.sendNotification(NTFinalityConflictResolved, FinalityConflictResolvedNotificationData{
+		FinalityConflictID:              resolvedFinalityConflict.ID,
+		ResolutionTime:                  resolutionTime,
+		AreAllFinalityConflictsResolved: areAllResolved,
+	})
+
+	return nil
+}
