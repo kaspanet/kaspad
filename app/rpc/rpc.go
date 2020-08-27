@@ -13,6 +13,7 @@ type handler func(context *rpccontext.Context, outgoingRoute *router.Route) erro
 
 var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetCurrentNetworkRequestMessage: rpchandlers.HandleGetCurrentNetwork,
+	appmessage.CmdSubmitBlockRequestMessage:       rpchandlers.HandleSubmitBlock,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

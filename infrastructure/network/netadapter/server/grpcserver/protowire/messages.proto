@@ -30,6 +30,8 @@ message KaspadMessage {
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
+    SubmitBlockRequestMessage submitBlockRequest = 1003;
+    SubmitBlockResponseMessage submitBlockResponse = 1004;
   }
 }
 
@@ -235,16 +237,18 @@ service P2P {
 // RPC                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-// GetCurrentNetworkRequestMessage start
 message GetCurrentNetworkRequestMessage{
 }
-// GetCurrentNetworkRequestMessage end
 
-// GetCurrentNetworkResponseMessage start
 message GetCurrentNetworkResponseMessage{
   string currentNetwork = 1;
 }
-// GetCurrentNetworkResponseMessage end
+
+message SubmitBlockRequestMessage{
+}
+
+message SubmitBlockResponseMessage{
+}
 
 service RPC {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
