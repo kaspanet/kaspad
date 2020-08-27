@@ -1,12 +1,13 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 func TestBlueBlockWindow(t *testing.T) {
@@ -117,13 +118,13 @@ func TestBlueBlockWindow(t *testing.T) {
 
 		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 		if err != nil {
-			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
+			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %+v", blockData.id, err)
 		}
 
 		utilBlock := util.NewBlock(block)
 		isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 		if err != nil {
-			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
+			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %+v", blockData.id, err)
 		}
 		if isDelayed {
 			t.Fatalf("block %s "+
