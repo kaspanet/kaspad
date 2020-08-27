@@ -70,9 +70,7 @@ type utxoVerificationOutput struct {
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data, the compactFeeData
 // for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	*utxoVerificationOutput, error) {
-
+func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx) (*utxoVerificationOutput, error) {
 	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
@@ -259,6 +257,10 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	for tip := range dag.virtual.parents {
+		if dag.index.BlockNodeStatus(tip) == statusUTXONotVerified {
+			continue
+		}
+
 		tipPastUTXO, err := dag.restorePastUTXO(tip)
 		if err != nil {
 			return err
@@ -289,6 +291,10 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 	}
 
 	for parent := range node.parents {
+		if node.dag.index.BlockNodeStatus(parent) == statusUTXONotVerified {
+			continue
+		}
+
 		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err
