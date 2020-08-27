@@ -56,9 +56,14 @@ func (dag *BlockDAG) addFinalityConflict(violatingNode *blockNode) {
 	dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{FinalityConflict: finalityConflict})
 }
 
-// ResolveFinalityConflict resolves
+// ResolveFinalityConflict resolves a finality conflict. It does the following:
+// 1. All blocks in validBlockHashes and their future are marked valid
+// 2. All blocks in invalidBlockHashes their future are marked manuallyRejected except:
+// 2.1. Blocks in invalidBlockHashes future that will have validBlockHashes in their selected-parent-chain
+//      are marked valid
+// 3. Tips and virtual's parents are updated accordingly
+// 4. Notifications regarding finality conflict resolution and selected-parent-chain changes are sent to clients
 func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBlockHashes []*daghash.Hash) error {
-
 	finalityConflict, ok := dag.finalityConflictByID(id)
 	if !ok {
 		return errors.Errorf("No finality conflict with ID %d found", id)
