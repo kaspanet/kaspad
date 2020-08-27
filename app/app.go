@@ -128,7 +128,8 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := rpc2.NewManager(netAdapter, dag, protocolManager, connectionManager)
+	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
+	rpcManager := rpc2.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator)
 	rpcServer, err := setupRPC(
 		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
 	if err != nil {

@@ -57,6 +57,7 @@ const (
 	CmdSubmitBlockResponseMessage
 	CmdGetBlockTemplateRequestMessage
 	CmdGetBlockTemplateResponseMessage
+	CmdGetBlockTemplateTransactionMessage
 	CmdRPCErrorMessage
 )
 
@@ -87,13 +88,14 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdReject:               "Reject",
 
 	// rpc
-	CmdGetCurrentNetworkRequestMessage:  "GetCurrentNetworkRequest",
-	CmdGetCurrentNetworkResponseMessage: "GetCurrentNetworkResponse",
-	CmdSubmitBlockRequestMessage:        "SubmitBlockRequest",
-	CmdSubmitBlockResponseMessage:       "SubmitBlockResponse",
-	CmdGetBlockTemplateRequestMessage:   "GetBlockTemplateRequest",
-	CmdGetBlockTemplateResponseMessage:  "GetBlockTemplateResponse",
-	CmdRPCErrorMessage:                  "CmdRPCError",
+	CmdGetCurrentNetworkRequestMessage:    "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage:   "GetCurrentNetworkResponse",
+	CmdSubmitBlockRequestMessage:          "SubmitBlockRequest",
+	CmdSubmitBlockResponseMessage:         "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:     "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:    "GetBlockTemplateResponse",
+	CmdGetBlockTemplateTransactionMessage: "CmdGetBlockTemplateTransaction",
+	CmdRPCErrorMessage:                    "CmdRPCError",
 }
 
 // Message is an interface that describes a kaspa message. A type that

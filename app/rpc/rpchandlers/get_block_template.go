@@ -30,8 +30,8 @@ func HandleGetBlockTemplate(context *rpccontext.Context, request appmessage.Mess
 	}
 
 	// Protect concurrent access when updating block templates.
-	context.BlockTemplateGenerator.Lock()
-	defer context.BlockTemplateGenerator.Unlock()
+	context.BlockTemplateState.Lock()
+	defer context.BlockTemplateState.Unlock()
 
 	// Get and return a block template. A new block template will be
 	// generated when the current best block has changed or the transactions
@@ -39,8 +39,9 @@ func HandleGetBlockTemplate(context *rpccontext.Context, request appmessage.Mess
 	// seconds since the last template was generated. Otherwise, the
 	// timestamp for the existing block template is updated (and possibly
 	// the difficulty on testnet per the consesus rules).
-	if err := context.BlockTemplateGenerator.Update(payAddress); err != nil {
+	err = context.BlockTemplateState.Update(payAddress)
+	if err != nil {
 		return nil, err
 	}
-	return context.BlockTemplateGenerator.Response(), nil
+	return context.BlockTemplateState.Response()
 }
