@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type GetBlockTemplateRequestMessage struct {
 	baseMessage
+	PayAddress string
 }
 
 // Command returns the protocol command string for the message
