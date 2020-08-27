@@ -21,6 +21,7 @@ type block struct {
 	ExpectedScore          uint64
 	ExpectedSelectedParent string
 	ExpectedBlues          []string
+	ExpectedReds           []string
 	Parents                []string
 }
 
@@ -104,9 +105,16 @@ func TestGHOSTDAG(t *testing.T) {
 				idByBlockMap[node] = blockData.ID
 
 				bluesIDs := make([]string, 0, len(node.blues))
+				redsIDs := make([]string, 0, len(node.reds))
+
 				for _, blue := range node.blues {
 					bluesIDs = append(bluesIDs, idByBlockMap[blue])
 				}
+
+				for _, red := range node.reds {
+					redsIDs = append(redsIDs, idByBlockMap[red])
+				}
+
 				selectedParentID := idByBlockMap[node.selectedParent]
 				fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
 					bluesIDs, selectedParentID, node.blueScore)
@@ -121,6 +129,10 @@ func TestGHOSTDAG(t *testing.T) {
 				if !reflect.DeepEqual(blockData.ExpectedBlues, bluesIDs) {
 					t.Errorf("Test %s: Block %s expected to have blues %v but got %v (fulldata: %v)",
 						info.Name(), blockData.ID, blockData.ExpectedBlues, bluesIDs, fullDataStr)
+				}
+				if !reflect.DeepEqual(blockData.ExpectedReds, redsIDs) {
+					t.Errorf("Test %s: Block %v expected to have reds %v but got %v (fulldata: %v)",
+						info.Name, blockData.ID, blockData.ExpectedReds, redsIDs, fullDataStr)
 				}
 			}
 

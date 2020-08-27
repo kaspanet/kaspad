@@ -1,8 +1,9 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestPruningDepth(t *testing.T) {
@@ -20,10 +21,6 @@ func TestPruningDepth(t *testing.T) {
 		},
 		{
 			params:        &dagconfig.DevnetParams,
-			expectedDepth: 244838,
-		},
-		{
-			params:        &dagconfig.RegressionNetParams,
 			expectedDepth: 244838,
 		},
 		{
