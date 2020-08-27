@@ -113,7 +113,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 		return err
 	}
 
-	addedTipsFromRehabilitateBlocks := dag.rehabilitateBlocks(rehabilitatedBlocks)
+	addedTipsFromRehabilitateBlocks := dag.findRehabilitatedTips(rehabilitatedBlocks)
 	addedTips.addSet(addedTipsFromRehabilitateBlocks)
 
 	virtualSelectedParentChainUpdates, err :=
@@ -135,7 +135,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 	return nil
 }
 
-func (dag *BlockDAG) rehabilitateBlocks(rehabilitatedBlocks blockSet) (addedTips blockSet) {
+func (dag *BlockDAG) findRehabilitatedTips(rehabilitatedBlocks blockSet) (addedTips blockSet) {
 	addedTips = newBlockSet()
 
 	for rehabilitatedBlock := range rehabilitatedBlocks {
@@ -268,13 +268,13 @@ func (dag *BlockDAG) checkIfSwitchingBranches(
 	validBlocks, invalidBlocks blockSet) (bool, error) {
 
 	// Make sure that all validBlocks have violatingBranchStart in their selectedParentChain
-	isOK, err := dag.areAllInSelectedParentChainOf(validBlocks, violatingBranchStart)
+	isOK, err := dag.isInSelectedParentChainOfAll(violatingBranchStart, validBlocks)
 	if err != nil || !isOK {
 		return false, err
 	}
 
 	// Make sure that all invalidBlocks have selectedTipBranchStart in their selectedParentChain
-	isOK, err = dag.areAllInSelectedParentChainOf(invalidBlocks, selectedTipBranchStart)
+	isOK, err = dag.isInSelectedParentChainOfAll(selectedTipBranchStart, invalidBlocks)
 	if err != nil || !isOK {
 		return false, err
 	}
@@ -299,13 +299,13 @@ func (dag *BlockDAG) checkIfKeepingBranches(
 	validBlocks, invalidBlocks blockSet) (bool, error) {
 
 	// Make sure that all invalidBlocks have violatingBranchStart in their selectedParentChain
-	isOK, err := dag.areAllInSelectedParentChainOf(invalidBlocks, violatingBranchStart)
+	isOK, err := dag.isInSelectedParentChainOfAll(violatingBranchStart, invalidBlocks)
 	if err != nil || !isOK {
 		return false, err
 	}
 
 	// Make sure that all validBlocks have selectedTipBranchStart in their selectedParentChain
-	isOK, err = dag.areAllInSelectedParentChainOf(validBlocks, selectedTipBranchStart)
+	isOK, err = dag.isInSelectedParentChainOfAll(selectedTipBranchStart, validBlocks)
 	if err != nil || !isOK {
 		return false, err
 	}
