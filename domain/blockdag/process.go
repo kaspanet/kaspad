@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -462,7 +463,7 @@ func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, err
 		}
 		if !isFinalityPointInPast {
 			isKosherized := false
-			for _, potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
+			for potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
 				isKosherized, err = dag.isInPast(redBlock, potentiallyKosherizingBlock)
 				if err != nil {
 					return nil, err
@@ -570,4 +571,79 @@ func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *chainU
 			AddedChainBlockHashes:   chainUpdates.addedChainBlockHashes,
 		})
 	}
+}
+
+func (dag *BlockDAG) selectAllowedTips() (blockSet, error) {
+	selected := newBlockSet()
+	mergeSetSize := 0
+
+	validTipsHeap := newDownHeap()
+	for _, validTip := range dag.virtual.validTips {
+		validTipsHeap.Push(validTip)
+	}
+
+	for {
+		candidateTip := validTipsHeap.pop()
+
+		if len(selected) == 0 {
+			// Sanity check to make sure that selectedTip is valid.
+			if dag.index.BlockNodeStatus(candidateTip) != statusValid {
+				return nil, errors.Errorf("First candidate tip has non-valid status",
+					dag.index.BlockNodeStatus(candidateTip))
+			}
+		}
+		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
+		if err != nil {
+			return nil, err
+		}
+
+		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
+			continue
+		}
+
+		selected.add(candidateTip)
+		mergeSetSize += mergeSetIncrease
+
+		if len(selected) == appmessage.MaxBlockParents || validTipsHeap.Len() == 0 {
+			break
+		}
+	}
+
+	tempVirtual, _ := dag.newBlockNode(nil, selected)
+
+	boundedMergeBreakingParents, err := dag.boundedMergeBreakingParents(tempVirtual)
+	if err != nil {
+		return nil, err
+	}
+	selected.subtract(boundedMergeBreakingParents)
+
+	return selected, nil
+}
+
+func (dag *BlockDAG) mergeSetIncrease(candidateTip *blockNode, selected blockSet) (int, error) {
+	inPastOfSelected := newBlockSet()
+	queue := newDownHeap()
+	queue.Push(candidateTip)
+	mergeSetAddition := 0
+
+	for queue.Len() > 0 {
+		current := queue.pop()
+		isInPastOfSelected, err := dag.isInPastOfAny(current, selected)
+		if err != nil {
+			return 0, err
+		}
+		if isInPastOfSelected {
+			inPastOfSelected.add(current)
+			continue
+		}
+		mergeSetAddition++
+
+		for parent := range current.parents {
+			if !inPastOfSelected.contains(parent) {
+				queue.Push(parent)
+			}
+		}
+	}
+
+	return mergeSetAddition, nil
 }

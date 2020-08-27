@@ -359,8 +359,8 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 }
 
 // isInPastOfAny returns true if this is in the past of any of others
-func (dag *BlockDAG) isInPastOfAny(this *blockNode, others []*blockNode) (bool, error) {
-	for _, other := range others {
+func (dag *BlockDAG) isInPastOfAny(this *blockNode, others blockSet) (bool, error) {
+	for other := range others {
 		isInPast, err := dag.isInPast(this, other)
 		if err != nil {
 			return false, err

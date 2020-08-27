@@ -287,8 +287,8 @@ func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (
 	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
 }
 
-func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
-	nonFinalityViolatingBlues := []*blockNode{}
+func (node *blockNode) nonFinalityViolatingBlues() (blockSet, error) {
+	nonFinalityViolatingBlues := newBlockSet()
 
 	for _, blueNode := range node.blues {
 		notViolatingFinality, err := node.hasFinalityPointInOthersSelectedChain(blueNode)
@@ -296,7 +296,7 @@ func (node *blockNode) nonFinalityViolatingBlues() ([]*blockNode, error) {
 			return nil, err
 		}
 		if notViolatingFinality {
-			nonFinalityViolatingBlues = append(nonFinalityViolatingBlues, blueNode)
+			nonFinalityViolatingBlues.add(blueNode)
 		}
 	}
 
