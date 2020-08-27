@@ -79,6 +79,6 @@ func (c *Client) ResolveFinalityConflictAsync(
 }
 
 // ResolveFinalityConflict tells the kaspa node how to resolve a finality conflict.
-func (c *Client) ResolveFinalityConflict(finalityConflitID int, validBlocks []string, invalidBlocks []string) error {
-	return c.ResolveFinalityConflictAsync(finalityConflitID, validBlocks, invalidBlocks).Receive()
+func (c *Client) ResolveFinalityConflict(finalityConflitID int, validBlockHashes []string, invalidBlockHashes []string) error {
+	return c.ResolveFinalityConflictAsync(finalityConflitID, validBlockHashes, invalidBlockHashes).Receive()
 }

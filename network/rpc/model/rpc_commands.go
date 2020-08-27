@@ -596,19 +596,19 @@ func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinal
 
 type ResolveFinalityConflictCmd struct {
 	FinalityConflictID int      `json:"finalityConflictID"`
-	ValidBlocks        []string `json:"validBlocks"`
-	InvalidBlocks      []string `json:"invalidBlocks"`
+	ValidBlockHashes   []string `json:"validBlockHashes"`
+	InvalidBlockHashes []string `json:"invalidBlockHashes"`
 }
 
 // NewResolveFinalityConflictCmd returns a new instance which can be used to issue a JSON-RPC
 // resolveFinalityConflict command.
 func NewResolveFinalityConflictCmd(
-	finalityConflitID int, validBlocks []string, invalidBlocks []string) *ResolveFinalityConflictCmd {
+	finalityConflitID int, validBlockHashes []string, invalidBlockHashes []string) *ResolveFinalityConflictCmd {
 
 	return &ResolveFinalityConflictCmd{
 		FinalityConflictID: finalityConflitID,
-		ValidBlocks:        validBlocks,
-		InvalidBlocks:      invalidBlocks,
+		ValidBlockHashes:   validBlockHashes,
+		InvalidBlockHashes: invalidBlockHashes,
 	}
 }
 
