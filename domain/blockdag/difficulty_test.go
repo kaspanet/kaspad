@@ -5,11 +5,12 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/util"
 )
@@ -135,7 +136,7 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
 		}
 	}
-	nodeInThePast := addNode(blockSetFromSlice(tip), tip.PastMedianTime(dag))
+	nodeInThePast := addNode(blockSetFromSlice(tip), tip.PastMedianTime())
 	if nodeInThePast.bits != tip.bits {
 		t.Fatalf("The difficulty should only change when nodeInThePast is in the past of a block bluest parent")
 	}
@@ -157,7 +158,7 @@ func TestDifficulty(t *testing.T) {
 
 	// Increase block rate to increase difficulty
 	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize; i++ {
-		tip = addNode(blockSetFromSlice(tip), tip.PastMedianTime(dag))
+		tip = addNode(blockSetFromSlice(tip), tip.PastMedianTime())
 		if compareBits(tip.bits, tip.parents.bluest().bits) > 0 {
 			t.Fatalf("Because we're increasing the block rate, the difficulty can't decrease")
 		}
@@ -203,7 +204,7 @@ func TestDifficulty(t *testing.T) {
 
 	redChainTip := splitNode
 	for i := 0; i < 10; i++ {
-		redChainTip = addNode(blockSetFromSlice(redChainTip), redChainTip.PastMedianTime(dag))
+		redChainTip = addNode(blockSetFromSlice(redChainTip), redChainTip.PastMedianTime())
 	}
 	tipWithRedPast := addNode(blockSetFromSlice(redChainTip, blueTip), zeroTime)
 	tipWithoutRedPast := addNode(blockSetFromSlice(blueTip), zeroTime)

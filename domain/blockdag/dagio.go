@@ -417,6 +417,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	}
 
 	node := &blockNode{
+		dag:                  dag,
 		hash:                 header.BlockHash(),
 		version:              header.Version,
 		bits:                 header.Bits,
@@ -478,6 +479,25 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 		var ok bool
 		node.blues[i], ok = dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
+		}
+	}
+
+	redsCount, err := appmessage.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.reds = make([]*blockNode, redsCount)
+	for i := uint64(0); i < redsCount; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+
+		var ok bool
+		node.reds[i], ok = dag.index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
 		}
@@ -561,6 +581,18 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = appmessage.WriteVarInt(w, uint64(len(node.reds)))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, red := range node.reds {
+		_, err = w.Write(red.hash[:])
 		if err != nil {
 			return nil, err
 		}

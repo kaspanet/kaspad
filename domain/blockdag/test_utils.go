@@ -315,7 +315,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	timestamp := node.parents.bluest().PastMedianTime(dag)
+	timestamp := node.parents.bluest().PastMedianTime()
 	msgBlock.Header = appmessage.BlockHeader{
 		Version: blockVersion,
 

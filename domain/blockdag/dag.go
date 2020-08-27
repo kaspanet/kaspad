@@ -6,12 +6,11 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -241,7 +240,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
-	return dag.virtual.tips().bluest().PastMedianTime(dag)
+	return dag.virtual.tips().bluest().PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -356,8 +355,24 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
+// isInPast returns true if this is in the past of other
 func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
+}
+
+// isInPastOfAny returns true if this is in the past of any of others
+func (dag *BlockDAG) isInPastOfAny(this *blockNode, others []*blockNode) (bool, error) {
+	for _, other := range others {
+		isInPast, err := dag.isInPast(this, other)
+		if err != nil {
+			return false, err
+		}
+		if isInPast {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // GetTopHeaders returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
