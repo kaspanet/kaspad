@@ -2,6 +2,7 @@ package grpcclient
 
 import (
 	"context"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -53,6 +54,22 @@ func (c *RPCClient) PostString(requestString string) (string, error) {
 		return "", errors.Wrapf(err, "error parsing the response from the RPC server")
 	}
 	return string(responseBytes), nil
+}
+
+func (c *RPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appmessage.Message, error) {
+	request, err := protowire.FromAppMessage(requestAppMessage)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error converting the request")
+	}
+	response, err := c.Post(request)
+	if err != nil {
+		return nil, err
+	}
+	responseAppMessage, err := response.ToAppMessage()
+	if err != nil {
+		return nil, errors.Wrapf(err, "error converting the response")
+	}
+	return responseAppMessage, nil
 }
 
 func (c *RPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMessage, error) {
