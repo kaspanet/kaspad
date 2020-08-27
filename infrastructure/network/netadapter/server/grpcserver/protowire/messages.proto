@@ -32,6 +32,8 @@ message KaspadMessage {
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
     SubmitBlockRequestMessage submitBlockRequest = 1003;
     SubmitBlockResponseMessage submitBlockResponse = 1004;
+    GetBlockTemplateRequestMessage getBlockTemplateRequest = 1005;
+    GetBlockTemplateResponseMessage getBlockTemplateResponse = 1006;
   }
 }
 
@@ -248,6 +250,12 @@ message SubmitBlockRequestMessage{
 }
 
 message SubmitBlockResponseMessage{
+}
+
+message GetBlockTemplateRequestMessage{
+}
+
+message GetBlockTemplateResponseMessage{
 }
 
 service RPC {

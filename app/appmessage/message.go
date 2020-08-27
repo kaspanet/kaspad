@@ -55,6 +55,8 @@ const (
 	CmdGetCurrentNetworkResponseMessage
 	CmdSubmitBlockRequestMessage
 	CmdSubmitBlockResponseMessage
+	CmdGetBlockTemplateRequestMessage
+	CmdGetBlockTemplateResponseMessage
 )
 
 // MessageCommandToString maps all MessageCommands to their string representation
@@ -88,6 +90,8 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdGetCurrentNetworkResponseMessage: "GetCurrentNetworkResponse",
 	CmdSubmitBlockRequestMessage:        "SubmitBlockRequest",
 	CmdSubmitBlockResponseMessage:       "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:   "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:  "GetBlockTemplateResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
