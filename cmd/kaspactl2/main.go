@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/grpcclient"
+	"os"
 )
 
 func main() {
@@ -10,14 +12,22 @@ func main() {
 		printErrorAndExit(fmt.Sprintf("error parsing command-line arguments: %s", err))
 	}
 
-	client, err := connectToServer(cfg)
+	client, err := grpcclient.Connect(cfg.RPCServer)
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error connecting to the RPC server: %s", err))
 	}
-	defer client.disconnect()
+	defer client.Disconnect()
 
 	requestString := cfg.RequestJSON
-	responseString := client.post(requestString)
+	responseString, err := client.Post(requestString)
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
+	}
 
 	fmt.Print(responseString)
+}
+
+func printErrorAndExit(message string) {
+	fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", message))
+	os.Exit(1)
 }

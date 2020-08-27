@@ -1,8 +1,7 @@
-package main
+package grpcclient
 
 import (
 	"context"
-	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -11,51 +10,51 @@ import (
 	"time"
 )
 
-type client struct {
+type RPCClient struct {
 	stream protowire.RPC_MessageStreamClient
 }
 
-func connectToServer(cfg *configFlags) (*client, error) {
+func Connect(address string) (*RPCClient, error) {
 	const dialTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
-	gRPCConnection, err := grpc.DialContext(ctx, cfg.RPCServer, grpc.WithInsecure(), grpc.WithBlock())
+	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to %s", cfg.RPCServer)
+		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
 
 	rpcClient := protowire.NewRPCClient(gRPCConnection)
 	stream, err := rpcClient.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name))
 	if err != nil {
-		return nil, errors.Wrapf(err, "error getting client stream for %s", cfg.RPCServer)
+		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
 
-	return &client{stream: stream}, nil
+	return &RPCClient{stream: stream}, nil
 }
 
-func (c *client) disconnect() error {
+func (c *RPCClient) Disconnect() error {
 	return c.stream.CloseSend()
 }
 
-func (c *client) post(requestString string) string {
+func (c *RPCClient) Post(requestString string) (string, error) {
 	requestBytes := []byte(requestString)
 	var parsedRequest protowire.KaspadMessage
 	err := protojson.Unmarshal(requestBytes, &parsedRequest)
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error parsing the request: %s", err))
+		return "", errors.Wrapf(err, "error parsing the request")
 	}
 	err = c.stream.Send(&parsedRequest)
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error sending the request to the RPC server: %s", err))
+		return "", errors.Wrapf(err, "error sending the request to the RPC server")
 	}
 	response, err := c.stream.Recv()
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error receiving the response from the RPC server: %s", err))
+		return "", errors.Wrapf(err, "error receiving the response from the RPC server")
 	}
 	responseBytes, err := protojson.Marshal(response)
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error parsing the response from the RPC server: %s", err))
+		return "", errors.Wrapf(err, "error parsing the response from the RPC server")
 	}
-	return string(responseBytes)
+	return string(responseBytes), nil
 }
