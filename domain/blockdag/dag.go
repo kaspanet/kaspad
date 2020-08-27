@@ -456,5 +456,5 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 	if !ok {
 		return false
 	}
-	return dag.index.NodeStatus(node).KnownInvalid()
+	return dag.index.BlockNodeStatus(node).KnownInvalid()
 }

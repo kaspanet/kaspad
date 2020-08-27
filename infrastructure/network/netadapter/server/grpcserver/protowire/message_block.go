@@ -26,9 +26,9 @@ func (x *BlockMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, errors.New("block header field cannot be nil")
 	}
 
-	if len(protoBlockHeader.ParentHashes) > domainmessage.MaxBlockParents {
+	if len(protoBlockHeader.ParentHashes) > appmessage.MaxBlockParents {
 		return nil, errors.Errorf("block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(protoBlockHeader.ParentHashes), domainmessage.MaxBlockParents)
+			"is %d", len(protoBlockHeader.ParentHashes), appmessage.MaxBlockParents)
 	}
 
 	parentHashes, err := protoHashesToWire(protoBlockHeader.ParentHashes)
@@ -83,9 +83,9 @@ func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
 			"[count %d, max %d]", len(msgBlock.Transactions), appmessage.MaxTxPerBlock)
 	}
 
-	if len(msgBlock.Header.ParentHashes) > domainmessage.MaxBlockParents {
+	if len(msgBlock.Header.ParentHashes) > appmessage.MaxBlockParents {
 		return errors.Errorf("block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(msgBlock.Header.ParentHashes), domainmessage.MaxBlockParents)
+			"is %d", len(msgBlock.Header.ParentHashes), appmessage.MaxBlockParents)
 	}
 
 	header := msgBlock.Header
