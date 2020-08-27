@@ -37,24 +37,32 @@ func (c *RPCClient) Disconnect() error {
 	return c.stream.CloseSend()
 }
 
-func (c *RPCClient) Post(requestString string) (string, error) {
+func (c *RPCClient) PostString(requestString string) (string, error) {
 	requestBytes := []byte(requestString)
 	var parsedRequest protowire.KaspadMessage
 	err := protojson.Unmarshal(requestBytes, &parsedRequest)
 	if err != nil {
 		return "", errors.Wrapf(err, "error parsing the request")
 	}
-	err = c.stream.Send(&parsedRequest)
+	response, err := c.Post(&parsedRequest)
 	if err != nil {
-		return "", errors.Wrapf(err, "error sending the request to the RPC server")
-	}
-	response, err := c.stream.Recv()
-	if err != nil {
-		return "", errors.Wrapf(err, "error receiving the response from the RPC server")
+		return "", err
 	}
 	responseBytes, err := protojson.Marshal(response)
 	if err != nil {
 		return "", errors.Wrapf(err, "error parsing the response from the RPC server")
 	}
 	return string(responseBytes), nil
+}
+
+func (c *RPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMessage, error) {
+	err := c.stream.Send(request)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error sending the request to the RPC server")
+	}
+	response, err := c.stream.Recv()
+	if err != nil {
+		return nil, errors.Wrapf(err, "error receiving the response from the RPC server")
+	}
+	return response, nil
 }

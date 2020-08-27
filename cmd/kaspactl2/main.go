@@ -19,7 +19,7 @@ func main() {
 	defer client.Disconnect()
 
 	requestString := cfg.RequestJSON
-	responseString, err := client.Post(requestString)
+	responseString, err := client.PostString(requestString)
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
