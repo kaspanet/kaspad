@@ -132,7 +132,7 @@ func TestGHOSTDAG(t *testing.T) {
 				}
 				if !reflect.DeepEqual(blockData.ExpectedReds, redsIDs) {
 					t.Errorf("Test %s: Block %v expected to have reds %v but got %v (fulldata: %v)",
-						info.Name, blockData.ID, blockData.ExpectedReds, redsIDs, fullDataStr)
+						info.Name(), blockData.ID, blockData.ExpectedReds, redsIDs, fullDataStr)
 				}
 			}
 
@@ -142,7 +142,7 @@ func TestGHOSTDAG(t *testing.T) {
 				reds[id] = true
 			}
 
-			for tip := &dag.virtual.blockNode; tip.selectedParent != nil; tip = tip.selectedParent {
+			for tip := dag.virtual.blockNode; tip.selectedParent != nil; tip = tip.selectedParent {
 				tipID := idByBlockMap[tip]
 				delete(reds, tipID)
 				for _, blue := range tip.blues {

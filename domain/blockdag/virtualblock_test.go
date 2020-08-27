@@ -5,10 +5,11 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 )
 
 func buildNode(t *testing.T, dag *BlockDAG, parents blockSet) *blockNode {
@@ -102,27 +103,30 @@ func TestVirtualBlock(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		// Create an empty VirtualBlock
-		virtual := newVirtualBlock(dag, nil)
-
 		// Set the tips. This will be the initial state
-		virtual.SetTips(blockSetFromSlice(test.tipsToSet...))
+		_, _, err := dag.setTips(blockSetFromSlice(test.tipsToSet...))
+		if err != nil {
+			t.Fatalf("Error setting tips: %+v", err)
+		}
 
 		// Add all blockNodes in tipsToAdd in order
 		for _, tipToAdd := range test.tipsToAdd {
 			addNodeAsChildToParents(tipToAdd)
-			virtual.AddTip(tipToAdd)
+			_, _, err := dag.addTip(tipToAdd)
+			if err != nil {
+				t.Fatalf("Error adding tip: %+v", err)
+			}
 		}
 
-		// Ensure that the virtual block's tips are now equal to expectedTips
-		resultTips := virtual.tips()
+		// Ensure that the dag's tips are now equal to expectedTips
+		resultTips := dag.tips
 		if !reflect.DeepEqual(resultTips, test.expectedTips) {
 			t.Errorf("unexpected tips in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)
 		}
 
 		// Ensure that the virtual block's selectedParent is now equal to expectedSelectedParent
-		resultSelectedTip := virtual.selectedParent
+		resultSelectedTip := dag.virtual.selectedParent
 		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedParent) {
 			t.Errorf("unexpected selected tip in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedSelectedParent, resultSelectedTip)
@@ -146,12 +150,18 @@ func TestSelectedPath(t *testing.T) {
 	virtual := newVirtualBlock(dag, nil)
 
 	tip := dag.genesis
-	virtual.AddTip(tip)
+	_, _, err = dag.addTip(tip)
+	if err != nil {
+		t.Fatalf("Error adding tip: %+v", err)
+	}
 	initialPath := blockSetFromSlice(tip)
 	for i := 0; i < 5; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
 		initialPath.add(tip)
-		virtual.AddTip(tip)
+		_, _, err = dag.addTip(tip)
+		if err != nil {
+			t.Fatalf("Error adding tip: %+v", err)
+		}
 	}
 	initialTip := tip
 
@@ -159,7 +169,10 @@ func TestSelectedPath(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
 		firstPath.add(tip)
-		virtual.AddTip(tip)
+		_, _, err = dag.addTip(tip)
+		if err != nil {
+			t.Fatalf("Error adding tip: %+v", err)
+		}
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
 	if !reflect.DeepEqual(virtual.selectedParentChainSet, firstPath) {
@@ -177,7 +190,10 @@ func TestSelectedPath(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
 		secondPath.add(tip)
-		virtual.AddTip(tip)
+		_, _, err = dag.addTip(tip)
+		if err != nil {
+			t.Fatalf("Error adding tip: %+v", err)
+		}
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
 	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
@@ -194,7 +210,10 @@ func TestSelectedPath(t *testing.T) {
 	tip = initialTip
 	for i := 0; i < 3; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
-		virtual.AddTip(tip)
+		_, _, err = dag.addTip(tip)
+		if err != nil {
+			t.Fatalf("Error adding tip: %+v", err)
+		}
 	}
 	// Because we added a very short chain, the selected path should not be affected.
 	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
@@ -240,9 +259,6 @@ func TestChainUpdates(t *testing.T) {
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
 
-	// Create a VirtualBlock with the toBeRemoved chain
-	virtual := newVirtualBlock(dag, blockSetFromSlice(toBeRemovedNodes...))
-
 	// Create a chain to be added
 	var toBeAddedNodes []*blockNode
 	toBeAddedTip := genesis
@@ -252,7 +268,10 @@ func TestChainUpdates(t *testing.T) {
 	}
 
 	// Set the virtual tip to be the tip of the toBeAdded chain
-	chainUpdates := virtual.setTips(blockSetFromSlice(toBeAddedTip))
+	_, chainUpdates, err := dag.setTips(blockSetFromSlice(toBeAddedTip))
+	if err != nil {
+		t.Fatalf("Error setting tips: %+v", err)
+	}
 
 	// Make sure that the removed blocks are as expected (in reverse order)
 	if len(chainUpdates.removedChainBlockHashes) != len(toBeRemovedNodes) {
