@@ -1,7 +1,7 @@
 package blockdag
 
 import (
-	"time"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -10,11 +10,11 @@ import (
 
 type FinalityConflict struct {
 	ID                     int
-	ConflictTime           time.Time
+	ConflictTime           mstime.Time
 	CurrentSelectedTipHash *daghash.Hash
 	ViolatingBlockHash     *daghash.Hash
 
-	ResolutionTime *time.Time
+	ResolutionTime *mstime.Time
 }
 
 // FinalityConflicts returns the list of all finality conflicts that occured in this node
@@ -44,7 +44,7 @@ func (dag *BlockDAG) addFinalityConflict(node *blockNode) {
 
 	finalityConflict := &FinalityConflict{
 		ID:                     topFinalityConflictID + 1,
-		ConflictTime:           time.Now(),
+		ConflictTime:           mstime.Now(),
 		CurrentSelectedTipHash: dag.SelectedTipHash(),
 		ViolatingBlockHash:     node.hash,
 	}

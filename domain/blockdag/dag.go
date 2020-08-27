@@ -7,7 +7,6 @@ package blockdag
 import (
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/kaspanet/kaspad/network/domainmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -503,8 +502,7 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 }
 
 func (dag *BlockDAG) updateFinalityConflictResolution(resolvedFinalityConflict *FinalityConflict) (err error) {
-
-	resolutionTime := time.Now()
+	resolutionTime := mstime.Now()
 	resolvedFinalityConflict.ResolutionTime = &resolutionTime
 
 	dbTx, err := dag.databaseContext.NewTx()

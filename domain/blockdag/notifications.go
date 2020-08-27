@@ -6,10 +6,10 @@ package blockdag
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // NotificationType represents the type of a notification message.
@@ -104,6 +104,6 @@ type FinalityConflictNotificationData struct {
 
 type FinalityConflictResolvedNotificationData struct {
 	FinalityConflictID              int
-	ResolutionTime                  time.Time
+	ResolutionTime                  mstime.Time
 	AreAllFinalityConflictsResolved bool
 }

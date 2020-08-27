@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+
 	"github.com/kaspanet/kaspad/domain/blockdag"
 
 	"github.com/pkg/errors"
@@ -244,10 +246,10 @@ func (m *wsNotificationManager) NotifyFinalityConflict(finalityConflict *blockda
 }
 
 func (m *wsNotificationManager) NotifyFinalityConflictResolved(
-	finalityConflictID int, resolutionTime time.Time, areAllFinalityConflictsResolved bool) {
+	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool) {
 	n := notificationFinalityConflictResolved{
 		finalityConflictID:              finalityConflictID,
-		resolutionTime:                  resolutionTime.Unix(),
+		resolutionTime:                  resolutionTime.UnixMilliseconds(),
 		areAllFinalityConflictsResolved: areAllFinalityConflictsResolved,
 	}
 	// As NotifyFinalityConflictResolved will be called by the DAG manager

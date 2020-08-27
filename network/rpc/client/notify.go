@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -129,7 +128,7 @@ type NotificationHandlers struct {
 	// NotifyFinalityConflicts has been made to register for the
 	// notification and the function is non-nil.
 	OnFinalityConflictReolved func(
-		finalityConflictID int, resolutionTime time.Time, areAllFinalityConflictsResolved bool)
+		finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received. This typically means the notification handling code
@@ -508,20 +507,20 @@ func parseFinalityConflictNtfnParams(params []json.RawMessage) (*model.FinalityC
 }
 
 func parseFinalityConflictResolvedNtfnParams(params []json.RawMessage) (
-	finalityConflictID int, resolutionTime time.Time, areAllFinalityConflictsResolved bool, err error) {
+	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool, err error) {
 
 	if len(params) != 1 {
-		return 0, time.Time{}, false, wrongNumParams(len(params))
+		return 0, mstime.Time{}, false, wrongNumParams(len(params))
 	}
 
 	var finalityConflictResolvedNtfn model.FinalityConflictResolvedNtfn
 	err = json.Unmarshal(params[0], &finalityConflictResolvedNtfn)
 	if err != nil {
-		return 0, time.Time{}, false, err
+		return 0, mstime.Time{}, false, err
 	}
 
 	return finalityConflictResolvedNtfn.FinalityConflictID,
-		time.Unix(finalityConflictResolvedNtfn.ResolutionTime, 0),
+		mstime.UnixMilliseconds(finalityConflictResolvedNtfn.ResolutionTime),
 		finalityConflictResolvedNtfn.AreAllFinalityConflictsResolved, nil
 }
 
