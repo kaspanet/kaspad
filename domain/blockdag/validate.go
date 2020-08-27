@@ -43,6 +43,9 @@ const (
 	// MassPerSigOp is the number of grams that any
 	// signature operation adds to a transaction.
 	MassPerSigOp = 10000
+
+	// mergeSetSizeLimit is the maximum allowed merge set size for a block.
+	mergeSetSizeLimit = 1000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
