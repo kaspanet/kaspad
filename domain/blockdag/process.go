@@ -315,8 +315,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 		}
 	}
 
-	utxoVerificationData, err :=
-		node.verifyAndBuildUTXO(dag, block.Transactions(), isBehaviorFlagRaised(flags, BFFastAdd))
+	utxoVerificationData, err := node.verifyAndBuildUTXO(dag, block.Transactions())
 	if err != nil {
 		return errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
