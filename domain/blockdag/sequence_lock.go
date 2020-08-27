@@ -1,8 +1,6 @@
 package blockdag
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -31,20 +29,31 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLo
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx)
+	return dag.calcTxSequenceLock(dag.selectedTip(), tx, utxoSet)
 }
 
 // CalcSequenceLockNoLock is lock free version of CalcSequenceLockWithLock
 // This function is unsafe for concurrent access.
 func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
-	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx)
+	return dag.calcTxSequenceLock(dag.selectedTip(), tx, utxoSet)
 }
 
-// calcSequenceLock computes the relative lock-times for the passed
+// calcTxSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx) (*SequenceLock, error) {
+func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
+	inputsWithReferencedUTXOEntries, err := dag.GetReferencedUTXOEntries(tx, utxoSet)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag.calcTxSequenceLockFromInputsWithReferencedEntries(node, tx, inputsWithReferencedUTXOEntries)
+}
+
+func (dag *BlockDAG) calcTxSequenceLockFromInputsWithReferencedEntries(
+	node *blockNode, tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) (*SequenceLock, error) {
+
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -57,16 +66,9 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		return sequenceLock, nil
 	}
 
-	mTx := tx.MsgTx()
-	for txInIndex, txIn := range mTx.TxIn {
-		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
-		if !ok {
-			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s input %d either does not exist or "+
-				"has already been spent", txIn.PreviousOutpoint,
-				tx.ID(), txInIndex)
-			return sequenceLock, ruleError(ErrMissingTxOut, str)
-		}
+	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+		txIn := txInAndReferencedUTXOEntry.txIn
+		entry := txInAndReferencedUTXOEntry.utxoEntry
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
