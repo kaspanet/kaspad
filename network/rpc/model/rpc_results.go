@@ -6,6 +6,7 @@ package model
 
 import (
 	"encoding/json"
+
 	"github.com/kaspanet/kaspad/network/addressmanager"
 )
 
@@ -472,4 +473,12 @@ type VersionResult struct {
 	Patch         uint32 `json:"patch"`
 	Prerelease    string `json:"prerelease"`
 	BuildMetadata string `json:"buildMetadata"`
+}
+
+type GetFinalityConflictsResult []struct {
+	ID                     int    `json:"id"`
+	ConflictTime           int64  `json:"conflictTime"`
+	ViolatingBlockHash     string `json:"violatingBlockHash"`
+	CurrentSelectedTipHash string `json:"currentSelectedTipHash"`
+	ResolutionTime         int64  `json:"resolutionTime"`
 }

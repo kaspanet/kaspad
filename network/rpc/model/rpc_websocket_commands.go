@@ -135,6 +135,24 @@ func NewRescanBlocksCmd(blockHashes []string) *RescanBlocksCmd {
 	return &RescanBlocksCmd{BlockHashes: blockHashes}
 }
 
+// NotifyFinalityConflictCmd defines the notifyFinalityConflicts JSON-RPC command.
+type NotifyFinalityConflictCmd struct{}
+
+// NewNotifyNewTransactionsCmd returns a new instance which can be used to issue
+// a notifyNewTransactions JSON-RPC command.
+func NewNotifyFinalityConflictsCmd() *NotifyFinalityConflictCmd {
+	return &NotifyFinalityConflictCmd{}
+}
+
+// StopNotifyFinalityConflictCmd defines the stopNotifyFinalityConflicts JSON-RPC command.
+type StopNotifyFinalityConflictCmd struct{}
+
+// NewStopNotifyNewTransactionsCmd returns a new instance which can be used to issue
+// a stopNotifyNewTransactions JSON-RPC command.
+func NewStopNotifyFinalityConflictsCmd() *NotifyFinalityConflictCmd {
+	return &NotifyFinalityConflictCmd{}
+}
+
 func init() {
 	// The commands in this file are only usable by websockets.
 	flags := UFWebsocketOnly
@@ -149,4 +167,6 @@ func init() {
 	MustRegisterCommand("stopNotifyChainChanges", (*StopNotifyChainChangesCmd)(nil), flags)
 	MustRegisterCommand("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
 	MustRegisterCommand("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
+	MustRegisterCommand("notifyFinalityConflicts", (*NotifyFinalityConflictCmd)(nil), flags)
+	MustRegisterCommand("stopNotifyFinalityConflicts", (*StopNotifyFinalityConflictCmd)(nil), flags)
 }

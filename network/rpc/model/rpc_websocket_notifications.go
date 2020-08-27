@@ -32,6 +32,16 @@ const (
 	// from the kaspa rpc server that inform a client that the selected chain
 	// has changed.
 	ChainChangedNtfnMethod = "chainChanged"
+
+	// FinalityConflictNtfnMethod is the new method used for notifications
+	// from the kaspa rpc server that inform a client that a finality conflict
+	// has occured.
+	FinalityConflictNtfnMethod = "finalityConflict"
+
+	// FinalityConflictResolvedNtfnMethod is the new method used for notifications
+	// from the kaspa rpc server that inform a client that a finality conflict
+	// has been resolved.
+	FinalityConflictResolvedNtfnMethod = "finalityConflictResolved"
 )
 
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
@@ -125,6 +135,48 @@ func NewRelevantTxAcceptedNtfn(txHex string) *RelevantTxAcceptedNtfn {
 	return &RelevantTxAcceptedNtfn{Transaction: txHex}
 }
 
+// FinalityConflictNtfn  defines the parameters to the finalityConflict
+// JSON-RPC notification.
+type FinalityConflictNtfn struct {
+	ID                     int    `json:"id"`
+	ConflictTime           int64  `json:"conflictTime"`
+	ViolatingBlockHash     string `json:"violatingBlockHash"`
+	CurrentSelectedTipHash string `json:"currentSelectedTipHash"`
+}
+
+// NewFinalityConflictNtfn returns a new instance which can be used to issue a
+// finalityConflict JSON-RPC notification.
+func NewFinalityConflictNtfn(
+	id int, conflictTime int64, violatingBlockHash string, currentSelectedTipHash string) *FinalityConflictNtfn {
+
+	return &FinalityConflictNtfn{
+		ID:                     id,
+		ConflictTime:           conflictTime,
+		ViolatingBlockHash:     violatingBlockHash,
+		CurrentSelectedTipHash: currentSelectedTipHash,
+	}
+}
+
+// FinalityConflictResolvedNtfn defines the parameters to the
+// finalityConflictResolved JSON-RPC notification.
+type FinalityConflictResolvedNtfn struct {
+	FinalityConflictID              int   `json:"id"`
+	ResolutionTime                  int64 `json:"resolutionTime"`
+	AreAllFinalityConflictsResolved bool  `json:"areAllFinalityConflictsResolved"`
+}
+
+// NewFinalityConflictResolvedNtfn returns a new instance which can be used to issue a
+// finalityConflictResolved JSON-RPC notification.
+func NewFinalityConflictResolvedNtfn(
+	finalityConflictID int, resolutionTime int64, areAllFinalityConflictsResolved bool) *FinalityConflictResolvedNtfn {
+
+	return &FinalityConflictResolvedNtfn{
+		FinalityConflictID:              finalityConflictID,
+		ResolutionTime:                  resolutionTime,
+		AreAllFinalityConflictsResolved: areAllFinalityConflictsResolved,
+	}
+}
+
 func init() {
 	// The commands in this file are only usable by websockets and are
 	// notifications.
@@ -135,4 +187,6 @@ func init() {
 	MustRegisterCommand(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
 	MustRegisterCommand(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)
 	MustRegisterCommand(ChainChangedNtfnMethod, (*ChainChangedNtfn)(nil), flags)
+	MustRegisterCommand(FinalityConflictNtfnMethod, (*FinalityConflictNtfn)(nil), flags)
+	MustRegisterCommand(FinalityConflictResolvedNtfnMethod, (*FinalityConflictResolvedNtfn)(nil), flags)
 }

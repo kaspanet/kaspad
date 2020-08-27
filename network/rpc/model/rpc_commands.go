@@ -594,13 +594,23 @@ type GetFinalityConflictsCmd struct{}
 // getFinalityConflicts command.
 func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinalityConflictsCmd) }
 
-type InvalidateAnticoneCmd struct {
-	blockHash string
+type ResolveFinalityConflictCmd struct {
+	FinalityConflictID int      `json:"finalityConflictID"`
+	ValidBlocks        []string `json:"validBlocks"`
+	InvalidBlocks      []string `json:"invalidBlocks"`
 }
 
-// NewInvalidateAnticoneCmd returns a new instance which can be used to issue a JSON-RPC
-// invalidateAnticoneCmd command.
-func NewInvalidateAnticoneCmd() *InvalidateAnticoneCmd { return new(InvalidateAnticoneCmd) }
+// NewResolveFinalityConflictCmd returns a new instance which can be used to issue a JSON-RPC
+// resolveFinalityConflict command.
+func NewResolveFinalityConflictCmd(
+	finalityConflitID int, validBlocks []string, invalidBlocks []string) *ResolveFinalityConflictCmd {
+
+	return &ResolveFinalityConflictCmd{
+		FinalityConflictID: finalityConflitID,
+		ValidBlocks:        validBlocks,
+		InvalidBlocks:      invalidBlocks,
+	}
+}
 
 func init() {
 	// No special flags for commands in this file.
@@ -645,5 +655,5 @@ func init() {
 	MustRegisterCommand("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
 	MustRegisterCommand("version", (*VersionCmd)(nil), flags)
 	MustRegisterCommand("getFinalityConflicts", (*GetFinalityConflictsCmd)(nil), flags)
-	MustRegisterCommand("invalidateAnticoneCmd", (*InvalidateAnticoneCmd)(nil), flags)
+	MustRegisterCommand("resolveFinalityConflict", (*ResolveFinalityConflictCmd)(nil), flags)
 }
