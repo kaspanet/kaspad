@@ -352,6 +352,8 @@ func (dag *BlockDAG) isInPast(node *blockNode, other *blockNode) (bool, error) {
 }
 
 // isInPastOfAny returns true if `node` is in the past of any of `others`
+//
+// Note: this method will return true if `node` is in `others`
 func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, error) {
 	for other := range others {
 		isInPast, err := dag.isInPast(node, other)
@@ -367,6 +369,8 @@ func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, erro
 }
 
 // isInPastOfAny returns true if any one of `nodes` is in the past of any of `others`
+//
+// Note: this method will return true if `other` is in `nodes`
 func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, error) {
 	isAnyInPastOfOther := false
 
