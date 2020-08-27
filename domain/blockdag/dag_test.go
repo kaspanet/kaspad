@@ -248,7 +248,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		blockTime = blockTime.Add(time.Second)
 		node = newTestNode(dag, blockSetFromSlice(node), blockVersion, 0, blockTime)
 		dag.index.AddNode(node)
-		dag.virtual.SetTips(blockSetFromSlice(node))
+		dag.setTips(blockSetFromSlice(node))
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -734,7 +734,7 @@ func TestConfirmations(t *testing.T) {
 	}
 
 	// Check that each of the tips has a 0 confirmations
-	tips := dag.virtual.tips()
+	tips := dag.tips
 	for tip := range tips {
 		tipConfirmations, err := dag.blockConfirmations(tip)
 		if err != nil {
