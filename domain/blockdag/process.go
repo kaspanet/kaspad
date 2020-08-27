@@ -598,24 +598,20 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 		}
 	}
 
-	for {
+	for len(selected) < appmessage.MaxBlockParents && tipsHeap.Len() > 0 {
 		candidateTip := tipsHeap.pop()
 
+		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
 		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
 		if err != nil {
 			return nil, err
 		}
-
 		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
 			continue
 		}
 
 		selected.add(candidateTip)
 		mergeSetSize += mergeSetIncrease
-
-		if len(selected) == appmessage.MaxBlockParents || tipsHeap.Len() == 0 {
-			break
-		}
 	}
 
 	tempVirtual, _ := dag.newBlockNode(nil, selected)
