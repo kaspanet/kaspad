@@ -259,6 +259,30 @@ message GetBlockTemplateRequestMessage{
 }
 
 message GetBlockTemplateResponseMessage{
+  string Bits = 1;
+  int64 CurrentTime = 2;
+  repeated string ParentHashes = 3;
+  int32 MassLimit = 4;
+  repeated GetBlockTemplateTransactionMessage Transactions = 5;
+  string HashMerkleRoot = 6;
+  string AcceptedIDMerkleRoot = 7;
+  string UTXOCommitment = 8;
+  int32 Version = 9;
+  string LongPollID = 10;
+  string TargetDifficulty = 11;
+  int64 MinTime = 12;
+  int64 MaxTime = 13;
+  repeated string MutableFields = 14;
+  string NonceRange = 15;
+  bool IsSynced = 16;
+}
+
+message GetBlockTemplateTransactionMessage{
+  string Data = 1;
+  string ID = 2;
+  repeated int64 Depends = 3;
+  uint64 Mass = 4;
+  uint64 Fee = 5;
 }
 
 message RPCErrorMessage{
