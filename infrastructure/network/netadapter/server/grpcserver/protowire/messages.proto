@@ -255,6 +255,7 @@ message SubmitBlockResponseMessage{
 }
 
 message GetBlockTemplateRequestMessage{
+  string payAddress = 1;
 }
 
 message GetBlockTemplateResponseMessage{
