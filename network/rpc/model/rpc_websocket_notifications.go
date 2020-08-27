@@ -138,22 +138,22 @@ func NewRelevantTxAcceptedNtfn(txHex string) *RelevantTxAcceptedNtfn {
 // FinalityConflictNtfn  defines the parameters to the finalityConflict
 // JSON-RPC notification.
 type FinalityConflictNtfn struct {
-	ID                     int    `json:"id"`
-	ConflictTime           int64  `json:"conflictTime"`
-	ViolatingBlockHash     string `json:"violatingBlockHash"`
-	CurrentSelectedTipHash string `json:"currentSelectedTipHash"`
+	ID                 int    `json:"id"`
+	ConflictTime       int64  `json:"conflictTime"`
+	ViolatingBlockHash string `json:"violatingBlockHash"`
+	SelectedTipHash    string `json:"SelectedTipHash"`
 }
 
 // NewFinalityConflictNtfn returns a new instance which can be used to issue a
 // finalityConflict JSON-RPC notification.
 func NewFinalityConflictNtfn(
-	id int, conflictTime int64, violatingBlockHash string, currentSelectedTipHash string) *FinalityConflictNtfn {
+	id int, conflictTime int64, violatingBlockHash string, selectedTipHash string) *FinalityConflictNtfn {
 
 	return &FinalityConflictNtfn{
-		ID:                     id,
-		ConflictTime:           conflictTime,
-		ViolatingBlockHash:     violatingBlockHash,
-		CurrentSelectedTipHash: currentSelectedTipHash,
+		ID:                 id,
+		ConflictTime:       conflictTime,
+		ViolatingBlockHash: violatingBlockHash,
+		SelectedTipHash:    selectedTipHash,
 	}
 }
 

@@ -10,10 +10,10 @@ import (
 
 // FinalityConflict represents an entry in the finality conflicts event log of the DAG
 type FinalityConflict struct {
-	ID                     int
-	ConflictTime           mstime.Time
-	CurrentSelectedTipHash *daghash.Hash
-	ViolatingBlockHash     *daghash.Hash
+	ID                 int
+	ConflictTime       mstime.Time
+	SelectedTipHash    *daghash.Hash
+	ViolatingBlockHash *daghash.Hash
 
 	// Only resolved FinalityConflict will have non-null ResolutionTime
 	ResolutionTime *mstime.Time
@@ -36,7 +36,7 @@ func (dag *BlockDAG) finalityConflictByID(id int) (*FinalityConflict, bool) {
 	return nil, false
 }
 
-func (dag *BlockDAG) addFinalityConflict(node *blockNode) {
+func (dag *BlockDAG) addFinalityConflict(violatingNode *blockNode) {
 	topFinalityConflictID := 0
 	for _, finalityConfict := range dag.finalityConflicts {
 		if finalityConfict.ID > topFinalityConflictID {
@@ -45,10 +45,10 @@ func (dag *BlockDAG) addFinalityConflict(node *blockNode) {
 	}
 
 	finalityConflict := &FinalityConflict{
-		ID:                     topFinalityConflictID + 1,
-		ConflictTime:           mstime.Now(),
-		CurrentSelectedTipHash: dag.SelectedTipHash(),
-		ViolatingBlockHash:     node.hash,
+		ID:                 topFinalityConflictID + 1,
+		ConflictTime:       mstime.Now(),
+		SelectedTipHash:    dag.SelectedTipHash(),
+		ViolatingBlockHash: violatingNode.hash,
 	}
 
 	dag.finalityConflicts = append(dag.finalityConflicts, finalityConflict)
@@ -64,24 +64,24 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 		return errors.Errorf("No finality conflict with ID %d found", id)
 	}
 
-	currentSelectedTip, violatingBlock, validBlocks, invalidBlocks, err :=
+	selectedTip, violatingBlock, validBlocks, invalidBlocks, err :=
 		dag.lookupFinalityConflictBlocks(finalityConflict, validBlockHashes, invalidBlockHashes)
 	if err != nil {
 		return err
 	}
 
-	violatingBranchStart, currentSelectedTipBranchStart :=
-		dag.findFinalityConflictBranchStarts(violatingBlock, currentSelectedTip)
+	violatingBranchStart, selectedTipBranchStart :=
+		dag.findFinalityConflictBranchStarts(violatingBlock, selectedTip)
 
-	isSwitchingBranches, err := dag.checkIfSwitchingBranches(currentSelectedTipBranchStart, violatingBranchStart,
-		currentSelectedTip, violatingBlock, validBlocks, invalidBlocks)
+	isSwitchingBranches, err := dag.checkIfSwitchingBranches(selectedTipBranchStart, violatingBranchStart,
+		selectedTip, violatingBlock, validBlocks, invalidBlocks)
 	if err != nil {
 		return err
 	}
 
 	if !isSwitchingBranches {
-		isKeepingBranches, err := dag.checkIfKeepingBranches(currentSelectedTipBranchStart, violatingBranchStart,
-			currentSelectedTip, violatingBlock, validBlocks, invalidBlocks)
+		isKeepingBranches, err := dag.checkIfKeepingBranches(selectedTipBranchStart, violatingBranchStart,
+			selectedTip, violatingBlock, validBlocks, invalidBlocks)
 		if err != nil {
 			return err
 		}
@@ -94,7 +94,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 	if isSwitchingBranches {
 		validBranchStart = violatingBranchStart
 	} else {
-		validBranchStart = currentSelectedTip
+		validBranchStart = selectedTip
 	}
 
 	addedTips := newBlockSet()
@@ -212,12 +212,12 @@ func (dag *BlockDAG) updateValidBlocksFuture(validBlocks blockSet) (addedTips bl
 
 func (dag *BlockDAG) lookupFinalityConflictBlocks(
 	finalityConflict *FinalityConflict, validBlockHashes []*daghash.Hash, invalidBlockHashes []*daghash.Hash) (
-	currentSelectedTip, violatingBlock *blockNode, validBlocks, invalidBlocks blockSet, err error) {
+	selectedTip, violatingBlock *blockNode, validBlocks, invalidBlocks blockSet, err error) {
 
-	currentSelectedTip, ok := dag.index.LookupNode(finalityConflict.CurrentSelectedTipHash)
+	selectedTip, ok := dag.index.LookupNode(finalityConflict.SelectedTipHash)
 	if !ok {
 		return nil, nil, nil, nil,
-			errors.Errorf("Couldn't find currentSelectedTip with hash %s", finalityConflict.CurrentSelectedTipHash)
+			errors.Errorf("Couldn't find selectedTip with hash %s", finalityConflict.SelectedTipHash)
 	}
 
 	violatingBlock, ok = dag.index.LookupNode(finalityConflict.ViolatingBlockHash)
@@ -238,28 +238,28 @@ func (dag *BlockDAG) lookupFinalityConflictBlocks(
 	}
 	invalidBlocks = blockSetFromSlice(invalidBlocksSlice...)
 
-	return currentSelectedTip, violatingBlock, validBlocks, invalidBlocks, nil
+	return selectedTip, violatingBlock, validBlocks, invalidBlocks, nil
 }
 
-func (dag *BlockDAG) findFinalityConflictBranchStarts(currentSelectedTip *blockNode, violatingBlock *blockNode) (
-	currentSelectedTipBranchStart, violatingBranchStart *blockNode) {
+func (dag *BlockDAG) findFinalityConflictBranchStarts(selectedTip *blockNode, violatingBlock *blockNode) (
+	selectedTipBranchStart, violatingBranchStart *blockNode) {
 
-	currentSelectedTipBranchStart = currentSelectedTip
+	selectedTipBranchStart = selectedTip
 	violatingBranchStart = violatingBlock
 
-	for currentSelectedTipBranchStart.selectedParent != violatingBranchStart.selectedParent {
-		if currentSelectedTipBranchStart.selectedParent.blueScore > violatingBranchStart.selectedParent.blueScore {
-			currentSelectedTipBranchStart = currentSelectedTipBranchStart.selectedParent
+	for selectedTipBranchStart.selectedParent != violatingBranchStart.selectedParent {
+		if selectedTipBranchStart.selectedParent.blueScore > violatingBranchStart.selectedParent.blueScore {
+			selectedTipBranchStart = selectedTipBranchStart.selectedParent
 		} else {
 			violatingBranchStart = violatingBranchStart.selectedParent
 		}
 	}
 
-	return currentSelectedTipBranchStart, violatingBranchStart
+	return selectedTipBranchStart, violatingBranchStart
 }
 
 func (dag *BlockDAG) checkIfSwitchingBranches(
-	currentSelectedTipBranchStart, violatingBranchStart, currentSelectedTip, violatingBlock *blockNode,
+	selectedTipBranchStart, violatingBranchStart, selectedTip, violatingBlock *blockNode,
 	validBlocks, invalidBlocks blockSet) (bool, error) {
 
 	// Make sure that all validBlocks have violatingBranchStart in their selectedParentChain
@@ -268,8 +268,8 @@ func (dag *BlockDAG) checkIfSwitchingBranches(
 		return false, err
 	}
 
-	// Make sure that all invalidBlocks have currentSelectedTipBranchStart in their selectedParentChain
-	isOK, err = dag.areAllInSelectedParentChainOf(invalidBlocks, currentSelectedTipBranchStart)
+	// Make sure that all invalidBlocks have selectedTipBranchStart in their selectedParentChain
+	isOK, err = dag.areAllInSelectedParentChainOf(invalidBlocks, selectedTipBranchStart)
 	if err != nil || !isOK {
 		return false, err
 	}
@@ -280,8 +280,8 @@ func (dag *BlockDAG) checkIfSwitchingBranches(
 		return false, err
 	}
 
-	// Make sure that at least one invalidBlock is currentSelectedTip or has currentSelectedTip in his past
-	isOK, err = dag.isAnyInPastOf(invalidBlocks, currentSelectedTip)
+	// Make sure that at least one invalidBlock is selectedTip or has selectedTip in his past
+	isOK, err = dag.isAnyInPastOf(invalidBlocks, selectedTip)
 	if err != nil || !isOK {
 		return false, err
 	}
@@ -290,7 +290,7 @@ func (dag *BlockDAG) checkIfSwitchingBranches(
 }
 
 func (dag *BlockDAG) checkIfKeepingBranches(
-	currentSelectedTipBranchStart, violatingBranchStart, currentSelectedTip, violatingBlock *blockNode,
+	selectedTipBranchStart, violatingBranchStart, selectedTip, violatingBlock *blockNode,
 	validBlocks, invalidBlocks blockSet) (bool, error) {
 
 	// Make sure that all invalidBlocks have violatingBranchStart in their selectedParentChain
@@ -299,8 +299,8 @@ func (dag *BlockDAG) checkIfKeepingBranches(
 		return false, err
 	}
 
-	// Make sure that all validBlocks have currentSelectedTipBranchStart in their selectedParentChain
-	isOK, err = dag.areAllInSelectedParentChainOf(validBlocks, currentSelectedTipBranchStart)
+	// Make sure that all validBlocks have selectedTipBranchStart in their selectedParentChain
+	isOK, err = dag.areAllInSelectedParentChainOf(validBlocks, selectedTipBranchStart)
 	if err != nil || !isOK {
 		return false, err
 	}
@@ -311,8 +311,8 @@ func (dag *BlockDAG) checkIfKeepingBranches(
 		return false, err
 	}
 
-	// Make sure that at least one validBlock is currentSelectedTip or has currentSelectedTip in his past
-	isOK, err = dag.isAnyInPastOf(validBlocks, currentSelectedTip)
+	// Make sure that at least one validBlock is selectedTip or has selectedTip in his past
+	isOK, err = dag.isAnyInPastOf(validBlocks, selectedTip)
 	if err != nil || !isOK {
 		return false, err
 	}
