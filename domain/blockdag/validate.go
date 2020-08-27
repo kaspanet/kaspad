@@ -729,6 +729,20 @@ func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestPa
 
 // validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
 func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parents blockSet) error {
+	if len(parents) > appmessage.MaxNumParentBlocks {
+		return ruleError(ErrTooManyParents,
+			fmt.Sprintf("block %s points to %d parents > MaxNumParentBlocks: %d",
+				blockHeader.BlockHash(), len(parents), appmessage.MaxNumParentBlocks))
+	}
+
+	for parent := range parents {
+		if parent.status == statusManuallyRejected {
+			return ruleError(ErrTooManyParents,
+				fmt.Sprintf("block %s points to %s which was manually rejected",
+					blockHeader.BlockHash(), parent.hash))
+		}
+	}
+
 	for parentA := range parents {
 		for parentB := range parents {
 			if parentA == parentB {
