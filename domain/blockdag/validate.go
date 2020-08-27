@@ -358,9 +358,9 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	if err != nil {
 		return err
 	}
-	if txMass > appmessage.MaxMassPerBlock {
+	if txMass > appmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
-			"allowed limit of %d", tx.ID(), txMass, appmessage.MaxMassPerBlock)
+			"allowed limit of %d", tx.ID(), txMass, appmessage.MaxMassAcceptedByBlock)
 		return ruleError(ErrTxMassTooHigh, str)
 	}
 	return nil
@@ -404,6 +404,10 @@ func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 		previousScriptPubKeys[txInIndex] = entry.ScriptPubKey()
 	}
 	return CalcTxMass(tx, previousScriptPubKeys), nil
+}
+
+func calcCoinbaseTxMass(tx *util.Tx) uint64 {
+	return CalcTxMass(tx, nil)
 }
 
 // CalcTxMass sums up and returns the "mass" of a transaction. This number
@@ -556,9 +560,9 @@ func (dag *BlockDAG) checkBlockContainsLessThanMaxBlockMassTransactions(block *u
 	// else it is certainly over the block mass limit.
 	transactions := block.Transactions()
 	numTx := len(transactions)
-	if numTx > appmessage.MaxMassPerBlock {
+	if numTx > appmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, appmessage.MaxMassPerBlock)
+			"got %d, max %d", numTx, appmessage.MaxMassAcceptedByBlock)
 		return ruleError(ErrBlockMassTooHigh, str)
 	}
 	return nil
@@ -980,10 +984,9 @@ func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiI
 	return totalSompiInAfter, nil
 }
 
-func checkReferencedOutputsAreAvailable(tx *util.Tx, utxoSet UTXOSet, txIn *appmessage.TxIn, txInIndex int) (
-	*UTXOEntry, error) {
+func checkReferencedOutputsAreAvailable(
+	tx *util.Tx, utxoSet UTXOSet, txIn *appmessage.TxIn, txInIndex int) (*UTXOEntry, error) {
 
-	// Ensure the referenced input transaction is available.
 	entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 	if !ok {
 		str := fmt.Sprintf("output %s referenced from "+
@@ -1014,8 +1017,8 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 	return nil
 }
 
-func (dag *BlockDAG) checkConnectBlockToPastUTXO(node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (
-	feeData compactFeeData, err error) {
+func (dag *BlockDAG) checkConnectBlockToPastUTXO(
+	node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (feeData compactFeeData, err error) {
 
 	selectedParentMedianTime := node.selectedParentMedianTime()
 
@@ -1117,8 +1120,7 @@ func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
 	if err != nil {
 		return err
 	}
-	if !SequenceLockActive(sequenceLock, node.blueScore,
-		medianTime) {
+	if !SequenceLockActive(sequenceLock, node.blueScore, medianTime) {
 		str := fmt.Sprintf("block contains " +
 			"transaction whose input sequence " +
 			"locks are not met")
@@ -1221,9 +1223,9 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []
 
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
-	if accumulatedMassAfter < txMass || accumulatedMassAfter > appmessage.MaxMassPerBlock {
+	if accumulatedMassAfter < txMass || accumulatedMassAfter > appmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("block accepts transactions with accumulated mass higher then allowed limit of %d",
-			appmessage.MaxMassPerBlock)
+			appmessage.MaxMassAcceptedByBlock)
 		return 0, ruleError(ErrBlockMassTooHigh, str)
 	}
 
