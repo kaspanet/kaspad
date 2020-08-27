@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// chainUpdates represents the updates made to the selected parent chain after
+// selectedParentChainUpdates represents the updates made to the selected parent chain after
 // a block had been added to the DAG.
-type chainUpdates struct {
+type selectedParentChainUpdates struct {
 	removedChainBlockHashes []*daghash.Hash
 	addedChainBlockHashes   []*daghash.Hash
 }
@@ -233,7 +233,7 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*chainUpdates, error) {
+	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*selectedParentChainUpdates, error) {
 
 	err := dag.checkBlockTransactionsFinalized(block, node, flags)
 	if err != nil {
@@ -262,6 +262,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		}
 		if isViolatingSubjectiveFinality {
 			dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
+			dag.addFinalityConflict(node)
 		}
 	}
 
@@ -306,10 +307,16 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	return chainUpdates, nil
 }
 
-func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*chainUpdates, error) {
-	didVirtualParentsChange, virtualSelectedParentChainUpdates, err := dag.addTip(node)
-	if err != nil {
-		return nil, err
+func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*selectedParentChainUpdates, error) {
+	nodeStatus := dag.index.BlockNodeStatus(node)
+	var didVirtualParentsChange bool
+	var chainUpdates *selectedParentChainUpdates
+	if nodeStatus != statusViolatedSubjectiveFinality && nodeStatus != statusManuallyRejected {
+		var err error
+		didVirtualParentsChange, chainUpdates, err = dag.addTip(node)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if didVirtualParentsChange {
@@ -340,7 +347,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 			return nil, err
 		}
 	}
-	return virtualSelectedParentChainUpdates, nil
+	return chainUpdates, nil
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(
@@ -453,11 +460,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 	}
 
 	// Update DAG state.
-	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LocalSubnetworkID: dag.subnetworkID,
-	}
-	err = saveDAGState(dbTx, state)
+	err = dag.saveState(dbTx)
 	if err != nil {
 		return err
 	}
@@ -557,7 +560,7 @@ func (dag *BlockDAG) handleConnectBlockError(err error, newNode *blockNode) erro
 // notifyBlockAccepted notifies the caller that the new block was
 // accepted into the block DAG. The caller would typically want to
 // react by relaying the inventory to other peers.
-func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *chainUpdates, flags BehaviorFlags) {
+func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *selectedParentChainUpdates, flags BehaviorFlags) {
 	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{
 		Block:         block,
 		WasUnorphaned: flags&BFWasUnorphaned != 0,

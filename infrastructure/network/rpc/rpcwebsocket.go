@@ -17,6 +17,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/mstime"
+
+	"github.com/kaspanet/kaspad/domain/blockdag"
+
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
@@ -228,6 +232,35 @@ func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*da
 	}
 }
 
+func (m *wsNotificationManager) NotifyFinalityConflict(finalityConflict *blockdag.FinalityConflict) {
+	n := notificationFinalityConflict(*finalityConflict)
+	// As NotifyFinalityConflict will be called by the DAG manager
+	// and the RPC server may no longer be running, use a select
+	// statement to unblock enqueuing the notification once the RPC
+	// server has begun shutting down.
+	select {
+	case m.queueNotification <- n:
+	case <-m.quit:
+	}
+}
+
+func (m *wsNotificationManager) NotifyFinalityConflictResolved(
+	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool) {
+	n := notificationFinalityConflictResolved{
+		finalityConflictID:              finalityConflictID,
+		resolutionTime:                  resolutionTime.UnixMilliseconds(),
+		areAllFinalityConflictsResolved: areAllFinalityConflictsResolved,
+	}
+	// As NotifyFinalityConflictResolved will be called by the DAG manager
+	// and the RPC server may no longer be running, use a select
+	// statement to unblock enqueuing the notification once the RPC
+	// server has begun shutting down.
+	select {
+	case m.queueNotification <- n:
+	case <-m.quit:
+	}
+}
+
 // NotifyMempoolTx passes a transaction accepted by mempool to the
 // notification manager for transaction notification processing. If
 // isNew is true, the tx is is a new transaction, rather than one
@@ -372,9 +405,18 @@ type notificationChainChanged struct {
 	removedChainBlockHashes []*daghash.Hash
 	addedChainBlocksHashes  []*daghash.Hash
 }
+
 type notificationTxAcceptedByMempool struct {
 	isNew bool
 	tx    *util.Tx
+}
+
+type notificationFinalityConflict blockdag.FinalityConflict
+
+type notificationFinalityConflictResolved struct {
+	finalityConflictID              int
+	resolutionTime                  int64
+	areAllFinalityConflictsResolved bool
 }
 
 // Notification control requests
@@ -384,6 +426,8 @@ type notificationRegisterBlocks wsClient
 type notificationUnregisterBlocks wsClient
 type notificationRegisterChainChanges wsClient
 type notificationUnregisterChainChanges wsClient
+type notificationRegisterFinalityConflicts wsClient
+type notificationUnregisterFinalityConflicts wsClient
 type notificationRegisterNewMempoolTxs wsClient
 type notificationUnregisterNewMempoolTxs wsClient
 
@@ -444,6 +488,14 @@ out:
 				chainChangeNotifications[wsc.quit] = wsc
 
 			case *notificationUnregisterChainChanges:
+				wsc := (*wsClient)(n)
+				delete(chainChangeNotifications, wsc.quit)
+
+			case *notificationRegisterFinalityConflicts:
+				wsc := (*wsClient)(n)
+				chainChangeNotifications[wsc.quit] = wsc
+
+			case *notificationUnregisterFinalityConflicts:
 				wsc := (*wsClient)(n)
 				delete(chainChangeNotifications, wsc.quit)
 
@@ -517,6 +569,18 @@ func (m *wsNotificationManager) RegisterChainChanges(wsc *wsClient) {
 // websocket client.
 func (m *wsNotificationManager) UnregisterChainChanges(wsc *wsClient) {
 	m.queueNotification <- (*notificationUnregisterChainChanges)(wsc)
+}
+
+// RegisterFinalityConflicts requests chain change notifications to the passed
+// websocket client.
+func (m *wsNotificationManager) RegisterFinalityConflicts(wsc *wsClient) {
+	m.queueNotification <- (*notificationRegisterFinalityConflicts)(wsc)
+}
+
+// UnregisterFinalityConflicts removes chain change notifications for the passed
+// websocket client.
+func (m *wsNotificationManager) UnregisterFinalityConflicts(wsc *wsClient) {
+	m.queueNotification <- (*notificationUnregisterFinalityConflicts)(wsc)
 }
 
 // notifyChainChanged notifies websocket clients that have registered for

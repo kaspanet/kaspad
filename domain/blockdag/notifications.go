@@ -6,8 +6,10 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // NotificationType represents the type of a notification message.
@@ -26,13 +28,21 @@ const (
 	// NTChainChanged indicates that selected parent
 	// chain had changed.
 	NTChainChanged
+
+	// NTFinalityConflict indicates that a finality conflict has just occurred
+	NTFinalityConflict
+
+	// NTFinalityConflict indicates that a finality conflict has been resolved
+	NTFinalityConflictResolved
 )
 
 // notificationTypeStrings is a map of notification types back to their constant
 // names for pretty printing.
 var notificationTypeStrings = map[NotificationType]string{
-	NTBlockAdded:   "NTBlockAdded",
-	NTChainChanged: "NTChainChanged",
+	NTBlockAdded:               "NTBlockAdded",
+	NTChainChanged:             "NTChainChanged",
+	NTFinalityConflict:         "NTFinalityConflict",
+	NTFinalityConflictResolved: "NTFinalityConflictResolved",
 }
 
 // String returns the NotificationType in human-readable form.
@@ -86,4 +96,18 @@ type BlockAddedNotificationData struct {
 type ChainChangedNotificationData struct {
 	RemovedChainBlockHashes []*daghash.Hash
 	AddedChainBlockHashes   []*daghash.Hash
+}
+
+// FinalityConflictNotificationData defines data to be sent along with a
+// FinalityConflict notification
+type FinalityConflictNotificationData struct {
+	*FinalityConflict
+}
+
+// FinalityConflictResolvedNotificationData defines data to be sent along with a
+// FinalityConflictResolved notification
+type FinalityConflictResolvedNotificationData struct {
+	FinalityConflictID              int
+	ResolutionTime                  mstime.Time
+	AreAllFinalityConflictsResolved bool
 }

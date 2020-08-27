@@ -10,6 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -58,6 +59,18 @@ func (bi *blockIndex) LookupNode(hash *daghash.Hash) (*blockNode, bool) {
 	defer bi.RUnlock()
 	node, ok := bi.index[*hash]
 	return node, ok
+}
+
+func (bi *blockIndex) LookupNodes(hashes []*daghash.Hash) ([]*blockNode, error) {
+	blocks := make([]*blockNode, 0, len(hashes))
+	for _, validBlockHash := range hashes {
+		validBlock, ok := bi.LookupNode(validBlockHash)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find block with hash %s", validBlockHash)
+		}
+		blocks = append(blocks, validBlock)
+	}
+	return blocks, nil
 }
 
 // AddNode adds the provided node to the block index and marks it as dirty.

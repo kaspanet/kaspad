@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
@@ -36,6 +37,7 @@ type notificationState struct {
 	notifyChainChanges      bool
 	notifyNewTx             bool
 	notifyNewTxVerbose      bool
+	notifyFinalityConflicts bool
 	notifyNewTxSubnetworkID *string
 }
 
@@ -47,6 +49,7 @@ func (s *notificationState) Copy() *notificationState {
 	stateCopy.notifyNewTx = s.notifyNewTx
 	stateCopy.notifyNewTxVerbose = s.notifyNewTxVerbose
 	stateCopy.notifyNewTxSubnetworkID = s.notifyNewTxSubnetworkID
+	stateCopy.notifyFinalityConflicts = s.notifyFinalityConflicts
 
 	return &stateCopy
 }
@@ -113,6 +116,19 @@ type NotificationHandlers struct {
 	// NotifyNewTransactions with the verbose flag set to true has been
 	// made to register for the notification and the function is non-nil.
 	OnTxAcceptedVerbose func(txDetails *model.TxRawResult)
+
+	// OnFinalityConflict is invoked when a finality conflict occurs.
+	// It will only be invoked if a preceding call to
+	// NotifyFinalityConflicts has been made to register for the
+	// notification and the function is non-nil.
+	OnFinalityConflict func(finalityConflict *model.FinalityConflictNtfn)
+
+	// OnFinalityConflictResolved is invoked when a finality conflict
+	// has been resolved. It will only be invoked if a preceding call to
+	// NotifyFinalityConflicts has been made to register for the
+	// notification and the function is non-nil.
+	OnFinalityConflictReolved func(
+		finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received. This typically means the notification handling code
@@ -221,6 +237,37 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		}
 
 		c.ntfnHandlers.OnTxAcceptedVerbose(rawTx)
+
+	case model.FinalityConflictNtfnMethod:
+		// Ignore the notification if the client is not interested in
+		// it.
+		if c.ntfnHandlers.OnFinalityConflict == nil {
+			return
+		}
+
+		finalityConflict, err := parseFinalityConflictNtfnParams(ntfn.Params)
+		if err != nil {
+			log.Warnf("Received invalid finality conflict notification: %s", err)
+			return
+		}
+
+		c.ntfnHandlers.OnFinalityConflict(finalityConflict)
+
+	case model.FinalityConflictResolvedNtfnMethod:
+		// Ignore the notification if the client is not interested in
+		// it.
+		if c.ntfnHandlers.OnFinalityConflictReolved == nil {
+			return
+		}
+
+		finalityConflictID, resolutionTime, areAllFinalityConflictsResolved, err :=
+			parseFinalityConflictResolvedNtfnParams(ntfn.Params)
+		if err != nil {
+			log.Warnf("Received invalid finality conflict notification: %s", err)
+			return
+		}
+
+		c.ntfnHandlers.OnFinalityConflictReolved(finalityConflictID, resolutionTime, areAllFinalityConflictsResolved)
 
 	// OnUnknownNotification
 	default:
@@ -442,6 +489,38 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*model.TxRawRes
 	return &rawTx, nil
 }
 
+func parseFinalityConflictNtfnParams(params []json.RawMessage) (*model.FinalityConflictNtfn, error) {
+	if len(params) != 1 {
+		return nil, wrongNumParams(len(params))
+	}
+
+	var finalityConflictNtfn model.FinalityConflictNtfn
+	err := json.Unmarshal(params[0], &finalityConflictNtfn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &finalityConflictNtfn, nil
+}
+
+func parseFinalityConflictResolvedNtfnParams(params []json.RawMessage) (
+	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool, err error) {
+
+	if len(params) != 1 {
+		return 0, mstime.Time{}, false, wrongNumParams(len(params))
+	}
+
+	var finalityConflictResolvedNtfn model.FinalityConflictResolvedNtfn
+	err = json.Unmarshal(params[0], &finalityConflictResolvedNtfn)
+	if err != nil {
+		return 0, mstime.Time{}, false, err
+	}
+
+	return finalityConflictResolvedNtfn.FinalityConflictID,
+		mstime.UnixMilliseconds(finalityConflictResolvedNtfn.ResolutionTime),
+		finalityConflictResolvedNtfn.AreAllFinalityConflictsResolved, nil
+}
+
 // FutureNotifyBlocksResult is a future promise to deliver the result of a
 // NotifyBlocksAsync RPC invocation (or an applicable error).
 type FutureNotifyBlocksResult chan *response
@@ -613,4 +692,47 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 // during mempool acceptance, and for block acceptance.
 func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []appmessage.Outpoint) error {
 	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
+}
+
+// FutureNotifyFinalityConflictsResult is a future promise to deliver the result of a
+// NotifyFinalityConflictsAsync RPC invocation (or an applicable error).
+type FutureNotifyFinalityConflictsResult chan *response
+
+// Receive waits for the response promised by the future and returns an error
+// if the registration was not successful.
+func (r FutureNotifyFinalityConflictsResult) Receive() error {
+	_, err := receiveFuture(r)
+	return err
+}
+
+// NotifyFinalityConflictsAsync returns an instance of a type that can be used to get the
+// result of the RPC at some future time by invoking the Receive function on
+// the returned instance.
+//
+// See NotifyFinalityConflicts for the blocking version and more details.
+func (c *Client) NotifyFinalityConflictsAsync() FutureNotifyFinalityConflictsResult {
+	// Not supported in HTTP POST mode.
+	if c.config.HTTPPostMode {
+		return newFutureError(ErrWebsocketsRequired)
+	}
+
+	// Ignore the notification if the client is not interested in
+	// notifications.
+	if c.ntfnHandlers == nil {
+		return newNilFutureResult()
+	}
+
+	cmd := model.NewNotifyFinalityConflictsCmd()
+	return c.sendCmd(cmd)
+}
+
+// NotifyFinalityConflicts registers the client to receive notifications when
+// finality conflicts occur. The notifications are delivered to the notification
+// handlers associated with the client. Calling this function has no effect
+// if there are no notification handlers and will result in an error if the
+// client is configured to run in HTTP POST mode.
+//
+// The notifications delivered as a result of this call will be via OnBlockAdded
+func (c *Client) NotifyFinalityConflicts() error {
+	return c.NotifyFinalityConflictsAsync().Receive()
 }

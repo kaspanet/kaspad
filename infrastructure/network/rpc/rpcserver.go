@@ -57,37 +57,39 @@ type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, er
 // a dependency loop.
 var rpcHandlers map[string]commandHandler
 var rpcHandlersBeforeInit = map[string]commandHandler{
-	"connect":              handleConnect,
-	"debugLevel":           handleDebugLevel,
-	"getSelectedTip":       handleGetSelectedTip,
-	"getSelectedTipHash":   handleGetSelectedTipHash,
-	"getBlock":             handleGetBlock,
-	"getBlocks":            handleGetBlocks,
-	"getBlockDagInfo":      handleGetBlockDAGInfo,
-	"getBlockCount":        handleGetBlockCount,
-	"getBlockHeader":       handleGetBlockHeader,
-	"getBlockTemplate":     handleGetBlockTemplate,
-	"getChainFromBlock":    handleGetChainFromBlock,
-	"getConnectionCount":   handleGetConnectionCount,
-	"getCurrentNet":        handleGetCurrentNet,
-	"getDifficulty":        handleGetDifficulty,
-	"getHeaders":           handleGetHeaders,
-	"getTopHeaders":        handleGetTopHeaders,
-	"getInfo":              handleGetInfo,
-	"getMempoolInfo":       handleGetMempoolInfo,
-	"getMempoolEntry":      handleGetMempoolEntry,
-	"getConnectedPeerInfo": handleGetConnectedPeerInfo,
-	"getPeerAddresses":     handleGetPeerAddresses,
-	"getRawMempool":        handleGetRawMempool,
-	"getSubnetwork":        handleGetSubnetwork,
-	"getTxOut":             handleGetTxOut,
-	"help":                 handleHelp,
-	"disconnect":           handleDisconnect,
-	"sendRawTransaction":   handleSendRawTransaction,
-	"stop":                 handleStop,
-	"submitBlock":          handleSubmitBlock,
-	"uptime":               handleUptime,
-	"version":              handleVersion,
+	"connect":                  handleConnect,
+	"debugLevel":               handleDebugLevel,
+	"getSelectedTip":           handleGetSelectedTip,
+	"getSelectedTipHash":       handleGetSelectedTipHash,
+	"getBlock":                 handleGetBlock,
+	"getBlocks":                handleGetBlocks,
+	"getBlockDagInfo":          handleGetBlockDAGInfo,
+	"getBlockCount":            handleGetBlockCount,
+	"getBlockHeader":           handleGetBlockHeader,
+	"getBlockTemplate":         handleGetBlockTemplate,
+	"getChainFromBlock":        handleGetChainFromBlock,
+	"getConnectionCount":       handleGetConnectionCount,
+	"getCurrentNet":            handleGetCurrentNet,
+	"getDifficulty":            handleGetDifficulty,
+	"getFinalityConflicts":     handleGetFinalityConflicts,
+	"resolveFinalityConflicts": handleResolveFinalityConflict,
+	"getHeaders":               handleGetHeaders,
+	"getTopHeaders":            handleGetTopHeaders,
+	"getInfo":                  handleGetInfo,
+	"getMempoolInfo":           handleGetMempoolInfo,
+	"getMempoolEntry":          handleGetMempoolEntry,
+	"getConnectedPeerInfo":     handleGetConnectedPeerInfo,
+	"getPeerAddresses":         handleGetPeerAddresses,
+	"getRawMempool":            handleGetRawMempool,
+	"getSubnetwork":            handleGetSubnetwork,
+	"getTxOut":                 handleGetTxOut,
+	"help":                     handleHelp,
+	"disconnect":               handleDisconnect,
+	"sendRawTransaction":       handleSendRawTransaction,
+	"stop":                     handleStop,
+	"submitBlock":              handleSubmitBlock,
+	"uptime":                   handleUptime,
+	"version":                  handleVersion,
 }
 
 // Commands that are currently unimplemented, but should ultimately be.
@@ -761,6 +763,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockAdded(block)
+
 	case blockdag.NTChainChanged:
 		data, ok := notification.Data.(*blockdag.ChainChangedNotificationData)
 		if !ok {
@@ -777,6 +780,27 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		// Notify registered websocket clients of chain changes.
 		s.ntfnMgr.NotifyChainChanged(data.RemovedChainBlockHashes,
 			data.AddedChainBlockHashes)
+
+	case blockdag.NTFinalityConflict:
+		data, ok := notification.Data.(*blockdag.FinalityConflictNotificationData)
+		if !ok {
+			log.Warnf("Finality conflict notification data is of wrong type.")
+			break
+		}
+
+		// Notify registered websocket clients of finality conflict.
+		s.ntfnMgr.NotifyFinalityConflict(data.FinalityConflict)
+
+	case blockdag.NTFinalityConflictResolved:
+		data, ok := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
+		if !ok {
+			log.Warnf("Finality conflict notification data is of wrong type.")
+			break
+		}
+
+		// Notify registered websocket clients of finality conflict resolution.
+		s.ntfnMgr.NotifyFinalityConflictResolved(
+			data.FinalityConflictID, data.ResolutionTime, data.AreAllFinalityConflictsResolved)
 	}
 }
 

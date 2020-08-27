@@ -48,7 +48,7 @@ func newVirtualBlock(dag *BlockDAG, parents blockSet) *virtualBlock {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *chainUpdates {
+func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *selectedParentChainUpdates {
 	var intersectionNode *blockNode
 	nodesToAdd := make([]*blockNode, 0)
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
@@ -90,7 +90,7 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *ch
 	}
 	v.selectedParentChainSlice = append(v.selectedParentChainSlice, nodesToAdd...)
 
-	return &chainUpdates{
+	return &selectedParentChainUpdates{
 		removedChainBlockHashes: removedChainBlockHashes,
 		addedChainBlockHashes:   addedChainBlockHashes,
 	}

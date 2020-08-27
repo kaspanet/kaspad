@@ -588,6 +588,32 @@ type GetPeerAddressesCmd struct {
 // getPeerAddresses command.
 func NewGetPeerAddressesCmd() *GetPeerAddressesCmd { return new(GetPeerAddressesCmd) }
 
+// GetFinalityConflictsCmd  defines the getFinalityConflicts JSON-RPC command.
+type GetFinalityConflictsCmd struct{}
+
+// NewGetFinalityConflictsCmd returns a new instance which can be used to issue a JSON-RPC
+// getFinalityConflicts command.
+func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinalityConflictsCmd) }
+
+// ResolveFinalityConflictCmd  defines the resolveFinalityConflict JSON-RPC command.
+type ResolveFinalityConflictCmd struct {
+	FinalityConflictID int      `json:"finalityConflictID"`
+	ValidBlockHashes   []string `json:"validBlockHashes"`
+	InvalidBlockHashes []string `json:"invalidBlockHashes"`
+}
+
+// NewResolveFinalityConflictCmd returns a new instance which can be used to issue a JSON-RPC
+// resolveFinalityConflict command.
+func NewResolveFinalityConflictCmd(
+	finalityConflitID int, validBlockHashes []string, invalidBlockHashes []string) *ResolveFinalityConflictCmd {
+
+	return &ResolveFinalityConflictCmd{
+		FinalityConflictID: finalityConflitID,
+		ValidBlockHashes:   validBlockHashes,
+		InvalidBlockHashes: invalidBlockHashes,
+	}
+}
+
 func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
@@ -630,4 +656,6 @@ func init() {
 	MustRegisterCommand("getHeaders", (*GetHeadersCmd)(nil), flags)
 	MustRegisterCommand("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
 	MustRegisterCommand("version", (*VersionCmd)(nil), flags)
+	MustRegisterCommand("getFinalityConflicts", (*GetFinalityConflictsCmd)(nil), flags)
+	MustRegisterCommand("resolveFinalityConflict", (*ResolveFinalityConflictCmd)(nil), flags)
 }
