@@ -765,6 +765,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockAdded(block)
+
 	case blockdag.NTChainChanged:
 		data, ok := notification.Data.(*blockdag.ChainChangedNotificationData)
 		if !ok {
@@ -781,6 +782,27 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		// Notify registered websocket clients of chain changes.
 		s.ntfnMgr.NotifyChainChanged(data.RemovedChainBlockHashes,
 			data.AddedChainBlockHashes)
+
+	case blockdag.NTFinalityConflict:
+		data, ok := notification.Data.(*blockdag.FinalityConflictNotificationData)
+		if !ok {
+			log.Warnf("Finality conflict notification data is of wrong type.")
+			break
+		}
+
+		// Notify registered websocket clients of finality conflict.
+		s.ntfnMgr.NotifyFinalityConflict(data.FinalityConflict)
+
+	case blockdag.NTFinalityConflictResolved:
+		data, ok := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
+		if !ok {
+			log.Warnf("Finality conflict notification data is of wrong type.")
+			break
+		}
+
+		// Notify registered websocket clients of finality conflict resolution.
+		s.ntfnMgr.NotifyFinalityConflictResolved(
+			data.FinalityConflictID, data.ResolutionTime, data.AreAllFinalityConflictsResolved)
 	}
 }
 

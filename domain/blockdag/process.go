@@ -311,10 +311,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*chainUpdates, error) {
 	nodeStatus := dag.index.BlockNodeStatus(node)
 	var didVirtualParentsChange bool
-	var virtualSelectedParentChainUpdates *chainUpdates
+	var chainUpdates *chainUpdates
 	if nodeStatus != statusViolatedSubjectiveFinality && nodeStatus != statusManuallyRejected {
 		var err error
-		didVirtualParentsChange, virtualSelectedParentChainUpdates, err = dag.addTip(node)
+		didVirtualParentsChange, chainUpdates, err = dag.addTip(node)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +348,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 			return nil, err
 		}
 	}
-	return virtualSelectedParentChainUpdates, nil
+	return chainUpdates, nil
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(

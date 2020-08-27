@@ -472,7 +472,7 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 }
 
 func (dag *BlockDAG) addTip(tip *blockNode) (
-	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
+	didVirtualParentsChange bool, chainUpdates *chainUpdates, err error) {
 
 	newTips := dag.tips.clone()
 	for parent := range tip.parents {
@@ -483,7 +483,7 @@ func (dag *BlockDAG) addTip(tip *blockNode) (
 }
 
 func (dag *BlockDAG) setTips(newTips blockSet) (
-	didVirtualParentsChange bool, virtualSelectedParentChainUpdates *chainUpdates, err error) {
+	didVirtualParentsChange bool, chainUpdates *chainUpdates, err error) {
 
 	newVirtualParents, err := dag.selectVirtualParents(newTips)
 	if err != nil {
@@ -497,33 +497,40 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 
 	oldSelectedParent := dag.virtual.selectedParent
 	dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
-	chainUpdates := dag.virtual.updateSelectedParentSet(oldSelectedParent)
+	chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
 
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
-func (dag *BlockDAG) updateFinalityConflictResolution(
-	resolvedFinalityConflict *FinalityConflict) (areAllResolved bool, err error) {
+func (dag *BlockDAG) updateFinalityConflictResolution(resolvedFinalityConflict *FinalityConflict) (err error) {
 
 	resolutionTime := time.Now()
 	resolvedFinalityConflict.ResolutionTime = &resolutionTime
 
 	dbTx, err := dag.databaseContext.NewTx()
 	if err != nil {
-		return false, err
+		return err
 	}
 	err = dag.saveState(dbTx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
+	areAllResolved := true
 	for _, finalityConflict := range dag.finalityConflicts {
 		if finalityConflict.ResolutionTime == nil {
-			return false, nil
+			areAllResolved = false
+			break
 		}
 	}
 
-	return true, nil
+	dag.sendNotification(NTFinalityConflictResolved, FinalityConflictResolvedNotificationData{
+		FinalityConflictID:              resolvedFinalityConflict.ID,
+		ResolutionTime:                  resolutionTime,
+		AreAllFinalityConflictsResolved: areAllResolved,
+	})
+
+	return nil
 }
 
 func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {

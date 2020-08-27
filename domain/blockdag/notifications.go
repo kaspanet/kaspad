@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -30,14 +31,18 @@ const (
 
 	// NTFinalityConflict indicates that a finality conflict has just occurred
 	NTFinalityConflict
+
+	// NTFinalityConflict indicates that a finality conflict has been resolved
+	NTFinalityConflictResolved
 )
 
 // notificationTypeStrings is a map of notification types back to their constant
 // names for pretty printing.
 var notificationTypeStrings = map[NotificationType]string{
-	NTBlockAdded:       "NTBlockAdded",
-	NTChainChanged:     "NTChainChanged",
-	NTFinalityConflict: "NTFinalityConflict",
+	NTBlockAdded:               "NTBlockAdded",
+	NTChainChanged:             "NTChainChanged",
+	NTFinalityConflict:         "NTFinalityConflict",
+	NTFinalityConflictResolved: "NTFinalityConflictResolved",
 }
 
 // String returns the NotificationType in human-readable form.
@@ -99,5 +104,6 @@ type FinalityConflictNotificationData struct {
 
 type FinalityConflictResolvedNotificationData struct {
 	FinalityConflictID              int
+	ResolutionTime                  time.Time
 	AreAllFinalityConflictsResolved bool
 }

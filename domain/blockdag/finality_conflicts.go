@@ -115,10 +115,15 @@ func (dag *BlockDAG) ResolveFinalityConflict(id int, validBlockHashes, invalidBl
 		return err
 	}
 
-	areAllResolved, err = dag.updateFinalityConflictResolution(finalityConflict)
+	err = dag.updateFinalityConflictResolution(finalityConflict)
 	if err != nil {
 		return err
 	}
+
+	dag.sendNotification(NTChainChanged, ChainChangedNotificationData{
+		RemovedChainBlockHashes: virtualSelectedParentChainUpdates.removedChainBlockHashes,
+		AddedChainBlockHashes:   virtualSelectedParentChainUpdates.addedChainBlockHashes,
+	})
 
 	return nil
 }
@@ -313,8 +318,8 @@ func (dag *BlockDAG) checkIfKeepingBranches(
 	return true, nil
 }
 
-func (dag *BlockDAG) updateTipsAfterFinalityConflictResolution(removedTips, addedTips blockSet) (
-	virtualSelectedParentChainUpdates *chainUpdates, err error) {
+func (dag *BlockDAG) updateTipsAfterFinalityConflictResolution(
+	removedTips, addedTips blockSet) (chainUpdates *chainUpdates, err error) {
 
 	newTips := dag.tips.clone()
 	for removedTip := range removedTips {
@@ -329,7 +334,7 @@ func (dag *BlockDAG) updateTipsAfterFinalityConflictResolution(removedTips, adde
 		newTips.add(addedTip)
 	}
 
-	_, virtualSelectedParentChainUpdates, err = dag.setTips(newTips)
+	_, chainUpdates, err = dag.setTips(newTips)
 
-	return virtualSelectedParentChainUpdates, err
+	return chainUpdates, err
 }
