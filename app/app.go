@@ -154,7 +154,7 @@ func (a *App) maybeSeedFromDNS() {
 				})
 		} else {
 			dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
-				a.cfg.Lookup, func(addresses []*appmessage	.NetAddress) {
+				a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
 					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.

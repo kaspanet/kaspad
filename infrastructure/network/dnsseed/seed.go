@@ -5,12 +5,16 @@
 package dnsseed
 
 import (
+	"context"
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"math/rand"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	pb2 "github.com/kaspanet/kaspad/infrastructure/network/dnsseed/pb"
+	"google.golang.org/grpc"
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
@@ -96,4 +100,72 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 			seedFn(addresses)
 		})
 	}
+}
+
+// SeedFromGRPC send gRPC request to get list of peers for a given host
+func SeedFromGRPC(dagParams *dagconfig.Params, host string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
+	subnetworkID *subnetworkid.SubnetworkID, seedFn OnSeed) {
+
+	spawn("SeedFromGRPC", func() {
+
+		randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+		conn, err := grpc.Dial(host, grpc.WithInsecure())
+		client := pb2.NewPeerServiceClient(conn)
+		if err != nil {
+			log.Infof("Failed to connect to gRPC server: %s", host)
+		}
+
+		var subnetID []byte
+		if subnetworkID != nil {
+			subnetID = subnetworkID.CloneBytes()
+		} else {
+			subnetID = nil
+		}
+
+		req := &pb2.GetPeersListRequest{
+			ServiceFlag:           uint64(reqServices),
+			SubnetworkID:          subnetID,
+			IncludeAllSubnetworks: includeAllSubnetworks,
+		}
+		res, err := client.GetPeersList(context.Background(), req)
+
+		if err != nil {
+			log.Infof("gRPC request to get peers failed (host=%s): %s", host, err)
+			return
+		}
+
+		seedPeers := fromProtobufAddresses(res.Addresses)
+
+		numPeers := len(seedPeers)
+
+		log.Infof("%d addresses found from DNS seed %s", numPeers, host)
+
+		if numPeers == 0 {
+			return
+		}
+		addresses := make([]*appmessage.NetAddress, len(seedPeers))
+		// if this errors then we have *real* problems
+		intPort, _ := strconv.Atoi(dagParams.DefaultPort)
+		for i, peer := range seedPeers {
+			addresses[i] = appmessage.NewNetAddressTimestamp(
+				// seed with addresses from a time randomly selected
+				// between 3 and 7 days ago.
+				mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
+					randSource.Int31n(secondsIn4Days))),
+				0, peer, uint16(intPort))
+		}
+
+		seedFn(addresses)
+	})
+}
+
+func fromProtobufAddresses(proto []*pb2.NetAddress) []net.IP {
+	var addresses []net.IP
+
+	for _, pbAddr := range proto {
+		addresses = append(addresses, net.IP(pbAddr.IP))
+	}
+
+	return addresses
 }
