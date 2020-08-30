@@ -32,3 +32,11 @@ func NewManager(
 
 	return &manager
 }
+
+func (m *Manager) NotifyBlockAddedToDAG() {
+	//m.context.BlockTemplateState.NotifyBlockAdded()
+}
+
+func (m *Manager) NotifyTransactionAddedToMempool() {
+	//m.context.BlockTemplateState.NotifyMempoolTx()
+}

@@ -18,6 +18,9 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+type OnBlockAddedToDAGHandler func()
+type OnTransactionAddedToMempoolHandler func()
+
 // FlowContext holds state that is relevant to more than one flow or one peer, and allows communication between
 // different flows that can be associated to different peers.
 type FlowContext struct {
@@ -27,6 +30,9 @@ type FlowContext struct {
 	dag               *blockdag.BlockDAG
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
+
+	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
+	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
 
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
@@ -60,4 +66,12 @@ func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmana
 		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[daghash.TxID]*util.Tx),
 	}
+}
+
+func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
+	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
+}
+
+func (f *FlowContext) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler) {
+	f.onTransactionAddedToMempoolHandler = onTransactionAddedToMempoolHandler
 }
