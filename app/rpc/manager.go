@@ -37,7 +37,7 @@ func NewManager(
 }
 
 func (m *Manager) NotifyBlockAddedToDAG() {
-	//m.context.BlockTemplateState.NotifyBlockAdded()
+	m.context.BlockTemplateState.NotifyBlockAdded()
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {

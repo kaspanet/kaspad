@@ -317,7 +317,8 @@ func (bt *BlockTemplateState) notifyLongPollers(tipHashes []*daghash.Hash, lastG
 // NotifyBlockAdded uses the newly-added block to notify any long poll
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
-func (bt *BlockTemplateState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
+func (bt *BlockTemplateState) NotifyBlockAdded() {
+	tipHashes := bt.context.DAG.TipHashes()
 	spawn("BlockTemplateState.NotifyBlockAdded", func() {
 		bt.Lock()
 		defer bt.Unlock()
