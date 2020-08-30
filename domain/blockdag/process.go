@@ -578,7 +578,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 	}
 
 	// If the first candidate has been disqualified from the chain - he cannot be a virtualParentCandidate, since it
-	// will make him selectedParent - making virtual itself disqualified.
+	// will make him virtual's selectedParent - making virtual itself disqualified.
 	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
 	// it's parents that have no other children
 	for {
@@ -588,7 +588,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 		firstCandidate := tipsHeap.pop()
 
 		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
-			tipsHeap.Push(firstCandidate)
+			selected.add(firstCandidate)
 			break
 		}
 
@@ -607,6 +607,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
 			continue
 		}
