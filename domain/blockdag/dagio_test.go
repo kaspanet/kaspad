@@ -9,6 +9,11 @@ import (
 	"encoding/hex"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/davecgh/go-spew/spew"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
 
@@ -178,6 +183,7 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 func TestDAGStateSerialization(t *testing.T) {
 	t.Parallel()
 
+	resolutionTime := mstime.New(time.Date(2020, time.September, 2, 0, 0, 0, 0, time.UTC))
 	tests := []struct {
 		name       string
 		state      *dagState
@@ -188,14 +194,23 @@ func TestDAGStateSerialization(t *testing.T) {
 			state: &dagState{
 				TipHashes: []*daghash.Hash{newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
 			},
-			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"LocalSubnetworkID\":null}"),
+			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"LocalSubnetworkID\":null,\"FinalityConflicts\":null}"),
 		},
 		{
 			name: "block 1",
 			state: &dagState{
 				TipHashes: []*daghash.Hash{newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
+				FinalityConflicts: []*FinalityConflict{
+					{
+						ID:                 1,
+						ConflictTime:       mstime.New(time.Date(2020, time.September, 1, 0, 0, 0, 0, time.UTC)),
+						SelectedTipHash:    newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
+						ViolatingBlockHash: newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
+						ResolutionTime:     &resolutionTime,
+					},
+				},
 			},
-			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"LocalSubnetworkID\":null}"),
+			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"LocalSubnetworkID\":null,\"FinalityConflicts\":[{\"ID\":1,\"ConflictTime\":\"2020-09-01T00:00:00Z\",\"SelectedTipHash\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"ViolatingBlockHash\":[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0],\"ResolutionTime\":\"2020-09-02T00:00:00Z\"}]}"),
 		},
 	}
 
@@ -225,8 +240,8 @@ func TestDAGStateSerialization(t *testing.T) {
 		}
 		if !reflect.DeepEqual(state, test.state) {
 			t.Errorf("deserializeDAGState #%d (%s) "+
-				"mismatched state - got %v, want %v", i,
-				test.name, state, test.state)
+				"mismatched state - got:\n %v\n want:\n %v", i,
+				test.name, spew.Sdump(state), spew.Sdump(test.state))
 			continue
 		}
 	}
