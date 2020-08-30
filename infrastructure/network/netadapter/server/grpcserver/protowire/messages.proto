@@ -36,7 +36,8 @@ message KaspadMessage {
     GetBlockTemplateResponseMessage getBlockTemplateResponse = 1006;
     NotifyBlockAddedRequestMessage notifyBlockAddedRequest = 1007;
     NotifyBlockAddedResponseMessage notifyBlockAddedResponse = 1008;
-    RPCErrorMessage rpcError = 1009;
+    BlockAddedNotificationMessage blockAddedNotification = 1009;
+    RPCErrorMessage rpcError = 1100;
   }
 }
 
@@ -291,6 +292,10 @@ message NotifyBlockAddedRequestMessage{
 }
 
 message NotifyBlockAddedResponseMessage{
+}
+
+message BlockAddedNotificationMessage{
+
 }
 
 message RPCErrorMessage{

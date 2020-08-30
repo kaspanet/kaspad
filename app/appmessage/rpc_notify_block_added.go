@@ -4,7 +4,6 @@ package appmessage
 // its respective RPC message
 type NotifyBlockAddedRequestMessage struct {
 	baseMessage
-	BlockHex string
 }
 
 // Command returns the protocol command string for the message
@@ -12,7 +11,7 @@ func (msg *NotifyBlockAddedRequestMessage) Command() MessageCommand {
 	return CmdNotifyBlockAddedRequestMessage
 }
 
-// NotifyBlockAddedRequestMessage returns a instance of the message
+// NewNotifyBlockAddedRequestMessage returns a instance of the message
 func NewNotifyBlockAddedRequestMessage() *NotifyBlockAddedRequestMessage {
 	return &NotifyBlockAddedRequestMessage{}
 }
@@ -28,7 +27,23 @@ func (msg *NotifyBlockAddedResponseMessage) Command() MessageCommand {
 	return CmdNotifyBlockAddedResponseMessage
 }
 
-// NotifyBlockAddedResponseMessage returns a instance of the message
+// NewNotifyBlockAddedResponseMessage returns a instance of the message
 func NewNotifyBlockAddedResponseMessage() *NotifyBlockAddedResponseMessage {
 	return &NotifyBlockAddedResponseMessage{}
+}
+
+// BlockAddedNotificationMessage is an appmessage corresponding to
+// its respective RPC message
+type BlockAddedNotificationMessage struct {
+	baseMessage
+}
+
+// Command returns the protocol command string for the message
+func (msg *BlockAddedNotificationMessage) Command() MessageCommand {
+	return CmdBlockAddedNotificationMessage
+}
+
+// NewBlockAddedNotificationMessage returns a instance of the message
+func NewBlockAddedNotificationMessage() *BlockAddedNotificationMessage {
+	return &BlockAddedNotificationMessage{}
 }
