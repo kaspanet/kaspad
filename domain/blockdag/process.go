@@ -587,6 +587,9 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
 	// it's parents that have no other children
 	for {
+		if tipsHeap.Len() == 0 {
+			return nil, errors.New("virtual has no valid parent candidates")
+		}
 		firstCandidate := tipsHeap.pop()
 
 		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
