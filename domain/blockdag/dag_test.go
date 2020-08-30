@@ -1280,7 +1280,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	if !ok {
 		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
 	}
-	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
@@ -1293,7 +1293,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
 
 	// Get blockC's selectedParentMultiset again
-	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}

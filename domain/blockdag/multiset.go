@@ -7,16 +7,10 @@ import (
 )
 
 // calcMultiset returns the multiset of the past UTXO of the given block.
-func (node *blockNode) calcMultiset(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
+func (node *blockNode) calcMultiset(acceptanceData MultiBlockTxsAcceptanceData,
 	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
 
-	return node.pastUTXOMultiSet(dag, acceptanceData, selectedParentPastUTXO)
-}
-
-func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlockTxsAcceptanceData,
-	selectedParentPastUTXO UTXOSet) (*secp256k1.MultiSet, error) {
-
-	ms, err := node.selectedParentMultiset(dag)
+	ms, err := node.selectedParentMultiset()
 	if err != nil {
 		return nil, err
 	}
@@ -42,12 +36,12 @@ func (node *blockNode) pastUTXOMultiSet(dag *BlockDAG, acceptanceData MultiBlock
 // selectedParentMultiset returns the multiset of the node's selected
 // parent. If the node is the genesis blockNode then it does not have
 // a selected parent, in which case return a new, empty multiset.
-func (node *blockNode) selectedParentMultiset(dag *BlockDAG) (*secp256k1.MultiSet, error) {
+func (node *blockNode) selectedParentMultiset() (*secp256k1.MultiSet, error) {
 	if node.isGenesis() {
 		return secp256k1.NewMultiset(), nil
 	}
 
-	ms, err := dag.multisetStore.multisetByBlockNode(node.selectedParent)
+	ms, err := node.dag.multisetStore.multisetByBlockNode(node.selectedParent)
 	if err != nil {
 		return nil, err
 	}

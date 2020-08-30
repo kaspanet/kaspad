@@ -284,7 +284,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 
-	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}

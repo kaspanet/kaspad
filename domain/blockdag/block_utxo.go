@@ -70,23 +70,23 @@ type utxoVerificationOutput struct {
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data
 // for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx) (*utxoVerificationOutput, error) {
-	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
+func (node *blockNode) verifyAndBuildUTXO(transactions []*util.Tx) (*utxoVerificationOutput, error) {
+	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := node.dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
 	}
 
-	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
+	err = node.validateAcceptedIDMerkleRoot(node.dag, txsAcceptanceData)
 	if err != nil {
 		return nil, err
 	}
 
-	err = dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
+	err = node.dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
 
-	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}

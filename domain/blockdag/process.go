@@ -365,7 +365,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 		}
 	}
 
-	utxoVerificationData, err := node.verifyAndBuildUTXO(dag, block.Transactions())
+	utxoVerificationData, err := node.verifyAndBuildUTXO(block.Transactions())
 	if err != nil {
 		return errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
