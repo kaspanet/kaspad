@@ -312,6 +312,10 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.tips.hashes()
 }
 
+func (dag *BlockDAG) VirtualParentsHashes() []*daghash.Hash {
+	return dag.virtual.parents.hashes()
+}
+
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
 func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*appmessage.BlockHeader, error) {

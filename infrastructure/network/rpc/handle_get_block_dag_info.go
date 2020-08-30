@@ -13,14 +13,15 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	dag := s.dag
 
 	dagInfo := &model.GetBlockDAGInfoResult{
-		DAG:           params.Name,
-		Blocks:        dag.BlockCount(),
-		Headers:       dag.BlockCount(),
-		TipHashes:     daghash.Strings(dag.TipHashes()),
-		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
-		MedianTime:    dag.CalcPastMedianTime().UnixMilliseconds(),
-		Pruned:        false,
-		Bip9SoftForks: make(map[string]*model.Bip9SoftForkDescription),
+		DAG:                  params.Name,
+		Blocks:               dag.BlockCount(),
+		Headers:              dag.BlockCount(),
+		TipHashes:            daghash.Strings(dag.TipHashes()),
+		VirtualParentsHashes: daghash.Strings(dag.VirtualParentsHashes()),
+		Difficulty:           getDifficultyRatio(dag.CurrentBits(), params),
+		MedianTime:           dag.CalcPastMedianTime().UnixMilliseconds(),
+		Pruned:               false,
+		Bip9SoftForks:        make(map[string]*model.Bip9SoftForkDescription),
 	}
 
 	return dagInfo, nil
