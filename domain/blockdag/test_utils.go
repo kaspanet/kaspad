@@ -309,7 +309,8 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return nil, err
 	}
 
-	blockTransactions[0], err = node.expectedCoinbaseTransaction(dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
+	blockTransactions[0], err = node.expectedCoinbaseTransaction(
+		dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}

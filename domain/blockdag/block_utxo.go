@@ -12,6 +12,7 @@ import (
 // if it was accepted or not by some block
 type TxAcceptanceData struct {
 	Tx         *util.Tx
+	Fee        uint64
 	IsAccepted bool
 }
 
@@ -63,12 +64,11 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 type utxoVerificationOutput struct {
 	newBlockUTXO      UTXOSet
 	txsAcceptanceData MultiBlockTxsAcceptanceData
-	newBlockFeeData   compactFeeData
 	newBlockMultiset  *secp256k1.MultiSet
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-// to save extra traversals it returns the transactions acceptance data, the compactFeeData
+// to save extra traversals it returns the transactions acceptance data
 // for the new block and its multiset.
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx) (*utxoVerificationOutput, error) {
 	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
@@ -81,7 +81,7 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, err
 	}
 
-	feeData, err := dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
+	err = dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	return &utxoVerificationOutput{
 		newBlockUTXO:      pastUTXO,
 		txsAcceptanceData: txsAcceptanceData,
-		newBlockFeeData:   feeData,
 		newBlockMultiset:  multiset}, nil
 }
 
@@ -143,12 +142,17 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 
 		for j, tx := range transactions {
 			var isAccepted bool
-			isAccepted, accumulatedMass, err = node.checkIsAccepted(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+			var txFee uint64
+			isAccepted, txFee, accumulatedMass, err =
+				node.checkIsAccepted(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
 			if err != nil {
 				return nil, nil, err
 			}
 
-			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{
+				Tx:         tx,
+				Fee:        txFee,
+				IsAccepted: isAccepted}
 		}
 		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
@@ -158,7 +162,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 
 func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
 	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
-	isAccepted bool, accumulatedMassAfter uint64, err error) {
+	isAccepted bool, txFee uint64, accumulatedMassAfter uint64, err error) {
 
 	accumulatedMass := accumulatedMassBefore
 
@@ -172,18 +176,18 @@ func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastU
 
 		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
-			return false, 0, err
+			return false, 0, 0, err
 		}
 
-		return isAccepted, accumulatedMass, nil
+		return isAccepted, 0, accumulatedMass, nil
 	}
 
-	_, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
+	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
 		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
 
 	if err != nil {
 		if !errors.As(err, &(RuleError{})) {
-			return false, 0, err
+			return false, 0, 0, err
 		}
 
 		isAccepted = false
@@ -193,10 +197,10 @@ func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastU
 
 		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
-			return false, 0, err
+			return false, 0, 0, err
 		}
 	}
-	return isAccepted, accumulatedMass, nil
+	return isAccepted, txFee, accumulatedMass, nil
 }
 
 // pastUTXO returns the UTXO of a given block's past

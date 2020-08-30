@@ -1046,6 +1046,8 @@ func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.Ms
 }
 
 func TestDoubleSpends(t *testing.T) {
+	t.SkipNow() // TODO: Re-write test to accomodate the fact that now double spends are allowed
+
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.

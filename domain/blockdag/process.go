@@ -394,11 +394,6 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 		return errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
-	err := dbaccess.StoreFeeData(dbTx, node.hash, utxoVerificationData.newBlockFeeData)
-	if err != nil {
-		return err
-	}
-
 	if dag.indexManager != nil {
 		err := dag.indexManager.ConnectBlock(dbTx, node.hash, utxoVerificationData.txsAcceptanceData)
 		if err != nil {
