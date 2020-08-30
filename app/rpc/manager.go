@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -18,7 +19,8 @@ func NewManager(
 	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
-	blockTemplateGenerator *mining.BlkTmplGenerator) *Manager {
+	blockTemplateGenerator *mining.BlkTmplGenerator,
+	mempool *mempool.TxPool) *Manager {
 	manager := Manager{
 		context: rpccontext.NewContext(
 			netAdapter,
@@ -26,6 +28,7 @@ func NewManager(
 			protocolManager,
 			connectionManager,
 			blockTemplateGenerator,
+			mempool,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
@@ -38,5 +41,5 @@ func (m *Manager) NotifyBlockAddedToDAG() {
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {
-	//m.context.BlockTemplateState.NotifyMempoolTx()
+	m.context.BlockTemplateState.NotifyMempoolTx()
 }

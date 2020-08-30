@@ -330,7 +330,8 @@ func (bt *BlockTemplateState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 // pool to notify any long poll clients with a new block template when their
 // existing block template is stale due to enough time passing and the contents
 // of the memory pool changing.
-func (bt *BlockTemplateState) NotifyMempoolTx(lastUpdated mstime.Time) {
+func (bt *BlockTemplateState) NotifyMempoolTx() {
+	lastUpdated := bt.context.Mempool.LastUpdated()
 	spawn("BlockTemplateState", func() {
 		bt.Lock()
 		defer bt.Unlock()
