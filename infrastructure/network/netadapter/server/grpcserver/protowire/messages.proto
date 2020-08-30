@@ -34,7 +34,9 @@ message KaspadMessage {
     SubmitBlockResponseMessage submitBlockResponse = 1004;
     GetBlockTemplateRequestMessage getBlockTemplateRequest = 1005;
     GetBlockTemplateResponseMessage getBlockTemplateResponse = 1006;
-    RPCErrorMessage rpcError = 1007;
+    NotifyBlockAddedRequestMessage notifyBlockAddedRequest = 1007;
+    NotifyBlockAddedResponseMessage notifyBlockAddedResponse = 1008;
+    RPCErrorMessage rpcError = 1009;
   }
 }
 
@@ -283,6 +285,12 @@ message GetBlockTemplateTransactionMessage{
   repeated int64 Depends = 3;
   uint64 Mass = 4;
   uint64 Fee = 5;
+}
+
+message NotifyBlockAddedRequestMessage{
+}
+
+message NotifyBlockAddedResponseMessage{
 }
 
 message RPCErrorMessage{

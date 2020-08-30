@@ -58,6 +58,8 @@ const (
 	CmdGetBlockTemplateRequestMessage
 	CmdGetBlockTemplateResponseMessage
 	CmdGetBlockTemplateTransactionMessage
+	CmdNotifyBlockAddedRequestMessage
+	CmdNotifyBlockAddedResponseMessage
 	CmdRPCErrorMessage
 )
 
@@ -95,6 +97,8 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdGetBlockTemplateRequestMessage:     "GetBlockTemplateRequest",
 	CmdGetBlockTemplateResponseMessage:    "GetBlockTemplateResponse",
 	CmdGetBlockTemplateTransactionMessage: "CmdGetBlockTemplateTransaction",
+	CmdNotifyBlockAddedRequestMessage:     "NotifyBlockAddedRequest",
+	CmdNotifyBlockAddedResponseMessage:    "NotifyBlockAddedResponse",
 	CmdRPCErrorMessage:                    "CmdRPCError",
 }
 
