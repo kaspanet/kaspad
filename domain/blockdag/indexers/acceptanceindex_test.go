@@ -77,7 +77,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	testFiles := []string{
 		"blk_0_to_4.dat",
-		"blk_3B.dat",
 	}
 
 	var blocks []*util.Block
