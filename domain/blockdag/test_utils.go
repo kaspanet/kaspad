@@ -169,6 +169,24 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(dag, parents)
 
+	if dag.index.BlockNodeStatus(virtual.selectedParent) == statusUTXONotVerified {
+		dbTx, err := dag.databaseContext.NewTx()
+		if err != nil {
+			return nil, err
+		}
+		defer dbTx.RollbackUnlessClosed()
+
+		err = dag.resolveNodeStatus(virtual.selectedParent, BFNone, dbTx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = dbTx.Commit()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	pastUTXO, _, _, err := dag.pastUTXO(virtual.blockNode)
 	if err != nil {
 		return nil, err
@@ -260,18 +278,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	node, _ := dag.newBlockNode(nil, parents)
 
 	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXONotVerified {
-		dbTx, err := dag.databaseContext.NewTx()
-		if err != nil {
-			return nil, err
-		}
-		defer dbTx.RollbackUnlessClosed()
-
-		err = dag.resolveSelectedParentStatus(node.selectedParent, BFNone, dbTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = dbTx.Commit()
+		err := resolveNodeStatusForTest(node.selectedParent)
 		if err != nil {
 			return nil, err
 		}
@@ -352,6 +359,25 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	}
 
 	return &msgBlock, nil
+}
+
+func resolveNodeStatusForTest(node *blockNode) error {
+	dbTx, err := node.dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = node.dag.resolveNodeStatus(node, BFNone, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent

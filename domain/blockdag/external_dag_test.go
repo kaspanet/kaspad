@@ -242,7 +242,7 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 		// Create the block
 		msgBlock, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{previousBlock.Hash()}, txs, false)
 		if err != nil {
-			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %s", err)
+			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %+v", err)
 		}
 
 		// Add the block to the DAG

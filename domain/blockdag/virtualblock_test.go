@@ -256,7 +256,7 @@ func TestChainUpdates(t *testing.T) {
 	// Create a chain to be removed
 	var toBeRemovedNodes []*blockNode
 	toBeRemovedTip := genesis
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 9; i++ {
 		toBeRemovedTip = buildNode(t, dag, blockSetFromSlice(toBeRemovedTip))
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
@@ -267,6 +267,11 @@ func TestChainUpdates(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		toBeAddedTip = buildNode(t, dag, blockSetFromSlice(toBeAddedTip))
 		toBeAddedNodes = append(toBeAddedNodes, toBeAddedTip)
+	}
+
+	err = resolveNodeStatusForTest(toBeAddedTip)
+	if err != nil {
+		t.Fatalf("Error resolving status of toBeAddedTip: %+v", err)
 	}
 
 	// Set the virtual tip to be the tip of the toBeAdded chain
@@ -291,7 +296,7 @@ func TestChainUpdates(t *testing.T) {
 	// Make sure that the added blocks are as expected (in forward order)
 	if len(chainUpdates.addedChainBlockHashes) != len(toBeAddedNodes) {
 		t.Fatalf("TestChainUpdates: wrong added amount. "+
-			"Got: %d, want: %d", len(chainUpdates.removedChainBlockHashes), len(toBeAddedNodes))
+			"Got: %d, want: %d", len(chainUpdates.addedChainBlockHashes), len(toBeAddedNodes))
 	}
 	for i, addedHash := range chainUpdates.addedChainBlockHashes {
 		correspondingAddedNode := toBeAddedNodes[i]
