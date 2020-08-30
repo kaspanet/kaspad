@@ -359,12 +359,12 @@ func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {
-		t.Fatalf("error in PrepareBlockForTest: %s", err)
+		t.Fatalf("error in PrepareBlockForTest: %+v", err)
 	}
 	utilBlock := util.NewBlock(block)
 	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 	if err != nil {
-		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		t.Fatalf("unexpected error in ProcessBlock: %+v", err)
 	}
 	if isDelayed {
 		t.Fatalf("block is too far in the future")
