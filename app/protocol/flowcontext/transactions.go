@@ -68,3 +68,9 @@ func (f *FlowContext) SharedRequestedTransactions() *relaytransactions.SharedReq
 func (f *FlowContext) TxPool() *mempool.TxPool {
 	return f.txPool
 }
+
+func (f *FlowContext) OnTransactionAddedToMempool() {
+	if f.onTransactionAddedToMempoolHandler != nil {
+		f.onTransactionAddedToMempoolHandler()
+	}
+}
