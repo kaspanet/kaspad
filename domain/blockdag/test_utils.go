@@ -356,7 +356,9 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
 // hashes and process it.
-func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+func PrepareAndProcessBlockForTest(
+	t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {

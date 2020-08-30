@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/util/daghash"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -146,22 +148,18 @@ func TestSelectedPath(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Create an empty VirtualBlock
-	virtual := newVirtualBlock(dag, nil)
-
+	initialPath := blockSetFromSlice(dag.genesis)
 	tip := dag.genesis
-	_, _, err = dag.addTip(tip)
-	if err != nil {
-		t.Fatalf("Error adding tip: %+v", err)
-	}
-	initialPath := blockSetFromSlice(tip)
 	for i := 0; i < 5; i++ {
-		tip = buildNode(t, dag, blockSetFromSlice(tip))
-		initialPath.add(tip)
-		_, _, err = dag.addTip(tip)
-		if err != nil {
-			t.Fatalf("Error adding tip: %+v", err)
+		tipBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tip.hash}, nil)
+
+		var ok bool
+		tip, ok = dag.index.LookupNode(tipBlock.BlockHash())
+		if !ok {
+			t.Fatalf("Couldn't lookup node that was just added")
 		}
+
+		initialPath.add(tip)
 	}
 	initialTip := tip
 
@@ -175,14 +173,16 @@ func TestSelectedPath(t *testing.T) {
 		}
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
-	if !reflect.DeepEqual(virtual.selectedParentChainSet, firstPath) {
-		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
+	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, firstPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v",
+			dag.virtual.selectedParent, firstPath)
 	}
 	// We expect that selectedParentChainSlice should have all the blocks we've added so far
 	wantLen := 11
-	gotLen := len(virtual.selectedParentChainSlice)
+	gotLen := len(dag.virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have the expected length. got %d, want %d", gotLen, wantLen)
+		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have the expected length. got %d, want %d",
+			gotLen, wantLen)
 	}
 
 	secondPath := initialPath.clone()
@@ -196,12 +196,13 @@ func TestSelectedPath(t *testing.T) {
 		}
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
-	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
-		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
+	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v",
+			dag.virtual.selectedParent, firstPath)
 	}
 	// We expect that selectedParentChainSlice should have all the blocks we've added so far except the old chain
 	wantLen = 106
-	gotLen = len(virtual.selectedParentChainSlice)
+	gotLen = len(dag.virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
 		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have"+
 			"the expected length, possibly because it didn't handle the re-org as expected. got %d, want %d", gotLen, wantLen)
@@ -216,12 +217,13 @@ func TestSelectedPath(t *testing.T) {
 		}
 	}
 	// Because we added a very short chain, the selected path should not be affected.
-	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
-		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
+	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v",
+			dag.virtual.selectedParent, firstPath)
 	}
 	// We expect that selectedParentChainSlice not to change
 	wantLen = 106
-	gotLen = len(virtual.selectedParentChainSlice)
+	gotLen = len(dag.virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
 		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't"+
 			"have the expected length, possibly due to unexpected did an unexpected re-org. got %d, want %d", gotLen, wantLen)
