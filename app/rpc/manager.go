@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/kaspanet/kaspad/util"
 )
 
 type Manager struct {
@@ -36,9 +37,9 @@ func NewManager(
 	return &manager
 }
 
-func (m *Manager) NotifyBlockAddedToDAG() {
-	m.context.BlockTemplateState.NotifyBlockAdded()
-	m.context.NotificationManager.Notify(rpccontext.BlockAdded)
+func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
+	m.context.BlockTemplateState.NotifyBlockAdded(block)
+	m.context.NotificationManager.NotifyBlockAdded(block)
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {

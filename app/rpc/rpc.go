@@ -68,8 +68,7 @@ func (m *Manager) handleOutgoingNotifications(router *router.Router) error {
 	notificationListener := m.context.NotificationManager.AddListener(router)
 	defer m.context.NotificationManager.RemoveListener(router)
 	for {
-		handler := notificationListener.NextHandler()
-		err := handler()
+		err := notificationListener.ProcessNextNotification()
 		if err != nil {
 			return err
 		}

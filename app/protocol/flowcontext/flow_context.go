@@ -18,7 +18,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-type OnBlockAddedToDAGHandler func()
+type OnBlockAddedToDAGHandler func(block *util.Block)
 type OnTransactionAddedToMempoolHandler func()
 
 // FlowContext holds state that is relevant to more than one flow or one peer, and allows communication between

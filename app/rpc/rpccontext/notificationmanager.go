@@ -2,6 +2,7 @@ package rpccontext
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -11,17 +12,13 @@ type NotificationManager struct {
 	listeners map[*router.Router]*NotificationListener
 }
 
-type NotificationHandler func() error
-
-type NotificationType int
-
-const (
-	BlockAdded NotificationType = iota
-)
+type OnBlockAddedListener func(block *util.Block) error
 
 type NotificationListener struct {
-	handlers    map[NotificationType]NotificationHandler
-	handlerChan chan NotificationHandler
+	onBlockAddedListener         OnBlockAddedListener
+	onBlockAddedNotificationChan chan *util.Block
+
+	closeChan chan struct{}
 }
 
 func NewNotificationManager() *NotificationManager {
@@ -34,7 +31,7 @@ func (nm *NotificationManager) AddListener(router *router.Router) *NotificationL
 	nm.Lock()
 	defer nm.Unlock()
 
-	listener := &NotificationListener{}
+	listener := NewNotificationListener()
 	nm.listeners[router] = listener
 	return listener
 }
@@ -42,6 +39,12 @@ func (nm *NotificationManager) AddListener(router *router.Router) *NotificationL
 func (nm *NotificationManager) RemoveListener(router *router.Router) {
 	nm.Lock()
 	defer nm.Unlock()
+
+	listener, ok := nm.listeners[router]
+	if !ok {
+		return
+	}
+	listener.close()
 
 	delete(nm.listeners, router)
 }
@@ -57,22 +60,36 @@ func (nm *NotificationManager) Listener(router *router.Router) (*NotificationLis
 	return listener, nil
 }
 
-func (nm *NotificationManager) Notify(notificationType NotificationType) {
+func (nm *NotificationManager) NotifyBlockAdded(block *util.Block) {
 	nm.RLock()
 	defer nm.RUnlock()
 
 	for _, listener := range nm.listeners {
-		handler, ok := listener.handlers[notificationType]
-		if ok {
-			listener.handlerChan <- handler
+		if listener.onBlockAddedListener != nil {
+			listener.onBlockAddedNotificationChan <- block
 		}
 	}
 }
 
-func (nl *NotificationListener) SetHandler(notificationType NotificationType, handler NotificationHandler) {
-	nl.handlers[notificationType] = handler
+func NewNotificationListener() *NotificationListener {
+	return &NotificationListener{
+		onBlockAddedNotificationChan: make(chan *util.Block),
+	}
 }
 
-func (nl *NotificationListener) NextHandler() NotificationHandler {
-	return <-nl.handlerChan
+func (nl *NotificationListener) SetOnBlockAddedListener(onBlockAddedListener OnBlockAddedListener) {
+	nl.onBlockAddedListener = onBlockAddedListener
+}
+
+func (nl *NotificationListener) ProcessNextNotification() error {
+	select {
+	case block := <-nl.onBlockAddedNotificationChan:
+		return nl.onBlockAddedListener(block)
+	case <-nl.closeChan:
+		return nil
+	}
+}
+
+func (nl *NotificationListener) close() {
+	nl.closeChan <- struct{}{}
 }
