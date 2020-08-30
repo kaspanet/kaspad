@@ -20,9 +20,23 @@ func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(_ *appmessage.No
 }
 
 func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.BlockAddedNotificationMessage{}, nil
+	block, err := x.BlockAddedNotification.Block.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.BlockAddedNotificationMessage{
+		Block: block.(*appmessage.MsgBlock),
+	}, nil
 }
 
-func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(_ *appmessage.BlockAddedNotificationMessage) error {
+func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessage.BlockAddedNotificationMessage) error {
+	blockMessage := &BlockMessage{}
+	err := blockMessage.fromAppMessage(message.Block)
+	if err != nil {
+		return err
+	}
+	x.BlockAddedNotification = &BlockAddedNotificationMessage{
+		Block: blockMessage,
+	}
 	return nil
 }

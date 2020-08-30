@@ -295,7 +295,7 @@ message NotifyBlockAddedResponseMessage{
 }
 
 message BlockAddedNotificationMessage{
-
+  BlockMessage block = 1;
 }
 
 message RPCErrorMessage{
