@@ -17,7 +17,8 @@ type Context struct {
 	BlockTemplateGenerator *mining.BlkTmplGenerator
 	Mempool                *mempool.TxPool
 
-	BlockTemplateState *BlockTemplateState
+	BlockTemplateState  *BlockTemplateState
+	NotificationManager *NotificationManager
 }
 
 func NewContext(
@@ -36,5 +37,6 @@ func NewContext(
 		Mempool:                mempool,
 	}
 	context.BlockTemplateState = NewBlockTemplateState(context)
+	context.NotificationManager = NewNotificationManager()
 	return context
 }

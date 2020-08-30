@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type handler func(context *rpccontext.Context, request appmessage.Message) (appmessage.Message, error)
+type handler func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
 
 var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetCurrentNetworkRequestMessage: rpchandlers.HandleGetCurrentNetwork,
@@ -29,12 +29,17 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 		panic(err)
 	}
 	spawn("routerInitializer-handleIncomingMessages", func() {
-		err := m.handleIncomingMessages(incomingRoute, router.OutgoingRoute())
+		err := m.handleIncomingMessages(router, incomingRoute)
+		m.handleError(err, netConnection)
+	})
+	spawn("routerInitializer-handleOutgoingNotifications", func() {
+		err := m.handleOutgoingNotifications(router)
 		m.handleError(err, netConnection)
 	})
 }
 
-func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Route) error {
+func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *router.Route) error {
+	outgoingRoute := router.OutgoingRoute()
 	for {
 		request, err := incomingRoute.Dequeue()
 		if err != nil {
@@ -44,7 +49,7 @@ func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Ro
 		if !ok {
 			return err
 		}
-		response, err := handler(m.context, request)
+		response, err := handler(m.context, router, request)
 		if err != nil {
 			if rpcErr := &(rpcerrors.RPCError{}); errors.As(err, &rpcErr) {
 				errorMessage := appmessage.NewRPCErrorMessage(rpcErr.Message)
@@ -53,6 +58,18 @@ func (m *Manager) handleIncomingMessages(incomingRoute, outgoingRoute *router.Ro
 			return err
 		}
 		err = outgoingRoute.Enqueue(response)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (m *Manager) handleOutgoingNotifications(router *router.Router) error {
+	notificationListener := m.context.NotificationManager.AddListener(router)
+	defer m.context.NotificationManager.RemoveListener(router)
+	for {
+		handler := notificationListener.NextHandler()
+		err := handler()
 		if err != nil {
 			return err
 		}

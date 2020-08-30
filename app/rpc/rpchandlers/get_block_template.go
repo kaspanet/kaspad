@@ -6,11 +6,12 @@ import (
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // HandleGetBlockTemplate handles the respectively named RPC command
-func HandleGetBlockTemplate(context *rpccontext.Context, request appmessage.Message) (appmessage.Message, error) {
+func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlockTemplateRequest := request.(*appmessage.GetBlockTemplateRequestMessage)
 
 	// Return an error if there are no peers connected since there is no

@@ -7,11 +7,12 @@ import (
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // HandleSubmitBlock handles the respectively named RPC command
-func HandleSubmitBlock(context *rpccontext.Context, request appmessage.Message) (appmessage.Message, error) {
+func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitBlockRequest := request.(*appmessage.SubmitBlockRequestMessage)
 
 	// Deserialize the submitted block.

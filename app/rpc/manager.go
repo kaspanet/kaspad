@@ -38,6 +38,7 @@ func NewManager(
 
 func (m *Manager) NotifyBlockAddedToDAG() {
 	m.context.BlockTemplateState.NotifyBlockAdded()
+	m.context.NotificationManager.Notify(rpccontext.BlockAdded)
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {
