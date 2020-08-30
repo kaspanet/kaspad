@@ -169,6 +169,12 @@ func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastU
 			txMass := CalcTxMass(tx, nil)
 			accumulatedMass += txMass
 		}
+
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return false, 0, err
+		}
+
 		return isAccepted, accumulatedMass, nil
 	}
 
