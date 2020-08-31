@@ -144,7 +144,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 			var isAccepted bool
 			var txFee uint64
 			isAccepted, txFee, accumulatedMass, err =
-				node.checkIsAccepted(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+				node.maybeAcceptTx(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -160,7 +160,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	return pastUTXO, multiBlockTxsAcceptanceData, nil
 }
 
-func (node *blockNode) checkIsAccepted(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
+func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
 	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
 	isAccepted bool, txFee uint64, accumulatedMassAfter uint64, err error) {
 
