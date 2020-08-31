@@ -17,7 +17,10 @@ const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 type MessageCommand uint32
 
 func (cmd MessageCommand) String() string {
-	cmdString, ok := MessageCommandToString[cmd]
+	cmdString, ok := ProtocolMessageCommandToString[cmd]
+	if !ok {
+		cmdString, ok = RPCMessageCommandToString[cmd]
+	}
 	if !ok {
 		cmdString = "unknown command"
 	}
@@ -64,9 +67,8 @@ const (
 	CmdRPCErrorMessage
 )
 
-// MessageCommandToString maps all MessageCommands to their string representation
-var MessageCommandToString = map[MessageCommand]string{
-	// protocol
+// ProtocolMessageCommandToString maps all MessageCommands to their string representation
+var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdVersion:              "Version",
 	CmdVerAck:               "VerAck",
 	CmdRequestAddresses:     "RequestAddresses",
@@ -89,8 +91,10 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdDoneIBDBlocks:        "DoneIBDBlocks",
 	CmdTransactionNotFound:  "TransactionNotFound",
 	CmdReject:               "Reject",
+}
 
-	// rpc
+// RPCMessageCommandToString maps all MessageCommands to their string representation
+var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetCurrentNetworkRequestMessage:    "GetCurrentNetworkRequest",
 	CmdGetCurrentNetworkResponseMessage:   "GetCurrentNetworkResponse",
 	CmdSubmitBlockRequestMessage:          "SubmitBlockRequest",

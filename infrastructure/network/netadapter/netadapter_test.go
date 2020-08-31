@@ -125,8 +125,8 @@ func TestNetAdapter(t *testing.T) {
 
 	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			appmessage.MessageCommandToString[appmessage.CmdPing],
-			appmessage.MessageCommandToString[command])
+			appmessage.ProtocolMessageCommandToString[appmessage.CmdPing],
+			appmessage.ProtocolMessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {
@@ -145,8 +145,8 @@ func TestNetAdapter(t *testing.T) {
 
 	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			appmessage.MessageCommandToString[appmessage.CmdPing],
-			appmessage.MessageCommandToString[command])
+			appmessage.ProtocolMessageCommandToString[appmessage.CmdPing],
+			appmessage.ProtocolMessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {
