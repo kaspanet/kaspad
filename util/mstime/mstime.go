@@ -1,9 +1,8 @@
 package mstime
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
+	"time"
 )
 
 const (
@@ -64,7 +63,7 @@ func (t Time) Before(u Time) bool {
 // It panics if d has a precision greater than one millisecond (the duration has a non zero microseconds part).
 func (t Time) Add(d time.Duration) Time {
 	validateDurationPrecision(d)
-	return New(t.time.Add(d))
+	return newMSTime(t.time.Add(d))
 }
 
 // Sub returns the duration t-u. If the result exceeds the maximum (or minimum)
@@ -96,7 +95,7 @@ func Now() Time {
 func UnixMilliseconds(ms int64) Time {
 	seconds := ms / millisecondsInSecond
 	nanoseconds := (ms - seconds*millisecondsInSecond) * nanosecondsInMillisecond
-	return New(time.Unix(ms/millisecondsInSecond, nanoseconds))
+	return newMSTime(time.Unix(ms/millisecondsInSecond, nanoseconds))
 }
 
 // Since returns the time elapsed since t.
@@ -108,10 +107,10 @@ func Since(t Time) time.Duration {
 // ToMSTime converts t to Time.
 // See Time for details.
 func ToMSTime(t time.Time) Time {
-	return New(t.Round(time.Millisecond))
+	return newMSTime(t.Round(time.Millisecond))
 }
 
-func New(t time.Time) Time {
+func newMSTime(t time.Time) Time {
 	return Time{time: t}
 }
 
@@ -119,12 +118,4 @@ func validateDurationPrecision(d time.Duration) {
 	if d.Nanoseconds()%nanosecondsInMillisecond != 0 {
 		panic(errors.Errorf("duration %s has lower precision than millisecond", d))
 	}
-}
-
-func (t *Time) UnmarshalJSON(data []byte) error {
-	return t.time.UnmarshalJSON(data)
-}
-
-func (t Time) MarshalJSON() ([]byte, error) {
-	return t.time.MarshalJSON()
 }
