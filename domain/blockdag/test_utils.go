@@ -170,18 +170,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	virtual := newVirtualBlock(dag, parents)
 
 	if dag.index.BlockNodeStatus(virtual.selectedParent) == statusUTXONotVerified {
-		dbTx, err := dag.databaseContext.NewTx()
-		if err != nil {
-			return nil, err
-		}
-		defer dbTx.RollbackUnlessClosed()
-
-		err = dag.resolveNodeStatus(virtual.selectedParent, BFNone, dbTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = dbTx.Commit()
+		err := resolveNodeStatusForTest(virtual.selectedParent)
 		if err != nil {
 			return nil, err
 		}
@@ -317,7 +306,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	}
 
 	blockTransactions[0], err = node.expectedCoinbaseTransaction(
-		dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
+		txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}

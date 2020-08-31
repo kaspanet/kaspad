@@ -22,7 +22,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 	if err != nil {
 		return err
 	}
-	expectedCoinbaseTransaction, err := node.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
+	expectedCoinbaseTransaction, err := node.expectedCoinbaseTransaction(txsAcceptanceData, scriptPubKey, extraData)
 	if err != nil {
 		return err
 	}
@@ -35,12 +35,12 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 }
 
 // expectedCoinbaseTransaction returns the coinbase transaction for the current block
-func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
+func (node *blockNode) expectedCoinbaseTransaction(txsAcceptanceData MultiBlockTxsAcceptanceData, scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
 	txIns := []*appmessage.TxIn{}
 	txOuts := []*appmessage.TxOut{}
 
 	for _, blue := range node.blues {
-		txOut, err := coinbaseOutputForBlueBlock(dag, blue, txsAcceptanceData)
+		txOut, err := coinbaseOutputForBlueBlock(node.dag, blue, txsAcceptanceData)
 		if err != nil {
 			return nil, err
 		}
@@ -113,5 +113,5 @@ func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, ext
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
+	return dag.virtual.blockNode.expectedCoinbaseTransaction(txsAcceptanceData, scriptPubKey, extraData)
 }
