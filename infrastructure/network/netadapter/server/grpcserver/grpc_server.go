@@ -90,12 +90,12 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
-	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
+	gRPCClientConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to %s", address)
 	}
 
-	client := protowire.NewP2PClient(gRPCConnection)
+	client := protowire.NewP2PClient(gRPCClientConnection)
 	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
@@ -110,7 +110,7 @@ func (s *gRPCServer) Connect(address string) (server.Connection, error) {
 		return nil, errors.Errorf("non-tcp addresses are not supported")
 	}
 
-	connection := newConnection(s, tcpAddress, true, stream)
+	connection := newConnection(s, tcpAddress, stream, gRPCClientConnection)
 
 	err = s.onConnectedHandler(connection)
 	if err != nil {

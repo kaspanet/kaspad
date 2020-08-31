@@ -13,11 +13,11 @@ import (
 )
 
 type gRPCConnection struct {
-	server     *gRPCServer
-	address    *net.TCPAddr
-	isOutbound bool
-	stream     grpcStream
-	router     *router.Router
+	server                   *gRPCServer
+	address                  *net.TCPAddr
+	stream                   grpcStream
+	router                   *router.Router
+	lowLevelClientConnection *grpc.ClientConn
 
 	// streamLock protects concurrent access to stream.
 	// Note that it's an RWMutex. Despite what the name
@@ -34,14 +34,16 @@ type gRPCConnection struct {
 	isConnected uint32
 }
 
-func newConnection(server *gRPCServer, address *net.TCPAddr, isOutbound bool, stream grpcStream) *gRPCConnection {
+func newConnection(server *gRPCServer, address *net.TCPAddr, stream grpcStream,
+	lowLevelClientConnection *grpc.ClientConn) *gRPCConnection {
+
 	connection := &gRPCConnection{
-		server:      server,
-		address:     address,
-		isOutbound:  isOutbound,
-		stream:      stream,
-		stopChan:    make(chan struct{}),
-		isConnected: 1,
+		server:                   server,
+		address:                  address,
+		stream:                   stream,
+		stopChan:                 make(chan struct{}),
+		isConnected:              1,
+		lowLevelClientConnection: lowLevelClientConnection,
 	}
 
 	return connection
@@ -83,7 +85,7 @@ func (c *gRPCConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler serv
 }
 
 func (c *gRPCConnection) IsOutbound() bool {
-	return c.isOutbound
+	return c.lowLevelClientConnection != nil
 }
 
 // Disconnect disconnects the connection
@@ -98,7 +100,7 @@ func (c *gRPCConnection) Disconnect() {
 
 	close(c.stopChan)
 
-	if c.isOutbound {
+	if c.IsOutbound() {
 		c.closeSend()
 		log.Debugf("Disconnected from %s", c)
 	}
@@ -138,5 +140,8 @@ func (c *gRPCConnection) closeSend() {
 	defer c.streamLock.Unlock()
 
 	clientStream := c.stream.(protowire.P2P_MessageStreamClient)
-	_ = clientStream.CloseSend() // ignore error because we don't really know what's the status of the connection
+
+	// ignore error because we don't really know what's the status of the connection
+	_ = clientStream.CloseSend()
+	_ = c.lowLevelClientConnection.Close()
 }

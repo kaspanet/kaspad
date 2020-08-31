@@ -29,7 +29,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 		return errors.Errorf("non-tcp connections are not supported")
 	}
 
-	connection := newConnection(p.server, tcpAddress, false, stream)
+	connection := newConnection(p.server, tcpAddress, stream, nil)
 
 	err := p.server.onConnectedHandler(connection)
 	if err != nil {
