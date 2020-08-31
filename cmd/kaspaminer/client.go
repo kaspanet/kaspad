@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/grpcclient"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"time"
