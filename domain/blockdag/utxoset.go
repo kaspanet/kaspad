@@ -212,7 +212,7 @@ func minInt(a, b int) int {
 	return b
 }
 
-// intersectionWithRemainderHavingBlueScoreInPlace calculates an intersection between two utxoCollections
+// intersectionWithRemainderHavingBlueScore calculates an intersection between two utxoCollections
 // having same blue score, returns the result and the remainder from collection1
 func intersectionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
 	result = make(utxoCollection, minInt(len(collection1), len(collection2)))
