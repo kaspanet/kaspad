@@ -33,16 +33,16 @@ func buildNode(t *testing.T, dag *BlockDAG, parents blockSet) *blockNode {
 	return nodeByMsgBlock(t, dag, block)
 }
 
-// TestVirtualBlock ensures that VirtualBlock works as expected.
-func TestVirtualBlock(t *testing.T) {
+// TestTips ensures that tips are updated as expected.
+func TestTips(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestVirtualBlock", true, Config{
+	dag, teardownFunc, err := DAGSetup("TestTips", true, Config{
 		DAGParams: &params,
 	})
 	if err != nil {
-		t.Fatalf("TestVirtualBlock: Failed to setup DAG instance: %s", err)
+		t.Fatalf("TestTips: Failed to setup DAG instance: %s", err)
 	}
 	defer teardownFunc()
 
@@ -75,13 +75,6 @@ func TestVirtualBlock(t *testing.T) {
 		expectedSelectedParent *blockNode
 	}{
 		{
-			name:                   "empty virtual",
-			tipsToSet:              []*blockNode{},
-			tipsToAdd:              []*blockNode{},
-			expectedTips:           newBlockSet(),
-			expectedSelectedParent: nil,
-		},
-		{
 			name:                   "virtual with genesis tip",
 			tipsToSet:              []*blockNode{node0},
 			tipsToAdd:              []*blockNode{},
@@ -96,11 +89,11 @@ func TestVirtualBlock(t *testing.T) {
 			expectedSelectedParent: node1,
 		},
 		{
-			name:                   "empty virtual, add a full DAG",
-			tipsToSet:              []*blockNode{},
-			tipsToAdd:              []*blockNode{node0, node1, node2, node3, node4, node5, node6},
+			name:                   "virtual with genesis, add a full DAG",
+			tipsToSet:              []*blockNode{node0},
+			tipsToAdd:              []*blockNode{node1, node2, node3, node4, node5, node6},
 			expectedTips:           blockSetFromSlice(node2, node5, node6),
-			expectedSelectedParent: node5,
+			expectedSelectedParent: node6,
 		},
 	}
 
@@ -108,7 +101,7 @@ func TestVirtualBlock(t *testing.T) {
 		// Set the tips. This will be the initial state
 		_, _, err := dag.setTips(blockSetFromSlice(test.tipsToSet...))
 		if err != nil {
-			t.Fatalf("Error setting tips: %+v", err)
+			t.Fatalf("%s: Error setting tips: %+v", test.name, err)
 		}
 
 		// Add all blockNodes in tipsToAdd in order
@@ -116,21 +109,21 @@ func TestVirtualBlock(t *testing.T) {
 			addNodeAsChildToParents(tipToAdd)
 			_, _, err := dag.addTip(tipToAdd)
 			if err != nil {
-				t.Fatalf("Error adding tip: %+v", err)
+				t.Fatalf("%s: Error adding tip: %+v", test.name, err)
 			}
 		}
 
 		// Ensure that the dag's tips are now equal to expectedTips
 		resultTips := dag.tips
 		if !reflect.DeepEqual(resultTips, test.expectedTips) {
-			t.Errorf("unexpected tips in test \"%s\". "+
+			t.Errorf("%s: unexpected tips. "+
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)
 		}
 
 		// Ensure that the virtual block's selectedParent is now equal to expectedSelectedParent
 		resultSelectedTip := dag.virtual.selectedParent
 		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedParent) {
-			t.Errorf("unexpected selected tip in test \"%s\". "+
+			t.Errorf("%s: unexpected selected tip. "+
 				"Expected: %v, got: %v.", test.name, test.expectedSelectedParent, resultSelectedTip)
 		}
 	}
