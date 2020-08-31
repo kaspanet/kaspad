@@ -11,7 +11,14 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
-	return x.Payload.(converter).toAppMessage()
+	appMessage, err := x.Payload.(converter).toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	if x.Error != nil {
+		appMessage.SetError(x.Error.Message)
+	}
+	return appMessage, nil
 }
 
 // FromAppMessage creates a KaspadMessage from a appmessage.Message
@@ -20,8 +27,14 @@ func FromAppMessage(message appmessage.Message) (*KaspadMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	var errorMessage *Error
+	if message.Error() != nil {
+		errorMessage = &Error{Message: message.Error().Message}
+	}
+	message.Error()
 	return &KaspadMessage{
 		Payload: payload,
+		Error:   errorMessage,
 	}, nil
 }
 

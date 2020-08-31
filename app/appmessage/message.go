@@ -118,4 +118,6 @@ type Message interface {
 	SetMessageNumber(index uint64)
 	ReceivedAt() time.Time
 	SetReceivedAt(receivedAt time.Time)
+	Error() *ErrorMessage
+	SetError(error string)
 }

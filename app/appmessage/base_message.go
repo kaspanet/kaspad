@@ -5,7 +5,7 @@ import "time"
 type baseMessage struct {
 	messageNumber uint64
 	receivedAt    time.Time
-	error         ErrorMessage
+	error         *ErrorMessage
 }
 
 func (b *baseMessage) MessageNumber() uint64 {
@@ -24,10 +24,10 @@ func (b *baseMessage) SetReceivedAt(receivedAt time.Time) {
 	b.receivedAt = receivedAt
 }
 
-func (b *baseMessage) Error() ErrorMessage {
+func (b *baseMessage) Error() *ErrorMessage {
 	return b.error
 }
 
 func (b *baseMessage) SetError(error string) {
-	b.error = ErrorMessage{Message: error}
+	b.error = &ErrorMessage{Message: error}
 }
