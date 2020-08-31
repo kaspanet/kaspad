@@ -13,15 +13,14 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/pkg/errors"
 )
 
 func TestBlockCount(t *testing.T) {
@@ -236,19 +235,41 @@ func TestIsKnownBlock(t *testing.T) {
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimnetParams
-
-	blockVersion := int32(0x10000000)
+	dag, teardownFunc, err := DAGSetup("TestCalcSequenceLock", true, Config{
+		DAGParams: netParams,
+	})
+	if err != nil {
+		t.Fatalf("Error in DAGSetup: %+v", err)
+	}
+	defer teardownFunc()
 
 	// Generate enough synthetic blocks for the rest of the test
-	dag := newTestDAG(netParams)
 	node := dag.selectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := 5
 	for i := 0; i < numBlocksToGenerate; i++ {
-		blockTime = blockTime.Add(time.Second)
-		node = newTestNode(dag, blockSetFromSlice(node), blockVersion, 0, blockTime)
-		dag.index.AddNode(node)
-		dag.setTips(blockSetFromSlice(node))
+		parents := blockSetFromSlice(node)
+
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("block No. %d got unexpected error from PrepareBlockForTest: %+v", i, err)
+		}
+		block.Header.Timestamp = blockTime.Add(time.Second)
+
+		utilBlock := util.NewBlock(block)
+		isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("block No. %d got unexpected error from ProcessBlock: %+v", i, err)
+		}
+		if isOrphan || isDelayed {
+			t.Fatalf("Block No. %d is unexpectadly orphan: %t or delayed: %t", i, isOrphan, isDelayed)
+		}
+
+		var ok bool
+		node, ok = dag.index.LookupNode(block.BlockHash())
+		if !ok {
+			t.Errorf("Block No. %d not found in index after adding to dag", i)
+		}
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -1257,7 +1278,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	if !ok {
 		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
 	}
-	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
@@ -1270,7 +1291,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
 
 	// Get blockC's selectedParentMultiset again
-	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}

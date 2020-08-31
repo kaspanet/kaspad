@@ -108,7 +108,7 @@ func (bs blockSet) bluest() *blockNode {
 	for node := range bs {
 		if bluestNode == nil ||
 			node.blueScore > maxScore ||
-			(node.blueScore == maxScore && daghash.Less(node.hash, bluestNode.hash)) {
+			(node.blueScore == maxScore && daghash.Less(bluestNode.hash, node.hash)) {
 			bluestNode = node
 			maxScore = node.blueScore
 		}

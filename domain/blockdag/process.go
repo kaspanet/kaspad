@@ -354,7 +354,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
 
 	if !node.isGenesis() {
-		err := dag.resolveSelectedParentStatus(node.selectedParent, flags, dbTx)
+		err := dag.resolveNodeStatus(node.selectedParent, flags, dbTx)
 		if err != nil {
 			return err
 		}
@@ -365,7 +365,7 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 		}
 	}
 
-	utxoVerificationData, err := node.verifyAndBuildUTXO(dag, block.Transactions())
+	utxoVerificationData, err := node.verifyAndBuildUTXO(block.Transactions())
 	if err != nil {
 		return errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
@@ -394,11 +394,6 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 		return errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
-	err := dbaccess.StoreFeeData(dbTx, node.hash, utxoVerificationData.newBlockFeeData)
-	if err != nil {
-		return err
-	}
-
 	if dag.indexManager != nil {
 		err := dag.indexManager.ConnectBlock(dbTx, node.hash, utxoVerificationData.txsAcceptanceData)
 		if err != nil {
@@ -409,7 +404,7 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	return nil
 }
 
-func (dag *BlockDAG) resolveSelectedParentStatus(
+func (dag *BlockDAG) resolveNodeStatus(
 	selectedParent *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
 
 	if dag.index.BlockNodeStatus(selectedParent) == statusUTXONotVerified {
@@ -583,14 +578,17 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 	}
 
 	// If the first candidate has been disqualified from the chain - he cannot be a virtualParentCandidate, since it
-	// will make him selectedParent - making virtual itself disqualified.
+	// will make him virtual's selectedParent - making virtual itself disqualified.
 	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
 	// it's parents that have no other children
 	for {
+		if tipsHeap.Len() == 0 {
+			return nil, errors.New("virtual has no valid parent candidates")
+		}
 		firstCandidate := tipsHeap.pop()
 
 		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
-			tipsHeap.Push(firstCandidate)
+			selected.add(firstCandidate)
 			break
 		}
 
@@ -609,6 +607,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
 			continue
 		}

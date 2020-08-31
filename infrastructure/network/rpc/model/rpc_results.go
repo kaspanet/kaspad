@@ -97,6 +97,7 @@ type GetBlockDAGInfoResult struct {
 	Blocks               uint64                              `json:"blocks"`
 	Headers              uint64                              `json:"headers"`
 	TipHashes            []string                            `json:"tipHashes"`
+	VirtualParentsHashes []string                            `json:"virtualParentsHashes"`
 	Difficulty           float64                             `json:"difficulty"`
 	MedianTime           int64                               `json:"medianTime"`
 	VerificationProgress float64                             `json:"verificationProgress,omitempty"`

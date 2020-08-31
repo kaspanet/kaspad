@@ -754,12 +754,12 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 		block := data.Block
 
-		tipHashes := s.dag.TipHashes()
+		virtualParentsHashes := s.dag.VirtualParentsHashes()
 
 		// Allow any clients performing long polling via the
 		// getBlockTemplate RPC to be notified when the new block causes
 		// their old block template to become stale.
-		s.gbtWorkState.NotifyBlockAdded(tipHashes)
+		s.gbtWorkState.NotifyBlockAdded(virtualParentsHashes)
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockAdded(block)
