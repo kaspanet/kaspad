@@ -44,7 +44,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*appmessage.MsgBlo
 
 	msgBlock.Header = appmessage.BlockHeader{
 		Version:              blockVersion,
-		ParentHashes:         dag.TipHashes(),
+		ParentHashes:         dag.VirtualParentsHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       (*daghash.Hash)(multiset.Finalize()),
@@ -65,7 +65,7 @@ func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
 		return nil, err
 	}
 
-	return dag.virtual.blockNode.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	return dag.virtual.blockNode.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 }
 
 // CoinbasePayloadExtraData returns coinbase payload extra data parameter

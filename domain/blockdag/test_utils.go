@@ -169,6 +169,13 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(dag, parents)
 
+	if dag.index.BlockNodeStatus(virtual.selectedParent) == statusUTXONotVerified {
+		err := resolveNodeStatusForTest(virtual.selectedParent)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	pastUTXO, _, _, err := dag.pastUTXO(virtual.blockNode)
 	if err != nil {
 		return nil, err
@@ -260,18 +267,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	node, _ := dag.newBlockNode(nil, parents)
 
 	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXONotVerified {
-		dbTx, err := dag.databaseContext.NewTx()
-		if err != nil {
-			return nil, err
-		}
-		defer dbTx.RollbackUnlessClosed()
-
-		err = dag.resolveSelectedParentStatus(node.selectedParent, BFNone, dbTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = dbTx.Commit()
+		err := resolveNodeStatusForTest(node.selectedParent)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +280,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 
-	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +305,8 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return nil, err
 	}
 
-	blockTransactions[0], err = node.expectedCoinbaseTransaction(dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
+	blockTransactions[0], err = node.expectedCoinbaseTransaction(
+		txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}
@@ -353,18 +350,39 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	return &msgBlock, nil
 }
 
+func resolveNodeStatusForTest(node *blockNode) error {
+	dbTx, err := node.dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = node.dag.resolveNodeStatus(node, BFNone, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
 // hashes and process it.
-func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+func PrepareAndProcessBlockForTest(
+	t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {
-		t.Fatalf("error in PrepareBlockForTest: %s", err)
+		t.Fatalf("error in PrepareBlockForTest: %+v", err)
 	}
 	utilBlock := util.NewBlock(block)
 	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 	if err != nil {
-		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		t.Fatalf("unexpected error in ProcessBlock: %+v", err)
 	}
 	if isDelayed {
 		t.Fatalf("block is too far in the future")

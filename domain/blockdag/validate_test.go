@@ -113,13 +113,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		}
 	}
 
-	// Block 3 should fail to connect since it's already inserted.
-	err = dag.CheckConnectBlockTemplateNoLock(blocks[3])
-	if err == nil {
-		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
-			"on block 3")
-	}
-
 	// Block 4 should connect successfully to tip of chain.
 	err = dag.CheckConnectBlockTemplateNoLock(blocks[4])
 	if err != nil {

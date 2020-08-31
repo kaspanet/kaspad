@@ -280,7 +280,7 @@ func handleGetBlockTemplateProposal(s *Server, request *model.TemplateRequest) (
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected parent blocks.
-	expectedParentHashes := s.dag.TipHashes()
+	expectedParentHashes := s.dag.VirtualParentsHashes()
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if !daghash.AreEqual(expectedParentHashes, parentHashes) {
 		return "bad-parentblk", nil
@@ -388,12 +388,12 @@ func dagErrToGBTErrString(err error) string {
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated mstime.Time) {
+func (state *gbtWorkState) notifyLongPollers(virtualParentsHashes []*daghash.Hash, lastGenerated mstime.Time) {
 	// Notify anything that is waiting for a block template update from
-	// hashes which are not the current tip hashes.
-	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
+	// hashes which are not the current virtual parents hashes.
+	virtualParentsHashesStr := daghash.JoinHashesStrings(virtualParentsHashes, "")
 	for hashesStr, channels := range state.notifyMap {
-		if hashesStr != tipHashesStr {
+		if hashesStr != virtualParentsHashesStr {
 			for _, c := range channels {
 				close(c)
 			}
@@ -409,7 +409,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 
 	// Return now if there is nothing registered for updates to the current
 	// best block hash.
-	channels, ok := state.notifyMap[tipHashesStr]
+	channels, ok := state.notifyMap[virtualParentsHashesStr]
 	if !ok {
 		return
 	}
@@ -428,19 +428,19 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 	// Remove the entry altogether if there are no more registered
 	// channels.
 	if len(channels) == 0 {
-		delete(state.notifyMap, tipHashesStr)
+		delete(state.notifyMap, virtualParentsHashesStr)
 	}
 }
 
 // NotifyBlockAdded uses the newly-added block to notify any long poll
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
-func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
+func (state *gbtWorkState) NotifyBlockAdded(virtualParentsHashes []*daghash.Hash) {
 	spawn("gbtWorkState.NotifyBlockAdded", func() {
 		state.Lock()
 		defer state.Unlock()
 
-		state.notifyLongPollers(tipHashes, state.lastTxUpdate)
+		state.notifyLongPollers(virtualParentsHashes, state.lastTxUpdate)
 	})
 }
 
@@ -521,7 +521,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 	// generated.
 	var msgBlock *appmessage.MsgBlock
 	var targetDifficulty string
-	tipHashes := s.dag.TipHashes()
+	tipHashes := s.dag.VirtualParentsHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||

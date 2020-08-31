@@ -1018,12 +1018,11 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 }
 
 func (dag *BlockDAG) checkConnectBlockToPastUTXO(
-	node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (feeData compactFeeData, err error) {
+	node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (err error) {
 
 	selectedParentMedianTime := node.selectedParentMedianTime()
 
 	totalFee := uint64(0)
-	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
 		txFee, _, err :=
@@ -1031,29 +1030,19 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(
 
 		if err != nil {
 			if ruleErr := &(RuleError{}); !errors.As(err, ruleErr) {
-				return nil, err
+				return err
 			}
 
 			continue
 		}
 
-		err = compactFeeFactory.add(txFee)
-		if err != nil {
-			return nil, err
-		}
-
 		totalFee, err = dag.checkTotalFee(totalFee, txFee)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	feeData, err = compactFeeFactory.data()
-	if err != nil {
-		return nil, err
-	}
-
-	return feeData, nil
+	return nil
 }
 
 type txInputAndReferencedUTXOEntry struct {
@@ -1327,7 +1316,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	templateNode, _ := dag.newBlockNode(&header, templateParents)
 
-	_, err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
+	err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 
 	return err
 }
