@@ -51,7 +51,7 @@ func connectToServer(rpcAddress string) (*grpcclient.RPCClient, error) {
 		return nil, errors.Wrapf(err, "error requesting block-added notifications")
 	}
 
-	log.Infof("Connected to server %s", rpcClient)
+	log.Infof("Connected to server %s", rpcAddress)
 
 	return rpcClient, nil
 }
