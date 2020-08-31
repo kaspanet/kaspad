@@ -26,10 +26,11 @@ func newMinerClient(cfg *configFlags) (*minerClient, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "error connecting to address %s", rpcClient)
 	}
-	minerRouter, err := newRouter(rpcClient)
+	minerRouter, err := buildRouter()
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating the miner router")
 	}
+	rpcClient.AttachRouter(minerRouter.router)
 
 	minerClient := &minerClient{
 		RPCClient:  rpcClient,

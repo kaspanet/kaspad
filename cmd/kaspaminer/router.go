@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -12,7 +11,7 @@ type minerRouter struct {
 	blockAddedNotificationRoute   *routerpkg.Route
 }
 
-func newRouter(rpcClient *grpcclient.RPCClient) (*minerRouter, error) {
+func buildRouter() (*minerRouter, error) {
 	router := routerpkg.NewRouter()
 	getBlockTemplateResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdGetBlockTemplateResponseMessage})
 	if err != nil {
@@ -33,31 +32,6 @@ func newRouter(rpcClient *grpcclient.RPCClient) (*minerRouter, error) {
 		getBlockTemplateResponseRoute: getBlockTemplateResponseRoute,
 		blockAddedNotificationRoute:   blockAddedNotificationRoute,
 	}
-
-	spawn("NewRouter-sendLoop", func() {
-		for {
-			message, err := minerRouter.router.OutgoingRoute().Dequeue()
-			if err != nil {
-				panic(err)
-			}
-			err = rpcClient.SendAppMessage(message)
-			if err != nil {
-				panic(err)
-			}
-		}
-	})
-	spawn("NewRouter-receiveLoop", func() {
-		for {
-			message, err := rpcClient.ReceiveAppMessage()
-			if err != nil {
-				panic(err)
-			}
-			err = minerRouter.router.EnqueueIncomingMessage(message)
-			if err != nil {
-				panic(err)
-			}
-		}
-	})
 
 	return minerRouter, nil
 }
