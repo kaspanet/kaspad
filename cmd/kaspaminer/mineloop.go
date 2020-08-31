@@ -1,14 +1,17 @@
 package main
 
 import (
+	"encoding/hex"
 	nativeerrors "errors"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"math/rand"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	clientpkg "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -89,11 +92,11 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 }
 
 func handleFoundBlock(client *minerClient, block *util.Block) error {
-	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Address())
+	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.address())
 
-	err := client.SubmitBlock(block)
+	err := client.submitBlock(block)
 	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Address(), err)
+		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.address(), err)
 	}
 	return nil
 }
@@ -116,7 +119,6 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 			}
 		}
 	}
-
 }
 
 func templatesLoop(client *minerClient, miningAddr util.Address,
@@ -125,16 +127,16 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Address())
+			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.address())
 		} else {
-			log.Infof("Requesting template without longPollID from %s", client.Address())
+			log.Infof("Requesting template without longPollID from %s", client.address())
 		}
-		template, err := getBlockTemplate(client, miningAddr, longPollID)
-		if nativeerrors.Is(err, clientpkg.ErrResponseTimedOut) {
-			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Address())
+		template, err := client.getBlockTemplate(miningAddr.String(), longPollID)
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.address())
 			return
 		} else if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
+			errChan <- errors.Errorf("Error getting block template from %s: %s", client.address(), err)
 			return
 		}
 		if template.LongPollID != longPollID {
@@ -149,16 +151,12 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 		case <-stopChan:
 			close(newTemplateChan)
 			return
-		case <-client.onBlockAdded:
+		case <-client.blockAddedNotificationChan:
 			getBlockTemplateLongPoll()
 		case <-time.Tick(500 * time.Millisecond):
 			getBlockTemplateLongPoll()
 		}
 	}
-}
-
-func getBlockTemplate(client *minerClient, miningAddr util.Address, longPollID string) (*appmessage.GetBlockTemplateResponseMessage, error) {
-	return client.GetBlockTemplate(miningAddr.String(), longPollID)
 }
 
 func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *util.Block,
@@ -179,7 +177,7 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(template)
+		block, err := convertGetBlockTemplateResultToBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return
@@ -192,4 +190,55 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 	if stopOldTemplateSolving != nil {
 		close(stopOldTemplateSolving)
 	}
+}
+
+func convertGetBlockTemplateResultToBlock(template *appmessage.GetBlockTemplateResponseMessage) (*util.Block, error) {
+	// parse parent hashes
+	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
+	for i, parentHash := range template.ParentHashes {
+		hash, err := daghash.NewHashFromStr(parentHash)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error decoding hash: '%s'", parentHash)
+		}
+		parentHashes[i] = hash
+	}
+
+	// parse Bits
+	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error decoding bits: '%s'", template.Bits)
+	}
+	bits := uint32(bitsUint64)
+
+	// parse hashMerkleRoot
+	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing HashMerkleRoot: '%s'", template.HashMerkleRoot)
+	}
+
+	// parse AcceptedIDMerkleRoot
+	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing acceptedIDMerkleRoot: '%s'", template.AcceptedIDMerkleRoot)
+	}
+	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing utxoCommitment '%s'", template.UTXOCommitment)
+	}
+	// parse rest of block
+	msgBlock := appmessage.NewMsgBlock(
+		appmessage.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
+			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
+
+	for i, txResult := range template.Transactions {
+		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
+		tx := &appmessage.MsgTx{}
+		if err := tx.KaspaDecode(reader, 0); err != nil {
+			return nil, errors.Wrapf(err, "error decoding tx #%d", i)
+		}
+		msgBlock.AddTransaction(tx)
+	}
+
+	block := util.NewBlock(msgBlock)
+	return block, nil
 }

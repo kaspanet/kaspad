@@ -12,7 +12,7 @@ func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(_ *appmessage.Not
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.NotifyBlockAddedRequestMessage{}, nil
+	return &appmessage.NotifyBlockAddedResponseMessage{}, nil
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(_ *appmessage.NotifyBlockAddedResponseMessage) error {

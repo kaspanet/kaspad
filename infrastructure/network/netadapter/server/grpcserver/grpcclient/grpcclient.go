@@ -87,3 +87,35 @@ func (c *RPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMes
 	}
 	return response, nil
 }
+
+func (c *RPCClient) Send(request *protowire.KaspadMessage) error {
+	return c.stream.Send(request)
+}
+
+func (c *RPCClient) SendAppMessage(requestAppMessage appmessage.Message) error {
+	request, err := protowire.FromAppMessage(requestAppMessage)
+	if err != nil {
+		return errors.Wrapf(err, "error converting the request")
+	}
+	return c.Send(request)
+}
+
+func (c *RPCClient) Receive() (*protowire.KaspadMessage, error) {
+	response, err := c.stream.Recv()
+	if err != nil {
+		return nil, err
+	}
+	errorResponse, isErrorResponse := response.Payload.(*protowire.KaspadMessage_RpcError)
+	if isErrorResponse {
+		return nil, errors.Errorf("received error from RPC: %s", errorResponse.RpcError.Message)
+	}
+	return response, nil
+}
+
+func (c *RPCClient) ReceiveAppMessage() (appmessage.Message, error) {
+	response, err := c.Receive()
+	if err != nil {
+		return nil, errors.Wrapf(err, "error receiving the response from the RPC server")
+	}
+	return response.ToAppMessage()
+}
