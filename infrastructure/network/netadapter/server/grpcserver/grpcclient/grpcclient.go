@@ -81,5 +81,9 @@ func (c *RPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMes
 	if err != nil {
 		return nil, errors.Wrapf(err, "error receiving the response from the RPC server")
 	}
+	errorResponse, isErrorResponse := response.Payload.(*protowire.KaspadMessage_RpcError)
+	if isErrorResponse {
+		return nil, errors.Errorf("received error from RPC: %s", errorResponse.RpcError.Message)
+	}
 	return response, nil
 }

@@ -107,7 +107,7 @@ func (c *Client) GetBlockTemplate(payAddress string, longPollID string) (*model.
 }
 
 // ConvertGetBlockTemplateResultToBlock Accepts a GetBlockTemplateResult and parses it into a Block
-func ConvertGetBlockTemplateResultToBlock(template *model.GetBlockTemplateResult) (*util.Block, error) {
+func ConvertGetBlockTemplateResultToBlock(template *appmessage.GetBlockTemplateResponseMessage) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
 	for i, parentHash := range template.ParentHashes {

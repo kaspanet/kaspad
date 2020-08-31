@@ -38,7 +38,7 @@ func main() {
 		profiling.Start(cfg.Profile, log)
 	}
 
-	client, err := connectToServer(cfg)
+	client, err := newMinerClient(cfg)
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}

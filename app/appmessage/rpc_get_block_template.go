@@ -14,8 +14,11 @@ func (msg *GetBlockTemplateRequestMessage) Command() MessageCommand {
 }
 
 // GetBlockTemplateRequestMessage returns a instance of the message
-func NewGetBlockTemplateRequestMessage() *GetBlockTemplateRequestMessage {
-	return &GetBlockTemplateRequestMessage{}
+func NewGetBlockTemplateRequestMessage(payAddress string, longPollID string) *GetBlockTemplateRequestMessage {
+	return &GetBlockTemplateRequestMessage{
+		PayAddress: payAddress,
+		LongPollID: longPollID,
+	}
 }
 
 // GetBlockTemplateResponseMessage is an appmessage corresponding to
