@@ -21,8 +21,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpc"
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )
@@ -30,7 +28,6 @@ import (
 // App is a wrapper for all the kaspad services
 type App struct {
 	cfg               *config.Config
-	rpcServer         *rpc.Server
 	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
 	rpcManager        *rpc2.Manager
@@ -57,10 +54,6 @@ func (a *App) Start() {
 	a.maybeSeedFromDNS()
 
 	a.connectionManager.Start()
-
-	if !a.cfg.DisableRPC {
-		a.rpcServer.Start()
-	}
 }
 
 // Stop gracefully shuts down all the kaspad services.
@@ -80,14 +73,6 @@ func (a *App) Stop() {
 		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
-	// Shutdown the RPC server if it's not disabled.
-	if !a.cfg.DisableRPC {
-		err := a.rpcServer.Stop()
-		if err != nil {
-			log.Errorf("Error stopping rpcServer: %+v", err)
-		}
-	}
-
 	err = a.addressManager.Stop()
 	if err != nil {
 		log.Errorf("Error stopping address manager: %s", err)
@@ -100,7 +85,7 @@ func (a *App) Stop() {
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*App, error) {
-	indexManager, acceptanceIndex := setupIndexes(cfg)
+	indexManager, _ := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
 
@@ -134,15 +119,8 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 
-	rpcServer, err := setupRPC(
-		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
-	if err != nil {
-		return nil, err
-	}
-
 	return &App{
 		cfg:               cfg,
-		rpcServer:         rpcServer,
 		protocolManager:   protocolManager,
 		rpcManager:        rpcManager,
 		connectionManager: connectionManager,
@@ -212,38 +190,6 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 	}
 
 	return mempool.New(&mempoolConfig)
-}
-
-func setupRPC(cfg *config.Config,
-	dag *blockdag.BlockDAG,
-	txMempool *mempool.TxPool,
-	sigCache *txscript.SigCache,
-	acceptanceIndex *indexers.AcceptanceIndex,
-	connectionManager *connmanager.ConnectionManager,
-	addressManager *addressmanager.AddressManager,
-	protocolManager *protocol.Manager) (*rpc.Server, error) {
-
-	if !cfg.DisableRPC {
-		policy := mining.Policy{
-			BlockMaxMass: cfg.BlockMaxMass,
-		}
-		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
-
-		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator,
-			connectionManager, addressManager, protocolManager)
-		if err != nil {
-			return nil, err
-		}
-
-		// Signal process shutdown when the RPC server requests it.
-		spawn("setupRPC-handleShutdownRequest", func() {
-			<-rpcServer.RequestedProcessShutdown()
-			signal.ShutdownRequestChannel <- struct{}{}
-		})
-
-		return rpcServer, nil
-	}
-	return nil, nil
 }
 
 // P2PNodeID returns the network ID associated with this App
