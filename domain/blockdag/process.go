@@ -256,7 +256,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
 		}
 
-		isViolatingSubjectiveFinality, err = node.isViolatingSubjectiveFinality()
+		isViolatingSubjectiveFinality, err = node.isViolatingFinality()
 		if err != nil {
 			return nil, err
 		}

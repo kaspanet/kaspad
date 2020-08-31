@@ -303,7 +303,7 @@ func (node *blockNode) nonFinalityViolatingBlues() (blockSet, error) {
 	return nonFinalityViolatingBlues, nil
 }
 
-func (node *blockNode) checkObjectiveFinality() error {
+func (node *blockNode) checkBoundedMergeDepth() error {
 	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
 	if err != nil {
 		return err
@@ -329,7 +329,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 	return nil
 }
 
-func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
+func (node *blockNode) isViolatingFinality() (bool, error) {
 	for parent := range node.parents {
 		if node.dag.index.BlockNodeStatus(parent) == statusViolatedSubjectiveFinality {
 			return true, nil
@@ -350,7 +350,7 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	return false, nil
 }
 
-func (node *blockNode) checkMergeLimit() error {
+func (node *blockNode) checkMergeSizeLimit() error {
 	mergeSetSize := len(node.reds) + len(node.blues)
 
 	if mergeSetSize > mergeSetSizeLimit {

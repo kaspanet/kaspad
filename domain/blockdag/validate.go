@@ -795,12 +795,12 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 }
 
 func (node *blockNode) checkDAGRelations() error {
-	err := node.checkMergeLimit()
+	err := node.checkMergeSizeLimit()
 	if err != nil {
 		return err
 	}
 
-	err = node.checkObjectiveFinality()
+	err = node.checkBoundedMergeDepth()
 	if err != nil {
 		return err
 	}
