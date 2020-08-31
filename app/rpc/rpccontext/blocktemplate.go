@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -175,12 +174,12 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 	adjustedTime := dag.Now()
 	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
-		return nil, &rpcerrors.RPCError{
-			Message: fmt.Sprintf("The template time is after the "+
-				"maximum allowed time for a block - template "+
-				"time %s, maximum time %s", adjustedTime,
-				maxTime),
-		}
+		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+		errorMessage.SetError(fmt.Sprintf("The template time is after the "+
+			"maximum allowed time for a block - template "+
+			"time %s, maximum time %s", adjustedTime,
+			maxTime))
+		return errorMessage, nil
 	}
 
 	// Convert each transaction in the block template to a template result
@@ -213,9 +212,9 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 		// Serialize the transaction for later conversion to hex.
 		txBuf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		if err := tx.Serialize(txBuf); err != nil {
-			return nil, &rpcerrors.RPCError{
-				Message: fmt.Sprintf("Failed to serialize transaction: %s", err),
-			}
+			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+			errorMessage.SetError(fmt.Sprintf("Failed to serialize transaction: %s", err))
+			return errorMessage, nil
 		}
 
 		resultTx := appmessage.GetBlockTemplateTransactionMessage{

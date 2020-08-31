@@ -37,8 +37,12 @@ message KaspadMessage {
     NotifyBlockAddedRequestMessage notifyBlockAddedRequest = 1007;
     NotifyBlockAddedResponseMessage notifyBlockAddedResponse = 1008;
     BlockAddedNotificationMessage blockAddedNotification = 1009;
-    RPCErrorMessage rpcError = 1100;
   }
+  Error error = 2000;
+}
+
+message Error{
+  string message = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -296,10 +300,6 @@ message NotifyBlockAddedResponseMessage{
 
 message BlockAddedNotificationMessage{
   BlockMessage block = 1;
-}
-
-message RPCErrorMessage{
-  string message = 1;
 }
 
 service RPC {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
@@ -18,16 +17,16 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	// way to relay a found block or receive transactions to work on.
 	// However, allow this state when running in the simulation test mode.
 	if context.DAG.Params != &dagconfig.SimnetParams && context.ConnectionManager.ConnectionCount() == 0 {
-		return nil, &rpcerrors.RPCError{
-			Message: "Kaspad is not connected",
-		}
+		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+		errorMessage.SetError("Kaspad is not connected")
+		return errorMessage, nil
 	}
 
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.DAG.Params.Prefix)
 	if err != nil {
-		return nil, &rpcerrors.RPCError{
-			Message: fmt.Sprintf("Could not decode address: %s", err),
-		}
+		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+		errorMessage.SetError(fmt.Sprintf("Could not decode address: %s", err))
+		return errorMessage, nil
 	}
 
 	// When a long poll ID was provided, this is a long poll request by the

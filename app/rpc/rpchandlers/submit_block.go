@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
@@ -18,22 +17,22 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 	// Deserialize the submitted block.
 	serializedBlock, err := hex.DecodeString(submitBlockRequest.BlockHex)
 	if err != nil {
-		return nil, &rpcerrors.RPCError{
-			Message: fmt.Sprintf("Block hex could not be parsed: %s", err),
-		}
+		errorMessage := &appmessage.SubmitBlockResponseMessage{}
+		errorMessage.SetError(fmt.Sprintf("Block hex could not be parsed: %s", err))
+		return errorMessage, nil
 	}
 	block, err := util.NewBlockFromBytes(serializedBlock)
 	if err != nil {
-		return nil, &rpcerrors.RPCError{
-			Message: "Block decode failed: " + err.Error(),
-		}
+		errorMessage := &appmessage.SubmitBlockResponseMessage{}
+		errorMessage.SetError(fmt.Sprintf("Block decode failed: %s", err))
+		return errorMessage, nil
 	}
 
 	err = context.ProtocolManager.AddBlock(block, blockdag.BFDisallowDelay|blockdag.BFDisallowOrphans)
 	if err != nil {
-		return nil, &rpcerrors.RPCError{
-			Message: fmt.Sprintf("Block rejected. Reason: %s", err),
-		}
+		errorMessage := &appmessage.SubmitBlockResponseMessage{}
+		errorMessage.SetError(fmt.Sprintf("Block rejected. Reason: %s", err))
+		return errorMessage, nil
 	}
 
 	log.Infof("Accepted block %s via submitBlock", block.Hash())

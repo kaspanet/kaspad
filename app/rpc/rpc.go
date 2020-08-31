@@ -3,7 +3,6 @@ package rpc
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/app/rpc/rpcerrors"
 	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -51,10 +50,6 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 		}
 		response, err := handler(m.context, router, request)
 		if err != nil {
-			if rpcErr := &(rpcerrors.RPCError{}); errors.As(err, &rpcErr) {
-				errorMessage := appmessage.NewRPCErrorMessage(rpcErr.Message)
-				return outgoingRoute.Enqueue(errorMessage)
-			}
 			return err
 		}
 		err = outgoingRoute.Enqueue(response)
