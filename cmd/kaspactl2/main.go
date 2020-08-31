@@ -24,7 +24,7 @@ func main() {
 		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
 
-	fmt.Print(responseString)
+	fmt.Println(responseString)
 }
 
 func printErrorAndExit(message string) {
