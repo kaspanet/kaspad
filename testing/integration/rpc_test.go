@@ -27,7 +27,7 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 	}
 	testRouter, err := buildTestRPCRouter()
 	if err != nil {
-		return nil, errors.Wrapf(err, "error creating the miner router")
+		return nil, errors.Wrapf(err, "error creating the test router")
 	}
 	rpcClient.AttachRouter(testRouter.router)
 
@@ -48,48 +48,27 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 }
 
 type testRPCRouter struct {
-	router                          *routerpkg.Router
-	getBlockTemplateResponseRoute   *routerpkg.Route
-	submitBlockResponseRoute        *routerpkg.Route
-	notifyBlockAddedResponseRoute   *routerpkg.Route
-	blockAddedNotificationRoute     *routerpkg.Route
-	getSelectedTipHashResponseRoute *routerpkg.Route
+	router *routerpkg.Router
+	routes map[appmessage.MessageCommand]*routerpkg.Route
 }
 
 func buildTestRPCRouter() (*testRPCRouter, error) {
 	router := routerpkg.NewRouter()
-	getBlockTemplateResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdGetBlockTemplateResponseMessage})
-	if err != nil {
-		return nil, err
-	}
-	submitBlockResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdSubmitBlockResponseMessage})
-	if err != nil {
-		return nil, err
-	}
-	notifyBlockAddedResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdNotifyBlockAddedResponseMessage})
-	if err != nil {
-		return nil, err
-	}
-	blockAddedNotificationRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdBlockAddedNotificationMessage})
-	if err != nil {
-		return nil, err
-	}
-	getSelectedTipHashResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdGetSelectedTipHashResponseMessage})
-	if err != nil {
-		return nil, err
+	routes := make(map[appmessage.MessageCommand]*routerpkg.Route, len(appmessage.RPCMessageCommandToString))
+	for messageType := range appmessage.RPCMessageCommandToString {
+		route, err := router.AddIncomingRoute([]appmessage.MessageCommand{messageType})
+		if err != nil {
+			return nil, err
+		}
+		routes[messageType] = route
 	}
 
-	minerRouter := &testRPCRouter{
+	testRPCRouter := &testRPCRouter{
 		router: router,
-
-		getBlockTemplateResponseRoute:   getBlockTemplateResponseRoute,
-		submitBlockResponseRoute:        submitBlockResponseRoute,
-		notifyBlockAddedResponseRoute:   notifyBlockAddedResponseRoute,
-		blockAddedNotificationRoute:     blockAddedNotificationRoute,
-		getSelectedTipHashResponseRoute: getSelectedTipHashResponseRoute,
+		routes: routes,
 	}
 
-	return minerRouter, nil
+	return testRPCRouter, nil
 }
 
 func (r *testRPCRouter) outgoingRoute() *routerpkg.Route {
@@ -100,12 +79,16 @@ func (c *testRPCClient) address() string {
 	return c.rpcAddress
 }
 
+func (c *testRPCClient) route(command appmessage.MessageCommand) *routerpkg.Route {
+	return c.router.routes[command]
+}
+
 func (c *testRPCClient) registerForBlockAddedNotifications() error {
 	err := c.router.outgoingRoute().Enqueue(appmessage.NewNotifyBlockAddedRequestMessage())
 	if err != nil {
 		return err
 	}
-	response, err := c.router.notifyBlockAddedResponseRoute.DequeueWithTimeout(testTimeout)
+	response, err := c.route(appmessage.CmdNotifyBlockAddedResponseMessage).DequeueWithTimeout(testTimeout)
 	if err != nil {
 		return err
 	}
@@ -115,7 +98,7 @@ func (c *testRPCClient) registerForBlockAddedNotifications() error {
 	}
 	spawn("registerForBlockAddedNotifications-blockAddedNotificationChan", func() {
 		for {
-			notification, err := c.router.blockAddedNotificationRoute.Dequeue()
+			notification, err := c.route(appmessage.CmdBlockAddedNotificationMessage).Dequeue()
 			if err != nil {
 				panic(err)
 			}
@@ -140,7 +123,7 @@ func (c *testRPCClient) submitBlock(block *util.Block) error {
 	if err != nil {
 		return err
 	}
-	response, err := c.router.submitBlockResponseRoute.DequeueWithTimeout(testTimeout)
+	response, err := c.route(appmessage.CmdSubmitBlockResponseMessage).DequeueWithTimeout(testTimeout)
 	if err != nil {
 		return err
 	}
@@ -156,7 +139,7 @@ func (c *testRPCClient) getBlockTemplate(miningAddress string, longPollID string
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.router.getBlockTemplateResponseRoute.DequeueWithTimeout(testTimeout)
+	response, err := c.route(appmessage.CmdGetBlockTemplateResponseMessage).DequeueWithTimeout(testTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +155,7 @@ func (c *testRPCClient) getPeerAddresses() (*appmessage.GetPeerAddressesResponse
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.router.getBlockTemplateResponseRoute.DequeueWithTimeout(testTimeout)
+	response, err := c.route(appmessage.CmdGetPeerAddressesResponseMessage).DequeueWithTimeout(testTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +171,7 @@ func (c *testRPCClient) getSelectedTipHash() (*appmessage.GetSelectedTipHashResp
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.router.getSelectedTipHashResponseRoute.DequeueWithTimeout(testTimeout)
+	response, err := c.route(appmessage.CmdGetSelectedTipHashResponseMessage).DequeueWithTimeout(testTimeout)
 	if err != nil {
 		return nil, err
 	}
