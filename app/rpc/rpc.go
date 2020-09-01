@@ -16,6 +16,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdSubmitBlockRequestMessage:       rpchandlers.HandleSubmitBlock,
 	appmessage.CmdGetBlockTemplateRequestMessage:  rpchandlers.HandleGetBlockTemplate,
 	appmessage.CmdNotifyBlockAddedRequestMessage:  rpchandlers.HandleNotifyBlockAdded,
+	appmessage.CmdGetPeerAddressesRequestMessage:  rpchandlers.HandleGetPeerAddresses,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

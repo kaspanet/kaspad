@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/util"
@@ -21,7 +22,8 @@ func NewManager(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
-	mempool *mempool.TxPool) *Manager {
+	mempool *mempool.TxPool,
+	addressManager *addressmanager.AddressManager) *Manager {
 	manager := Manager{
 		context: rpccontext.NewContext(
 			netAdapter,
@@ -30,6 +32,7 @@ func NewManager(
 			connectionManager,
 			blockTemplateGenerator,
 			mempool,
+			addressManager,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)

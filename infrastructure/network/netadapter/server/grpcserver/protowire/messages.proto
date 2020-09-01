@@ -37,6 +37,8 @@ message KaspadMessage {
     NotifyBlockAddedRequestMessage notifyBlockAddedRequest = 1007;
     NotifyBlockAddedResponseMessage notifyBlockAddedResponse = 1008;
     BlockAddedNotificationMessage blockAddedNotification = 1009;
+    GetPeerAddressesRequestMessage getPeerAddressesRequest = 1010;
+    GetPeerAddressesResponseMessage getPeerAddressesResponse = 1011;
   }
 }
 
@@ -305,6 +307,18 @@ message NotifyBlockAddedResponseMessage{
 
 message BlockAddedNotificationMessage{
   BlockMessage block = 1;
+}
+
+message GetPeerAddressesRequestMessage{
+}
+
+message GetPeerAddressesResponseMessage{
+  repeated GetPeerAddressesKnownAddressMessage addresses = 1;
+  RPCError error = 2;
+}
+
+message GetPeerAddressesKnownAddressMessage {
+  string Addr = 1;
 }
 
 service RPC {

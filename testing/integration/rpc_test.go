@@ -161,6 +161,22 @@ func (c *testRPCClient) getBlockTemplate(miningAddress string, longPollID string
 	return getBlockTemplateResponse, nil
 }
 
+func (c *testRPCClient) getPeerAddresses() (*appmessage.GetPeerAddressesResponseMessage, error) {
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewGetPeerAddressesRequestMessage())
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.router.getBlockTemplateResponseRoute.DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return nil, err
+	}
+	getPeerAddressesResponse := response.(*appmessage.GetPeerAddressesResponseMessage)
+	if getPeerAddressesResponse.Error != nil {
+		return nil, c.convertRPCError(getPeerAddressesResponse.Error)
+	}
+	return getPeerAddressesResponse, nil
+}
+
 func (c *testRPCClient) convertRPCError(rpcError *appmessage.RPCError) error {
 	return errors.Errorf("received error response from RPC: %s", rpcError.Message)
 }

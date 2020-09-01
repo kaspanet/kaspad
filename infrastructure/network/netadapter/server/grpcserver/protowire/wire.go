@@ -275,6 +275,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetPeerAddressesRequestMessage:
+		payload := new(KaspadMessage_GetPeerAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetPeerAddressesResponseMessage:
+		payload := new(KaspadMessage_GetPeerAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

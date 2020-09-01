@@ -115,7 +115,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	}
 
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc2.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool)
+	rpcManager := rpc2.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 

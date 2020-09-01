@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 )
@@ -16,6 +17,7 @@ type Context struct {
 	ConnectionManager      *connmanager.ConnectionManager
 	BlockTemplateGenerator *mining.BlkTmplGenerator
 	Mempool                *mempool.TxPool
+	AddressManager         *addressmanager.AddressManager
 
 	BlockTemplateState  *BlockTemplateState
 	NotificationManager *NotificationManager
@@ -27,7 +29,8 @@ func NewContext(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
-	mempool *mempool.TxPool) *Context {
+	mempool *mempool.TxPool,
+	addressManager *addressmanager.AddressManager) *Context {
 	context := &Context{
 		NetAdapter:             netAdapter,
 		DAG:                    dag,
@@ -35,6 +38,7 @@ func NewContext(
 		ConnectionManager:      connectionManager,
 		BlockTemplateGenerator: blockTemplateGenerator,
 		Mempool:                mempool,
+		AddressManager:         addressManager,
 	}
 	context.BlockTemplateState = NewBlockTemplateState(context)
 	context.NotificationManager = NewNotificationManager()

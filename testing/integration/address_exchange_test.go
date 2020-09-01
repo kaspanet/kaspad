@@ -18,7 +18,7 @@ func TestAddressExchange(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	peerAddresses, err := appHarness3.rpcClient.GetPeerAddresses()
+	peerAddresses, err := appHarness3.rpcClient.getPeerAddresses()
 	if err != nil {
 		t.Fatalf("Error getting peer addresses: %+v", err)
 	}
