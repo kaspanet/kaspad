@@ -106,7 +106,7 @@ func TestSendVersion(t *testing.T) {
 			dag:        dag,
 		}
 
-		incomingRoute.Enqueue(&appmessage.MsgVersion{})
+		incomingRoute.Enqueue(&appmessage.MsgInvTransaction{})
 		SendVersion(context, incomingRoute, outgoingRoute, peer)
 	})
 
@@ -118,6 +118,7 @@ func TestSendVersion(t *testing.T) {
 		}
 
 		incomingRoute.Enqueue(&appmessage.MsgVersion{})
+		incomingRoute.Close()
 		SendVersion(context, incomingRoute, outgoingRoute, peer)
 	})
 }
