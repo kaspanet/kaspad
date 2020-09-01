@@ -565,31 +565,3 @@ func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *select
 		})
 	}
 }
-
-func (dag *BlockDAG) mergeSetIncrease(candidateTip *blockNode, selected blockSet) (int, error) {
-	inPastOfSelected := newBlockSet()
-	queue := newDownHeap()
-	queue.Push(candidateTip)
-	mergeSetAddition := 0
-
-	for queue.Len() > 0 {
-		current := queue.pop()
-		isInPastOfSelected, err := dag.isInPastOfAny(current, selected)
-		if err != nil {
-			return 0, err
-		}
-		if isInPastOfSelected {
-			inPastOfSelected.add(current)
-			continue
-		}
-		mergeSetAddition++
-
-		for parent := range current.parents {
-			if !inPastOfSelected.contains(parent) {
-				queue.Push(parent)
-			}
-		}
-	}
-
-	return mergeSetAddition, nil
-}

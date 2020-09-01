@@ -16,7 +16,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 
 	finalityBlock, ok := dag.index.LookupNode(finalityBlockHash)
 	if !ok {
-		return errors.Errorf("Couldn't find block with hash %s", finalityBlockHash)
+		return errors.Errorf("Couldn't find finality block with hash %s", finalityBlockHash)
 	}
 
 	_, chainUpdates, err := dag.updateVirtualParents(dag.tips, finalityBlock)
