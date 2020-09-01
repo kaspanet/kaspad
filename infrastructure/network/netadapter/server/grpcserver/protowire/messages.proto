@@ -41,6 +41,8 @@ message KaspadMessage {
     GetPeerAddressesResponseMessage getPeerAddressesResponse = 1011;
     GetSelectedTipHashRequestMessage getSelectedTipHashRequest = 1012;
     GetSelectedTipHashResponseMessage getSelectedTipHashResponse = 1013;
+    GetMempoolEntryRequestMessage getMempoolEntryRequest = 1014;
+    GetMempoolEntryResponseMessage getMempoolEntryResponse = 1016;
   }
 }
 
@@ -328,6 +330,14 @@ message GetSelectedTipHashRequestMessage{
 message GetSelectedTipHashResponseMessage{
   string selectedTipHash = 1;
   RPCError error = 2;
+}
+
+message GetMempoolEntryRequestMessage{
+  string txId = 1;
+}
+
+message GetMempoolEntryResponseMessage{
+  RPCError error = 1;
 }
 
 service RPC {

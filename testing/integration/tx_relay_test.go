@@ -53,7 +53,7 @@ func TestTxRelay(t *testing.T) {
 		for range ticker.C {
 			_, err := payee.rpcClient.getMempoolEntry(txID.String())
 			if err != nil {
-				if strings.Contains(err.Error(), "-32603: transaction is not in the pool") {
+				if strings.Contains(err.Error(), "transaction is not in the pool") {
 					continue
 				}
 

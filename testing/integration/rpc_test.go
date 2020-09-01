@@ -188,8 +188,20 @@ func (c *testRPCClient) sendRawTransaction(tx *appmessage.MsgTx, allowHighFees b
 	return nil, nil
 }
 
-func (c *testRPCClient) getMempoolEntry(txHash string) (*model.GetMempoolEntryResult, error) {
-	return nil, nil
+func (c *testRPCClient) getMempoolEntry(txID string) (*appmessage.GetMempoolEntryResponseMessage, error) {
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewGetMempoolEntryRequestMessage(txID))
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.route(appmessage.CmdGetMempoolEntryResponseMessage).DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return nil, err
+	}
+	getMempoolEntryResponse := response.(*appmessage.GetMempoolEntryResponseMessage)
+	if getMempoolEntryResponse.Error != nil {
+		return nil, c.convertRPCError(getMempoolEntryResponse.Error)
+	}
+	return getMempoolEntryResponse, nil
 }
 
 func (c *testRPCClient) connectNode(host string) error {
