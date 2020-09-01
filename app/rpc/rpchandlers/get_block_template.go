@@ -18,14 +18,18 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	// However, allow this state when running in the simulation test mode.
 	if context.DAG.Params != &dagconfig.SimnetParams && context.ConnectionManager.ConnectionCount() == 0 {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.SetError("Kaspad is not connected")
+		errorMessage.Error = &appmessage.RPCError{
+			Message: "Kaspad is not connected",
+		}
 		return errorMessage, nil
 	}
 
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.DAG.Params.Prefix)
 	if err != nil {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.SetError(fmt.Sprintf("Could not decode address: %s", err))
+		errorMessage.Error = &appmessage.RPCError{
+			Message: fmt.Sprintf("Could not decode address: %s", err),
+		}
 		return errorMessage, nil
 	}
 

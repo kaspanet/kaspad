@@ -41,6 +41,8 @@ type GetBlockTemplateResponseMessage struct {
 	MutableFields        []string
 	NonceRange           string
 	IsSynced             bool
+
+	Error *RPCError
 }
 
 // Command returns the protocol command string for the message

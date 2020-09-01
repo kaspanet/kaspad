@@ -38,11 +38,6 @@ message KaspadMessage {
     NotifyBlockAddedResponseMessage notifyBlockAddedResponse = 1008;
     BlockAddedNotificationMessage blockAddedNotification = 1009;
   }
-  Error error = 2000;
-}
-
-message Error{
-  string message = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -247,11 +242,17 @@ service P2P {
 // RPC                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
+message RPCError{
+  string message = 1;
+}
+
 message GetCurrentNetworkRequestMessage{
 }
 
 message GetCurrentNetworkResponseMessage{
   string currentNetwork = 1;
+
+  RPCError error = 2;
 }
 
 message SubmitBlockRequestMessage{
@@ -259,6 +260,7 @@ message SubmitBlockRequestMessage{
 }
 
 message SubmitBlockResponseMessage{
+  RPCError error = 1;
 }
 
 message GetBlockTemplateRequestMessage{
@@ -282,6 +284,8 @@ message GetBlockTemplateResponseMessage{
   repeated string MutableFields = 14;
   string NonceRange = 15;
   bool IsSynced = 16;
+
+  RPCError error = 17;
 }
 
 message GetBlockTemplateTransactionMessage{
@@ -296,6 +300,7 @@ message NotifyBlockAddedRequestMessage{
 }
 
 message NotifyBlockAddedResponseMessage{
+  RPCError error = 1;
 }
 
 message BlockAddedNotificationMessage{

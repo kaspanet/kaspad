@@ -23,6 +23,7 @@ func NewSubmitBlockRequestMessage(blockHex string) *SubmitBlockRequestMessage {
 // its respective RPC message
 type SubmitBlockResponseMessage struct {
 	baseMessage
+	Error *RPCError
 }
 
 // Command returns the protocol command string for the message

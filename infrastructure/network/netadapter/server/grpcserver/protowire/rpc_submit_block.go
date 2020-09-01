@@ -16,9 +16,22 @@ func (x *KaspadMessage_SubmitBlockRequest) fromAppMessage(message *appmessage.Su
 }
 
 func (x *KaspadMessage_SubmitBlockResponse) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.SubmitBlockResponseMessage{}, nil
+	var err *appmessage.RPCError
+	if x.SubmitBlockResponse.Error != nil {
+		err = &appmessage.RPCError{Message: x.SubmitBlockResponse.Error.Message}
+	}
+	return &appmessage.SubmitBlockResponseMessage{
+		Error: err,
+	}, nil
 }
 
-func (x *KaspadMessage_SubmitBlockResponse) fromAppMessage(_ *appmessage.SubmitBlockResponseMessage) error {
+func (x *KaspadMessage_SubmitBlockResponse) fromAppMessage(message *appmessage.SubmitBlockResponseMessage) error {
+	var err *RPCError
+	if message.Error != nil {
+		err = &RPCError{Message: message.Error.Message}
+	}
+	x.SubmitBlockResponse = &SubmitBlockResponseMessage{
+		Error: err,
+	}
 	return nil
 }

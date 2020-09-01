@@ -12,10 +12,23 @@ func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(_ *appmessage.Not
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.NotifyBlockAddedResponseMessage{}, nil
+	var err *appmessage.RPCError
+	if x.NotifyBlockAddedResponse.Error != nil {
+		err = &appmessage.RPCError{Message: x.NotifyBlockAddedResponse.Error.Message}
+	}
+	return &appmessage.NotifyBlockAddedResponseMessage{
+		Error: err,
+	}, nil
 }
 
-func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(_ *appmessage.NotifyBlockAddedResponseMessage) error {
+func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmessage.NotifyBlockAddedResponseMessage) error {
+	var err *RPCError
+	if message.Error != nil {
+		err = &RPCError{Message: message.Error.Message}
+	}
+	x.NotifyBlockAddedResponse = &NotifyBlockAddedResponseMessage{
+		Error: err,
+	}
 	return nil
 }
 

@@ -58,9 +58,13 @@ func (c *minerClient) registerForBlockAddedNotifications() error {
 	if err != nil {
 		return err
 	}
-	_, err = c.router.notifyBlockAddedResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
+	response, err := c.router.notifyBlockAddedResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
+	}
+	notifyBlockAddedResponse := response.(*appmessage.NotifyBlockAddedResponseMessage)
+	if notifyBlockAddedResponse.Error != nil {
+		return c.convertRPCError(notifyBlockAddedResponse.Error)
 	}
 	spawn("registerForBlockAddedNotifications-blockAddedNotificationChan", func() {
 		for {
@@ -91,8 +95,15 @@ func (c *minerClient) submitBlock(block *util.Block) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.router.submitBlockResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
-	return err
+	response, err := c.router.submitBlockResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+	submitBlockResponse := response.(*appmessage.SubmitBlockResponseMessage)
+	if submitBlockResponse.Error != nil {
+		return c.convertRPCError(submitBlockResponse.Error)
+	}
+	return nil
 }
 
 func (c *minerClient) getBlockTemplate(miningAddress string, longPollID string) (*appmessage.GetBlockTemplateResponseMessage, error) {
@@ -104,5 +115,13 @@ func (c *minerClient) getBlockTemplate(miningAddress string, longPollID string) 
 	if err != nil {
 		return nil, err
 	}
-	return response.(*appmessage.GetBlockTemplateResponseMessage), nil
+	getBlockTemplateResponse := response.(*appmessage.GetBlockTemplateResponseMessage)
+	if getBlockTemplateResponse.Error != nil {
+		return nil, c.convertRPCError(getBlockTemplateResponse.Error)
+	}
+	return getBlockTemplateResponse, nil
+}
+
+func (c *minerClient) convertRPCError(rpcError *appmessage.RPCError) error {
+	return errors.Errorf("received error response from RPC: %s", rpcError.Message)
 }

@@ -20,6 +20,7 @@ func NewNotifyBlockAddedRequestMessage() *NotifyBlockAddedRequestMessage {
 // its respective RPC message
 type NotifyBlockAddedResponseMessage struct {
 	baseMessage
+	Error *RPCError
 }
 
 // Command returns the protocol command string for the message

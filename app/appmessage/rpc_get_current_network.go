@@ -21,6 +21,8 @@ func NewGetCurrentNetworkRequestMessage() *GetCurrentNetworkRequestMessage {
 type GetCurrentNetworkResponseMessage struct {
 	baseMessage
 	CurrentNetwork string
+
+	Error *RPCError
 }
 
 // Command returns the protocol command string for the message

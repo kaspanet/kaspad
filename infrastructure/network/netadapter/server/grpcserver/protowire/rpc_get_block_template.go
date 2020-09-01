@@ -26,6 +26,10 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 		}
 		transactions[i] = *appMessageTransaction.(*appmessage.GetBlockTemplateTransactionMessage)
 	}
+	var err *appmessage.RPCError
+	if x.GetBlockTemplateResponse.Error != nil {
+		err = &appmessage.RPCError{Message: x.GetBlockTemplateResponse.Error.Message}
+	}
 	return &appmessage.GetBlockTemplateResponseMessage{
 		Bits:                 x.GetBlockTemplateResponse.Bits,
 		CurrentTime:          x.GetBlockTemplateResponse.CurrentTime,
@@ -43,6 +47,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 		MutableFields:        x.GetBlockTemplateResponse.MutableFields,
 		NonceRange:           x.GetBlockTemplateResponse.NonceRange,
 		IsSynced:             x.GetBlockTemplateResponse.IsSynced,
+		Error:                err,
 	}, nil
 }
 
@@ -55,6 +60,10 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 			return err
 		}
 		transactions[i] = &protoMessageTransaction
+	}
+	var err *RPCError
+	if message.Error != nil {
+		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
 		Bits:                 message.Bits,
@@ -73,6 +82,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 		MutableFields:        message.MutableFields,
 		NonceRange:           message.NonceRange,
 		IsSynced:             message.IsSynced,
+		Error:                err,
 	}
 	return nil
 }
