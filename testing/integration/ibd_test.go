@@ -45,7 +45,7 @@ func TestIBD(t *testing.T) {
 		t.Fatalf("Error getting tip for syncee")
 	}
 
-	if tip1Hash != tip2Hash {
-		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1Hash, tip2Hash)
+	if tip1Hash.SelectedTipHash != tip2Hash.SelectedTipHash {
+		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1Hash.SelectedTipHash, tip2Hash.SelectedTipHash)
 	}
 }

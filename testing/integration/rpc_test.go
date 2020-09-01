@@ -5,7 +5,9 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -180,6 +182,22 @@ func (c *testRPCClient) getSelectedTipHash() (*appmessage.GetSelectedTipHashResp
 		return nil, c.convertRPCError(getSelectedTipHashResponse.Error)
 	}
 	return getSelectedTipHashResponse, nil
+}
+
+func (c *testRPCClient) sendRawTransaction(tx *appmessage.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
+	return nil, nil
+}
+
+func (c *testRPCClient) getMempoolEntry(txHash string) (*model.GetMempoolEntryResult, error) {
+	return nil, nil
+}
+
+func (c *testRPCClient) connectNode(host string) error {
+	return nil
+}
+
+func (c *testRPCClient) getConnectedPeerInfo() ([]model.GetConnectedPeerInfoResult, error) {
+	return nil, nil
 }
 
 func (c *testRPCClient) convertRPCError(rpcError *appmessage.RPCError) error {
