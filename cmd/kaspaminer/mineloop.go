@@ -1,13 +1,11 @@
 package main
 
 import (
-	"encoding/hex"
 	nativeerrors "errors"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"math/rand"
-	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -177,7 +175,7 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := convertGetBlockTemplateResultToBlock(template)
+		block, err := mining.ConvertGetBlockTemplateResultToBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return
@@ -190,55 +188,4 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 	if stopOldTemplateSolving != nil {
 		close(stopOldTemplateSolving)
 	}
-}
-
-func convertGetBlockTemplateResultToBlock(template *appmessage.GetBlockTemplateResponseMessage) (*util.Block, error) {
-	// parse parent hashes
-	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
-	for i, parentHash := range template.ParentHashes {
-		hash, err := daghash.NewHashFromStr(parentHash)
-		if err != nil {
-			return nil, errors.Wrapf(err, "error decoding hash: '%s'", parentHash)
-		}
-		parentHashes[i] = hash
-	}
-
-	// parse Bits
-	bitsUint64, err := strconv.ParseUint(template.Bits, 16, 32)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error decoding bits: '%s'", template.Bits)
-	}
-	bits := uint32(bitsUint64)
-
-	// parse hashMerkleRoot
-	hashMerkleRoot, err := daghash.NewHashFromStr(template.HashMerkleRoot)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error parsing HashMerkleRoot: '%s'", template.HashMerkleRoot)
-	}
-
-	// parse AcceptedIDMerkleRoot
-	acceptedIDMerkleRoot, err := daghash.NewHashFromStr(template.AcceptedIDMerkleRoot)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error parsing acceptedIDMerkleRoot: '%s'", template.AcceptedIDMerkleRoot)
-	}
-	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error parsing utxoCommitment '%s'", template.UTXOCommitment)
-	}
-	// parse rest of block
-	msgBlock := appmessage.NewMsgBlock(
-		appmessage.NewBlockHeader(template.Version, parentHashes, hashMerkleRoot,
-			acceptedIDMerkleRoot, utxoCommitment, bits, 0))
-
-	for i, txResult := range template.Transactions {
-		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
-		tx := &appmessage.MsgTx{}
-		if err := tx.KaspaDecode(reader, 0); err != nil {
-			return nil, errors.Wrapf(err, "error decoding tx #%d", i)
-		}
-		msgBlock.AddTransaction(tx)
-	}
-
-	block := util.NewBlock(msgBlock)
-	return block, nil
 }
