@@ -518,9 +518,17 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *blockNode) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	newVirtualParents, err := dag.selectVirtualParents(newTips, finalityPoint)
-	if err != nil {
-		return false, nil, err
+	var newVirtualParents blockSet
+	// If only genesis is the newTips, not all structures requierd for calling dag.selectVirtualParents
+	// have been initialized yet.
+	// Therefore, simply genesis it as virtual's only parent
+	if newTips.isOnlyGenesis() {
+		newVirtualParents = newTips
+	} else {
+		newVirtualParents, err = dag.selectVirtualParents(newTips, finalityPoint)
+		if err != nil {
+			return false, nil, err
+		}
 	}
 
 	oldVirtualParents := dag.virtual.parents
@@ -558,6 +566,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 			if err != nil {
 				return nil, err
 			}
+
 			if isFinalityPointInSelectedParentChain {
 				selected.add(firstCandidate)
 				break

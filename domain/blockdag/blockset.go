@@ -139,3 +139,16 @@ func (bs blockSet) areAllIn(other blockSet) bool {
 
 	return true
 }
+
+func (bs blockSet) isOnlyGenesis() bool {
+	if len(bs) != 1 {
+		return false
+	}
+	for node := range bs {
+		if node.isGenesis() {
+			return true
+		}
+	}
+
+	return false
+}
