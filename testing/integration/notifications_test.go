@@ -7,7 +7,7 @@ import (
 )
 
 func setOnBlockAddedHandler(t *testing.T, harness *appHarness, handler func(header *appmessage.BlockHeader)) {
-	err := harness.rpcClient.NotifyBlocks()
+	err := harness.rpcClient.registerForBlockAddedNotifications()
 	if err != nil {
 		t.Fatalf("Error from NotifyBlocks: %s", err)
 	}
