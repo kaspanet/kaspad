@@ -6,7 +6,7 @@ import (
 )
 
 func connect(t *testing.T, incoming, outgoing *appHarness) {
-	err := outgoing.rpcClient.connectNode(incoming.p2pAddress)
+	err := outgoing.rpcClient.connectToPeer(incoming.p2pAddress, false)
 	if err != nil {
 		t.Fatalf("Error connecting the nodes")
 	}

@@ -105,7 +105,6 @@ func (c *testRPCClient) registerForBlockAddedNotifications() error {
 			}
 			blockAddedNotification := notification.(*appmessage.BlockAddedNotificationMessage)
 			c.onBlockAdded(&blockAddedNotification.Block.Header)
-
 		}
 	})
 	return nil
@@ -203,7 +202,19 @@ func (c *testRPCClient) getMempoolEntry(txID string) (*appmessage.GetMempoolEntr
 	return getMempoolEntryResponse, nil
 }
 
-func (c *testRPCClient) connectNode(host string) error {
+func (c *testRPCClient) connectToPeer(address string, isPermanent bool) error {
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewConnectToPeerRequestMessage(address, isPermanent))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdConnectToPeerResponseMessage).DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return err
+	}
+	getMempoolEntryResponse := response.(*appmessage.ConnectToPeerResponseMessage)
+	if getMempoolEntryResponse.Error != nil {
+		return c.convertRPCError(getMempoolEntryResponse.Error)
+	}
 	return nil
 }
 

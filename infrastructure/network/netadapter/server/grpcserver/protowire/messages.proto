@@ -45,6 +45,8 @@ message KaspadMessage {
     GetMempoolEntryResponseMessage getMempoolEntryResponse = 1015;
     GetConnectedPeerInfoRequestMessage getConnectedPeerInfoRequest = 1016;
     GetConnectedPeerInfoResponseMessage getConnectedPeerInfoResponse = 1017;
+    ConnectToPeerRequestMessage connectToPeerRequest = 1018;
+    ConnectToPeerResponseMessage connectToPeerResponse = 1019;
   }
 }
 
@@ -361,6 +363,15 @@ message GetConnectedPeerInfoMessage{
   string userAgent = 8;
   uint32 advertisedProtocolVersion = 9;
   int64 timeConnected = 10;
+}
+
+message ConnectToPeerRequestMessage{
+  string address = 1;
+  bool isPermanent = 2;
+}
+
+message ConnectToPeerResponseMessage{
+  RPCError error = 1;
 }
 
 service RPC {

@@ -331,6 +331,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.ConnectToPeerRequestMessage:
+		payload := new(KaspadMessage_ConnectToPeerRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.ConnectToPeerResponseMessage:
+		payload := new(KaspadMessage_ConnectToPeerResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

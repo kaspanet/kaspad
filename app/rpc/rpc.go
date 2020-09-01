@@ -20,6 +20,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetSelectedTipHashRequestMessage:   rpchandlers.HandleGetSelectedTipHash,
 	appmessage.CmdGetMempoolEntryRequestMessage:      rpchandlers.HandleGetMempoolEntry,
 	appmessage.CmdGetConnectedPeerInfoRequestMessage: rpchandlers.HandleGetConnectedPeerInfo,
+	appmessage.CmdConnectToPeerRequestMessage:        rpchandlers.HandleConnectToPeer,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

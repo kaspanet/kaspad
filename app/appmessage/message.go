@@ -72,6 +72,8 @@ const (
 	CmdGetMempoolEntryResponseMessage
 	CmdGetConnectedPeerInfoRequestMessage
 	CmdGetConnectedPeerInfoResponseMessage
+	CmdConnectToPeerRequestMessage
+	CmdConnectToPeerResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -120,6 +122,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetMempoolEntryResponseMessage:      "GetMempoolEntryResponse",
 	CmdGetConnectedPeerInfoRequestMessage:  "GetConnectedPeerInfoRequest",
 	CmdGetConnectedPeerInfoResponseMessage: "GetConnectedPeerInfoResponse",
+	CmdConnectToPeerRequestMessage:         "ConnectToPeerRequest",
+	CmdConnectToPeerResponseMessage:        "ConnectToPeerResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
