@@ -36,18 +36,18 @@ func Test64IncomingConnections(t *testing.T) {
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBullies)
 	for _, bully := range bullies {
-		err := bully.rpcClient.registerForBlockAddedNotifications()
-		if err != nil {
-			t.Fatalf("Error from NotifyBlocks: %+v", err)
-		}
-
 		blockAdded := false
-		bully.rpcClient.onBlockAdded = func(header *appmessage.BlockHeader) {
+		onBlockAdded := func(header *appmessage.BlockHeader) {
 			if blockAdded {
 				t.Fatalf("Single bully reported block added twice")
 			}
 			blockAdded = true
 			blockAddedWG.Done()
+		}
+
+		err := bully.rpcClient.registerForBlockAddedNotifications(onBlockAdded)
+		if err != nil {
+			t.Fatalf("Error from NotifyBlocks: %+v", err)
 		}
 	}
 

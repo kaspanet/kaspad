@@ -16,9 +16,8 @@ const testTimeout = 1 * time.Second
 type testRPCClient struct {
 	*grpcclient.RPCClient
 
-	rpcAddress   string
-	router       *testRPCRouter
-	onBlockAdded func(header *appmessage.BlockHeader)
+	rpcAddress string
+	router     *testRPCRouter
 }
 
 func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
@@ -36,11 +35,6 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 		RPCClient:  rpcClient,
 		rpcAddress: rpcAddress,
 		router:     testRouter,
-	}
-
-	err = testClient.registerForBlockAddedNotifications()
-	if err != nil {
-		return nil, errors.Wrapf(err, "error requesting block-added notifications")
 	}
 
 	log.Infof("Connected to server %s", rpcAddress)
@@ -84,7 +78,7 @@ func (c *testRPCClient) route(command appmessage.MessageCommand) *routerpkg.Rout
 	return c.router.routes[command]
 }
 
-func (c *testRPCClient) registerForBlockAddedNotifications() error {
+func (c *testRPCClient) registerForBlockAddedNotifications(onBlockAdded func(header *appmessage.BlockHeader)) error {
 	err := c.router.outgoingRoute().Enqueue(appmessage.NewNotifyBlockAddedRequestMessage())
 	if err != nil {
 		return err
@@ -104,7 +98,7 @@ func (c *testRPCClient) registerForBlockAddedNotifications() error {
 				panic(err)
 			}
 			blockAddedNotification := notification.(*appmessage.BlockAddedNotificationMessage)
-			c.onBlockAdded(&blockAddedNotification.Block.Header)
+			onBlockAdded(&blockAddedNotification.Block.Header)
 		}
 	})
 	return nil
