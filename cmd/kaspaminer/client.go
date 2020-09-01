@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -57,6 +58,10 @@ func (c *minerClient) registerForBlockAddedNotifications() error {
 	if err != nil {
 		return err
 	}
+	_, err = c.router.notifyBlockAddedResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
 	spawn("registerForBlockAddedNotifications-blockAddedNotificationChan", func() {
 		_, err := c.router.blockAddedNotificationRoute.Dequeue()
 		if err != nil {
@@ -76,7 +81,12 @@ func (c *minerClient) submitBlock(block *util.Block) error {
 		}
 		blockHex = hex.EncodeToString(blockBytes)
 	}
-	return c.router.outgoingRoute().Enqueue(appmessage.NewSubmitBlockRequestMessage(blockHex))
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewSubmitBlockRequestMessage(blockHex))
+	if err != nil {
+		return err
+	}
+	_, err = c.router.submitBlockResponseRoute.DequeueWithTimeout(common.DefaultTimeout)
+	return err
 }
 
 func (c *minerClient) getBlockTemplate(miningAddress string, longPollID string) (*appmessage.GetBlockTemplateResponseMessage, error) {

@@ -8,6 +8,8 @@ import (
 type minerRouter struct {
 	router                        *routerpkg.Router
 	getBlockTemplateResponseRoute *routerpkg.Route
+	submitBlockResponseRoute      *routerpkg.Route
+	notifyBlockAddedResponseRoute *routerpkg.Route
 	blockAddedNotificationRoute   *routerpkg.Route
 }
 
@@ -17,11 +19,15 @@ func buildRouter() (*minerRouter, error) {
 	if err != nil {
 		return nil, err
 	}
-	blockAddedNotificationRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdBlockAddedNotificationMessage})
+	submitBlockResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdSubmitBlockResponseMessage})
 	if err != nil {
 		return nil, err
 	}
-	_, err = router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdNotifyBlockAddedResponseMessage, appmessage.CmdSubmitBlockResponseMessage})
+	notifyBlockAddedResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdNotifyBlockAddedResponseMessage})
+	if err != nil {
+		return nil, err
+	}
+	blockAddedNotificationRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdBlockAddedNotificationMessage})
 	if err != nil {
 		return nil, err
 	}
@@ -30,6 +36,8 @@ func buildRouter() (*minerRouter, error) {
 		router: router,
 
 		getBlockTemplateResponseRoute: getBlockTemplateResponseRoute,
+		submitBlockResponseRoute:      submitBlockResponseRoute,
+		notifyBlockAddedResponseRoute: notifyBlockAddedResponseRoute,
 		blockAddedNotificationRoute:   blockAddedNotificationRoute,
 	}
 
