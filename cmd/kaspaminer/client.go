@@ -63,11 +63,17 @@ func (c *minerClient) registerForBlockAddedNotifications() error {
 		return err
 	}
 	spawn("registerForBlockAddedNotifications-blockAddedNotificationChan", func() {
-		_, err := c.router.blockAddedNotificationRoute.Dequeue()
-		if err != nil {
-			panic(err)
+		for {
+			_, err := c.router.blockAddedNotificationRoute.Dequeue()
+			if err != nil {
+				panic(err)
+			}
+			select {
+			case c.blockAddedNotificationChan <- struct{}{}:
+			default:
+			}
+
 		}
-		c.blockAddedNotificationChan <- struct{}{}
 	})
 	return nil
 }
