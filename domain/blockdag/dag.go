@@ -536,11 +536,10 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 
 func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {
 	selected := newBlockSet()
-	mergeSetSize := 0
 
-	tipsHeap := newDownHeap()
+	candidatesHeap := newDownHeap()
 	for tip := range tips {
-		tipsHeap.Push(tip)
+		candidatesHeap.Push(tip)
 	}
 
 	// If the first candidate has been disqualified from the chain or violates finality -
@@ -549,17 +548,17 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	// it's parents that have no disqualified children
 	disqualifiedCandidates := newBlockSet()
 	for {
-		if tipsHeap.Len() == 0 {
+		if candidatesHeap.Len() == 0 {
 			return nil, errors.New("virtual has no valid parent candidates")
 		}
-		firstCandidate := tipsHeap.pop()
+		firstCandidate := candidatesHeap.pop()
 
 		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
-			isInSelectedParentChainOfFinalityPoint, err := dag.isInSelectedParentChainOf(finalityPoint, firstCandidate)
+			isFinalityPointInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityPoint, firstCandidate)
 			if err != nil {
 				return nil, err
 			}
-			if isInSelectedParentChainOfFinalityPoint {
+			if isFinalityPointInSelectedParentChain {
 				selected.add(firstCandidate)
 				break
 			}
@@ -569,16 +568,18 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 
 		for parent := range firstCandidate.parents {
 			if parent.children.areAllIn(disqualifiedCandidates) {
-				tipsHeap.Push(parent)
+				candidatesHeap.Push(parent)
 			}
 		}
 	}
 
-	for len(selected) < appmessage.MaxBlockParents && tipsHeap.Len() > 0 {
-		candidateTip := tipsHeap.pop()
+	mergeSetSize := 1 // starts with 1 for firstCandidate/selectedParent
+
+	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
+		candidate := candidatesHeap.pop()
 
 		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
-		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
+		mergeSetIncrease, err := dag.mergeSetIncrease(candidate, selected)
 		if err != nil {
 			return nil, err
 		}
@@ -587,7 +588,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 			continue
 		}
 
-		selected.add(candidateTip)
+		selected.add(candidate)
 		mergeSetSize += mergeSetIncrease
 	}
 
@@ -597,9 +598,37 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	if err != nil {
 		return nil, err
 	}
-	selected.subtract(boundedMergeBreakingParents)
+	selected = selected.subtract(boundedMergeBreakingParents)
 
 	return selected, nil
+}
+
+func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (int, error) {
+	visited := newBlockSet()
+	queue := newDownHeap()
+	queue.Push(candidate)
+	mergeSetIncrease := 1 // starts with 1 for the candidate itself
+
+	for queue.Len() > 0 {
+		current := queue.pop()
+		isInPastOfSelected, err := dag.isInPastOfAny(current, selected)
+		if err != nil {
+			return 0, err
+		}
+		if isInPastOfSelected {
+			continue
+		}
+		mergeSetIncrease++
+
+		for parent := range current.parents {
+			if !visited.contains(parent) {
+				visited.add(parent)
+				queue.Push(parent)
+			}
+		}
+	}
+
+	return mergeSetIncrease, nil
 }
 
 func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
