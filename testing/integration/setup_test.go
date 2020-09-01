@@ -11,7 +11,7 @@ import (
 
 type appHarness struct {
 	app                     *app.App
-	rpcClient               *rpcClient
+	rpcClient               *testRPCClient
 	p2pAddress              string
 	rpcAddress              string
 	miningAddress           string
@@ -90,7 +90,7 @@ func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarn
 
 func setRPCClient(t *testing.T, harness *appHarness) {
 	var err error
-	harness.rpcClient, err = newRPCClient(harness.rpcAddress)
+	harness.rpcClient, err = newTestRPCClient(harness.rpcAddress)
 	if err != nil {
 		t.Fatalf("Error getting RPC client %+v", err)
 	}

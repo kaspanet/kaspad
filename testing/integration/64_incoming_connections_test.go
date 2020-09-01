@@ -36,7 +36,7 @@ func Test64IncomingConnections(t *testing.T) {
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBullies)
 	for _, bully := range bullies {
-		err := bully.rpcClient.NotifyBlocks()
+		err := bully.rpcClient.registerForBlockAddedNotifications()
 		if err != nil {
 			t.Fatalf("Error from NotifyBlocks: %+v", err)
 		}
