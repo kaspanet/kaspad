@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/util/mstime"
+
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -244,10 +245,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 		return nil, err
 	}
 
-	var isNewSelectedTip, isViolatingSubjectiveFinality bool
+	var isNewSelectedTip bool
 	if node.isGenesis() {
 		isNewSelectedTip = true
-		isViolatingSubjectiveFinality = false
 	} else {
 		// If the new block is not the selected tip - it's not in virtual's selectedParentChain, therefore it's
 		// not going to be utxo-verified at this point
@@ -256,14 +256,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
 		}
 
-		isViolatingSubjectiveFinality, err = node.isViolatingSubjectiveFinality()
-		if err != nil {
-			return nil, err
-		}
-		if isViolatingSubjectiveFinality {
-			dag.index.SetBlockNodeStatus(node, statusViolatedSubjectiveFinality)
-			dag.addFinalityConflict(node)
-		}
 	}
 
 	dbTx, err := dag.databaseContext.NewTx()
@@ -272,10 +264,22 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	if isNewSelectedTip && !isViolatingSubjectiveFinality {
+	if isNewSelectedTip {
 		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
 		if err != nil {
 			return nil, err
+		}
+
+		isViolatingSubjectiveFinality, err := node.isViolatingFinality()
+		if err != nil {
+			return nil, err
+		}
+		if isViolatingSubjectiveFinality {
+			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
+			dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
+				ViolatingBlockHash: node.hash,
+				ConflictTime:       mstime.Now(),
+			})
 		}
 	}
 
@@ -308,15 +312,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 }
 
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*selectedParentChainUpdates, error) {
-	nodeStatus := dag.index.BlockNodeStatus(node)
-	var didVirtualParentsChange bool
-	var chainUpdates *selectedParentChainUpdates
-	if nodeStatus != statusViolatedSubjectiveFinality && nodeStatus != statusManuallyRejected {
-		var err error
-		didVirtualParentsChange, chainUpdates, err = dag.addTip(node)
-		if err != nil {
-			return nil, err
-		}
+	didVirtualParentsChange, chainUpdates, err := dag.addTip(node)
+	if err != nil {
+		return nil, err
 	}
 
 	if didVirtualParentsChange {
@@ -566,65 +564,6 @@ func (dag *BlockDAG) notifyBlockAccepted(block *util.Block, chainUpdates *select
 			AddedChainBlockHashes:   chainUpdates.addedChainBlockHashes,
 		})
 	}
-}
-
-func (dag *BlockDAG) selectVirtualParents(tips blockSet) (blockSet, error) {
-	selected := newBlockSet()
-	mergeSetSize := 0
-
-	tipsHeap := newDownHeap()
-	for tip := range tips {
-		tipsHeap.Push(tip)
-	}
-
-	// If the first candidate has been disqualified from the chain - he cannot be a virtualParentCandidate, since it
-	// will make him virtual's selectedParent - making virtual itself disqualified.
-	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
-	// it's parents that have no other children
-	for {
-		if tipsHeap.Len() == 0 {
-			return nil, errors.New("virtual has no valid parent candidates")
-		}
-		firstCandidate := tipsHeap.pop()
-
-		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
-			selected.add(firstCandidate)
-			break
-		}
-
-		for parent := range firstCandidate.parents {
-			if len(parent.children) == 1 {
-				tipsHeap.Push(parent)
-			}
-		}
-	}
-
-	for len(selected) < appmessage.MaxBlockParents && tipsHeap.Len() > 0 {
-		candidateTip := tipsHeap.pop()
-
-		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
-		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
-		if err != nil {
-			return nil, err
-		}
-
-		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
-			continue
-		}
-
-		selected.add(candidateTip)
-		mergeSetSize += mergeSetIncrease
-	}
-
-	tempVirtual, _ := dag.newBlockNode(nil, selected)
-
-	boundedMergeBreakingParents, err := dag.boundedMergeBreakingParents(tempVirtual)
-	if err != nil {
-		return nil, err
-	}
-	selected.subtract(boundedMergeBreakingParents)
-
-	return selected, nil
 }
 
 func (dag *BlockDAG) mergeSetIncrease(candidateTip *blockNode, selected blockSet) (int, error) {

@@ -591,26 +591,16 @@ func NewGetPeerAddressesCmd() *GetPeerAddressesCmd { return new(GetPeerAddresses
 // GetFinalityConflictsCmd  defines the getFinalityConflicts JSON-RPC command.
 type GetFinalityConflictsCmd struct{}
 
-// NewGetFinalityConflictsCmd returns a new instance which can be used to issue a JSON-RPC
-// getFinalityConflicts command.
-func NewGetFinalityConflictsCmd() *GetFinalityConflictsCmd { return new(GetFinalityConflictsCmd) }
-
 // ResolveFinalityConflictCmd  defines the resolveFinalityConflict JSON-RPC command.
 type ResolveFinalityConflictCmd struct {
-	FinalityConflictID int      `json:"finalityConflictID"`
-	ValidBlockHashes   []string `json:"validBlockHashes"`
-	InvalidBlockHashes []string `json:"invalidBlockHashes"`
+	FinalityBlockHash string `json:"finalityBlockHash"`
 }
 
 // NewResolveFinalityConflictCmd returns a new instance which can be used to issue a JSON-RPC
 // resolveFinalityConflict command.
-func NewResolveFinalityConflictCmd(
-	finalityConflitID int, validBlockHashes []string, invalidBlockHashes []string) *ResolveFinalityConflictCmd {
-
+func NewResolveFinalityConflictCmd(finalityBlockHash string) *ResolveFinalityConflictCmd {
 	return &ResolveFinalityConflictCmd{
-		FinalityConflictID: finalityConflitID,
-		ValidBlockHashes:   validBlockHashes,
-		InvalidBlockHashes: invalidBlockHashes,
+		FinalityBlockHash: finalityBlockHash,
 	}
 }
 
