@@ -127,8 +127,7 @@ type NotificationHandlers struct {
 	// has been resolved. It will only be invoked if a preceding call to
 	// NotifyFinalityConflicts has been made to register for the
 	// notification and the function is non-nil.
-	OnFinalityConflictReolved func(
-		finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool)
+	OnFinalityConflictResolved func(finalityBlockHash *daghash.Hash, resolutionTime mstime.Time)
 
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received. This typically means the notification handling code
@@ -256,18 +255,17 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	case model.FinalityConflictResolvedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
-		if c.ntfnHandlers.OnFinalityConflictReolved == nil {
+		if c.ntfnHandlers.OnFinalityConflictResolved == nil {
 			return
 		}
 
-		finalityConflictID, resolutionTime, areAllFinalityConflictsResolved, err :=
-			parseFinalityConflictResolvedNtfnParams(ntfn.Params)
+		finalityBlockHash, resolutionTime, err := parseFinalityConflictResolvedNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid finality conflict notification: %s", err)
 			return
 		}
 
-		c.ntfnHandlers.OnFinalityConflictReolved(finalityConflictID, resolutionTime, areAllFinalityConflictsResolved)
+		c.ntfnHandlers.OnFinalityConflictResolved(finalityBlockHash, resolutionTime)
 
 	// OnUnknownNotification
 	default:
@@ -504,21 +502,26 @@ func parseFinalityConflictNtfnParams(params []json.RawMessage) (*model.FinalityC
 }
 
 func parseFinalityConflictResolvedNtfnParams(params []json.RawMessage) (
-	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool, err error) {
+	finalityConflictBlockHash *daghash.Hash, resolutionTime mstime.Time, err error) {
 
 	if len(params) != 1 {
-		return 0, mstime.Time{}, false, wrongNumParams(len(params))
+		return nil, mstime.Time{}, wrongNumParams(len(params))
 	}
 
 	var finalityConflictResolvedNtfn model.FinalityConflictResolvedNtfn
 	err = json.Unmarshal(params[0], &finalityConflictResolvedNtfn)
 	if err != nil {
-		return 0, mstime.Time{}, false, err
+		return nil, mstime.Time{}, err
 	}
 
-	return finalityConflictResolvedNtfn.FinalityConflictID,
+	finalityBlockHash, err := daghash.NewHashFromStr(finalityConflictResolvedNtfn.FinalityBlockHash)
+	if err != nil {
+		return nil, mstime.Time{}, err
+	}
+
+	return finalityBlockHash,
 		mstime.UnixMilliseconds(finalityConflictResolvedNtfn.ResolutionTime),
-		finalityConflictResolvedNtfn.AreAllFinalityConflictsResolved, nil
+		nil
 }
 
 // FutureNotifyBlocksResult is a future promise to deliver the result of a

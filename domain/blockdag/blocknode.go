@@ -36,12 +36,6 @@ const (
 	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
 	statusUTXONotVerified
 
-	// statusViolatedSubjectiveFinality indicates that the block violated subjective finality.
-	statusViolatedSubjectiveFinality
-
-	// statusManuallyRejected indicates the the block was manually rejected.
-	statusManuallyRejected
-
 	// statusDisqualifiedFromChain indicates that the block is not eligible to be a selected parent.
 	statusDisqualifiedFromChain
 )
@@ -99,7 +93,7 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// Some fields from block headers to aid in  reconstructing headers
+	// Some fields from block headers to aid in reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
 	version              int32
@@ -330,12 +324,6 @@ func (node *blockNode) checkBoundedMergeDepth() error {
 }
 
 func (node *blockNode) isViolatingFinality() (bool, error) {
-	for parent := range node.parents {
-		if node.dag.index.BlockNodeStatus(parent) == statusViolatedSubjectiveFinality {
-			return true, nil
-		}
-	}
-
 	if node.dag.virtual.less(node) {
 		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
 			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data

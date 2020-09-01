@@ -475,12 +475,3 @@ type VersionResult struct {
 	Prerelease    string `json:"prerelease"`
 	BuildMetadata string `json:"buildMetadata"`
 }
-
-// GetFinalityConflictsResult models the data returned from the getFinalityConflicts command.
-type GetFinalityConflictsResult []struct {
-	ID                 int    `json:"id"`
-	ConflictTime       int64  `json:"conflictTime"`
-	ViolatingBlockHash string `json:"violatingBlockHash"`
-	SelectedTipHash    string `json:"selectedTipHash"`
-	ResolutionTime     int64  `json:"resolutionTime"`
-}

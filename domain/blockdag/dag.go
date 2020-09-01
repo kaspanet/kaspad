@@ -95,8 +95,6 @@ type BlockDAG struct {
 	startTime                       mstime.Time
 
 	tips blockSet
-
-	finalityConflicts []*FinalityConflict
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -507,28 +505,107 @@ func (dag *BlockDAG) addTip(tip *blockNode) (
 func (dag *BlockDAG) setTips(newTips blockSet) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	newVirtualParents, err := dag.selectVirtualParents(newTips)
+	didVirtualParentsChange, chainUpdates, err = dag.updateVirtualParents(newTips, dag.virtual.finalityPoint())
 	if err != nil {
 		return false, nil, err
 	}
 
 	dag.tips = newTips
 
+	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *blockNode) (
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
+
+	newVirtualParents, err := dag.selectVirtualParents(newTips, finalityPoint)
+	if err != nil {
+		return false, nil, err
+	}
+
 	oldVirtualParents := dag.virtual.parents
 	didVirtualParentsChange = !oldVirtualParents.isEqual(newVirtualParents)
 
-	oldSelectedParent := dag.virtual.selectedParent
-	dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
-	chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
-
+	if didVirtualParentsChange {
+		oldSelectedParent := dag.virtual.selectedParent
+		dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
+		chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
+	}
 	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {
+	selected := newBlockSet()
+	mergeSetSize := 0
+
+	tipsHeap := newDownHeap()
+	for tip := range tips {
+		tipsHeap.Push(tip)
+	}
+
+	// If the first candidate has been disqualified from the chain or violates finality -
+	// he cannot be virtual's parent, since it will make him virtual's selectedParent - disqualifying virtual itself.
+	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
+	// it's parents that have no disqualified children
+	disqualifiedCandidates := newBlockSet()
+	for {
+		if tipsHeap.Len() == 0 {
+			return nil, errors.New("virtual has no valid parent candidates")
+		}
+		firstCandidate := tipsHeap.pop()
+
+		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
+			isInSelectedParentChainOfFinalityPoint, err := dag.isInSelectedParentChainOf(finalityPoint, firstCandidate)
+			if err != nil {
+				return nil, err
+			}
+			if isInSelectedParentChainOfFinalityPoint {
+				selected.add(firstCandidate)
+				break
+			}
+		}
+
+		disqualifiedCandidates.add(firstCandidate)
+
+		for parent := range firstCandidate.parents {
+			if parent.children.areAllIn(disqualifiedCandidates) {
+				tipsHeap.Push(parent)
+			}
+		}
+	}
+
+	for len(selected) < appmessage.MaxBlockParents && tipsHeap.Len() > 0 {
+		candidateTip := tipsHeap.pop()
+
+		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
+		mergeSetIncrease, err := dag.mergeSetIncrease(candidateTip, selected)
+		if err != nil {
+			return nil, err
+		}
+
+		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
+			continue
+		}
+
+		selected.add(candidateTip)
+		mergeSetSize += mergeSetIncrease
+	}
+
+	tempVirtual, _ := dag.newBlockNode(nil, selected)
+
+	boundedMergeBreakingParents, err := dag.boundedMergeBreakingParents(tempVirtual)
+	if err != nil {
+		return nil, err
+	}
+	selected.subtract(boundedMergeBreakingParents)
+
+	return selected, nil
 }
 
 func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
 	state := &dagState{
 		TipHashes:         dag.TipHashes(),
 		LocalSubnetworkID: dag.subnetworkID,
-		FinalityConflicts: dag.finalityConflicts,
 	}
 	return saveDAGState(dbTx, state)
 }

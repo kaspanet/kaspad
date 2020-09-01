@@ -101,13 +101,13 @@ type ChainChangedNotificationData struct {
 // FinalityConflictNotificationData defines data to be sent along with a
 // FinalityConflict notification
 type FinalityConflictNotificationData struct {
-	*FinalityConflict
+	ViolatingBlockHash *daghash.Hash
+	ConflictTime       mstime.Time
 }
 
 // FinalityConflictResolvedNotificationData defines data to be sent along with a
 // FinalityConflictResolved notification
 type FinalityConflictResolvedNotificationData struct {
-	FinalityConflictID              int
-	ResolutionTime                  mstime.Time
-	AreAllFinalityConflictsResolved bool
+	FinalityBlockHash *daghash.Hash
+	ResolutionTime    mstime.Time
 }
