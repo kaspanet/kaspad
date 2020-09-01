@@ -729,14 +729,6 @@ func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parent
 				blockHeader.BlockHash(), len(parents), appmessage.MaxNumParentBlocks))
 	}
 
-	for parent := range parents {
-		if dag.index.BlockNodeStatus(parent) == statusManuallyRejected {
-			return ruleError(ErrTooManyParents,
-				fmt.Sprintf("block %s points to %s which was manually rejected",
-					blockHeader.BlockHash(), parent.hash))
-		}
-	}
-
 	for parentA := range parents {
 		for parentB := range parents {
 			if parentA == parentB {
@@ -795,12 +787,12 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 }
 
 func (node *blockNode) checkDAGRelations() error {
-	err := node.checkMergeLimit()
+	err := node.checkMergeSizeLimit()
 	if err != nil {
 		return err
 	}
 
-	err = node.checkObjectiveFinality()
+	err = node.checkBoundedMergeDepth()
 	if err != nil {
 		return err
 	}

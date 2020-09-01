@@ -71,7 +71,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getConnectionCount":       handleGetConnectionCount,
 	"getCurrentNet":            handleGetCurrentNet,
 	"getDifficulty":            handleGetDifficulty,
-	"getFinalityConflicts":     handleGetFinalityConflicts,
 	"resolveFinalityConflicts": handleResolveFinalityConflict,
 	"getHeaders":               handleGetHeaders,
 	"getTopHeaders":            handleGetTopHeaders,
@@ -789,7 +788,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 
 		// Notify registered websocket clients of finality conflict.
-		s.ntfnMgr.NotifyFinalityConflict(data.FinalityConflict)
+		s.ntfnMgr.NotifyFinalityConflict(data.ViolatingBlockHash, data.ConflictTime)
 
 	case blockdag.NTFinalityConflictResolved:
 		data, ok := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
@@ -799,8 +798,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 
 		// Notify registered websocket clients of finality conflict resolution.
-		s.ntfnMgr.NotifyFinalityConflictResolved(
-			data.FinalityConflictID, data.ResolutionTime, data.AreAllFinalityConflictsResolved)
+		s.ntfnMgr.NotifyFinalityConflictResolved(data.FinalityBlockHash, data.ResolutionTime)
 	}
 }
 

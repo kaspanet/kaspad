@@ -138,42 +138,32 @@ func NewRelevantTxAcceptedNtfn(txHex string) *RelevantTxAcceptedNtfn {
 // FinalityConflictNtfn  defines the parameters to the finalityConflict
 // JSON-RPC notification.
 type FinalityConflictNtfn struct {
-	ID                 int    `json:"id"`
-	ConflictTime       int64  `json:"conflictTime"`
 	ViolatingBlockHash string `json:"violatingBlockHash"`
-	SelectedTipHash    string `json:"SelectedTipHash"`
+	ConflictTime       int64  `json:"conflictTime"`
 }
 
 // NewFinalityConflictNtfn returns a new instance which can be used to issue a
 // finalityConflict JSON-RPC notification.
-func NewFinalityConflictNtfn(
-	id int, conflictTime int64, violatingBlockHash string, selectedTipHash string) *FinalityConflictNtfn {
-
+func NewFinalityConflictNtfn(violatingBlockHash string, conflictTime int64) *FinalityConflictNtfn {
 	return &FinalityConflictNtfn{
-		ID:                 id,
-		ConflictTime:       conflictTime,
 		ViolatingBlockHash: violatingBlockHash,
-		SelectedTipHash:    selectedTipHash,
+		ConflictTime:       conflictTime,
 	}
 }
 
 // FinalityConflictResolvedNtfn defines the parameters to the
 // finalityConflictResolved JSON-RPC notification.
 type FinalityConflictResolvedNtfn struct {
-	FinalityConflictID              int   `json:"id"`
-	ResolutionTime                  int64 `json:"resolutionTime"`
-	AreAllFinalityConflictsResolved bool  `json:"areAllFinalityConflictsResolved"`
+	FinalityBlockHash string
+	ResolutionTime    int64 `json:"resolutionTime"`
 }
 
 // NewFinalityConflictResolvedNtfn returns a new instance which can be used to issue a
 // finalityConflictResolved JSON-RPC notification.
-func NewFinalityConflictResolvedNtfn(
-	finalityConflictID int, resolutionTime int64, areAllFinalityConflictsResolved bool) *FinalityConflictResolvedNtfn {
-
+func NewFinalityConflictResolvedNtfn(finalityBlockHash string, resolutionTime int64) *FinalityConflictResolvedNtfn {
 	return &FinalityConflictResolvedNtfn{
-		FinalityConflictID:              finalityConflictID,
-		ResolutionTime:                  resolutionTime,
-		AreAllFinalityConflictsResolved: areAllFinalityConflictsResolved,
+		FinalityBlockHash: finalityBlockHash,
+		ResolutionTime:    resolutionTime,
 	}
 }
 

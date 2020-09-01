@@ -36,12 +36,6 @@ const (
 	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
 	statusUTXONotVerified
 
-	// statusViolatedSubjectiveFinality indicates that the block violated subjective finality.
-	statusViolatedSubjectiveFinality
-
-	// statusManuallyRejected indicates the the block was manually rejected.
-	statusManuallyRejected
-
 	// statusDisqualifiedFromChain indicates that the block is not eligible to be a selected parent.
 	statusDisqualifiedFromChain
 )
@@ -99,7 +93,7 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// Some fields from block headers to aid in  reconstructing headers
+	// Some fields from block headers to aid in reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
 	version              int32
@@ -303,7 +297,7 @@ func (node *blockNode) nonFinalityViolatingBlues() (blockSet, error) {
 	return nonFinalityViolatingBlues, nil
 }
 
-func (node *blockNode) checkObjectiveFinality() error {
+func (node *blockNode) checkBoundedMergeDepth() error {
 	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
 	if err != nil {
 		return err
@@ -329,13 +323,7 @@ func (node *blockNode) checkObjectiveFinality() error {
 	return nil
 }
 
-func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
-	for parent := range node.parents {
-		if node.dag.index.BlockNodeStatus(parent) == statusViolatedSubjectiveFinality {
-			return true, nil
-		}
-	}
-
+func (node *blockNode) isViolatingFinality() (bool, error) {
 	if node.dag.virtual.less(node) {
 		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
 			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
@@ -350,7 +338,7 @@ func (node *blockNode) isViolatingSubjectiveFinality() (bool, error) {
 	return false, nil
 }
 
-func (node *blockNode) checkMergeLimit() error {
+func (node *blockNode) checkMergeSizeLimit() error {
 	mergeSetSize := len(node.reds) + len(node.blues)
 
 	if mergeSetSize > mergeSetSizeLimit {

@@ -129,3 +129,13 @@ func (bs blockSet) isEqual(other blockSet) bool {
 
 	return true
 }
+
+func (bs blockSet) areAllIn(other blockSet) bool {
+	for node := range bs {
+		if !other.contains(node) {
+			return false
+		}
+	}
+
+	return true
+}

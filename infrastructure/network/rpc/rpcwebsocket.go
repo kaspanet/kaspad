@@ -19,8 +19,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
-	"github.com/kaspanet/kaspad/domain/blockdag"
-
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
@@ -232,8 +230,11 @@ func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*da
 	}
 }
 
-func (m *wsNotificationManager) NotifyFinalityConflict(finalityConflict *blockdag.FinalityConflict) {
-	n := notificationFinalityConflict(*finalityConflict)
+func (m *wsNotificationManager) NotifyFinalityConflict(violatingBlockHash *daghash.Hash, conflictTime mstime.Time) {
+	n := notificationFinalityConflict{
+		violatingBlockHash: violatingBlockHash,
+		conflictTime:       conflictTime,
+	}
 	// As NotifyFinalityConflict will be called by the DAG manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
@@ -245,11 +246,11 @@ func (m *wsNotificationManager) NotifyFinalityConflict(finalityConflict *blockda
 }
 
 func (m *wsNotificationManager) NotifyFinalityConflictResolved(
-	finalityConflictID int, resolutionTime mstime.Time, areAllFinalityConflictsResolved bool) {
+	finalityBlockHash *daghash.Hash, resolutionTime mstime.Time) {
+
 	n := notificationFinalityConflictResolved{
-		finalityConflictID:              finalityConflictID,
-		resolutionTime:                  resolutionTime.UnixMilliseconds(),
-		areAllFinalityConflictsResolved: areAllFinalityConflictsResolved,
+		finalityBlockHash: finalityBlockHash,
+		resolutionTime:    resolutionTime,
 	}
 	// As NotifyFinalityConflictResolved will be called by the DAG manager
 	// and the RPC server may no longer be running, use a select
@@ -411,12 +412,14 @@ type notificationTxAcceptedByMempool struct {
 	tx    *util.Tx
 }
 
-type notificationFinalityConflict blockdag.FinalityConflict
+type notificationFinalityConflict struct {
+	violatingBlockHash *daghash.Hash
+	conflictTime       mstime.Time
+}
 
 type notificationFinalityConflictResolved struct {
-	finalityConflictID              int
-	resolutionTime                  int64
-	areAllFinalityConflictsResolved bool
+	finalityBlockHash *daghash.Hash
+	resolutionTime    mstime.Time
 }
 
 // Notification control requests
