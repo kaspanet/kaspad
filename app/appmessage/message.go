@@ -70,6 +70,8 @@ const (
 	CmdGetSelectedTipHashResponseMessage
 	CmdGetMempoolEntryRequestMessage
 	CmdGetMempoolEntryResponseMessage
+	CmdGetConnectedPeerInfoRequestMessage
+	CmdGetConnectedPeerInfoResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -100,22 +102,24 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation
 var RPCMessageCommandToString = map[MessageCommand]string{
-	CmdGetCurrentNetworkRequestMessage:    "GetCurrentNetworkRequest",
-	CmdGetCurrentNetworkResponseMessage:   "GetCurrentNetworkResponse",
-	CmdSubmitBlockRequestMessage:          "SubmitBlockRequest",
-	CmdSubmitBlockResponseMessage:         "SubmitBlockResponse",
-	CmdGetBlockTemplateRequestMessage:     "GetBlockTemplateRequest",
-	CmdGetBlockTemplateResponseMessage:    "GetBlockTemplateResponse",
-	CmdGetBlockTemplateTransactionMessage: "CmdGetBlockTemplateTransaction",
-	CmdNotifyBlockAddedRequestMessage:     "NotifyBlockAddedRequest",
-	CmdNotifyBlockAddedResponseMessage:    "NotifyBlockAddedResponse",
-	CmdBlockAddedNotificationMessage:      "BlockAddedNotification",
-	CmdGetPeerAddressesRequestMessage:     "GetPeerAddressesRequest",
-	CmdGetPeerAddressesResponseMessage:    "GetPeerAddressesResponse",
-	CmdGetSelectedTipHashRequestMessage:   "GetSelectedTipHashRequest",
-	CmdGetSelectedTipHashResponseMessage:  "GetSelectedTipHashResponse",
-	CmdGetMempoolEntryRequestMessage:      "GetMempoolEntryRequest",
-	CmdGetMempoolEntryResponseMessage:     "GetMempoolEntryResponse",
+	CmdGetCurrentNetworkRequestMessage:     "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage:    "GetCurrentNetworkResponse",
+	CmdSubmitBlockRequestMessage:           "SubmitBlockRequest",
+	CmdSubmitBlockResponseMessage:          "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:      "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:     "GetBlockTemplateResponse",
+	CmdGetBlockTemplateTransactionMessage:  "CmdGetBlockTemplateTransaction",
+	CmdNotifyBlockAddedRequestMessage:      "NotifyBlockAddedRequest",
+	CmdNotifyBlockAddedResponseMessage:     "NotifyBlockAddedResponse",
+	CmdBlockAddedNotificationMessage:       "BlockAddedNotification",
+	CmdGetPeerAddressesRequestMessage:      "GetPeerAddressesRequest",
+	CmdGetPeerAddressesResponseMessage:     "GetPeerAddressesResponse",
+	CmdGetSelectedTipHashRequestMessage:    "GetSelectedTipHashRequest",
+	CmdGetSelectedTipHashResponseMessage:   "GetSelectedTipHashResponse",
+	CmdGetMempoolEntryRequestMessage:       "GetMempoolEntryRequest",
+	CmdGetMempoolEntryResponseMessage:      "GetMempoolEntryResponse",
+	CmdGetConnectedPeerInfoRequestMessage:  "GetConnectedPeerInfoRequest",
+	CmdGetConnectedPeerInfoResponseMessage: "GetConnectedPeerInfoResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

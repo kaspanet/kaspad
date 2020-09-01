@@ -38,7 +38,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 		Transactions:         transactions,
 		HashMerkleRoot:       x.GetBlockTemplateResponse.HashMerkleRoot,
 		AcceptedIDMerkleRoot: x.GetBlockTemplateResponse.AcceptedIDMerkleRoot,
-		UTXOCommitment:       x.GetBlockTemplateResponse.UTXOCommitment,
+		UTXOCommitment:       x.GetBlockTemplateResponse.UtxoCommitment,
 		Version:              x.GetBlockTemplateResponse.Version,
 		LongPollID:           x.GetBlockTemplateResponse.LongPollID,
 		TargetDifficulty:     x.GetBlockTemplateResponse.TargetDifficulty,
@@ -73,7 +73,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 		Transactions:         transactions,
 		HashMerkleRoot:       message.HashMerkleRoot,
 		AcceptedIDMerkleRoot: message.AcceptedIDMerkleRoot,
-		UTXOCommitment:       message.UTXOCommitment,
+		UtxoCommitment:       message.UTXOCommitment,
 		Version:              message.Version,
 		LongPollID:           message.LongPollID,
 		TargetDifficulty:     message.TargetDifficulty,
@@ -90,7 +90,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 func (x *GetBlockTemplateTransactionMessage) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetBlockTemplateTransactionMessage{
 		Data:    x.Data,
-		ID:      x.ID,
+		ID:      x.Id,
 		Depends: x.Depends,
 		Mass:    x.Mass,
 		Fee:     x.Fee,
@@ -99,7 +99,7 @@ func (x *GetBlockTemplateTransactionMessage) toAppMessage() (appmessage.Message,
 
 func (x *GetBlockTemplateTransactionMessage) fromAppMessage(message *appmessage.GetBlockTemplateTransactionMessage) error {
 	x.Data = message.Data
-	x.ID = message.ID
+	x.Id = message.ID
 	x.Depends = message.Depends
 	x.Mass = message.Mass
 	x.Fee = message.Fee

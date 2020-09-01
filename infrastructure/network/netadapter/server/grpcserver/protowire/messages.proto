@@ -42,7 +42,9 @@ message KaspadMessage {
     GetSelectedTipHashRequestMessage getSelectedTipHashRequest = 1012;
     GetSelectedTipHashResponseMessage getSelectedTipHashResponse = 1013;
     GetMempoolEntryRequestMessage getMempoolEntryRequest = 1014;
-    GetMempoolEntryResponseMessage getMempoolEntryResponse = 1016;
+    GetMempoolEntryResponseMessage getMempoolEntryResponse = 1015;
+    GetConnectedPeerInfoRequestMessage getConnectedPeerInfoRequest = 1016;
+    GetConnectedPeerInfoResponseMessage getConnectedPeerInfoResponse = 1017;
   }
 }
 
@@ -273,32 +275,32 @@ message GetBlockTemplateRequestMessage{
 }
 
 message GetBlockTemplateResponseMessage{
-  string Bits = 1;
-  int64 CurrentTime = 2;
-  repeated string ParentHashes = 3;
-  int32 MassLimit = 4;
-  repeated GetBlockTemplateTransactionMessage Transactions = 5;
-  string HashMerkleRoot = 6;
-  string AcceptedIDMerkleRoot = 7;
-  string UTXOCommitment = 8;
-  int32 Version = 9;
-  string LongPollID = 10;
-  string TargetDifficulty = 11;
-  int64 MinTime = 12;
-  int64 MaxTime = 13;
-  repeated string MutableFields = 14;
-  string NonceRange = 15;
-  bool IsSynced = 16;
+  string bits = 1;
+  int64 currentTime = 2;
+  repeated string parentHashes = 3;
+  int32 massLimit = 4;
+  repeated GetBlockTemplateTransactionMessage transactions = 5;
+  string hashMerkleRoot = 6;
+  string acceptedIDMerkleRoot = 7;
+  string utxoCommitment = 8;
+  int32 version = 9;
+  string longPollID = 10;
+  string targetDifficulty = 11;
+  int64 minTime = 12;
+  int64 maxTime = 13;
+  repeated string mutableFields = 14;
+  string nonceRange = 15;
+  bool isSynced = 16;
 
   RPCError error = 17;
 }
 
 message GetBlockTemplateTransactionMessage{
-  string Data = 1;
-  string ID = 2;
-  repeated int64 Depends = 3;
-  uint64 Mass = 4;
-  uint64 Fee = 5;
+  string data = 1;
+  string id = 2;
+  repeated int64 depends = 3;
+  uint64 mass = 4;
+  uint64 fee = 5;
 }
 
 message NotifyBlockAddedRequestMessage{
@@ -338,6 +340,27 @@ message GetMempoolEntryRequestMessage{
 
 message GetMempoolEntryResponseMessage{
   RPCError error = 1;
+}
+
+message GetConnectedPeerInfoRequestMessage{
+}
+
+message GetConnectedPeerInfoResponseMessage{
+  repeated GetConnectedPeerInfoMessage infos = 1;
+  RPCError error = 2;
+}
+
+message GetConnectedPeerInfoMessage{
+  string id = 1;
+  string address = 2;
+  int64 lastPingDuration = 3;
+  string selectedTipHash = 4;
+  bool isSyncNode = 5;
+  bool isOutbound = 6;
+  int64 timeOffset = 7;
+  string userAgent = 8;
+  uint32 advertisedProtocolVersion = 9;
+  int64 timeConnected = 10;
 }
 
 service RPC {

@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -208,8 +207,20 @@ func (c *testRPCClient) connectNode(host string) error {
 	return nil
 }
 
-func (c *testRPCClient) getConnectedPeerInfo() ([]model.GetConnectedPeerInfoResult, error) {
-	return nil, nil
+func (c *testRPCClient) getConnectedPeerInfo() (*appmessage.GetConnectedPeerInfoResponseMessage, error) {
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewGetConnectedPeerInfoRequestMessage())
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.route(appmessage.CmdGetConnectedPeerInfoResponseMessage).DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return nil, err
+	}
+	getMempoolEntryResponse := response.(*appmessage.GetConnectedPeerInfoResponseMessage)
+	if getMempoolEntryResponse.Error != nil {
+		return nil, c.convertRPCError(getMempoolEntryResponse.Error)
+	}
+	return getMempoolEntryResponse, nil
 }
 
 func (c *testRPCClient) convertRPCError(rpcError *appmessage.RPCError) error {

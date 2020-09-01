@@ -52,14 +52,14 @@ func isConnected(t *testing.T, appHarness1, appHarness2 *appHarness) bool {
 	var incomingConnected, outgoingConnected bool
 	app1ID, app2ID := appHarness1.app.P2PNodeID().String(), appHarness2.app.P2PNodeID().String()
 
-	for _, connectedPeer := range connectedPeerInfo1 {
+	for _, connectedPeer := range connectedPeerInfo1.Infos {
 		if connectedPeer.ID == app2ID {
 			incomingConnected = true
 			break
 		}
 	}
 
-	for _, connectedPeer := range connectedPeerInfo2 {
+	for _, connectedPeer := range connectedPeerInfo2.Infos {
 		if connectedPeer.ID == app1ID {
 			outgoingConnected = true
 			break
