@@ -324,6 +324,10 @@ func (node *blockNode) checkBoundedMergeDepth() error {
 }
 
 func (node *blockNode) isViolatingFinality() (bool, error) {
+	if node.isGenesis() {
+		return false, nil
+	}
+
 	if node.dag.virtual.less(node) {
 		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
 			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
