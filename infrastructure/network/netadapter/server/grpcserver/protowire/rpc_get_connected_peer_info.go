@@ -43,7 +43,7 @@ func (x *KaspadMessage_GetConnectedPeerInfoResponse) fromAppMessage(message *app
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	infos := make([]*GetConnectedPeerInfoMessage, len(x.GetConnectedPeerInfoResponse.Infos))
+	infos := make([]*GetConnectedPeerInfoMessage, len(message.Infos))
 	for i, info := range message.Infos {
 		infos[i] = &GetConnectedPeerInfoMessage{
 			Id:                        info.ID,
