@@ -12,11 +12,12 @@ import (
 type handler func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
 
 var handlers = map[appmessage.MessageCommand]handler{
-	appmessage.CmdGetCurrentNetworkRequestMessage: rpchandlers.HandleGetCurrentNetwork,
-	appmessage.CmdSubmitBlockRequestMessage:       rpchandlers.HandleSubmitBlock,
-	appmessage.CmdGetBlockTemplateRequestMessage:  rpchandlers.HandleGetBlockTemplate,
-	appmessage.CmdNotifyBlockAddedRequestMessage:  rpchandlers.HandleNotifyBlockAdded,
-	appmessage.CmdGetPeerAddressesRequestMessage:  rpchandlers.HandleGetPeerAddresses,
+	appmessage.CmdGetCurrentNetworkRequestMessage:  rpchandlers.HandleGetCurrentNetwork,
+	appmessage.CmdSubmitBlockRequestMessage:        rpchandlers.HandleSubmitBlock,
+	appmessage.CmdGetBlockTemplateRequestMessage:   rpchandlers.HandleGetBlockTemplate,
+	appmessage.CmdNotifyBlockAddedRequestMessage:   rpchandlers.HandleNotifyBlockAdded,
+	appmessage.CmdGetPeerAddressesRequestMessage:   rpchandlers.HandleGetPeerAddresses,
+	appmessage.CmdGetSelectedTipHashRequestMessage: rpchandlers.HandleGetSelectedTipHash,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

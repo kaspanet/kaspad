@@ -48,11 +48,12 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 }
 
 type testRPCRouter struct {
-	router                        *routerpkg.Router
-	getBlockTemplateResponseRoute *routerpkg.Route
-	submitBlockResponseRoute      *routerpkg.Route
-	notifyBlockAddedResponseRoute *routerpkg.Route
-	blockAddedNotificationRoute   *routerpkg.Route
+	router                          *routerpkg.Router
+	getBlockTemplateResponseRoute   *routerpkg.Route
+	submitBlockResponseRoute        *routerpkg.Route
+	notifyBlockAddedResponseRoute   *routerpkg.Route
+	blockAddedNotificationRoute     *routerpkg.Route
+	getSelectedTipHashResponseRoute *routerpkg.Route
 }
 
 func buildTestRPCRouter() (*testRPCRouter, error) {
@@ -73,14 +74,19 @@ func buildTestRPCRouter() (*testRPCRouter, error) {
 	if err != nil {
 		return nil, err
 	}
+	getSelectedTipHashResponseRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdGetSelectedTipHashResponseMessage})
+	if err != nil {
+		return nil, err
+	}
 
 	minerRouter := &testRPCRouter{
 		router: router,
 
-		getBlockTemplateResponseRoute: getBlockTemplateResponseRoute,
-		submitBlockResponseRoute:      submitBlockResponseRoute,
-		notifyBlockAddedResponseRoute: notifyBlockAddedResponseRoute,
-		blockAddedNotificationRoute:   blockAddedNotificationRoute,
+		getBlockTemplateResponseRoute:   getBlockTemplateResponseRoute,
+		submitBlockResponseRoute:        submitBlockResponseRoute,
+		notifyBlockAddedResponseRoute:   notifyBlockAddedResponseRoute,
+		blockAddedNotificationRoute:     blockAddedNotificationRoute,
+		getSelectedTipHashResponseRoute: getSelectedTipHashResponseRoute,
 	}
 
 	return minerRouter, nil
@@ -175,6 +181,22 @@ func (c *testRPCClient) getPeerAddresses() (*appmessage.GetPeerAddressesResponse
 		return nil, c.convertRPCError(getPeerAddressesResponse.Error)
 	}
 	return getPeerAddressesResponse, nil
+}
+
+func (c *testRPCClient) getSelectedTipHash() (*appmessage.GetSelectedTipHashResponseMessage, error) {
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewGetSelectedTipHashRequestMessage())
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.router.getSelectedTipHashResponseRoute.DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return nil, err
+	}
+	getSelectedTipHashResponse := response.(*appmessage.GetSelectedTipHashResponseMessage)
+	if getSelectedTipHashResponse.Error != nil {
+		return nil, c.convertRPCError(getSelectedTipHashResponse.Error)
+	}
+	return getSelectedTipHashResponse, nil
 }
 
 func (c *testRPCClient) convertRPCError(rpcError *appmessage.RPCError) error {

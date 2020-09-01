@@ -66,6 +66,8 @@ const (
 	CmdBlockAddedNotificationMessage
 	CmdGetPeerAddressesRequestMessage
 	CmdGetPeerAddressesResponseMessage
+	CmdGetSelectedTipHashRequestMessage
+	CmdGetSelectedTipHashResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -108,6 +110,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdBlockAddedNotificationMessage:      "BlockAddedNotification",
 	CmdGetPeerAddressesRequestMessage:     "GetPeerAddressesRequest",
 	CmdGetPeerAddressesResponseMessage:    "GetPeerAddressesResponse",
+	CmdGetSelectedTipHashRequestMessage:   "GetSelectedTipHashRequest",
+	CmdGetSelectedTipHashResponseMessage:  "GetSelectedTipHashResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

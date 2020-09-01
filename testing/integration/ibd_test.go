@@ -36,16 +36,16 @@ func TestIBD(t *testing.T) {
 	case <-locks.ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
 	}
 
-	tip1, err := syncer.rpcClient.GetSelectedTip()
+	tip1Hash, err := syncer.rpcClient.getSelectedTipHash()
 	if err != nil {
 		t.Fatalf("Error getting tip for syncer")
 	}
-	tip2, err := syncee.rpcClient.GetSelectedTip()
+	tip2Hash, err := syncee.rpcClient.getSelectedTipHash()
 	if err != nil {
 		t.Fatalf("Error getting tip for syncee")
 	}
 
-	if tip1.Hash != tip2.Hash {
-		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1.Hash, tip2.Hash)
+	if tip1Hash != tip2Hash {
+		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1Hash, tip2Hash)
 	}
 }

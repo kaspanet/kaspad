@@ -39,6 +39,8 @@ message KaspadMessage {
     BlockAddedNotificationMessage blockAddedNotification = 1009;
     GetPeerAddressesRequestMessage getPeerAddressesRequest = 1010;
     GetPeerAddressesResponseMessage getPeerAddressesResponse = 1011;
+    GetSelectedTipHashRequestMessage getSelectedTipHashRequest = 1012;
+    GetSelectedTipHashResponseMessage getSelectedTipHashResponse = 1013;
   }
 }
 
@@ -253,7 +255,6 @@ message GetCurrentNetworkRequestMessage{
 
 message GetCurrentNetworkResponseMessage{
   string currentNetwork = 1;
-
   RPCError error = 2;
 }
 
@@ -319,6 +320,14 @@ message GetPeerAddressesResponseMessage{
 
 message GetPeerAddressesKnownAddressMessage {
   string Addr = 1;
+}
+
+message GetSelectedTipHashRequestMessage{
+}
+
+message GetSelectedTipHashResponseMessage{
+  string selectedTipHash = 1;
+  RPCError error = 2;
 }
 
 service RPC {
