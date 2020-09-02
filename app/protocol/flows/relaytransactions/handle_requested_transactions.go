@@ -30,6 +30,7 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 		}
 
 		for _, transactionID := range msgRequestTransactions.IDs {
+			log.Criticalf("~~~~~ handleRequestedTransactionsFlow.start() tx %s was requested", transactionID)
 			tx, ok := flow.TxPool().FetchTransaction(transactionID)
 
 			if !ok {

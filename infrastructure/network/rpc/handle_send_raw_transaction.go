@@ -29,6 +29,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	}
 
 	tx := util.NewTx(&msgTx)
+	log.Criticalf("~~~~~ handleSendRawTransaction got %s", tx.ID())
 	err = s.protocolManager.AddTransaction(tx)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {

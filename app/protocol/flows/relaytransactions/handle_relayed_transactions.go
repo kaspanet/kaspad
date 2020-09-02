@@ -48,6 +48,10 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 			return err
 		}
 
+		for _, txID := range inv.TxIDs {
+			log.Criticalf("~~~~~ handleRelayedTransactionsFlow.start() got %s", txID)
+		}
+
 		requestedIDs, err := flow.requestInvTransactions(inv)
 		if err != nil {
 			return err
@@ -137,6 +141,7 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransact
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
+		log.Criticalf("~~~~~ broadcastAcceptedTransactions() broadcasting", tx.Tx.ID())
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
 	inv := appmessage.NewMsgInvTransaction(idsToBroadcast)
@@ -187,6 +192,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 			continue
 		}
 		tx := util.NewTx(msgTx)
+		log.Criticalf("~~~~~ receiveTransactions() got %s", tx.ID())
 		if !tx.ID().IsEqual(expectedID) {
 			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 				expectedID, tx.ID())

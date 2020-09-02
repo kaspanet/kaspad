@@ -33,6 +33,10 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
 
+	for _, tx := range block.Transactions() {
+		log.Criticalf("~~~~~ processBlockNoLock block %s tx %s", block.Hash(), tx.ID())
+	}
+
 	err = dag.checkDuplicateBlock(blockHash, flags)
 	if err != nil {
 		return false, false, err

@@ -7,6 +7,7 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -498,6 +499,7 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 
 	txDesc, _ := mp.fetchTxDesc(txID)
 	if txDesc.depCount == 0 {
+		log.Criticalf("~~~~~ removeTransactionWithDiff delete %s stack %s", txID, debug.Stack())
 		delete(mp.pool, *txID)
 	} else {
 		delete(mp.depends, *txID)
@@ -571,6 +573,7 @@ func (mp *TxPool) processRemovedTransactionDependencies(tx *util.Tx) {
 				if _, ok := mp.depends[*txD.Tx.ID()]; ok {
 					delete(mp.depends, *txD.Tx.ID())
 					mp.pool[*txD.Tx.ID()] = txD
+					log.Criticalf("~~~~~ processRemovedTransactionDependencies adds %s stack %s", txD.Tx.ID(), debug.Stack())
 				}
 			}
 		}
@@ -652,6 +655,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, fee uint64, parentsInPool []*appme
 	}
 
 	if len(parentsInPool) == 0 {
+		log.Criticalf("~~~~~ addTransaction adds %s stack %s", tx.ID(), debug.Stack())
 		mp.pool[*tx.ID()] = txD
 	} else {
 		mp.depends[*tx.ID()] = txD
