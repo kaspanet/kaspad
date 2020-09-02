@@ -425,3 +425,13 @@ func TestSort(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkHash_Cmp(b *testing.B) {
+	hash0, err := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+	if err != nil {
+		b.Fatal(err)
+	}
+	for n := 0; n < b.N; n++ {
+		hash0.Cmp(hash0)
+	}
+}
