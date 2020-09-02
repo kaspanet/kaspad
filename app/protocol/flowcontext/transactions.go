@@ -26,7 +26,7 @@ func (f *FlowContext) AddTransaction(tx *util.Tx) error {
 
 	f.transactionsToRebroadcast[*tx.ID()] = tx
 	inv := appmessage.NewMsgInvTransaction([]*daghash.TxID{tx.ID()})
-	log.Criticalf("~~~~~ FlowContext.AddTransaction() broadcasting", tx.ID())
+	log.Criticalf("~~~~~ FlowContext.AddTransaction() broadcasting %s", tx.ID())
 	return f.Broadcast(inv)
 }
 

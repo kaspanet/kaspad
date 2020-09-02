@@ -141,7 +141,7 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransact
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
 	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
-		log.Criticalf("~~~~~ broadcastAcceptedTransactions() broadcasting", tx.Tx.ID())
+		log.Criticalf("~~~~~ broadcastAcceptedTransactions() broadcasting %s", tx.Tx.ID())
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
 	inv := appmessage.NewMsgInvTransaction(idsToBroadcast)
