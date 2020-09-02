@@ -49,6 +49,9 @@ message KaspadMessage {
     ConnectToPeerResponseMessage connectToPeerResponse = 1019;
     SendRawTransactionRequestMessage sendRawTransactionRequest = 1020;
     SendRawTransactionResponseMessage sendRawTransactionResponse = 1021;
+    NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
+    NotifyChainChangedResponseMessage notifyChainChangedResponse = 1023;
+    ChainChangedNotificationMessage chainChangedNotification = 1024;
   }
 }
 
@@ -384,6 +387,17 @@ message SendRawTransactionRequestMessage{
 message SendRawTransactionResponseMessage{
   string txId = 1;
   RPCError error = 2;
+}
+
+message NotifyChainChangedRequestMessage{
+}
+
+message NotifyChainChangedResponseMessage{
+  RPCError error = 1;
+}
+
+message ChainChangedNotificationMessage{
+
 }
 
 service RPC {
