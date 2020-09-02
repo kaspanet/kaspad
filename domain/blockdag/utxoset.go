@@ -116,9 +116,23 @@ func (uc utxoCollection) add(outpoint appmessage.Outpoint, entry *UTXOEntry) {
 	uc[outpoint] = entry
 }
 
+// addMultiple adds multiple UTXO entries to this collection
+func (uc utxoCollection) addMultiple(collectionToAdd utxoCollection) {
+	for outpoint, entry := range collectionToAdd {
+		uc[outpoint] = entry
+	}
+}
+
 // remove removes a UTXO entry from this collection if it exists
 func (uc utxoCollection) remove(outpoint appmessage.Outpoint) {
 	delete(uc, outpoint)
+}
+
+// removeMultiple removes multiple UTXO entries from this collection if it exists
+func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
+	for outpoint := range collectionToRemove {
+		delete(uc, outpoint)
+	}
 }
 
 // get returns the UTXOEntry represented by provided outpoint,
@@ -166,6 +180,100 @@ func NewUTXODiff() *UTXODiff {
 	}
 }
 
+// checkIntersection checks if there is an intersection between two utxoCollections
+func checkIntersection(collection1 utxoCollection, collection2 utxoCollection) bool {
+	for outpoint := range collection1 {
+		if collection2.contains(outpoint) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checkIntersectionWithRule checks if there is an intersection between two utxoCollections satisfying arbitrary rule
+func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoCollection, extraRule func(appmessage.Outpoint, *UTXOEntry, *UTXOEntry) bool) bool {
+	for outpoint, utxoEntry := range collection1 {
+		if diffEntry, ok := collection2.get(outpoint); ok {
+			if extraRule(outpoint, utxoEntry, diffEntry) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// minInt returns the smaller of x or y integer values
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// intersectionWithRemainderHavingBlueScore calculates an intersection between two utxoCollections
+// having same blue score, returns the result and the remainder from collection1
+func intersectionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
+	result = make(utxoCollection, minInt(len(collection1), len(collection2)))
+	remainder = make(utxoCollection, len(collection1))
+	intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
+	return
+}
+
+// intersectionWithRemainderHavingBlueScoreInPlace calculates an intersection between two utxoCollections
+// having same blue score, puts it into result and into remainder from collection1
+func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+	for outpoint, utxoEntry := range collection1 {
+		if collection2.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
+			result.add(outpoint, utxoEntry)
+		} else {
+			remainder.add(outpoint, utxoEntry)
+		}
+	}
+}
+
+// subtractionHavingBlueScore calculates a subtraction between collection1 and collection2
+// having same blue score, returns the result
+func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result utxoCollection) {
+	result = make(utxoCollection, len(collection1))
+
+	subtractionHavingBlueScoreInPlace(collection1, collection2, result)
+	return
+}
+
+// subtractionHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
+// having same blue score, puts it into result
+func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
+	for outpoint, utxoEntry := range collection1 {
+		if !collection2.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
+			result.add(outpoint, utxoEntry)
+		}
+	}
+}
+
+// subtractionWithRemainderHavingBlueScore calculates a subtraction between collection1 and collection2
+// having same blue score, returns the result and the remainder from collection1
+func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
+	result = make(utxoCollection, len(collection1))
+	remainder = make(utxoCollection, len(collection1))
+
+	subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
+	return
+}
+
+// subtractionWithRemainderHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
+// having same blue score, puts it into result and into remainder from collection1
+func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+	for outpoint, utxoEntry := range collection1 {
+		if !collection2.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
+			result.add(outpoint, utxoEntry)
+		} else {
+			remainder.add(outpoint, utxoEntry)
+		}
+	}
+}
+
 // diffFrom returns a new utxoDiff with the difference between this utxoDiff and another
 // Assumes that:
 // Both utxoDiffs are from the same base
@@ -195,89 +303,69 @@ func NewUTXODiff() *UTXODiff {
 // 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
 //    diffFrom results in the UTXO being added to toAdd
 func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
-	result := UTXODiff{
-		toAdd:    make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
-		toRemove: make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
-	}
-
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
 	// - if utxoEntry is in d.toAdd and other.toRemove
 	// - if utxoEntry is in d.toRemove and other.toAdd
 
+	// check that NOT (entries with unequal blue scores AND utxoEntry is in d.toAdd and/or other.toRemove) -> Error
+	isNotAddedOutputRemovedWithBlueScore := func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+			(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
+	}
+
+	if checkIntersectionWithRule(d.toRemove, other.toAdd, isNotAddedOutputRemovedWithBlueScore) {
+		return nil, errors.New("diffFrom: outpoint both in d.toAdd and in other.toRemove")
+	}
+
+	//check that NOT (entries with unequal blue score AND utxoEntry is in d.toRemove and/or other.toAdd) -> Error
+	isNotRemovedOutputAddedWithBlueScore := func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+		return !(diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+			(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+				other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)))
+	}
+
+	if checkIntersectionWithRule(d.toAdd, other.toRemove, isNotRemovedOutputAddedWithBlueScore) {
+		return nil, errors.New("diffFrom: outpoint both in d.toRemove and in other.toAdd")
+	}
+
+	// if have the same entry in d.toRemove and other.toRemove
+	// and existing entry is with different blue score, in this case - this is an error
+	if checkIntersectionWithRule(d.toRemove, other.toRemove,
+		func(outpoint appmessage.Outpoint, utxoEntry, diffEntry *UTXOEntry) bool {
+			return utxoEntry.blockBlueScore != diffEntry.blockBlueScore
+		}) {
+		return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
+			"blue scores, with no corresponding entry in d.toAdd")
+	}
+
+	result := UTXODiff{
+		toAdd:    make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
+		toRemove: make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
+	}
+
 	// All transactions in d.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
+	inBothToAdd := make(utxoCollection, len(d.toAdd))
+	subtractionWithRemainderHavingBlueScoreInPlace(d.toAdd, other.toAdd, result.toRemove, inBothToAdd)
 	// If they are in other.toRemove - base utxoSet is not the same
-	for outpoint, utxoEntry := range d.toAdd {
-		if !other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toRemove.add(outpoint, utxoEntry)
-		} else if (d.toRemove.contains(outpoint) && !other.toRemove.contains(outpoint)) ||
-			(!d.toRemove.contains(outpoint) && other.toRemove.contains(outpoint)) {
-			return nil, errors.New(
-				"diffFrom: outpoint both in d.toAdd, other.toAdd, and only one of d.toRemove and other.toRemove")
-		}
-		if diffEntry, ok := other.toRemove.get(outpoint); ok {
-			// An exception is made for entries with unequal blue scores
-			// as long as the appropriate entry exists in either d.toRemove
-			// or other.toAdd.
-			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
-				continue
-			}
-			return nil, errors.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outpoint)
-		}
-	}
-
-	// All transactions in d.toRemove:
-	// If they are not in other.toRemove - should be added in result.toAdd
-	// If they are in other.toAdd - base utxoSet is not the same
-	for outpoint, utxoEntry := range d.toRemove {
-		diffEntry, ok := other.toRemove.get(outpoint)
-		if ok {
-			// if have the same entry in d.toRemove - simply don't copy.
-			// unless existing entry is with different blue score, in this case - this is an error
-			if utxoEntry.blockBlueScore != diffEntry.blockBlueScore {
-				return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
-					"blue scores, with no corresponding entry in d.toAdd")
-			}
-		} else { // if no existing entry - add to result.toAdd
-			result.toAdd.add(outpoint, utxoEntry)
-		}
-
-		if !other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toAdd.add(outpoint, utxoEntry)
-		}
-		if diffEntry, ok := other.toAdd.get(outpoint); ok {
-			// An exception is made for entries with unequal blue scores
-			// as long as the appropriate entry exists in either d.toAdd
-			// or other.toRemove.
-			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
-					other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
-				continue
-			}
-			return nil, errors.New("diffFrom: outpoint both in d.toRemove and in other.toAdd")
-		}
-	}
-
-	// All transactions in other.toAdd:
-	// If they are not in d.toAdd - should be added in result.toAdd
-	for outpoint, utxoEntry := range other.toAdd {
-		if !d.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toAdd.add(outpoint, utxoEntry)
-		}
+	if checkIntersection(inBothToAdd, d.toRemove) != checkIntersection(inBothToAdd, other.toRemove) {
+		return nil, errors.New(
+			"diffFrom: outpoint both in d.toAdd, other.toAdd, and only one of d.toRemove and other.toRemove")
 	}
 
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
-	for outpoint, utxoEntry := range other.toRemove {
-		if !d.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
-			result.toRemove.add(outpoint, utxoEntry)
-		}
-	}
+	subtractionHavingBlueScoreInPlace(other.toRemove, d.toRemove, result.toRemove)
+
+	// All transactions in d.toRemove:
+	// If they are not in other.toRemove - should be added in result.toAdd
+	subtractionHavingBlueScoreInPlace(d.toRemove, other.toRemove, result.toAdd)
+
+	// All transactions in other.toAdd:
+	// If they are not in d.toAdd - should be added in result.toAdd
+	subtractionHavingBlueScoreInPlace(other.toAdd, d.toAdd, result.toAdd)
 
 	return &result, nil
 }
@@ -285,44 +373,34 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 // withDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
 func (d *UTXODiff) withDiffInPlace(diff *UTXODiff) error {
-	for outpoint, entryToRemove := range diff.toRemove {
-		if d.toAdd.containsWithBlueScore(outpoint, entryToRemove.blockBlueScore) {
-			// If already exists in toAdd with the same blueScore - remove from toAdd
-			d.toAdd.remove(outpoint)
-			continue
-		}
-		if d.toRemove.contains(outpoint) {
-			// If already exists - this is an error
-			return errors.Errorf(
-				"withDiffInPlace: outpoint %s both in d.toRemove and in diff.toRemove", outpoint)
-		}
+	if checkIntersectionWithRule(diff.toRemove, d.toRemove,
+		func(outpoint appmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
+			return !d.toAdd.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore)
 
-		// If not exists neither in toAdd nor in toRemove - add to toRemove
-		d.toRemove.add(outpoint, entryToRemove)
+		}) {
+		return errors.New(
+			"withDiffInPlace: outpoint both in d.toRemove and in diff.toRemove")
 	}
 
-	for outpoint, entryToAdd := range diff.toAdd {
-		if d.toRemove.containsWithBlueScore(outpoint, entryToAdd.blockBlueScore) {
-			// If already exists in toRemove with the same blueScore - remove from toRemove
-			if d.toAdd.contains(outpoint) && !diff.toRemove.contains(outpoint) {
-				return errors.Errorf(
-					"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd with no "+
-						"corresponding entry in diff.toRemove", outpoint)
-			}
-			d.toRemove.remove(outpoint)
-			continue
-		}
-		if existingEntry, ok := d.toAdd.get(outpoint); ok &&
-			(existingEntry.blockBlueScore == entryToAdd.blockBlueScore ||
-				!diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)) {
-			// If already exists - this is an error
-			return errors.Errorf(
-				"withDiffInPlace: outpoint %s both in d.toAdd and in diff.toAdd", outpoint)
-		}
-
-		// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
-		d.toAdd.add(outpoint, entryToAdd)
+	if checkIntersectionWithRule(diff.toAdd, d.toAdd,
+		func(outpoint appmessage.Outpoint, entryToAdd, existingEntry *UTXOEntry) bool {
+			return !diff.toRemove.containsWithBlueScore(outpoint, existingEntry.blockBlueScore)
+		}) {
+		return errors.New(
+			"withDiffInPlace: outpoint both in d.toAdd and in diff.toAdd")
 	}
+
+	intersection := make(utxoCollection, minInt(len(diff.toRemove), len(d.toAdd)))
+	// If not exists neither in toAdd nor in toRemove - add to toRemove
+	intersectionWithRemainderHavingBlueScoreInPlace(diff.toRemove, d.toAdd, intersection, d.toRemove)
+	// If already exists in toAdd with the same blueScore - remove from toAdd
+	d.toAdd.removeMultiple(intersection)
+
+	intersection = make(utxoCollection, minInt(len(diff.toAdd), len(d.toRemove)))
+	// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
+	intersectionWithRemainderHavingBlueScoreInPlace(diff.toAdd, d.toRemove, intersection, d.toAdd)
+	// If already exists in toRemove with the same blueScore - remove from toRemove
+	d.toRemove.removeMultiple(intersection)
 
 	return nil
 }

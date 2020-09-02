@@ -60,7 +60,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 		return nil, errors.Errorf("non-tcp addresses are not supported")
 	}
 
-	connection := newConnection(&p.gRPCServer, tcpAddress, true, stream)
+	connection := newConnection(&p.gRPCServer, tcpAddress, stream, nil)
 
 	err = p.onConnectedHandler(connection)
 	if err != nil {
