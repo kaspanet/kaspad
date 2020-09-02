@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"bytes"
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
@@ -182,8 +183,29 @@ func (c *testRPCClient) getSelectedTipHash() (*appmessage.GetSelectedTipHashResp
 	return getSelectedTipHashResponse, nil
 }
 
-func (c *testRPCClient) sendRawTransaction(tx *appmessage.MsgTx) (*appmessage.SendRawTransactionResponseMessage, error) {
-	return nil, nil
+func (c *testRPCClient) sendRawTransaction(msgTx *appmessage.MsgTx) (*appmessage.SendRawTransactionResponseMessage, error) {
+	transactionHex := ""
+	if msgTx != nil {
+		buf := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
+		if err := msgTx.Serialize(buf); err != nil {
+			return nil, err
+		}
+		transactionHex = hex.EncodeToString(buf.Bytes())
+	}
+	err := c.router.outgoingRoute().Enqueue(appmessage.NewSendRawTransactionRequestMessage(transactionHex))
+	if err != nil {
+		return nil, err
+	}
+	response, err := c.route(appmessage.CmdSendRawTransactionResponseMessage).DequeueWithTimeout(testTimeout)
+	if err != nil {
+		return nil, err
+	}
+	sendRawTransactionResponse := response.(*appmessage.SendRawTransactionResponseMessage)
+	if sendRawTransactionResponse.Error != nil {
+		return nil, c.convertRPCError(sendRawTransactionResponse.Error)
+	}
+
+	return sendRawTransactionResponse, nil
 }
 
 func (c *testRPCClient) getMempoolEntry(txID string) (*appmessage.GetMempoolEntryResponseMessage, error) {
