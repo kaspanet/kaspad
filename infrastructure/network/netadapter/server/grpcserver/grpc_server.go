@@ -82,7 +82,7 @@ func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStr
 		return errors.Errorf("non-tcp connections are not supported")
 	}
 
-	connection := newConnection(s, tcpAddress, false, stream)
+	connection := newConnection(s, tcpAddress, stream, nil)
 
 	err := s.onConnectedHandler(connection)
 	if err != nil {
