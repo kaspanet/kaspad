@@ -169,18 +169,18 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 
 	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
 	if tx.IsCoinBase() {
-		isAccepted = isSelectedParent
-		if isAccepted {
-			txMass := CalcTxMass(tx, nil)
-			accumulatedMass += txMass
+		if !isSelectedParent {
+			return false, 0, 0, nil
 		}
+		txMass := CalcTxMass(tx, nil)
+		accumulatedMass += txMass
 
 		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
 			return false, 0, 0, err
 		}
 
-		return isAccepted, 0, accumulatedMass, nil
+		return true, 0, accumulatedMass, nil
 	}
 
 	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
