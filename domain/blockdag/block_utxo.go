@@ -143,6 +143,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		for j, tx := range transactions {
 			var isAccepted bool
 			var txFee uint64
+
 			isAccepted, txFee, accumulatedMass, err =
 				node.maybeAcceptTx(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
 			if err != nil {
@@ -184,7 +185,6 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 
 	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
 		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
-
 	if err != nil {
 		if !errors.As(err, &(RuleError{})) {
 			return false, 0, 0, err

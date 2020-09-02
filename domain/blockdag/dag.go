@@ -538,6 +538,8 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 		oldSelectedParent := dag.virtual.selectedParent
 		dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
 		chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
+	} else {
+		chainUpdates = &selectedParentChainUpdates{}
 	}
 	return didVirtualParentsChange, chainUpdates, nil
 }

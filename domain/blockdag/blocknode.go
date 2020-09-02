@@ -40,6 +40,18 @@ const (
 	statusDisqualifiedFromChain
 )
 
+var blockStatusToString = map[blockStatus]string{
+	statusDataStored:            "statusDataStored",
+	statusValid:                 "statusValid",
+	statusInvalidAncestor:       "statusInvalidAncestor",
+	statusUTXONotVerified:       "statusUTXONotVerified",
+	statusDisqualifiedFromChain: "statusDisqualifiedFromChain",
+}
+
+func (status blockStatus) String() string {
+	return blockStatusToString[status]
+}
+
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
