@@ -5,12 +5,14 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type Manager struct {
@@ -24,7 +26,8 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	mempool *mempool.TxPool,
-	addressManager *addressmanager.AddressManager) *Manager {
+	addressManager *addressmanager.AddressManager,
+	acceptanceIndex *indexers.AcceptanceIndex) *Manager {
 	manager := Manager{
 		context: rpccontext.NewContext(
 			netAdapter,
@@ -34,6 +37,7 @@ func NewManager(
 			blockTemplateGenerator,
 			mempool,
 			addressManager,
+			acceptanceIndex,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
@@ -48,8 +52,18 @@ func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
 	m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
-func (m *Manager) NotifyChainChanged() {
-
+func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) error {
+	addedChainBlocks, err := m.context.CollectChainBlocks(addedChainBlockHashes)
+	if err != nil {
+		return err
+	}
+	removedChainBlockHashStrings := make([]string, len(removedChainBlockHashes))
+	for i, removedChainBlockHash := range removedChainBlockHashes {
+		removedChainBlockHashStrings[i] = removedChainBlockHash.String()
+	}
+	notification := appmessage.NewChainChangedNotificationMessage(removedChainBlockHashStrings, addedChainBlocks)
+	m.context.NotificationManager.NotifyChainChanged(notification)
+	return nil
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {

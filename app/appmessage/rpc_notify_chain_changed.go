@@ -48,7 +48,7 @@ type ChainChangedChainBlock struct {
 
 type ChainChangedAcceptedBlock struct {
 	Hash          string
-	AcceptedTxIds []string
+	AcceptedTxIDs []string
 }
 
 // Command returns the protocol command string for the message

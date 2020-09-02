@@ -39,7 +39,7 @@ func (x *KaspadMessage_ChainChangedNotification) toAppMessage() (appmessage.Mess
 		for j, acceptedBlock := range addedChainBlock.AcceptedBlocks {
 			acceptedBlocks[j] = &appmessage.ChainChangedAcceptedBlock{
 				Hash:          acceptedBlock.Hash,
-				AcceptedTxIds: acceptedBlock.AcceptedTxIds,
+				AcceptedTxIDs: acceptedBlock.AcceptedTxIds,
 			}
 		}
 		addedChainBlocks[i] = &appmessage.ChainChangedChainBlock{
@@ -60,7 +60,7 @@ func (x *KaspadMessage_ChainChangedNotification) fromAppMessage(message *appmess
 		for j, acceptedBlock := range addedChainBlock.AcceptedBlocks {
 			acceptedBlocks[j] = &ChainChangedAcceptedBlock{
 				Hash:          acceptedBlock.Hash,
-				AcceptedTxIds: acceptedBlock.AcceptedTxIds,
+				AcceptedTxIds: acceptedBlock.AcceptedTxIDs,
 			}
 		}
 		addedChainBlocks[i] = &ChainChangedChainBlock{

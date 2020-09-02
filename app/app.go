@@ -85,7 +85,7 @@ func (a *App) Stop() {
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
 func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*App, error) {
-	indexManager, _ := setupIndexes(cfg)
+	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
 
@@ -113,7 +113,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager)
+	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex)
 
 	return &App{
 		cfg:               cfg,
@@ -133,15 +133,21 @@ func setupRPC(
 	netAdapter *netadapter.NetAdapter,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
-	addressManager *addressmanager.AddressManager) *rpc.Manager {
+	addressManager *addressmanager.AddressManager,
+	acceptanceIndex *indexers.AcceptanceIndex) *rpc.Manager {
+
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
+	rpcManager := rpc.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 	dag.Subscribe(func(notification *blockdag.Notification) {
-		if notification.Type == blockdag.NTChainChanged {
-			//chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
-			//rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes, chainChangedNotificationData.AddedChainBlockHashes)
+		if notification.Type == blockdag.NTChainChanged && acceptanceIndex != nil {
+			chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
+			err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
+				chainChangedNotificationData.AddedChainBlockHashes)
+			if err != nil {
+				panic(err)
+			}
 		}
 	})
 	return rpcManager

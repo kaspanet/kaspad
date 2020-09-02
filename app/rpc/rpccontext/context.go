@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -18,6 +19,7 @@ type Context struct {
 	BlockTemplateGenerator *mining.BlkTmplGenerator
 	Mempool                *mempool.TxPool
 	AddressManager         *addressmanager.AddressManager
+	AcceptanceIndex        *indexers.AcceptanceIndex
 
 	BlockTemplateState  *BlockTemplateState
 	NotificationManager *NotificationManager
@@ -30,7 +32,8 @@ func NewContext(
 	connectionManager *connmanager.ConnectionManager,
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	mempool *mempool.TxPool,
-	addressManager *addressmanager.AddressManager) *Context {
+	addressManager *addressmanager.AddressManager,
+	acceptanceIndex *indexers.AcceptanceIndex) *Context {
 	context := &Context{
 		NetAdapter:             netAdapter,
 		DAG:                    dag,
@@ -39,6 +42,7 @@ func NewContext(
 		BlockTemplateGenerator: blockTemplateGenerator,
 		Mempool:                mempool,
 		AddressManager:         addressManager,
+		AcceptanceIndex:        acceptanceIndex,
 	}
 	context.BlockTemplateState = NewBlockTemplateState(context)
 	context.NotificationManager = NewNotificationManager()
