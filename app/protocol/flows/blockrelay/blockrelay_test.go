@@ -1,20 +1,21 @@
 package blockrelay
 
 import (
-	"os"
-	"path/filepath"
+	"math"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
+
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
@@ -76,70 +77,109 @@ func newMocRelayInvsContext(dag *blockdag.BlockDAG) *mocRelayInvsContext {
 	}
 }
 
-func createDag() (*blockdag.BlockDAG, func()) {
-	tempDir := os.TempDir()
-	dbPath := filepath.Join(tempDir, "TestRelaytransactions")
-	_ = os.RemoveAll(dbPath)
-
-	databaseContext, err := dbaccess.New(dbPath)
-	if err != nil {
-		return nil, nil
-	}
-
-	cfg := &blockdag.Config{
-		DAGParams:  &dagconfig.SimnetParams,
-		TimeSource: blockdag.NewTimeSource(),
-		SigCache:   txscript.NewSigCache(1000),
-	}
-
-	cfg.DatabaseContext = databaseContext
-	dag, err := blockdag.New(cfg)
-
-	return dag, func() {
-		databaseContext.Close()
-		os.RemoveAll(dbPath)
-	}
-}
-
 func TestHandleRelayBlockRequests(t *testing.T) {
-	incomingRoute := router.NewRoute()
-	outgoingRoute := router.NewRoute()
 	peer := peerpkg.New(nil)
-	dag, cleanDag := createDag()
-	defer cleanDag()
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
 
-	getRelayBlocksMessage := appmessage.MsgRequestRelayBlocks{
-		Hashes: []*daghash.Hash{&daghash.Hash{10}, &daghash.Hash{20}},
+	block := util.NewBlock(params.GenesisBlock)
+	msgRequestRelayBlocks := appmessage.MsgRequestRelayBlocks{
+		Hashes: []*daghash.Hash{block.Hash()},
 	}
 
-	t.Run("Test for invalid arguments 1", func(t *testing.T) {
+	t.Run("Simple call test", func(t *testing.T) {
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
 		context := newMocRelayBlockRequestsContext(dag)
-		incomingRoute.Enqueue(&getRelayBlocksMessage)
+
+		go func() {
+			outgoingRoute.Dequeue()
+			incomingRoute.Close()
+		}()
+
+		incomingRoute.Enqueue(&msgRequestRelayBlocks)
 		HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
 	})
 
-	t.Run("Test for invalid arguments 2", func(t *testing.T) {
+	t.Run("Test on wrong message type", func(t *testing.T) {
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
 		context := newMocRelayBlockRequestsContext(dag)
 		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 		HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
 	})
 
-	t.Run("Test for invalid arguments 3", func(t *testing.T) {
-		context := newMocRelayBlockRequestsContext(nil)
+	t.Run("Test on closed route", func(t *testing.T) {
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
+		context := newMocRelayBlockRequestsContext(dag)
+		incomingRoute.Close()
 		HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
+
+		err := HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
+		if err.Error() != routerpkg.ErrRouteClosed.Error() {
+			t.Fatalf("HandleRelayBlockRequests: expected ErrRouteClosed, got %s", err)
+		}
+	})
+
+	t.Run("Test block requesting", func(t *testing.T) {
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
+		context := newMocRelayBlockRequestsContext(dag)
+
+		go func() {
+			for _, hash := range msgRequestRelayBlocks.Hashes {
+				message, err := outgoingRoute.Dequeue()
+				if err != nil {
+					t.Fatalf("HandleRelayBlockRequests: %s", err)
+				}
+
+				msgBlock := message.(*appmessage.MsgBlock)
+				block, err := context.DAG().BlockByHash(hash)
+				if err != nil {
+					t.Fatalf("HandleRelayBlockRequests: %s", err)
+				}
+
+				if block.Hash().String() != msgBlock.BlockHash().String() {
+					t.Fatalf("HandleRelayBlockRequests: expected equal blocks hash %s != %s", block.Hash().String(), msgBlock.BlockHash())
+				}
+			}
+			incomingRoute.Close()
+			outgoingRoute.Close()
+		}()
+
+		incomingRoute.Enqueue(&msgRequestRelayBlocks)
+		err := HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
+		if err.Error() != routerpkg.ErrRouteClosed.Error() {
+			t.Fatalf("HandleRelayBlockRequests: expected ErrRouteClosed, got %s", err)
+		}
 	})
 }
 
 func TestHandleRelayInvs(t *testing.T) {
 	peer := peerpkg.New(nil)
-	dag, cleanDag := createDag()
-	defer cleanDag()
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", true, blockdag.Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
 
+	block := util.NewBlock(&Block100000)
+	//genesisBlock := util.NewBlock(params.GenesisBlock)
 	msgInvRelayBlock := appmessage.MsgInvRelayBlock{
-		Hash: &daghash.Hash{10},
+		Hash: block.Hash(),
 	}
 
-	t.Run("Test for invalid arguments 1", func(t *testing.T) {
+	t.Run("Test on wrong message type 1", func(t *testing.T) {
 		context := newMocRelayInvsContext(dag)
 		incomingRoute := router.NewRoute()
 		outgoingRoute := router.NewRoute()
@@ -148,7 +188,7 @@ func TestHandleRelayInvs(t *testing.T) {
 		HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
 	})
 
-	t.Run("Test for invalid arguments 2", func(t *testing.T) {
+	t.Run("Test on wrong message type 2", func(t *testing.T) {
 		context := newMocRelayInvsContext(dag)
 		incomingRoute := router.NewRoute()
 		outgoingRoute := router.NewRoute()
@@ -157,12 +197,334 @@ func TestHandleRelayInvs(t *testing.T) {
 		HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
 	})
 
-	t.Run("Test for invalid arguments 3", func(t *testing.T) {
-		context := newMocRelayInvsContext(nil)
+	t.Run("Test on closed route", func(t *testing.T) {
+		context := newMocRelayInvsContext(dag)
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
+		incomingRoute.Close()
+
+		err := HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
+		if err.Error() != routerpkg.ErrRouteClosed.Error() {
+			t.Fatalf("TestHandleRelayInvs: expected ErrRouteClosed, got %s", err)
+		}
+	})
+
+	t.Run("Test return wrong requested block", func(t *testing.T) {
+		context := newMocRelayInvsContext(dag)
 		incomingRoute := router.NewRoute()
 		outgoingRoute := router.NewRoute()
 		incomingRoute.Enqueue(&msgInvRelayBlock)
-		HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
+		block := util.NewBlock(params.GenesisBlock)
+		incomingRoute.Enqueue(block.MsgBlock())
+
+		err := HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
+		if err == nil {
+			t.Fatal("TestHandleRelayInvs: expected err, got nil")
+		}
 	})
 
+	t.Run("Test requsting blocks", func(t *testing.T) {
+		context := newMocRelayInvsContext(dag)
+		incomingRoute := router.NewRoute()
+		outgoingRoute := router.NewRoute()
+		incomingRoute.Enqueue(&msgInvRelayBlock)
+
+		go func() {
+			message, err := outgoingRoute.Dequeue()
+			msgRequestRelayBlocks := message.(*appmessage.MsgRequestRelayBlocks)
+			if err != nil {
+				t.Fatalf("TestHandleRelayInvs: %s", err)
+			}
+
+			for _, hash := range msgRequestRelayBlocks.Hashes {
+				if hash.String() != block.Hash().String() {
+					incomingRoute.Close()
+					t.Fatalf("TestHandleRelayInvs: expected equal blocks hash %s != %s", block.Hash().String(), hash.String())
+				}
+			}
+
+			incomingRoute.Enqueue(block.MsgBlock())
+		}()
+
+		err := HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
+		if err != nil {
+			t.Fatalf("TestHandleRelayInvs: %s", err)
+		}
+	})
+
+}
+
+// Block100000 defines block 100,000 of the block DAG. It is used to
+// test Block operations.
+var Block100000 = appmessage.MsgBlock{
+	Header: appmessage.BlockHeader{
+		Version: 1,
+		ParentHashes: []*daghash.Hash{
+			{
+				0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
+				0x78, 0x6b, 0x03, 0x1d, 0xa3, 0x48, 0x3c, 0x45,
+				0x3f, 0xc3, 0x2e, 0xd4, 0x53, 0x5b, 0x6f, 0x26,
+				0x26, 0xb0, 0x48, 0x4f, 0x09, 0x00, 0x00, 0x00,
+			}, // Mainnet genesis
+			{
+				0xc1, 0x5b, 0x71, 0xfe, 0x20, 0x70, 0x0f, 0xd0,
+				0x08, 0x49, 0x88, 0x1b, 0x32, 0xb5, 0xbd, 0x13,
+				0x17, 0xbe, 0x75, 0xe7, 0x29, 0x46, 0xdd, 0x03,
+				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
+			}}, // Simnet genesis
+		HashMerkleRoot: &daghash.Hash{
+			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
+			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
+			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
+			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
+		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
+		AcceptedIDMerkleRoot: &daghash.Hash{
+			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
+			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
+			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
+			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
+		},
+		UTXOCommitment: &daghash.Hash{
+			0x10, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
+			0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+			0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+			0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+		},
+		Timestamp: mstime.UnixMilliseconds(1529483563000),
+		Bits:      0x1e00ffff, // 503382015
+		Nonce:     0x000ae53f, // 714047
+	},
+	Transactions: []*appmessage.MsgTx{
+		{
+			Version: 1,
+			TxIn: []*appmessage.TxIn{
+				{
+					PreviousOutpoint: appmessage.Outpoint{
+						TxID:  daghash.TxID{},
+						Index: 0xffffffff,
+					},
+					SignatureScript: []byte{
+						0x04, 0x4c, 0x86, 0x04, 0x1b, 0x02, 0x06, 0x02,
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
+			TxOut: []*appmessage.TxOut{
+				{
+					Value: 0x12a05f200, // 5000000000
+					ScriptPubKey: []byte{
+						0x41, // OP_DATA_65
+						0x04, 0x1b, 0x0e, 0x8c, 0x25, 0x67, 0xc1, 0x25,
+						0x36, 0xaa, 0x13, 0x35, 0x7b, 0x79, 0xa0, 0x73,
+						0xdc, 0x44, 0x44, 0xac, 0xb8, 0x3c, 0x4e, 0xc7,
+						0xa0, 0xe2, 0xf9, 0x9d, 0xd7, 0x45, 0x75, 0x16,
+						0xc5, 0x81, 0x72, 0x42, 0xda, 0x79, 0x69, 0x24,
+						0xca, 0x4e, 0x99, 0x94, 0x7d, 0x08, 0x7f, 0xed,
+						0xf9, 0xce, 0x46, 0x7c, 0xb9, 0xf7, 0xc6, 0x28,
+						0x70, 0x78, 0xf8, 0x01, 0xdf, 0x27, 0x6f, 0xdf,
+						0x84, // 65-byte signature
+						0xac, // OP_CHECKSIG
+					},
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		},
+		{
+			Version: 1,
+			TxIn: []*appmessage.TxIn{
+				{
+					PreviousOutpoint: appmessage.Outpoint{
+						TxID: daghash.TxID([32]byte{
+							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
+							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
+							0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
+							0x79, 0xac, 0x88, 0xfd, 0xf3, 0x57, 0xa1, 0x87,
+						}), // 87a157f3fd88ac7907c05fc55e271dc4acdc5605d187d646604ca8c0e9382e03
+						Index: 0,
+					},
+					SignatureScript: []byte{
+						0x49, // OP_DATA_73
+						0x30, 0x46, 0x02, 0x21, 0x00, 0xc3, 0x52, 0xd3,
+						0xdd, 0x99, 0x3a, 0x98, 0x1b, 0xeb, 0xa4, 0xa6,
+						0x3a, 0xd1, 0x5c, 0x20, 0x92, 0x75, 0xca, 0x94,
+						0x70, 0xab, 0xfc, 0xd5, 0x7d, 0xa9, 0x3b, 0x58,
+						0xe4, 0xeb, 0x5d, 0xce, 0x82, 0x02, 0x21, 0x00,
+						0x84, 0x07, 0x92, 0xbc, 0x1f, 0x45, 0x60, 0x62,
+						0x81, 0x9f, 0x15, 0xd3, 0x3e, 0xe7, 0x05, 0x5c,
+						0xf7, 0xb5, 0xee, 0x1a, 0xf1, 0xeb, 0xcc, 0x60,
+						0x28, 0xd9, 0xcd, 0xb1, 0xc3, 0xaf, 0x77, 0x48,
+						0x01, // 73-byte signature
+						0x41, // OP_DATA_65
+						0x04, 0xf4, 0x6d, 0xb5, 0xe9, 0xd6, 0x1a, 0x9d,
+						0xc2, 0x7b, 0x8d, 0x64, 0xad, 0x23, 0xe7, 0x38,
+						0x3a, 0x4e, 0x6c, 0xa1, 0x64, 0x59, 0x3c, 0x25,
+						0x27, 0xc0, 0x38, 0xc0, 0x85, 0x7e, 0xb6, 0x7e,
+						0xe8, 0xe8, 0x25, 0xdc, 0xa6, 0x50, 0x46, 0xb8,
+						0x2c, 0x93, 0x31, 0x58, 0x6c, 0x82, 0xe0, 0xfd,
+						0x1f, 0x63, 0x3f, 0x25, 0xf8, 0x7c, 0x16, 0x1b,
+						0xc6, 0xf8, 0xa6, 0x30, 0x12, 0x1d, 0xf2, 0xb3,
+						0xd3, // 65-byte pubkey
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
+			TxOut: []*appmessage.TxOut{
+				{
+					Value: 0x2123e300, // 556000000
+					ScriptPubKey: []byte{
+						0x76, // OP_DUP
+						0xa9, // OP_HASH160
+						0x14, // OP_DATA_20
+						0xc3, 0x98, 0xef, 0xa9, 0xc3, 0x92, 0xba, 0x60,
+						0x13, 0xc5, 0xe0, 0x4e, 0xe7, 0x29, 0x75, 0x5e,
+						0xf7, 0xf5, 0x8b, 0x32,
+						0x88, // OP_EQUALVERIFY
+						0xac, // OP_CHECKSIG
+					},
+				},
+				{
+					Value: 0x108e20f00, // 4444000000
+					ScriptPubKey: []byte{
+						0x76, // OP_DUP
+						0xa9, // OP_HASH160
+						0x14, // OP_DATA_20
+						0x94, 0x8c, 0x76, 0x5a, 0x69, 0x14, 0xd4, 0x3f,
+						0x2a, 0x7a, 0xc1, 0x77, 0xda, 0x2c, 0x2f, 0x6b,
+						0x52, 0xde, 0x3d, 0x7c,
+						0x88, // OP_EQUALVERIFY
+						0xac, // OP_CHECKSIG
+					},
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		},
+		{
+			Version: 1,
+			TxIn: []*appmessage.TxIn{
+				{
+					PreviousOutpoint: appmessage.Outpoint{
+						TxID: daghash.TxID([32]byte{
+							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
+							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
+							0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
+							0xe4, 0x1c, 0x61, 0xd0, 0x78, 0x29, 0x4e, 0xcf,
+						}), // cf4e2978d0611ce46592e02d7e7daf8627a316ab69759a9f3df109a7f2bf3ec3
+						Index: 1,
+					},
+					SignatureScript: []byte{
+						0x47, // OP_DATA_71
+						0x30, 0x44, 0x02, 0x20, 0x03, 0x2d, 0x30, 0xdf,
+						0x5e, 0xe6, 0xf5, 0x7f, 0xa4, 0x6c, 0xdd, 0xb5,
+						0xeb, 0x8d, 0x0d, 0x9f, 0xe8, 0xde, 0x6b, 0x34,
+						0x2d, 0x27, 0x94, 0x2a, 0xe9, 0x0a, 0x32, 0x31,
+						0xe0, 0xba, 0x33, 0x3e, 0x02, 0x20, 0x3d, 0xee,
+						0xe8, 0x06, 0x0f, 0xdc, 0x70, 0x23, 0x0a, 0x7f,
+						0x5b, 0x4a, 0xd7, 0xd7, 0xbc, 0x3e, 0x62, 0x8c,
+						0xbe, 0x21, 0x9a, 0x88, 0x6b, 0x84, 0x26, 0x9e,
+						0xae, 0xb8, 0x1e, 0x26, 0xb4, 0xfe, 0x01,
+						0x41, // OP_DATA_65
+						0x04, 0xae, 0x31, 0xc3, 0x1b, 0xf9, 0x12, 0x78,
+						0xd9, 0x9b, 0x83, 0x77, 0xa3, 0x5b, 0xbc, 0xe5,
+						0xb2, 0x7d, 0x9f, 0xff, 0x15, 0x45, 0x68, 0x39,
+						0xe9, 0x19, 0x45, 0x3f, 0xc7, 0xb3, 0xf7, 0x21,
+						0xf0, 0xba, 0x40, 0x3f, 0xf9, 0x6c, 0x9d, 0xee,
+						0xb6, 0x80, 0xe5, 0xfd, 0x34, 0x1c, 0x0f, 0xc3,
+						0xa7, 0xb9, 0x0d, 0xa4, 0x63, 0x1e, 0xe3, 0x95,
+						0x60, 0x63, 0x9d, 0xb4, 0x62, 0xe9, 0xcb, 0x85,
+						0x0f, // 65-byte pubkey
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
+			TxOut: []*appmessage.TxOut{
+				{
+					Value: 0xf4240, // 1000000
+					ScriptPubKey: []byte{
+						0x76, // OP_DUP
+						0xa9, // OP_HASH160
+						0x14, // OP_DATA_20
+						0xb0, 0xdc, 0xbf, 0x97, 0xea, 0xbf, 0x44, 0x04,
+						0xe3, 0x1d, 0x95, 0x24, 0x77, 0xce, 0x82, 0x2d,
+						0xad, 0xbe, 0x7e, 0x10,
+						0x88, // OP_EQUALVERIFY
+						0xac, // OP_CHECKSIG
+					},
+				},
+				{
+					Value: 0x11d260c0, // 299000000
+					ScriptPubKey: []byte{
+						0x76, // OP_DUP
+						0xa9, // OP_HASH160
+						0x14, // OP_DATA_20
+						0x6b, 0x12, 0x81, 0xee, 0xc2, 0x5a, 0xb4, 0xe1,
+						0xe0, 0x79, 0x3f, 0xf4, 0xe0, 0x8a, 0xb1, 0xab,
+						0xb3, 0x40, 0x9c, 0xd9,
+						0x88, // OP_EQUALVERIFY
+						0xac, // OP_CHECKSIG
+					},
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		},
+		{
+			Version: 1,
+			TxIn: []*appmessage.TxIn{
+				{
+					PreviousOutpoint: appmessage.Outpoint{
+						TxID: daghash.TxID([32]byte{
+							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
+							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
+							0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,
+							0x9b, 0xa1, 0xc4, 0x3d, 0xed, 0x5f, 0x51, 0xf4,
+						}), // f4515fed3dc4a19b90a317b9840c243bac26114cf637522373a7d486b372600b
+						Index: 0,
+					},
+					SignatureScript: []byte{
+						0x49, // OP_DATA_73
+						0x30, 0x46, 0x02, 0x21, 0x00, 0xbb, 0x1a, 0xd2,
+						0x6d, 0xf9, 0x30, 0xa5, 0x1c, 0xce, 0x11, 0x0c,
+						0xf4, 0x4f, 0x7a, 0x48, 0xc3, 0xc5, 0x61, 0xfd,
+						0x97, 0x75, 0x00, 0xb1, 0xae, 0x5d, 0x6b, 0x6f,
+						0xd1, 0x3d, 0x0b, 0x3f, 0x4a, 0x02, 0x21, 0x00,
+						0xc5, 0xb4, 0x29, 0x51, 0xac, 0xed, 0xff, 0x14,
+						0xab, 0xba, 0x27, 0x36, 0xfd, 0x57, 0x4b, 0xdb,
+						0x46, 0x5f, 0x3e, 0x6f, 0x8d, 0xa1, 0x2e, 0x2c,
+						0x53, 0x03, 0x95, 0x4a, 0xca, 0x7f, 0x78, 0xf3,
+						0x01, // 73-byte signature
+						0x41, // OP_DATA_65
+						0x04, 0xa7, 0x13, 0x5b, 0xfe, 0x82, 0x4c, 0x97,
+						0xec, 0xc0, 0x1e, 0xc7, 0xd7, 0xe3, 0x36, 0x18,
+						0x5c, 0x81, 0xe2, 0xaa, 0x2c, 0x41, 0xab, 0x17,
+						0x54, 0x07, 0xc0, 0x94, 0x84, 0xce, 0x96, 0x94,
+						0xb4, 0x49, 0x53, 0xfc, 0xb7, 0x51, 0x20, 0x65,
+						0x64, 0xa9, 0xc2, 0x4d, 0xd0, 0x94, 0xd4, 0x2f,
+						0xdb, 0xfd, 0xd5, 0xaa, 0xd3, 0xe0, 0x63, 0xce,
+						0x6a, 0xf4, 0xcf, 0xaa, 0xea, 0x4e, 0xa1, 0x4f,
+						0xbb, // 65-byte pubkey
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
+			TxOut: []*appmessage.TxOut{
+				{
+					Value: 0xf4240, // 1000000
+					ScriptPubKey: []byte{
+						0x76, // OP_DUP
+						0xa9, // OP_HASH160
+						0x14, // OP_DATA_20
+						0x39, 0xaa, 0x3d, 0x56, 0x9e, 0x06, 0xa1, 0xd7,
+						0x92, 0x6d, 0xc4, 0xbe, 0x11, 0x93, 0xc9, 0x9b,
+						0xf2, 0xeb, 0x9e, 0xe0,
+						0x88, // OP_EQUALVERIFY
+						0xac, // OP_CHECKSIG
+					},
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		},
+	},
 }
