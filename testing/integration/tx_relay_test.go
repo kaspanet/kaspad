@@ -39,7 +39,7 @@ func TestTxRelay(t *testing.T) {
 	}
 
 	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
-	response, err := payer.rpcClient.sendRawTransaction(tx)
+	response, err := payer.rpcClient.SendRawTransaction(tx)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
@@ -52,7 +52,7 @@ func TestTxRelay(t *testing.T) {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			_, err := payee.rpcClient.getMempoolEntry(txID)
+			_, err := payee.rpcClient.GetMempoolEntry(txID)
 			if err != nil {
 				if strings.Contains(err.Error(), "transaction is not in the pool") {
 					continue

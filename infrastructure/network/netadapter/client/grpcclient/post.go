@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (c *RPCClient) PostString(requestString string) (string, error) {
+func (c *GRPCClient) PostString(requestString string) (string, error) {
 	requestBytes := []byte(requestString)
 	var parsedRequest protowire.KaspadMessage
 	err := protojson.Unmarshal(requestBytes, &parsedRequest)
@@ -25,7 +25,7 @@ func (c *RPCClient) PostString(requestString string) (string, error) {
 	return string(responseBytes), nil
 }
 
-func (c *RPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appmessage.Message, error) {
+func (c *GRPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appmessage.Message, error) {
 	request, err := protowire.FromAppMessage(requestAppMessage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error converting the request")
@@ -41,7 +41,7 @@ func (c *RPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appmes
 	return responseAppMessage, nil
 }
 
-func (c *RPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMessage, error) {
+func (c *GRPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMessage, error) {
 	err := c.stream.Send(request)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error sending the request to the RPC server")

@@ -26,7 +26,7 @@ func solveBlock(block *util.Block) *appmessage.MsgBlock {
 }
 
 func mineNextBlock(t *testing.T, harness *appHarness) *util.Block {
-	blockTemplate, err := harness.rpcClient.getBlockTemplate(harness.miningAddress, "")
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
@@ -38,7 +38,7 @@ func mineNextBlock(t *testing.T, harness *appHarness) *util.Block {
 
 	solveBlock(block)
 
-	err = harness.rpcClient.submitBlock(block)
+	err = harness.rpcClient.SubmitBlock(block)
 	if err != nil {
 		t.Fatalf("Error submitting block: %s", err)
 	}

@@ -97,7 +97,7 @@ func setRPCClient(t *testing.T, harness *appHarness) {
 }
 
 func teardownHarness(t *testing.T, harness *appHarness) {
-	harness.rpcClient.close()
+	harness.rpcClient.Close()
 	harness.app.Stop()
 
 	err := harness.databaseContext.Close()

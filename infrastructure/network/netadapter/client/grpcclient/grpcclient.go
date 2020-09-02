@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-type RPCClient struct {
+type GRPCClient struct {
 	stream protowire.RPC_MessageStreamClient
 }
 
-func Connect(address string) (*RPCClient, error) {
+func Connect(address string) (*GRPCClient, error) {
 	const dialTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
@@ -31,15 +31,15 @@ func Connect(address string) (*RPCClient, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
-	return &RPCClient{stream: stream}, nil
+	return &GRPCClient{stream: stream}, nil
 }
 
-func (c *RPCClient) Disconnect() error {
+func (c *GRPCClient) Disconnect() error {
 	return c.stream.CloseSend()
 }
 
-func (c *RPCClient) AttachRouter(router *router.Router) {
-	spawn("RPCClient.AttachRouter-sendLoop", func() {
+func (c *GRPCClient) AttachRouter(router *router.Router) {
+	spawn("GRPCClient.AttachRouter-sendLoop", func() {
 		for {
 			message, err := router.OutgoingRoute().Dequeue()
 			if err != nil {
@@ -53,7 +53,7 @@ func (c *RPCClient) AttachRouter(router *router.Router) {
 			}
 		}
 	})
-	spawn("RPCClient.AttachRouter-receiveLoop", func() {
+	spawn("GRPCClient.AttachRouter-receiveLoop", func() {
 		for {
 			message, err := c.receive()
 			if err != nil {
@@ -69,7 +69,7 @@ func (c *RPCClient) AttachRouter(router *router.Router) {
 	})
 }
 
-func (c *RPCClient) send(requestAppMessage appmessage.Message) error {
+func (c *GRPCClient) send(requestAppMessage appmessage.Message) error {
 	request, err := protowire.FromAppMessage(requestAppMessage)
 	if err != nil {
 		return errors.Wrapf(err, "error converting the request")
@@ -77,7 +77,7 @@ func (c *RPCClient) send(requestAppMessage appmessage.Message) error {
 	return c.stream.Send(request)
 }
 
-func (c *RPCClient) receive() (appmessage.Message, error) {
+func (c *GRPCClient) receive() (appmessage.Message, error) {
 	response, err := c.stream.Recv()
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (c *RPCClient) receive() (appmessage.Message, error) {
 	return response.ToAppMessage()
 }
 
-func (c *RPCClient) handleError(err error) {
+func (c *GRPCClient) handleError(err error) {
 	if errors.Is(err, io.EOF) {
 		return
 	}

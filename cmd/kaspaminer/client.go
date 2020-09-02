@@ -11,7 +11,7 @@ import (
 )
 
 type minerClient struct {
-	*grpcclient.RPCClient
+	*grpcclient.GRPCClient
 
 	rpcAddress                 string
 	router                     *minerRouter
@@ -34,7 +34,7 @@ func newMinerClient(cfg *configFlags) (*minerClient, error) {
 	rpcClient.AttachRouter(minerRouter.router)
 
 	minerClient := &minerClient{
-		RPCClient:  rpcClient,
+		GRPCClient: rpcClient,
 		rpcAddress: rpcAddress,
 		router:     minerRouter,
 	}
