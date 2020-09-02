@@ -48,6 +48,10 @@ func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
 	m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
+func (m *Manager) NotifyChainChanged() {
+
+}
+
 func (m *Manager) NotifyTransactionAddedToMempool() {
 	m.context.BlockTemplateState.NotifyMempoolTx()
 }

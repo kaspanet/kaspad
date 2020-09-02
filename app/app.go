@@ -113,11 +113,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-
-	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
-	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
-	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
+	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager)
 
 	return &App{
 		cfg:               cfg,
@@ -127,6 +123,28 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 		netAdapter:        netAdapter,
 		addressManager:    addressManager,
 	}, nil
+}
+
+func setupRPC(
+	cfg *config.Config,
+	txMempool *mempool.TxPool,
+	dag *blockdag.BlockDAG,
+	sigCache *txscript.SigCache,
+	netAdapter *netadapter.NetAdapter,
+	protocolManager *protocol.Manager,
+	connectionManager *connmanager.ConnectionManager,
+	addressManager *addressmanager.AddressManager) *rpc.Manager {
+	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
+	rpcManager := rpc.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
+	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
+	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
+	dag.Subscribe(func(notification *blockdag.Notification) {
+		if notification.Type == blockdag.NTChainChanged {
+			//chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
+			//rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes, chainChangedNotificationData.AddedChainBlockHashes)
+		}
+	})
+	return rpcManager
 }
 
 func (a *App) maybeSeedFromDNS() {
