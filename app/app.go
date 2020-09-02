@@ -10,7 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
-	rpc2 "github.com/kaspanet/kaspad/app/rpc"
+	"github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
@@ -30,7 +30,7 @@ type App struct {
 	cfg               *config.Config
 	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
-	rpcManager        *rpc2.Manager
+	rpcManager        *rpc.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
 
@@ -115,7 +115,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	}
 
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc2.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
+	rpcManager := rpc.NewManager(netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 
