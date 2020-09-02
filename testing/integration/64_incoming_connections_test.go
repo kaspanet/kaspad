@@ -37,7 +37,7 @@ func Test64IncomingConnections(t *testing.T) {
 	blockAddedWG.Add(numBullies)
 	for _, bully := range bullies {
 		blockAdded := false
-		onBlockAdded := func(header *appmessage.BlockHeader) {
+		onBlockAdded := func(_ *appmessage.BlockAddedNotificationMessage) {
 			if blockAdded {
 				t.Fatalf("Single bully reported block added twice")
 			}

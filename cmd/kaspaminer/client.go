@@ -31,7 +31,7 @@ func newMinerClient(cfg *configFlags) (*minerClient, error) {
 		blockAddedNotificationChan: make(chan struct{}),
 	}
 
-	err = rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockHeader) {
+	err = rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
 		select {
 		case minerClient.blockAddedNotificationChan <- struct{}{}:
 		default:

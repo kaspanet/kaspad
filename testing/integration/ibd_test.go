@@ -23,7 +23,7 @@ func TestIBD(t *testing.T) {
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
 	receivedBlocks := 0
-	setOnBlockAddedHandler(t, syncee, func(header *appmessage.BlockHeader) {
+	setOnBlockAddedHandler(t, syncee, func(_ *appmessage.BlockAddedNotificationMessage) {
 		receivedBlocks++
 		blockAddedWG.Done()
 	})

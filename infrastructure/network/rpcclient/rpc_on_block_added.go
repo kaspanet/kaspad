@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *RPCClient) RegisterForBlockAddedNotifications(onBlockAdded func(header *appmessage.BlockHeader)) error {
+func (c *RPCClient) RegisterForBlockAddedNotifications(onBlockAdded func(notification *appmessage.BlockAddedNotificationMessage)) error {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyBlockAddedRequestMessage())
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func (c *RPCClient) RegisterForBlockAddedNotifications(onBlockAdded func(header 
 	if notifyBlockAddedResponse.Error != nil {
 		return c.convertRPCError(notifyBlockAddedResponse.Error)
 	}
-	spawn("RegisterForBlockAddedNotifications-blockAddedNotificationChan", func() {
+	spawn("RegisterForBlockAddedNotifications", func() {
 		for {
 			notification, err := c.route(appmessage.CmdBlockAddedNotificationMessage).Dequeue()
 			if err != nil {
@@ -29,7 +29,7 @@ func (c *RPCClient) RegisterForBlockAddedNotifications(onBlockAdded func(header 
 				panic(err)
 			}
 			blockAddedNotification := notification.(*appmessage.BlockAddedNotificationMessage)
-			onBlockAdded(&blockAddedNotification.Block.Header)
+			onBlockAdded(blockAddedNotification)
 		}
 	})
 	return nil
