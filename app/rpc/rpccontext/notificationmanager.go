@@ -66,7 +66,11 @@ func (nm *NotificationManager) NotifyBlockAdded(block *util.Block) {
 
 	for _, listener := range nm.listeners {
 		if listener.onBlockAddedListener != nil {
-			listener.onBlockAddedNotificationChan <- block
+			select {
+			case listener.onBlockAddedNotificationChan <- block:
+			case <-listener.closeChan:
+				continue
+			}
 		}
 	}
 }
@@ -74,6 +78,7 @@ func (nm *NotificationManager) NotifyBlockAdded(block *util.Block) {
 func NewNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		onBlockAddedNotificationChan: make(chan *util.Block),
+		closeChan:                    make(chan struct{}, 1),
 	}
 }
 
