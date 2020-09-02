@@ -1054,6 +1054,23 @@ func testProcessBlockStatus(
 	}
 }
 
+func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+
+	err = checkRuleError(err, expectedRuleErr)
+	if err != nil {
+		t.Errorf("checkRuleError: %s", err)
+	}
+
+	if isDelayed {
+		t.Fatalf("ProcessBlock: block " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
+	}
+}
+
 func TestDoubleSpends(t *testing.T) {
 	params := dagconfig.SimnetParams
 	params.BlockCoinbaseMaturity = 0
