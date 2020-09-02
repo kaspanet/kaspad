@@ -37,7 +37,18 @@ func NewNotifyChainChangedResponseMessage() *NotifyChainChangedResponseMessage {
 // its respective RPC message
 type ChainChangedNotificationMessage struct {
 	baseMessage
-	// TODO
+	RemovedChainBlockHashes []string
+	AddedChainBlocks        []*ChainChangedChainBlock
+}
+
+type ChainChangedChainBlock struct {
+	Hash           string
+	AcceptedBlocks []*ChainChangedAcceptedBlock
+}
+
+type ChainChangedAcceptedBlock struct {
+	Hash          string
+	AcceptedTxIds []string
 }
 
 // Command returns the protocol command string for the message
@@ -46,8 +57,11 @@ func (msg *ChainChangedNotificationMessage) Command() MessageCommand {
 }
 
 // NewChainChangedNotificationMessage returns a instance of the message
-func NewChainChangedNotificationMessage() *ChainChangedNotificationMessage {
+func NewChainChangedNotificationMessage(removedChainBlockHashes []string,
+	addedChainBlocks []*ChainChangedChainBlock) *ChainChangedNotificationMessage {
+
 	return &ChainChangedNotificationMessage{
-		// TODO
+		RemovedChainBlockHashes: removedChainBlockHashes,
+		AddedChainBlocks:        addedChainBlocks,
 	}
 }

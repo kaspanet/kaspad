@@ -33,14 +33,44 @@ func (x *KaspadMessage_NotifyChainChangedResponse) fromAppMessage(message *appme
 }
 
 func (x *KaspadMessage_ChainChangedNotification) toAppMessage() (appmessage.Message, error) {
+	addedChainBlocks := make([]*appmessage.ChainChangedChainBlock, len(x.ChainChangedNotification.AddedChainBlocks))
+	for i, addedChainBlock := range x.ChainChangedNotification.AddedChainBlocks {
+		acceptedBlocks := make([]*appmessage.ChainChangedAcceptedBlock, len(addedChainBlock.AcceptedBlocks))
+		for j, acceptedBlock := range addedChainBlock.AcceptedBlocks {
+			acceptedBlocks[j] = &appmessage.ChainChangedAcceptedBlock{
+				Hash:          acceptedBlock.Hash,
+				AcceptedTxIds: acceptedBlock.AcceptedTxIds,
+			}
+		}
+		addedChainBlocks[i] = &appmessage.ChainChangedChainBlock{
+			Hash:           addedChainBlock.Hash,
+			AcceptedBlocks: acceptedBlocks,
+		}
+	}
 	return &appmessage.ChainChangedNotificationMessage{
-		// TODO
+		RemovedChainBlockHashes: x.ChainChangedNotification.RemovedChainBlockHashes,
+		AddedChainBlocks:        addedChainBlocks,
 	}, nil
 }
 
 func (x *KaspadMessage_ChainChangedNotification) fromAppMessage(message *appmessage.ChainChangedNotificationMessage) error {
+	addedChainBlocks := make([]*ChainChangedChainBlock, len(message.AddedChainBlocks))
+	for i, addedChainBlock := range message.AddedChainBlocks {
+		acceptedBlocks := make([]*ChainChangedAcceptedBlock, len(addedChainBlock.AcceptedBlocks))
+		for j, acceptedBlock := range addedChainBlock.AcceptedBlocks {
+			acceptedBlocks[j] = &ChainChangedAcceptedBlock{
+				Hash:          acceptedBlock.Hash,
+				AcceptedTxIds: acceptedBlock.AcceptedTxIds,
+			}
+		}
+		addedChainBlocks[i] = &ChainChangedChainBlock{
+			Hash:           addedChainBlock.Hash,
+			AcceptedBlocks: acceptedBlocks,
+		}
+	}
 	x.ChainChangedNotification = &ChainChangedNotificationMessage{
-		// TODO
+		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
+		AddedChainBlocks:        addedChainBlocks,
 	}
 	return nil
 }
