@@ -90,11 +90,11 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 }
 
 func handleFoundBlock(client *minerClient, block *util.Block) error {
-	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.address())
+	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Address())
 
-	err := client.submitBlock(block)
+	err := client.SubmitBlock(block)
 	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.address(), err)
+		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Address(), err)
 	}
 	return nil
 }
@@ -125,20 +125,20 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.address())
+			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Address())
 		} else {
-			log.Infof("Requesting template without longPollID from %s", client.address())
+			log.Infof("Requesting template without longPollID from %s", client.Address())
 		}
-		template, err := client.getBlockTemplate(miningAddr.String(), longPollID)
+		template, err := client.GetBlockTemplate(miningAddr.String(), longPollID)
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.address())
+			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Address())
 			return
 		} else if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.address(), err)
+			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
 			return
 		}
 		if !template.IsConnected {
-			errChan <- errors.Errorf("Kaspad is not connected for %s", client.address())
+			errChan <- errors.Errorf("Kaspad is not connected for %s", client.Address())
 			return
 		}
 		if template.LongPollID != longPollID {
