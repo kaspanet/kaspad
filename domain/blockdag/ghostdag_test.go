@@ -79,14 +79,14 @@ func TestGHOSTDAG(t *testing.T) {
 
 				block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %v", blockData.ID,
+					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %+v", blockData.ID,
 						err)
 				}
 
 				utilBlock := util.NewBlock(block)
 				isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %s: %v", blockData.ID, err)
+					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %s: %+v", blockData.ID, err)
 				}
 				if isDelayed {
 					t.Fatalf("TestGHOSTDAG: block %s "+

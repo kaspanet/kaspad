@@ -95,6 +95,10 @@ type BlockDAG struct {
 	startTime                       mstime.Time
 
 	tips blockSet
+
+	// validTips is a set of blocks with the status "valid", which have no valid parents.
+	// Note that some validTips might not be actual tips
+	validTips blockSet
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -542,6 +546,32 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 		chainUpdates = &selectedParentChainUpdates{}
 	}
 	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) addValidTipIfHasNoValidChildren(node *blockNode) {
+	hasValidChildren := false
+	for child := range node.children {
+		if dag.index.BlockNodeStatus(child) == statusValid {
+			hasValidChildren = true
+			break
+		}
+	}
+	if !hasValidChildren {
+		dag.addValidTip(node)
+	}
+}
+
+func (dag *BlockDAG) addValidTip(newValidTip *blockNode) {
+	newValidTips := dag.validTips.clone()
+	for validTip := range dag.validTips {
+		if newValidTip.parents.contains(validTip) {
+			newValidTips.remove(validTip)
+		}
+	}
+
+	newValidTips.add(newValidTip)
+
+	dag.validTips = newValidTips
 }
 
 func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {

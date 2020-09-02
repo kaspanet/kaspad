@@ -327,7 +327,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 		}
 
 		// Apply new utxoDiffs to all the tips
-		err = updateTipsUTXO(dag, newVirtualUTXO)
+		err = updateValidTipsUTXO(dag, newVirtualUTXO)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed updating the tips' UTXO")
 		}
@@ -388,9 +388,16 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
+	dag.addValidTipIfHasNoValidChildren(node)
+
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
 
-	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockUTXO); err != nil {
+	err := node.updateDiffAndDiffChild(dag, utxoVerificationData.newBlockPastUTXO)
+	if err != nil {
+		return err
+	}
+
+	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockPastUTXO); err != nil {
 		return errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 

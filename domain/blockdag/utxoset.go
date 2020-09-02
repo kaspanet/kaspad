@@ -239,8 +239,8 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 			// if have the same entry in d.toRemove - simply don't copy.
 			// unless existing entry is with different blue score, in this case - this is an error
 			if utxoEntry.blockBlueScore != diffEntry.blockBlueScore {
-				return nil, errors.New("diffFrom: outpoint both in d.toRemove and other.toRemove with different " +
-					"blue scores, with no corresponding entry in d.toAdd")
+				return nil, errors.Errorf("diffFrom: outpoint %s both in d.toRemove and other.toRemove with different "+
+					"blue scores, with no corresponding entry in d.toAdd", outpoint)
 			}
 		} else { // if no existing entry - add to result.toAdd
 			result.toAdd.add(outpoint, utxoEntry)
