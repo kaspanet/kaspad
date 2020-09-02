@@ -397,7 +397,18 @@ message NotifyChainChangedResponseMessage{
 }
 
 message ChainChangedNotificationMessage{
+  repeated string removedChainBlockHashes = 1;
+  repeated ChainChangedChainBlock addedChainBlocks = 2;
+}
 
+message ChainChangedChainBlock{
+  string hash = 1;
+  repeated ChainChangedAcceptedBlock acceptedBlocks = 2;
+}
+
+message ChainChangedAcceptedBlock{
+  string hash = 1;
+  repeated string acceptedTxIds = 2;
 }
 
 service RPC {

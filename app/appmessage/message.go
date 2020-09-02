@@ -76,6 +76,9 @@ const (
 	CmdConnectToPeerResponseMessage
 	CmdSendRawTransactionRequestMessage
 	CmdSendRawTransactionResponseMessage
+	CmdNotifyChainChangedRequestMessage
+	CmdNotifyChainChangedResponseMessage
+	CmdChainChangedNotificationMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -128,6 +131,9 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdConnectToPeerResponseMessage:        "ConnectToPeerResponse",
 	CmdSendRawTransactionRequestMessage:    "SendRawTransactionRequest",
 	CmdSendRawTransactionResponseMessage:   "SendRawTransactionResponse",
+	CmdNotifyChainChangedRequestMessage:    "NotifyChainChangedRequest",
+	CmdNotifyChainChangedResponseMessage:   "NotifyChainChangedResponse",
+	CmdChainChangedNotificationMessage:     "ChainChangedNotification",
 }
 
 // Message is an interface that describes a kaspa message. A type that
