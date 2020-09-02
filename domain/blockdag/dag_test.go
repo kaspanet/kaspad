@@ -1054,20 +1054,29 @@ func testProcessBlockStatus(
 	}
 }
 
-func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
+func testProcessBlockRuleError(t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 
 	err = checkRuleError(err, expectedRuleErr)
 	if err != nil {
-		t.Errorf("checkRuleError: %s", err)
+		t.Errorf("%s: checkRuleError: %s", err, testName)
 	}
 
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block " +
-			"is too far in the future")
+		t.Fatalf("%s: ProcessBlock: block is too far in the future", testName)
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
+		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
+	}
+}
+
+// makeNextSelectedTip plays with block's nonce until it's ID is smaller then dag's selectedTip
+// It is the callers responsibility to make sure block's blue score is equal to selected tip's
+func makeNextSelectedTip(dag *BlockDAG, block *appmessage.MsgBlock) {
+	selectedTip := dag.selectedTip()
+
+	for daghash.Less(block.BlockHash(), selectedTip.hash) {
+		block.Header.Nonce++
 	}
 }
 
@@ -1147,11 +1156,13 @@ func TestDoubleSpends(t *testing.T) {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
+	makeNextSelectedTip(dag, blockInAnticoneOfBlockWithTx1)
+
 	// Check that a block will not get disqualified if it has a transaction that double spends
 	// a transaction from its anticone.
 	testProcessBlockStatus(t, "blockInAnticoneOfBlockWithTx1", dag, blockInAnticoneOfBlockWithTx1, statusValid)
 
-	// Check that a block will be dosqialified if it has two transactions that spend the same UTXO.
+	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
 	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
@@ -1165,9 +1176,10 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
 
-	testProcessBlockStatus(t, "blockWithDoubleSpendWithItself", dag, blockWithDoubleSpendWithItself, statusDisqualifiedFromChain)
+	testProcessBlockRuleError(t, "blockWithDoubleSpendWithItself", dag,
+		blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
 
-	// Check that a block will be disqualified if it has the same transaction twice.
+	// Check that a block will be rejected if it has the same transaction twice.
 	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
@@ -1180,7 +1192,8 @@ func TestDoubleSpends(t *testing.T) {
 		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
 	}
 	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
-	testProcessBlockStatus(t, "blockWithDuplicateTransaction", dag, blockWithDuplicateTransaction, statusDisqualifiedFromChain)
+	testProcessBlockRuleError(t, "blockWithDuplicateTransaction", dag,
+		blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
 }
 
 func TestUTXOCommitment(t *testing.T) {

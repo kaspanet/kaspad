@@ -404,16 +404,14 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	return nil
 }
 
-func (dag *BlockDAG) resolveNodeStatus(
-	selectedParent *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
-
-	if dag.index.BlockNodeStatus(selectedParent) == statusUTXONotVerified {
-		selectedParentBlock, err := dag.fetchBlockByHash(selectedParent.hash)
+func (dag *BlockDAG) resolveNodeStatus(node *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+	if dag.index.BlockNodeStatus(node) == statusUTXONotVerified {
+		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
 		}
 
-		err = dag.validateAndApplyUTXOSet(selectedParent, selectedParentBlock, flags, dbTx)
+		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
 		if err != nil {
 			return err
 		}
