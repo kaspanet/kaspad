@@ -21,11 +21,10 @@ var (
 
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
 	ErrRouteClosed = errors.New("route is closed")
-)
 
-// onCapacityReachedHandler is a function that is to be
-// called when a route reaches capacity.
-type onCapacityReachedHandler func()
+	// ErrRouteCapacityReached indicates that route's capacity has reached
+	ErrRouteCapacityReached = protocolerrors.New(false, "route capacity has reached")
+)
 
 // Route represents an incoming or outgoing Router route
 type Route struct {
@@ -34,8 +33,7 @@ type Route struct {
 	// reads use the channel's built-in mechanism to check if the channel is closed
 	closed    bool
 	closeLock sync.Mutex
-
-	onCapacityReachedHandler onCapacityReachedHandler
+	capacity  int
 }
 
 // NewRoute create a new Route
@@ -45,8 +43,9 @@ func NewRoute() *Route {
 
 func newRouteWithCapacity(capacity int) *Route {
 	return &Route{
-		channel: make(chan appmessage.Message, capacity),
-		closed:  false,
+		channel:  make(chan appmessage.Message, capacity),
+		closed:   false,
+		capacity: capacity,
 	}
 }
 
@@ -58,8 +57,8 @@ func (r *Route) Enqueue(message appmessage.Message) error {
 	if r.closed {
 		return errors.WithStack(ErrRouteClosed)
 	}
-	if len(r.channel) == DefaultMaxMessages {
-		r.onCapacityReachedHandler()
+	if len(r.channel) == r.capacity {
+		return errors.Wrapf(ErrRouteCapacityReached, "reached capacity of %d", r.capacity)
 	}
 	r.channel <- message
 	return nil
@@ -86,10 +85,6 @@ func (r *Route) DequeueWithTimeout(timeout time.Duration) (appmessage.Message, e
 		}
 		return message, nil
 	}
-}
-
-func (r *Route) setOnCapacityReachedHandler(onCapacityReachedHandler onCapacityReachedHandler) {
-	r.onCapacityReachedHandler = onCapacityReachedHandler
 }
 
 // Close closes this route
