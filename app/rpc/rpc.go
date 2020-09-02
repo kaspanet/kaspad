@@ -22,6 +22,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetConnectedPeerInfoRequestMessage: rpchandlers.HandleGetConnectedPeerInfo,
 	appmessage.CmdConnectToPeerRequestMessage:        rpchandlers.HandleConnectToPeer,
 	appmessage.CmdSendRawTransactionRequestMessage:   rpchandlers.HandleSendRawTransaction,
+	appmessage.CmdNotifyChainChangedRequestMessage:   rpchandlers.HandleNotifyChainChanged,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

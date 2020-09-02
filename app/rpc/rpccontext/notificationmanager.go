@@ -1,6 +1,7 @@
 package rpccontext
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -13,10 +14,13 @@ type NotificationManager struct {
 }
 
 type OnBlockAddedListener func(block *util.Block) error
+type OnChainChangedListener func(notification *appmessage.ChainChangedNotificationMessage) error
 
 type NotificationListener struct {
-	onBlockAddedListener         OnBlockAddedListener
-	onBlockAddedNotificationChan chan *util.Block
+	onBlockAddedListener           OnBlockAddedListener
+	onBlockAddedNotificationChan   chan *util.Block
+	onChainChangedListener         OnChainChangedListener
+	onChainChangedNotificationChan chan *appmessage.ChainChangedNotificationMessage
 
 	closeChan chan struct{}
 }
@@ -75,6 +79,21 @@ func (nm *NotificationManager) NotifyBlockAdded(block *util.Block) {
 	}
 }
 
+func (nm *NotificationManager) NotifyChainChanged(message *appmessage.ChainChangedNotificationMessage) {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for _, listener := range nm.listeners {
+		if listener.onChainChangedListener != nil {
+			select {
+			case listener.onChainChangedNotificationChan <- message:
+			case <-listener.closeChan:
+				continue
+			}
+		}
+	}
+}
+
 func NewNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		onBlockAddedNotificationChan: make(chan *util.Block),
@@ -86,10 +105,16 @@ func (nl *NotificationListener) SetOnBlockAddedListener(onBlockAddedListener OnB
 	nl.onBlockAddedListener = onBlockAddedListener
 }
 
+func (nl *NotificationListener) SetOnChainChangedListener(onChainChangedListener OnChainChangedListener) {
+	nl.onChainChangedListener = onChainChangedListener
+}
+
 func (nl *NotificationListener) ProcessNextNotification() error {
 	select {
 	case block := <-nl.onBlockAddedNotificationChan:
 		return nl.onBlockAddedListener(block)
+	case notification := <-nl.onChainChangedNotificationChan:
+		return nl.onChainChangedListener(notification)
 	case <-nl.closeChan:
 		return nil
 	}
