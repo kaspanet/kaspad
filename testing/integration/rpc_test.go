@@ -70,6 +70,10 @@ func (r *testRPCRouter) outgoingRoute() *routerpkg.Route {
 	return r.router.OutgoingRoute()
 }
 
+func (c *testRPCClient) close() {
+	c.router.router.Close()
+}
+
 func (c *testRPCClient) address() string {
 	return c.rpcAddress
 }
@@ -95,6 +99,9 @@ func (c *testRPCClient) registerForBlockAddedNotifications(onBlockAdded func(hea
 		for {
 			notification, err := c.route(appmessage.CmdBlockAddedNotificationMessage).Dequeue()
 			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
 				panic(err)
 			}
 			blockAddedNotification := notification.(*appmessage.BlockAddedNotificationMessage)

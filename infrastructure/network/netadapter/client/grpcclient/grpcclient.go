@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/encoding/gzip"
+	"io"
 	"time"
 )
 
@@ -85,5 +86,15 @@ func (c *RPCClient) receive() (appmessage.Message, error) {
 }
 
 func (c *RPCClient) handleError(err error) {
+	if errors.Is(err, io.EOF) {
+		return
+	}
+	if errors.Is(err, router.ErrRouteClosed) {
+		err := c.Disconnect()
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
 	panic(err)
 }
