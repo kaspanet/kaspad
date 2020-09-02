@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -183,7 +182,7 @@ func (c *testRPCClient) getSelectedTipHash() (*appmessage.GetSelectedTipHashResp
 	return getSelectedTipHashResponse, nil
 }
 
-func (c *testRPCClient) sendRawTransaction(tx *appmessage.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
+func (c *testRPCClient) sendRawTransaction(tx *appmessage.MsgTx) (*appmessage.SendRawTransactionResponseMessage, error) {
 	return nil, nil
 }
 

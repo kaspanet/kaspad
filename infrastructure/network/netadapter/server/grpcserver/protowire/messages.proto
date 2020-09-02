@@ -47,6 +47,8 @@ message KaspadMessage {
     GetConnectedPeerInfoResponseMessage getConnectedPeerInfoResponse = 1017;
     ConnectToPeerRequestMessage connectToPeerRequest = 1018;
     ConnectToPeerResponseMessage connectToPeerResponse = 1019;
+    SendRawTransactionRequestMessage sendRawTransactionRequest = 1020;
+    SendRawTransactionResponseMessage sendRawTransactionResponse = 1021;
   }
 }
 
@@ -373,6 +375,15 @@ message ConnectToPeerRequestMessage{
 
 message ConnectToPeerResponseMessage{
   RPCError error = 1;
+}
+
+message SendRawTransactionRequestMessage{
+  string transactionHex = 1;
+}
+
+message SendRawTransactionResponseMessage{
+  string txId = 1;
+  RPCError error = 2;
 }
 
 service RPC {

@@ -345,6 +345,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.SendRawTransactionRequestMessage:
+		payload := new(KaspadMessage_SendRawTransactionRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.SendRawTransactionResponseMessage:
+		payload := new(KaspadMessage_SendRawTransactionResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
