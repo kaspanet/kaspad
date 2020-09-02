@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -12,17 +11,6 @@ import (
 // HandleGetBlockTemplate handles the respectively named RPC command
 func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlockTemplateRequest := request.(*appmessage.GetBlockTemplateRequestMessage)
-
-	// Return an error if there are no peers connected since there is no
-	// way to relay a found block or receive transactions to work on.
-	// However, allow this state when running in the simulation test mode.
-	if context.DAG.Params != &dagconfig.SimnetParams && context.ConnectionManager.ConnectionCount() == 0 {
-		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: "Kaspad is not connected",
-		}
-		return errorMessage, nil
-	}
 
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.DAG.Params.Prefix)
 	if err != nil {

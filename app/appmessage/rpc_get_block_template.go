@@ -41,6 +41,7 @@ type GetBlockTemplateResponseMessage struct {
 	MutableFields        []string
 	NonceRange           string
 	IsSynced             bool
+	IsConnected          bool
 
 	Error *RPCError
 }

@@ -293,8 +293,9 @@ message GetBlockTemplateResponseMessage{
   repeated string mutableFields = 14;
   string nonceRange = 15;
   bool isSynced = 16;
+  bool isConnected = 17;
 
-  RPCError error = 17;
+  RPCError error = 18;
 }
 
 message GetBlockTemplateTransactionMessage{

@@ -47,6 +47,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 		MutableFields:        x.GetBlockTemplateResponse.MutableFields,
 		NonceRange:           x.GetBlockTemplateResponse.NonceRange,
 		IsSynced:             x.GetBlockTemplateResponse.IsSynced,
+		IsConnected:          x.GetBlockTemplateResponse.IsConnected,
 		Error:                err,
 	}, nil
 }
@@ -82,6 +83,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 		MutableFields:        message.MutableFields,
 		NonceRange:           message.NonceRange,
 		IsSynced:             message.IsSynced,
+		IsConnected:          message.IsConnected,
 		Error:                err,
 	}
 	return nil
