@@ -89,13 +89,13 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime mstime
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block blue score.
-	blockTimeOrBlueScore := int64(0)
+	blockTimeOrBlueScore := uint64(0)
 	if lockTime < txscript.LockTimeThreshold {
-		blockTimeOrBlueScore = int64(blockBlueScore)
+		blockTimeOrBlueScore = blockBlueScore
 	} else {
-		blockTimeOrBlueScore = blockTime.UnixMilliseconds()
+		blockTimeOrBlueScore = uint64(blockTime.UnixMilliseconds())
 	}
-	if int64(lockTime) < blockTimeOrBlueScore {
+	if lockTime < blockTimeOrBlueScore {
 		return true
 	}
 
