@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math/big"
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -422,6 +423,36 @@ func TestSort(t *testing.T) {
 		if !reflect.DeepEqual(test.hashes, test.expected) {
 			t.Errorf("unexpected Sort result for"+
 				" test \"%s\". Expected: %v, got: %v.", test.name, test.expected, test.hashes)
+		}
+	}
+}
+
+func hashFlipBit(hash Hash, bit int) Hash {
+	word := bit / 8
+	bit = bit % 8
+	hash[word] ^= 1 << bit
+	return hash
+}
+
+func TestHash_Cmp(t *testing.T) {
+	r := rand.New(rand.NewSource(1))
+
+	for i := 0; i < 100; i++ {
+		hash := Hash{}
+		n, err := r.Read(hash[:])
+		if err != nil {
+			t.Fatalf("Failed generating a random hash '%s'", err)
+		} else if n != len(hash) {
+			t.Fatalf("Failed generating a random hash, expected reading: %d. instead read: %d.", len(hash), n)
+
+		}
+		hashBig := HashToBig(&hash)
+		// Iterate bit by bit, flip it and compare.
+		for bit := 0; bit < HashSize*8; bit++ {
+			newHash := hashFlipBit(hash, bit)
+			if hash.Cmp(&newHash) != hashBig.Cmp(HashToBig(&newHash)) {
+				t.Errorf("Hash.Cmp disagrees with big.Int.Cmp newHash: %s, hash: %s", newHash, hash)
+			}
 		}
 	}
 }
