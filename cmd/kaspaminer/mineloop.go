@@ -137,6 +137,10 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 			errChan <- errors.Errorf("Error getting block template from %s: %s", client.address(), err)
 			return
 		}
+		if !template.IsConnected {
+			errChan <- errors.Errorf("Kaspad is not connected for %s", client.address())
+			return
+		}
 		if template.LongPollID != longPollID {
 			log.Infof("Got new long poll template: %s", template.LongPollID)
 			longPollID = template.LongPollID
