@@ -1,9 +1,9 @@
-package client
+package rpcclient
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
 	"github.com/pkg/errors"
 	"time"
 )

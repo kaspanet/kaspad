@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client/grpcclient"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
 	"os"
 )
 

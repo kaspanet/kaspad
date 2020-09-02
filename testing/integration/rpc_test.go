@@ -1,18 +1,18 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"time"
 )
 
 const testTimeout = 1 * time.Second
 
 type testRPCClient struct {
-	*client.RPCClient
+	*rpcclient.RPCClient
 }
 
 func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
-	rpcClient, err := client.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
 	if err != nil {
 		return nil, err
 	}

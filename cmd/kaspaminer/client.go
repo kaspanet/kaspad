@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/client"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -10,7 +10,7 @@ import (
 const minerTimeout = 10 * time.Second
 
 type minerClient struct {
-	*client.RPCClient
+	*rpcclient.RPCClient
 
 	blockAddedNotificationChan chan struct{}
 }
@@ -20,7 +20,7 @@ func newMinerClient(cfg *configFlags) (*minerClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	rpcClient, err := client.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
 	if err != nil {
 		return nil, err
 	}
