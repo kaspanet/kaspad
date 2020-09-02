@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -934,8 +935,14 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	invalidCbTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{}, []*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
-	txs := []*util.Tx{util.NewTx(invalidCbTx)}
+	// Create a block with non-finalized transaction so that it's flagged as invalid
+	coinbaseTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{},
+		[]*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
+	invalidTxIn := appmessage.NewTxIn(appmessage.NewOutpoint(dag.Params.GenesisBlock.Transactions[0].TxID(), 0), nil)
+	invalidTxIn.Sequence = 0
+	invalidTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{invalidTxIn}, []*appmessage.TxOut{})
+	invalidTx.LockTime = math.MaxUint64
+	txs := []*util.Tx{util.NewTx(coinbaseTx), util.NewTx(invalidTx)}
 	hashMerkleRoot := BuildHashMerkleTreeStore(txs).Root()
 	invalidMsgBlock := appmessage.NewMsgBlock(
 		appmessage.NewBlockHeader(
@@ -946,7 +953,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			dag.genesis.bits,
 			0),
 	)
-	invalidMsgBlock.AddTransaction(invalidCbTx)
+	invalidMsgBlock.AddTransaction(coinbaseTx)
+	invalidMsgBlock.AddTransaction(invalidTx)
 	invalidBlock := util.NewBlock(invalidMsgBlock)
 	isOrphan, isDelayed, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
 
@@ -975,7 +983,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlock.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockChild.AddTransaction(invalidTx)
 	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
@@ -1004,7 +1013,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlockChild.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockGrandChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockGrandChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockGrandChild.AddTransaction(invalidTx)
 	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
