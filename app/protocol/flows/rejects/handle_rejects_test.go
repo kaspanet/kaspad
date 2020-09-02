@@ -75,8 +75,9 @@ func TestHandleRejects(t *testing.T) {
 	})
 
 	t.Run("CallOnClosedRoute", func(t *testing.T) {
-		incomingRoute.Close()
-		err := HandleRejects(nil, incomingRoute, outgoingRoute)
+		closedRoute := router.NewRoute()
+		closedRoute.Close()
+		err := HandleRejects(nil, closedRoute, outgoingRoute)
 		if err == nil {
 			t.Fatal("HandleRejects: expected error, got nil")
 		}
