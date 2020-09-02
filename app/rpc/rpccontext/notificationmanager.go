@@ -3,7 +3,6 @@ package rpccontext
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -13,12 +12,12 @@ type NotificationManager struct {
 	listeners map[*router.Router]*NotificationListener
 }
 
-type OnBlockAddedListener func(block *util.Block) error
+type OnBlockAddedListener func(notification *appmessage.BlockAddedNotificationMessage) error
 type OnChainChangedListener func(notification *appmessage.ChainChangedNotificationMessage) error
 
 type NotificationListener struct {
 	onBlockAddedListener           OnBlockAddedListener
-	onBlockAddedNotificationChan   chan *util.Block
+	onBlockAddedNotificationChan   chan *appmessage.BlockAddedNotificationMessage
 	onChainChangedListener         OnChainChangedListener
 	onChainChangedNotificationChan chan *appmessage.ChainChangedNotificationMessage
 
@@ -64,14 +63,14 @@ func (nm *NotificationManager) Listener(router *router.Router) (*NotificationLis
 	return listener, nil
 }
 
-func (nm *NotificationManager) NotifyBlockAdded(block *util.Block) {
+func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAddedNotificationMessage) {
 	nm.RLock()
 	defer nm.RUnlock()
 
 	for _, listener := range nm.listeners {
 		if listener.onBlockAddedListener != nil {
 			select {
-			case listener.onBlockAddedNotificationChan <- block:
+			case listener.onBlockAddedNotificationChan <- notification:
 			case <-listener.closeChan:
 				continue
 			}
@@ -96,8 +95,9 @@ func (nm *NotificationManager) NotifyChainChanged(message *appmessage.ChainChang
 
 func NewNotificationListener() *NotificationListener {
 	return &NotificationListener{
-		onBlockAddedNotificationChan: make(chan *util.Block),
-		closeChan:                    make(chan struct{}, 1),
+		onBlockAddedNotificationChan:   make(chan *appmessage.BlockAddedNotificationMessage),
+		onChainChangedNotificationChan: make(chan *appmessage.ChainChangedNotificationMessage),
+		closeChan:                      make(chan struct{}, 1),
 	}
 }
 

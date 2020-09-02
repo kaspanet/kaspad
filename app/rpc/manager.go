@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/blockdag"
@@ -42,7 +43,9 @@ func NewManager(
 
 func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
 	m.context.BlockTemplateState.NotifyBlockAdded(block)
-	m.context.NotificationManager.NotifyBlockAdded(block)
+
+	notification := appmessage.NewBlockAddedNotificationMessage(block.MsgBlock())
+	m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
 func (m *Manager) NotifyTransactionAddedToMempool() {

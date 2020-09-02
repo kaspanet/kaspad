@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // HandleNotifyBlockAdded handles the respectively named RPC command
@@ -13,8 +12,7 @@ func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, 
 	if err != nil {
 		return nil, err
 	}
-	listener.SetOnBlockAddedListener(func(block *util.Block) error {
-		notification := appmessage.NewBlockAddedNotificationMessage(block.MsgBlock())
+	listener.SetOnBlockAddedListener(func(notification *appmessage.BlockAddedNotificationMessage) error {
 		return router.OutgoingRoute().Enqueue(notification)
 	})
 
