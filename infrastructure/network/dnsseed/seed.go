@@ -113,7 +113,7 @@ func SeedFromGRPC(dagParams *dagconfig.Params, host string, reqServices appmessa
 		conn, err := grpc.Dial(host, grpc.WithInsecure())
 		client := pb2.NewPeerServiceClient(conn)
 		if err != nil {
-			log.Infof("Failed to connect to gRPC server: %s", host)
+			log.Warnf("Failed to connect to gRPC server: %s", host)
 		}
 
 		var subnetID []byte
