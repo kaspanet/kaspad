@@ -12,23 +12,36 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
-// HandleGetBlockHex handles the respectively named RPC command
-func HandleGetBlockHex(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	getBlockHexRequest := request.(*appmessage.GetBlockHexRequestMessage)
+// HandleGetBlock handles the respectively named RPC command
+func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	getBlockRequest := request.(*appmessage.GetBlockRequestMessage)
 
 	// Load the raw block bytes from the database.
-	hash, err := daghash.NewHashFromStr(getBlockHexRequest.Hash)
+	hash, err := daghash.NewHashFromStr(getBlockRequest.Hash)
 	if err != nil {
-		errorMessage := &appmessage.GetBlockHexResponseMessage{}
+		errorMessage := &appmessage.GetBlockResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
 			Message: fmt.Sprintf("Hash could not be parsed: %s", err),
 		}
 		return errorMessage, nil
 	}
-
+	if context.DAG.IsKnownInvalid(hash) {
+		errorMessage := &appmessage.GetBlockResponseMessage{}
+		errorMessage.Error = &appmessage.RPCError{
+			Message: fmt.Sprintf("Block %s is known to be invalid", hash),
+		}
+		return errorMessage, nil
+	}
+	if context.DAG.IsKnownOrphan(hash) {
+		errorMessage := &appmessage.GetBlockResponseMessage{}
+		errorMessage.Error = &appmessage.RPCError{
+			Message: fmt.Sprintf("Block %s is an orphan", hash),
+		}
+		return errorMessage, nil
+	}
 	block, err := context.DAG.BlockByHash(hash)
 	if err != nil {
-		errorMessage := &appmessage.GetBlockHexResponseMessage{}
+		errorMessage := &appmessage.GetBlockResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
 			Message: fmt.Sprintf("Block %s not found", hash),
 		}
@@ -41,10 +54,10 @@ func HandleGetBlockHex(context *rpccontext.Context, _ *router.Router, request ap
 	}
 
 	// Handle partial blocks
-	if getBlockHexRequest.SubnetworkID != "" {
-		requestSubnetworkID, err := subnetworkid.NewFromStr(getBlockHexRequest.SubnetworkID)
+	if getBlockRequest.SubnetworkID != "" {
+		requestSubnetworkID, err := subnetworkid.NewFromStr(getBlockRequest.SubnetworkID)
 		if err != nil {
-			errorMessage := &appmessage.GetBlockHexResponseMessage{}
+			errorMessage := &appmessage.GetBlockResponseMessage{}
 			errorMessage.Error = &appmessage.RPCError{
 				Message: fmt.Sprintf("SubnetworkID could not be parsed: %s", err),
 			}
@@ -55,10 +68,10 @@ func HandleGetBlockHex(context *rpccontext.Context, _ *router.Router, request ap
 		if requestSubnetworkID != nil {
 			if nodeSubnetworkID != nil {
 				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
-					errorMessage := &appmessage.GetBlockHexResponseMessage{}
+					errorMessage := &appmessage.GetBlockResponseMessage{}
 					errorMessage.Error = &appmessage.RPCError{
 						Message: fmt.Sprintf("subnetwork %s does not match this partial node",
-							getBlockHexRequest.SubnetworkID),
+							getBlockRequest.SubnetworkID),
 					}
 					return errorMessage, nil
 				}
@@ -77,7 +90,11 @@ func HandleGetBlockHex(context *rpccontext.Context, _ *router.Router, request ap
 		}
 	}
 
-	blockHex := hex.EncodeToString(blockBytes)
-	response := appmessage.NewGetBlockHexResponseMessage(blockHex)
+	response := appmessage.NewGetBlockResponseMessage()
+
+	if getBlockRequest.IncludeBlockHex {
+		response.BlockHex = hex.EncodeToString(blockBytes)
+	}
+
 	return response, nil
 }
