@@ -56,7 +56,7 @@ type BlockVerboseData struct {
 	HashMerkleRoot         string
 	AcceptedIDMerkleRoot   string
 	UTXOCommitment         string
-	TransactionHex         []string
+	TxIDs                  []string
 	TransactionVerboseData []*TransactionVerboseData
 	Time                   int64
 	Nonce                  uint64
