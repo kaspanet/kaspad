@@ -418,6 +418,7 @@ message GetBlockRequestMessage{
   string subnetworkId = 2;
   bool includeBlockHex = 3;
   bool includeBlockVerboseData = 4;
+  bool includeTransactionVerboseData = 5;
 }
 
 message GetBlockResponseMessage{

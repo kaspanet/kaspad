@@ -96,7 +96,7 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 		response.BlockHex = hex.EncodeToString(blockBytes)
 	}
 	if getBlockRequest.IncludeBlockVerboseData {
-		blockVerboseData, err := context.BuildBlockVerboseData(block, true)
+		blockVerboseData, err := context.BuildBlockVerboseData(block, getBlockRequest.IncludeTransactionVerboseData)
 		if err != nil {
 			return nil, err
 		}

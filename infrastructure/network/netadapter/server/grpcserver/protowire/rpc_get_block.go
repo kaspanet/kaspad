@@ -6,19 +6,21 @@ import (
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetBlockRequestMessage{
-		Hash:                    x.GetBlockRequest.Hash,
-		SubnetworkID:            x.GetBlockRequest.SubnetworkId,
-		IncludeBlockHex:         x.GetBlockRequest.IncludeBlockHex,
-		IncludeBlockVerboseData: x.GetBlockRequest.IncludeBlockVerboseData,
+		Hash:                          x.GetBlockRequest.Hash,
+		SubnetworkID:                  x.GetBlockRequest.SubnetworkId,
+		IncludeBlockHex:               x.GetBlockRequest.IncludeBlockHex,
+		IncludeBlockVerboseData:       x.GetBlockRequest.IncludeBlockVerboseData,
+		IncludeTransactionVerboseData: x.GetBlockRequest.IncludeTransactionVerboseData,
 	}, nil
 }
 
 func (x *KaspadMessage_GetBlockRequest) fromAppMessage(message *appmessage.GetBlockRequestMessage) error {
 	x.GetBlockRequest = &GetBlockRequestMessage{
-		Hash:                    message.Hash,
-		SubnetworkId:            message.SubnetworkID,
-		IncludeBlockHex:         message.IncludeBlockHex,
-		IncludeBlockVerboseData: message.IncludeBlockVerboseData,
+		Hash:                          message.Hash,
+		SubnetworkId:                  message.SubnetworkID,
+		IncludeBlockHex:               message.IncludeBlockHex,
+		IncludeBlockVerboseData:       message.IncludeBlockVerboseData,
+		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil
 }

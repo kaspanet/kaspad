@@ -2,8 +2,11 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-func (c *RPCClient) GetBlock(hash string, subnetworkID string, includeBlockHex bool, includeBlockVerboseData bool) (*appmessage.GetBlockResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockRequestMessage(hash, subnetworkID, includeBlockHex, includeBlockVerboseData))
+func (c *RPCClient) GetBlock(hash string, subnetworkID string, includeBlockHex bool,
+	includeBlockVerboseData bool, includeTransactionVerboseData bool) (*appmessage.GetBlockResponseMessage, error) {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockRequestMessage(hash, subnetworkID,
+		includeBlockHex, includeBlockVerboseData, includeTransactionVerboseData))
 	if err != nil {
 		return nil, err
 	}
