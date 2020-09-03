@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -20,6 +21,7 @@ type Manager struct {
 }
 
 func NewManager(
+	cfg *config.Config,
 	netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
@@ -30,6 +32,7 @@ func NewManager(
 	acceptanceIndex *indexers.AcceptanceIndex) *Manager {
 	manager := Manager{
 		context: rpccontext.NewContext(
+			cfg,
 			netAdapter,
 			dag,
 			protocolManager,

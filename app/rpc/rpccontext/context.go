@@ -6,12 +6,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 )
 
 type Context struct {
+	Config                 *config.Config
 	NetAdapter             *netadapter.NetAdapter
 	DAG                    *blockdag.BlockDAG
 	ProtocolManager        *protocol.Manager
@@ -26,6 +28,7 @@ type Context struct {
 }
 
 func NewContext(
+	cfg *config.Config,
 	netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
@@ -35,6 +38,7 @@ func NewContext(
 	addressManager *addressmanager.AddressManager,
 	acceptanceIndex *indexers.AcceptanceIndex) *Context {
 	context := &Context{
+		Config:                 cfg,
 		NetAdapter:             netAdapter,
 		DAG:                    dag,
 		ProtocolManager:        protocolManager,

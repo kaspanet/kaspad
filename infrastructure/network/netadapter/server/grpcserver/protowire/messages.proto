@@ -52,6 +52,8 @@ message KaspadMessage {
     NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
     NotifyChainChangedResponseMessage notifyChainChangedResponse = 1023;
     ChainChangedNotificationMessage chainChangedNotification = 1024;
+    GetBlockHexRequestMessage getBlockHexRequest = 1025;
+    GetBlockHexResponseMessage getBlockHexResponse = 1026;
   }
 }
 
@@ -409,6 +411,16 @@ message ChainChangedChainBlock{
 message ChainChangedAcceptedBlock{
   string hash = 1;
   repeated string acceptedTxIds = 2;
+}
+
+message GetBlockHexRequestMessage{
+  string hash = 1;
+  string subnetworkId = 2;
+}
+
+message GetBlockHexResponseMessage{
+  string blockHex = 1;
+  RPCError error = 2;
 }
 
 service RPC {
