@@ -428,7 +428,71 @@ message GetBlockResponseMessage{
 }
 
 message BlockVerboseData{
+  string hash = 1;
+  uint64 confirmations = 2;
+  int32 size = 3;
+  uint64 blueScore = 4;
+  bool isChainBlock = 5;
+  int32 version = 6;
+  string versionHex = 7;
+  string hashMerkleRoot = 8;
+  string acceptedIDMerkleRoot = 9;
+  string utxoCommitment = 10;
+  repeated string transactionHex = 11;
+  repeated TransactionVerboseData transactionVerboseData = 12;
+  int64 time = 13;
+  uint64 nonce = 14;
+  string bits = 15;
+  double difficulty = 16;
+  repeated string parentHashes = 17;
+  string selectedParentHash = 18;
+  repeated string childHashes = 19;
+  repeated string acceptedBlockHashes = 20;
+}
 
+message TransactionVerboseData{
+  string hex = 1;
+  string txId = 2;
+  string hash = 3;
+  int32 size = 4;
+  int32 version = 5;
+  uint64 lockTime = 6;
+  string subnetworkId = 7;
+  uint64 gas = 8;
+  string payloadHash = 9;
+  string payload = 10;
+  repeated Vin vin = 11;
+  repeated Vout vout = 12;
+  string blockHash = 13;
+  string acceptedBy = 14;
+  bool isInMempool = 15;
+  uint64 time = 16;
+  uint64 blockTime = 17;
+}
+
+message Vin{
+  string txId = 1;
+  uint32 vout = 2;
+  ScriptSig scriptSig = 3;
+  uint64 sequence = 4;
+}
+
+message ScriptSig{
+  string asm = 1;
+  string hex = 2;
+}
+
+message Vout{
+  uint64 value = 1;
+  uint32 n = 2;
+  ScriptPubKeyResult scriptPubKey = 3;
+}
+
+message ScriptPubKeyResult{
+  string asm = 1;
+  string hex = 2;
+  string type = 3;
+  string address = 4;
 }
 
 service RPC {

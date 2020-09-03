@@ -4199,6 +4199,27 @@ type BlockVerboseData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Hash                   string                    `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Confirmations          uint64                    `protobuf:"varint,2,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+	Size                   int32                     `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	BlueScore              uint64                    `protobuf:"varint,4,opt,name=blueScore,proto3" json:"blueScore,omitempty"`
+	IsChainBlock           bool                      `protobuf:"varint,5,opt,name=isChainBlock,proto3" json:"isChainBlock,omitempty"`
+	Version                int32                     `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
+	VersionHex             string                    `protobuf:"bytes,7,opt,name=versionHex,proto3" json:"versionHex,omitempty"`
+	HashMerkleRoot         string                    `protobuf:"bytes,8,opt,name=hashMerkleRoot,proto3" json:"hashMerkleRoot,omitempty"`
+	AcceptedIDMerkleRoot   string                    `protobuf:"bytes,9,opt,name=acceptedIDMerkleRoot,proto3" json:"acceptedIDMerkleRoot,omitempty"`
+	UtxoCommitment         string                    `protobuf:"bytes,10,opt,name=utxoCommitment,proto3" json:"utxoCommitment,omitempty"`
+	TransactionHex         []string                  `protobuf:"bytes,11,rep,name=transactionHex,proto3" json:"transactionHex,omitempty"`
+	TransactionVerboseData []*TransactionVerboseData `protobuf:"bytes,12,rep,name=transactionVerboseData,proto3" json:"transactionVerboseData,omitempty"`
+	Time                   int64                     `protobuf:"varint,13,opt,name=time,proto3" json:"time,omitempty"`
+	Nonce                  uint64                    `protobuf:"varint,14,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	Bits                   string                    `protobuf:"bytes,15,opt,name=bits,proto3" json:"bits,omitempty"`
+	Difficulty             float64                   `protobuf:"fixed64,16,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	ParentHashes           []string                  `protobuf:"bytes,17,rep,name=parentHashes,proto3" json:"parentHashes,omitempty"`
+	SelectedParentHash     string                    `protobuf:"bytes,18,opt,name=selectedParentHash,proto3" json:"selectedParentHash,omitempty"`
+	ChildHashes            []string                  `protobuf:"bytes,19,rep,name=childHashes,proto3" json:"childHashes,omitempty"`
+	AcceptedBlockHashes    []string                  `protobuf:"bytes,20,rep,name=acceptedBlockHashes,proto3" json:"acceptedBlockHashes,omitempty"`
 }
 
 func (x *BlockVerboseData) Reset() {
@@ -4231,6 +4252,581 @@ func (x *BlockVerboseData) ProtoReflect() protoreflect.Message {
 // Deprecated: Use BlockVerboseData.ProtoReflect.Descriptor instead.
 func (*BlockVerboseData) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *BlockVerboseData) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetConfirmations() uint64 {
+	if x != nil {
+		return x.Confirmations
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetSize() int32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetBlueScore() uint64 {
+	if x != nil {
+		return x.BlueScore
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetIsChainBlock() bool {
+	if x != nil {
+		return x.IsChainBlock
+	}
+	return false
+}
+
+func (x *BlockVerboseData) GetVersion() int32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetVersionHex() string {
+	if x != nil {
+		return x.VersionHex
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetHashMerkleRoot() string {
+	if x != nil {
+		return x.HashMerkleRoot
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetAcceptedIDMerkleRoot() string {
+	if x != nil {
+		return x.AcceptedIDMerkleRoot
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetUtxoCommitment() string {
+	if x != nil {
+		return x.UtxoCommitment
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetTransactionHex() []string {
+	if x != nil {
+		return x.TransactionHex
+	}
+	return nil
+}
+
+func (x *BlockVerboseData) GetTransactionVerboseData() []*TransactionVerboseData {
+	if x != nil {
+		return x.TransactionVerboseData
+	}
+	return nil
+}
+
+func (x *BlockVerboseData) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetNonce() uint64 {
+	if x != nil {
+		return x.Nonce
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetBits() string {
+	if x != nil {
+		return x.Bits
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetDifficulty() float64 {
+	if x != nil {
+		return x.Difficulty
+	}
+	return 0
+}
+
+func (x *BlockVerboseData) GetParentHashes() []string {
+	if x != nil {
+		return x.ParentHashes
+	}
+	return nil
+}
+
+func (x *BlockVerboseData) GetSelectedParentHash() string {
+	if x != nil {
+		return x.SelectedParentHash
+	}
+	return ""
+}
+
+func (x *BlockVerboseData) GetChildHashes() []string {
+	if x != nil {
+		return x.ChildHashes
+	}
+	return nil
+}
+
+func (x *BlockVerboseData) GetAcceptedBlockHashes() []string {
+	if x != nil {
+		return x.AcceptedBlockHashes
+	}
+	return nil
+}
+
+type TransactionVerboseData struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Hex          string  `protobuf:"bytes,1,opt,name=hex,proto3" json:"hex,omitempty"`
+	TxId         string  `protobuf:"bytes,2,opt,name=txId,proto3" json:"txId,omitempty"`
+	Hash         string  `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+	Size         int32   `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	Version      int32   `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	LockTime     uint64  `protobuf:"varint,6,opt,name=lockTime,proto3" json:"lockTime,omitempty"`
+	SubnetworkId string  `protobuf:"bytes,7,opt,name=subnetworkId,proto3" json:"subnetworkId,omitempty"`
+	Gas          uint64  `protobuf:"varint,8,opt,name=gas,proto3" json:"gas,omitempty"`
+	PayloadHash  string  `protobuf:"bytes,9,opt,name=payloadHash,proto3" json:"payloadHash,omitempty"`
+	Payload      string  `protobuf:"bytes,10,opt,name=payload,proto3" json:"payload,omitempty"`
+	Vin          []*Vin  `protobuf:"bytes,11,rep,name=vin,proto3" json:"vin,omitempty"`
+	Vout         []*Vout `protobuf:"bytes,12,rep,name=vout,proto3" json:"vout,omitempty"`
+	BlockHash    string  `protobuf:"bytes,13,opt,name=blockHash,proto3" json:"blockHash,omitempty"`
+	AcceptedBy   string  `protobuf:"bytes,14,opt,name=acceptedBy,proto3" json:"acceptedBy,omitempty"`
+	IsInMempool  bool    `protobuf:"varint,15,opt,name=isInMempool,proto3" json:"isInMempool,omitempty"`
+	Time         uint64  `protobuf:"varint,16,opt,name=time,proto3" json:"time,omitempty"`
+	BlockTime    uint64  `protobuf:"varint,17,opt,name=blockTime,proto3" json:"blockTime,omitempty"`
+}
+
+func (x *TransactionVerboseData) Reset() {
+	*x = TransactionVerboseData{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[63]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TransactionVerboseData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransactionVerboseData) ProtoMessage() {}
+
+func (x *TransactionVerboseData) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[63]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransactionVerboseData.ProtoReflect.Descriptor instead.
+func (*TransactionVerboseData) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *TransactionVerboseData) GetHex() string {
+	if x != nil {
+		return x.Hex
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetTxId() string {
+	if x != nil {
+		return x.TxId
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetSize() int32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *TransactionVerboseData) GetVersion() int32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *TransactionVerboseData) GetLockTime() uint64 {
+	if x != nil {
+		return x.LockTime
+	}
+	return 0
+}
+
+func (x *TransactionVerboseData) GetSubnetworkId() string {
+	if x != nil {
+		return x.SubnetworkId
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetGas() uint64 {
+	if x != nil {
+		return x.Gas
+	}
+	return 0
+}
+
+func (x *TransactionVerboseData) GetPayloadHash() string {
+	if x != nil {
+		return x.PayloadHash
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetVin() []*Vin {
+	if x != nil {
+		return x.Vin
+	}
+	return nil
+}
+
+func (x *TransactionVerboseData) GetVout() []*Vout {
+	if x != nil {
+		return x.Vout
+	}
+	return nil
+}
+
+func (x *TransactionVerboseData) GetBlockHash() string {
+	if x != nil {
+		return x.BlockHash
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetAcceptedBy() string {
+	if x != nil {
+		return x.AcceptedBy
+	}
+	return ""
+}
+
+func (x *TransactionVerboseData) GetIsInMempool() bool {
+	if x != nil {
+		return x.IsInMempool
+	}
+	return false
+}
+
+func (x *TransactionVerboseData) GetTime() uint64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *TransactionVerboseData) GetBlockTime() uint64 {
+	if x != nil {
+		return x.BlockTime
+	}
+	return 0
+}
+
+type Vin struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxId      string     `protobuf:"bytes,1,opt,name=txId,proto3" json:"txId,omitempty"`
+	Vout      uint32     `protobuf:"varint,2,opt,name=vout,proto3" json:"vout,omitempty"`
+	ScriptSig *ScriptSig `protobuf:"bytes,3,opt,name=scriptSig,proto3" json:"scriptSig,omitempty"`
+	Sequence  uint64     `protobuf:"varint,4,opt,name=sequence,proto3" json:"sequence,omitempty"`
+}
+
+func (x *Vin) Reset() {
+	*x = Vin{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[64]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Vin) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Vin) ProtoMessage() {}
+
+func (x *Vin) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[64]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Vin.ProtoReflect.Descriptor instead.
+func (*Vin) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{64}
+}
+
+func (x *Vin) GetTxId() string {
+	if x != nil {
+		return x.TxId
+	}
+	return ""
+}
+
+func (x *Vin) GetVout() uint32 {
+	if x != nil {
+		return x.Vout
+	}
+	return 0
+}
+
+func (x *Vin) GetScriptSig() *ScriptSig {
+	if x != nil {
+		return x.ScriptSig
+	}
+	return nil
+}
+
+func (x *Vin) GetSequence() uint64 {
+	if x != nil {
+		return x.Sequence
+	}
+	return 0
+}
+
+type ScriptSig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Asm string `protobuf:"bytes,1,opt,name=asm,proto3" json:"asm,omitempty"`
+	Hex string `protobuf:"bytes,2,opt,name=hex,proto3" json:"hex,omitempty"`
+}
+
+func (x *ScriptSig) Reset() {
+	*x = ScriptSig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[65]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ScriptSig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScriptSig) ProtoMessage() {}
+
+func (x *ScriptSig) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[65]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScriptSig.ProtoReflect.Descriptor instead.
+func (*ScriptSig) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ScriptSig) GetAsm() string {
+	if x != nil {
+		return x.Asm
+	}
+	return ""
+}
+
+func (x *ScriptSig) GetHex() string {
+	if x != nil {
+		return x.Hex
+	}
+	return ""
+}
+
+type Vout struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Value        uint64              `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	N            uint32              `protobuf:"varint,2,opt,name=n,proto3" json:"n,omitempty"`
+	ScriptPubKey *ScriptPubKeyResult `protobuf:"bytes,3,opt,name=scriptPubKey,proto3" json:"scriptPubKey,omitempty"`
+}
+
+func (x *Vout) Reset() {
+	*x = Vout{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[66]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Vout) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Vout) ProtoMessage() {}
+
+func (x *Vout) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[66]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Vout.ProtoReflect.Descriptor instead.
+func (*Vout) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *Vout) GetValue() uint64 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+func (x *Vout) GetN() uint32 {
+	if x != nil {
+		return x.N
+	}
+	return 0
+}
+
+func (x *Vout) GetScriptPubKey() *ScriptPubKeyResult {
+	if x != nil {
+		return x.ScriptPubKey
+	}
+	return nil
+}
+
+type ScriptPubKeyResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Asm     string `protobuf:"bytes,1,opt,name=asm,proto3" json:"asm,omitempty"`
+	Hex     string `protobuf:"bytes,2,opt,name=hex,proto3" json:"hex,omitempty"`
+	Type    string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Address string `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
+}
+
+func (x *ScriptPubKeyResult) Reset() {
+	*x = ScriptPubKeyResult{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[67]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ScriptPubKeyResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScriptPubKeyResult) ProtoMessage() {}
+
+func (x *ScriptPubKeyResult) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[67]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScriptPubKeyResult.ProtoReflect.Descriptor instead.
+func (*ScriptPubKeyResult) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *ScriptPubKeyResult) GetAsm() string {
+	if x != nil {
+		return x.Asm
+	}
+	return ""
+}
+
+func (x *ScriptPubKeyResult) GetHex() string {
+	if x != nil {
+		return x.Hex
+	}
+	return ""
+}
+
+func (x *ScriptPubKeyResult) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *ScriptPubKeyResult) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
 }
 
 var File_messages_proto protoreflect.FileDescriptor
@@ -4930,22 +5526,122 @@ var file_messages_proto_rawDesc = []byte{
 	0x6c, 0x6f, 0x63, 0x6b, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61, 0x12,
 	0x29, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72,
-	0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x12, 0x0a, 0x10, 0x42, 0x6c,
-	0x6f, 0x63, 0x6b, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61, 0x32, 0x50,
-	0x0a, 0x03, 0x50, 0x32, 0x50, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
-	0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73,
-	0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01,
-	0x32, 0x50, 0x0a, 0x03, 0x52, 0x50, 0x43, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b,
-	0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01,
-	0x30, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64,
-	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0xe9, 0x05, 0x0a, 0x10, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61, 0x12,
+	0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68,
+	0x61, 0x73, 0x68, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x1c, 0x0a,
+	0x09, 0x62, 0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04,
+	0x52, 0x09, 0x62, 0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x69,
+	0x73, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x0c, 0x69, 0x73, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x12,
+	0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05,
+	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x76, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x78, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x76,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x78, 0x12, 0x26, 0x0a, 0x0e, 0x68, 0x61, 0x73,
+	0x68, 0x4d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0e, 0x68, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f,
+	0x74, 0x12, 0x32, 0x0a, 0x14, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x49, 0x44, 0x4d,
+	0x65, 0x72, 0x6b, 0x6c, 0x65, 0x52, 0x6f, 0x6f, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x14, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x49, 0x44, 0x4d, 0x65, 0x72, 0x6b, 0x6c,
+	0x65, 0x52, 0x6f, 0x6f, 0x74, 0x12, 0x26, 0x0a, 0x0e, 0x75, 0x74, 0x78, 0x6f, 0x43, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x75,
+	0x74, 0x78, 0x6f, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x26, 0x0a,
+	0x0e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x78, 0x18,
+	0x0b, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0e, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x48, 0x65, 0x78, 0x12, 0x59, 0x0a, 0x16, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61, 0x18,
+	0x0c, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72,
+	0x65, 0x2e, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x65, 0x72,
+	0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x16, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74, 0x61,
+	0x12, 0x12, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04,
+	0x74, 0x69, 0x6d, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x0e, 0x20,
+	0x01, 0x28, 0x04, 0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x62, 0x69,
+	0x74, 0x73, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x62, 0x69, 0x74, 0x73, 0x12, 0x1e,
+	0x0a, 0x0a, 0x64, 0x69, 0x66, 0x66, 0x69, 0x63, 0x75, 0x6c, 0x74, 0x79, 0x18, 0x10, 0x20, 0x01,
+	0x28, 0x01, 0x52, 0x0a, 0x64, 0x69, 0x66, 0x66, 0x69, 0x63, 0x75, 0x6c, 0x74, 0x79, 0x12, 0x22,
+	0x0a, 0x0c, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x11,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x0c, 0x70, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68,
+	0x65, 0x73, 0x12, 0x2e, 0x0a, 0x12, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x61,
+	0x72, 0x65, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x12, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12,
+	0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x48, 0x61,
+	0x73, 0x68, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x68, 0x69, 0x6c, 0x64, 0x48, 0x61, 0x73, 0x68, 0x65,
+	0x73, 0x18, 0x13, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x68, 0x69, 0x6c, 0x64, 0x48, 0x61,
+	0x73, 0x68, 0x65, 0x73, 0x12, 0x30, 0x0a, 0x13, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64,
+	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x14, 0x20, 0x03, 0x28,
+	0x09, 0x52, 0x13, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0xe7, 0x03, 0x0a, 0x16, 0x54, 0x72, 0x61, 0x6e, 0x73,
+	0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x56, 0x65, 0x72, 0x62, 0x6f, 0x73, 0x65, 0x44, 0x61, 0x74,
+	0x61, 0x12, 0x10, 0x0a, 0x03, 0x68, 0x65, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
+	0x68, 0x65, 0x78, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x73,
+	0x69, 0x7a, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12,
+	0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05,
+	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x6c, 0x6f, 0x63,
+	0x6b, 0x54, 0x69, 0x6d, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x6c, 0x6f, 0x63,
+	0x6b, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x75, 0x62, 0x6e, 0x65, 0x74, 0x77,
+	0x6f, 0x72, 0x6b, 0x49, 0x64, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x73, 0x75, 0x62,
+	0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x49, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x67, 0x61, 0x73,
+	0x18, 0x08, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x67, 0x61, 0x73, 0x12, 0x20, 0x0a, 0x0b, 0x70,
+	0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x48, 0x61, 0x73, 0x68, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0b, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x48, 0x61, 0x73, 0x68, 0x12, 0x18, 0x0a,
+	0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x20, 0x0a, 0x03, 0x76, 0x69, 0x6e, 0x18, 0x0b,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
+	0x2e, 0x56, 0x69, 0x6e, 0x52, 0x03, 0x76, 0x69, 0x6e, 0x12, 0x23, 0x0a, 0x04, 0x76, 0x6f, 0x75,
+	0x74, 0x18, 0x0c, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x56, 0x6f, 0x75, 0x74, 0x52, 0x04, 0x76, 0x6f, 0x75, 0x74, 0x12, 0x1c,
+	0x0a, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x18, 0x0d, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x1e, 0x0a, 0x0a,
+	0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x42, 0x79, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0a, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x65, 0x64, 0x42, 0x79, 0x12, 0x20, 0x0a, 0x0b,
+	0x69, 0x73, 0x49, 0x6e, 0x4d, 0x65, 0x6d, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x0f, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x0b, 0x69, 0x73, 0x49, 0x6e, 0x4d, 0x65, 0x6d, 0x70, 0x6f, 0x6f, 0x6c, 0x12, 0x12,
+	0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x10, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x74, 0x69,
+	0x6d, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65, 0x18,
+	0x11, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x69, 0x6d, 0x65,
+	0x22, 0x7d, 0x0a, 0x03, 0x56, 0x69, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x76,
+	0x6f, 0x75, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x76, 0x6f, 0x75, 0x74, 0x12,
+	0x32, 0x0a, 0x09, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x53, 0x69, 0x67, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x14, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x53, 0x69, 0x67, 0x52, 0x09, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x53, 0x69, 0x67, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x22,
+	0x2f, 0x0a, 0x09, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74, 0x53, 0x69, 0x67, 0x12, 0x10, 0x0a, 0x03,
+	0x61, 0x73, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x61, 0x73, 0x6d, 0x12, 0x10,
+	0x0a, 0x03, 0x68, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x68, 0x65, 0x78,
+	0x22, 0x6d, 0x0a, 0x04, 0x56, 0x6f, 0x75, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x0c,
+	0x0a, 0x01, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x01, 0x6e, 0x12, 0x41, 0x0a, 0x0c,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x52, 0x0c, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x22,
+	0x66, 0x0a, 0x12, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x52,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x61, 0x73, 0x6d, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x03, 0x61, 0x73, 0x6d, 0x12, 0x10, 0x0a, 0x03, 0x68, 0x65, 0x78, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x68, 0x65, 0x78, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x18, 0x0a,
+	0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x32, 0x50, 0x0a, 0x03, 0x50, 0x32, 0x50, 0x12, 0x49,
+	0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12,
+	0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70,
+	0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x32, 0x50, 0x0a, 0x03, 0x52, 0x50, 0x43,
+	0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61,
+	0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61,
+	0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e,
+	0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4960,7 +5656,7 @@ func file_messages_proto_rawDescGZIP() []byte {
 	return file_messages_proto_rawDescData
 }
 
-var file_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
+var file_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
 var file_messages_proto_goTypes = []interface{}{
 	(*KaspadMessage)(nil),                       // 0: protowire.KaspadMessage
 	(*AddressesMessage)(nil),                    // 1: protowire.AddressesMessage
@@ -5025,113 +5721,123 @@ var file_messages_proto_goTypes = []interface{}{
 	(*GetBlockRequestMessage)(nil),              // 60: protowire.GetBlockRequestMessage
 	(*GetBlockResponseMessage)(nil),             // 61: protowire.GetBlockResponseMessage
 	(*BlockVerboseData)(nil),                    // 62: protowire.BlockVerboseData
+	(*TransactionVerboseData)(nil),              // 63: protowire.TransactionVerboseData
+	(*Vin)(nil),                                 // 64: protowire.Vin
+	(*ScriptSig)(nil),                           // 65: protowire.ScriptSig
+	(*Vout)(nil),                                // 66: protowire.Vout
+	(*ScriptPubKeyResult)(nil),                  // 67: protowire.ScriptPubKeyResult
 }
 var file_messages_proto_depIdxs = []int32{
-	1,  // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
-	10, // 1: protowire.KaspadMessage.block:type_name -> protowire.BlockMessage
-	5,  // 2: protowire.KaspadMessage.transaction:type_name -> protowire.TransactionMessage
-	13, // 3: protowire.KaspadMessage.requestBlockLocator:type_name -> protowire.RequestBlockLocatorMessage
-	14, // 4: protowire.KaspadMessage.blockLocator:type_name -> protowire.BlockLocatorMessage
-	4,  // 5: protowire.KaspadMessage.requestAddresses:type_name -> protowire.RequestAddressesMessage
-	15, // 6: protowire.KaspadMessage.requestIBDBlocks:type_name -> protowire.RequestIBDBlocksMessage
-	16, // 7: protowire.KaspadMessage.requestNextIBDBlocks:type_name -> protowire.RequestNextIBDBlocksMessage
-	17, // 8: protowire.KaspadMessage.DoneIBDBlocks:type_name -> protowire.DoneIBDBlocksMessage
-	18, // 9: protowire.KaspadMessage.requestRelayBlocks:type_name -> protowire.RequestRelayBlocksMessage
-	19, // 10: protowire.KaspadMessage.requestSelectedTip:type_name -> protowire.RequestSelectedTipMessage
-	20, // 11: protowire.KaspadMessage.requestTransactions:type_name -> protowire.RequestTransactionsMessage
-	10, // 12: protowire.KaspadMessage.ibdBlock:type_name -> protowire.BlockMessage
-	22, // 13: protowire.KaspadMessage.invRelayBlock:type_name -> protowire.InvRelayBlockMessage
-	23, // 14: protowire.KaspadMessage.invTransactions:type_name -> protowire.InvTransactionsMessage
-	24, // 15: protowire.KaspadMessage.ping:type_name -> protowire.PingMessage
-	25, // 16: protowire.KaspadMessage.pong:type_name -> protowire.PongMessage
-	26, // 17: protowire.KaspadMessage.selectedTip:type_name -> protowire.SelectedTipMessage
-	27, // 18: protowire.KaspadMessage.verack:type_name -> protowire.VerackMessage
-	28, // 19: protowire.KaspadMessage.version:type_name -> protowire.VersionMessage
-	21, // 20: protowire.KaspadMessage.transactionNotFound:type_name -> protowire.TransactionNotFoundMessage
-	29, // 21: protowire.KaspadMessage.reject:type_name -> protowire.RejectMessage
-	31, // 22: protowire.KaspadMessage.getCurrentNetworkRequest:type_name -> protowire.GetCurrentNetworkRequestMessage
-	32, // 23: protowire.KaspadMessage.getCurrentNetworkResponse:type_name -> protowire.GetCurrentNetworkResponseMessage
-	33, // 24: protowire.KaspadMessage.submitBlockRequest:type_name -> protowire.SubmitBlockRequestMessage
-	34, // 25: protowire.KaspadMessage.submitBlockResponse:type_name -> protowire.SubmitBlockResponseMessage
-	35, // 26: protowire.KaspadMessage.getBlockTemplateRequest:type_name -> protowire.GetBlockTemplateRequestMessage
-	36, // 27: protowire.KaspadMessage.getBlockTemplateResponse:type_name -> protowire.GetBlockTemplateResponseMessage
-	38, // 28: protowire.KaspadMessage.notifyBlockAddedRequest:type_name -> protowire.NotifyBlockAddedRequestMessage
-	39, // 29: protowire.KaspadMessage.notifyBlockAddedResponse:type_name -> protowire.NotifyBlockAddedResponseMessage
-	40, // 30: protowire.KaspadMessage.blockAddedNotification:type_name -> protowire.BlockAddedNotificationMessage
-	41, // 31: protowire.KaspadMessage.getPeerAddressesRequest:type_name -> protowire.GetPeerAddressesRequestMessage
-	42, // 32: protowire.KaspadMessage.getPeerAddressesResponse:type_name -> protowire.GetPeerAddressesResponseMessage
-	44, // 33: protowire.KaspadMessage.getSelectedTipHashRequest:type_name -> protowire.GetSelectedTipHashRequestMessage
-	45, // 34: protowire.KaspadMessage.getSelectedTipHashResponse:type_name -> protowire.GetSelectedTipHashResponseMessage
-	46, // 35: protowire.KaspadMessage.getMempoolEntryRequest:type_name -> protowire.GetMempoolEntryRequestMessage
-	47, // 36: protowire.KaspadMessage.getMempoolEntryResponse:type_name -> protowire.GetMempoolEntryResponseMessage
-	48, // 37: protowire.KaspadMessage.getConnectedPeerInfoRequest:type_name -> protowire.GetConnectedPeerInfoRequestMessage
-	49, // 38: protowire.KaspadMessage.getConnectedPeerInfoResponse:type_name -> protowire.GetConnectedPeerInfoResponseMessage
-	51, // 39: protowire.KaspadMessage.connectToPeerRequest:type_name -> protowire.ConnectToPeerRequestMessage
-	52, // 40: protowire.KaspadMessage.connectToPeerResponse:type_name -> protowire.ConnectToPeerResponseMessage
-	53, // 41: protowire.KaspadMessage.sendRawTransactionRequest:type_name -> protowire.SendRawTransactionRequestMessage
-	54, // 42: protowire.KaspadMessage.sendRawTransactionResponse:type_name -> protowire.SendRawTransactionResponseMessage
-	55, // 43: protowire.KaspadMessage.notifyChainChangedRequest:type_name -> protowire.NotifyChainChangedRequestMessage
-	56, // 44: protowire.KaspadMessage.notifyChainChangedResponse:type_name -> protowire.NotifyChainChangedResponseMessage
-	57, // 45: protowire.KaspadMessage.chainChangedNotification:type_name -> protowire.ChainChangedNotificationMessage
-	60, // 46: protowire.KaspadMessage.getBlockRequest:type_name -> protowire.GetBlockRequestMessage
-	61, // 47: protowire.KaspadMessage.getBlockResponse:type_name -> protowire.GetBlockResponseMessage
-	3,  // 48: protowire.AddressesMessage.subnetworkID:type_name -> protowire.SubnetworkID
-	2,  // 49: protowire.AddressesMessage.addressList:type_name -> protowire.NetAddress
-	3,  // 50: protowire.RequestAddressesMessage.subnetworkID:type_name -> protowire.SubnetworkID
-	6,  // 51: protowire.TransactionMessage.inputs:type_name -> protowire.TransactionInput
-	9,  // 52: protowire.TransactionMessage.outputs:type_name -> protowire.TransactionOutput
-	3,  // 53: protowire.TransactionMessage.subnetworkID:type_name -> protowire.SubnetworkID
-	12, // 54: protowire.TransactionMessage.payloadHash:type_name -> protowire.Hash
-	7,  // 55: protowire.TransactionInput.PreviousOutpoint:type_name -> protowire.Outpoint
-	8,  // 56: protowire.Outpoint.transactionID:type_name -> protowire.TransactionID
-	11, // 57: protowire.BlockMessage.header:type_name -> protowire.BlockHeader
-	5,  // 58: protowire.BlockMessage.transactions:type_name -> protowire.TransactionMessage
-	12, // 59: protowire.BlockHeader.parentHashes:type_name -> protowire.Hash
-	12, // 60: protowire.BlockHeader.hashMerkleRoot:type_name -> protowire.Hash
-	12, // 61: protowire.BlockHeader.acceptedIDMerkleRoot:type_name -> protowire.Hash
-	12, // 62: protowire.BlockHeader.utxoCommitment:type_name -> protowire.Hash
-	12, // 63: protowire.RequestBlockLocatorMessage.lowHash:type_name -> protowire.Hash
-	12, // 64: protowire.RequestBlockLocatorMessage.highHash:type_name -> protowire.Hash
-	12, // 65: protowire.BlockLocatorMessage.hashes:type_name -> protowire.Hash
-	12, // 66: protowire.RequestIBDBlocksMessage.lowHash:type_name -> protowire.Hash
-	12, // 67: protowire.RequestIBDBlocksMessage.highHash:type_name -> protowire.Hash
-	12, // 68: protowire.RequestRelayBlocksMessage.hashes:type_name -> protowire.Hash
-	8,  // 69: protowire.RequestTransactionsMessage.ids:type_name -> protowire.TransactionID
-	8,  // 70: protowire.TransactionNotFoundMessage.id:type_name -> protowire.TransactionID
-	12, // 71: protowire.InvRelayBlockMessage.hash:type_name -> protowire.Hash
-	8,  // 72: protowire.InvTransactionsMessage.ids:type_name -> protowire.TransactionID
-	12, // 73: protowire.SelectedTipMessage.selectedTipHash:type_name -> protowire.Hash
-	2,  // 74: protowire.VersionMessage.address:type_name -> protowire.NetAddress
-	12, // 75: protowire.VersionMessage.selectedTipHash:type_name -> protowire.Hash
-	3,  // 76: protowire.VersionMessage.subnetworkID:type_name -> protowire.SubnetworkID
-	30, // 77: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
-	30, // 78: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
-	37, // 79: protowire.GetBlockTemplateResponseMessage.transactions:type_name -> protowire.GetBlockTemplateTransactionMessage
-	30, // 80: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
-	30, // 81: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
-	10, // 82: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.BlockMessage
-	43, // 83: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
-	30, // 84: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
-	30, // 85: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
-	30, // 86: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
-	50, // 87: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
-	30, // 88: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
-	30, // 89: protowire.ConnectToPeerResponseMessage.error:type_name -> protowire.RPCError
-	30, // 90: protowire.SendRawTransactionResponseMessage.error:type_name -> protowire.RPCError
-	30, // 91: protowire.NotifyChainChangedResponseMessage.error:type_name -> protowire.RPCError
-	58, // 92: protowire.ChainChangedNotificationMessage.addedChainBlocks:type_name -> protowire.ChainChangedChainBlock
-	59, // 93: protowire.ChainChangedChainBlock.acceptedBlocks:type_name -> protowire.ChainChangedAcceptedBlock
-	62, // 94: protowire.GetBlockResponseMessage.blockVerboseData:type_name -> protowire.BlockVerboseData
-	30, // 95: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
-	0,  // 96: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
-	0,  // 97: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
-	0,  // 98: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
-	0,  // 99: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
-	98, // [98:100] is the sub-list for method output_type
-	96, // [96:98] is the sub-list for method input_type
-	96, // [96:96] is the sub-list for extension type_name
-	96, // [96:96] is the sub-list for extension extendee
-	0,  // [0:96] is the sub-list for field type_name
+	1,   // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
+	10,  // 1: protowire.KaspadMessage.block:type_name -> protowire.BlockMessage
+	5,   // 2: protowire.KaspadMessage.transaction:type_name -> protowire.TransactionMessage
+	13,  // 3: protowire.KaspadMessage.requestBlockLocator:type_name -> protowire.RequestBlockLocatorMessage
+	14,  // 4: protowire.KaspadMessage.blockLocator:type_name -> protowire.BlockLocatorMessage
+	4,   // 5: protowire.KaspadMessage.requestAddresses:type_name -> protowire.RequestAddressesMessage
+	15,  // 6: protowire.KaspadMessage.requestIBDBlocks:type_name -> protowire.RequestIBDBlocksMessage
+	16,  // 7: protowire.KaspadMessage.requestNextIBDBlocks:type_name -> protowire.RequestNextIBDBlocksMessage
+	17,  // 8: protowire.KaspadMessage.DoneIBDBlocks:type_name -> protowire.DoneIBDBlocksMessage
+	18,  // 9: protowire.KaspadMessage.requestRelayBlocks:type_name -> protowire.RequestRelayBlocksMessage
+	19,  // 10: protowire.KaspadMessage.requestSelectedTip:type_name -> protowire.RequestSelectedTipMessage
+	20,  // 11: protowire.KaspadMessage.requestTransactions:type_name -> protowire.RequestTransactionsMessage
+	10,  // 12: protowire.KaspadMessage.ibdBlock:type_name -> protowire.BlockMessage
+	22,  // 13: protowire.KaspadMessage.invRelayBlock:type_name -> protowire.InvRelayBlockMessage
+	23,  // 14: protowire.KaspadMessage.invTransactions:type_name -> protowire.InvTransactionsMessage
+	24,  // 15: protowire.KaspadMessage.ping:type_name -> protowire.PingMessage
+	25,  // 16: protowire.KaspadMessage.pong:type_name -> protowire.PongMessage
+	26,  // 17: protowire.KaspadMessage.selectedTip:type_name -> protowire.SelectedTipMessage
+	27,  // 18: protowire.KaspadMessage.verack:type_name -> protowire.VerackMessage
+	28,  // 19: protowire.KaspadMessage.version:type_name -> protowire.VersionMessage
+	21,  // 20: protowire.KaspadMessage.transactionNotFound:type_name -> protowire.TransactionNotFoundMessage
+	29,  // 21: protowire.KaspadMessage.reject:type_name -> protowire.RejectMessage
+	31,  // 22: protowire.KaspadMessage.getCurrentNetworkRequest:type_name -> protowire.GetCurrentNetworkRequestMessage
+	32,  // 23: protowire.KaspadMessage.getCurrentNetworkResponse:type_name -> protowire.GetCurrentNetworkResponseMessage
+	33,  // 24: protowire.KaspadMessage.submitBlockRequest:type_name -> protowire.SubmitBlockRequestMessage
+	34,  // 25: protowire.KaspadMessage.submitBlockResponse:type_name -> protowire.SubmitBlockResponseMessage
+	35,  // 26: protowire.KaspadMessage.getBlockTemplateRequest:type_name -> protowire.GetBlockTemplateRequestMessage
+	36,  // 27: protowire.KaspadMessage.getBlockTemplateResponse:type_name -> protowire.GetBlockTemplateResponseMessage
+	38,  // 28: protowire.KaspadMessage.notifyBlockAddedRequest:type_name -> protowire.NotifyBlockAddedRequestMessage
+	39,  // 29: protowire.KaspadMessage.notifyBlockAddedResponse:type_name -> protowire.NotifyBlockAddedResponseMessage
+	40,  // 30: protowire.KaspadMessage.blockAddedNotification:type_name -> protowire.BlockAddedNotificationMessage
+	41,  // 31: protowire.KaspadMessage.getPeerAddressesRequest:type_name -> protowire.GetPeerAddressesRequestMessage
+	42,  // 32: protowire.KaspadMessage.getPeerAddressesResponse:type_name -> protowire.GetPeerAddressesResponseMessage
+	44,  // 33: protowire.KaspadMessage.getSelectedTipHashRequest:type_name -> protowire.GetSelectedTipHashRequestMessage
+	45,  // 34: protowire.KaspadMessage.getSelectedTipHashResponse:type_name -> protowire.GetSelectedTipHashResponseMessage
+	46,  // 35: protowire.KaspadMessage.getMempoolEntryRequest:type_name -> protowire.GetMempoolEntryRequestMessage
+	47,  // 36: protowire.KaspadMessage.getMempoolEntryResponse:type_name -> protowire.GetMempoolEntryResponseMessage
+	48,  // 37: protowire.KaspadMessage.getConnectedPeerInfoRequest:type_name -> protowire.GetConnectedPeerInfoRequestMessage
+	49,  // 38: protowire.KaspadMessage.getConnectedPeerInfoResponse:type_name -> protowire.GetConnectedPeerInfoResponseMessage
+	51,  // 39: protowire.KaspadMessage.connectToPeerRequest:type_name -> protowire.ConnectToPeerRequestMessage
+	52,  // 40: protowire.KaspadMessage.connectToPeerResponse:type_name -> protowire.ConnectToPeerResponseMessage
+	53,  // 41: protowire.KaspadMessage.sendRawTransactionRequest:type_name -> protowire.SendRawTransactionRequestMessage
+	54,  // 42: protowire.KaspadMessage.sendRawTransactionResponse:type_name -> protowire.SendRawTransactionResponseMessage
+	55,  // 43: protowire.KaspadMessage.notifyChainChangedRequest:type_name -> protowire.NotifyChainChangedRequestMessage
+	56,  // 44: protowire.KaspadMessage.notifyChainChangedResponse:type_name -> protowire.NotifyChainChangedResponseMessage
+	57,  // 45: protowire.KaspadMessage.chainChangedNotification:type_name -> protowire.ChainChangedNotificationMessage
+	60,  // 46: protowire.KaspadMessage.getBlockRequest:type_name -> protowire.GetBlockRequestMessage
+	61,  // 47: protowire.KaspadMessage.getBlockResponse:type_name -> protowire.GetBlockResponseMessage
+	3,   // 48: protowire.AddressesMessage.subnetworkID:type_name -> protowire.SubnetworkID
+	2,   // 49: protowire.AddressesMessage.addressList:type_name -> protowire.NetAddress
+	3,   // 50: protowire.RequestAddressesMessage.subnetworkID:type_name -> protowire.SubnetworkID
+	6,   // 51: protowire.TransactionMessage.inputs:type_name -> protowire.TransactionInput
+	9,   // 52: protowire.TransactionMessage.outputs:type_name -> protowire.TransactionOutput
+	3,   // 53: protowire.TransactionMessage.subnetworkID:type_name -> protowire.SubnetworkID
+	12,  // 54: protowire.TransactionMessage.payloadHash:type_name -> protowire.Hash
+	7,   // 55: protowire.TransactionInput.PreviousOutpoint:type_name -> protowire.Outpoint
+	8,   // 56: protowire.Outpoint.transactionID:type_name -> protowire.TransactionID
+	11,  // 57: protowire.BlockMessage.header:type_name -> protowire.BlockHeader
+	5,   // 58: protowire.BlockMessage.transactions:type_name -> protowire.TransactionMessage
+	12,  // 59: protowire.BlockHeader.parentHashes:type_name -> protowire.Hash
+	12,  // 60: protowire.BlockHeader.hashMerkleRoot:type_name -> protowire.Hash
+	12,  // 61: protowire.BlockHeader.acceptedIDMerkleRoot:type_name -> protowire.Hash
+	12,  // 62: protowire.BlockHeader.utxoCommitment:type_name -> protowire.Hash
+	12,  // 63: protowire.RequestBlockLocatorMessage.lowHash:type_name -> protowire.Hash
+	12,  // 64: protowire.RequestBlockLocatorMessage.highHash:type_name -> protowire.Hash
+	12,  // 65: protowire.BlockLocatorMessage.hashes:type_name -> protowire.Hash
+	12,  // 66: protowire.RequestIBDBlocksMessage.lowHash:type_name -> protowire.Hash
+	12,  // 67: protowire.RequestIBDBlocksMessage.highHash:type_name -> protowire.Hash
+	12,  // 68: protowire.RequestRelayBlocksMessage.hashes:type_name -> protowire.Hash
+	8,   // 69: protowire.RequestTransactionsMessage.ids:type_name -> protowire.TransactionID
+	8,   // 70: protowire.TransactionNotFoundMessage.id:type_name -> protowire.TransactionID
+	12,  // 71: protowire.InvRelayBlockMessage.hash:type_name -> protowire.Hash
+	8,   // 72: protowire.InvTransactionsMessage.ids:type_name -> protowire.TransactionID
+	12,  // 73: protowire.SelectedTipMessage.selectedTipHash:type_name -> protowire.Hash
+	2,   // 74: protowire.VersionMessage.address:type_name -> protowire.NetAddress
+	12,  // 75: protowire.VersionMessage.selectedTipHash:type_name -> protowire.Hash
+	3,   // 76: protowire.VersionMessage.subnetworkID:type_name -> protowire.SubnetworkID
+	30,  // 77: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 78: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
+	37,  // 79: protowire.GetBlockTemplateResponseMessage.transactions:type_name -> protowire.GetBlockTemplateTransactionMessage
+	30,  // 80: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 81: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
+	10,  // 82: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.BlockMessage
+	43,  // 83: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
+	30,  // 84: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 85: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 86: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
+	50,  // 87: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
+	30,  // 88: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 89: protowire.ConnectToPeerResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 90: protowire.SendRawTransactionResponseMessage.error:type_name -> protowire.RPCError
+	30,  // 91: protowire.NotifyChainChangedResponseMessage.error:type_name -> protowire.RPCError
+	58,  // 92: protowire.ChainChangedNotificationMessage.addedChainBlocks:type_name -> protowire.ChainChangedChainBlock
+	59,  // 93: protowire.ChainChangedChainBlock.acceptedBlocks:type_name -> protowire.ChainChangedAcceptedBlock
+	62,  // 94: protowire.GetBlockResponseMessage.blockVerboseData:type_name -> protowire.BlockVerboseData
+	30,  // 95: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
+	63,  // 96: protowire.BlockVerboseData.transactionVerboseData:type_name -> protowire.TransactionVerboseData
+	64,  // 97: protowire.TransactionVerboseData.vin:type_name -> protowire.Vin
+	66,  // 98: protowire.TransactionVerboseData.vout:type_name -> protowire.Vout
+	65,  // 99: protowire.Vin.scriptSig:type_name -> protowire.ScriptSig
+	67,  // 100: protowire.Vout.scriptPubKey:type_name -> protowire.ScriptPubKeyResult
+	0,   // 101: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 102: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 103: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
+	0,   // 104: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
+	103, // [103:105] is the sub-list for method output_type
+	101, // [101:103] is the sub-list for method input_type
+	101, // [101:101] is the sub-list for extension type_name
+	101, // [101:101] is the sub-list for extension extendee
+	0,   // [0:101] is the sub-list for field type_name
 }
 
 func init() { file_messages_proto_init() }
@@ -5896,6 +6602,66 @@ func file_messages_proto_init() {
 				return nil
 			}
 		}
+		file_messages_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TransactionVerboseData); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_messages_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Vin); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_messages_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ScriptSig); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_messages_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Vout); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_messages_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ScriptPubKeyResult); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_messages_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*KaspadMessage_Addresses)(nil),
@@ -5953,7 +6719,7 @@ func file_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_messages_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   63,
+			NumMessages:   68,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
