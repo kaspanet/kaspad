@@ -380,15 +380,15 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetBlockHexRequestMessage:
-		payload := new(KaspadMessage_GetBlockHexRequest)
+	case *appmessage.GetBlockRequestMessage:
+		payload := new(KaspadMessage_GetBlockRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetBlockHexResponseMessage:
-		payload := new(KaspadMessage_GetBlockHexResponse)
+	case *appmessage.GetBlockResponseMessage:
+		payload := new(KaspadMessage_GetBlockResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

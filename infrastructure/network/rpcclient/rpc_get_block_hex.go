@@ -2,18 +2,18 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-func (c *RPCClient) GetBlockHex(hash string, subnetworkID string) (*appmessage.GetBlockHexResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockHexRequestMessage(hash, subnetworkID))
+func (c *RPCClient) GetBlock(hash string, subnetworkID string, includeBlockHex bool, includeBlockVerboseData bool) (*appmessage.GetBlockResponseMessage, error) {
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockRequestMessage(hash, subnetworkID, includeBlockHex, includeBlockVerboseData))
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.route(appmessage.CmdGetBlockHexResponseMessage).DequeueWithTimeout(c.timeout)
+	response, err := c.route(appmessage.CmdGetBlockResponseMessage).DequeueWithTimeout(c.timeout)
 	if err != nil {
 		return nil, err
 	}
-	getBlockHexResponse := response.(*appmessage.GetBlockHexResponseMessage)
-	if getBlockHexResponse.Error != nil {
-		return nil, c.convertRPCError(getBlockHexResponse.Error)
+	GetBlockResponse := response.(*appmessage.GetBlockResponseMessage)
+	if GetBlockResponse.Error != nil {
+		return nil, c.convertRPCError(GetBlockResponse.Error)
 	}
-	return getBlockHexResponse, nil
+	return GetBlockResponse, nil
 }

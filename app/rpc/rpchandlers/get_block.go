@@ -7,10 +7,14 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/pointers"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"math/big"
 	"strconv"
 )
 
@@ -183,15 +187,157 @@ func buildBlockVerboseData(context *rpccontext.Context, block *util.Block,
 		transactions := block.Transactions()
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(transactions))
 		for i, tx := range transactions {
-			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
+			data, err := buildTransactionVerboseData(params, tx.MsgTx(), tx.ID().String(),
 				&blockHeader, hash.String(), nil, false)
 			if err != nil {
 				return nil, err
 			}
-			transactionVerboseData[i] = *rawTxn
+			transactionVerboseData[i] = data
 		}
 		result.TransactionVerboseData = transactionVerboseData
 	}
 
 	return result, nil
+}
+
+// getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
+// minimum difficulty using the passed bits field from the header of a block.
+func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
+	// The minimum difficulty is the max possible proof-of-work limit bits
+	// converted back to a number. Note this is not the same as the proof of
+	// work limit directly because the block difficulty is encoded in a block
+	// with the compact form which loses precision.
+	target := util.CompactToBig(bits)
+
+	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
+	outString := difficulty.FloatString(8)
+	diff, err := strconv.ParseFloat(outString, 64)
+	if err != nil {
+		log.Errorf("Cannot get difficulty: %s", err)
+		return 0
+	}
+	return diff
+}
+
+func buildTransactionVerboseData(dagParams *dagconfig.Params, mtx *appmessage.MsgTx,
+	txID string, blkHeader *appmessage.BlockHeader, blkHash string,
+	acceptingBlock *daghash.Hash, isInMempool bool) (*appmessage.TransactionVerboseData, error) {
+
+	mtxHex, err := msgTxToHex(mtx)
+	if err != nil {
+		return nil, err
+	}
+
+	var payloadHash string
+	if mtx.PayloadHash != nil {
+		payloadHash = mtx.PayloadHash.String()
+	}
+
+	txReply := &appmessage.TransactionVerboseData{
+		Hex:          mtxHex,
+		TxID:         txID,
+		Hash:         mtx.TxHash().String(),
+		Size:         int32(mtx.SerializeSize()),
+		Vin:          buildVinList(mtx),
+		Vout:         createVoutList(mtx, dagParams, nil),
+		Version:      mtx.Version,
+		LockTime:     mtx.LockTime,
+		SubnetworkID: mtx.SubnetworkID.String(),
+		Gas:          mtx.Gas,
+		PayloadHash:  payloadHash,
+		Payload:      hex.EncodeToString(mtx.Payload),
+	}
+
+	if blkHeader != nil {
+		txReply.Time = uint64(blkHeader.Timestamp.UnixMilliseconds())
+		txReply.BlockTime = uint64(blkHeader.Timestamp.UnixMilliseconds())
+		txReply.BlockHash = blkHash
+	}
+
+	txReply.IsInMempool = isInMempool
+	if acceptingBlock != nil {
+		txReply.AcceptedBy = acceptingBlock.String()
+	}
+
+	return txReply, nil
+}
+
+// msgTxToHex serializes a transaction using the latest protocol version and
+// returns a hex-encoded string of the result.
+func msgTxToHex(msgTx *appmessage.MsgTx) (string, error) {
+	var buf bytes.Buffer
+	err := msgTx.KaspaEncode(&buf, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(buf.Bytes()), nil
+}
+
+func buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
+	vinList := make([]*appmessage.Vin, len(mtx.TxIn))
+	for i, txIn := range mtx.TxIn {
+		// The disassembled string will contain [error] inline
+		// if the script doesn't fully parse, so ignore the
+		// error here.
+		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
+
+		vinEntry := vinList[i]
+		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
+		vinEntry.Vout = txIn.PreviousOutpoint.Index
+		vinEntry.Sequence = txIn.Sequence
+		vinEntry.ScriptSig = &appmessage.ScriptSig{
+			Asm: disbuf,
+			Hex: hex.EncodeToString(txIn.SignatureScript),
+		}
+	}
+
+	return vinList
+}
+
+// createVoutList returns a slice of JSON objects for the outputs of the passed
+// transaction.
+func createVoutList(mtx *appmessage.MsgTx, dagParams *dagconfig.Params, filterAddrMap map[string]struct{}) []*appmessage.Vout {
+	voutList := make([]*appmessage.Vout, 0, len(mtx.TxOut))
+	for i, v := range mtx.TxOut {
+		// The disassembled string will contain [error] inline if the
+		// script doesn't fully parse, so ignore the error here.
+		disbuf, _ := txscript.DisasmString(v.ScriptPubKey)
+
+		// Ignore the error here since an error means the script
+		// couldn't parse and there is no additional information about
+		// it anyways.
+		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
+			v.ScriptPubKey, dagParams)
+
+		// Encode the addresses while checking if the address passes the
+		// filter when needed.
+		passesFilter := len(filterAddrMap) == 0
+		var encodedAddr string
+		if addr != nil {
+			encodedAddr = *pointers.String(addr.EncodeAddress())
+
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[encodedAddr]; exists {
+				passesFilter = true
+			}
+		}
+
+		if !passesFilter {
+			continue
+		}
+
+		vout := &appmessage.Vout{}
+		vout.N = uint32(i)
+		vout.Value = v.Value
+		vout.ScriptPubKey.Address = encodedAddr
+		vout.ScriptPubKey.Asm = disbuf
+		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
+		vout.ScriptPubKey.Type = scriptClass.String()
+
+		voutList = append(voutList, vout)
+	}
+
+	return voutList
 }

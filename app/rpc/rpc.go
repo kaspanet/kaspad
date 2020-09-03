@@ -23,7 +23,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdConnectToPeerRequestMessage:        rpchandlers.HandleConnectToPeer,
 	appmessage.CmdSendRawTransactionRequestMessage:   rpchandlers.HandleSendRawTransaction,
 	appmessage.CmdNotifyChainChangedRequestMessage:   rpchandlers.HandleNotifyChainChanged,
-	appmessage.CmdGetBlockHexRequestMessage:          rpchandlers.HandleGetBlock,
+	appmessage.CmdGetBlockRequestMessage:             rpchandlers.HandleGetBlock,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
