@@ -144,7 +144,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 
 func (a *App) maybeSeedFromDNS() {
 	if !a.cfg.DisableDNSSeed {
-		if a.cfg.Devnet {
+		if a.cfg.GRPCSeed != "" {
 			dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 				func(addresses []*appmessage.NetAddress) {
 					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
