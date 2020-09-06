@@ -181,7 +181,7 @@ func (ctx *Context) buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
 		// error here.
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
 
-		vinEntry := vinList[i]
+		vinEntry := &appmessage.Vin{}
 		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
 		vinEntry.Vout = txIn.PreviousOutpoint.Index
 		vinEntry.Sequence = txIn.Sequence
@@ -189,7 +189,7 @@ func (ctx *Context) buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
-		vinList = append(vinList, vinEntry)
+		vinList[i] = vinEntry
 	}
 
 	return vinList
@@ -198,7 +198,7 @@ func (ctx *Context) buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
 func (ctx *Context) createVoutList(mtx *appmessage.MsgTx, filterAddrMap map[string]struct{}) []*appmessage.Vout {
-	voutList := make([]*appmessage.Vout, 0, len(mtx.TxOut))
+	voutList := make([]*appmessage.Vout, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
@@ -237,7 +237,7 @@ func (ctx *Context) createVoutList(mtx *appmessage.MsgTx, filterAddrMap map[stri
 			Hex:     hex.EncodeToString(v.ScriptPubKey),
 			Type:    scriptClass.String(),
 		}
-		voutList = append(voutList, vout)
+		voutList[i] = vout
 	}
 
 	return voutList
