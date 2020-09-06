@@ -241,6 +241,11 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 		return nil, err
 	}
 
+	err = dag.checkBlockHasNoChainedTransactions(block, newNode, flags)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := dag.validateGasLimit(block); err != nil {
 		return nil, err
 	}

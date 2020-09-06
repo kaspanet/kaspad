@@ -156,8 +156,8 @@ func TestChainedTransactions(t *testing.T) {
 	} else {
 		var ruleErr blockdag.RuleError
 		if ok := errors.As(err, &ruleErr); ok {
-			if ruleErr.ErrorCode != blockdag.ErrMissingTxOut {
-				t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrMissingTxOut, ruleErr.ErrorCode)
+			if ruleErr.ErrorCode != blockdag.ErrChainedTransactions {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrChainedTransactions, ruleErr.ErrorCode)
 			}
 		} else {
 			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
