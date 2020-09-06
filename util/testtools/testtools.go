@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/util/daghash"
 
 	"github.com/kaspanet/kaspad/domain/blockdag"
@@ -20,7 +19,7 @@ import (
 // RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
 func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
 	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*appmessage.MsgTx) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, parentHashes, txs, false)
+		msgBlock, err := blockdag.PrepareBlockForTest(dag, parentHashes, txs)
 		if err != nil {
 			return nil, err
 		}

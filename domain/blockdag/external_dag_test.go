@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -89,7 +88,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil, false)
+	block1, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -137,7 +136,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{chainedTxIn}, []*appmessage.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{tx}, false)
+	block2, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{tx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -183,7 +182,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	nonChainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonChainedTxIn}, []*appmessage.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{nonChainedTx}, false)
+	block3, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{nonChainedTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -297,7 +296,7 @@ func TestGasLimit(t *testing.T) {
 
 	cbTxs := []*appmessage.MsgTx{}
 	for i := 0; i < 4; i++ {
-		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), nil, false)
+		fundsBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), nil)
 		if err != nil {
 			t.Fatalf("PrepareBlockForTest: %v", err)
 		}
@@ -349,7 +348,7 @@ func TestGasLimit(t *testing.T) {
 	tx2 := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{tx2In}, []*appmessage.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, tx2}, true)
+	overLimitBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, tx2})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -384,7 +383,7 @@ func TestGasLimit(t *testing.T) {
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, overflowGasTx}, true)
+	overflowGasBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, overflowGasTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -418,7 +417,7 @@ func TestGasLimit(t *testing.T) {
 	nonExistentSubnetworkTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonExistentSubnetworkTxIn},
 		[]*appmessage.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
+	nonExistentSubnetworkBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -439,7 +438,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1}, true)
+	validBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
