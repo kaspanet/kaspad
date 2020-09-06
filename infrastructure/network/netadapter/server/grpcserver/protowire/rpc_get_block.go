@@ -51,7 +51,7 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 		err = &RPCError{Message: message.Error.Message}
 	}
 	var blockVerboseData *BlockVerboseData
-	if x.GetBlockResponse.BlockVerboseData != nil {
+	if message.BlockVerboseData != nil {
 		wireBlockVerboseData := &BlockVerboseData{}
 		err := wireBlockVerboseData.fromAppMessage(message.BlockVerboseData)
 		if err != nil {

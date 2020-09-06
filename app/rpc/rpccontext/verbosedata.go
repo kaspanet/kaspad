@@ -75,15 +75,14 @@ func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionV
 		AcceptedBlockHashes:  daghash.Strings(acceptedBlockHashes),
 	}
 
-	if includeTransactionVerboseData {
-		transactions := block.Transactions()
-		txIDs := make([]string, len(transactions))
-		for i, tx := range transactions {
-			txIDs[i] = tx.ID().String()
-		}
+	transactions := block.Transactions()
+	txIDs := make([]string, len(transactions))
+	for i, tx := range transactions {
+		txIDs[i] = tx.ID().String()
+	}
+	result.TxIDs = txIDs
 
-		result.TxIDs = txIDs
-	} else {
+	if includeTransactionVerboseData {
 		transactions := block.Transactions()
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(transactions))
 		for i, tx := range transactions {
@@ -190,6 +189,7 @@ func (ctx *Context) buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
+		vinList = append(vinList, vinEntry)
 	}
 
 	return vinList
@@ -231,11 +231,12 @@ func (ctx *Context) createVoutList(mtx *appmessage.MsgTx, filterAddrMap map[stri
 		vout := &appmessage.Vout{}
 		vout.N = uint32(i)
 		vout.Value = v.Value
-		vout.ScriptPubKey.Address = encodedAddr
-		vout.ScriptPubKey.Asm = disbuf
-		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
-		vout.ScriptPubKey.Type = scriptClass.String()
-
+		vout.ScriptPubKey = &appmessage.ScriptPubKeyResult{
+			Address: encodedAddr,
+			Asm:     disbuf,
+			Hex:     hex.EncodeToString(v.ScriptPubKey),
+			Type:    scriptClass.String(),
+		}
 		voutList = append(voutList, vout)
 	}
 
