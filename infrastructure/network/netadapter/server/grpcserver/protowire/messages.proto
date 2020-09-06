@@ -56,6 +56,8 @@ message KaspadMessage {
     GetBlockResponseMessage getBlockResponse = 1026;
     GetSubnetworkRequestMessage getSubnetworkRequest = 1027;
     GetSubnetworkResponseMessage getSubnetworkResponse = 1028;
+    GetChainFromBlockRequestMessage getChainFromBlockRequest = 1029;
+    GetChainFromBlockResponseMessage getChainFromBlockResponse = 1030;
   }
 }
 
@@ -505,6 +507,18 @@ message GetSubnetworkRequestMessage{
 message GetSubnetworkResponseMessage{
   uint64 gasLimit = 1;
   RPCError error = 2;
+}
+
+message GetChainFromBlockRequestMessage{
+  string startHash = 1;
+  bool includeBlockVerboseData = 2;
+}
+
+message GetChainFromBlockResponseMessage{
+  repeated string removedChainBlockHashes = 1;
+  repeated ChainChangedChainBlock addedChainBlocks = 2;
+  repeated BlockVerboseData blockVerboseData = 3;
+  RPCError error = 4;
 }
 
 service RPC {
