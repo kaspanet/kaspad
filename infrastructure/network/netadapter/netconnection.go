@@ -45,10 +45,6 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 		netConnection.invalidMessageChan <- err
 	})
 
-	router.SetOnRouteCapacityReachedHandler(func() {
-		netConnection.Disconnect()
-	})
-
 	routerInitializer(router, netConnection)
 
 	return netConnection
