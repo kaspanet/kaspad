@@ -54,6 +54,8 @@ message KaspadMessage {
     ChainChangedNotificationMessage chainChangedNotification = 1024;
     GetBlockRequestMessage getBlockRequest = 1025;
     GetBlockResponseMessage getBlockResponse = 1026;
+    GetSubnetworkRequestMessage getSubnetworkRequest = 1027;
+    GetSubnetworkResponseMessage getSubnetworkResponse = 1028;
   }
 }
 
@@ -494,6 +496,15 @@ message ScriptPubKeyResult{
   string hex = 2;
   string type = 3;
   string address = 4;
+}
+
+message GetSubnetworkRequestMessage{
+  string subnetworkId = 1;
+}
+
+message GetSubnetworkResponseMessage{
+  uint64 gasLimit = 1;
+  RPCError error = 2;
 }
 
 service RPC {

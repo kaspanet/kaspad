@@ -81,6 +81,8 @@ const (
 	CmdChainChangedNotificationMessage
 	CmdGetBlockRequestMessage
 	CmdGetBlockResponseMessage
+	CmdGetSubnetworkRequestMessage
+	CmdGetSubnetworkResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -138,6 +140,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdChainChangedNotificationMessage:     "ChainChangedNotification",
 	CmdGetBlockRequestMessage:              "GetBlockRequest",
 	CmdGetBlockResponseMessage:             "GetBlockResponse",
+	CmdGetSubnetworkRequestMessage:         "GetSubnetworkRequest",
+	CmdGetSubnetworkResponseMessage:        "GetSubnetworkResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
