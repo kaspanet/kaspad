@@ -20,8 +20,6 @@ type Router struct {
 	incomingRoutesLock sync.RWMutex
 
 	outgoingRoute *Route
-
-	onRouteCapacityReachedHandler OnRouteCapacityReachedHandler
 }
 
 // NewRouter creates a new empty router
@@ -30,16 +28,7 @@ func NewRouter() *Router {
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
 		outgoingRoute:  newRouteWithCapacity(outgoingRouteMaxMessages),
 	}
-	router.outgoingRoute.setOnCapacityReachedHandler(func() {
-		router.onRouteCapacityReachedHandler()
-	})
 	return &router
-}
-
-// SetOnRouteCapacityReachedHandler sets the onRouteCapacityReachedHandler
-// function for this router
-func (r *Router) SetOnRouteCapacityReachedHandler(onRouteCapacityReachedHandler OnRouteCapacityReachedHandler) {
-	r.onRouteCapacityReachedHandler = onRouteCapacityReachedHandler
 }
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
@@ -52,9 +41,6 @@ func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Ro
 		}
 		r.setIncomingRoute(messageType, route)
 	}
-	route.setOnCapacityReachedHandler(func() {
-		r.onRouteCapacityReachedHandler()
-	})
 	return route, nil
 }
 
