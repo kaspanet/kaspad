@@ -46,7 +46,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	// Create a block in order to fund later transactions
-	fundsBlock, err := buildNextBlock(dag.VirtualParentsHashes(), []*appmessage.MsgTx{})
+	fundsBlock, err := buildNextBlock(dag.VirtualParentHashes(), []*appmessage.MsgTx{})
 	if err != nil {
 		return nil, errors.Errorf("could not build funds block: %s", err)
 	}

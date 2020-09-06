@@ -364,3 +364,12 @@ func (node *blockNode) checkMergeSizeLimit() error {
 
 	return nil
 }
+
+func (node *blockNode) hasValidChildren() bool {
+	for child := range node.children {
+		if node.dag.index.BlockNodeStatus(child) == statusValid {
+			return true
+		}
+	}
+	return false
+}

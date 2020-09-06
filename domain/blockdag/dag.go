@@ -314,7 +314,12 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.tips.hashes()
 }
 
-func (dag *BlockDAG) VirtualParentsHashes() []*daghash.Hash {
+// ValidTipHashes returns the hashes of the DAG's tips
+func (dag *BlockDAG) ValidTipHashes() []*daghash.Hash {
+	return dag.validTips.hashes()
+}
+
+func (dag *BlockDAG) VirtualParentHashes() []*daghash.Hash {
 	return dag.virtual.parents.hashes()
 }
 
@@ -548,19 +553,6 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
-func (dag *BlockDAG) addValidTipIfHasNoValidChildren(node *blockNode) {
-	hasValidChildren := false
-	for child := range node.children {
-		if dag.index.BlockNodeStatus(child) == statusValid {
-			hasValidChildren = true
-			break
-		}
-	}
-	if !hasValidChildren {
-		dag.addValidTip(node)
-	}
-}
-
 func (dag *BlockDAG) addValidTip(newValidTip *blockNode) {
 	newValidTips := dag.validTips.clone()
 	for validTip := range dag.validTips {
@@ -674,8 +666,10 @@ func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (
 
 func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
 	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LocalSubnetworkID: dag.subnetworkID,
+		TipHashes:            dag.TipHashes(),
+		ValidTipHashes:       dag.ValidTipHashes(),
+		VirtualParentsHashes: dag.VirtualParentHashes(),
+		LocalSubnetworkID:    dag.subnetworkID,
 	}
 	return saveDAGState(dbTx, state)
 }

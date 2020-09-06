@@ -280,7 +280,7 @@ func handleGetBlockTemplateProposal(s *Server, request *model.TemplateRequest) (
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected parent blocks.
-	expectedParentHashes := s.dag.VirtualParentsHashes()
+	expectedParentHashes := s.dag.VirtualParentHashes()
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if !daghash.AreEqual(expectedParentHashes, parentHashes) {
 		return "bad-parentblk", nil
@@ -521,7 +521,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, payAddr util.Address) 
 	// generated.
 	var msgBlock *appmessage.MsgBlock
 	var targetDifficulty string
-	tipHashes := s.dag.VirtualParentsHashes()
+	tipHashes := s.dag.VirtualParentHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||

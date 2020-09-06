@@ -297,7 +297,7 @@ func TestGasLimit(t *testing.T) {
 
 	cbTxs := []*appmessage.MsgTx{}
 	for i := 0; i < 4; i++ {
-		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentsHashes(), nil, false)
+		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), nil, false)
 		if err != nil {
 			t.Fatalf("PrepareBlockForTest: %v", err)
 		}
@@ -349,7 +349,7 @@ func TestGasLimit(t *testing.T) {
 	tx2 := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{tx2In}, []*appmessage.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentsHashes(), []*appmessage.MsgTx{tx1, tx2}, true)
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, tx2}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -384,7 +384,7 @@ func TestGasLimit(t *testing.T) {
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentsHashes(), []*appmessage.MsgTx{tx1, overflowGasTx}, true)
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -418,7 +418,7 @@ func TestGasLimit(t *testing.T) {
 	nonExistentSubnetworkTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonExistentSubnetworkTxIn},
 		[]*appmessage.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentsHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
+	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -439,7 +439,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentsHashes(), []*appmessage.MsgTx{tx1}, true)
+	validBlock, err := mining.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

@@ -44,7 +44,7 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*appmessage.MsgBlo
 
 	msgBlock.Header = appmessage.BlockHeader{
 		Version:              blockVersion,
-		ParentHashes:         dag.VirtualParentsHashes(),
+		ParentHashes:         dag.VirtualParentHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       (*daghash.Hash)(multiset.Finalize()),

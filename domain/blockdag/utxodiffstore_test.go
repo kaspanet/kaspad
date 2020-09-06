@@ -113,7 +113,7 @@ func TestClearOldEntries(t *testing.T) {
 	// Add 10 blocks
 	blockNodes := make([]*blockNode, 10)
 	for i := 0; i < 10; i++ {
-		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentsHashes(), nil)
+		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentHashes(), nil)
 
 		node, ok := dag.index.LookupNode(processedBlock.BlockHash())
 		if !ok {
@@ -132,7 +132,7 @@ func TestClearOldEntries(t *testing.T) {
 
 	// Add 10 more blocks on top of the others
 	for i := 0; i < 10; i++ {
-		PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentsHashes(), nil)
+		PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentHashes(), nil)
 	}
 
 	// Make sure that all the old nodes no longer exist in the loaded set
