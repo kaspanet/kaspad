@@ -22,8 +22,8 @@ var (
 	// ErrRouteClosed indicates that a route was closed while reading/writing.
 	ErrRouteClosed = errors.New("route is closed")
 
-	// ErrRouteCapacityReached indicates that route's capacity has reached
-	ErrRouteCapacityReached = protocolerrors.New(false, "route capacity has reached")
+	// ErrRouteCapacityReached indicates that route's capacity has been reached
+	ErrRouteCapacityReached = protocolerrors.New(false, "route capacity has been reached")
 )
 
 // Route represents an incoming or outgoing Router route
