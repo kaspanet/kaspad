@@ -647,5 +647,5 @@ func init() {
 	MustRegisterCommand("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
 	MustRegisterCommand("version", (*VersionCmd)(nil), flags)
 	MustRegisterCommand("getFinalityConflicts", (*GetFinalityConflictsCmd)(nil), flags)
-	MustRegisterCommand("resolveFinalityConflict", (*ResolveFinalityConflictCmd)(nil), flags)
+	MustRegisterCommand("resolveFinalityConflicts", (*ResolveFinalityConflictCmd)(nil), flags)
 }
