@@ -16,7 +16,7 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 	return CmdGetBlockRequestMessage
 }
 
-// GetBlockRequestMessage returns a instance of the message
+// NewGetBlockRequestMessage returns a instance of the message
 func NewGetBlockRequestMessage(hash string, subnetworkID string, includeBlockHex bool,
 	includeBlockVerboseData bool, includeTransactionVerboseData bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
@@ -43,11 +43,12 @@ func (msg *GetBlockResponseMessage) Command() MessageCommand {
 	return CmdGetBlockResponseMessage
 }
 
-// GetBlockResponseMessage returns a instance of the message
+// NewGetBlockResponseMessage returns a instance of the message
 func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 	return &GetBlockResponseMessage{}
 }
 
+// BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
 	Confirmations          uint64
@@ -71,6 +72,7 @@ type BlockVerboseData struct {
 	AcceptedBlockHashes    []string
 }
 
+// TransactionVerboseData holds verbose data about a transaction
 type TransactionVerboseData struct {
 	Hex          string
 	TxID         string
@@ -91,6 +93,7 @@ type TransactionVerboseData struct {
 	BlockTime    uint64
 }
 
+// Vin holds data about a transaction input
 type Vin struct {
 	TxID      string
 	Vout      uint32
@@ -98,17 +101,20 @@ type Vin struct {
 	Sequence  uint64
 }
 
+// ScriptSig holds data about a script signature
 type ScriptSig struct {
 	Asm string
 	Hex string
 }
 
+// Vout holds data about a transaction output
 type Vout struct {
 	Value        uint64
 	N            uint32
 	ScriptPubKey *ScriptPubKeyResult
 }
 
+// ScriptPubKeyResult holds data about a script public key
 type ScriptPubKeyResult struct {
 	Asm     string
 	Hex     string

@@ -12,7 +12,7 @@ func (msg *GetMempoolEntryRequestMessage) Command() MessageCommand {
 	return CmdGetMempoolEntryRequestMessage
 }
 
-// GetMempoolEntryRequestMessage returns a instance of the message
+// NewGetMempoolEntryRequestMessage returns a instance of the message
 func NewGetMempoolEntryRequestMessage(txID string) *GetMempoolEntryRequestMessage {
 	return &GetMempoolEntryRequestMessage{TxID: txID}
 }
@@ -29,7 +29,7 @@ func (msg *GetMempoolEntryResponseMessage) Command() MessageCommand {
 	return CmdGetMempoolEntryResponseMessage
 }
 
-// GetMempoolEntryResponseMessage returns a instance of the message
+// NewGetMempoolEntryResponseMessage returns a instance of the message
 func NewGetMempoolEntryResponseMessage() *GetMempoolEntryResponseMessage {
 	return &GetMempoolEntryResponseMessage{}
 }

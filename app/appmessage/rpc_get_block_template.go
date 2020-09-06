@@ -13,7 +13,7 @@ func (msg *GetBlockTemplateRequestMessage) Command() MessageCommand {
 	return CmdGetBlockTemplateRequestMessage
 }
 
-// GetBlockTemplateRequestMessage returns a instance of the message
+// NewGetBlockTemplateRequestMessage returns a instance of the message
 func NewGetBlockTemplateRequestMessage(payAddress string, longPollID string) *GetBlockTemplateRequestMessage {
 	return &GetBlockTemplateRequestMessage{
 		PayAddress: payAddress,
@@ -51,7 +51,7 @@ func (msg *GetBlockTemplateResponseMessage) Command() MessageCommand {
 	return CmdGetBlockTemplateResponseMessage
 }
 
-// GetBlockTemplateResponseMessage returns a instance of the message
+// NewGetBlockTemplateResponseMessage returns a instance of the message
 func NewGetBlockTemplateResponseMessage() *GetBlockTemplateResponseMessage {
 	return &GetBlockTemplateResponseMessage{}
 }
@@ -72,7 +72,7 @@ func (msg *GetBlockTemplateTransactionMessage) Command() MessageCommand {
 	return CmdGetBlockTemplateTransactionMessage
 }
 
-// GetBlockTemplateTransactionMessage returns a instance of the message
+// NewGetBlockTemplateTransactionMessage returns a instance of the message
 func NewGetBlockTemplateTransactionMessage() *GetBlockTemplateTransactionMessage {
 	return &GetBlockTemplateTransactionMessage{}
 }

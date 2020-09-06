@@ -11,7 +11,7 @@ func (msg *GetCurrentNetworkRequestMessage) Command() MessageCommand {
 	return CmdGetCurrentNetworkRequestMessage
 }
 
-// GetCurrentNetworkRequestMessage returns a instance of the message
+// NewGetCurrentNetworkRequestMessage returns a instance of the message
 func NewGetCurrentNetworkRequestMessage() *GetCurrentNetworkRequestMessage {
 	return &GetCurrentNetworkRequestMessage{}
 }
@@ -30,7 +30,7 @@ func (msg *GetCurrentNetworkResponseMessage) Command() MessageCommand {
 	return CmdGetCurrentNetworkResponseMessage
 }
 
-// GetCurrentNetworkResponseMessage returns a instance of the message
+// NewGetCurrentNetworkResponseMessage returns a instance of the message
 func NewGetCurrentNetworkResponseMessage(currentNetwork string) *GetCurrentNetworkResponseMessage {
 	return &GetCurrentNetworkResponseMessage{
 		CurrentNetwork: currentNetwork,

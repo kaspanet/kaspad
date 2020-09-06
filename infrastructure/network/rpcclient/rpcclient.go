@@ -10,6 +10,7 @@ import (
 
 const defaultTimeout = 30 * time.Second
 
+// RPCClient is an RPC client
 type RPCClient struct {
 	*grpcclient.GRPCClient
 
@@ -19,6 +20,7 @@ type RPCClient struct {
 	timeout time.Duration
 }
 
+// NewRPCClient creates a new RPC client
 func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 	rpcClient, err := grpcclient.Connect(rpcAddress)
 	if err != nil {
@@ -40,14 +42,17 @@ func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 	}, nil
 }
 
+// SetTimeout sets the timeout by which to wait for RPC responses
 func (c *RPCClient) SetTimeout(timeout time.Duration) {
 	c.timeout = timeout
 }
 
+// Close closes the RPC client
 func (c *RPCClient) Close() {
 	c.rpcRouter.router.Close()
 }
 
+// Address returns the address the RPC client connected to
 func (c *RPCClient) Address() string {
 	return c.rpcAddress
 }

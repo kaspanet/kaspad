@@ -11,7 +11,7 @@ func (msg *GetSelectedTipHashRequestMessage) Command() MessageCommand {
 	return CmdGetSelectedTipHashRequestMessage
 }
 
-// GetSelectedTipHashRequestMessage returns a instance of the message
+// NewGetSelectedTipHashRequestMessage returns a instance of the message
 func NewGetSelectedTipHashRequestMessage() *GetSelectedTipHashRequestMessage {
 	return &GetSelectedTipHashRequestMessage{}
 }
@@ -30,7 +30,7 @@ func (msg *GetSelectedTipHashResponseMessage) Command() MessageCommand {
 	return CmdGetSelectedTipHashResponseMessage
 }
 
-// GetSelectedTipHashResponseMessage returns a instance of the message
+// NewGetSelectedTipHashResponseMessage returns a instance of the message
 func NewGetSelectedTipHashResponseMessage(selectedTipHash string) *GetSelectedTipHashResponseMessage {
 	return &GetSelectedTipHashResponseMessage{
 		SelectedTipHash: selectedTipHash,

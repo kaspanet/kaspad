@@ -63,10 +63,12 @@ func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan err
 	return <-errChan
 }
 
+// SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowcontext.OnBlockAddedToDAGHandler) {
 	m.context.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
 }
 
+// SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler
 func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
 }

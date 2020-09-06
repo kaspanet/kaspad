@@ -11,7 +11,7 @@ func (msg *GetConnectedPeerInfoRequestMessage) Command() MessageCommand {
 	return CmdGetConnectedPeerInfoRequestMessage
 }
 
-// GetConnectedPeerInfoRequestMessage returns a instance of the message
+// NewGetConnectedPeerInfoRequestMessage returns a instance of the message
 func NewGetConnectedPeerInfoRequestMessage() *GetConnectedPeerInfoRequestMessage {
 	return &GetConnectedPeerInfoRequestMessage{}
 }
@@ -29,13 +29,14 @@ func (msg *GetConnectedPeerInfoResponseMessage) Command() MessageCommand {
 	return CmdGetConnectedPeerInfoResponseMessage
 }
 
-// GetConnectedPeerInfoResponseMessage returns a instance of the message
+// NewGetConnectedPeerInfoResponseMessage returns a instance of the message
 func NewGetConnectedPeerInfoResponseMessage(infos []*GetConnectedPeerInfoMessage) *GetConnectedPeerInfoResponseMessage {
 	return &GetConnectedPeerInfoResponseMessage{
 		Infos: infos,
 	}
 }
 
+// GetConnectedPeerInfoMessage holds information about a connected peer
 type GetConnectedPeerInfoMessage struct {
 	ID                        string
 	Address                   string

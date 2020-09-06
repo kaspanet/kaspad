@@ -69,6 +69,8 @@ func (f *FlowContext) TxPool() *mempool.TxPool {
 	return f.txPool
 }
 
+// OnTransactionAddedToMempool notifies the handler function that a transaction
+// has been added to the mempool
 func (f *FlowContext) OnTransactionAddedToMempool() {
 	if f.onTransactionAddedToMempoolHandler != nil {
 		f.onTransactionAddedToMempoolHandler()

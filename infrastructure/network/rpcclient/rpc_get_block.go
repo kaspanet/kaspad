@@ -2,6 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
+// GetBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetBlock(hash string, subnetworkID string, includeBlockHex bool,
 	includeBlockVerboseData bool, includeTransactionVerboseData bool) (*appmessage.GetBlockResponseMessage, error) {
 

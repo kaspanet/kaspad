@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
+// SendRawTransaction sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SendRawTransaction(msgTx *appmessage.MsgTx) (*appmessage.SendRawTransactionResponseMessage, error) {
 	transactionHex := ""
 	if msgTx != nil {

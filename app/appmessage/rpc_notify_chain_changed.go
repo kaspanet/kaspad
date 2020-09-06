@@ -41,11 +41,13 @@ type ChainChangedNotificationMessage struct {
 	AddedChainBlocks        []*ChainChangedChainBlock
 }
 
+// ChainChangedChainBlock represents a DAG chain-block
 type ChainChangedChainBlock struct {
 	Hash           string
 	AcceptedBlocks []*ChainChangedAcceptedBlock
 }
 
+// ChainChangedAcceptedBlock represents a block accepted into the DAG
 type ChainChangedAcceptedBlock struct {
 	Hash          string
 	AcceptedTxIDs []string

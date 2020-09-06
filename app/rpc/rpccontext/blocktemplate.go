@@ -65,6 +65,7 @@ func NewBlockTemplateState(context *Context) *BlockTemplateState {
 	}
 }
 
+// Update updates the block template state
 func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 	generator := bt.context.BlockTemplateGenerator
 	lastTxUpdate := generator.TxSource().LastUpdated()
@@ -162,6 +163,7 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 	return nil
 }
 
+// Response builds a GetBlockTemplateResponseMessage from the current state
 func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMessage, error) {
 	dag := bt.context.DAG
 	// Ensure the timestamps are still in valid range for the template.

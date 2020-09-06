@@ -18,7 +18,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// OnBlockAddedToDAGHandler is a handler function that's triggered
+// when a block is added to the DAG
 type OnBlockAddedToDAGHandler func(block *util.Block)
+
+// OnTransactionAddedToMempoolHandler is a handler function that's triggered
+// when a transaction is added to the mempool
 type OnTransactionAddedToMempoolHandler func()
 
 // FlowContext holds state that is relevant to more than one flow or one peer, and allows communication between
@@ -68,10 +73,12 @@ func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmana
 	}
 }
 
+// SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
 	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
 }
 
+// SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler
 func (f *FlowContext) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler) {
 	f.onTransactionAddedToMempoolHandler = onTransactionAddedToMempoolHandler
 }

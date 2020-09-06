@@ -12,10 +12,12 @@ import (
 	"time"
 )
 
+// GRPCClient is a gRPC-based RPC client
 type GRPCClient struct {
 	stream protowire.RPC_MessageStreamClient
 }
 
+// Connect connects to the RPC server with the given address
 func Connect(address string) (*GRPCClient, error) {
 	const dialTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
@@ -34,10 +36,13 @@ func Connect(address string) (*GRPCClient, error) {
 	return &GRPCClient{stream: stream}, nil
 }
 
+// Disconnect disconnects from the RPC server
 func (c *GRPCClient) Disconnect() error {
 	return c.stream.CloseSend()
 }
 
+// AttachRouter attaches the given router to the client and starts
+// sending/receiving messages via it
 func (c *GRPCClient) AttachRouter(router *router.Router) {
 	spawn("GRPCClient.AttachRouter-sendLoop", func() {
 		for {

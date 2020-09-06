@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
+// SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SubmitBlock(block *util.Block) error {
 	blockHex := ""
 	if block != nil {

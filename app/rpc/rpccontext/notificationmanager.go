@@ -7,14 +7,19 @@ import (
 	"sync"
 )
 
+// NotificationManager manages notifications for the RPC
 type NotificationManager struct {
 	sync.RWMutex
 	listeners map[*router.Router]*NotificationListener
 }
 
+// OnBlockAddedListener is a listener function for when a block is added to the DAG
 type OnBlockAddedListener func(notification *appmessage.BlockAddedNotificationMessage) error
+
+// OnChainChangedListener is a listener function for when the DAG's selected parent chain changes
 type OnChainChangedListener func(notification *appmessage.ChainChangedNotificationMessage) error
 
+// NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
 	onBlockAddedListener           OnBlockAddedListener
 	onBlockAddedNotificationChan   chan *appmessage.BlockAddedNotificationMessage
@@ -24,21 +29,24 @@ type NotificationListener struct {
 	closeChan chan struct{}
 }
 
+// NewNotificationManager creates a new NotificationManager
 func NewNotificationManager() *NotificationManager {
 	return &NotificationManager{
 		listeners: make(map[*router.Router]*NotificationListener),
 	}
 }
 
+// AddListener registers a listener with the given router
 func (nm *NotificationManager) AddListener(router *router.Router) *NotificationListener {
 	nm.Lock()
 	defer nm.Unlock()
 
-	listener := NewNotificationListener()
+	listener := newNotificationListener()
 	nm.listeners[router] = listener
 	return listener
 }
 
+// RemoveListener unregisters the given router
 func (nm *NotificationManager) RemoveListener(router *router.Router) {
 	nm.Lock()
 	defer nm.Unlock()
@@ -52,6 +60,7 @@ func (nm *NotificationManager) RemoveListener(router *router.Router) {
 	delete(nm.listeners, router)
 }
 
+// Listener retrieves the listener registered with the given router
 func (nm *NotificationManager) Listener(router *router.Router) (*NotificationListener, error) {
 	nm.RLock()
 	defer nm.RUnlock()
@@ -63,6 +72,7 @@ func (nm *NotificationManager) Listener(router *router.Router) (*NotificationLis
 	return listener, nil
 }
 
+// NotifyBlockAdded notifies the notification manager that a block has been added to the DAG
 func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAddedNotificationMessage) {
 	nm.RLock()
 	defer nm.RUnlock()
@@ -78,6 +88,7 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 	}
 }
 
+// NotifyChainChanged notifies the notification manager that the DAG's selected parent chain has changed
 func (nm *NotificationManager) NotifyChainChanged(message *appmessage.ChainChangedNotificationMessage) {
 	nm.RLock()
 	defer nm.RUnlock()
@@ -93,7 +104,7 @@ func (nm *NotificationManager) NotifyChainChanged(message *appmessage.ChainChang
 	}
 }
 
-func NewNotificationListener() *NotificationListener {
+func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		onBlockAddedNotificationChan:   make(chan *appmessage.BlockAddedNotificationMessage),
 		onChainChangedNotificationChan: make(chan *appmessage.ChainChangedNotificationMessage),
@@ -101,14 +112,17 @@ func NewNotificationListener() *NotificationListener {
 	}
 }
 
+// SetOnBlockAddedListener sets the onBlockAddedListener handler for this listener
 func (nl *NotificationListener) SetOnBlockAddedListener(onBlockAddedListener OnBlockAddedListener) {
 	nl.onBlockAddedListener = onBlockAddedListener
 }
 
+// SetOnChainChangedListener sets the onChainChangedListener handler for this listener
 func (nl *NotificationListener) SetOnChainChangedListener(onChainChangedListener OnChainChangedListener) {
 	nl.onChainChangedListener = onChainChangedListener
 }
 
+// ProcessNextNotification waits until a notification arrives and processes it
 func (nl *NotificationListener) ProcessNextNotification() error {
 	select {
 	case block := <-nl.onBlockAddedNotificationChan:

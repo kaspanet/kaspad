@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CollectChainBlocks creates a slice of chain blocks from the given hashes
 func (ctx *Context) CollectChainBlocks(hashes []*daghash.Hash) ([]*appmessage.ChainChangedChainBlock, error) {
 	chainBlocks := make([]*appmessage.ChainChangedChainBlock, 0, len(hashes))
 	for _, hash := range hashes {

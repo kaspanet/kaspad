@@ -18,6 +18,7 @@ type p2pServer struct {
 	gRPCServer
 }
 
+// NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
 	gRPCServer := newGRPCServer(listeningAddresses)
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}

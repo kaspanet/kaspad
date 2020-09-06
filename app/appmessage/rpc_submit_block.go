@@ -12,7 +12,7 @@ func (msg *SubmitBlockRequestMessage) Command() MessageCommand {
 	return CmdSubmitBlockRequestMessage
 }
 
-// SubmitBlockRequestMessage returns a instance of the message
+// NewSubmitBlockRequestMessage returns a instance of the message
 func NewSubmitBlockRequestMessage(blockHex string) *SubmitBlockRequestMessage {
 	return &SubmitBlockRequestMessage{
 		BlockHex: blockHex,
@@ -31,7 +31,7 @@ func (msg *SubmitBlockResponseMessage) Command() MessageCommand {
 	return CmdSubmitBlockResponseMessage
 }
 
-// SubmitBlockResponseMessage returns a instance of the message
+// NewSubmitBlockResponseMessage returns a instance of the message
 func NewSubmitBlockResponseMessage() *SubmitBlockResponseMessage {
 	return &SubmitBlockResponseMessage{}
 }

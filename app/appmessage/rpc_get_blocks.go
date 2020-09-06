@@ -14,7 +14,7 @@ func (msg *GetBlocksRequestMessage) Command() MessageCommand {
 	return CmdGetBlocksRequestMessage
 }
 
-// GetBlocksRequestMessage returns a instance of the message
+// NewGetBlocksRequestMessage returns a instance of the message
 func NewGetBlocksRequestMessage(lowHash string, includeBlockHexes bool, includeBlockVerboseData bool) *GetBlocksRequestMessage {
 	return &GetBlocksRequestMessage{
 		LowHash:                 lowHash,
@@ -39,7 +39,7 @@ func (msg *GetBlocksResponseMessage) Command() MessageCommand {
 	return CmdGetBlocksResponseMessage
 }
 
-// GetBlocksResponseMessage returns a instance of the message
+// NewGetBlocksResponseMessage returns a instance of the message
 func NewGetBlocksResponseMessage(blockHashes []string, blockHexes []string,
 	blockVerboseData []*BlockVerboseData) *GetBlocksResponseMessage {
 

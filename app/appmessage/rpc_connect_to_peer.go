@@ -13,7 +13,7 @@ func (msg *ConnectToPeerRequestMessage) Command() MessageCommand {
 	return CmdConnectToPeerRequestMessage
 }
 
-// ConnectToPeerRequestMessage returns a instance of the message
+// NewConnectToPeerRequestMessage returns a instance of the message
 func NewConnectToPeerRequestMessage(address string, isPermanent bool) *ConnectToPeerRequestMessage {
 	return &ConnectToPeerRequestMessage{
 		Address:     address,
@@ -33,7 +33,7 @@ func (msg *ConnectToPeerResponseMessage) Command() MessageCommand {
 	return CmdConnectToPeerResponseMessage
 }
 
-// ConnectToPeerResponseMessage returns a instance of the message
+// NewConnectToPeerResponseMessage returns a instance of the message
 func NewConnectToPeerResponseMessage() *ConnectToPeerResponseMessage {
 	return &ConnectToPeerResponseMessage{}
 }

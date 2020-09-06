@@ -33,6 +33,7 @@ func messageError(f string, desc string) *MessageError {
 	return &MessageError{Func: f, Description: desc}
 }
 
+// RPCError represents an error arriving from the RPC
 type RPCError struct {
 	Message string
 }

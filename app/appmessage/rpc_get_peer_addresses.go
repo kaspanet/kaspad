@@ -11,7 +11,7 @@ func (msg *GetPeerAddressesRequestMessage) Command() MessageCommand {
 	return CmdGetPeerAddressesRequestMessage
 }
 
-// GetPeerAddressesRequestMessage returns a instance of the message
+// NewGetPeerAddressesRequestMessage returns a instance of the message
 func NewGetPeerAddressesRequestMessage() *GetPeerAddressesRequestMessage {
 	return &GetPeerAddressesRequestMessage{}
 }
@@ -30,7 +30,7 @@ func (msg *GetPeerAddressesResponseMessage) Command() MessageCommand {
 	return CmdGetPeerAddressesResponseMessage
 }
 
-// GetPeerAddressesResponseMessage returns a instance of the message
+// NewGetPeerAddressesResponseMessage returns a instance of the message
 func NewGetPeerAddressesResponseMessage(addresses []*GetPeerAddressesKnownAddressMessage) *GetPeerAddressesResponseMessage {
 	return &GetPeerAddressesResponseMessage{
 		Addresses: addresses,

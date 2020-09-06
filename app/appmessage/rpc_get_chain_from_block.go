@@ -13,7 +13,7 @@ func (msg *GetChainFromBlockRequestMessage) Command() MessageCommand {
 	return CmdGetChainFromBlockRequestMessage
 }
 
-// GetChainFromBlockRequestMessage returns a instance of the message
+// NewGetChainFromBlockRequestMessage returns a instance of the message
 func NewGetChainFromBlockRequestMessage(startHash string, includeBlockVerboseData bool) *GetChainFromBlockRequestMessage {
 	return &GetChainFromBlockRequestMessage{
 		StartHash:               startHash,
@@ -37,7 +37,7 @@ func (msg *GetChainFromBlockResponseMessage) Command() MessageCommand {
 	return CmdGetChainFromBlockResponseMessage
 }
 
-// GetChainFromBlockResponseMessage returns a instance of the message
+// NewGetChainFromBlockResponseMessage returns a instance of the message
 func NewGetChainFromBlockResponseMessage(removedChainBlockHashes []string,
 	addedChainBlocks []*ChainChangedChainBlock, blockVerboseData []*BlockVerboseData) *GetChainFromBlockResponseMessage {
 

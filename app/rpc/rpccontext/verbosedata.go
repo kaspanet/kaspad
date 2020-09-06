@@ -14,6 +14,7 @@ import (
 	"strconv"
 )
 
+// BuildBlockVerboseData builds a BlockVerboseData from the given block
 func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
 	hash := block.Hash()
 	params := ctx.DAG.Params

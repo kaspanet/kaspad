@@ -251,6 +251,7 @@ func (g *BlkTmplGenerator) IsSynced() bool {
 	return g.dag.IsSyncRateBelowThreshold(maxSyncRateDeviation)
 }
 
+// ConvertGetBlockTemplateResultToBlock converts the given template into a util.Block
 func ConvertGetBlockTemplateResultToBlock(template *appmessage.GetBlockTemplateResponseMessage) (*util.Block, error) {
 	// parse parent hashes
 	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))

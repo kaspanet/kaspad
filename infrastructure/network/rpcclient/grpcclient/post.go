@@ -7,6 +7,9 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// PostString is a helper function that converts the given requestString
+// to protobuf, sends it to the RPC server, accepts the first response
+// that arrives back, and returns the response as string
 func (c *GRPCClient) PostString(requestString string) (string, error) {
 	requestBytes := []byte(requestString)
 	var parsedRequest protowire.KaspadMessage
@@ -25,6 +28,10 @@ func (c *GRPCClient) PostString(requestString string) (string, error) {
 	return string(responseBytes), nil
 }
 
+// PostAppMessage is a helper function that converts the given
+// requestAppMessage to protobuf, sends it to the RPC server,
+// accepts the first response that arrives back, and returns the
+// response as an appMessage
 func (c *GRPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appmessage.Message, error) {
 	request, err := protowire.FromAppMessage(requestAppMessage)
 	if err != nil {
@@ -41,6 +48,9 @@ func (c *GRPCClient) PostAppMessage(requestAppMessage appmessage.Message) (appme
 	return responseAppMessage, nil
 }
 
+// Post is a helper function that sends the given request to the
+// RPC server, accepts the first response that arrives back, and
+// returns the response
 func (c *GRPCClient) Post(request *protowire.KaspadMessage) (*protowire.KaspadMessage, error) {
 	err := c.stream.Send(request)
 	if err != nil {

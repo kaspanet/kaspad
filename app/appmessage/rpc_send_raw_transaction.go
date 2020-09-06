@@ -12,7 +12,7 @@ func (msg *SendRawTransactionRequestMessage) Command() MessageCommand {
 	return CmdSendRawTransactionRequestMessage
 }
 
-// SendRawTransactionRequestMessage returns a instance of the message
+// NewSendRawTransactionRequestMessage returns a instance of the message
 func NewSendRawTransactionRequestMessage(transactionHex string) *SendRawTransactionRequestMessage {
 	return &SendRawTransactionRequestMessage{
 		TransactionHex: transactionHex,
@@ -33,7 +33,7 @@ func (msg *SendRawTransactionResponseMessage) Command() MessageCommand {
 	return CmdSendRawTransactionResponseMessage
 }
 
-// SendRawTransactionResponseMessage returns a instance of the message
+// NewSendRawTransactionResponseMessage returns a instance of the message
 func NewSendRawTransactionResponseMessage(txID string) *SendRawTransactionResponseMessage {
 	return &SendRawTransactionResponseMessage{
 		TxID: txID,

@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RegisterForChainChangedNotifications sends an RPC request respective to the function's name and returns the RPC server's response.
+// Additionally, it starts listening for the appropriate notification using the given handler function
 func (c *RPCClient) RegisterForChainChangedNotifications(onChainChanged func(notification *appmessage.ChainChangedNotificationMessage)) error {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyChainChangedRequestMessage())
 	if err != nil {

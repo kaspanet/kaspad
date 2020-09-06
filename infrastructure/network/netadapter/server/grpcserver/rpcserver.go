@@ -11,6 +11,7 @@ type rpcServer struct {
 	gRPCServer
 }
 
+// NewRPCServer creates a new RPCServer
 func NewRPCServer(listeningAddresses []string) (server.Server, error) {
 	gRPCServer := newGRPCServer(listeningAddresses)
 	rpcServer := &rpcServer{gRPCServer: *gRPCServer}

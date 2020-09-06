@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 )
 
+// Context represents the RPC context
 type Context struct {
 	Config                 *config.Config
 	NetAdapter             *netadapter.NetAdapter
@@ -27,6 +28,7 @@ type Context struct {
 	NotificationManager *NotificationManager
 }
 
+// NewContext creates a new RPC context
 func NewContext(
 	cfg *config.Config,
 	netAdapter *netadapter.NetAdapter,

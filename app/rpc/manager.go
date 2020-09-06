@@ -16,10 +16,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// Manager is an RPC manager
 type Manager struct {
 	context *rpccontext.Context
 }
 
+// NewManager creates a new RPC Manager
 func NewManager(
 	cfg *config.Config,
 	netAdapter *netadapter.NetAdapter,
@@ -48,6 +50,7 @@ func NewManager(
 	return &manager
 }
 
+// NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
 func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
 	m.context.BlockTemplateState.NotifyBlockAdded(block)
 
@@ -55,6 +58,7 @@ func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
 	m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
+// NotifyChainChanged notifies the manager that the DAG's selected parent chain has changed
 func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) error {
 	addedChainBlocks, err := m.context.CollectChainBlocks(addedChainBlockHashes)
 	if err != nil {
@@ -69,6 +73,7 @@ func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, ad
 	return nil
 }
 
+// NotifyTransactionAddedToMempool notifies the manager that a transaction has been added to the mempool
 func (m *Manager) NotifyTransactionAddedToMempool() {
 	m.context.BlockTemplateState.NotifyMempoolTx()
 }

@@ -12,7 +12,7 @@ func (msg *GetSubnetworkRequestMessage) Command() MessageCommand {
 	return CmdGetSubnetworkRequestMessage
 }
 
-// GetSubnetworkRequestMessage returns a instance of the message
+// NewGetSubnetworkRequestMessage returns a instance of the message
 func NewGetSubnetworkRequestMessage(subnetworkID string) *GetSubnetworkRequestMessage {
 	return &GetSubnetworkRequestMessage{
 		SubnetworkID: subnetworkID,
@@ -33,7 +33,7 @@ func (msg *GetSubnetworkResponseMessage) Command() MessageCommand {
 	return CmdGetSubnetworkResponseMessage
 }
 
-// GetSubnetworkResponseMessage returns a instance of the message
+// NewGetSubnetworkResponseMessage returns a instance of the message
 func NewGetSubnetworkResponseMessage(gasLimit uint64) *GetSubnetworkResponseMessage {
 	return &GetSubnetworkResponseMessage{
 		GasLimit: gasLimit,
