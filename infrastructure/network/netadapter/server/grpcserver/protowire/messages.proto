@@ -58,6 +58,8 @@ message KaspadMessage {
     GetSubnetworkResponseMessage getSubnetworkResponse = 1028;
     GetChainFromBlockRequestMessage getChainFromBlockRequest = 1029;
     GetChainFromBlockResponseMessage getChainFromBlockResponse = 1030;
+    GetBlocksRequestMessage getBlocksRequest = 1031;
+    GetBlocksResponseMessage getBlocksResponse = 1032;
   }
 }
 
@@ -517,6 +519,20 @@ message GetChainFromBlockRequestMessage{
 message GetChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainChangedChainBlock addedChainBlocks = 2;
+  repeated BlockVerboseData blockVerboseData = 3;
+  RPCError error = 4;
+}
+
+message GetBlocksRequestMessage{
+  string lowHash = 1;
+  bool includeBlockHexes = 2;
+  bool includeBlockVerboseData = 3;
+  bool includeTransactionVerboseData = 4;
+}
+
+message GetBlocksResponseMessage{
+  repeated string blockHashes = 1;
+  repeated string blockHexes = 2;
   repeated BlockVerboseData blockVerboseData = 3;
   RPCError error = 4;
 }
