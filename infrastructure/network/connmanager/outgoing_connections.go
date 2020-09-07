@@ -30,13 +30,12 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 			return
 		}
 
-		address := c.addressManager.GetAddress()
-		if address == nil {
+		netAddress := c.addressManager.RandomAddress(nil)
+		if netAddress == nil {
 			log.Warnf("No more addresses available")
 			return
 		}
 
-		netAddress := address.NetAddress()
 		tcpAddress := netAddress.TCPAddress()
 		addressString := tcpAddress.String()
 
@@ -54,7 +53,6 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 			continue
 		}
 
-		c.addressManager.Attempt(netAddress)
 		log.Debugf("Connecting to %s because we have %d outgoing connections and the target is "+
 			"%d", addressString, len(c.activeOutgoing), c.targetOutgoing)
 		err = c.initiateConnection(addressString)
@@ -63,7 +61,6 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 			continue
 		}
 
-		c.addressManager.Connected(netAddress)
 		c.activeOutgoing[addressString] = struct{}{}
 	}
 }

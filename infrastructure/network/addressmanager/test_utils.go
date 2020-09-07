@@ -1,11 +1,12 @@
 package addressmanager
 
 import (
+	"net"
+	"strconv"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
-	"net"
-	"strconv"
 )
 
 // AddAddressByIP adds an address where we are given an ip:port and not a
@@ -26,6 +27,6 @@ func AddAddressByIP(am *AddressManager, addressIP string, subnetworkID *subnetwo
 		return errors.Errorf("invalid port %s: %s", portString, err)
 	}
 	netAddress := appmessage.NewNetAddressIPPort(ip, uint16(port), 0)
-	am.AddAddress(netAddress, netAddress, subnetworkID)
+	am.AddAddress(netAddress)
 	return nil
 }

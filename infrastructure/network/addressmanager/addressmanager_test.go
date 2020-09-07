@@ -6,12 +6,13 @@ package addressmanager
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"

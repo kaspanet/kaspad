@@ -1,10 +1,11 @@
 package addressexchange
 
 import (
+	"math/rand"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"math/rand"
 )
 
 // SendAddressesContext is the interface for the context needed for the SendAddresses flow.
@@ -20,8 +21,7 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 	}
 
 	msgGetAddresses := message.(*appmessage.MsgRequestAddresses)
-	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
-		msgGetAddresses.SubnetworkID)
+	addresses := context.AddressManager().Addresses()
 	msgAddresses := appmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
 	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
 	if err != nil {

@@ -73,11 +73,6 @@ func (a *App) Stop() {
 		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
-	err = a.addressManager.Stop()
-	if err != nil {
-		log.Errorf("Error stopping address manager: %s", err)
-	}
-
 	return
 }
 
@@ -101,7 +96,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	addressManager, err := addressmanager.New(cfg, databaseContext)
+	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg))
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +165,7 @@ func (a *App) maybeSeedFromDNS() {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+				a.addressManager.AddAddresses(addresses...)
 			})
 	}
 }

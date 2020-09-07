@@ -5,8 +5,9 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"net"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 var (
@@ -75,6 +76,37 @@ var (
 
 	// heNet defines the Hurricane Electric IPv6 address block.
 	heNet = ipNet("2001:470::", 32, 128)
+)
+
+const (
+	// TriedBucketCount is the number of buckets we split tried
+	// addresses over.
+	TriedBucketCount = 64
+
+	// NewBucketCount is the number of buckets that we spread new addresses
+	// over.
+	NewBucketCount = 1024
+
+	// numMissingDays is the number of days before which we assume an
+	// address has vanished if we have not seen it announced  in that long.
+	numMissingDays = 30
+
+	// numRetries is the number of tried without a single success before
+	// we assume an address is bad.
+	numRetries = 3
+
+	// maxFailures is the maximum number of failures we will accept without
+	// a success before considering an address bad.
+	maxFailures = 10
+
+	// minBadDays is the number of days since the last success before we
+	// will consider evicting an address.
+	minBadDays = 7
+
+	// GetAddressesMax is the most addresses that we will send in response
+	// to a getAddress (in practise the most addresses we will return from a
+	// call to AddressCache()).
+	GetAddressesMax = 2500
 )
 
 // ipNet returns a net.IPNet struct given the passed IP address string, number
@@ -200,7 +232,7 @@ func IsValid(na *appmessage.NetAddress) bool {
 // the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
 func (am *AddressManager) IsRoutable(na *appmessage.NetAddress) bool {
-	if am.cfg.NetParams().AcceptUnroutable {
+	if am.cfg.AcceptUnroutable() {
 		return !IsLocal(na)
 	}
 
