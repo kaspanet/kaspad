@@ -47,8 +47,8 @@ message KaspadMessage {
     GetConnectedPeerInfoResponseMessage getConnectedPeerInfoResponse = 1017;
     ConnectToPeerRequestMessage connectToPeerRequest = 1018;
     ConnectToPeerResponseMessage connectToPeerResponse = 1019;
-    SendRawTransactionRequestMessage sendRawTransactionRequest = 1020;
-    SendRawTransactionResponseMessage sendRawTransactionResponse = 1021;
+    SubmitTransactionRequestMessage submitTransactionRequest = 1020;
+    SubmitTransactionResponseMessage submitTransactionResponse = 1021;
     NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
     NotifyChainChangedResponseMessage notifyChainChangedResponse = 1023;
     ChainChangedNotificationMessage chainChangedNotification = 1024;
@@ -388,11 +388,11 @@ message ConnectToPeerResponseMessage{
   RPCError error = 1;
 }
 
-message SendRawTransactionRequestMessage{
+message SubmitTransactionRequestMessage{
   string transactionHex = 1;
 }
 
-message SendRawTransactionResponseMessage{
+message SubmitTransactionResponseMessage{
   string txId = 1;
   RPCError error = 2;
 }

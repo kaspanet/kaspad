@@ -74,8 +74,8 @@ const (
 	CmdGetConnectedPeerInfoResponseMessage
 	CmdConnectToPeerRequestMessage
 	CmdConnectToPeerResponseMessage
-	CmdSendRawTransactionRequestMessage
-	CmdSendRawTransactionResponseMessage
+	CmdSubmitTransactionRequestMessage
+	CmdSubmitTransactionResponseMessage
 	CmdNotifyChainChangedRequestMessage
 	CmdNotifyChainChangedResponseMessage
 	CmdChainChangedNotificationMessage
@@ -137,8 +137,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetConnectedPeerInfoResponseMessage: "GetConnectedPeerInfoResponse",
 	CmdConnectToPeerRequestMessage:         "ConnectToPeerRequest",
 	CmdConnectToPeerResponseMessage:        "ConnectToPeerResponse",
-	CmdSendRawTransactionRequestMessage:    "SendRawTransactionRequest",
-	CmdSendRawTransactionResponseMessage:   "SendRawTransactionResponse",
+	CmdSubmitTransactionRequestMessage:     "SubmitTransactionRequest",
+	CmdSubmitTransactionResponseMessage:    "SubmitTransactionResponse",
 	CmdNotifyChainChangedRequestMessage:    "NotifyChainChangedRequest",
 	CmdNotifyChainChangedResponseMessage:   "NotifyChainChangedResponse",
 	CmdChainChangedNotificationMessage:     "ChainChangedNotification",

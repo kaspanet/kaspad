@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HandleSendRawTransaction handles the respectively named RPC command
-func HandleSendRawTransaction(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	sendRawTransactionRequest := request.(*appmessage.SendRawTransactionRequestMessage)
+// HandleSubmitTransaction handles the respectively named RPC command
+func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	submitTransactionRequest := request.(*appmessage.SubmitTransactionRequestMessage)
 
-	serializedTx, err := hex.DecodeString(sendRawTransactionRequest.TransactionHex)
+	serializedTx, err := hex.DecodeString(submitTransactionRequest.TransactionHex)
 	if err != nil {
-		errorMessage := &appmessage.SendRawTransactionResponseMessage{}
+		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
 			Message: fmt.Sprintf("Transaction hex could not be parsed: %s", err),
 		}
@@ -27,7 +27,7 @@ func HandleSendRawTransaction(context *rpccontext.Context, _ *router.Router, req
 	var msgTx appmessage.MsgTx
 	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
-		errorMessage := &appmessage.SendRawTransactionResponseMessage{}
+		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
 			Message: fmt.Sprintf("Transaction decode failed: %s", err),
 		}
@@ -42,13 +42,13 @@ func HandleSendRawTransaction(context *rpccontext.Context, _ *router.Router, req
 		}
 
 		log.Debugf("Rejected transaction %s: %s", tx.ID(), err)
-		errorMessage := &appmessage.SendRawTransactionResponseMessage{}
+		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
 			Message: fmt.Sprintf("Rejected transaction %s: %s", tx.ID(), err),
 		}
 		return errorMessage, nil
 	}
 
-	response := appmessage.NewSendRawTransactionResponseMessage(tx.ID().String())
+	response := appmessage.NewSubmitTransactionResponseMessage(tx.ID().String())
 	return response, nil
 }

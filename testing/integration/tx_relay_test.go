@@ -39,7 +39,7 @@ func TestTxRelay(t *testing.T) {
 	}
 
 	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
-	response, err := payer.rpcClient.SendRawTransaction(tx)
+	response, err := payer.rpcClient.SubmitTransaction(tx)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}

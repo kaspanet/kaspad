@@ -21,7 +21,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetMempoolEntryRequestMessage:      rpchandlers.HandleGetMempoolEntry,
 	appmessage.CmdGetConnectedPeerInfoRequestMessage: rpchandlers.HandleGetConnectedPeerInfo,
 	appmessage.CmdConnectToPeerRequestMessage:        rpchandlers.HandleConnectToPeer,
-	appmessage.CmdSendRawTransactionRequestMessage:   rpchandlers.HandleSendRawTransaction,
+	appmessage.CmdSubmitTransactionRequestMessage:    rpchandlers.HandleSubmitTransaction,
 	appmessage.CmdNotifyChainChangedRequestMessage:   rpchandlers.HandleNotifyChainChanged,
 	appmessage.CmdGetBlockRequestMessage:             rpchandlers.HandleGetBlock,
 	appmessage.CmdGetSubnetworkRequestMessage:        rpchandlers.HandleGetSubnetwork,
