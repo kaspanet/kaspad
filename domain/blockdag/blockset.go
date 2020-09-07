@@ -136,6 +136,7 @@ func (bs blockSet) areAllIn(other blockSet) bool {
 	return true
 }
 
+// isOnlyGenesis returns true if the only block in this blockSet is the genesis block
 func (bs blockSet) isOnlyGenesis() bool {
 	if len(bs) != 1 {
 		return false

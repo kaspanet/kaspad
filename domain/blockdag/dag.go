@@ -96,8 +96,8 @@ type BlockDAG struct {
 
 	tips blockSet
 
-	// validTips is a set of blocks with the status "valid", which have no valid parents.
-	// Note that some validTips might not be actual tips
+	// validTips is a set of blocks with the status "valid", which have no valid descendants.
+	// Note that some validTips might not be actual tips.
 	validTips blockSet
 }
 
@@ -314,11 +314,12 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.tips.hashes()
 }
 
-// ValidTipHashes returns the hashes of the DAG's tips
+// ValidTipHashes returns the hashes of the DAG's valid tips
 func (dag *BlockDAG) ValidTipHashes() []*daghash.Hash {
 	return dag.validTips.hashes()
 }
 
+// VirtualParentHashes returns the hashes of the virtual block's parents
 func (dag *BlockDAG) VirtualParentHashes() []*daghash.Hash {
 	return dag.virtual.parents.hashes()
 }
@@ -528,9 +529,9 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
 	var newVirtualParents blockSet
-	// If only genesis is the newTips, not all structures requierd for calling dag.selectVirtualParents
-	// have been initialized yet.
-	// Therefore, simply genesis it as virtual's only parent
+	// If only genesis is the newTips - we are still initializing the DAG and not all structures required
+	// for calling dag.selectVirtualParents have been initialized yet.
+	// Therefore, simply pick genesis as virtual's only parent
 	if newTips.isOnlyGenesis() {
 		newVirtualParents = newTips
 	} else {
@@ -550,6 +551,7 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 	} else {
 		chainUpdates = &selectedParentChainUpdates{}
 	}
+
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
@@ -606,7 +608,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 		}
 	}
 
-	mergeSetSize := 1 // starts with 1 for firstCandidate/selectedParent
+	mergeSetSize := 1 // starts counting from 1 because firstCandidate/selectedParent is already in the mergeSet
 
 	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
 		candidate := candidatesHeap.pop()
