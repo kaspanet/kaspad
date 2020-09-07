@@ -25,6 +25,10 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 		}
 		return errorMessage, nil
 	}
+
+	context.DAG.RLock()
+	defer context.DAG.RUnlock()
+
 	if context.DAG.IsKnownInvalid(hash) {
 		errorMessage := &appmessage.GetBlockResponseMessage{}
 		errorMessage.Error = &appmessage.RPCError{
