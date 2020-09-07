@@ -8,15 +8,12 @@ import (
 
 // SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SubmitBlock(block *util.Block) error {
-	blockHex := ""
-	if block != nil {
-		blockBytes, err := block.Bytes()
-		if err != nil {
-			return err
-		}
-		blockHex = hex.EncodeToString(blockBytes)
+	blockBytes, err := block.Bytes()
+	if err != nil {
+		return err
 	}
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewSubmitBlockRequestMessage(blockHex))
+	blockHex := hex.EncodeToString(blockBytes)
+	err = c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewSubmitBlockRequestMessage(blockHex))
 	if err != nil {
 		return err
 	}
