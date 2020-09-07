@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const testTimeout = 1 * time.Second
+const rpcTimeout = 1 * time.Second
 
 type testRPCClient struct {
 	*rpcclient.RPCClient
@@ -16,7 +16,7 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	rpcClient.SetTimeout(testTimeout)
+	rpcClient.SetTimeout(rpcTimeout)
 
 	return &testRPCClient{
 		RPCClient: rpcClient,
