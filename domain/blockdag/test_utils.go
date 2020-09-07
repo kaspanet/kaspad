@@ -147,49 +147,6 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	return appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
 }
 
-// VirtualForTest is an exported version for virtualBlock, so that it can be returned by exported test_util methods
-type VirtualForTest *virtualBlock
-
-// SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only
-func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
-	oldVirtual := dag.virtual
-	dag.virtual = virtual
-	return VirtualForTest(oldVirtual)
-}
-
-// GetVirtualFromParentsForTest generates a virtual block with the given parents.
-func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
-	parents := newBlockSet()
-	for _, hash := range parentHashes {
-		parent, ok := dag.index.LookupNode(hash)
-		if !ok {
-			return nil, errors.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
-		}
-		parents.add(parent)
-	}
-	virtual := newVirtualBlock(dag, parents)
-
-	if dag.index.BlockNodeStatus(virtual.selectedParent) == statusUTXONotVerified {
-		err := resolveNodeStatusForTest(virtual.selectedParent)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	pastUTXO, _, _, err := dag.pastUTXO(virtual.blockNode)
-	if err != nil {
-		return nil, err
-	}
-	diffUTXO := pastUTXO.clone().(*DiffUTXOSet)
-	err = diffUTXO.meldToBase()
-	if err != nil {
-		return nil, err
-	}
-	virtual.utxoSet = diffUTXO.base
-
-	return virtual, nil
-}
-
 // LoadBlocks reads files containing kaspa gzipped block data from disk
 // and returns them as an array of util.Block.
 func LoadBlocks(filename string) (blocks []*util.Block, err error) {
@@ -357,7 +314,7 @@ func resolveNodeStatusForTest(node *blockNode) error {
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	err = node.dag.resolveNodeStatus(node, BFNone, dbTx)
+	err = node.dag.resolveNodeStatus(node, dbTx)
 	if err != nil {
 		return err
 	}
