@@ -407,15 +407,15 @@ message NotifyChainChangedResponseMessage{
 
 message ChainChangedNotificationMessage{
   repeated string removedChainBlockHashes = 1;
-  repeated ChainChangedChainBlock addedChainBlocks = 2;
+  repeated ChainBlock addedChainBlocks = 2;
 }
 
-message ChainChangedChainBlock{
+message ChainBlock{
   string hash = 1;
-  repeated ChainChangedAcceptedBlock acceptedBlocks = 2;
+  repeated AcceptedBlock acceptedBlocks = 2;
 }
 
-message ChainChangedAcceptedBlock{
+message AcceptedBlock{
   string hash = 1;
   repeated string acceptedTxIds = 2;
 }
@@ -519,7 +519,7 @@ message GetChainFromBlockRequestMessage{
 
 message GetChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
-  repeated ChainChangedChainBlock addedChainBlocks = 2;
+  repeated ChainBlock addedChainBlocks = 2;
   repeated BlockVerboseData blockVerboseData = 3;
   RPCError error = 4;
 }

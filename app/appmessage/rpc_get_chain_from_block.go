@@ -26,7 +26,7 @@ func NewGetChainFromBlockRequestMessage(startHash string, includeBlockVerboseDat
 type GetChainFromBlockResponseMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
-	AddedChainBlocks        []*ChainChangedChainBlock
+	AddedChainBlocks        []*ChainBlock
 	BlockVerboseData        []*BlockVerboseData
 
 	Error *RPCError
@@ -39,7 +39,7 @@ func (msg *GetChainFromBlockResponseMessage) Command() MessageCommand {
 
 // NewGetChainFromBlockResponseMessage returns a instance of the message
 func NewGetChainFromBlockResponseMessage(removedChainBlockHashes []string,
-	addedChainBlocks []*ChainChangedChainBlock, blockVerboseData []*BlockVerboseData) *GetChainFromBlockResponseMessage {
+	addedChainBlocks []*ChainBlock, blockVerboseData []*BlockVerboseData) *GetChainFromBlockResponseMessage {
 
 	return &GetChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,

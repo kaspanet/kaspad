@@ -22,7 +22,7 @@ func (x *KaspadMessage_GetChainFromBlockResponse) toAppMessage() (appmessage.Mes
 	if x.GetChainFromBlockResponse.Error != nil {
 		err = &appmessage.RPCError{Message: x.GetChainFromBlockResponse.Error.Message}
 	}
-	addedChainBlocks := make([]*appmessage.ChainChangedChainBlock, len(x.GetChainFromBlockResponse.AddedChainBlocks))
+	addedChainBlocks := make([]*appmessage.ChainBlock, len(x.GetChainFromBlockResponse.AddedChainBlocks))
 	for i, addedChainBlock := range x.GetChainFromBlockResponse.AddedChainBlocks {
 		appAddedChainBlock, err := addedChainBlock.toAppMessage()
 		if err != nil {
@@ -51,9 +51,9 @@ func (x *KaspadMessage_GetChainFromBlockResponse) fromAppMessage(message *appmes
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	addedChainBlocks := make([]*ChainChangedChainBlock, len(message.AddedChainBlocks))
+	addedChainBlocks := make([]*ChainBlock, len(message.AddedChainBlocks))
 	for i, addedChainBlock := range message.AddedChainBlocks {
-		protoAddedChainBlock := &ChainChangedChainBlock{}
+		protoAddedChainBlock := &ChainBlock{}
 		err := protoAddedChainBlock.fromAppMessage(addedChainBlock)
 		if err != nil {
 			return err

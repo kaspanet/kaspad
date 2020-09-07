@@ -38,17 +38,17 @@ func NewNotifyChainChangedResponseMessage() *NotifyChainChangedResponseMessage {
 type ChainChangedNotificationMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
-	AddedChainBlocks        []*ChainChangedChainBlock
+	AddedChainBlocks        []*ChainBlock
 }
 
-// ChainChangedChainBlock represents a DAG chain-block
-type ChainChangedChainBlock struct {
+// ChainBlock represents a DAG chain-block
+type ChainBlock struct {
 	Hash           string
-	AcceptedBlocks []*ChainChangedAcceptedBlock
+	AcceptedBlocks []*AcceptedBlock
 }
 
-// ChainChangedAcceptedBlock represents a block accepted into the DAG
-type ChainChangedAcceptedBlock struct {
+// AcceptedBlock represents a block accepted into the DAG
+type AcceptedBlock struct {
 	Hash          string
 	AcceptedTxIDs []string
 }
@@ -60,7 +60,7 @@ func (msg *ChainChangedNotificationMessage) Command() MessageCommand {
 
 // NewChainChangedNotificationMessage returns a instance of the message
 func NewChainChangedNotificationMessage(removedChainBlockHashes []string,
-	addedChainBlocks []*ChainChangedChainBlock) *ChainChangedNotificationMessage {
+	addedChainBlocks []*ChainBlock) *ChainChangedNotificationMessage {
 
 	return &ChainChangedNotificationMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,

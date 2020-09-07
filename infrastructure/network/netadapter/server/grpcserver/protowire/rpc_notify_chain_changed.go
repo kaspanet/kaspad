@@ -33,7 +33,7 @@ func (x *KaspadMessage_NotifyChainChangedResponse) fromAppMessage(message *appme
 }
 
 func (x *KaspadMessage_ChainChangedNotification) toAppMessage() (appmessage.Message, error) {
-	addedChainBlocks := make([]*appmessage.ChainChangedChainBlock, len(x.ChainChangedNotification.AddedChainBlocks))
+	addedChainBlocks := make([]*appmessage.ChainBlock, len(x.ChainChangedNotification.AddedChainBlocks))
 	for i, addedChainBlock := range x.ChainChangedNotification.AddedChainBlocks {
 		appAddedChainBlock, err := addedChainBlock.toAppMessage()
 		if err != nil {
@@ -48,9 +48,9 @@ func (x *KaspadMessage_ChainChangedNotification) toAppMessage() (appmessage.Mess
 }
 
 func (x *KaspadMessage_ChainChangedNotification) fromAppMessage(message *appmessage.ChainChangedNotificationMessage) error {
-	addedChainBlocks := make([]*ChainChangedChainBlock, len(message.AddedChainBlocks))
+	addedChainBlocks := make([]*ChainBlock, len(message.AddedChainBlocks))
 	for i, addedChainBlock := range message.AddedChainBlocks {
-		protoAddedChainBlock := &ChainChangedChainBlock{}
+		protoAddedChainBlock := &ChainBlock{}
 		err := protoAddedChainBlock.fromAppMessage(addedChainBlock)
 		if err != nil {
 			return err
@@ -64,29 +64,29 @@ func (x *KaspadMessage_ChainChangedNotification) fromAppMessage(message *appmess
 	return nil
 }
 
-func (x *ChainChangedChainBlock) toAppMessage() (*appmessage.ChainChangedChainBlock, error) {
-	acceptedBlocks := make([]*appmessage.ChainChangedAcceptedBlock, len(x.AcceptedBlocks))
+func (x *ChainBlock) toAppMessage() (*appmessage.ChainBlock, error) {
+	acceptedBlocks := make([]*appmessage.AcceptedBlock, len(x.AcceptedBlocks))
 	for j, acceptedBlock := range x.AcceptedBlocks {
-		acceptedBlocks[j] = &appmessage.ChainChangedAcceptedBlock{
+		acceptedBlocks[j] = &appmessage.AcceptedBlock{
 			Hash:          acceptedBlock.Hash,
 			AcceptedTxIDs: acceptedBlock.AcceptedTxIds,
 		}
 	}
-	return &appmessage.ChainChangedChainBlock{
+	return &appmessage.ChainBlock{
 		Hash:           x.Hash,
 		AcceptedBlocks: acceptedBlocks,
 	}, nil
 }
 
-func (x *ChainChangedChainBlock) fromAppMessage(message *appmessage.ChainChangedChainBlock) error {
-	acceptedBlocks := make([]*ChainChangedAcceptedBlock, len(message.AcceptedBlocks))
+func (x *ChainBlock) fromAppMessage(message *appmessage.ChainBlock) error {
+	acceptedBlocks := make([]*AcceptedBlock, len(message.AcceptedBlocks))
 	for j, acceptedBlock := range message.AcceptedBlocks {
-		acceptedBlocks[j] = &ChainChangedAcceptedBlock{
+		acceptedBlocks[j] = &AcceptedBlock{
 			Hash:          acceptedBlock.Hash,
 			AcceptedTxIds: acceptedBlock.AcceptedTxIDs,
 		}
 	}
-	*x = ChainChangedChainBlock{
+	*x = ChainBlock{
 		Hash:           message.Hash,
 		AcceptedBlocks: acceptedBlocks,
 	}
