@@ -31,8 +31,8 @@ type NetAdapter struct {
 	rpcRouterInitializer RouterInitializer
 	stop                 uint32
 
-	connections     map[*NetConnection]struct{}
-	connectionsLock sync.RWMutex
+	p2pConnections     map[*NetConnection]struct{}
+	p2pConnectionsLock sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -56,7 +56,7 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 		p2pServer: p2pServer,
 		rpcServer: rpcServer,
 
-		connections: make(map[*NetConnection]struct{}),
+		p2pConnections: make(map[*NetConnection]struct{}),
 	}
 
 	adapter.p2pServer.SetOnConnectedHandler(adapter.onP2PConnectedHandler)
@@ -107,12 +107,12 @@ func (na *NetAdapter) P2PConnect(address string) error {
 
 // P2PConnections returns a list of p2p connections currently connected and active
 func (na *NetAdapter) P2PConnections() []*NetConnection {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
-	netConnections := make([]*NetConnection, 0, len(na.connections))
+	netConnections := make([]*NetConnection, 0, len(na.p2pConnections))
 
-	for netConnection := range na.connections {
+	for netConnection := range na.p2pConnections {
 		netConnections = append(netConnections, netConnection)
 	}
 
@@ -121,26 +121,26 @@ func (na *NetAdapter) P2PConnections() []*NetConnection {
 
 // P2PConnectionCount returns the count of the connected p2p connections
 func (na *NetAdapter) P2PConnectionCount() int {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
-	return len(na.connections)
+	return len(na.p2pConnections)
 }
 
 func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.p2pRouterInitializer)
 
-	na.connectionsLock.Lock()
-	defer na.connectionsLock.Unlock()
+	na.p2pConnectionsLock.Lock()
+	defer na.p2pConnectionsLock.Unlock()
 
 	netConnection.setOnDisconnectedHandler(func() {
-		na.connectionsLock.Lock()
-		defer na.connectionsLock.Unlock()
+		na.p2pConnectionsLock.Lock()
+		defer na.p2pConnectionsLock.Unlock()
 
-		delete(na.connections, netConnection)
+		delete(na.p2pConnections, netConnection)
 	})
 
-	na.connections[netConnection] = struct{}{}
+	na.p2pConnections[netConnection] = struct{}{}
 
 	netConnection.start()
 
@@ -175,8 +175,8 @@ func (na *NetAdapter) ID() *id.ID {
 // P2PBroadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
 func (na *NetAdapter) P2PBroadcast(netConnections []*NetConnection, message appmessage.Message) error {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
 	for _, netConnection := range netConnections {
 		err := netConnection.router.OutgoingRoute().Enqueue(message)
