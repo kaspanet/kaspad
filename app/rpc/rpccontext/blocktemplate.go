@@ -248,7 +248,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 	// to mine or not is the responsibility of the miner rather
 	// than the node's.
 	isSynced := bt.context.BlockTemplateGenerator.IsSynced()
-	isConnected := bt.context.ConnectionManager.ConnectionCount() > 0
+	isConnected := len(bt.context.ProtocolManager.Peers()) > 0
 
 	reply := appmessage.GetBlockTemplateResponseMessage{
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
