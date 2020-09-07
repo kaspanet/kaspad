@@ -141,16 +141,26 @@ func setupRPC(
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 	dag.Subscribe(func(notification *blockdag.Notification) {
-		if notification.Type == blockdag.NTChainChanged && acceptanceIndex != nil {
-			chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
-			err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
-				chainChangedNotificationData.AddedChainBlockHashes)
-			if err != nil {
-				panic(err)
-			}
+		err := handleBlockDAGNotifications(notification, acceptanceIndex, rpcManager)
+		if err != nil {
+			panic(err)
 		}
 	})
 	return rpcManager
+}
+
+func handleBlockDAGNotifications(notification *blockdag.Notification,
+	acceptanceIndex *indexers.AcceptanceIndex, rpcManager *rpc.Manager) error {
+
+	if notification.Type == blockdag.NTChainChanged && acceptanceIndex != nil {
+		chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
+		err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
+			chainChangedNotificationData.AddedChainBlockHashes)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *App) maybeSeedFromDNS() {
