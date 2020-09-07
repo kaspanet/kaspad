@@ -7,11 +7,11 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// PostString is a helper function that converts the given requestString
+// PostJSON is a helper function that converts the given requestJSON
 // to protobuf, sends it to the RPC server, accepts the first response
-// that arrives back, and returns the response as string
-func (c *GRPCClient) PostString(requestString string) (string, error) {
-	requestBytes := []byte(requestString)
+// that arrives back, and returns the response as JSON
+func (c *GRPCClient) PostJSON(requestJSON string) (string, error) {
+	requestBytes := []byte(requestJSON)
 	var parsedRequest protowire.KaspadMessage
 	err := protojson.Unmarshal(requestBytes, &parsedRequest)
 	if err != nil {
