@@ -223,6 +223,10 @@ const (
 
 	// ErrViolatingMergeLimit indicates that a block merges more then mergeLimit blocks
 	ErrViolatingMergeLimit
+
+	// ErrChainedTransactions indicates that a block contains a transaction that spends an output of a transaction
+	// In the same block
+	ErrChainedTransactions
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.

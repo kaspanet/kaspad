@@ -23,7 +23,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -256,8 +255,8 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 		if i == 0 {
 			blockTxs = msgTxs
 		}
-		block, err := mining.PrepareBlockForTest(
-			tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAG.VirtualParentsHashes(), blockTxs, false)
+		block, err := blockdag.PrepareBlockForTest(
+			tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAG.VirtualParentHashes(), blockTxs)
 		if err != nil {
 			tc.t.Fatalf("PrepareBlockForTest: %s", err)
 		}
@@ -818,7 +817,7 @@ func TestDoubleSpendsFromDAG(t *testing.T) {
 	}
 
 	dag := harness.txPool.cfg.DAG
-	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentsHashes(), []*appmessage.MsgTx{tx.MsgTx()})
+	blockdag.PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx.MsgTx()})
 
 	// Check that a transaction that double spends the DAG UTXO set is orphaned.
 	doubleSpendTx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 2)

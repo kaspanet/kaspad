@@ -166,11 +166,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	err = newNode.checkDAGRelations()
-	if err != nil {
-		return err
-	}
-
 	chainUpdates, err := dag.connectBlock(newNode, block, selectedParentAnticone, flags)
 	if err != nil {
 		return dag.handleConnectBlockError(err, newNode)
@@ -233,10 +228,20 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode,
+func (dag *BlockDAG) connectBlock(newNode *blockNode,
 	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*selectedParentChainUpdates, error) {
 
-	err := dag.checkBlockTransactionsFinalized(block, node, flags)
+	err := newNode.checkDAGRelations()
+	if err != nil {
+		return nil, err
+	}
+
+	err = dag.checkBlockTransactionsFinalized(block, newNode, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	err = dag.checkBlockHasNoChainedTransactions(block, newNode, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -246,16 +251,15 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	}
 
 	var isNewSelectedTip bool
-	if node.isGenesis() {
+	if newNode.isGenesis() {
 		isNewSelectedTip = true
 	} else {
 		// If the new block is not the selected tip - it's not in virtual's selectedParentChain, therefore it's
 		// not going to be utxo-verified at this point
-		isNewSelectedTip = dag.selectedTip().less(node)
+		isNewSelectedTip = dag.selectedTip().less(newNode)
 		if !isNewSelectedTip {
-			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
+			dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
 		}
-
 	}
 
 	dbTx, err := dag.databaseContext.NewTx()
@@ -265,30 +269,33 @@ func (dag *BlockDAG) connectBlock(node *blockNode,
 	defer dbTx.RollbackUnlessClosed()
 
 	if isNewSelectedTip {
-		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
+		err = dag.validateAndApplyUTXOSet(newNode, block, flags, dbTx)
 		if err != nil {
-			return nil, err
-		}
-
-		isViolatingSubjectiveFinality, err := node.isViolatingFinality()
-		if err != nil {
-			return nil, err
-		}
-		if isViolatingSubjectiveFinality {
-			dag.index.SetBlockNodeStatus(node, statusUTXONotVerified)
-			dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
-				ViolatingBlockHash: node.hash,
-				ConflictTime:       mstime.Now(),
-			})
+			if !errors.As(err, &(RuleError{})) {
+				return nil, err
+			}
+			dag.index.SetBlockNodeStatus(newNode, statusDisqualifiedFromChain)
+		} else {
+			isViolatingSubjectiveFinality, err := newNode.isViolatingFinality()
+			if err != nil {
+				return nil, err
+			}
+			if isViolatingSubjectiveFinality {
+				dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
+				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
+					ViolatingBlockHash: newNode.hash,
+					ConflictTime:       mstime.Now(),
+				})
+			}
 		}
 	}
 
-	err = dag.applyDAGChanges(node, selectedParentAnticone)
+	err = dag.applyDAGChanges(newNode, selectedParentAnticone)
 	if err != nil {
 		return nil, err
 	}
 
-	chainUpdates, err := dag.updateVirtualAndTips(node, dbTx)
+	chainUpdates, err := dag.updateVirtualAndTips(newNode, dbTx)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +332,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 		}
 
 		// Apply new utxoDiffs to all the tips
-		err = updateTipsUTXO(dag, newVirtualUTXO)
+		err = updateValidTipsUTXO(dag, newVirtualUTXO)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed updating the tips' UTXO")
 		}
@@ -386,9 +393,18 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
+	if !node.hasValidChildren() {
+		dag.addValidTip(node)
+	}
+
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
 
-	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockUTXO); err != nil {
+	err := node.updateDiffAndDiffChild(dag, utxoVerificationData.newBlockPastUTXO)
+	if err != nil {
+		return err
+	}
+
+	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockPastUTXO); err != nil {
 		return errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
@@ -402,16 +418,14 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	return nil
 }
 
-func (dag *BlockDAG) resolveNodeStatus(
-	selectedParent *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
-
-	if dag.index.BlockNodeStatus(selectedParent) == statusUTXONotVerified {
-		selectedParentBlock, err := dag.fetchBlockByHash(selectedParent.hash)
+func (dag *BlockDAG) resolveNodeStatus(node *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+	if dag.index.BlockNodeStatus(node) == statusUTXONotVerified {
+		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
 		}
 
-		err = dag.validateAndApplyUTXOSet(selectedParent, selectedParentBlock, flags, dbTx)
+		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
 		if err != nil {
 			return err
 		}

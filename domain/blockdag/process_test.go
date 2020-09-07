@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"math"
 	"path/filepath"
 	"testing"
 	"time"
@@ -39,7 +40,10 @@ func TestProcessOrphans(t *testing.T) {
 	// a. It gets added to the orphan pool
 	// b. It gets rejected once it's unorphaned
 	childBlock := blocks[2]
-	childBlock.MsgBlock().Header.UTXOCommitment = &daghash.ZeroHash
+	tx := childBlock.Transactions()[1].MsgTx()
+	tx.LockTime = math.MaxUint64
+	tx.TxIn[0].Sequence = 0
+	childBlock.MsgBlock().Header.HashMerkleRoot = BuildHashMerkleTreeStore(childBlock.Transactions()).Root()
 
 	// Process the child block so that it gets added to the orphan pool
 	isOrphan, isDelayed, err := dag.ProcessBlock(childBlock, BFNoPoWCheck)

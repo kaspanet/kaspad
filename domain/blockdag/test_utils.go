@@ -106,7 +106,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 	dag, err := New(&config)
 	if err != nil {
 		teardown()
-		err := errors.Errorf("failed to create dag instance: %s", err)
+		err := errors.Wrapf(err, "failed to create dag instance")
 		return nil, nil, err
 	}
 	return dag, teardown, nil

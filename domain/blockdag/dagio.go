@@ -126,8 +126,10 @@ func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 }
 
 type dagState struct {
-	TipHashes         []*daghash.Hash
-	LocalSubnetworkID *subnetworkid.SubnetworkID
+	TipHashes            []*daghash.Hash
+	VirtualParentsHashes []*daghash.Hash
+	ValidTipHashes       []*daghash.Hash
+	LocalSubnetworkID    *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -164,8 +166,10 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dag.databaseContext, &dagState{
-		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
-		LocalSubnetworkID: localSubnetworkID,
+		TipHashes:            []*daghash.Hash{dag.Params.GenesisHash},
+		VirtualParentsHashes: []*daghash.Hash{dag.Params.GenesisHash},
+		ValidTipHashes:       []*daghash.Hash{dag.Params.GenesisHash},
+		LocalSubnetworkID:    localSubnetworkID,
 	})
 }
 
@@ -225,7 +229,7 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Applying the stored tips to the virtual block...")
-	err = dag.initVirtualBlockTips(dagState)
+	err = dag.initTipsAndVirtualParents(dagState)
 	if err != nil {
 		return err
 	}
@@ -339,21 +343,25 @@ func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error
 	return fullUTXOCollection, nil
 }
 
-func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
-	tips := newBlockSet()
-	for _, tipHash := range state.TipHashes {
-		tip, ok := dag.index.LookupNode(tipHash)
-		if !ok {
-			return errors.Errorf("cannot find "+
-				"DAG tip %s in block index", tipHash)
-		}
-		tips.add(tip)
-	}
-
-	_, _, err := dag.setTips(tips)
+func (dag *BlockDAG) initTipsAndVirtualParents(state *dagState) error {
+	tips, err := dag.index.LookupNodes(state.TipHashes)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Error loading tips")
 	}
+	dag.tips = blockSetFromSlice(tips...)
+
+	validTips, err := dag.index.LookupNodes(state.ValidTipHashes)
+	if err != nil {
+		return errors.Wrapf(err, "Error loading tips")
+	}
+	dag.validTips = blockSetFromSlice(validTips...)
+
+	virtualParents, err := dag.index.LookupNodes(state.VirtualParentsHashes)
+	if err != nil {
+		return errors.Wrapf(err, "Error loading tips")
+	}
+	dag.virtual.blockNode, _ = dag.newBlockNode(nil, blockSetFromSlice(virtualParents...))
+	_ = dag.virtual.updateSelectedParentSet(dag.genesis)
 
 	return nil
 }

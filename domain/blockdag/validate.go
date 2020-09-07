@@ -89,13 +89,13 @@ func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime mstime
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block blue score.
-	blockTimeOrBlueScore := int64(0)
+	blockTimeOrBlueScore := uint64(0)
 	if lockTime < txscript.LockTimeThreshold {
-		blockTimeOrBlueScore = int64(blockBlueScore)
+		blockTimeOrBlueScore = blockBlueScore
 	} else {
-		blockTimeOrBlueScore = blockTime.UnixMilliseconds()
+		blockTimeOrBlueScore = uint64(blockTime.UnixMilliseconds())
 	}
-	if int64(lockTime) < blockTimeOrBlueScore {
+	if lockTime < blockTimeOrBlueScore {
 		return true
 	}
 
@@ -834,6 +834,31 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 	return nil
 }
 
+func (dag *BlockDAG) checkBlockHasNoChainedTransactions(block *util.Block, node *blockNode, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.BlockNodeStatus(node).KnownValid()
+	if fastAdd {
+		return nil
+	}
+
+	transactions := block.Transactions()
+	transactionsSet := make(map[daghash.TxID]struct{}, len(transactions))
+	for _, transaction := range transactions {
+		transactionsSet[*transaction.ID()] = struct{}{}
+	}
+
+	for _, transaction := range transactions {
+		for _, transactionInput := range transaction.MsgTx().TxIn {
+			if i, ok := transactionsSet[transactionInput.PreviousOutpoint.TxID]; ok {
+				str := fmt.Sprintf("block contains chained transactions: Input %d of transaction %s spend"+
+					"an output of transaction %s", i, transaction.ID(), transactionInput.PreviousOutpoint.TxID)
+				return ruleError(ErrChainedTransactions, str)
+			}
+		}
+	}
+
+	return nil
+}
+
 // ensureNoDuplicateTx ensures blocks do not contain duplicate transactions which
 // 'overwrite' older transactions that are not fully spent. This prevents an
 // attack where a coinbase and all of its dependent transactions could be
@@ -1021,7 +1046,7 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(
 			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, 0, selectedParentMedianTime)
 
 		if err != nil {
-			if ruleErr := &(RuleError{}); !errors.As(err, ruleErr) {
+			if ruleErr := &(RuleError{}); errors.As(err, ruleErr) {
 				return err
 			}
 

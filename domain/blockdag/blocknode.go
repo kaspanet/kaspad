@@ -40,6 +40,19 @@ const (
 	statusDisqualifiedFromChain
 )
 
+var blockStatusToString = map[blockStatus]string{
+	statusDataStored:            "statusDataStored",
+	statusValid:                 "statusValid",
+	statusValidateFailed:        "statusValidateFailed",
+	statusInvalidAncestor:       "statusInvalidAncestor",
+	statusUTXONotVerified:       "statusUTXONotVerified",
+	statusDisqualifiedFromChain: "statusDisqualifiedFromChain",
+}
+
+func (status blockStatus) String() string {
+	return blockStatusToString[status]
+}
+
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
@@ -324,6 +337,10 @@ func (node *blockNode) checkBoundedMergeDepth() error {
 }
 
 func (node *blockNode) isViolatingFinality() (bool, error) {
+	if node.isGenesis() {
+		return false, nil
+	}
+
 	if node.dag.virtual.less(node) {
 		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
 			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
@@ -347,4 +364,13 @@ func (node *blockNode) checkMergeSizeLimit() error {
 	}
 
 	return nil
+}
+
+func (node *blockNode) hasValidChildren() bool {
+	for child := range node.children {
+		if node.dag.index.BlockNodeStatus(child) == statusValid {
+			return true
+		}
+	}
+	return false
 }

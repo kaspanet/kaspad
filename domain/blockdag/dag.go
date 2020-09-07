@@ -95,6 +95,10 @@ type BlockDAG struct {
 	startTime                       mstime.Time
 
 	tips blockSet
+
+	// validTips is a set of blocks with the status "valid", which have no valid descendants.
+	// Note that some validTips might not be actual tips.
+	validTips blockSet
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -310,7 +314,13 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.tips.hashes()
 }
 
-func (dag *BlockDAG) VirtualParentsHashes() []*daghash.Hash {
+// ValidTipHashes returns the hashes of the DAG's valid tips
+func (dag *BlockDAG) ValidTipHashes() []*daghash.Hash {
+	return dag.validTips.hashes()
+}
+
+// VirtualParentHashes returns the hashes of the virtual block's parents
+func (dag *BlockDAG) VirtualParentHashes() []*daghash.Hash {
 	return dag.virtual.parents.hashes()
 }
 
@@ -518,9 +528,17 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *blockNode) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	newVirtualParents, err := dag.selectVirtualParents(newTips, finalityPoint)
-	if err != nil {
-		return false, nil, err
+	var newVirtualParents blockSet
+	// If only genesis is the newTips - we are still initializing the DAG and not all structures required
+	// for calling dag.selectVirtualParents have been initialized yet.
+	// Therefore, simply pick genesis as virtual's only parent
+	if newTips.isOnlyGenesis() {
+		newVirtualParents = newTips
+	} else {
+		newVirtualParents, err = dag.selectVirtualParents(newTips, finalityPoint)
+		if err != nil {
+			return false, nil, err
+		}
 	}
 
 	oldVirtualParents := dag.virtual.parents
@@ -530,8 +548,24 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 		oldSelectedParent := dag.virtual.selectedParent
 		dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
 		chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
+	} else {
+		chainUpdates = &selectedParentChainUpdates{}
 	}
+
 	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) addValidTip(newValidTip *blockNode) {
+	newValidTips := dag.validTips.clone()
+	for validTip := range dag.validTips {
+		if newValidTip.parents.contains(validTip) {
+			newValidTips.remove(validTip)
+		}
+	}
+
+	newValidTips.add(newValidTip)
+
+	dag.validTips = newValidTips
 }
 
 func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {
@@ -558,6 +592,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 			if err != nil {
 				return nil, err
 			}
+
 			if isFinalityPointInSelectedParentChain {
 				selected.add(firstCandidate)
 				break
@@ -573,7 +608,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 		}
 	}
 
-	mergeSetSize := 1 // starts with 1 for firstCandidate/selectedParent
+	mergeSetSize := 1 // starts counting from 1 because firstCandidate/selectedParent is already in the mergeSet
 
 	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
 		candidate := candidatesHeap.pop()
@@ -633,8 +668,10 @@ func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (
 
 func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
 	state := &dagState{
-		TipHashes:         dag.TipHashes(),
-		LocalSubnetworkID: dag.subnetworkID,
+		TipHashes:            dag.TipHashes(),
+		ValidTipHashes:       dag.ValidTipHashes(),
+		VirtualParentsHashes: dag.VirtualParentHashes(),
+		LocalSubnetworkID:    dag.subnetworkID,
 	}
 	return saveDAGState(dbTx, state)
 }

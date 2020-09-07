@@ -17,7 +17,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Blocks:               dag.BlockCount(),
 		Headers:              dag.BlockCount(),
 		TipHashes:            daghash.Strings(dag.TipHashes()),
-		VirtualParentsHashes: daghash.Strings(dag.VirtualParentsHashes()),
+		VirtualParentsHashes: daghash.Strings(dag.VirtualParentHashes()),
 		Difficulty:           getDifficultyRatio(dag.CurrentBits(), params),
 		MedianTime:           dag.CalcPastMedianTime().UnixMilliseconds(),
 		Pruned:               false,

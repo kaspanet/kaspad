@@ -68,11 +68,11 @@
         {
             "ID": "5",
             "ExpectedScore": 3,
-            "ExpectedSelectedParent": "2",
+            "ExpectedSelectedParent": "3",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "2",
-                "3"
+                "3",
+                "2"
             ],
             "Parents": [
                 "2",
@@ -106,11 +106,11 @@
         {
             "ID": "8",
             "ExpectedScore": 3,
-            "ExpectedSelectedParent": "2",
+            "ExpectedSelectedParent": "1",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "2",
-                "1"
+                "1",
+                "2"
             ],
             "Parents": [
                 "1",
@@ -162,12 +162,15 @@
         {
             "ID": "12",
             "ExpectedScore": 8,
-            "ExpectedSelectedParent": "9",
-            "ExpectedReds": [],
+            "ExpectedSelectedParent": "10",
+            "ExpectedReds": [
+                "3",
+                "6"
+            ],
             "ExpectedBlues": [
-                "9",
-                "8",
-                "10"
+                "10",
+                "5",
+                "9"
             ],
             "Parents": [
                 "10",
@@ -193,7 +196,9 @@
             "ID": "14",
             "ExpectedScore": 8,
             "ExpectedSelectedParent": "13",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "4"
+            ],
             "ExpectedBlues": [
                 "13",
                 "10"
@@ -207,7 +212,10 @@
             "ID": "15",
             "ExpectedScore": 9,
             "ExpectedSelectedParent": "11",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "1",
+                "8"
+            ],
             "ExpectedBlues": [
                 "11",
                 "13"
@@ -257,7 +265,9 @@
             "ID": "19",
             "ExpectedScore": 10,
             "ExpectedSelectedParent": "15",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "18"
+            ],
             "ExpectedBlues": [
                 "15"
             ],
@@ -270,7 +280,13 @@
             "ID": "20",
             "ExpectedScore": 10,
             "ExpectedSelectedParent": "17",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "6",
+                "7",
+                "9",
+                "11",
+                "16"
+            ],
             "ExpectedBlues": [
                 "17"
             ],
@@ -297,7 +313,10 @@
             "ID": "22",
             "ExpectedScore": 13,
             "ExpectedSelectedParent": "21",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "15",
+                "19"
+            ],
             "ExpectedBlues": [
                 "21"
             ],
@@ -310,7 +329,10 @@
             "ID": "23",
             "ExpectedScore": 11,
             "ExpectedSelectedParent": "17",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "6",
+                "9"
+            ],
             "ExpectedBlues": [
                 "17",
                 "12"
@@ -324,7 +346,11 @@
             "ID": "24",
             "ExpectedScore": 13,
             "ExpectedSelectedParent": "23",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "7",
+                "11",
+                "16"
+            ],
             "ExpectedBlues": [
                 "23",
                 "20"
@@ -350,7 +376,11 @@
             "ID": "26",
             "ExpectedScore": 15,
             "ExpectedSelectedParent": "22",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "12",
+                "23",
+                "24"
+            ],
             "ExpectedBlues": [
                 "22",
                 "25"
@@ -377,7 +407,10 @@
             "ID": "28",
             "ExpectedScore": 14,
             "ExpectedSelectedParent": "25",
-            "ExpectedReds": [],
+            "ExpectedReds": [
+                "12",
+                "23"
+            ],
             "ExpectedBlues": [
                 "25"
             ],

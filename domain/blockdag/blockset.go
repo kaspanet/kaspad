@@ -104,13 +104,9 @@ func (bs blockSet) String() string {
 
 func (bs blockSet) bluest() *blockNode {
 	var bluestNode *blockNode
-	var maxScore uint64
 	for node := range bs {
-		if bluestNode == nil ||
-			node.blueScore > maxScore ||
-			(node.blueScore == maxScore && daghash.Less(bluestNode.hash, node.hash)) {
+		if bluestNode == nil || bluestNode.less(node) {
 			bluestNode = node
-			maxScore = node.blueScore
 		}
 	}
 	return bluestNode
@@ -138,4 +134,18 @@ func (bs blockSet) areAllIn(other blockSet) bool {
 	}
 
 	return true
+}
+
+// isOnlyGenesis returns true if the only block in this blockSet is the genesis block
+func (bs blockSet) isOnlyGenesis() bool {
+	if len(bs) != 1 {
+		return false
+	}
+	for node := range bs {
+		if node.isGenesis() {
+			return true
+		}
+	}
+
+	return false
 }

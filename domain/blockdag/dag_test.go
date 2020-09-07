@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -934,8 +935,14 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	invalidCbTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{}, []*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
-	txs := []*util.Tx{util.NewTx(invalidCbTx)}
+	// Create a block with non-finalized transaction so that it's flagged as invalid
+	coinbaseTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{},
+		[]*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
+	invalidTxIn := appmessage.NewTxIn(appmessage.NewOutpoint(dag.Params.GenesisBlock.Transactions[0].TxID(), 0), nil)
+	invalidTxIn.Sequence = 0
+	invalidTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{invalidTxIn}, []*appmessage.TxOut{})
+	invalidTx.LockTime = math.MaxUint64
+	txs := []*util.Tx{util.NewTx(coinbaseTx), util.NewTx(invalidTx)}
 	hashMerkleRoot := BuildHashMerkleTreeStore(txs).Root()
 	invalidMsgBlock := appmessage.NewMsgBlock(
 		appmessage.NewBlockHeader(
@@ -946,7 +953,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			dag.genesis.bits,
 			0),
 	)
-	invalidMsgBlock.AddTransaction(invalidCbTx)
+	invalidMsgBlock.AddTransaction(coinbaseTx)
+	invalidMsgBlock.AddTransaction(invalidTx)
 	invalidBlock := util.NewBlock(invalidMsgBlock)
 	isOrphan, isDelayed, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
 
@@ -975,7 +983,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlock.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockChild.AddTransaction(invalidTx)
 	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
@@ -1004,7 +1013,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlockChild.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockGrandChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockGrandChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockGrandChild.AddTransaction(invalidTx)
 	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
@@ -1028,20 +1038,55 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 }
 
-func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
+// testProcessBlockStatus submits the given block, and makes sure this block has got expected status
+func testProcessBlockStatus(
+	t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedStatus blockStatus) {
+
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("%s: Error submitting block: %+v", testName, err)
+	}
+	if isDelayed {
+		t.Fatalf("%s: ProcessBlock: block is too far in the future", testName)
+	}
+	if isOrphan {
+		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
+	}
+
+	node, ok := dag.index.LookupNode(block.BlockHash())
+	if !ok {
+		t.Fatalf("%s: Error locating block %s after processing it", testName, block.BlockHash())
+	}
+
+	actualStatus := dag.index.BlockNodeStatus(node)
+	if actualStatus != expectedStatus {
+		t.Errorf("%s: Expected block status: '%s' but got '%s'", testName, expectedStatus, actualStatus)
+	}
+}
+
+func testProcessBlockRuleError(t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 
 	err = checkRuleError(err, expectedRuleErr)
 	if err != nil {
-		t.Errorf("checkRuleError: %s", err)
+		t.Errorf("%s: checkRuleError: %s", err, testName)
 	}
 
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block " +
-			"is too far in the future")
+		t.Fatalf("%s: ProcessBlock: block is too far in the future", testName)
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
+		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
+	}
+}
+
+// makeNextSelectedTip plays with block's nonce until it's ID is smaller then dag's selectedTip
+// It is the callers responsibility to make sure block's blue score is equal to selected tip's
+func makeNextSelectedTip(dag *BlockDAG, block *appmessage.MsgBlock) {
+	selectedTip := dag.selectedTip()
+
+	for daghash.Less(block.BlockHash(), selectedTip.hash) {
+		block.Header.Nonce++
 	}
 }
 
@@ -1083,7 +1128,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{tx1})
 
-	// Check that a block will be rejected if it has a transaction that already exists in its past.
+	// Check that a block will be disqualified if it has a transaction that already exists in its past.
 	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
@@ -1097,9 +1142,9 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, anotherBlockWithTx1, ruleError(ErrOverwriteTx, ""))
+	testProcessBlockStatus(t, "anotherBlockWithTx1", dag, anotherBlockWithTx1, statusDisqualifiedFromChain)
 
-	// Check that a block will be rejected if it has a transaction that double spends
+	// Check that a block will be disqualified if it has a transaction that double spends
 	// a transaction from its past.
 	blockWithDoubleSpendForTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
@@ -1114,16 +1159,18 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleError(ErrMissingTxOut, ""))
+	testProcessBlockStatus(t, "blockWithDoubleSpendForTx1", dag, blockWithDoubleSpendForTx1, statusDisqualifiedFromChain)
 
 	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{doubleSpendTx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
-	// Check that a block will not get rejected if it has a transaction that double spends
+	makeNextSelectedTip(dag, blockInAnticoneOfBlockWithTx1)
+
+	// Check that a block will not get disqualified if it has a transaction that double spends
 	// a transaction from its anticone.
-	testProcessBlockRuleError(t, dag, blockInAnticoneOfBlockWithTx1, nil)
+	testProcessBlockStatus(t, "blockInAnticoneOfBlockWithTx1", dag, blockInAnticoneOfBlockWithTx1, statusValid)
 
 	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
 	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1139,7 +1186,8 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
+	testProcessBlockRuleError(t, "blockWithDoubleSpendWithItself", dag,
+		blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
 
 	// Check that a block will be rejected if it has the same transaction twice.
 	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1154,7 +1202,8 @@ func TestDoubleSpends(t *testing.T) {
 		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
 	}
 	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
-	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
+	testProcessBlockRuleError(t, "blockWithDuplicateTransaction", dag,
+		blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
 }
 
 func TestUTXOCommitment(t *testing.T) {

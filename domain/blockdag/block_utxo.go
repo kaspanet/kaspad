@@ -62,7 +62,7 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 }
 
 type utxoVerificationOutput struct {
-	newBlockUTXO      UTXOSet
+	newBlockPastUTXO  UTXOSet
 	txsAcceptanceData MultiBlockTxsAcceptanceData
 	newBlockMultiset  *secp256k1.MultiSet
 }
@@ -97,7 +97,7 @@ func (node *blockNode) verifyAndBuildUTXO(transactions []*util.Tx) (*utxoVerific
 	}
 
 	return &utxoVerificationOutput{
-		newBlockUTXO:      pastUTXO,
+		newBlockPastUTXO:  pastUTXO,
 		txsAcceptanceData: txsAcceptanceData,
 		newBlockMultiset:  multiset}, nil
 }
@@ -143,6 +143,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		for j, tx := range transactions {
 			var isAccepted bool
 			var txFee uint64
+
 			isAccepted, txFee, accumulatedMass, err =
 				node.maybeAcceptTx(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
 			if err != nil {
@@ -168,23 +169,22 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 
 	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
 	if tx.IsCoinBase() {
-		isAccepted = isSelectedParent
-		if isAccepted {
-			txMass := CalcTxMass(tx, nil)
-			accumulatedMass += txMass
+		if !isSelectedParent {
+			return false, 0, 0, nil
 		}
+		txMass := CalcTxMass(tx, nil)
+		accumulatedMass += txMass
 
 		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
 			return false, 0, 0, err
 		}
 
-		return isAccepted, 0, accumulatedMass, nil
+		return true, 0, accumulatedMass, nil
 	}
 
 	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
 		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
-
 	if err != nil {
 		if !errors.As(err, &(RuleError{})) {
 			return false, 0, 0, err
@@ -270,22 +270,22 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 	return NewDiffUTXOSet(dag.virtual.utxoSet, accumulatedDiff), nil
 }
 
-// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
-func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
-	for tip := range dag.tips {
-		if dag.index.BlockNodeStatus(tip) == statusUTXONotVerified {
+// updateValidTipsUTXO builds and applies new diff UTXOs for all the DAG's valid tips
+func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
+	for validTip := range dag.validTips {
+		if dag.index.BlockNodeStatus(validTip) != statusValid {
 			continue
 		}
 
-		tipPastUTXO, err := dag.restorePastUTXO(tip)
+		validTipPastUTXO, err := dag.restorePastUTXO(validTip)
 		if err != nil {
 			return err
 		}
-		diff, err := virtualUTXO.diffFrom(tipPastUTXO)
+		diff, err := virtualUTXO.diffFrom(validTipPastUTXO)
 		if err != nil {
 			return err
 		}
-		err = dag.utxoDiffStore.setBlockDiff(tip, diff)
+		err = dag.utxoDiffStore.setBlockDiff(validTip, diff)
 		if err != nil {
 			return err
 		}
@@ -295,17 +295,7 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 }
 
 // updateParentsDiffs updates the diff of any parent whose DiffChild is this block
-func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) error {
-	virtualDiffFromNewBlock, err := dag.virtual.utxoSet.diffFrom(newBlockUTXO)
-	if err != nil {
-		return err
-	}
-
-	err = dag.utxoDiffStore.setBlockDiff(node, virtualDiffFromNewBlock)
-	if err != nil {
-		return err
-	}
-
+func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
 	for parent := range node.parents {
 		if node.dag.index.BlockNodeStatus(parent) == statusUTXONotVerified {
 			continue
@@ -324,7 +314,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 			if err != nil {
 				return err
 			}
-			diff, err := newBlockUTXO.diffFrom(parentPastUTXO)
+			diff, err := newBlockPastUTXO.diffFrom(parentPastUTXO)
 			if err != nil {
 				return err
 			}
@@ -335,5 +325,43 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 		}
 	}
 
+	return nil
+}
+
+func (node *blockNode) updateDiffAndDiffChild(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
+	var diffChild *blockNode
+	for child := range node.children {
+		if node.dag.index.BlockNodeStatus(child) == statusValid {
+			diffChild = child
+			break
+		}
+	}
+
+	// If there's no diffChild, then virtual is the de-facto diffChild
+	var diffChildUTXOSet UTXOSet = dag.virtual.utxoSet
+	if diffChild != nil {
+		var err error
+		diffChildUTXOSet, err = dag.restorePastUTXO(diffChild)
+		if err != nil {
+			return err
+		}
+	}
+
+	diffFromDiffChild, err := diffChildUTXOSet.diffFrom(newBlockPastUTXO)
+	if err != nil {
+		return err
+	}
+
+	err = dag.utxoDiffStore.setBlockDiff(node, diffFromDiffChild)
+	if err != nil {
+		return err
+	}
+
+	if diffChild != nil {
+		err = dag.utxoDiffStore.setBlockDiffChild(node, diffChild)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
