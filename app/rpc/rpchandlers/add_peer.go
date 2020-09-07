@@ -1,7 +1,6 @@
 package rpchandlers
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -14,9 +13,7 @@ func HandleAddPeer(context *rpccontext.Context, _ *router.Router, request appmes
 	address, err := network.NormalizeAddress(AddPeerRequest.Address, context.DAG.Params.DefaultPort)
 	if err != nil {
 		errorMessage := &appmessage.AddPeerResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Could not parse address: %s", err),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse address: %s", err)
 		return errorMessage, nil
 	}
 

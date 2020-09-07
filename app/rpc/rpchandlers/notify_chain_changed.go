@@ -10,9 +10,7 @@ import (
 func HandleNotifyChainChanged(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
 	if context.AcceptanceIndex == nil {
 		errorMessage := appmessage.NewNotifyChainChangedResponseMessage()
-		errorMessage.Error = &appmessage.RPCError{
-			Message: "Acceptance index is not available",
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Acceptance index is not available")
 		return errorMessage, nil
 	}
 

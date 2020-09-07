@@ -1,7 +1,6 @@
 package rpchandlers
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -14,18 +13,14 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 	txID, err := daghash.NewTxIDFromStr(getMempoolEntryRequest.TxID)
 	if err != nil {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Could not parse txId: %s", err),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse txId: %s", err)
 		return errorMessage, nil
 	}
 
 	_, ok := context.Mempool.FetchTxDesc(txID)
 	if !ok {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: "transaction is not in the pool",
-		}
+		errorMessage.Error = appmessage.RPCErrorf("transaction is not in the pool")
 		return errorMessage, nil
 	}
 

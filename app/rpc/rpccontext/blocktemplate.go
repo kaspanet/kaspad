@@ -177,12 +177,10 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 	maxTime := adjustedTime.Add(time.Millisecond * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("The template time is after the "+
-				"maximum allowed time for a block - template "+
-				"time %s, maximum time %s", adjustedTime,
-				maxTime),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("The template time is after the "+
+			"maximum allowed time for a block - template "+
+			"time %s, maximum time %s", adjustedTime,
+			maxTime)
 		return errorMessage, nil
 	}
 
@@ -217,9 +215,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 		txBuf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		if err := tx.Serialize(txBuf); err != nil {
 			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-			errorMessage.Error = &appmessage.RPCError{
-				Message: fmt.Sprintf("Failed to serialize transaction: %s", err),
-			}
+			errorMessage.Error = appmessage.RPCErrorf("Failed to serialize transaction: %s", err)
 			return errorMessage, nil
 		}
 

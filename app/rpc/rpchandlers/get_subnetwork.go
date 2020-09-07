@@ -1,7 +1,6 @@
 package rpchandlers
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -15,9 +14,7 @@ func HandleGetSubnetwork(context *rpccontext.Context, _ *router.Router, request 
 	subnetworkID, err := subnetworkid.NewFromStr(getSubnetworkRequest.SubnetworkID)
 	if err != nil {
 		errorMessage := &appmessage.GetSubnetworkResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Could not parse subnetworkID: %s", err),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse subnetworkID: %s", err)
 		return errorMessage, nil
 	}
 
@@ -26,9 +23,7 @@ func HandleGetSubnetwork(context *rpccontext.Context, _ *router.Router, request 
 		limit, err := context.DAG.GasLimit(subnetworkID)
 		if err != nil {
 			errorMessage := &appmessage.GetSubnetworkResponseMessage{}
-			errorMessage.Error = &appmessage.RPCError{
-				Message: fmt.Sprintf("Subnetwork %s not found.", subnetworkID),
-			}
+			errorMessage.Error = appmessage.RPCErrorf("Subnetwork %s not found.", subnetworkID)
 			return errorMessage, nil
 		}
 		gasLimit = limit

@@ -1,7 +1,6 @@
 package rpchandlers
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -21,11 +20,9 @@ func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, requ
 
 	if context.AcceptanceIndex == nil {
 		errorMessage := &appmessage.GetChainFromBlockResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: "The acceptance index must be " +
-				"enabled to get the selected parent chain " +
-				"(specify --acceptanceindex)",
-		}
+		errorMessage.Error = appmessage.RPCErrorf("The acceptance index must be " +
+			"enabled to get the selected parent chain " +
+			"(specify --acceptanceindex)")
 		return errorMessage, nil
 	}
 
@@ -35,9 +32,7 @@ func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, requ
 		err := daghash.Decode(startHash, getChainFromBlockRequest.StartHash)
 		if err != nil {
 			errorMessage := &appmessage.GetChainFromBlockResponseMessage{}
-			errorMessage.Error = &appmessage.RPCError{
-				Message: fmt.Sprintf("Could not parse startHash: %s", err),
-			}
+			errorMessage.Error = appmessage.RPCErrorf("Could not parse startHash: %s", err)
 			return errorMessage, nil
 		}
 	}
@@ -49,9 +44,7 @@ func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, requ
 	// to do; return an error.
 	if startHash != nil && !context.DAG.IsInDAG(startHash) {
 		errorMessage := &appmessage.GetChainFromBlockResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Block %s not found in the DAG", startHash),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Block %s not found in the DAG", startHash)
 		return errorMessage, nil
 	}
 
@@ -70,9 +63,7 @@ func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, requ
 	addedChainBlocks, err := context.CollectChainBlocks(addedChainHashes)
 	if err != nil {
 		errorMessage := &appmessage.GetChainFromBlockResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Could not collect chain blocks: %s", err),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Could not collect chain blocks: %s", err)
 		return errorMessage, nil
 	}
 

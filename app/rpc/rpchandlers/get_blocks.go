@@ -2,7 +2,6 @@ package rpchandlers
 
 import (
 	"encoding/hex"
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -26,9 +25,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		err := daghash.Decode(lowHash, getBlocksRequest.LowHash)
 		if err != nil {
 			errorMessage := &appmessage.GetBlocksResponseMessage{}
-			errorMessage.Error = &appmessage.RPCError{
-				Message: fmt.Sprintf("Could not parse lowHash: %s", err),
-			}
+			errorMessage.Error = appmessage.RPCErrorf("Could not parse lowHash: %s", err)
 			return errorMessage, nil
 		}
 	}
@@ -39,9 +36,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	// If lowHash is not in the DAG, there's nothing to do; return an error.
 	if lowHash != nil && !context.DAG.IsKnownBlock(lowHash) {
 		errorMessage := &appmessage.GetBlocksResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Block %s not found in DAG", lowHash),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Block %s not found in DAG", lowHash)
 		return errorMessage, nil
 	}
 

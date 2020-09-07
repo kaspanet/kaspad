@@ -1,7 +1,6 @@
 package rpchandlers
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -15,9 +14,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.DAG.Params.Prefix)
 	if err != nil {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.Error = &appmessage.RPCError{
-			Message: fmt.Sprintf("Could not decode address: %s", err),
-		}
+		errorMessage.Error = appmessage.RPCErrorf("Could not decode address: %s", err)
 		return errorMessage, nil
 	}
 
