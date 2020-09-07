@@ -47,7 +47,7 @@ func Test64IncomingConnections(t *testing.T) {
 
 		err := bully.rpcClient.RegisterForBlockAddedNotifications(onBlockAdded)
 		if err != nil {
-			t.Fatalf("Error from NotifyBlocks: %+v", err)
+			t.Fatalf("Error from RegisterForBlockAddedNotifications: %+v", err)
 		}
 	}
 
