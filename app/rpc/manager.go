@@ -32,6 +32,7 @@ func NewManager(
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
 	acceptanceIndex *indexers.AcceptanceIndex) *Manager {
+
 	manager := Manager{
 		context: rpccontext.NewContext(
 			cfg,
