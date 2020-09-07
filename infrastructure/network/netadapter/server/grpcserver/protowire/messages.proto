@@ -469,8 +469,8 @@ message TransactionVerboseData{
   uint64 gas = 8;
   string payloadHash = 9;
   string payload = 10;
-  repeated Vin vin = 11;
-  repeated Vout vout = 12;
+  repeated TransactionVerboseInput transactionVerboseInputs = 11;
+  repeated TransactionVerboseOutput transactionVerboseOutputs = 12;
   string blockHash = 13;
   string acceptedBy = 14;
   bool isInMempool = 15;
@@ -478,9 +478,9 @@ message TransactionVerboseData{
   uint64 blockTime = 17;
 }
 
-message Vin{
+message TransactionVerboseInput{
   string txId = 1;
-  uint32 vout = 2;
+  uint32 outputIndex = 2;
   ScriptSig scriptSig = 3;
   uint64 sequence = 4;
 }
@@ -490,9 +490,9 @@ message ScriptSig{
   string hex = 2;
 }
 
-message Vout{
+message TransactionVerboseOutput{
   uint64 value = 1;
-  uint32 n = 2;
+  uint32 index = 2;
   ScriptPubKeyResult scriptPubKey = 3;
 }
 

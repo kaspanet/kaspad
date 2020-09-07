@@ -74,31 +74,31 @@ type BlockVerboseData struct {
 
 // TransactionVerboseData holds verbose data about a transaction
 type TransactionVerboseData struct {
-	Hex          string
-	TxID         string
-	Hash         string
-	Size         int32
-	Version      int32
-	LockTime     uint64
-	SubnetworkID string
-	Gas          uint64
-	PayloadHash  string
-	Payload      string
-	Vin          []*Vin
-	Vout         []*Vout
-	BlockHash    string
-	AcceptedBy   string
-	IsInMempool  bool
-	Time         uint64
-	BlockTime    uint64
+	Hex                       string
+	TxID                      string
+	Hash                      string
+	Size                      int32
+	Version                   int32
+	LockTime                  uint64
+	SubnetworkID              string
+	Gas                       uint64
+	PayloadHash               string
+	Payload                   string
+	TransactionVerboseInputs  []*TransactionVerboseInput
+	TransactionVerboseOutputs []*TransactionVerboseOutput
+	BlockHash                 string
+	AcceptedBy                string
+	IsInMempool               bool
+	Time                      uint64
+	BlockTime                 uint64
 }
 
-// Vin holds data about a transaction input
-type Vin struct {
-	TxID      string
-	Vout      uint32
-	ScriptSig *ScriptSig
-	Sequence  uint64
+// TransactionVerboseInput holds data about a transaction input
+type TransactionVerboseInput struct {
+	TxID        string
+	OutputIndex uint32
+	ScriptSig   *ScriptSig
+	Sequence    uint64
 }
 
 // ScriptSig holds data about a script signature
@@ -107,10 +107,10 @@ type ScriptSig struct {
 	Hex string
 }
 
-// Vout holds data about a transaction output
-type Vout struct {
+// TransactionVerboseOutput holds data about a transaction output
+type TransactionVerboseOutput struct {
 	Value        uint64
-	N            uint32
+	Index        uint32
 	ScriptPubKey *ScriptPubKeyResult
 }
 

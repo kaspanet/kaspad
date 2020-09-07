@@ -135,18 +135,18 @@ func (ctx *Context) buildTransactionVerboseData(mtx *appmessage.MsgTx,
 	}
 
 	txReply := &appmessage.TransactionVerboseData{
-		Hex:          mtxHex,
-		TxID:         txID,
-		Hash:         mtx.TxHash().String(),
-		Size:         int32(mtx.SerializeSize()),
-		Vin:          ctx.buildVinList(mtx),
-		Vout:         ctx.createVoutList(mtx, nil),
-		Version:      mtx.Version,
-		LockTime:     mtx.LockTime,
-		SubnetworkID: mtx.SubnetworkID.String(),
-		Gas:          mtx.Gas,
-		PayloadHash:  payloadHash,
-		Payload:      hex.EncodeToString(mtx.Payload),
+		Hex:                       mtxHex,
+		TxID:                      txID,
+		Hash:                      mtx.TxHash().String(),
+		Size:                      int32(mtx.SerializeSize()),
+		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(mtx),
+		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(mtx, nil),
+		Version:                   mtx.Version,
+		LockTime:                  mtx.LockTime,
+		SubnetworkID:              mtx.SubnetworkID.String(),
+		Gas:                       mtx.Gas,
+		PayloadHash:               payloadHash,
+		Payload:                   hex.EncodeToString(mtx.Payload),
 	}
 
 	if blockHeader != nil {
@@ -175,32 +175,32 @@ func msgTxToHex(msgTx *appmessage.MsgTx) (string, error) {
 	return hex.EncodeToString(buf.Bytes()), nil
 }
 
-func (ctx *Context) buildVinList(mtx *appmessage.MsgTx) []*appmessage.Vin {
-	vinList := make([]*appmessage.Vin, len(mtx.TxIn))
+func (ctx *Context) buildTransactionVerboseInputs(mtx *appmessage.MsgTx) []*appmessage.TransactionVerboseInput {
+	inputs := make([]*appmessage.TransactionVerboseInput, len(mtx.TxIn))
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
 		// error here.
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
 
-		vinEntry := &appmessage.Vin{}
-		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
-		vinEntry.Vout = txIn.PreviousOutpoint.Index
-		vinEntry.Sequence = txIn.Sequence
-		vinEntry.ScriptSig = &appmessage.ScriptSig{
+		input := &appmessage.TransactionVerboseInput{}
+		input.TxID = txIn.PreviousOutpoint.TxID.String()
+		input.OutputIndex = txIn.PreviousOutpoint.Index
+		input.Sequence = txIn.Sequence
+		input.ScriptSig = &appmessage.ScriptSig{
 			Asm: disbuf,
 			Hex: hex.EncodeToString(txIn.SignatureScript),
 		}
-		vinList[i] = vinEntry
+		inputs[i] = input
 	}
 
-	return vinList
+	return inputs
 }
 
-// createVoutList returns a slice of JSON objects for the outputs of the passed
+// buildTransactionVerboseOutputs returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func (ctx *Context) createVoutList(mtx *appmessage.MsgTx, filterAddrMap map[string]struct{}) []*appmessage.Vout {
-	voutList := make([]*appmessage.Vout, len(mtx.TxOut))
+func (ctx *Context) buildTransactionVerboseOutputs(mtx *appmessage.MsgTx, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
+	outputs := make([]*appmessage.TransactionVerboseOutput, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
@@ -230,17 +230,17 @@ func (ctx *Context) createVoutList(mtx *appmessage.MsgTx, filterAddrMap map[stri
 			continue
 		}
 
-		vout := &appmessage.Vout{}
-		vout.N = uint32(i)
-		vout.Value = v.Value
-		vout.ScriptPubKey = &appmessage.ScriptPubKeyResult{
+		output := &appmessage.TransactionVerboseOutput{}
+		output.Index = uint32(i)
+		output.Value = v.Value
+		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
 			Address: encodedAddr,
 			Asm:     disbuf,
 			Hex:     hex.EncodeToString(v.ScriptPubKey),
 			Type:    scriptClass.String(),
 		}
-		voutList[i] = vout
+		outputs[i] = output
 	}
 
-	return voutList
+	return outputs
 }
