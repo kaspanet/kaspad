@@ -8,14 +8,11 @@ import (
 
 // SendRawTransaction sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SendRawTransaction(msgTx *appmessage.MsgTx) (*appmessage.SendRawTransactionResponseMessage, error) {
-	transactionHex := ""
-	if msgTx != nil {
-		buf := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
-		if err := msgTx.Serialize(buf); err != nil {
-			return nil, err
-		}
-		transactionHex = hex.EncodeToString(buf.Bytes())
+	buf := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
+	if err := msgTx.Serialize(buf); err != nil {
+		return nil, err
 	}
+	transactionHex := hex.EncodeToString(buf.Bytes())
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewSendRawTransactionRequestMessage(transactionHex))
 	if err != nil {
 		return nil, err
