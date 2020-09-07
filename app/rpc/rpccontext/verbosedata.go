@@ -14,7 +14,8 @@ import (
 	"strconv"
 )
 
-// BuildBlockVerboseData builds a BlockVerboseData from the given block
+// BuildBlockVerboseData builds a BlockVerboseData from the given block.
+// This method must be called with the DAG lock held for reads
 func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
 	hash := block.Hash()
 	params := ctx.DAG.Params
