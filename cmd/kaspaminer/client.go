@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 	"time"
@@ -25,6 +26,7 @@ func newMinerClient(cfg *configFlags) (*minerClient, error) {
 		return nil, err
 	}
 	rpcClient.SetTimeout(minerTimeout)
+	rpcClient.SetLogger(backendLog, logger.LevelTrace)
 
 	minerClient := &minerClient{
 		RPCClient:                  rpcClient,

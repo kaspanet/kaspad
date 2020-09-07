@@ -2,8 +2,10 @@ package rpcclient
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
+	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -63,4 +65,12 @@ func (c *RPCClient) route(command appmessage.MessageCommand) *routerpkg.Route {
 
 func (c *RPCClient) convertRPCError(rpcError *appmessage.RPCError) error {
 	return errors.Errorf("received error response from RPC: %s", rpcError.Message)
+}
+
+// SetLogger uses a specified Logger to output package logging info
+func (c *RPCClient) SetLogger(backend *logger.Backend, level logger.Level) {
+	const logSubsystem = "RPCC"
+	log = backend.Logger(logSubsystem)
+	log.SetLevel(level)
+	spawn = panics.GoroutineWrapperFunc(log)
 }
