@@ -20,7 +20,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetSelectedTipHashRequestMessage:   rpchandlers.HandleGetSelectedTipHash,
 	appmessage.CmdGetMempoolEntryRequestMessage:      rpchandlers.HandleGetMempoolEntry,
 	appmessage.CmdGetConnectedPeerInfoRequestMessage: rpchandlers.HandleGetConnectedPeerInfo,
-	appmessage.CmdConnectToPeerRequestMessage:        rpchandlers.HandleConnectToPeer,
+	appmessage.CmdAddPeerRequestMessage:              rpchandlers.HandleAddPeer,
 	appmessage.CmdSubmitTransactionRequestMessage:    rpchandlers.HandleSubmitTransaction,
 	appmessage.CmdNotifyChainChangedRequestMessage:   rpchandlers.HandleNotifyChainChanged,
 	appmessage.CmdGetBlockRequestMessage:             rpchandlers.HandleGetBlock,

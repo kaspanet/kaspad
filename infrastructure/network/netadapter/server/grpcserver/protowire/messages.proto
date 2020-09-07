@@ -45,8 +45,8 @@ message KaspadMessage {
     GetMempoolEntryResponseMessage getMempoolEntryResponse = 1015;
     GetConnectedPeerInfoRequestMessage getConnectedPeerInfoRequest = 1016;
     GetConnectedPeerInfoResponseMessage getConnectedPeerInfoResponse = 1017;
-    ConnectToPeerRequestMessage connectToPeerRequest = 1018;
-    ConnectToPeerResponseMessage connectToPeerResponse = 1019;
+    AddPeerRequestMessage addPeerRequest = 1018;
+    AddPeerResponseMessage addPeerResponse = 1019;
     SubmitTransactionRequestMessage submitTransactionRequest = 1020;
     SubmitTransactionResponseMessage submitTransactionResponse = 1021;
     NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
@@ -379,12 +379,12 @@ message GetConnectedPeerInfoMessage{
   int64 timeConnected = 10;
 }
 
-message ConnectToPeerRequestMessage{
+message AddPeerRequestMessage{
   string address = 1;
   bool isPermanent = 2;
 }
 
-message ConnectToPeerResponseMessage{
+message AddPeerResponseMessage{
   RPCError error = 1;
 }
 
