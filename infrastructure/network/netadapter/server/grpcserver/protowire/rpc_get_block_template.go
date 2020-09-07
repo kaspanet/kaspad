@@ -7,12 +7,14 @@ import (
 func (x *KaspadMessage_GetBlockTemplateRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetBlockTemplateRequestMessage{
 		PayAddress: x.GetBlockTemplateRequest.PayAddress,
+		LongPollID: x.GetBlockTemplateRequest.LongPollId,
 	}, nil
 }
 
 func (x *KaspadMessage_GetBlockTemplateRequest) fromAppMessage(message *appmessage.GetBlockTemplateRequestMessage) error {
 	x.GetBlockTemplateRequest = &GetBlockTemplateRequestMessage{
 		PayAddress: message.PayAddress,
+		LongPollId: message.LongPollID,
 	}
 	return nil
 }
@@ -40,7 +42,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 		AcceptedIDMerkleRoot: x.GetBlockTemplateResponse.AcceptedIDMerkleRoot,
 		UTXOCommitment:       x.GetBlockTemplateResponse.UtxoCommitment,
 		Version:              x.GetBlockTemplateResponse.Version,
-		LongPollID:           x.GetBlockTemplateResponse.LongPollID,
+		LongPollID:           x.GetBlockTemplateResponse.LongPollId,
 		TargetDifficulty:     x.GetBlockTemplateResponse.TargetDifficulty,
 		MinTime:              x.GetBlockTemplateResponse.MinTime,
 		MaxTime:              x.GetBlockTemplateResponse.MaxTime,
@@ -76,7 +78,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 		AcceptedIDMerkleRoot: message.AcceptedIDMerkleRoot,
 		UtxoCommitment:       message.UTXOCommitment,
 		Version:              message.Version,
-		LongPollID:           message.LongPollID,
+		LongPollId:           message.LongPollID,
 		TargetDifficulty:     message.TargetDifficulty,
 		MinTime:              message.MinTime,
 		MaxTime:              message.MaxTime,

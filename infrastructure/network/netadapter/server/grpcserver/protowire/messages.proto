@@ -287,6 +287,7 @@ message SubmitBlockResponseMessage{
 
 message GetBlockTemplateRequestMessage{
   string payAddress = 1;
+  string longPollId = 2;
 }
 
 message GetBlockTemplateResponseMessage{
@@ -299,7 +300,7 @@ message GetBlockTemplateResponseMessage{
   string acceptedIDMerkleRoot = 7;
   string utxoCommitment = 8;
   int32 version = 9;
-  string longPollID = 10;
+  string longPollId = 10;
   string targetDifficulty = 11;
   int64 minTime = 12;
   int64 maxTime = 13;
