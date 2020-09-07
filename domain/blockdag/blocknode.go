@@ -43,6 +43,7 @@ const (
 var blockStatusToString = map[blockStatus]string{
 	statusDataStored:            "statusDataStored",
 	statusValid:                 "statusValid",
+	statusValidateFailed:        "statusValidateFailed",
 	statusInvalidAncestor:       "statusInvalidAncestor",
 	statusUTXONotVerified:       "statusUTXONotVerified",
 	statusDisqualifiedFromChain: "statusDisqualifiedFromChain",

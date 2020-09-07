@@ -337,6 +337,7 @@ func (node *blockNode) updateDiffAndDiffChild(dag *BlockDAG, newBlockPastUTXO UT
 		}
 	}
 
+	// If there's no diffChild, then virtual is the de-facto diffChild
 	var diffChildUTXOSet UTXOSet = dag.virtual.utxoSet
 	if diffChild != nil {
 		var err error
