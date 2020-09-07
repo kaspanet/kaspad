@@ -47,12 +47,12 @@ func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.Get
 	}
 	blockVerboseData := make([]*BlockVerboseData, len(message.BlockVerboseData))
 	for i, blockVerboseDatum := range message.BlockVerboseData {
-		wireBlockVerboseDatum := &BlockVerboseData{}
-		err := wireBlockVerboseDatum.fromAppMessage(blockVerboseDatum)
+		protoBlockVerboseDatum := &BlockVerboseData{}
+		err := protoBlockVerboseDatum.fromAppMessage(blockVerboseDatum)
 		if err != nil {
 			return err
 		}
-		blockVerboseData[i] = wireBlockVerboseDatum
+		blockVerboseData[i] = protoBlockVerboseDatum
 	}
 	x.GetBlocksResponse = &GetBlocksResponseMessage{
 		BlockHashes:      message.BlockHashes,

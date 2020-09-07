@@ -50,12 +50,12 @@ func (x *KaspadMessage_ChainChangedNotification) toAppMessage() (appmessage.Mess
 func (x *KaspadMessage_ChainChangedNotification) fromAppMessage(message *appmessage.ChainChangedNotificationMessage) error {
 	addedChainBlocks := make([]*ChainChangedChainBlock, len(message.AddedChainBlocks))
 	for i, addedChainBlock := range message.AddedChainBlocks {
-		wireAddedChainBlock := &ChainChangedChainBlock{}
-		err := wireAddedChainBlock.fromAppMessage(addedChainBlock)
+		protoAddedChainBlock := &ChainChangedChainBlock{}
+		err := protoAddedChainBlock.fromAppMessage(addedChainBlock)
 		if err != nil {
 			return err
 		}
-		addedChainBlocks[i] = wireAddedChainBlock
+		addedChainBlocks[i] = protoAddedChainBlock
 	}
 	x.ChainChangedNotification = &ChainChangedNotificationMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,

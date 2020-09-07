@@ -53,21 +53,21 @@ func (x *KaspadMessage_GetChainFromBlockResponse) fromAppMessage(message *appmes
 	}
 	addedChainBlocks := make([]*ChainChangedChainBlock, len(message.AddedChainBlocks))
 	for i, addedChainBlock := range message.AddedChainBlocks {
-		wireAddedChainBlock := &ChainChangedChainBlock{}
-		err := wireAddedChainBlock.fromAppMessage(addedChainBlock)
+		protoAddedChainBlock := &ChainChangedChainBlock{}
+		err := protoAddedChainBlock.fromAppMessage(addedChainBlock)
 		if err != nil {
 			return err
 		}
-		addedChainBlocks[i] = wireAddedChainBlock
+		addedChainBlocks[i] = protoAddedChainBlock
 	}
 	blockVerboseData := make([]*BlockVerboseData, len(message.BlockVerboseData))
 	for i, blockVerboseDatum := range message.BlockVerboseData {
-		wireBlockVerboseDatum := &BlockVerboseData{}
-		err := wireBlockVerboseDatum.fromAppMessage(blockVerboseDatum)
+		protoBlockVerboseDatum := &BlockVerboseData{}
+		err := protoBlockVerboseDatum.fromAppMessage(blockVerboseDatum)
 		if err != nil {
 			return err
 		}
-		blockVerboseData[i] = wireBlockVerboseDatum
+		blockVerboseData[i] = protoBlockVerboseDatum
 	}
 	x.GetChainFromBlockResponse = &GetChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,

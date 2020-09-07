@@ -52,12 +52,12 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 	}
 	var blockVerboseData *BlockVerboseData
 	if message.BlockVerboseData != nil {
-		wireBlockVerboseData := &BlockVerboseData{}
-		err := wireBlockVerboseData.fromAppMessage(message.BlockVerboseData)
+		protoBlockVerboseData := &BlockVerboseData{}
+		err := protoBlockVerboseData.fromAppMessage(message.BlockVerboseData)
 		if err != nil {
 			return err
 		}
-		blockVerboseData = wireBlockVerboseData
+		blockVerboseData = protoBlockVerboseData
 	}
 	x.GetBlockResponse = &GetBlockResponseMessage{
 		BlockHex:         message.BlockHex,
