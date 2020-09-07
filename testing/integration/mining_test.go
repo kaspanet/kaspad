@@ -1,10 +1,9 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/mining"
 	"math/rand"
 	"testing"
-
-	clientpkg "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util"
@@ -32,14 +31,14 @@ func mineNextBlock(t *testing.T, harness *appHarness) *util.Block {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
 
-	block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(blockTemplate)
+	block, err := mining.ConvertGetBlockTemplateResultToBlock(blockTemplate)
 	if err != nil {
 		t.Fatalf("Error parsing blockTemplate: %s", err)
 	}
 
 	solveBlock(block)
 
-	err = harness.rpcClient.SubmitBlock(block, nil)
+	err = harness.rpcClient.SubmitBlock(block)
 	if err != nil {
 		t.Fatalf("Error submitting block: %s", err)
 	}

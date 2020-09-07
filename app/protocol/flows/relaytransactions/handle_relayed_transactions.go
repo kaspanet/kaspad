@@ -21,6 +21,7 @@ type TransactionsRelayContext interface {
 	SharedRequestedTransactions() *SharedRequestedTransactions
 	TxPool() *mempool.TxPool
 	Broadcast(message appmessage.Message) error
+	OnTransactionAddedToMempool()
 }
 
 type handleRelayedTransactionsFlow struct {
@@ -218,6 +219,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		if err != nil {
 			return err
 		}
+		flow.OnTransactionAddedToMempool()
 	}
 	return nil
 }

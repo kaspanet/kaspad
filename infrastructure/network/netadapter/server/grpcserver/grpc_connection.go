@@ -34,9 +34,13 @@ type gRPCConnection struct {
 	isConnected uint32
 }
 
+type grpcStream interface {
+	Send(*protowire.KaspadMessage) error
+	Recv() (*protowire.KaspadMessage, error)
+}
+
 func newConnection(server *gRPCServer, address *net.TCPAddr, stream grpcStream,
 	lowLevelClientConnection *grpc.ClientConn) *gRPCConnection {
-
 	connection := &gRPCConnection{
 		server:                   server,
 		address:                  address,
@@ -139,7 +143,7 @@ func (c *gRPCConnection) closeSend() {
 	c.streamLock.Lock()
 	defer c.streamLock.Unlock()
 
-	clientStream := c.stream.(protowire.P2P_MessageStreamClient)
+	clientStream := c.stream.(grpc.ClientStream)
 
 	// ignore error because we don't really know what's the status of the connection
 	_ = clientStream.CloseSend()

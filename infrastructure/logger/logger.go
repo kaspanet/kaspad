@@ -38,6 +38,7 @@ var (
 	minrLog = BackendLog.Logger("MINR")
 	peerLog = BackendLog.Logger("PEER")
 	rpcsLog = BackendLog.Logger("RPCS")
+	rpccLog = BackendLog.Logger("RPCC")
 	scrpLog = BackendLog.Logger("SCRP")
 	srvrLog = BackendLog.Logger("SRVR")
 	syncLog = BackendLog.Logger("SYNC")
@@ -68,6 +69,7 @@ var SubsystemTags = struct {
 	MINR,
 	PEER,
 	RPCS,
+	RPCC,
 	SCRP,
 	SRVR,
 	SYNC,
@@ -95,6 +97,7 @@ var SubsystemTags = struct {
 	MINR: "MINR",
 	PEER: "PEER",
 	RPCS: "RPCS",
+	RPCC: "RPCC",
 	SCRP: "SCRP",
 	SRVR: "SRVR",
 	SYNC: "SYNC",
@@ -125,6 +128,7 @@ var subsystemLoggers = map[string]*Logger{
 	SubsystemTags.MINR: minrLog,
 	SubsystemTags.PEER: peerLog,
 	SubsystemTags.RPCS: rpcsLog,
+	SubsystemTags.RPCC: rpccLog,
 	SubsystemTags.SCRP: scrpLog,
 	SubsystemTags.SRVR: srvrLog,
 	SubsystemTags.SYNC: syncLog,

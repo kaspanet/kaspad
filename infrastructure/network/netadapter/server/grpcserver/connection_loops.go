@@ -13,11 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 )
 
-type grpcStream interface {
-	Send(*protowire.KaspadMessage) error
-	Recv() (*protowire.KaspadMessage, error)
-}
-
 func (c *gRPCConnection) connectionLoops() error {
 	errChan := make(chan error, 1) // buffered channel because one of the loops might try write after disconnect
 

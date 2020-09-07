@@ -17,7 +17,10 @@ const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 type MessageCommand uint32
 
 func (cmd MessageCommand) String() string {
-	cmdString, ok := MessageCommandToString[cmd]
+	cmdString, ok := ProtocolMessageCommandToString[cmd]
+	if !ok {
+		cmdString, ok = RPCMessageCommandToString[cmd]
+	}
 	if !ok {
 		cmdString = "unknown command"
 	}
@@ -26,6 +29,7 @@ func (cmd MessageCommand) String() string {
 
 // Commands used in kaspa message headers which describe the type of message.
 const (
+	// protocol
 	CmdVersion MessageCommand = iota
 	CmdVerAck
 	CmdRequestAddresses
@@ -48,10 +52,45 @@ const (
 	CmdDoneIBDBlocks
 	CmdTransactionNotFound
 	CmdReject
+
+	// rpc
+	CmdGetCurrentNetworkRequestMessage
+	CmdGetCurrentNetworkResponseMessage
+	CmdSubmitBlockRequestMessage
+	CmdSubmitBlockResponseMessage
+	CmdGetBlockTemplateRequestMessage
+	CmdGetBlockTemplateResponseMessage
+	CmdGetBlockTemplateTransactionMessage
+	CmdNotifyBlockAddedRequestMessage
+	CmdNotifyBlockAddedResponseMessage
+	CmdBlockAddedNotificationMessage
+	CmdGetPeerAddressesRequestMessage
+	CmdGetPeerAddressesResponseMessage
+	CmdGetSelectedTipHashRequestMessage
+	CmdGetSelectedTipHashResponseMessage
+	CmdGetMempoolEntryRequestMessage
+	CmdGetMempoolEntryResponseMessage
+	CmdGetConnectedPeerInfoRequestMessage
+	CmdGetConnectedPeerInfoResponseMessage
+	CmdAddPeerRequestMessage
+	CmdAddPeerResponseMessage
+	CmdSubmitTransactionRequestMessage
+	CmdSubmitTransactionResponseMessage
+	CmdNotifyChainChangedRequestMessage
+	CmdNotifyChainChangedResponseMessage
+	CmdChainChangedNotificationMessage
+	CmdGetBlockRequestMessage
+	CmdGetBlockResponseMessage
+	CmdGetSubnetworkRequestMessage
+	CmdGetSubnetworkResponseMessage
+	CmdGetChainFromBlockRequestMessage
+	CmdGetChainFromBlockResponseMessage
+	CmdGetBlocksRequestMessage
+	CmdGetBlocksResponseMessage
 )
 
-// MessageCommandToString maps all MessageCommands to their string representation
-var MessageCommandToString = map[MessageCommand]string{
+// ProtocolMessageCommandToString maps all MessageCommands to their string representation
+var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdVersion:              "Version",
 	CmdVerAck:               "VerAck",
 	CmdRequestAddresses:     "RequestAddresses",
@@ -74,6 +113,43 @@ var MessageCommandToString = map[MessageCommand]string{
 	CmdDoneIBDBlocks:        "DoneIBDBlocks",
 	CmdTransactionNotFound:  "TransactionNotFound",
 	CmdReject:               "Reject",
+}
+
+// RPCMessageCommandToString maps all MessageCommands to their string representation
+var RPCMessageCommandToString = map[MessageCommand]string{
+	CmdGetCurrentNetworkRequestMessage:     "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage:    "GetCurrentNetworkResponse",
+	CmdSubmitBlockRequestMessage:           "SubmitBlockRequest",
+	CmdSubmitBlockResponseMessage:          "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:      "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:     "GetBlockTemplateResponse",
+	CmdGetBlockTemplateTransactionMessage:  "CmdGetBlockTemplateTransaction",
+	CmdNotifyBlockAddedRequestMessage:      "NotifyBlockAddedRequest",
+	CmdNotifyBlockAddedResponseMessage:     "NotifyBlockAddedResponse",
+	CmdBlockAddedNotificationMessage:       "BlockAddedNotification",
+	CmdGetPeerAddressesRequestMessage:      "GetPeerAddressesRequest",
+	CmdGetPeerAddressesResponseMessage:     "GetPeerAddressesResponse",
+	CmdGetSelectedTipHashRequestMessage:    "GetSelectedTipHashRequest",
+	CmdGetSelectedTipHashResponseMessage:   "GetSelectedTipHashResponse",
+	CmdGetMempoolEntryRequestMessage:       "GetMempoolEntryRequest",
+	CmdGetMempoolEntryResponseMessage:      "GetMempoolEntryResponse",
+	CmdGetConnectedPeerInfoRequestMessage:  "GetConnectedPeerInfoRequest",
+	CmdGetConnectedPeerInfoResponseMessage: "GetConnectedPeerInfoResponse",
+	CmdAddPeerRequestMessage:               "AddPeerRequest",
+	CmdAddPeerResponseMessage:              "AddPeerResponse",
+	CmdSubmitTransactionRequestMessage:     "SubmitTransactionRequest",
+	CmdSubmitTransactionResponseMessage:    "SubmitTransactionResponse",
+	CmdNotifyChainChangedRequestMessage:    "NotifyChainChangedRequest",
+	CmdNotifyChainChangedResponseMessage:   "NotifyChainChangedResponse",
+	CmdChainChangedNotificationMessage:     "ChainChangedNotification",
+	CmdGetBlockRequestMessage:              "GetBlockRequest",
+	CmdGetBlockResponseMessage:             "GetBlockResponse",
+	CmdGetSubnetworkRequestMessage:         "GetSubnetworkRequest",
+	CmdGetSubnetworkResponseMessage:        "GetSubnetworkResponse",
+	CmdGetChainFromBlockRequestMessage:     "GetChainFromBlockRequest",
+	CmdGetChainFromBlockResponseMessage:    "GetChainFromBlockResponse",
+	CmdGetBlocksRequestMessage:             "GetBlocksRequest",
+	CmdGetBlocksResponseMessage:            "GetBlocksResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

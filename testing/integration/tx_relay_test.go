@@ -22,8 +22,8 @@ func TestTxRelay(t *testing.T) {
 	connect(t, mediator, payee)
 
 	payeeBlockAddedChan := make(chan *appmessage.BlockHeader)
-	setOnBlockAddedHandler(t, payee, func(header *appmessage.BlockHeader) {
-		payeeBlockAddedChan <- header
+	setOnBlockAddedHandler(t, payee, func(notification *appmessage.BlockAddedNotificationMessage) {
+		payeeBlockAddedChan <- &notification.Block.Header
 	})
 	// skip the first block because it's paying to genesis script
 	mineNextBlock(t, payer)
@@ -39,10 +39,11 @@ func TestTxRelay(t *testing.T) {
 	}
 
 	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
-	txID, err := payer.rpcClient.SendRawTransaction(tx, true)
+	response, err := payer.rpcClient.SubmitTransaction(tx)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
+	txID := response.TxID
 
 	txAddedToMempoolChan := make(chan struct{})
 
@@ -51,9 +52,9 @@ func TestTxRelay(t *testing.T) {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			_, err := payee.rpcClient.GetMempoolEntry(txID.String())
+			_, err := payee.rpcClient.GetMempoolEntry(txID)
 			if err != nil {
-				if strings.Contains(err.Error(), "-32603: transaction is not in the pool") {
+				if strings.Contains(err.Error(), "transaction is not in the pool") {
 					continue
 				}
 

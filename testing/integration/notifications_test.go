@@ -6,10 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
-func setOnBlockAddedHandler(t *testing.T, harness *appHarness, handler func(header *appmessage.BlockHeader)) {
-	err := harness.rpcClient.NotifyBlocks()
+func setOnBlockAddedHandler(t *testing.T, harness *appHarness, handler func(notification *appmessage.BlockAddedNotificationMessage)) {
+	err := harness.rpcClient.RegisterForBlockAddedNotifications(handler)
 	if err != nil {
-		t.Fatalf("Error from NotifyBlocks: %s", err)
+		t.Fatalf("Error from RegisterForBlockAddedNotifications: %s", err)
 	}
-	harness.rpcClient.onBlockAdded = handler
 }

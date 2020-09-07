@@ -35,7 +35,7 @@ func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 
 	routerInitializer, routesChan := generateRouteInitializer()
 
-	netAdapter.SetRouterInitializer(routerInitializer)
+	netAdapter.SetP2PRouterInitializer(routerInitializer)
 	err = netAdapter.Start()
 	if err != nil {
 		return nil, errors.Wrap(err, "Error starting netAdapter")
@@ -57,7 +57,7 @@ func (mna *MinimalNetAdapter) Connect(address string) (*Routes, error) {
 	mna.lock.Lock()
 	defer mna.lock.Unlock()
 
-	err := mna.netAdapter.Connect(address)
+	err := mna.netAdapter.P2PConnect(address)
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,9 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
 	cmdsWithBuiltInRoutes := []appmessage.MessageCommand{appmessage.CmdVerAck, appmessage.CmdVersion, appmessage.CmdPing}
 
-	everythingElse := make([]appmessage.MessageCommand, 0, len(appmessage.MessageCommandToString)-len(cmdsWithBuiltInRoutes))
+	everythingElse := make([]appmessage.MessageCommand, 0, len(appmessage.ProtocolMessageCommandToString)-len(cmdsWithBuiltInRoutes))
 outerLoop:
-	for command := range appmessage.MessageCommandToString {
+	for command := range appmessage.ProtocolMessageCommandToString {
 		for _, cmdWithBuiltInRoute := range cmdsWithBuiltInRoutes {
 			if command == cmdWithBuiltInRoute {
 				continue outerLoop
