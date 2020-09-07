@@ -269,7 +269,7 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 	defer dbTx.RollbackUnlessClosed()
 
 	if isNewSelectedTip {
-		err = dag.validateAndApplyUTXOSet(newNode, block, flags, dbTx)
+		err = dag.validateAndApplyUTXOSet(newNode, block, dbTx)
 		if err != nil {
 			if !errors.As(err, &(RuleError{})) {
 				return nil, err
@@ -356,10 +356,10 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(
-	node *blockNode, block *util.Block, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+	node *blockNode, block *util.Block, dbTx *dbaccess.TxContext) error {
 
 	if !node.isGenesis() {
-		err := dag.resolveNodeStatus(node.selectedParent, flags, dbTx)
+		err := dag.resolveNodeStatus(node.selectedParent, dbTx)
 		if err != nil {
 			return err
 		}
@@ -418,14 +418,14 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	return nil
 }
 
-func (dag *BlockDAG) resolveNodeStatus(node *blockNode, flags BehaviorFlags, dbTx *dbaccess.TxContext) error {
+func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext) error {
 	if dag.index.BlockNodeStatus(node) == statusUTXONotVerified {
 		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
 		}
 
-		err = dag.validateAndApplyUTXOSet(node, block, flags, dbTx)
+		err = dag.validateAndApplyUTXOSet(node, block, dbTx)
 		if err != nil {
 			return err
 		}

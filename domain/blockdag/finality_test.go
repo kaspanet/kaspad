@@ -113,6 +113,5 @@ func TestFinality(t *testing.T) {
 	case <-notificationChan:
 	default:
 		t.Fatalf("No finality violation notification was sent")
-
 	}
 }

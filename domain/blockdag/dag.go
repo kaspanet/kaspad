@@ -572,9 +572,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	selected := newBlockSet()
 
 	candidatesHeap := newDownHeap()
-	for tip := range tips {
-		candidatesHeap.Push(tip)
-	}
+	candidatesHeap.pushSet(tips)
 
 	// If the first candidate has been disqualified from the chain or violates finality -
 	// he cannot be virtual's parent, since it will make him virtual's selectedParent - disqualifying virtual itself.
