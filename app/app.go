@@ -144,23 +144,20 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 
 func (a *App) maybeSeedFromDNS() {
 	if !a.cfg.DisableDNSSeed {
-		switch {
-		case a.cfg.GRPCSeed != "" && a.cfg.DNSSeed != "":
-			panics.Exit(log, "GRPCSeed and DNSSeed are both defined. Only one of them is allowed to be defined")
-		case a.cfg.GRPCSeed != "":
-			dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
-				func(addresses []*appmessage.NetAddress) {
-					a.addressManager.AddAddresses(addresses, addresses[0], nil)
-				})
-		case a.cfg.DNSSeed != "":
-			dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
-				a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
-					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-					// IPs of nodes and not its own IP, we can not know real IP of
-					// source. So we'll take first returned address as source.
-					a.addressManager.AddAddresses(addresses, addresses[0], nil)
-				})
-		}
+		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
+			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
+				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
+				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
+	}
+
+	if a.cfg.GRPCSeed != "" {
+		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
+			func(addresses []*appmessage.NetAddress) {
+				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
 	}
 }
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
