@@ -173,6 +173,13 @@ func (a *App) maybeSeedFromDNS() {
 				a.addressManager.AddAddresses(addresses, addresses[0], nil)
 			})
 	}
+
+	if a.cfg.GRPCSeed != "" {
+		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
+			func(addresses []*appmessage.NetAddress) {
+				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
+	}
 }
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
