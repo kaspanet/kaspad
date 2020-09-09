@@ -267,11 +267,11 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 			}
 			dag.index.SetBlockNodeStatus(newNode, statusDisqualifiedFromChain)
 		} else {
-			isViolatingSubjectiveFinality, err := newNode.isViolatingFinality()
+			isViolatingFinality, err := newNode.isViolatingFinality()
 			if err != nil {
 				return nil, err
 			}
-			if isViolatingSubjectiveFinality {
+			if isViolatingFinality {
 				dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
 				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
 					ViolatingBlockHash: newNode.hash,
