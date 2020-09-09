@@ -1322,7 +1322,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 	for _, parentHash := range header.ParentHashes {
 		parent, ok := dag.index.LookupNode(parentHash)
 		if !ok {
-			return errors.Errorf("Couldn't find parent of templates with hash `%s`", parentHash)
+			return errors.Errorf("Couldn't find parent of block template with hash `%s`", parentHash)
 		}
 		templateParents.add(parent)
 	}
