@@ -847,8 +847,8 @@ func (dag *BlockDAG) checkBlockHasNoChainedTransactions(block *util.Block, node 
 	}
 
 	for _, transaction := range transactions {
-		for _, transactionInput := range transaction.MsgTx().TxIn {
-			if i, ok := transactionsSet[transactionInput.PreviousOutpoint.TxID]; ok {
+		for i, transactionInput := range transaction.MsgTx().TxIn {
+			if _, ok := transactionsSet[transactionInput.PreviousOutpoint.TxID]; ok {
 				str := fmt.Sprintf("block contains chained transactions: Input %d of transaction %s spend"+
 					"an output of transaction %s", i, transaction.ID(), transactionInput.PreviousOutpoint.TxID)
 				return ruleError(ErrChainedTransactions, str)
