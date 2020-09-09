@@ -60,6 +60,8 @@ message KaspadMessage {
     GetChainFromBlockResponseMessage getChainFromBlockResponse = 1030;
     GetBlocksRequestMessage getBlocksRequest = 1031;
     GetBlocksResponseMessage getBlocksResponse = 1032;
+    GetBlockCountRequestMessage getBlockCountRequest = 1033;
+    GetBlockCountResponseMessage getBlockCountResponse = 1034;
   }
 }
 
@@ -536,6 +538,14 @@ message GetBlocksResponseMessage{
   repeated string blockHexes = 2;
   repeated BlockVerboseData blockVerboseData = 3;
   RPCError error = 4;
+}
+
+message GetBlockCountRequestMessage{
+}
+
+message GetBlockCountResponseMessage{
+  uint64 blockCount = 1;
+  RPCError error = 2;
 }
 
 service RPC {
