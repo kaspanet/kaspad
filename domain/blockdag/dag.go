@@ -397,20 +397,17 @@ func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, erro
 //
 // Note: this method will return true if `other` is in `nodes`
 func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, error) {
-	isAnyInPastOfOther := false
-
 	for node := range nodes {
 		isInPast, err := dag.isInPast(node, other)
 		if err != nil {
 			return false, err
 		}
 		if isInPast {
-			isAnyInPastOfOther = true
-			break
+			return true, nil
 		}
 	}
 
-	return isAnyInPastOfOther, nil
+	return false, nil
 }
 
 // GetTopHeaders returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
