@@ -1167,7 +1167,6 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 // in the DAG.
 //
 // Note: this method will return true if this == other
-//
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
 func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	// Check if this node is a reachability tree ancestor of the

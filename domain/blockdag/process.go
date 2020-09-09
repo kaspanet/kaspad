@@ -250,16 +250,9 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 		return nil, err
 	}
 
-	var isNewSelectedTip bool
-	if newNode.isGenesis() {
-		isNewSelectedTip = true
-	} else {
-		// If the new block is not the selected tip - it's not in virtual's selectedParentChain, therefore it's
-		// not going to be utxo-verified at this point
-		isNewSelectedTip = dag.selectedTip().less(newNode)
-		if !isNewSelectedTip {
-			dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
-		}
+	isNewSelectedTip := dag.isNewSelectedTip(newNode)
+	if !isNewSelectedTip {
+		dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
 	}
 
 	dbTx, err := dag.databaseContext.NewTx()
@@ -316,6 +309,11 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 	dag.blockCount++
 
 	return chainUpdates, nil
+}
+
+// isNewSelectedTip determines if a new blockNode qualifies to be the next selectedTip
+func (dag *BlockDAG) isNewSelectedTip(newNode *blockNode) bool {
+	return newNode.isGenesis() || dag.selectedTip().less(newNode)
 }
 
 func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*selectedParentChainUpdates, error) {
