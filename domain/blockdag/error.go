@@ -217,9 +217,9 @@ const (
 	// BFDisallowOrphans flag raised.
 	ErrOrphanBlockIsNotAllowed
 
-	// ErrViolatingObjectiveFinality indicates that a block is violating finality from
-	// it's own point of view
-	ErrViolatingObjectiveFinality
+	// ErrViolatingBoundedMergeDepth indicates that a block is violating finality from
+	// its own point of view
+	ErrViolatingBoundedMergeDepth
 
 	// ErrViolatingMergeLimit indicates that a block merges more then mergeLimit blocks
 	ErrViolatingMergeLimit

@@ -329,7 +329,7 @@ func (node *blockNode) checkBoundedMergeDepth() error {
 		}
 
 		if !doesRedHaveFinalityPointInPast && !isRedInPastOfAnyNonFinalityViolatingBlue {
-			return ruleError(ErrViolatingObjectiveFinality, "block is violating objective finality")
+			return ruleError(ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
 	}
 
