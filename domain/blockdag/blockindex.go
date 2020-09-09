@@ -63,12 +63,12 @@ func (bi *blockIndex) LookupNode(hash *daghash.Hash) (*blockNode, bool) {
 
 func (bi *blockIndex) LookupNodes(hashes []*daghash.Hash) ([]*blockNode, error) {
 	blocks := make([]*blockNode, 0, len(hashes))
-	for _, validBlockHash := range hashes {
-		validBlock, ok := bi.LookupNode(validBlockHash)
+	for _, hash := range hashes {
+		node, ok := bi.LookupNode(hash)
 		if !ok {
-			return nil, errors.Errorf("Couldn't find block with hash %s", validBlockHash)
+			return nil, errors.Errorf("Couldn't find block with hash %s", hash)
 		}
-		blocks = append(blocks, validBlock)
+		blocks = append(blocks, node)
 	}
 	return blocks, nil
 }
