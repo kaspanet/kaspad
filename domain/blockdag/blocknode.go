@@ -33,8 +33,8 @@ const (
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
 
-	// statusUTXOPendingVerification indicates that the block is pending verification against it's UTXO-Set, either
-	// because it was not yet verified since the block was never in the selectedParentChain, or if the
+	// statusUTXOPendingVerification indicates that the block is pending verification against its past UTXO-Set, either
+	// because it was not yet verified since the block was never in the selected parent chain, or if the
 	// block violates finality.
 	statusUTXOPendingVerification
 

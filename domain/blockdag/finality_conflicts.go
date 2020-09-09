@@ -59,9 +59,9 @@ func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNo
 			continue
 		}
 		if dag.index.BlockNodeStatus(candidate) == statusUTXOPendingVerification {
-			err2 := dag.resolveNodeStatusInNewTransaction(candidate)
-			if err2 != nil {
-				return err2
+			err := dag.resolveNodeStatusInNewTransaction(candidate)
+			if err != nil {
+				return err
 			}
 		}
 		if dag.index.BlockNodeStatus(candidate) == statusValid {

@@ -222,7 +222,7 @@ func TestSelectedPath(t *testing.T) {
 
 // TestChainUpdates makes sure the chainUpdates from setTips are correct:
 // It creates two chains: a main-chain to be removed and a side-chain to be added
-// The main-chain has to be longer then the side-chain, so that the natural selected tip of the DAG is the one
+// The main-chain has to be longer than the side-chain, so that the natural selected tip of the DAG is the one
 // from the main chain.
 // Then dag.setTip is called with the tip of the side-chain to artificially re-org the DAG, and verify
 // the chainUpdates return value is correct.

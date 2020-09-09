@@ -8,7 +8,7 @@ import (
 )
 
 func TestFinality(t *testing.T) {
-	// Set finalityInterval to 50 block, so that test runs quickly
+	// Set finalityInterval to 50 blocks, so that test runs quickly
 	dagConfig := dagconfig.SimnetParams
 	dagConfig.FinalityDuration = 50 * dagConfig.TargetTimePerBlock
 
@@ -94,7 +94,7 @@ func TestFinality(t *testing.T) {
 		}
 	})
 
-	// Add two more blocks to the side chain, so that it violates finality and get's status UTXOPendingVerification even
+	// Add two more blocks to the side chain, so that it violates finality and gets status UTXOPendingVerification even
 	// though it is the block with the highest blue score.
 	for i := uint64(0); i < 2; i++ {
 		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{sideChainTip.hash}, nil)
