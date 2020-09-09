@@ -577,7 +577,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	// If the first candidate has been disqualified from the chain or violates finality -
 	// he cannot be virtual's parent, since it will make him virtual's selectedParent - disqualifying virtual itself.
 	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
-	// it's parents that have no disqualified children
+	// its parents that have no disqualified children
 	disqualifiedCandidates := newBlockSet()
 	for {
 		if candidatesHeap.Len() == 0 {

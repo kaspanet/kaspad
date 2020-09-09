@@ -273,10 +273,6 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 // updateValidTipsUTXO builds and applies new diff UTXOs for all the DAG's valid tips
 func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	for validTip := range dag.validTips {
-		if dag.index.BlockNodeStatus(validTip) != statusValid {
-			continue
-		}
-
 		validTipPastUTXO, err := dag.restorePastUTXO(validTip)
 		if err != nil {
 			return err
