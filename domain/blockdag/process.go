@@ -500,9 +500,9 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 }
 
 // boundedMergeBreakingParents returns all parents of given `node` that break the bounded merge depth rule:
-// All blocks in B.MergeSet should be in future of node.finalityPoint.
+// All blocks in B.MergeSet should be in future of node.finalityPoint, with the following exception:
 // If there exists a block C violating this, i.e., C in node's merge set and node.finalityPoint's anticone,
-// then there must be a (“kosherizing”) block D in C's Future such that D is in node.blues
+// then there must be a "kosherizing" block D in C's Future such that D is in node.blues
 // and node.finalityPoint in D.SelectedChain
 func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, error) {
 	potentiallyKosherizingBlocks, err := node.nonBoundedMergeDepthViolatingBlues()
