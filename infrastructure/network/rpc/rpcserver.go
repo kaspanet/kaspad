@@ -788,7 +788,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 
 		// Notify registered websocket clients of finality conflict.
-		s.ntfnMgr.NotifyFinalityConflict(data.ViolatingBlockHash, data.ConflictTime)
+		s.ntfnMgr.NotifyFinalityConflict(data.ViolatingBlockHash)
 
 	case blockdag.NTFinalityConflictResolved:
 		data, ok := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
@@ -798,7 +798,7 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 
 		// Notify registered websocket clients of finality conflict resolution.
-		s.ntfnMgr.NotifyFinalityConflictResolved(data.FinalityBlockHash, data.ResolutionTime)
+		s.ntfnMgr.NotifyFinalityConflictResolved(data.FinalityBlockHash)
 	}
 }
 

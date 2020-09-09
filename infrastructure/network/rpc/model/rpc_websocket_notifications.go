@@ -139,15 +139,13 @@ func NewRelevantTxAcceptedNtfn(txHex string) *RelevantTxAcceptedNtfn {
 // JSON-RPC notification.
 type FinalityConflictNtfn struct {
 	ViolatingBlockHash string `json:"violatingBlockHash"`
-	ConflictTime       int64  `json:"conflictTime"`
 }
 
 // NewFinalityConflictNtfn returns a new instance which can be used to issue a
 // finalityConflict JSON-RPC notification.
-func NewFinalityConflictNtfn(violatingBlockHash string, conflictTime int64) *FinalityConflictNtfn {
+func NewFinalityConflictNtfn(violatingBlockHash string) *FinalityConflictNtfn {
 	return &FinalityConflictNtfn{
 		ViolatingBlockHash: violatingBlockHash,
-		ConflictTime:       conflictTime,
 	}
 }
 
@@ -155,15 +153,13 @@ func NewFinalityConflictNtfn(violatingBlockHash string, conflictTime int64) *Fin
 // finalityConflictResolved JSON-RPC notification.
 type FinalityConflictResolvedNtfn struct {
 	FinalityBlockHash string
-	ResolutionTime    int64 `json:"resolutionTime"`
 }
 
 // NewFinalityConflictResolvedNtfn returns a new instance which can be used to issue a
 // finalityConflictResolved JSON-RPC notification.
-func NewFinalityConflictResolvedNtfn(finalityBlockHash string, resolutionTime int64) *FinalityConflictResolvedNtfn {
+func NewFinalityConflictResolvedNtfn(finalityBlockHash string) *FinalityConflictResolvedNtfn {
 	return &FinalityConflictResolvedNtfn{
 		FinalityBlockHash: finalityBlockHash,
-		ResolutionTime:    resolutionTime,
 	}
 }
 

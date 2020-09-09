@@ -17,8 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/mstime"
-
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/random"
@@ -230,10 +228,9 @@ func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*da
 	}
 }
 
-func (m *wsNotificationManager) NotifyFinalityConflict(violatingBlockHash *daghash.Hash, conflictTime mstime.Time) {
+func (m *wsNotificationManager) NotifyFinalityConflict(violatingBlockHash *daghash.Hash) {
 	n := notificationFinalityConflict{
 		violatingBlockHash: violatingBlockHash,
-		conflictTime:       conflictTime,
 	}
 	// As NotifyFinalityConflict will be called by the DAG manager
 	// and the RPC server may no longer be running, use a select
@@ -245,12 +242,10 @@ func (m *wsNotificationManager) NotifyFinalityConflict(violatingBlockHash *dagha
 	}
 }
 
-func (m *wsNotificationManager) NotifyFinalityConflictResolved(
-	finalityBlockHash *daghash.Hash, resolutionTime mstime.Time) {
+func (m *wsNotificationManager) NotifyFinalityConflictResolved(finalityBlockHash *daghash.Hash) {
 
 	n := notificationFinalityConflictResolved{
 		finalityBlockHash: finalityBlockHash,
-		resolutionTime:    resolutionTime,
 	}
 	// As NotifyFinalityConflictResolved will be called by the DAG manager
 	// and the RPC server may no longer be running, use a select
@@ -414,12 +409,10 @@ type notificationTxAcceptedByMempool struct {
 
 type notificationFinalityConflict struct {
 	violatingBlockHash *daghash.Hash
-	conflictTime       mstime.Time
 }
 
 type notificationFinalityConflictResolved struct {
 	finalityBlockHash *daghash.Hash
-	resolutionTime    mstime.Time
 }
 
 // Notification control requests

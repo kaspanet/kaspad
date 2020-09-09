@@ -9,7 +9,6 @@ import (
 
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // NotificationType represents the type of a notification message.
@@ -102,12 +101,10 @@ type ChainChangedNotificationData struct {
 // FinalityConflict notification
 type FinalityConflictNotificationData struct {
 	ViolatingBlockHash *daghash.Hash
-	ConflictTime       mstime.Time
 }
 
 // FinalityConflictResolvedNotificationData defines data to be sent along with a
 // FinalityConflictResolved notification
 type FinalityConflictResolvedNotificationData struct {
 	FinalityBlockHash *daghash.Hash
-	ResolutionTime    mstime.Time
 }

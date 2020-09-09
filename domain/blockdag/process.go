@@ -275,7 +275,6 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 				dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
 				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
 					ViolatingBlockHash: newNode.hash,
-					ConflictTime:       dag.Now(),
 				})
 			}
 		}

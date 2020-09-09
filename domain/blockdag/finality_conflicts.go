@@ -33,7 +33,6 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 	})
 	dag.sendNotification(NTFinalityConflictResolved, FinalityConflictResolvedNotificationData{
 		FinalityBlockHash: finalityBlockHash,
-		ResolutionTime:    dag.Now(),
 	})
 
 	return nil
