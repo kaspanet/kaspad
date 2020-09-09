@@ -43,16 +43,16 @@ func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*Sequ
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
-	inputsWithReferencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
+	inputsWithUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
 	if err != nil {
 		return nil, err
 	}
 
-	return dag.calcTxSequenceLockFromInputsWithReferencedEntries(node, tx, inputsWithReferencedUTXOEntries)
+	return dag.calcTxSequenceLockFromInputsWithUTXOEntries(node, tx, inputsWithUTXOEntries)
 }
 
-func (dag *BlockDAG) calcTxSequenceLockFromInputsWithReferencedEntries(
-	node *blockNode, tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) (*SequenceLock, error) {
+func (dag *BlockDAG) calcTxSequenceLockFromInputsWithUTXOEntries(
+	node *blockNode, tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry) (*SequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -66,7 +66,7 @@ func (dag *BlockDAG) calcTxSequenceLockFromInputsWithReferencedEntries(
 		return sequenceLock, nil
 	}
 
-	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+	for _, txInAndReferencedUTXOEntry := range inputsWithUTXOEntries {
 		txIn := txInAndReferencedUTXOEntry.txIn
 		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
 

@@ -366,8 +366,8 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	return nil
 }
 
-func calcTxMassFromInputsWithReferencedEntries(
-	tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) uint64 {
+func calcTxMassFromInputsWithUTXOEntries(
+	tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry) uint64 {
 
 	if tx.IsCoinBase() {
 		return CalcTxMass(tx, nil)
@@ -375,8 +375,8 @@ func calcTxMassFromInputsWithReferencedEntries(
 
 	previousScriptPubKeys := make([][]byte, 0, len(tx.MsgTx().TxIn))
 
-	for _, inputWithReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
-		utxoEntry := inputWithReferencedUTXOEntry.utxoEntry
+	for _, inputWithUTXOEntry := range inputsWithUTXOEntries {
+		utxoEntry := inputWithUTXOEntry.utxoEntry
 
 		previousScriptPubKeys = append(previousScriptPubKeys, utxoEntry.ScriptPubKey())
 	}
@@ -1062,7 +1062,7 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(
 	return nil
 }
 
-type txInputAndReferencedUTXOEntry struct {
+type txInputAndUTXOEntry struct {
 	txIn      *appmessage.TxIn
 	utxoEntry *UTXOEntry
 }
@@ -1076,22 +1076,22 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 		return 0, 0, err
 	}
 
-	inputsWithReferencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, pastUTXO)
+	inputsWithUTXOEntries, err := dag.getReferencedUTXOEntries(tx, pastUTXO)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	accumulatedMassAfter, err = dag.checkTxMass(tx, inputsWithReferencedUTXOEntries, accumulatedMassBefore)
+	accumulatedMassAfter, err = dag.checkTxMass(tx, inputsWithUTXOEntries, accumulatedMassBefore)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	err = dag.checkTxCoinbaseMaturity(node, inputsWithReferencedUTXOEntries)
+	err = dag.checkTxCoinbaseMaturity(node, inputsWithUTXOEntries)
 	if err != nil {
 		return 0, 0, nil
 	}
 
-	totalSompiIn, err := dag.checkTxInputAmounts(inputsWithReferencedUTXOEntries)
+	totalSompiIn, err := dag.checkTxInputAmounts(inputsWithUTXOEntries)
 	if err != nil {
 		return 0, 0, nil
 	}
@@ -1103,7 +1103,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 
 	txFee = totalSompiIn - totalSompiOut
 
-	err = dag.checkTxSequenceLock(node, tx, inputsWithReferencedUTXOEntries, selectedParentMedianTime)
+	err = dag.checkTxSequenceLock(node, tx, inputsWithUTXOEntries, selectedParentMedianTime)
 	if err != nil {
 		return 0, 0, nil
 	}
@@ -1117,12 +1117,12 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 }
 
 func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
-	inputsWithReferencedEntries []*txInputAndReferencedUTXOEntry, medianTime mstime.Time) error {
+	inputsWithUTXOEntries []*txInputAndUTXOEntry, medianTime mstime.Time) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
 	// active.
-	sequenceLock, err := dag.calcTxSequenceLockFromInputsWithReferencedEntries(node, tx, inputsWithReferencedEntries)
+	sequenceLock, err := dag.calcTxSequenceLockFromInputsWithUTXOEntries(node, tx, inputsWithUTXOEntries)
 	if err != nil {
 		return err
 	}
@@ -1156,11 +1156,11 @@ func (dag *BlockDAG) checkTxOutputAmounts(tx *util.Tx, totalSompiIn uint64) (uin
 }
 
 func (dag *BlockDAG) checkTxInputAmounts(
-	inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) (totalSompiIn uint64, err error) {
+	inputsWithUTXOEntries []*txInputAndUTXOEntry) (totalSompiIn uint64, err error) {
 
 	totalSompiIn = 0
 
-	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+	for _, txInAndReferencedUTXOEntry := range inputsWithUTXOEntries {
 		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
 
 		// Ensure the transaction amounts are in range. Each of the
@@ -1195,9 +1195,9 @@ func (dag *BlockDAG) checkTxInputAmounts(
 }
 
 func (dag *BlockDAG) checkTxCoinbaseMaturity(
-	node *blockNode, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry) error {
+	node *blockNode, inputsWithUTXOEntries []*txInputAndUTXOEntry) error {
 	txBlueScore := node.blueScore
-	for _, txInAndReferencedUTXOEntry := range inputsWithReferencedUTXOEntries {
+	for _, txInAndReferencedUTXOEntry := range inputsWithUTXOEntries {
 		txIn := txInAndReferencedUTXOEntry.txIn
 		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
 
@@ -1220,10 +1220,10 @@ func (dag *BlockDAG) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []*txInputAndReferencedUTXOEntry,
+func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry,
 	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
 
-	txMass := calcTxMassFromInputsWithReferencedEntries(tx, inputsWithReferencedUTXOEntries)
+	txMass := calcTxMassFromInputsWithUTXOEntries(tx, inputsWithUTXOEntries)
 
 	accumulatedMassAfter = accumulatedMassBefore + txMass
 
@@ -1239,10 +1239,10 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, inputsWithReferencedUTXOEntries []
 }
 
 func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
-	[]*txInputAndReferencedUTXOEntry, error) {
+	[]*txInputAndUTXOEntry, error) {
 
 	txIns := tx.MsgTx().TxIn
-	inputsWithReferencedUTXOEntries := make([]*txInputAndReferencedUTXOEntry, 0, len(txIns))
+	inputsWithUTXOEntries := make([]*txInputAndUTXOEntry, 0, len(txIns))
 
 	for txInIndex, txIn := range txIns {
 		utxoEntry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -1254,13 +1254,13 @@ func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) (
 			return nil, ruleError(ErrMissingTxOut, str)
 		}
 
-		inputsWithReferencedUTXOEntries = append(inputsWithReferencedUTXOEntries, &txInputAndReferencedUTXOEntry{
+		inputsWithUTXOEntries = append(inputsWithUTXOEntries, &txInputAndUTXOEntry{
 			txIn:      txIn,
 			utxoEntry: utxoEntry,
 		})
 	}
 
-	return inputsWithReferencedUTXOEntries, nil
+	return inputsWithUTXOEntries, nil
 }
 
 func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) (uint64, error) {
