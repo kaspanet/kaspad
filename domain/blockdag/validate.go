@@ -1283,20 +1283,14 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	templateParents := newBlockSet()
-	for _, parentHash := range header.ParentHashes {
-		parent, ok := dag.index.LookupNode(parentHash)
-		if !ok {
-			return errors.Errorf("Couldn't find parent of block template with hash `%s`", parentHash)
-		}
-		templateParents.add(parent)
+	templateParents, err := dag.index.LookupNodes(header.ParentHashes)
+	if err != nil {
+		return err
 	}
 
-	templateNode, _ := dag.newBlockNode(&header, templateParents)
+	templateNode, _ := dag.newBlockNode(&header, blockSetFromSlice(templateParents...))
 
-	err = dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
-
-	return err
+	return dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 }
 
 func (dag *BlockDAG) checkDuplicateBlock(blockHash *daghash.Hash, flags BehaviorFlags) error {
