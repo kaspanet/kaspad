@@ -45,12 +45,6 @@ func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNo
 	queue := newDownHeap()
 	queue.pushSet(dag.tips)
 
-	dbTx, err := dag.databaseContext.NewTx()
-	if err != nil {
-		return err
-	}
-	defer dbTx.RollbackUnlessClosed()
-
 	disqualifiedCandidates := newBlockSet()
 	for {
 		if queue.Len() == 0 {
@@ -66,16 +60,12 @@ func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNo
 			continue
 		}
 		if dag.index.BlockNodeStatus(candidate) == statusUTXONotVerified {
-			err = dag.resolveNodeStatus(candidate, dbTx)
-			if err != nil {
-				return err
+			err2 := dag.resolveNodeStatusInNewTransaction(candidate)
+			if err2 != nil {
+				return err2
 			}
 		}
 		if dag.index.BlockNodeStatus(candidate) == statusValid {
-			err = dbTx.Commit()
-			if err != nil {
-				return err
-			}
 			return nil
 		}
 

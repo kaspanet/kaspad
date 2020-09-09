@@ -429,6 +429,23 @@ func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext
 	return nil
 }
 
+func (dag *BlockDAG) resolveNodeStatusInNewTransaction(node *blockNode) error {
+	dbTx, err := dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+	err = dag.resolveNodeStatus(node, dbTx)
+	if err != nil {
+		return err
+	}
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode) error {
 	// Add the block to the reachability tree
 	err := dag.reachabilityTree.addBlock(node, selectedParentAnticone)
