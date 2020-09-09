@@ -936,10 +936,9 @@ func CheckTransactionInputsAndCalulateFee(
 		return 0, nil
 	}
 
-	txID := tx.ID()
 	var totalSompiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
-		entry, err := checkReferencedOutputsAreAvailable(tx, utxoSet, txIn, txInIndex)
+		entry, err := findReferencedOutput(tx, utxoSet, txIn, txInIndex)
 		if err != nil {
 			return 0, err
 		}
@@ -956,31 +955,13 @@ func CheckTransactionInputsAndCalulateFee(
 		}
 	}
 
-	totalSompiOut, err := checkOutputsAmounts(tx, totalSompiIn, txID)
+	totalSompiOut, err := checkTxOutputAmounts(tx, totalSompiIn)
 	if err != nil {
 		return 0, err
 	}
 
 	txFeeInSompi = totalSompiIn - totalSompiOut
 	return txFeeInSompi, nil
-}
-
-func checkOutputsAmounts(tx *util.Tx, totalSompiIn uint64, txID *daghash.TxID) (totalSompiOut uint64, err error) {
-	// Calculate the total output amount for this transaction. It is safe
-	// to ignore overflow and out of range errors here because those error
-	// conditions would have already been caught by checkTransactionSanity.
-	for _, txOut := range tx.MsgTx().TxOut {
-		totalSompiOut += txOut.Value
-	}
-
-	// Ensure the transaction does not spend more than its inputs.
-	if totalSompiIn < totalSompiOut {
-		str := fmt.Sprintf("total value of all transaction inputs for "+
-			"transaction %s is %d which is less than the amount "+
-			"spent of %d", txID, totalSompiIn, totalSompiOut)
-		return 0, ruleError(ErrSpendTooHigh, str)
-	}
-	return totalSompiOut, nil
 }
 
 func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
@@ -1001,7 +982,7 @@ func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiI
 	return totalSompiInAfter, nil
 }
 
-func checkReferencedOutputsAreAvailable(
+func findReferencedOutput(
 	tx *util.Tx, utxoSet UTXOSet, txIn *appmessage.TxIn, txInIndex int) (*UTXOEntry, error) {
 
 	entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -1092,7 +1073,7 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 		return 0, 0, nil
 	}
 
-	totalSompiOut, err := dag.checkTxOutputAmounts(tx, totalSompiIn)
+	totalSompiOut, err := checkTxOutputAmounts(tx, totalSompiIn)
 	if err != nil {
 		return 0, 0, nil
 	}
@@ -1132,7 +1113,7 @@ func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
 	return nil
 }
 
-func (dag *BlockDAG) checkTxOutputAmounts(tx *util.Tx, totalSompiIn uint64) (uint64, error) {
+func checkTxOutputAmounts(tx *util.Tx, totalSompiIn uint64) (uint64, error) {
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
@@ -1165,26 +1146,10 @@ func (dag *BlockDAG) checkTxInputAmounts(
 		// a transaction are in a unit value known as a sompi. One
 		// kaspa is a quantity of sompi as defined by the
 		// SompiPerKaspa constant.
-		originTxSompi := utxoEntry.Amount()
-		if originTxSompi > util.MaxSompi {
-			str := fmt.Sprintf("transaction output value of %s is "+
-				"higher than max allowed value of %d",
-				util.Amount(originTxSompi),
-				util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
+		totalSompiIn, err = checkEntryAmounts(utxoEntry, totalSompiIn)
+		if err != nil {
+			return 0, err
 		}
-
-		// The total of all outputs must not be more than the max
-		// allowed per transaction. Also, we could potentially overflow
-		// the accumulator so check for overflow.
-		totalSompiInAfter := totalSompiIn + originTxSompi
-		if totalSompiInAfter < totalSompiIn || totalSompiInAfter > util.MaxSompi {
-			str := fmt.Sprintf("total value of all transaction "+
-				"inputs is %d which is higher than max "+
-				"allowed value of %d", totalSompiInAfter, util.MaxSompi)
-			return 0, ruleError(ErrBadTxOutValue, str)
-		}
-		totalSompiIn = totalSompiInAfter
 	}
 
 	return totalSompiIn, nil
