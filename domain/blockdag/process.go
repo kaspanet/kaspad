@@ -395,7 +395,7 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
 
-	err := node.updateDiffAndDiffChild(dag, utxoVerificationData.newBlockPastUTXO)
+	err := node.updateDiffAndDiffChild(utxoVerificationData.newBlockPastUTXO)
 	if err != nil {
 		return err
 	}

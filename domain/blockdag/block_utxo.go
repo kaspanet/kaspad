@@ -324,7 +324,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSe
 	return nil
 }
 
-func (node *blockNode) updateDiffAndDiffChild(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
+func (node *blockNode) updateDiffAndDiffChild(newBlockPastUTXO UTXOSet) error {
 	var diffChild *blockNode
 	for child := range node.children {
 		if node.dag.index.BlockNodeStatus(child) == statusValid {
@@ -334,10 +334,10 @@ func (node *blockNode) updateDiffAndDiffChild(dag *BlockDAG, newBlockPastUTXO UT
 	}
 
 	// If there's no diffChild, then virtual is the de-facto diffChild
-	var diffChildUTXOSet UTXOSet = dag.virtual.utxoSet
+	var diffChildUTXOSet UTXOSet = node.dag.virtual.utxoSet
 	if diffChild != nil {
 		var err error
-		diffChildUTXOSet, err = dag.restorePastUTXO(diffChild)
+		diffChildUTXOSet, err = node.dag.restorePastUTXO(diffChild)
 		if err != nil {
 			return err
 		}
@@ -348,13 +348,13 @@ func (node *blockNode) updateDiffAndDiffChild(dag *BlockDAG, newBlockPastUTXO UT
 		return err
 	}
 
-	err = dag.utxoDiffStore.setBlockDiff(node, diffFromDiffChild)
+	err = node.dag.utxoDiffStore.setBlockDiff(node, diffFromDiffChild)
 	if err != nil {
 		return err
 	}
 
 	if diffChild != nil {
-		err = dag.utxoDiffStore.setBlockDiffChild(node, diffChild)
+		err = node.dag.utxoDiffStore.setBlockDiffChild(node, diffChild)
 		if err != nil {
 			return err
 		}
