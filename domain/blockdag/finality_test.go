@@ -8,7 +8,7 @@ import (
 )
 
 func TestFinality(t *testing.T) {
-	// Set finalityInterval to 10 block, so that test runs quickly
+	// Set finalityInterval to 50 block, so that test runs quickly
 	dagConfig := dagconfig.SimnetParams
 	dagConfig.FinalityDuration = 50 * dagConfig.TargetTimePerBlock
 
@@ -20,7 +20,7 @@ func TestFinality(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Build a chain of `finalityInterval - 3` blocks
+	// Build a chain of `finalityInterval - 1` blocks
 	finalityInterval := dag.FinalityInterval()
 	mainChainTip := dag.genesis
 	var ok bool
@@ -94,7 +94,8 @@ func TestFinality(t *testing.T) {
 		}
 	})
 
-	// Add two more blocks to side chain, so that it violates finality and is disqualified from chain
+	// Add two more blocks to the side chain, so that it violates finality and get's status UTXONotVerified even
+	// though it is the block with the highest blue score.
 	for i := uint64(0); i < 2; i++ {
 		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{sideChainTip.hash}, nil)
 		sideChainTip, ok = dag.index.LookupNode(block.BlockHash())
@@ -102,6 +103,12 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("Couldn't lookup in blockIndex that was just submitted: %s", block.BlockHash())
 		}
 	}
+
+	// Check that sideChainTip is the bluest tip now
+	if dag.tips.bluest() != sideChainTip {
+		t.Fatalf("sideChainTip is not the bluest tip when it is expected to be")
+	}
+
 	status = dag.index.BlockNodeStatus(sideChainTip)
 	if status != statusUTXONotVerified {
 		t.Fatalf("Finality violating block expected to have status '%s', but got '%s'",
