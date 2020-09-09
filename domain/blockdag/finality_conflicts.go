@@ -1,8 +1,6 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
-
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -35,7 +33,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 	})
 	dag.sendNotification(NTFinalityConflictResolved, FinalityConflictResolvedNotificationData{
 		FinalityBlockHash: finalityBlockHash,
-		ResolutionTime:    mstime.Now(),
+		ResolutionTime:    dag.Now(),
 	})
 
 	return nil

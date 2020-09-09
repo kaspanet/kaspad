@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/mstime"
-
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -277,7 +275,7 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 				dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
 				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
 					ViolatingBlockHash: newNode.hash,
-					ConflictTime:       mstime.Now(),
+					ConflictTime:       dag.Now(),
 				})
 			}
 		}
