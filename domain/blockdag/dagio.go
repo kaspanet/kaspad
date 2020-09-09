@@ -361,6 +361,8 @@ func (dag *BlockDAG) initTipsAndVirtualParents(state *dagState) error {
 		return errors.Wrapf(err, "Error loading tips")
 	}
 	dag.virtual.blockNode, _ = dag.newBlockNode(nil, blockSetFromSlice(virtualParents...))
+
+	// call updateSelectedParentSet with genesis as oldSelectedParent, so that the selectedParentSet is fully calculated
 	_ = dag.virtual.updateSelectedParentSet(dag.genesis)
 
 	return nil
