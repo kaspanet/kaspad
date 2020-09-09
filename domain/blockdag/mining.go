@@ -128,7 +128,7 @@ func (dag *BlockDAG) NextBlockTime() mstime.Time {
 // CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
 func (dag *BlockDAG) CurrentBits() uint32 {
 	minBits := uint32(math.MaxUint32)
-	for tip := range dag.tips {
+	for tip := range dag.virtual.parents {
 		if minBits > tip.Header().Bits {
 			minBits = tip.Header().Bits
 		}
