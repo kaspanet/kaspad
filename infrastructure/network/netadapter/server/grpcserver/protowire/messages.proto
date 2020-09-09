@@ -62,6 +62,8 @@ message KaspadMessage {
     GetBlocksResponseMessage getBlocksResponse = 1032;
     GetBlockCountRequestMessage getBlockCountRequest = 1033;
     GetBlockCountResponseMessage getBlockCountResponse = 1034;
+    GetBlockDagInfoRequestMessage getBlockDagInfoRequest = 1035;
+    GetBlockDagInfoResponseMessage getBlockDagInfoResponse = 1036;
   }
 }
 
@@ -546,6 +548,18 @@ message GetBlockCountRequestMessage{
 message GetBlockCountResponseMessage{
   uint64 blockCount = 1;
   RPCError error = 2;
+}
+
+message GetBlockDagInfoRequestMessage{
+}
+
+message GetBlockDagInfoResponseMessage{
+  string networkName = 1;
+  uint64 blockCount = 2;
+  repeated string tipHashes = 3;
+  double difficulty = 4;
+  int64 pastMedianTime = 5;
+  RPCError error = 6;
 }
 
 service RPC {
