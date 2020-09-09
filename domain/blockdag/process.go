@@ -516,21 +516,23 @@ func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, err
 		if err != nil {
 			return nil, err
 		}
-		if !isFinalityPointInPast {
-			isKosherized := false
-			for potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
-				isKosherized, err = dag.isInPast(redBlock, potentiallyKosherizingBlock)
-				if err != nil {
-					return nil, err
-				}
-				if isKosherized {
-					break
-				}
-			}
+		if isFinalityPointInPast {
+			continue
+		}
 
-			if !isKosherized {
-				badReds = append(badReds, redBlock)
+		isKosherized := false
+		for potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
+			isKosherized, err = dag.isInPast(redBlock, potentiallyKosherizingBlock)
+			if err != nil {
+				return nil, err
 			}
+			if isKosherized {
+				break
+			}
+		}
+
+		if !isKosherized {
+			badReds = append(badReds, redBlock)
 		}
 	}
 
