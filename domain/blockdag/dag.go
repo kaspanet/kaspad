@@ -528,7 +528,10 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 	var newVirtualParents blockSet
 	// If only genesis is the newTips - we are still initializing the DAG and not all structures required
 	// for calling dag.selectVirtualParents have been initialized yet.
-	// Therefore, simply pick genesis as virtual's only parent
+	// Specifically - this function would be called with finalityPoint = dag.virtual.finalityPoint(), which has
+	// not been initialized to anything real yet.
+	//
+	// Therefore, in this case - simply pick genesis as virtual's only parent
 	if newTips.isOnlyGenesis() {
 		newVirtualParents = newTips
 	} else {
