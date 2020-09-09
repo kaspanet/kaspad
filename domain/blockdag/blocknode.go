@@ -90,10 +90,10 @@ type blockNode struct {
 	// children are all the blocks that refer to this block as a parent
 	children blockSet
 
-	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
+	// blues are all blue blocks in this block's worldview that are in its merge set
 	blues []*blockNode
 
-	// reds are all red blocks in this block's worldview that are in its selected parent anticone
+	// reds are all red blocks in this block's worldview that are in its its merge set
 	reds []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
