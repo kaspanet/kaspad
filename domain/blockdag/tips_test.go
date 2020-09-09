@@ -232,6 +232,12 @@ func TestSelectedPath(t *testing.T) {
 	virtual2.updateSelectedParentSet(buildNode(t, dag, blockSetFromSlice()))
 }
 
+// TestChainUpdates makes sure the chainUpdates from setTips are correct:
+// It creates two chains: a main-chain to be removed and a side-chain to be added
+// The main-chain has to be longer then the side-chain, so that the natural selected tip of the DAG is the one
+// from the main chain.
+// Then dag.setTip is called with the tip of the side-chain to artificially re-org the DAG, and verify
+// the chainUpdates return value is correct.
 func TestChainUpdates(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimnetParams
@@ -246,7 +252,7 @@ func TestChainUpdates(t *testing.T) {
 
 	genesis := dag.genesis
 
-	// Create a chain to be removed
+	// Create the main-chain to be removed
 	var toBeRemovedNodes []*blockNode
 	toBeRemovedTip := genesis
 	for i := 0; i < 9; i++ {
@@ -254,7 +260,7 @@ func TestChainUpdates(t *testing.T) {
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
 
-	// Create a chain to be added
+	// Create the side-chain to be added
 	var toBeAddedNodes []*blockNode
 	toBeAddedTip := genesis
 	for i := 0; i < 8; i++ {
@@ -267,7 +273,7 @@ func TestChainUpdates(t *testing.T) {
 		t.Fatalf("Error resolving status of toBeAddedTip: %+v", err)
 	}
 
-	// Set the virtual tip to be the tip of the toBeAdded chain
+	// Set the virtual tip to be the tip of the toBeAdded side-chain
 	_, chainUpdates, err := dag.setTips(blockSetFromSlice(toBeAddedTip))
 	if err != nil {
 		t.Fatalf("Error setting tips: %+v", err)
