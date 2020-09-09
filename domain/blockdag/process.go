@@ -58,8 +58,6 @@ func (dag *BlockDAG) processBlockNoLock(block *util.Block, flags BehaviorFlags) 
 		return false, false, err
 	}
 
-	log.Debugf("Accepted block %s", blockHash)
-
 	return false, false, nil
 }
 
@@ -170,6 +168,8 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	dag.notifyBlockAccepted(block, chainUpdates, flags)
+
+	log.Debugf("Accepted block %s with status '%s'", newNode.hash, dag.index.BlockNodeStatus(newNode))
 
 	return nil
 }
