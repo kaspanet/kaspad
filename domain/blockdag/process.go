@@ -260,13 +260,11 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 	defer dbTx.RollbackUnlessClosed()
 
 	if isNewSelectedTip {
-		err = dag.validateAndApplyUTXOSet(newNode, block, dbTx)
+		err = dag.resolveNodeStatus(newNode, dbTx)
 		if err != nil {
-			if !errors.As(err, &(RuleError{})) {
-				return nil, err
-			}
-			dag.index.SetBlockNodeStatus(newNode, statusDisqualifiedFromChain)
-		} else {
+			return nil, err
+		}
+		if dag.index.BlockNodeStatus(newNode) == statusValid {
 			isViolatingFinality, err := newNode.isViolatingFinality()
 			if err != nil {
 				return nil, err
@@ -409,7 +407,8 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 }
 
 func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext) error {
-	if dag.index.BlockNodeStatus(node) == statusUTXOPendingVerification {
+	blockStatus := dag.index.BlockNodeStatus(node)
+	if blockStatus != statusValid && blockStatus != statusDisqualifiedFromChain {
 		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err
@@ -417,7 +416,10 @@ func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext
 
 		err = dag.validateAndApplyUTXOSet(node, block, dbTx)
 		if err != nil {
-			return err
+			if !errors.As(err, &(RuleError{})) {
+				return err
+			}
+			dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
 		}
 	}
 	return nil
