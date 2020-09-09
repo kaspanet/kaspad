@@ -355,8 +355,8 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 		}
 
 		if dag.index.BlockNodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
-			dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
-			return nil
+			return ruleError(ErrSelectedParentDisqualifiedFromChain,
+				"Block's selected parent is disqualified from chain")
 		}
 	}
 

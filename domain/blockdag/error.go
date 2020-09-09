@@ -218,12 +218,15 @@ const (
 	// its own point of view
 	ErrViolatingBoundedMergeDepth
 
-	// ErrViolatingMergeLimit indicates that a block merges more then mergeLimit blocks
+	// ErrViolatingMergeLimit indicates that a block merges more than mergeLimit blocks
 	ErrViolatingMergeLimit
 
 	// ErrChainedTransactions indicates that a block contains a transaction that spends an output of a transaction
 	// In the same block
 	ErrChainedTransactions
+
+	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
+	ErrSelectedParentDisqualifiedFromChain
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
