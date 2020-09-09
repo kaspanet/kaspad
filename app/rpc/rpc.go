@@ -27,6 +27,8 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetSubnetworkRequestMessage:        rpchandlers.HandleGetSubnetwork,
 	appmessage.CmdGetChainFromBlockRequestMessage:    rpchandlers.HandleGetChainFromBlock,
 	appmessage.CmdGetBlocksRequestMessage:            rpchandlers.HandleGetBlocks,
+	appmessage.CmdGetBlockCountRequestMessage:        rpchandlers.HandleGetBlockCount,
+	appmessage.CmdGetBlockDAGInfoRequestMessage:      rpchandlers.HandleGetBlockDAGInfo,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

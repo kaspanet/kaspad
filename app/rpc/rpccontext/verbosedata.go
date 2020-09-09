@@ -72,7 +72,7 @@ func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionV
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
+		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, params),
 		ChildHashes:          daghash.Strings(childHashes),
 		AcceptedBlockHashes:  daghash.Strings(acceptedBlockHashes),
 	}
@@ -101,9 +101,9 @@ func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionV
 	return result, nil
 }
 
-// getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
+// GetDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
-func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
+func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// The minimum difficulty is the max possible proof-of-work limit bits
 	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
