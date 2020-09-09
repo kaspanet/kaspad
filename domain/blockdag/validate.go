@@ -370,7 +370,7 @@ func calcTxMassFromInputsWithUTXOEntries(
 	tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry) uint64 {
 
 	if tx.IsCoinBase() {
-		return CalcTxMass(tx, nil)
+		return calcCoinbaseTxMass(tx)
 	}
 
 	previousScriptPubKeys := make([][]byte, 0, len(tx.MsgTx().TxIn))
