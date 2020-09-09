@@ -506,16 +506,12 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		log.Infof("RPC service is disabled")
 	}
 
-	// Default RPC to listen on localhost only.
+	// Add the default RPC listener if none were specified. The default
+	// RPC listener is all addresses on the RPC listen port for the
+	// network we are to connect to.
 	if !cfg.DisableRPC && len(cfg.RPCListeners) == 0 {
-		addrs, err := net.LookupHost("localhost")
-		if err != nil {
-			return nil, nil, err
-		}
-		cfg.RPCListeners = make([]string, 0, len(addrs))
-		for _, addr := range addrs {
-			addr = net.JoinHostPort(addr, cfg.NetParams().RPCPort)
-			cfg.RPCListeners = append(cfg.RPCListeners, addr)
+		cfg.RPCListeners = []string{
+			net.JoinHostPort("", cfg.NetParams().RPCPort),
 		}
 	}
 
