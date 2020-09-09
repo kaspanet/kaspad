@@ -160,10 +160,6 @@ func TestSelectedPath(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
 		firstPath.add(tip)
-		_, _, err = dag.addTip(tip)
-		if err != nil {
-			t.Fatalf("Error adding tip: %+v", err)
-		}
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
 	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, firstPath) {
@@ -183,10 +179,6 @@ func TestSelectedPath(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
 		secondPath.add(tip)
-		_, _, err = dag.addTip(tip)
-		if err != nil {
-			t.Fatalf("Error adding tip: %+v", err)
-		}
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
 	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
@@ -204,10 +196,6 @@ func TestSelectedPath(t *testing.T) {
 	tip = initialTip
 	for i := 0; i < 3; i++ {
 		tip = buildNode(t, dag, blockSetFromSlice(tip))
-		_, _, err = dag.addTip(tip)
-		if err != nil {
-			t.Fatalf("Error adding tip: %+v", err)
-		}
 	}
 	// Because we added a very short chain, the selected path should not be affected.
 	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
