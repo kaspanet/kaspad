@@ -281,12 +281,7 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 		}
 	}
 
-	err = dag.applyDAGChanges(newNode, selectedParentAnticone)
-	if err != nil {
-		return nil, err
-	}
-
-	chainUpdates, err := dag.updateVirtualAndTips(newNode, dbTx)
+	chainUpdates, err := dag.applyDAGChanges(newNode, selectedParentAnticone, dbTx)
 	if err != nil {
 		return nil, err
 	}
@@ -446,16 +441,23 @@ func (dag *BlockDAG) resolveNodeStatusInNewTransaction(node *blockNode) error {
 	return nil
 }
 
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode) error {
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode, dbTx *dbaccess.TxContext) (
+	*selectedParentChainUpdates, error) {
+
 	// Add the block to the reachability tree
 	err := dag.reachabilityTree.addBlock(node, selectedParentAnticone)
 	if err != nil {
-		return errors.Wrap(err, "failed adding block to the reachability tree")
+		return nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
 	node.updateParentsChildren()
 
-	return nil
+	chainUpdates, err := dag.updateVirtualAndTips(node, dbTx)
+	if err != nil {
+		return nil, err
+	}
+
+	return chainUpdates, nil
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxContext) error {
