@@ -117,8 +117,8 @@ func (bs blockSet) isEqual(other blockSet) bool {
 		return false
 	}
 
-	for block := range bs {
-		if !other.contains(block) {
+	for node := range bs {
+		if !other.contains(node) {
 			return false
 		}
 	}

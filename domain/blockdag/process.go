@@ -485,7 +485,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 // then there must be a (“kosherizing”) block D in C's Future such that D is in node.blues
 // and node.finalityPoint in D.SelectedChain; and
 func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, error) {
-	potentiallyKosherizingBlocks, err := node.nonFinalityViolatingBlues()
+	potentiallyKosherizingBlocks, err := node.nonBoundedMergeDepthViolatingBlues()
 	if err != nil {
 		return nil, err
 	}

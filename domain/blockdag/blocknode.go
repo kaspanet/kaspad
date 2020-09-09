@@ -294,7 +294,7 @@ func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (
 	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
 }
 
-func (node *blockNode) nonFinalityViolatingBlues() (blockSet, error) {
+func (node *blockNode) nonBoundedMergeDepthViolatingBlues() (blockSet, error) {
 	nonFinalityViolatingBlues := newBlockSet()
 
 	for _, blueNode := range node.blues {
@@ -311,7 +311,7 @@ func (node *blockNode) nonFinalityViolatingBlues() (blockSet, error) {
 }
 
 func (node *blockNode) checkBoundedMergeDepth() error {
-	nonFinalityViolatingBlues, err := node.nonFinalityViolatingBlues()
+	nonBoundedMergeDepthViolatingBlues, err := node.nonBoundedMergeDepthViolatingBlues()
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (node *blockNode) checkBoundedMergeDepth() error {
 			return err
 		}
 
-		isRedInPastOfAnyNonFinalityViolatingBlue, err := node.dag.isInPastOfAny(red, nonFinalityViolatingBlues)
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := node.dag.isInPastOfAny(red, nonBoundedMergeDepthViolatingBlues)
 		if err != nil {
 			return err
 		}
