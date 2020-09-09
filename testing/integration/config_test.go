@@ -18,9 +18,6 @@ const (
 	rpcAddress2 = "127.0.0.1:12346"
 	rpcAddress3 = "127.0.0.1:12347"
 
-	rpcUser = "user"
-	rpcPass = "pass"
-
 	miningAddress1           = "kaspasim:qzmdkk8ay8sgvp8cnwts8gtdylz9j7572slwdh85qv"
 	miningAddress1PrivateKey = "be9e9884f03e687166479e22d21b064db7903d69b5a46878aae66521c01a6094"
 
@@ -47,9 +44,6 @@ func commonConfig() *config.Config {
 	commonConfig.ActiveNetParams.BlockCoinbaseMaturity = 10
 	commonConfig.TargetOutboundPeers = 0
 	commonConfig.DisableDNSSeed = true
-	commonConfig.RPCUser = rpcUser
-	commonConfig.RPCPass = rpcPass
-	commonConfig.DisableTLS = true
 	commonConfig.Simnet = true
 
 	return commonConfig
