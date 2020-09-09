@@ -40,7 +40,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 }
 
 // prepareForFinalityConflictResolution makes sure that the designated selectedTip once a finality conflict is resolved
-// is not UTXONotVerified.
+// is not UTXOPendingVerification.
 func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNode) error {
 	queue := newDownHeap()
 	queue.pushSet(dag.tips)
@@ -59,7 +59,7 @@ func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNo
 		if !isFinalityBlockInSelectedParentChain {
 			continue
 		}
-		if dag.index.BlockNodeStatus(candidate) == statusUTXONotVerified {
+		if dag.index.BlockNodeStatus(candidate) == statusUTXOPendingVerification {
 			err2 := dag.resolveNodeStatusInNewTransaction(candidate)
 			if err2 != nil {
 				return err2

@@ -48,9 +48,9 @@ func TestFinality(t *testing.T) {
 		}
 
 		status := dag.index.BlockNodeStatus(sideChainTip)
-		if status != statusUTXONotVerified {
+		if status != statusUTXOPendingVerification {
 			t.Fatalf("Block #%d in side-chain expected to have status '%s', but got '%s'",
-				i, statusUTXONotVerified, status)
+				i, statusUTXOPendingVerification, status)
 		}
 	}
 
@@ -94,7 +94,7 @@ func TestFinality(t *testing.T) {
 		}
 	})
 
-	// Add two more blocks to the side chain, so that it violates finality and get's status UTXONotVerified even
+	// Add two more blocks to the side chain, so that it violates finality and get's status UTXOPendingVerification even
 	// though it is the block with the highest blue score.
 	for i := uint64(0); i < 2; i++ {
 		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{sideChainTip.hash}, nil)
@@ -110,9 +110,9 @@ func TestFinality(t *testing.T) {
 	}
 
 	status = dag.index.BlockNodeStatus(sideChainTip)
-	if status != statusUTXONotVerified {
+	if status != statusUTXOPendingVerification {
 		t.Fatalf("Finality violating block expected to have status '%s', but got '%s'",
-			statusUTXONotVerified, status)
+			statusUTXOPendingVerification, status)
 	}
 
 	// Make sure that a finlality conflict notification was sent

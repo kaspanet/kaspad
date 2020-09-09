@@ -250,7 +250,7 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 
 	isNewSelectedTip := dag.isNewSelectedTip(newNode)
 	if !isNewSelectedTip {
-		dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
+		dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
 	}
 
 	dbTx, err := dag.databaseContext.NewTx()
@@ -272,7 +272,7 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 				return nil, err
 			}
 			if isViolatingSubjectiveFinality {
-				dag.index.SetBlockNodeStatus(newNode, statusUTXONotVerified)
+				dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
 				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
 					ViolatingBlockHash: newNode.hash,
 					ConflictTime:       dag.Now(),
@@ -415,7 +415,7 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 }
 
 func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext) error {
-	if dag.index.BlockNodeStatus(node) == statusUTXONotVerified {
+	if dag.index.BlockNodeStatus(node) == statusUTXOPendingVerification {
 		block, err := dag.fetchBlockByHash(node.hash)
 		if err != nil {
 			return err

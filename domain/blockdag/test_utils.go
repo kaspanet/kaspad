@@ -210,7 +210,7 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
 //
 // Note: since we need to calculate acceptedIDMerkleRoot and utxoCommitment, we have to resolve selectedParent's utxo-set.
-// Therefore, this might skew the test results in a way where blocks that should have been UTXONotVerified have
+// Therefore, this might skew the test results in a way where blocks that should have been status UTXOPendingVerification have
 // some other status.
 func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) (*appmessage.MsgBlock, error) {
 	parents := newBlockSet()
@@ -223,7 +223,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	}
 	node, _ := dag.newBlockNode(nil, parents)
 
-	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXONotVerified {
+	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXOPendingVerification {
 		err := resolveNodeStatusForTest(node.selectedParent)
 		if err != nil {
 			return nil, err

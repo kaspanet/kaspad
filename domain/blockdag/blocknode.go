@@ -33,20 +33,22 @@ const (
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
 
-	// statusUTXONotVerified indicates that the block UTXO wasn't verified.
-	statusUTXONotVerified
+	// statusUTXOPendingVerification indicates that the block is pending verification against it's UTXO-Set, either
+	// because it was not yet verified since the block was never in the selectedParentChain, or if the
+	// block violates finality.
+	statusUTXOPendingVerification
 
 	// statusDisqualifiedFromChain indicates that the block is not eligible to be a selected parent.
 	statusDisqualifiedFromChain
 )
 
 var blockStatusToString = map[blockStatus]string{
-	statusDataStored:            "statusDataStored",
-	statusValid:                 "statusValid",
-	statusValidateFailed:        "statusValidateFailed",
-	statusInvalidAncestor:       "statusInvalidAncestor",
-	statusUTXONotVerified:       "statusUTXONotVerified",
-	statusDisqualifiedFromChain: "statusDisqualifiedFromChain",
+	statusDataStored:              "statusDataStored",
+	statusValid:                   "statusValid",
+	statusValidateFailed:          "statusValidateFailed",
+	statusInvalidAncestor:         "statusInvalidAncestor",
+	statusUTXOPendingVerification: "statusUTXOPendingVerification",
+	statusDisqualifiedFromChain:   "statusDisqualifiedFromChain",
 }
 
 func (status blockStatus) String() string {

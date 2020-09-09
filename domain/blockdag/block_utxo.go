@@ -293,7 +293,7 @@ func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 // updateParentsDiffs updates the diff of any parent whose DiffChild is this block
 func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
 	for parent := range node.parents {
-		if node.dag.index.BlockNodeStatus(parent) == statusUTXONotVerified {
+		if node.dag.index.BlockNodeStatus(parent) == statusUTXOPendingVerification {
 			continue
 		}
 
