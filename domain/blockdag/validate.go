@@ -1046,11 +1046,7 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(
 			dag.checkConnectTransactionToPastUTXO(node, tx, pastUTXO, 0, selectedParentMedianTime)
 
 		if err != nil {
-			if ruleErr := &(RuleError{}); errors.As(err, ruleErr) {
-				return err
-			}
-
-			continue
+			return err
 		}
 
 		totalFee, err = dag.checkTotalFee(totalFee, txFee)
