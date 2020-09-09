@@ -1038,7 +1038,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 }
 
-// testProcessBlockStatus submits the given block, and makes sure this block has got expected status
+// testProcessBlockStatus submits the given block, and makes sure this block has got the expected status
 func testProcessBlockStatus(
 	t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedStatus blockStatus) {
 
@@ -1080,7 +1080,7 @@ func testProcessBlockRuleError(t *testing.T, testName string, dag *BlockDAG, blo
 	}
 }
 
-// makeNextSelectedTip plays with block's nonce until it's ID is smaller then dag's selectedTip
+// makeNextSelectedTip plays with block's nonce until its hash is smaller than dag's selectedTip
 // It is the callers responsibility to make sure block's blue score is equal to selected tip's
 func makeNextSelectedTip(dag *BlockDAG, block *appmessage.MsgBlock) {
 	selectedTip := dag.selectedTip()

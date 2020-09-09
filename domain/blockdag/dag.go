@@ -575,38 +575,38 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	candidatesHeap.pushSet(tips)
 
 	// If the first candidate has been disqualified from the chain or violates finality -
-	// he cannot be virtual's parent, since it will make him virtual's selectedParent - disqualifying virtual itself.
-	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with any of
+	// it cannot be virtual's parent, since it will make it virtual's selectedParent - disqualifying virtual itself.
+	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with
 	// its parents that have no disqualified children
 	disqualifiedCandidates := newBlockSet()
 	for {
 		if candidatesHeap.Len() == 0 {
 			return nil, errors.New("virtual has no valid parent candidates")
 		}
-		firstCandidate := candidatesHeap.pop()
+		selectedParentCandidate := candidatesHeap.pop()
 
-		if dag.index.BlockNodeStatus(firstCandidate) == statusValid {
-			isFinalityPointInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityPoint, firstCandidate)
+		if dag.index.BlockNodeStatus(selectedParentCandidate) == statusValid {
+			isFinalityPointInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityPoint, selectedParentCandidate)
 			if err != nil {
 				return nil, err
 			}
 
 			if isFinalityPointInSelectedParentChain {
-				selected.add(firstCandidate)
+				selected.add(selectedParentCandidate)
 				break
 			}
 		}
 
-		disqualifiedCandidates.add(firstCandidate)
+		disqualifiedCandidates.add(selectedParentCandidate)
 
-		for parent := range firstCandidate.parents {
+		for parent := range selectedParentCandidate.parents {
 			if parent.children.areAllIn(disqualifiedCandidates) {
 				candidatesHeap.Push(parent)
 			}
 		}
 	}
 
-	mergeSetSize := 1 // starts counting from 1 because firstCandidate/selectedParent is already in the mergeSet
+	mergeSetSize := 1 // starts counting from 1 because selectedParent is already in the mergeSet
 
 	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
 		candidate := candidatesHeap.pop()
