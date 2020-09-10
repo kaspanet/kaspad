@@ -224,7 +224,16 @@ func HashToBig(hash *Hash) *big.Int {
 //   +1 if hash >  target
 //
 func (hash *Hash) Cmp(target *Hash) int {
-	return HashToBig(hash).Cmp(HashToBig(target))
+	// We compare the hashes backwards because Hash is stored as a little endian byte array.
+	for i := HashSize - 1; i >= 0; i-- {
+		switch {
+		case hash[i] < target[i]:
+			return -1
+		case hash[i] > target[i]:
+			return 1
+		}
+	}
+	return 0
 }
 
 // Less returns true iff hash a is less than hash b
