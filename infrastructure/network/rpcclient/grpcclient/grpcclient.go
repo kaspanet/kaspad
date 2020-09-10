@@ -12,9 +12,12 @@ import (
 	"time"
 )
 
+type OnErrorHandler func(err error)
+
 // GRPCClient is a gRPC-based RPC client
 type GRPCClient struct {
-	stream protowire.RPC_MessageStreamClient
+	stream         protowire.RPC_MessageStreamClient
+	onErrorHandler OnErrorHandler
 }
 
 // Connect connects to the RPC server with the given address
@@ -39,6 +42,10 @@ func Connect(address string) (*GRPCClient, error) {
 // Disconnect disconnects from the RPC server
 func (c *GRPCClient) Disconnect() error {
 	return c.stream.CloseSend()
+}
+
+func (c *GRPCClient) SetOnErrorHandler(onErrorHandler OnErrorHandler) {
+	c.onErrorHandler = onErrorHandler
 }
 
 // AttachRouter attaches the given router to the client and starts
@@ -99,6 +106,10 @@ func (c *GRPCClient) handleError(err error) {
 		if err != nil {
 			panic(err)
 		}
+		return
+	}
+	if c.onErrorHandler != nil {
+		c.onErrorHandler(err)
 		return
 	}
 	panic(err)
