@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// OnErrorHandler defines a handler function for when errors occur
 type OnErrorHandler func(err error)
 
 // GRPCClient is a gRPC-based RPC client
@@ -44,6 +45,7 @@ func (c *GRPCClient) Disconnect() error {
 	return c.stream.CloseSend()
 }
 
+// SetOnErrorHandler sets the client's onErrorHandler
 func (c *GRPCClient) SetOnErrorHandler(onErrorHandler OnErrorHandler) {
 	c.onErrorHandler = onErrorHandler
 }
