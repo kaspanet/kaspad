@@ -91,35 +91,43 @@ func New(cfg Configer) (*AddressManager, error) {
 	}, nil
 }
 
-// AddAddress adds address to the address manager
-func (am *AddressManager) AddAddress(address *appmessage.NetAddress) {
-	am.mutex.Lock()
-	defer am.mutex.Unlock()
-
-	key := netAddressKey(address)
-	if _, ok := am.addresses[key]; !ok {
-		am.addresses[key] = &netAddressWrapper{
-			netAddress: address,
-			isBanned:   false,
-			isLocal:    IsLocal(address),
-		}
-	}
-}
-
 // AddAddresses adds addresses to the address manager
 func (am *AddressManager) AddAddresses(addresses ...*appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	for _, address := range addresses {
+		if !am.IsRoutable(address) {
+			continue
+		}
+
 		key := netAddressKey(address)
 		if _, ok := am.addresses[key]; !ok {
 			am.addresses[key] = &netAddressWrapper{
 				netAddress: address,
-				isBanned:   false,
-				isLocal:    IsLocal(address),
 			}
 		}
+	}
+}
+
+// AddLocalAddresses adds local netAddresses to the address manager
+func (am *AddressManager) AddLocalAddresses(addresses ...*appmessage.NetAddress) {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	for _, address := range addresses {
+		if !am.IsRoutable(address) {
+			continue
+		}
+
+		key := netAddressKey(address)
+		if _, ok := am.addresses[key]; !ok {
+			am.addresses[key] = &netAddressWrapper{
+				netAddress: address,
+				isLocal:    true,
+			}
+		}
+
 	}
 }
 
