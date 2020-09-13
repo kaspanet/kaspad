@@ -250,7 +250,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
 		CurrentTime:          header.Timestamp.UnixMilliseconds(),
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		MassLimit:            appmessage.MaxMassPerBlock,
+		MassLimit:            appmessage.MaxMassAcceptedByBlock,
 		Transactions:         transactions,
 		HashMerkleRoot:       header.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
