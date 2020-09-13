@@ -297,7 +297,7 @@ func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (
 }
 
 func (node *blockNode) nonBoundedMergeDepthViolatingBlues() (blockSet, error) {
-	nonFinalityViolatingBlues := newBlockSet()
+	nonBoundedMergeDepthViolatingBlues := newBlockSet()
 
 	for _, blueNode := range node.blues {
 		notViolatingFinality, err := node.hasFinalityPointInOthersSelectedChain(blueNode)
@@ -305,11 +305,11 @@ func (node *blockNode) nonBoundedMergeDepthViolatingBlues() (blockSet, error) {
 			return nil, err
 		}
 		if notViolatingFinality {
-			nonFinalityViolatingBlues.add(blueNode)
+			nonBoundedMergeDepthViolatingBlues.add(blueNode)
 		}
 	}
 
-	return nonFinalityViolatingBlues, nil
+	return nonBoundedMergeDepthViolatingBlues, nil
 }
 
 func (node *blockNode) checkBoundedMergeDepth() error {
