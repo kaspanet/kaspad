@@ -128,7 +128,7 @@ type Flags struct {
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
-	MaxUTXOCacheSize     int64         `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
+	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	NetworkFlags
 }
 

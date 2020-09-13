@@ -98,7 +98,7 @@ type BlockDAG struct {
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
 
-	maxUTXOCacheSize int64
+	maxUTXOCacheSize uint64
 }
 
 // New returns a BlockDAG instance using the provided configuration details.

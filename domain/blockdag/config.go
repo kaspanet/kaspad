@@ -54,5 +54,5 @@ type Config struct {
 
 	// MaxUTXOCacheSize is the Max size of loaded UTXO into ram from the disk in bytes
 	// to support UTXO lazy-load
-	MaxUTXOCacheSize int64
+	MaxUTXOCacheSize uint64
 }

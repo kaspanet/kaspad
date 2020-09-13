@@ -12,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
@@ -412,8 +411,8 @@ type UTXOSet interface {
 type FullUTXOSet struct {
 	utxoCollection
 	dbContext        dbaccess.Context
-	size             int64
-	maxUTXOCacheSize int64
+	estimatedSize    uint64
+	maxUTXOCacheSize uint64
 	outpointBuff     *bytes.Buffer
 }
 
@@ -421,35 +420,17 @@ type FullUTXOSet struct {
 func NewFullUTXOSet() *FullUTXOSet {
 	return &FullUTXOSet{
 		utxoCollection:   utxoCollection{},
-		maxUTXOCacheSize: -1,
 	}
 }
 
 // NewFullUTXOSetFromContext creates a new utxoSet and map the data context with caching
-// if the cacheSize is less than zero then the cache size limit will be ignored
-func NewFullUTXOSetFromContext(context dbaccess.Context, cacheSize int64) *FullUTXOSet {
+func NewFullUTXOSetFromContext(context dbaccess.Context, cacheSize uint64) *FullUTXOSet {
 	return &FullUTXOSet{
 		dbContext:        context,
 		maxUTXOCacheSize: cacheSize,
 		utxoCollection:   make(utxoCollection),
 		outpointBuff:     bytes.NewBuffer(make([]byte, outpointSerializeSize)),
 	}
-}
-
-// newFullUTXOSetFromUTXOCollection converts a utxoCollection to a FullUTXOSet
-func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
-	var err error
-	multiset := secp256k1.NewMultiset()
-	for outpoint, utxoEntry := range collection {
-		multiset, err = addUTXOToMultiset(multiset, utxoEntry, &outpoint)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &FullUTXOSet{
-		utxoCollection:   collection,
-		maxUTXOCacheSize: -1,
-	}, nil
 }
 
 // diffFrom returns the difference between this utxoSet and another
@@ -512,27 +493,28 @@ func (fus *FullUTXOSet) clone() UTXOSet {
 	return &FullUTXOSet{
 		utxoCollection:   fus.utxoCollection.clone(),
 		dbContext:        fus.dbContext,
-		size:             fus.size,
+		estimatedSize:    fus.estimatedSize,
 		maxUTXOCacheSize: fus.maxUTXOCacheSize,
 	}
 }
 
+// get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
 // this method hides the embedded utxoCollection's implementation of get
 func (fus *FullUTXOSet) get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	return fus.Get(outpoint)
 }
 
-// getSizeOfUTXOEntryAndOutpoint returns size of UTXOEntry & Outpoint in bytes
-func getSizeOfUTXOEntryAndOutpoint(entry *UTXOEntry) int64 {
-	const staticSize = int64(unsafe.Sizeof(UTXOEntry{}) + unsafe.Sizeof(appmessage.Outpoint{}))
-	return staticSize + int64(len(entry.scriptPubKey))
+// getSizeOfUTXOEntryAndOutpoint returns estimated size of UTXOEntry & Outpoint in bytes
+func getSizeOfUTXOEntryAndOutpoint(entry *UTXOEntry) uint64 {
+	const staticSize = uint64(unsafe.Sizeof(UTXOEntry{}) + unsafe.Sizeof(appmessage.Outpoint{}))
+	return staticSize + uint64(len(entry.scriptPubKey))
 }
 
-// checkAndCleanCachedData checks the FullUTXOSet size and clean it if it reaches the limit
+// checkAndCleanCachedData checks the FullUTXOSet estimated size and clean it if it reaches the limit
 func (fus *FullUTXOSet) checkAndCleanCachedData() {
-	if fus.maxUTXOCacheSize > 0 && fus.size > fus.maxUTXOCacheSize {
+	if fus.estimatedSize > fus.maxUTXOCacheSize {
 		fus.utxoCollection = make(utxoCollection)
-		fus.size = 0
+		fus.estimatedSize = 0
 	}
 }
 
@@ -540,7 +522,7 @@ func (fus *FullUTXOSet) checkAndCleanCachedData() {
 // this method hides the embedded utxoCollection's implementation of add
 func (fus *FullUTXOSet) add(outpoint appmessage.Outpoint, entry *UTXOEntry) {
 	fus.utxoCollection[outpoint] = entry
-	fus.size += getSizeOfUTXOEntryAndOutpoint(entry)
+	fus.estimatedSize += getSizeOfUTXOEntryAndOutpoint(entry)
 	fus.checkAndCleanCachedData()
 }
 
@@ -550,20 +532,16 @@ func (fus *FullUTXOSet) remove(outpoint appmessage.Outpoint) {
 	entry, ok := fus.utxoCollection.get(outpoint)
 	if ok {
 		delete(fus.utxoCollection, outpoint)
-		fus.size -= getSizeOfUTXOEntryAndOutpoint(entry)
+		fus.estimatedSize -= getSizeOfUTXOEntryAndOutpoint(entry)
 	}
 }
 
 // Get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
-// If the UTXOEntry is not exist in the memory then check in the database
+// If the UTXOEntry doesn't not exist in the memory then check in the database
 func (fus *FullUTXOSet) Get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outpoint]
 	if ok {
 		return utxoEntry, ok
-	}
-
-	if fus.dbContext == nil {
-		return nil, false
 	}
 
 	fus.outpointBuff.Reset()

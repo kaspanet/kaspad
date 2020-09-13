@@ -214,9 +214,6 @@ func (dag *BlockDAG) initDAGState() error {
 		return err
 	}
 
-	log.Debugf("Setting the FullUTXOSet to the virtual block...")
-	dag.virtual.utxoSet = NewFullUTXOSetFromContext(dag.databaseContext, dag.maxUTXOCacheSize)
-
 	log.Debugf("Applying the stored tips to the virtual block...")
 	err = dag.initVirtualBlockTips(dagState)
 	if err != nil {
