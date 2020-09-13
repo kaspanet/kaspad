@@ -64,6 +64,8 @@ message KaspadMessage {
     GetBlockCountResponseMessage getBlockCountResponse = 1034;
     GetBlockDagInfoRequestMessage getBlockDagInfoRequest = 1035;
     GetBlockDagInfoResponseMessage getBlockDagInfoResponse = 1036;
+    ResolveFinalityConflictRequestMessage resolveFinalityConflictRequest = 1037;
+    ResolveFinalityConflictResponseMessage resolveFinalityConflictResponse = 1038;
   }
 }
 
@@ -560,6 +562,14 @@ message GetBlockDagInfoResponseMessage{
   double difficulty = 4;
   int64 pastMedianTime = 5;
   repeated string virtualParentHashes = 6;
+  RPCError error = 1000;
+}
+
+message ResolveFinalityConflictRequestMessage{
+  string finalityBlockHash = 1;
+}
+
+message ResolveFinalityConflictResponseMessage{
   RPCError error = 1000;
 }
 
