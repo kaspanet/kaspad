@@ -16,6 +16,7 @@ func HandleGetBlockDAGInfo(context *rpccontext.Context, _ *router.Router, _ appm
 	response.NetworkName = params.Name
 	response.BlockCount = dag.BlockCount()
 	response.TipHashes = daghash.Strings(dag.TipHashes())
+	response.VirtualParentHashes = daghash.Strings(dag.VirtualParentHashes())
 	response.Difficulty = context.GetDifficultyRatio(dag.CurrentBits(), params)
 	response.PastMedianTime = dag.CalcPastMedianTime().UnixMilliseconds()
 	return response, nil

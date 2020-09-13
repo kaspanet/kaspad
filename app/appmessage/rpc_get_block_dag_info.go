@@ -20,11 +20,12 @@ func NewGetBlockDAGInfoRequestMessage() *GetBlockDAGInfoRequestMessage {
 // its respective RPC message
 type GetBlockDAGInfoResponseMessage struct {
 	baseMessage
-	NetworkName    string
-	BlockCount     uint64
-	TipHashes      []string
-	Difficulty     float64
-	PastMedianTime int64
+	NetworkName         string
+	BlockCount          uint64
+	TipHashes           []string
+	VirtualParentHashes []string
+	Difficulty          float64
+	PastMedianTime      int64
 
 	Error *RPCError
 }
