@@ -55,7 +55,8 @@ func TestNetAdapter(t *testing.T) {
 		t.Fatalf("TestNetAdapter: NetAdapter instantiation failed: %+v", err)
 	}
 
-	adapterA.SetRouterInitializer(func(router *router.Router, connection *NetConnection) {})
+	adapterA.SetP2PRouterInitializer(func(router *router.Router, connection *NetConnection) {})
+	adapterA.SetRPCRouterInitializer(func(router *router.Router, connection *NetConnection) {})
 	err = adapterA.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
@@ -67,7 +68,8 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	initializer := routerInitializerForTest(t, routes, "B", wg)
-	adapterB.SetRouterInitializer(initializer)
+	adapterB.SetP2PRouterInitializer(initializer)
+	adapterB.SetRPCRouterInitializer(func(router *router.Router, connection *NetConnection) {})
 	err = adapterB.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
@@ -79,30 +81,31 @@ func TestNetAdapter(t *testing.T) {
 	}
 
 	initializer = routerInitializerForTest(t, routes, "C", wg)
-	adapterC.SetRouterInitializer(initializer)
+	adapterC.SetP2PRouterInitializer(initializer)
+	adapterC.SetRPCRouterInitializer(func(router *router.Router, connection *NetConnection) {})
 	err = adapterC.Start()
 	if err != nil {
 		t.Fatalf("TestNetAdapter: Start() failed: %+v", err)
 	}
 
-	err = adapterA.Connect(addressB)
+	err = adapterA.P2PConnect(addressB)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: connection to %s failed: %+v", addressB, err)
 	}
 
-	err = adapterA.Connect(addressC)
+	err = adapterA.P2PConnect(addressC)
 	if err != nil {
 		t.Fatalf("TestNetAdapter: connection to %s failed: %+v", addressC, err)
 	}
 
 	// Ensure adapter has two connections
-	if count := adapterA.ConnectionCount(); count != 2 {
+	if count := adapterA.P2PConnectionCount(); count != 2 {
 		t.Fatalf("TestNetAdapter: expected 2 connections, got - %d", count)
 	}
 
 	// Ensure all connected peers have received broadcasted message
-	connections := adapterA.Connections()
-	err = adapterA.Broadcast(connections, appmessage.NewMsgPing(1))
+	connections := adapterA.P2PConnections()
+	err = adapterA.P2PBroadcast(connections, appmessage.NewMsgPing(1))
 	if err != nil {
 		t.Fatalf("TestNetAdapter: broadcast failed: %+v", err)
 	}
@@ -122,8 +125,8 @@ func TestNetAdapter(t *testing.T) {
 
 	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			appmessage.MessageCommandToString[appmessage.CmdPing],
-			appmessage.MessageCommandToString[command])
+			appmessage.ProtocolMessageCommandToString[appmessage.CmdPing],
+			appmessage.ProtocolMessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {
@@ -142,8 +145,8 @@ func TestNetAdapter(t *testing.T) {
 
 	if command := msg.Command(); command != appmessage.CmdPing {
 		t.Fatalf("TestNetAdapter: expected '%s' message to be received but got '%s'",
-			appmessage.MessageCommandToString[appmessage.CmdPing],
-			appmessage.MessageCommandToString[command])
+			appmessage.ProtocolMessageCommandToString[appmessage.CmdPing],
+			appmessage.ProtocolMessageCommandToString[command])
 	}
 
 	if number := msg.MessageNumber(); number != nonce {

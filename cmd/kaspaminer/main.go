@@ -29,16 +29,12 @@ func main() {
 	// Show version at startup.
 	log.Infof("Version %s", version.Version())
 
-	if cfg.Verbose {
-		enableRPCLogging()
-	}
-
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		profiling.Start(cfg.Profile, log)
 	}
 
-	client, err := connectToServer(cfg)
+	client, err := newMinerClient(cfg)
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}

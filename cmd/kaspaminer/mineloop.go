@@ -2,13 +2,14 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	clientpkg "github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpc/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -79,7 +80,7 @@ func logHashRate() {
 func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *util.Block, mineWhenNotSynced bool,
 	templateStopChan chan struct{}, errChan chan error) {
 
-	newTemplateChan := make(chan *model.GetBlockTemplateResult)
+	newTemplateChan := make(chan *appmessage.GetBlockTemplateResponseMessage)
 	spawn("templatesLoop", func() {
 		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
@@ -89,11 +90,11 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 }
 
 func handleFoundBlock(client *minerClient, block *util.Block) error {
-	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
+	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Address())
 
-	err := client.SubmitBlock(block, &model.SubmitBlockOptions{})
+	err := client.SubmitBlock(block)
 	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Host(), err)
+		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Address(), err)
 	}
 	return nil
 }
@@ -116,25 +117,28 @@ func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util
 			}
 		}
 	}
-
 }
 
 func templatesLoop(client *minerClient, miningAddr util.Address,
-	newTemplateChan chan *model.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
+	newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, errChan chan error, stopChan chan struct{}) {
 
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
+			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Address())
 		} else {
-			log.Infof("Requesting template without longPollID from %s", client.Host())
+			log.Infof("Requesting template without longPollID from %s", client.Address())
 		}
-		template, err := getBlockTemplate(client, miningAddr, longPollID)
-		if nativeerrors.Is(err, clientpkg.ErrResponseTimedOut) {
-			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
+		template, err := client.GetBlockTemplate(miningAddr.String(), longPollID)
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Address())
 			return
 		} else if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Host(), err)
+			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
+			return
+		}
+		if !template.IsConnected {
+			errChan <- errors.Errorf("Kaspad is not connected for %s", client.Address())
 			return
 		}
 		if template.LongPollID != longPollID {
@@ -149,7 +153,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 		case <-stopChan:
 			close(newTemplateChan)
 			return
-		case <-client.onBlockAdded:
+		case <-client.blockAddedNotificationChan:
 			getBlockTemplateLongPoll()
 		case <-time.Tick(500 * time.Millisecond):
 			getBlockTemplateLongPoll()
@@ -157,11 +161,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	}
 }
 
-func getBlockTemplate(client *minerClient, miningAddr util.Address, longPollID string) (*model.GetBlockTemplateResult, error) {
-	return client.GetBlockTemplate(miningAddr.String(), longPollID)
-}
-
-func solveLoop(newTemplateChan chan *model.GetBlockTemplateResult, foundBlock chan *util.Block,
+func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *util.Block,
 	mineWhenNotSynced bool, errChan chan error) {
 
 	var stopOldTemplateSolving chan struct{}
@@ -179,7 +179,7 @@ func solveLoop(newTemplateChan chan *model.GetBlockTemplateResult, foundBlock ch
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := clientpkg.ConvertGetBlockTemplateResultToBlock(template)
+		block, err := mining.ConvertGetBlockTemplateResultToBlock(template)
 		if err != nil {
 			errChan <- errors.Errorf("Error parsing block: %s", err)
 			return

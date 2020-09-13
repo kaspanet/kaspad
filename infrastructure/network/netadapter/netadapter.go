@@ -23,14 +23,16 @@ type RouterInitializer func(*routerpkg.Router, *NetConnection)
 // and message handlers) without exposing anything related
 // to networking internals.
 type NetAdapter struct {
-	cfg               *config.Config
-	id                *id.ID
-	server            server.Server
-	routerInitializer RouterInitializer
-	stop              uint32
+	cfg                  *config.Config
+	id                   *id.ID
+	p2pServer            server.P2PServer
+	p2pRouterInitializer RouterInitializer
+	rpcServer            server.Server
+	rpcRouterInitializer RouterInitializer
+	stop                 uint32
 
-	connections     map[*NetConnection]struct{}
-	connectionsLock sync.RWMutex
+	p2pConnections     map[*NetConnection]struct{}
+	p2pConnectionsLock sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -40,30 +42,43 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	s, err := grpcserver.NewGRPCServer(cfg.Listeners)
+	p2pServer, err := grpcserver.NewP2PServer(cfg.Listeners)
+	if err != nil {
+		return nil, err
+	}
+	rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners)
 	if err != nil {
 		return nil, err
 	}
 	adapter := NetAdapter{
-		cfg:    cfg,
-		id:     netAdapterID,
-		server: s,
+		cfg:       cfg,
+		id:        netAdapterID,
+		p2pServer: p2pServer,
+		rpcServer: rpcServer,
 
-		connections: make(map[*NetConnection]struct{}),
+		p2pConnections: make(map[*NetConnection]struct{}),
 	}
 
-	adapter.server.SetOnConnectedHandler(adapter.onConnectedHandler)
+	adapter.p2pServer.SetOnConnectedHandler(adapter.onP2PConnectedHandler)
+	adapter.rpcServer.SetOnConnectedHandler(adapter.onRPCConnectedHandler)
 
 	return &adapter, nil
 }
 
 // Start begins the operation of the NetAdapter
 func (na *NetAdapter) Start() error {
-	if na.routerInitializer == nil {
-		return errors.New("routerInitializer was not set")
+	if na.p2pRouterInitializer == nil {
+		return errors.New("p2pRouterInitializer was not set")
+	}
+	if na.rpcRouterInitializer == nil {
+		return errors.New("rpcRouterInitializer was not set")
 	}
 
-	err := na.server.Start()
+	err := na.p2pServer.Start()
+	if err != nil {
+		return err
+	}
+	err = na.rpcServer.Start()
 	if err != nil {
 		return err
 	}
@@ -76,62 +91,80 @@ func (na *NetAdapter) Stop() error {
 	if atomic.AddUint32(&na.stop, 1) != 1 {
 		return errors.New("net adapter stopped more than once")
 	}
-	return na.server.Stop()
+	err := na.p2pServer.Stop()
+	if err != nil {
+		return err
+	}
+	return na.rpcServer.Stop()
 }
 
-// Connect tells the NetAdapter's underlying server to initiate a connection
+// P2PConnect tells the NetAdapter's underlying p2p server to initiate a connection
 // to the given address
-func (na *NetAdapter) Connect(address string) error {
-	_, err := na.server.Connect(address)
+func (na *NetAdapter) P2PConnect(address string) error {
+	_, err := na.p2pServer.Connect(address)
 	return err
 }
 
-// Connections returns a list of connections currently connected and active
-func (na *NetAdapter) Connections() []*NetConnection {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+// P2PConnections returns a list of p2p connections currently connected and active
+func (na *NetAdapter) P2PConnections() []*NetConnection {
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
-	netConnections := make([]*NetConnection, 0, len(na.connections))
+	netConnections := make([]*NetConnection, 0, len(na.p2pConnections))
 
-	for netConnection := range na.connections {
+	for netConnection := range na.p2pConnections {
 		netConnections = append(netConnections, netConnection)
 	}
 
 	return netConnections
 }
 
-// ConnectionCount returns the count of the connected connections
-func (na *NetAdapter) ConnectionCount() int {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+// P2PConnectionCount returns the count of the connected p2p connections
+func (na *NetAdapter) P2PConnectionCount() int {
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
-	return len(na.connections)
+	return len(na.p2pConnections)
 }
 
-func (na *NetAdapter) onConnectedHandler(connection server.Connection) error {
-	netConnection := newNetConnection(connection, na.routerInitializer)
+func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error {
+	netConnection := newNetConnection(connection, na.p2pRouterInitializer)
 
-	na.connectionsLock.Lock()
-	defer na.connectionsLock.Unlock()
+	na.p2pConnectionsLock.Lock()
+	defer na.p2pConnectionsLock.Unlock()
 
 	netConnection.setOnDisconnectedHandler(func() {
-		na.connectionsLock.Lock()
-		defer na.connectionsLock.Unlock()
+		na.p2pConnectionsLock.Lock()
+		defer na.p2pConnectionsLock.Unlock()
 
-		delete(na.connections, netConnection)
+		delete(na.p2pConnections, netConnection)
 	})
 
-	na.connections[netConnection] = struct{}{}
+	na.p2pConnections[netConnection] = struct{}{}
 
 	netConnection.start()
 
 	return nil
 }
 
-// SetRouterInitializer sets the routerInitializer function
+func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
+	netConnection := newNetConnection(connection, na.rpcRouterInitializer)
+	netConnection.setOnDisconnectedHandler(func() {})
+	netConnection.start()
+
+	return nil
+}
+
+// SetP2PRouterInitializer sets the p2pRouterInitializer function
 // for the net adapter
-func (na *NetAdapter) SetRouterInitializer(routerInitializer RouterInitializer) {
-	na.routerInitializer = routerInitializer
+func (na *NetAdapter) SetP2PRouterInitializer(routerInitializer RouterInitializer) {
+	na.p2pRouterInitializer = routerInitializer
+}
+
+// SetRPCRouterInitializer sets the rpcRouterInitializer function
+// for the net adapter
+func (na *NetAdapter) SetRPCRouterInitializer(routerInitializer RouterInitializer) {
+	na.rpcRouterInitializer = routerInitializer
 }
 
 // ID returns this netAdapter's ID in the network
@@ -139,11 +172,11 @@ func (na *NetAdapter) ID() *id.ID {
 	return na.id
 }
 
-// Broadcast sends the given `message` to every peer corresponding
+// P2PBroadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
-func (na *NetAdapter) Broadcast(netConnections []*NetConnection, message appmessage.Message) error {
-	na.connectionsLock.RLock()
-	defer na.connectionsLock.RUnlock()
+func (na *NetAdapter) P2PBroadcast(netConnections []*NetConnection, message appmessage.Message) error {
+	na.p2pConnectionsLock.RLock()
+	defer na.p2pConnectionsLock.RUnlock()
 
 	for _, netConnection := range netConnections {
 		err := netConnection.router.OutgoingRoute().Enqueue(message)

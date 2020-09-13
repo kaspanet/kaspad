@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpc/client"
 	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 )
@@ -25,8 +24,4 @@ func initLog(logFile, errLogFile string) {
 		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, logger.LevelWarn, err)
 		os.Exit(1)
 	}
-}
-
-func enableRPCLogging() {
-	client.UseLogger(backendLog, logger.LevelTrace)
 }

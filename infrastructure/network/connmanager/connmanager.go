@@ -82,7 +82,7 @@ func (c *ConnectionManager) Start() {
 func (c *ConnectionManager) Stop() {
 	atomic.StoreUint32(&c.stop, 1)
 
-	for _, connection := range c.netAdapter.Connections() {
+	for _, connection := range c.netAdapter.P2PConnections() {
 		connection.Disconnect()
 	}
 
@@ -95,14 +95,14 @@ func (c *ConnectionManager) run() {
 
 func (c *ConnectionManager) initiateConnection(address string) error {
 	log.Infof("Connecting to %s", address)
-	return c.netAdapter.Connect(address)
+	return c.netAdapter.P2PConnect(address)
 }
 
 const connectionsLoopInterval = 30 * time.Second
 
 func (c *ConnectionManager) connectionsLoop() {
 	for atomic.LoadUint32(&c.stop) == 0 {
-		connections := c.netAdapter.Connections()
+		connections := c.netAdapter.P2PConnections()
 
 		// We convert the connections list to a set, so that connections can be found quickly
 		// Then we go over the set, classifying connection by category: requested, outgoing or incoming.
@@ -122,7 +122,7 @@ func (c *ConnectionManager) connectionsLoop() {
 
 // ConnectionCount returns the count of the connected connections
 func (c *ConnectionManager) ConnectionCount() int {
-	return c.netAdapter.ConnectionCount()
+	return c.netAdapter.P2PConnectionCount()
 }
 
 // Ban marks the given netConnection as banned
