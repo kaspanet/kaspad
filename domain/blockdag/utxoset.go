@@ -157,7 +157,7 @@ func (uc utxoCollection) containsWithBlueScore(outpoint appmessage.Outpoint, blu
 
 // clone returns a clone of this collection
 func (uc utxoCollection) clone() utxoCollection {
-	clone := utxoCollection{}
+	clone := make(utxoCollection, len(uc))
 	for outpoint, entry := range uc {
 		clone.add(outpoint, entry)
 	}

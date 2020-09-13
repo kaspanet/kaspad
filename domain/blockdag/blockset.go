@@ -36,7 +36,7 @@ func (bs blockSet) remove(node *blockNode) {
 
 // clone clones thie block set
 func (bs blockSet) clone() blockSet {
-	clone := newBlockSet()
+	clone := make(blockSet, len(bs))
 	for node := range bs {
 		clone.add(node)
 	}
