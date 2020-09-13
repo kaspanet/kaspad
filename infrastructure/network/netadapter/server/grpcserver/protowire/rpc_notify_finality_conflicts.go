@@ -31,3 +31,29 @@ func (x *KaspadMessage_NotifyFinalityConflictsResponse) fromAppMessage(message *
 	}
 	return nil
 }
+
+func (x *KaspadMessage_FinalityConflictNotification) toAppMessage() (appmessage.Message, error) {
+	return &appmessage.FinalityConflictNotificationMessage{
+		ViolatingBlockHash: x.FinalityConflictNotification.ViolatingBlockHash,
+	}, nil
+}
+
+func (x *KaspadMessage_FinalityConflictNotification) fromAppMessage(message *appmessage.FinalityConflictNotificationMessage) error {
+	x.FinalityConflictNotification = &FinalityConflictNotificationMessage{
+		ViolatingBlockHash: message.ViolatingBlockHash,
+	}
+	return nil
+}
+
+func (x *KaspadMessage_FinalityConflictResolvedNotification) toAppMessage() (appmessage.Message, error) {
+	return &appmessage.FinalityConflictResolvedNotificationMessage{
+		FinalityBlockHash: x.FinalityConflictResolvedNotification.FinalityBlockHash,
+	}, nil
+}
+
+func (x *KaspadMessage_FinalityConflictResolvedNotification) fromAppMessage(message *appmessage.FinalityConflictResolvedNotificationMessage) error {
+	x.FinalityConflictResolvedNotification = &FinalityConflictResolvedNotificationMessage{
+		FinalityBlockHash: message.FinalityBlockHash,
+	}
+	return nil
+}

@@ -492,6 +492,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.FinalityConflictNotificationMessage:
+		payload := new(KaspadMessage_FinalityConflictNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.FinalityConflictResolvedNotificationMessage:
+		payload := new(KaspadMessage_FinalityConflictResolvedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

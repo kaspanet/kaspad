@@ -68,6 +68,8 @@ message KaspadMessage {
     ResolveFinalityConflictResponseMessage resolveFinalityConflictResponse = 1038;
     NotifyFinalityConflictsRequestMessage notifyFinalityConflictsRequest = 1039;
     NotifyFinalityConflictsResponseMessage notifyFinalityConflictsResponse = 1040;
+    FinalityConflictNotificationMessage finalityConflictNotification = 1041;
+    FinalityConflictResolvedNotificationMessage finalityConflictResolvedNotification = 1042;
   }
 }
 
@@ -580,6 +582,14 @@ message NotifyFinalityConflictsRequestMessage{
 
 message NotifyFinalityConflictsResponseMessage{
   RPCError error = 1000;
+}
+
+message FinalityConflictNotificationMessage{
+  string violatingBlockHash = 1;
+}
+
+message FinalityConflictResolvedNotificationMessage{
+  string finalityBlockHash = 1;
 }
 
 service RPC {
