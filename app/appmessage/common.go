@@ -375,30 +375,31 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 // on its value.
 func WriteVarInt(w io.Writer, val uint64) error {
 	if val < 0xfd {
-		return binaryserializer.PutUint8(w, uint8(val))
+		_, err := w.Write([]byte{uint8(val)})
+		return errors.WithStack(err)
 	}
 
 	if val <= math.MaxUint16 {
-		err := binaryserializer.PutUint8(w, 0xfd)
-		if err != nil {
-			return err
-		}
-		return binaryserializer.PutUint16(w, littleEndian, uint16(val))
+		var buf [3]byte
+		buf[0] = 0xfd
+		littleEndian.PutUint16(buf[1:], uint16(val))
+		_, err := w.Write(buf[:])
+		return errors.WithStack(err)
 	}
 
 	if val <= math.MaxUint32 {
-		err := binaryserializer.PutUint8(w, 0xfe)
-		if err != nil {
-			return err
-		}
-		return binaryserializer.PutUint32(w, littleEndian, uint32(val))
+		var buf [5]byte
+		buf[0] = 0xfe
+		littleEndian.PutUint32(buf[1:], uint32(val))
+		_, err := w.Write(buf[:])
+		return errors.WithStack(err)
 	}
 
-	err := binaryserializer.PutUint8(w, 0xff)
-	if err != nil {
-		return err
-	}
-	return binaryserializer.PutUint64(w, littleEndian, val)
+	var buf [9]byte
+	buf[0] = 0xff
+	littleEndian.PutUint64(buf[1:], val)
+	_, err := w.Write(buf[:])
+	return errors.WithStack(err)
 }
 
 // VarIntSerializeSize returns the number of bytes it would take to serialize
