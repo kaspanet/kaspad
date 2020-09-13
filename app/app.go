@@ -152,10 +152,26 @@ func setupRPC(
 func handleBlockDAGNotifications(notification *blockdag.Notification,
 	acceptanceIndex *indexers.AcceptanceIndex, rpcManager *rpc.Manager) error {
 
-	if notification.Type == blockdag.NTChainChanged && acceptanceIndex != nil {
+	switch notification.Type {
+	case blockdag.NTChainChanged:
+		if acceptanceIndex == nil {
+			return nil
+		}
 		chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
 		err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
 			chainChangedNotificationData.AddedChainBlockHashes)
+		if err != nil {
+			return err
+		}
+	case blockdag.NTFinalityConflict:
+		finalityConflictNotificationData := notification.Data.(*blockdag.FinalityConflictNotificationData)
+		err := rpcManager.NotifyFinalityConflict(finalityConflictNotificationData.ViolatingBlockHash.String())
+		if err != nil {
+			return err
+		}
+	case blockdag.NTFinalityConflictResolved:
+		finalityConflictResolvedNotificationData := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
+		err := rpcManager.NotifyFinalityConflictResolved(finalityConflictResolvedNotificationData.FinalityBlockHash.String())
 		if err != nil {
 			return err
 		}

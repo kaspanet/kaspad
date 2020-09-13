@@ -19,12 +19,22 @@ type OnBlockAddedListener func(notification *appmessage.BlockAddedNotificationMe
 // OnChainChangedListener is a listener function for when the DAG's selected parent chain changes
 type OnChainChangedListener func(notification *appmessage.ChainChangedNotificationMessage) error
 
+// OnFinalityConflictListener is a listener function for when there a finality conflict in the DAG
+type OnFinalityConflictListener func(notification *appmessage.FinalityConflictNotificationMessage) error
+
+// OnFinalityConflictResolvedListener is a listener function for when a finality conflict in the DAG has been resolved
+type OnFinalityConflictResolvedListener func(notification *appmessage.FinalityConflictResolvedNotificationMessage) error
+
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
-	onBlockAddedListener           OnBlockAddedListener
-	onBlockAddedNotificationChan   chan *appmessage.BlockAddedNotificationMessage
-	onChainChangedListener         OnChainChangedListener
-	onChainChangedNotificationChan chan *appmessage.ChainChangedNotificationMessage
+	onBlockAddedListener                       OnBlockAddedListener
+	onBlockAddedNotificationChan               chan *appmessage.BlockAddedNotificationMessage
+	onChainChangedListener                     OnChainChangedListener
+	onChainChangedNotificationChan             chan *appmessage.ChainChangedNotificationMessage
+	onFinalityConflictListener                 OnFinalityConflictListener
+	onFinalityConflictNotificationChan         chan *appmessage.FinalityConflictNotificationMessage
+	onFinalityConflictResolvedListener         OnFinalityConflictResolvedListener
+	onFinalityConflictResolvedNotificationChan chan *appmessage.FinalityConflictResolvedNotificationMessage
 
 	closeChan chan struct{}
 }
@@ -104,11 +114,45 @@ func (nm *NotificationManager) NotifyChainChanged(message *appmessage.ChainChang
 	}
 }
 
+// NotifyFinalityConflict notifies the notification manager that there's a finality conflict in the DAG
+func (nm *NotificationManager) NotifyFinalityConflict(message *appmessage.FinalityConflictNotificationMessage) {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for _, listener := range nm.listeners {
+		if listener.onFinalityConflictListener != nil {
+			select {
+			case listener.onFinalityConflictNotificationChan <- message:
+			case <-listener.closeChan:
+				continue
+			}
+		}
+	}
+}
+
+// NotifyFinalityConflictResolved notifies the notification manager that a finality conflict in the DAG has been resolved
+func (nm *NotificationManager) NotifyFinalityConflictResolved(message *appmessage.FinalityConflictResolvedNotificationMessage) {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for _, listener := range nm.listeners {
+		if listener.onFinalityConflictResolvedListener != nil {
+			select {
+			case listener.onFinalityConflictResolvedNotificationChan <- message:
+			case <-listener.closeChan:
+				continue
+			}
+		}
+	}
+}
+
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
-		onBlockAddedNotificationChan:   make(chan *appmessage.BlockAddedNotificationMessage),
-		onChainChangedNotificationChan: make(chan *appmessage.ChainChangedNotificationMessage),
-		closeChan:                      make(chan struct{}, 1),
+		onBlockAddedNotificationChan:               make(chan *appmessage.BlockAddedNotificationMessage),
+		onChainChangedNotificationChan:             make(chan *appmessage.ChainChangedNotificationMessage),
+		onFinalityConflictNotificationChan:         make(chan *appmessage.FinalityConflictNotificationMessage),
+		onFinalityConflictResolvedNotificationChan: make(chan *appmessage.FinalityConflictResolvedNotificationMessage),
+		closeChan: make(chan struct{}, 1),
 	}
 }
 
@@ -122,6 +166,16 @@ func (nl *NotificationListener) SetOnChainChangedListener(onChainChangedListener
 	nl.onChainChangedListener = onChainChangedListener
 }
 
+// SetOnFinalityConflictListener sets the onFinalityConflictListener handler for this listener
+func (nl *NotificationListener) SetOnFinalityConflictListener(onFinalityConflictListener OnFinalityConflictListener) {
+	nl.onFinalityConflictListener = onFinalityConflictListener
+}
+
+// SetOnFinalityConflictResolvedListener sets the onFinalityConflictResolvedListener handler for this listener
+func (nl *NotificationListener) SetOnFinalityConflictResolvedListener(onFinalityConflictResolvedListener OnFinalityConflictResolvedListener) {
+	nl.onFinalityConflictResolvedListener = onFinalityConflictResolvedListener
+}
+
 // ProcessNextNotification waits until a notification arrives and processes it
 func (nl *NotificationListener) ProcessNextNotification() error {
 	select {
@@ -129,6 +183,10 @@ func (nl *NotificationListener) ProcessNextNotification() error {
 		return nl.onBlockAddedListener(block)
 	case notification := <-nl.onChainChangedNotificationChan:
 		return nl.onChainChangedListener(notification)
+	case notification := <-nl.onFinalityConflictNotificationChan:
+		return nl.onFinalityConflictListener(notification)
+	case notification := <-nl.onFinalityConflictResolvedNotificationChan:
+		return nl.onFinalityConflictResolvedListener(notification)
 	case <-nl.closeChan:
 		return nil
 	}

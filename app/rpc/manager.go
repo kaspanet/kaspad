@@ -74,6 +74,20 @@ func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, ad
 	return nil
 }
 
+// NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
+func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
+	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
+	m.context.NotificationManager.NotifyFinalityConflict(notification)
+	return nil
+}
+
+// NotifyFinalityConflictResolved notifies the manager that a finality conflict in the DAG has been resolved
+func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
+	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
+	m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
+	return nil
+}
+
 // NotifyTransactionAddedToMempool notifies the manager that a transaction has been added to the mempool
 func (m *Manager) NotifyTransactionAddedToMempool() {
 	m.context.BlockTemplateState.NotifyMempoolTx()
