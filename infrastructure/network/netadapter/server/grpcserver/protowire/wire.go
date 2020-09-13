@@ -464,6 +464,48 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.ResolveFinalityConflictRequestMessage:
+		payload := new(KaspadMessage_ResolveFinalityConflictRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.ResolveFinalityConflictResponseMessage:
+		payload := new(KaspadMessage_ResolveFinalityConflictResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyFinalityConflictsRequestMessage:
+		payload := new(KaspadMessage_NotifyFinalityConflictsRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyFinalityConflictsResponseMessage:
+		payload := new(KaspadMessage_NotifyFinalityConflictsResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.FinalityConflictNotificationMessage:
+		payload := new(KaspadMessage_FinalityConflictNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.FinalityConflictResolvedNotificationMessage:
+		payload := new(KaspadMessage_FinalityConflictResolvedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

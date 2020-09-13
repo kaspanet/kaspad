@@ -11,7 +11,7 @@ import (
 
 // MaxMessagePayload is the maximum bytes a message can be regardless of other
 // individual limits imposed by messages themselves.
-const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
+const MaxMessagePayload = 1024 * 1024 * 32 // 32MB
 
 // MessageCommand is a number in the header of a message that represents its type.
 type MessageCommand uint32
@@ -91,6 +91,12 @@ const (
 	CmdGetBlockCountResponseMessage
 	CmdGetBlockDAGInfoRequestMessage
 	CmdGetBlockDAGInfoResponseMessage
+	CmdResolveFinalityConflictRequestMessage
+	CmdResolveFinalityConflictResponseMessage
+	CmdNotifyFinalityConflictsRequestMessage
+	CmdNotifyFinalityConflictsResponseMessage
+	CmdFinalityConflictNotificationMessage
+	CmdFinalityConflictResolvedNotificationMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -121,43 +127,49 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation
 var RPCMessageCommandToString = map[MessageCommand]string{
-	CmdGetCurrentNetworkRequestMessage:     "GetCurrentNetworkRequest",
-	CmdGetCurrentNetworkResponseMessage:    "GetCurrentNetworkResponse",
-	CmdSubmitBlockRequestMessage:           "SubmitBlockRequest",
-	CmdSubmitBlockResponseMessage:          "SubmitBlockResponse",
-	CmdGetBlockTemplateRequestMessage:      "GetBlockTemplateRequest",
-	CmdGetBlockTemplateResponseMessage:     "GetBlockTemplateResponse",
-	CmdGetBlockTemplateTransactionMessage:  "CmdGetBlockTemplateTransaction",
-	CmdNotifyBlockAddedRequestMessage:      "NotifyBlockAddedRequest",
-	CmdNotifyBlockAddedResponseMessage:     "NotifyBlockAddedResponse",
-	CmdBlockAddedNotificationMessage:       "BlockAddedNotification",
-	CmdGetPeerAddressesRequestMessage:      "GetPeerAddressesRequest",
-	CmdGetPeerAddressesResponseMessage:     "GetPeerAddressesResponse",
-	CmdGetSelectedTipHashRequestMessage:    "GetSelectedTipHashRequest",
-	CmdGetSelectedTipHashResponseMessage:   "GetSelectedTipHashResponse",
-	CmdGetMempoolEntryRequestMessage:       "GetMempoolEntryRequest",
-	CmdGetMempoolEntryResponseMessage:      "GetMempoolEntryResponse",
-	CmdGetConnectedPeerInfoRequestMessage:  "GetConnectedPeerInfoRequest",
-	CmdGetConnectedPeerInfoResponseMessage: "GetConnectedPeerInfoResponse",
-	CmdAddPeerRequestMessage:               "AddPeerRequest",
-	CmdAddPeerResponseMessage:              "AddPeerResponse",
-	CmdSubmitTransactionRequestMessage:     "SubmitTransactionRequest",
-	CmdSubmitTransactionResponseMessage:    "SubmitTransactionResponse",
-	CmdNotifyChainChangedRequestMessage:    "NotifyChainChangedRequest",
-	CmdNotifyChainChangedResponseMessage:   "NotifyChainChangedResponse",
-	CmdChainChangedNotificationMessage:     "ChainChangedNotification",
-	CmdGetBlockRequestMessage:              "GetBlockRequest",
-	CmdGetBlockResponseMessage:             "GetBlockResponse",
-	CmdGetSubnetworkRequestMessage:         "GetSubnetworkRequest",
-	CmdGetSubnetworkResponseMessage:        "GetSubnetworkResponse",
-	CmdGetChainFromBlockRequestMessage:     "GetChainFromBlockRequest",
-	CmdGetChainFromBlockResponseMessage:    "GetChainFromBlockResponse",
-	CmdGetBlocksRequestMessage:             "GetBlocksRequest",
-	CmdGetBlocksResponseMessage:            "GetBlocksResponse",
-	CmdGetBlockCountRequestMessage:         "GetBlockCountRequest",
-	CmdGetBlockCountResponseMessage:        "GetBlockCountResponse",
-	CmdGetBlockDAGInfoRequestMessage:       "GetBlockDAGInfoRequest",
-	CmdGetBlockDAGInfoResponseMessage:      "GetBlockDAGInfoResponse",
+	CmdGetCurrentNetworkRequestMessage:             "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage:            "GetCurrentNetworkResponse",
+	CmdSubmitBlockRequestMessage:                   "SubmitBlockRequest",
+	CmdSubmitBlockResponseMessage:                  "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:              "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:             "GetBlockTemplateResponse",
+	CmdGetBlockTemplateTransactionMessage:          "CmdGetBlockTemplateTransaction",
+	CmdNotifyBlockAddedRequestMessage:              "NotifyBlockAddedRequest",
+	CmdNotifyBlockAddedResponseMessage:             "NotifyBlockAddedResponse",
+	CmdBlockAddedNotificationMessage:               "BlockAddedNotification",
+	CmdGetPeerAddressesRequestMessage:              "GetPeerAddressesRequest",
+	CmdGetPeerAddressesResponseMessage:             "GetPeerAddressesResponse",
+	CmdGetSelectedTipHashRequestMessage:            "GetSelectedTipHashRequest",
+	CmdGetSelectedTipHashResponseMessage:           "GetSelectedTipHashResponse",
+	CmdGetMempoolEntryRequestMessage:               "GetMempoolEntryRequest",
+	CmdGetMempoolEntryResponseMessage:              "GetMempoolEntryResponse",
+	CmdGetConnectedPeerInfoRequestMessage:          "GetConnectedPeerInfoRequest",
+	CmdGetConnectedPeerInfoResponseMessage:         "GetConnectedPeerInfoResponse",
+	CmdAddPeerRequestMessage:                       "AddPeerRequest",
+	CmdAddPeerResponseMessage:                      "AddPeerResponse",
+	CmdSubmitTransactionRequestMessage:             "SubmitTransactionRequest",
+	CmdSubmitTransactionResponseMessage:            "SubmitTransactionResponse",
+	CmdNotifyChainChangedRequestMessage:            "NotifyChainChangedRequest",
+	CmdNotifyChainChangedResponseMessage:           "NotifyChainChangedResponse",
+	CmdChainChangedNotificationMessage:             "ChainChangedNotification",
+	CmdGetBlockRequestMessage:                      "GetBlockRequest",
+	CmdGetBlockResponseMessage:                     "GetBlockResponse",
+	CmdGetSubnetworkRequestMessage:                 "GetSubnetworkRequest",
+	CmdGetSubnetworkResponseMessage:                "GetSubnetworkResponse",
+	CmdGetChainFromBlockRequestMessage:             "GetChainFromBlockRequest",
+	CmdGetChainFromBlockResponseMessage:            "GetChainFromBlockResponse",
+	CmdGetBlocksRequestMessage:                     "GetBlocksRequest",
+	CmdGetBlocksResponseMessage:                    "GetBlocksResponse",
+	CmdGetBlockCountRequestMessage:                 "GetBlockCountRequest",
+	CmdGetBlockCountResponseMessage:                "GetBlockCountResponse",
+	CmdGetBlockDAGInfoRequestMessage:               "GetBlockDAGInfoRequest",
+	CmdGetBlockDAGInfoResponseMessage:              "GetBlockDAGInfoResponse",
+	CmdResolveFinalityConflictRequestMessage:       "ResolveFinalityConflictRequest",
+	CmdResolveFinalityConflictResponseMessage:      "ResolveFinalityConflictResponse",
+	CmdNotifyFinalityConflictsRequestMessage:       "NotifyFinalityConflictsRequest",
+	CmdNotifyFinalityConflictsResponseMessage:      "NotifyFinalityConflictsResponse",
+	CmdFinalityConflictNotificationMessage:         "FinalityConflictNotification",
+	CmdFinalityConflictResolvedNotificationMessage: "FinalityConflictResolvedNotification",
 }
 
 // Message is an interface that describes a kaspa message. A type that

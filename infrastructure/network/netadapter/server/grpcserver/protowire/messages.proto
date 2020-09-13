@@ -64,6 +64,12 @@ message KaspadMessage {
     GetBlockCountResponseMessage getBlockCountResponse = 1034;
     GetBlockDagInfoRequestMessage getBlockDagInfoRequest = 1035;
     GetBlockDagInfoResponseMessage getBlockDagInfoResponse = 1036;
+    ResolveFinalityConflictRequestMessage resolveFinalityConflictRequest = 1037;
+    ResolveFinalityConflictResponseMessage resolveFinalityConflictResponse = 1038;
+    NotifyFinalityConflictsRequestMessage notifyFinalityConflictsRequest = 1039;
+    NotifyFinalityConflictsResponseMessage notifyFinalityConflictsResponse = 1040;
+    FinalityConflictNotificationMessage finalityConflictNotification = 1041;
+    FinalityConflictResolvedNotificationMessage finalityConflictResolvedNotification = 1042;
   }
 }
 
@@ -278,7 +284,7 @@ message GetCurrentNetworkRequestMessage{
 
 message GetCurrentNetworkResponseMessage{
   string currentNetwork = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message SubmitBlockRequestMessage{
@@ -286,7 +292,7 @@ message SubmitBlockRequestMessage{
 }
 
 message SubmitBlockResponseMessage{
-  RPCError error = 1;
+  RPCError error = 1000;
 }
 
 message GetBlockTemplateRequestMessage{
@@ -313,7 +319,7 @@ message GetBlockTemplateResponseMessage{
   bool isSynced = 16;
   bool isConnected = 17;
 
-  RPCError error = 18;
+  RPCError error = 1000;
 }
 
 message GetBlockTemplateTransactionMessage{
@@ -328,7 +334,7 @@ message NotifyBlockAddedRequestMessage{
 }
 
 message NotifyBlockAddedResponseMessage{
-  RPCError error = 1;
+  RPCError error = 1000;
 }
 
 message BlockAddedNotificationMessage{
@@ -340,7 +346,7 @@ message GetPeerAddressesRequestMessage{
 
 message GetPeerAddressesResponseMessage{
   repeated GetPeerAddressesKnownAddressMessage addresses = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message GetPeerAddressesKnownAddressMessage {
@@ -352,7 +358,7 @@ message GetSelectedTipHashRequestMessage{
 
 message GetSelectedTipHashResponseMessage{
   string selectedTipHash = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message GetMempoolEntryRequestMessage{
@@ -360,7 +366,7 @@ message GetMempoolEntryRequestMessage{
 }
 
 message GetMempoolEntryResponseMessage{
-  RPCError error = 1;
+  RPCError error = 1000;
 }
 
 message GetConnectedPeerInfoRequestMessage{
@@ -368,7 +374,7 @@ message GetConnectedPeerInfoRequestMessage{
 
 message GetConnectedPeerInfoResponseMessage{
   repeated GetConnectedPeerInfoMessage infos = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message GetConnectedPeerInfoMessage{
@@ -390,7 +396,7 @@ message AddPeerRequestMessage{
 }
 
 message AddPeerResponseMessage{
-  RPCError error = 1;
+  RPCError error = 1000;
 }
 
 message SubmitTransactionRequestMessage{
@@ -399,14 +405,14 @@ message SubmitTransactionRequestMessage{
 
 message SubmitTransactionResponseMessage{
   string txId = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message NotifyChainChangedRequestMessage{
 }
 
 message NotifyChainChangedResponseMessage{
-  RPCError error = 1;
+  RPCError error = 1000;
 }
 
 message ChainChangedNotificationMessage{
@@ -436,7 +442,7 @@ message GetBlockResponseMessage{
   string blockHash = 1;
   string blockHex = 2;
   BlockVerboseData blockVerboseData = 3;
-  RPCError error = 4;
+  RPCError error = 1000;
 }
 
 message BlockVerboseData{
@@ -513,7 +519,7 @@ message GetSubnetworkRequestMessage{
 
 message GetSubnetworkResponseMessage{
   uint64 gasLimit = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message GetChainFromBlockRequestMessage{
@@ -525,7 +531,7 @@ message GetChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainBlock addedChainBlocks = 2;
   repeated BlockVerboseData blockVerboseData = 3;
-  RPCError error = 4;
+  RPCError error = 1000;
 }
 
 message GetBlocksRequestMessage{
@@ -539,7 +545,7 @@ message GetBlocksResponseMessage{
   repeated string blockHashes = 1;
   repeated string blockHexes = 2;
   repeated BlockVerboseData blockVerboseData = 3;
-  RPCError error = 4;
+  RPCError error = 1000;
 }
 
 message GetBlockCountRequestMessage{
@@ -547,7 +553,7 @@ message GetBlockCountRequestMessage{
 
 message GetBlockCountResponseMessage{
   uint64 blockCount = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 message GetBlockDagInfoRequestMessage{
@@ -559,7 +565,31 @@ message GetBlockDagInfoResponseMessage{
   repeated string tipHashes = 3;
   double difficulty = 4;
   int64 pastMedianTime = 5;
-  RPCError error = 6;
+  repeated string virtualParentHashes = 6;
+  RPCError error = 1000;
+}
+
+message ResolveFinalityConflictRequestMessage{
+  string finalityBlockHash = 1;
+}
+
+message ResolveFinalityConflictResponseMessage{
+  RPCError error = 1000;
+}
+
+message NotifyFinalityConflictsRequestMessage{
+}
+
+message NotifyFinalityConflictsResponseMessage{
+  RPCError error = 1000;
+}
+
+message FinalityConflictNotificationMessage{
+  string violatingBlockHash = 1;
+}
+
+message FinalityConflictResolvedNotificationMessage{
+  string finalityBlockHash = 1;
 }
 
 service RPC {

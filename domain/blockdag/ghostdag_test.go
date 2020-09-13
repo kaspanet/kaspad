@@ -21,6 +21,7 @@ type block struct {
 	ExpectedScore          uint64
 	ExpectedSelectedParent string
 	ExpectedBlues          []string
+	ExpectedReds           []string
 	Parents                []string
 }
 
@@ -78,14 +79,14 @@ func TestGHOSTDAG(t *testing.T) {
 
 				block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %v", blockData.ID,
+					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %+v", blockData.ID,
 						err)
 				}
 
 				utilBlock := util.NewBlock(block)
 				isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 				if err != nil {
-					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %s: %v", blockData.ID, err)
+					t.Fatalf("TestGHOSTDAG: dag.ProcessBlock got unexpected error for block %s: %+v", blockData.ID, err)
 				}
 				if isDelayed {
 					t.Fatalf("TestGHOSTDAG: block %s "+
@@ -104,9 +105,16 @@ func TestGHOSTDAG(t *testing.T) {
 				idByBlockMap[node] = blockData.ID
 
 				bluesIDs := make([]string, 0, len(node.blues))
+				redsIDs := make([]string, 0, len(node.reds))
+
 				for _, blue := range node.blues {
 					bluesIDs = append(bluesIDs, idByBlockMap[blue])
 				}
+
+				for _, red := range node.reds {
+					redsIDs = append(redsIDs, idByBlockMap[red])
+				}
+
 				selectedParentID := idByBlockMap[node.selectedParent]
 				fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
 					bluesIDs, selectedParentID, node.blueScore)
@@ -122,6 +130,10 @@ func TestGHOSTDAG(t *testing.T) {
 					t.Errorf("Test %s: Block %s expected to have blues %v but got %v (fulldata: %v)",
 						info.Name(), blockData.ID, blockData.ExpectedBlues, bluesIDs, fullDataStr)
 				}
+				if !reflect.DeepEqual(blockData.ExpectedReds, redsIDs) {
+					t.Errorf("Test %s: Block %v expected to have reds %v but got %v (fulldata: %v)",
+						info.Name(), blockData.ID, blockData.ExpectedReds, redsIDs, fullDataStr)
+				}
 			}
 
 			reds := make(map[string]bool)
@@ -130,7 +142,7 @@ func TestGHOSTDAG(t *testing.T) {
 				reds[id] = true
 			}
 
-			for tip := &dag.virtual.blockNode; tip.selectedParent != nil; tip = tip.selectedParent {
+			for tip := dag.virtual.blockNode; tip.selectedParent != nil; tip = tip.selectedParent {
 				tipID := idByBlockMap[tip]
 				delete(reds, tipID)
 				for _, blue := range tip.blues {

@@ -1,10 +1,10 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
 
@@ -12,6 +12,7 @@ import (
 // if it was accepted or not by some block
 type TxAcceptanceData struct {
 	Tx         *util.Tx
+	Fee        uint64
 	IsAccepted bool
 }
 
@@ -40,7 +41,7 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
-	_, _, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	_, _, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
 	return txsAcceptanceData, err
 }
 
@@ -60,57 +61,45 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	return newVirtualUTXODiffSet.meldToBase()
 }
 
-// checkDoubleSpendsWithBlockPast checks that each block transaction
-// has a corresponding UTXO in the block pastUTXO.
-func checkDoubleSpendsWithBlockPast(pastUTXO UTXOSet, blockTransactions []*util.Tx) error {
-	for _, tx := range blockTransactions {
-		if tx.IsCoinBase() {
-			continue
-		}
-
-		for _, txIn := range tx.MsgTx().TxIn {
-			if _, ok := pastUTXO.Get(txIn.PreviousOutpoint); !ok {
-				return ruleError(ErrMissingTxOut, fmt.Sprintf("missing transaction "+
-					"output %s in the utxo set", txIn.PreviousOutpoint))
-			}
-		}
-	}
-
-	return nil
+type utxoVerificationOutput struct {
+	newBlockPastUTXO  UTXOSet
+	txsAcceptanceData MultiBlockTxsAcceptanceData
+	newBlockMultiset  *secp256k1.MultiSet
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-// to save extra traversals it returns the transactions acceptance data, the compactFeeData
+// to save extra traversals it returns the transactions acceptance data
 // for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, multiset *secp256k1.MultiSet, err error) {
-
-	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
+func (node *blockNode) verifyAndBuildUTXO(transactions []*util.Tx) (*utxoVerificationOutput, error) {
+	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := node.dag.pastUTXO(node)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
+	err = node.validateAcceptedIDMerkleRoot(node.dag, txsAcceptanceData)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	err = node.dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	multiset, err = node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	err = node.validateUTXOCommitment(multiset)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	return pastUTXO, txsAcceptanceData, feeData, multiset, nil
+	return &utxoVerificationOutput{
+		newBlockPastUTXO:  pastUTXO,
+		txsAcceptanceData: txsAcceptanceData,
+		newBlockMultiset:  multiset}, nil
 }
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
@@ -134,6 +123,11 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
+	// We obtain the median time of the selected parent block (unless it's genesis block)
+	// in order to determine if transactions in the current block are final.
+	selectedParentMedianTime := node.selectedParentMedianTime()
+	accumulatedMass := uint64(0)
+
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
 	// is so that anyone who iterates over it would process blocks (and transactions)
 	// in their order of appearance in the DAG.
@@ -146,25 +140,67 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 		}
 		isSelectedParent := i == 0
 
-		for j, tx := range blueBlock.Transactions() {
+		for j, tx := range transactions {
 			var isAccepted bool
+			var txFee uint64
 
-			// Coinbase transaction outputs are added to the UTXO
-			// only if they are in the selected parent chain.
-			if !isSelectedParent && tx.IsCoinBase() {
-				isAccepted = false
-			} else {
-				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
-				if err != nil {
-					return nil, nil, err
-				}
+			isAccepted, txFee, accumulatedMass, err =
+				node.maybeAcceptTx(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+			if err != nil {
+				return nil, nil, err
 			}
-			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+
+			blockTxsAcceptanceData.TxAcceptanceData[j] = TxAcceptanceData{
+				Tx:         tx,
+				Fee:        txFee,
+				IsAccepted: isAccepted}
 		}
 		multiBlockTxsAcceptanceData[i] = blockTxsAcceptanceData
 	}
 
 	return pastUTXO, multiBlockTxsAcceptanceData, nil
+}
+
+func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
+	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
+	isAccepted bool, txFee uint64, accumulatedMassAfter uint64, err error) {
+
+	accumulatedMass := accumulatedMassBefore
+
+	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
+	if tx.IsCoinBase() {
+		if !isSelectedParent {
+			return false, 0, 0, nil
+		}
+		txMass := CalcTxMass(tx, nil)
+		accumulatedMass += txMass
+
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return false, 0, 0, err
+		}
+
+		return true, 0, accumulatedMass, nil
+	}
+
+	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
+		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
+	if err != nil {
+		if !errors.As(err, &(RuleError{})) {
+			return false, 0, 0, err
+		}
+
+		isAccepted = false
+	} else {
+		isAccepted = true
+		accumulatedMass = accumulatedMassAfter
+
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		if err != nil {
+			return false, 0, 0, err
+		}
+	}
+	return isAccepted, txFee, accumulatedMass, nil
 }
 
 // pastUTXO returns the UTXO of a given block's past
@@ -234,18 +270,18 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 	return NewDiffUTXOSet(dag.virtual.utxoSet, accumulatedDiff), nil
 }
 
-// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
-func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
-	for tip := range dag.virtual.parents {
-		tipPastUTXO, err := dag.restorePastUTXO(tip)
+// updateValidTipsUTXO builds and applies new diff UTXOs for all the DAG's valid tips
+func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
+	for validTip := range dag.validTips {
+		validTipPastUTXO, err := dag.restorePastUTXO(validTip)
 		if err != nil {
 			return err
 		}
-		diff, err := virtualUTXO.diffFrom(tipPastUTXO)
+		diff, err := virtualUTXO.diffFrom(validTipPastUTXO)
 		if err != nil {
 			return err
 		}
-		err = dag.utxoDiffStore.setBlockDiff(tip, diff)
+		err = dag.utxoDiffStore.setBlockDiff(validTip, diff)
 		if err != nil {
 			return err
 		}
@@ -254,26 +290,13 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 	return nil
 }
 
-// updateParents adds this block to the children sets of its parents
-// and updates the diff of any parent whose DiffChild is this block
-func (node *blockNode) updateParents(dag *BlockDAG, newBlockUTXO UTXOSet) error {
-	node.updateParentsChildren()
-	return node.updateParentsDiffs(dag, newBlockUTXO)
-}
-
 // updateParentsDiffs updates the diff of any parent whose DiffChild is this block
-func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) error {
-	virtualDiffFromNewBlock, err := dag.virtual.utxoSet.diffFrom(newBlockUTXO)
-	if err != nil {
-		return err
-	}
-
-	err = dag.utxoDiffStore.setBlockDiff(node, virtualDiffFromNewBlock)
-	if err != nil {
-		return err
-	}
-
+func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
 	for parent := range node.parents {
+		if node.dag.index.BlockNodeStatus(parent) == statusUTXOPendingVerification {
+			continue
+		}
+
 		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err
@@ -287,7 +310,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 			if err != nil {
 				return err
 			}
-			diff, err := newBlockUTXO.diffFrom(parentPastUTXO)
+			diff, err := newBlockPastUTXO.diffFrom(parentPastUTXO)
 			if err != nil {
 				return err
 			}
@@ -298,5 +321,43 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 		}
 	}
 
+	return nil
+}
+
+func (node *blockNode) updateDiffAndDiffChild(newBlockPastUTXO UTXOSet) error {
+	var diffChild *blockNode
+	for child := range node.children {
+		if node.dag.index.BlockNodeStatus(child) == statusValid {
+			diffChild = child
+			break
+		}
+	}
+
+	// If there's no diffChild, then virtual is the de-facto diffChild
+	var diffChildUTXOSet UTXOSet = node.dag.virtual.utxoSet
+	if diffChild != nil {
+		var err error
+		diffChildUTXOSet, err = node.dag.restorePastUTXO(diffChild)
+		if err != nil {
+			return err
+		}
+	}
+
+	diffFromDiffChild, err := diffChildUTXOSet.diffFrom(newBlockPastUTXO)
+	if err != nil {
+		return err
+	}
+
+	err = node.dag.utxoDiffStore.setBlockDiff(node, diffFromDiffChild)
+	if err != nil {
+		return err
+	}
+
+	if diffChild != nil {
+		err = node.dag.utxoDiffStore.setBlockDiffChild(node, diffChild)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

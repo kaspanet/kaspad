@@ -106,7 +106,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 	dag, err := New(&config)
 	if err != nil {
 		teardown()
-		err := errors.Errorf("failed to create dag instance: %s", err)
+		err := errors.Wrapf(err, "failed to create dag instance")
 		return nil, nil, err
 	}
 	return dag, teardown, nil
@@ -145,42 +145,6 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	}
 
 	return appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
-}
-
-// VirtualForTest is an exported version for virtualBlock, so that it can be returned by exported test_util methods
-type VirtualForTest *virtualBlock
-
-// SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only
-func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
-	oldVirtual := dag.virtual
-	dag.virtual = virtual
-	return VirtualForTest(oldVirtual)
-}
-
-// GetVirtualFromParentsForTest generates a virtual block with the given parents.
-func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
-	parents := newBlockSet()
-	for _, hash := range parentHashes {
-		parent, ok := dag.index.LookupNode(hash)
-		if !ok {
-			return nil, errors.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
-		}
-		parents.add(parent)
-	}
-	virtual := newVirtualBlock(dag, parents)
-
-	pastUTXO, _, _, err := dag.pastUTXO(&virtual.blockNode)
-	if err != nil {
-		return nil, err
-	}
-	diffUTXO := pastUTXO.clone().(*DiffUTXOSet)
-	err = diffUTXO.meldToBase()
-	if err != nil {
-		return nil, err
-	}
-	virtual.utxoSet = diffUTXO.base
-
-	return VirtualForTest(virtual), nil
 }
 
 // LoadBlocks reads files containing kaspa gzipped block data from disk
@@ -244,6 +208,10 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
+//
+// Note: since we need to calculate acceptedIDMerkleRoot and utxoCommitment, we have to resolve selectedParent's utxo-set.
+// Therefore, this might skew the test results in a way where blocks that should have been status UTXOPendingVerification have
+// some other status.
 func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) (*appmessage.MsgBlock, error) {
 	parents := newBlockSet()
 	for _, hash := range parentHashes {
@@ -255,6 +223,13 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	}
 	node, _ := dag.newBlockNode(nil, parents)
 
+	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXOPendingVerification {
+		err := resolveNodeStatusForTest(node.selectedParent)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
@@ -262,7 +237,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 
-	multiset, err := node.calcMultiset(dag, txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +262,8 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return nil, err
 	}
 
-	blockTransactions[0], err = node.expectedCoinbaseTransaction(dag, txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
+	blockTransactions[0], err = node.expectedCoinbaseTransaction(
+		txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +291,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	timestamp := node.parents.bluest().PastMedianTime(dag)
+	timestamp := node.parents.bluest().PastMedianTime()
 	msgBlock.Header = appmessage.BlockHeader{
 		Version: blockVersion,
 
@@ -331,18 +307,39 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 	return &msgBlock, nil
 }
 
+func resolveNodeStatusForTest(node *blockNode) error {
+	dbTx, err := node.dag.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = node.dag.resolveNodeStatus(node, dbTx)
+	if err != nil {
+		return err
+	}
+
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // PrepareAndProcessBlockForTest prepares a block that points to the given parent
 // hashes and process it.
-func PrepareAndProcessBlockForTest(t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+func PrepareAndProcessBlockForTest(
+	t *testing.T, dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) *appmessage.MsgBlock {
+
 	daghash.Sort(parentHashes)
 	block, err := PrepareBlockForTest(dag, parentHashes, transactions)
 	if err != nil {
-		t.Fatalf("error in PrepareBlockForTest: %s", err)
+		t.Fatalf("error in PrepareBlockForTest: %+v", err)
 	}
 	utilBlock := util.NewBlock(block)
 	isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 	if err != nil {
-		t.Fatalf("unexpected error in ProcessBlock: %s", err)
+		t.Fatalf("unexpected error in ProcessBlock: %+v", err)
 	}
 	if isDelayed {
 		t.Fatalf("block is too far in the future")

@@ -126,9 +126,10 @@ func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error 
 }
 
 type dagState struct {
-	TipHashes         []*daghash.Hash
-	LastFinalityPoint *daghash.Hash
-	LocalSubnetworkID *subnetworkid.SubnetworkID
+	TipHashes            []*daghash.Hash
+	VirtualParentsHashes []*daghash.Hash
+	ValidTipHashes       []*daghash.Hash
+	LocalSubnetworkID    *subnetworkid.SubnetworkID
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -165,9 +166,10 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
 	return saveDAGState(dag.databaseContext, &dagState{
-		TipHashes:         []*daghash.Hash{dag.Params.GenesisHash},
-		LastFinalityPoint: dag.Params.GenesisHash,
-		LocalSubnetworkID: localSubnetworkID,
+		TipHashes:            []*daghash.Hash{dag.Params.GenesisHash},
+		VirtualParentsHashes: []*daghash.Hash{dag.Params.GenesisHash},
+		ValidTipHashes:       []*daghash.Hash{dag.Params.GenesisHash},
+		LocalSubnetworkID:    localSubnetworkID,
 	})
 }
 
@@ -227,19 +229,10 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	log.Debugf("Applying the stored tips to the virtual block...")
-	err = dag.initVirtualBlockTips(dagState)
+	err = dag.initTipsAndVirtualParents(dagState)
 	if err != nil {
 		return err
 	}
-
-	log.Debugf("Setting the last finality point...")
-	var ok bool
-	dag.lastFinalityPoint, ok = dag.index.LookupNode(dagState.LastFinalityPoint)
-	if !ok {
-		return errors.Errorf("finality point block %s "+
-			"does not exist in the DAG", dagState.LastFinalityPoint)
-	}
-	dag.finalizeNodesBelowFinalityPoint(false)
 
 	log.Debugf("Processing unprocessed blockNodes...")
 	err = dag.processUnprocessedBlockNodes(unprocessedBlockNodes)
@@ -350,17 +343,28 @@ func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error
 	return fullUTXOCollection, nil
 }
 
-func (dag *BlockDAG) initVirtualBlockTips(state *dagState) error {
-	tips := newBlockSet()
-	for _, tipHash := range state.TipHashes {
-		tip, ok := dag.index.LookupNode(tipHash)
-		if !ok {
-			return errors.Errorf("cannot find "+
-				"DAG tip %s in block index", state.TipHashes)
-		}
-		tips.add(tip)
+func (dag *BlockDAG) initTipsAndVirtualParents(state *dagState) error {
+	tips, err := dag.index.LookupNodes(state.TipHashes)
+	if err != nil {
+		return errors.Wrapf(err, "Error loading tips")
 	}
-	dag.virtual.SetTips(tips)
+	dag.tips = blockSetFromSlice(tips...)
+
+	validTips, err := dag.index.LookupNodes(state.ValidTipHashes)
+	if err != nil {
+		return errors.Wrapf(err, "Error loading tips")
+	}
+	dag.validTips = blockSetFromSlice(validTips...)
+
+	virtualParents, err := dag.index.LookupNodes(state.VirtualParentsHashes)
+	if err != nil {
+		return errors.Wrapf(err, "Error loading tips")
+	}
+	dag.virtual.blockNode, _ = dag.newBlockNode(nil, blockSetFromSlice(virtualParents...))
+
+	// call updateSelectedParentSet with genesis as oldSelectedParent, so that the selectedParentSet is fully calculated
+	_ = dag.virtual.updateSelectedParentSet(dag.genesis)
+
 	return nil
 }
 
@@ -417,6 +421,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	}
 
 	node := &blockNode{
+		dag:                  dag,
 		hash:                 header.BlockHash(),
 		version:              header.Version,
 		bits:                 header.Bits,
@@ -478,6 +483,25 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 		var ok bool
 		node.blues[i], ok = dag.index.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
+		}
+	}
+
+	redsCount, err := appmessage.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.reds = make([]*blockNode, redsCount)
+	for i := uint64(0); i < redsCount; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+
+		var ok bool
+		node.reds[i], ok = dag.index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
 		}
@@ -561,6 +585,18 @@ func serializeBlockNode(node *blockNode) ([]byte, error) {
 
 	for _, blue := range node.blues {
 		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = appmessage.WriteVarInt(w, uint64(len(node.reds)))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, red := range node.reds {
+		_, err = w.Write(red.hash[:])
 		if err != nil {
 			return nil, err
 		}

@@ -74,7 +74,7 @@ func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 // the given node
 func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	// Return an error if the node is the virtual block
-	if node == &dag.virtual.blockNode {
+	if node == dag.virtual.blockNode {
 		return nil, errors.New("cannot get acceptingBlock for virtual")
 	}
 
