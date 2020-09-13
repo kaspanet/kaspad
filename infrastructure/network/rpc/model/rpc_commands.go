@@ -1,8 +1,5 @@
 package model
 
-//// GetFinalityConflictsCmd  defines the getFinalityConflicts JSON-RPC command.
-//type GetFinalityConflictsCmd struct{}
-//
 //// ResolveFinalityConflictCmd  defines the resolveFinalityConflict JSON-RPC command.
 //type ResolveFinalityConflictCmd struct {
 //	FinalityBlockHash string `json:"finalityBlockHash"`
