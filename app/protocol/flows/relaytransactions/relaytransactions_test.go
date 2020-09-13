@@ -190,7 +190,8 @@ func TestHandleRequestedTransactions(t *testing.T) {
 		outgoingRoute := router.NewRoute()
 		context := newMocTransactionsRelayContext(dag)
 		incomingRoute.Enqueue(&appmessage.MsgRequestTransactions{})
-		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
+		incomingRoute.Enqueue(&appmessage.MsgRequestTransactions{})
+		incomingRoute.Close()
 		HandleRequestedTransactions(context, incomingRoute, outgoingRoute)
 	})
 
