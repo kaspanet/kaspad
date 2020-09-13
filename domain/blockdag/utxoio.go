@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"bytes"
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -168,21 +169,18 @@ var p2pkhUTXOEntrySerializeSize = 8 + 8 + appmessage.VarIntSerializeSize(25) + 2
 // serializeUTXOEntry encodes the entry to the given io.Writer and use compression if useCompression is true.
 // The compression format is described in detail above.
 func serializeUTXOEntry(w io.Writer, entry *UTXOEntry) error {
+	buf := [8 + 1 + 8]byte{}
 	// Encode the blueScore.
-	err := binaryserializer.PutUint64(w, byteOrder, entry.blockBlueScore)
-	if err != nil {
-		return err
-	}
+	binary.LittleEndian.PutUint64(buf[:8], entry.blockBlueScore)
 
 	// Encode the packedFlags.
-	err = binaryserializer.PutUint8(w, uint8(entry.packedFlags))
-	if err != nil {
-		return err
-	}
+	buf[8] = uint8(entry.packedFlags)
 
-	err = binaryserializer.PutUint64(w, byteOrder, entry.Amount())
+	binary.LittleEndian.PutUint64(buf[9:], entry.Amount())
+
+	_, err := w.Write(buf[:])
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	err = appmessage.WriteVarInt(w, uint64(len(entry.ScriptPubKey())))

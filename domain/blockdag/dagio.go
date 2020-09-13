@@ -55,7 +55,14 @@ func serializeOutpoint(w io.Writer, outpoint *appmessage.Outpoint) error {
 		return err
 	}
 
-	return binaryserializer.PutUint32(w, outpointIndexByteOrder, outpoint.Index)
+	var buf [4]byte
+	outpointIndexByteOrder.PutUint32(buf[:], outpoint.Index)
+	_, err = w.Write(buf[:])
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 var outpointSerializeSize = daghash.TxIDSize + 4
