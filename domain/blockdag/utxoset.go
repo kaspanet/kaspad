@@ -419,7 +419,7 @@ type FullUTXOSet struct {
 // NewFullUTXOSet creates a new utxoSet with full list of transaction outputs and their values
 func NewFullUTXOSet() *FullUTXOSet {
 	return &FullUTXOSet{
-		utxoCollection:   utxoCollection{},
+		utxoCollection: utxoCollection{},
 	}
 }
 
