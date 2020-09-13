@@ -19,7 +19,7 @@ type OnBlockAddedListener func(notification *appmessage.BlockAddedNotificationMe
 // OnChainChangedListener is a listener function for when the DAG's selected parent chain changes
 type OnChainChangedListener func(notification *appmessage.ChainChangedNotificationMessage) error
 
-// OnFinalityConflictListener is a listener function for when there a finality conflict in the DAG
+// OnFinalityConflictListener is a listener function for when there's a finality conflict in the DAG
 type OnFinalityConflictListener func(notification *appmessage.FinalityConflictNotificationMessage) error
 
 // OnFinalityConflictResolvedListener is a listener function for when a finality conflict in the DAG has been resolved
