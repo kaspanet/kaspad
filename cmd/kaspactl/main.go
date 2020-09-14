@@ -37,7 +37,7 @@ func main() {
 	case <-done:
 		fmt.Println(responseString)
 	case <-time.After(timeout):
-		printErrorAndExit(fmt.Sprintf("timeout of %s has exceeded", timeout))
+		printErrorAndExit(fmt.Sprintf("timeout of %s has been exceeded", timeout))
 	}
 }
 
