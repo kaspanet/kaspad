@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/pkg/errors"
 
@@ -257,7 +258,10 @@ func TestCalcSequenceLock(t *testing.T) {
 	// age of 4 blocks.
 	msgTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, nil, []*appmessage.TxOut{{ScriptPubKey: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
-	utxoSet := NewFullUTXOSet()
+	fullUTXOCacheSize := config.DefaultConfig().MaxUTXOCacheSize
+	db, teardown := prepareDatabaseForTest(t, "TestCalcSequenceLock")
+	defer teardown()
+	utxoSet := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
 	blueScore := uint64(numBlocksToGenerate) - 4
 	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), blueScore); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
@@ -1316,7 +1320,7 @@ func TestUTXOCommitment(t *testing.T) {
 
 	// Build a Multiset for block D
 	multiset := secp256k1.NewMultiset()
-	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCollection {
+	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCache {
 		var err error
 		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
 		if err != nil {

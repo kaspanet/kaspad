@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -118,7 +119,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
 	diff := NewUTXODiff()
-	for outpoint, entry := range virtual.utxoSet.utxoCollection {
+	for outpoint, entry := range virtual.utxoSet.utxoCache {
 		diff.toRemove[outpoint] = entry
 	}
 	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))

@@ -14,13 +14,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ffldb/ldb"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
@@ -43,7 +43,7 @@ func FileExists(name string) bool {
 // The openDB parameter instructs DAGSetup whether or not to also open the
 // database. Setting it to false is useful in tests that handle database
 // opening/closing by themselves.
-func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), error) {
+func DAGSetup(dbName string, openDb bool, dagConfig Config) (*BlockDAG, func(), error) {
 	var teardown func()
 
 	// To make sure that the teardown function is not called before any goroutines finished to run -
@@ -81,7 +81,7 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 			return nil, nil, errors.Errorf("error creating db: %s", err)
 		}
 
-		config.DatabaseContext = databaseContext
+		dagConfig.DatabaseContext = databaseContext
 
 		// Setup a teardown function for cleaning up. This function is
 		// returned to the caller to be invoked when it is done testing.
@@ -99,11 +99,12 @@ func DAGSetup(dbName string, openDb bool, config Config) (*BlockDAG, func(), err
 		}
 	}
 
-	config.TimeSource = NewTimeSource()
-	config.SigCache = txscript.NewSigCache(1000)
+	dagConfig.TimeSource = NewTimeSource()
+	dagConfig.SigCache = txscript.NewSigCache(1000)
+	dagConfig.MaxUTXOCacheSize = config.DefaultConfig().MaxUTXOCacheSize
 
 	// Create the DAG instance.
-	dag, err := New(&config)
+	dag, err := New(&dagConfig)
 	if err != nil {
 		teardown()
 		err := errors.Errorf("failed to create dag instance: %s", err)
