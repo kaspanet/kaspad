@@ -1,18 +1,19 @@
 package main
 
 import (
+	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
-
-	"github.com/jessevdk/go-flags"
 )
 
 var (
-	defaultRPCServer = "localhost"
+	defaultRPCServer        = "localhost"
+	defaultTimeout   uint64 = 30
 )
 
 type configFlags struct {
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	Timeout     uint64 `short:"t" long:"timeout" description:"Timeout for the request (in seconds)"`
 	RequestJSON string `description:"The request in JSON format"`
 	config.NetworkFlags
 }
@@ -20,6 +21,7 @@ type configFlags struct {
 func parseConfig() (*configFlags, error) {
 	cfg := &configFlags{
 		RPCServer: defaultRPCServer,
+		Timeout:   defaultTimeout,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	args, err := parser.Parse()

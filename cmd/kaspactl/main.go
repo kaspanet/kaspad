@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
 	"os"
+	"time"
 )
 
 func main() {
@@ -18,13 +19,26 @@ func main() {
 	}
 	defer client.Disconnect()
 
-	requestString := cfg.RequestJSON
-	responseString, err := client.PostJSON(requestString)
-	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
-	}
+	var responseString string
+	done := make(chan struct{})
 
-	fmt.Println(responseString)
+	go func() {
+		requestString := cfg.RequestJSON
+		var err error
+		responseString, err = client.PostJSON(requestString)
+		if err != nil {
+			printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
+		}
+		done <- struct{}{}
+	}()
+
+	timeout := time.Duration(cfg.Timeout) * time.Second
+	select {
+	case <-done:
+		fmt.Println(responseString)
+	case <-time.After(timeout):
+		printErrorAndExit(fmt.Sprintf("timeout of %s has exceeded", timeout))
+	}
 }
 
 func printErrorAndExit(message string) {
