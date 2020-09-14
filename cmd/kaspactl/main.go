@@ -12,7 +12,11 @@ func main() {
 		printErrorAndExit(fmt.Sprintf("error parsing command-line arguments: %s", err))
 	}
 
-	client, err := grpcclient.Connect(cfg.RPCServer)
+	rpcAddress, err := cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer)
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("error parsing RPC server address: %s", err))
+	}
+	client, err := grpcclient.Connect(rpcAddress)
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error connecting to the RPC server: %s", err))
 	}
