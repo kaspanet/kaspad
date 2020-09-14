@@ -16,13 +16,13 @@ func TestCrashingDAG(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	gensis := dag.genesis
-	block1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{gensis.hash}, nil)
+	genesis := dag.genesis
+	block1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.hash}, nil)
 	block2 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block1.BlockHash()}, nil)
 	block3 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block2.BlockHash()}, nil)
-	block4 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{gensis.hash}, nil)
+	block4 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.hash}, nil)
 	block5 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block3.BlockHash(), block4.BlockHash()}, nil)
-	block6 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{gensis.hash}, nil)
+	block6 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{genesis.hash}, nil)
 	block7 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block6.BlockHash(), block1.BlockHash(), block4.BlockHash()}, nil)
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block5.BlockHash(), block7.BlockHash()}, nil)
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{block7.BlockHash(), block2.BlockHash()}, nil)
