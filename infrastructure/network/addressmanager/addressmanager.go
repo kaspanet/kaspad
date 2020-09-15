@@ -10,7 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/util/random"
+	"github.com/kaspanet/kaspad/infrastructure/network/randomaddress"
 	"github.com/pkg/errors"
 )
 
@@ -86,7 +86,7 @@ func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[AddressKey]bool
 func New(cfg Configer) (*AddressManager, error) {
 	return &AddressManager{
 		addresses: map[AddressKey]*netAddressWrapper{},
-		random:    random.NewAddressRandomize(),
+		random:    randomaddress.NewAddressRandomize(),
 		cfg:       cfg,
 	}, nil
 }

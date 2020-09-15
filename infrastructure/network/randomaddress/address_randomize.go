@@ -1,4 +1,4 @@
-package random
+package randomaddress
 
 import (
 	"math/rand"

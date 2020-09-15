@@ -172,7 +172,7 @@ func (a *App) maybeSeedFromDNS() {
 	if a.cfg.GRPCSeed != "" {
 		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 			func(addresses []*appmessage.NetAddress) {
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+				a.addressManager.AddAddresses(addresses...)
 			})
 	}
 }
