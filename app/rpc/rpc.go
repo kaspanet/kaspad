@@ -27,6 +27,8 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetSubnetworkRequestMessage:        rpchandlers.HandleGetSubnetwork,
 	appmessage.CmdGetChainFromBlockRequestMessage:    rpchandlers.HandleGetChainFromBlock,
 	appmessage.CmdGetBlocksRequestMessage:            rpchandlers.HandleGetBlocks,
+	appmessage.CmdGetBlockCountRequestMessage:        rpchandlers.HandleGetBlockCount,
+	appmessage.CmdGetBlockDAGInfoRequestMessage:      rpchandlers.HandleGetBlockDAGInfo,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
@@ -42,8 +44,12 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 		err := m.handleIncomingMessages(router, incomingRoute)
 		m.handleError(err, netConnection)
 	})
+
+	notificationListener := m.context.NotificationManager.AddListener(router)
 	spawn("routerInitializer-handleOutgoingNotifications", func() {
-		err := m.handleOutgoingNotifications(router)
+		defer m.context.NotificationManager.RemoveListener(router)
+
+		err := m.handleOutgoingNotifications(notificationListener)
 		m.handleError(err, netConnection)
 	})
 }
@@ -70,9 +76,7 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 	}
 }
 
-func (m *Manager) handleOutgoingNotifications(router *router.Router) error {
-	notificationListener := m.context.NotificationManager.AddListener(router)
-	defer m.context.NotificationManager.RemoveListener(router)
+func (m *Manager) handleOutgoingNotifications(notificationListener *rpccontext.NotificationListener) error {
 	for {
 		err := notificationListener.ProcessNextNotification()
 		if err != nil {

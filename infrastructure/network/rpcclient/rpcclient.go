@@ -26,7 +26,7 @@ type RPCClient struct {
 func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 	rpcClient, err := grpcclient.Connect(rpcAddress)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to address %s", rpcClient)
+		return nil, errors.Wrapf(err, "error connecting to address %s", rpcAddress)
 	}
 	rpcRouter, err := buildRPCRouter()
 	if err != nil {

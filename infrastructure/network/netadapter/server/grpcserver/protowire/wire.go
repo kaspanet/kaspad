@@ -436,6 +436,34 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetBlockCountRequestMessage:
+		payload := new(KaspadMessage_GetBlockCountRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetBlockCountResponseMessage:
+		payload := new(KaspadMessage_GetBlockCountResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetBlockDAGInfoRequestMessage:
+		payload := new(KaspadMessage_GetBlockDagInfoRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetBlockDAGInfoResponseMessage:
+		payload := new(KaspadMessage_GetBlockDagInfoResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
