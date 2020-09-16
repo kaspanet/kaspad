@@ -555,10 +555,17 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
-func (dag *BlockDAG) addValidTip(newValidTip *blockNode) {
+func (dag *BlockDAG) addValidTip(newValidTip *blockNode) error {
 	newValidTips := dag.validTips.clone()
 	for validTip := range dag.validTips {
-		if newValidTip.parents.contains(validTip) {
+		// We use isInPastOfAny on newValidTip.parents instead of
+		// isInPast on newValidTip because newValidTip does not
+		// necessarily have reachability data associated with it yet.
+		isInPastOfNewValidTip, err := dag.isInPastOfAny(validTip, newValidTip.parents)
+		if err != nil {
+			return err
+		}
+		if isInPastOfNewValidTip {
 			newValidTips.remove(validTip)
 		}
 	}
@@ -566,6 +573,7 @@ func (dag *BlockDAG) addValidTip(newValidTip *blockNode) {
 	newValidTips.add(newValidTip)
 
 	dag.validTips = newValidTips
+	return nil
 }
 
 func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {

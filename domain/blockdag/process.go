@@ -382,7 +382,10 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	dag.index.SetBlockNodeStatus(node, statusValid)
 
 	if !node.hasValidChildren() {
-		dag.addValidTip(node)
+		err := dag.addValidTip(node)
+		if err != nil {
+			return err
+		}
 	}
 
 	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
