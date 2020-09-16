@@ -120,6 +120,8 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	return diff
 }
 
+// BuildTransactionVerboseData builds a TransactionVerboseData from
+// the given parameters
 func (ctx *Context) BuildTransactionVerboseData(mtx *appmessage.MsgTx,
 	txID string, blockHeader *appmessage.BlockHeader, blockHash string,
 	acceptingBlock *daghash.Hash, isInMempool bool) (*appmessage.TransactionVerboseData, error) {
