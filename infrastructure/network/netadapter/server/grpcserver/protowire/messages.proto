@@ -366,6 +366,9 @@ message GetMempoolEntryRequestMessage{
 }
 
 message GetMempoolEntryResponseMessage{
+  uint64 fee = 1;
+  TransactionVerboseData transactionVerboseData = 2;
+
   RPCError error = 1000;
 }
 
