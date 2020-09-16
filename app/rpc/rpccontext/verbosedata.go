@@ -88,7 +88,7 @@ func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionV
 		transactions := block.Transactions()
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(transactions))
 		for i, tx := range transactions {
-			data, err := ctx.buildTransactionVerboseData(tx.MsgTx(), tx.ID().String(),
+			data, err := ctx.BuildTransactionVerboseData(tx.MsgTx(), tx.ID().String(),
 				&blockHeader, hash.String(), nil, false)
 			if err != nil {
 				return nil, err
@@ -120,7 +120,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	return diff
 }
 
-func (ctx *Context) buildTransactionVerboseData(mtx *appmessage.MsgTx,
+func (ctx *Context) BuildTransactionVerboseData(mtx *appmessage.MsgTx,
 	txID string, blockHeader *appmessage.BlockHeader, blockHash string,
 	acceptingBlock *daghash.Hash, isInMempool bool) (*appmessage.TransactionVerboseData, error) {
 

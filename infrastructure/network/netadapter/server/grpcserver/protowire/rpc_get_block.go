@@ -69,53 +69,12 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 
 func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) {
 	transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(x.TransactionVerboseData))
-	for i, data := range x.TransactionVerboseData {
-		inputs := make([]*appmessage.TransactionVerboseInput, len(data.TransactionVerboseInputs))
-		for j, item := range data.TransactionVerboseInputs {
-			scriptSig := &appmessage.ScriptSig{
-				Asm: item.ScriptSig.Asm,
-				Hex: item.ScriptSig.Hex,
-			}
-			inputs[j] = &appmessage.TransactionVerboseInput{
-				TxID:        item.TxId,
-				OutputIndex: item.OutputIndex,
-				ScriptSig:   scriptSig,
-				Sequence:    item.Sequence,
-			}
+	for i, transactionVerboseDatum := range x.TransactionVerboseData {
+		appTransactionVerboseDatum, err := transactionVerboseDatum.toAppMessage()
+		if err != nil {
+			return nil, err
 		}
-		outputs := make([]*appmessage.TransactionVerboseOutput, len(data.TransactionVerboseOutputs))
-		for j, item := range data.TransactionVerboseOutputs {
-			scriptPubKey := &appmessage.ScriptPubKeyResult{
-				Asm:     item.ScriptPubKey.Asm,
-				Hex:     item.ScriptPubKey.Hex,
-				Type:    item.ScriptPubKey.Type,
-				Address: item.ScriptPubKey.Address,
-			}
-			outputs[j] = &appmessage.TransactionVerboseOutput{
-				Value:        item.Value,
-				Index:        item.Index,
-				ScriptPubKey: scriptPubKey,
-			}
-		}
-		transactionVerboseData[i] = &appmessage.TransactionVerboseData{
-			Hex:                       data.Hex,
-			TxID:                      data.TxId,
-			Hash:                      data.Hash,
-			Size:                      data.Size,
-			Version:                   data.Version,
-			LockTime:                  data.LockTime,
-			SubnetworkID:              data.SubnetworkId,
-			Gas:                       data.Gas,
-			PayloadHash:               data.PayloadHash,
-			Payload:                   data.Payload,
-			TransactionVerboseInputs:  inputs,
-			TransactionVerboseOutputs: outputs,
-			BlockHash:                 data.BlockHash,
-			AcceptedBy:                data.AcceptedBy,
-			IsInMempool:               data.IsInMempool,
-			Time:                      data.Time,
-			BlockTime:                 data.BlockTime,
-		}
+		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
@@ -143,53 +102,13 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 
 func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) error {
 	transactionVerboseData := make([]*TransactionVerboseData, len(message.TransactionVerboseData))
-	for i, data := range message.TransactionVerboseData {
-		inputs := make([]*TransactionVerboseInput, len(data.TransactionVerboseInputs))
-		for j, item := range data.TransactionVerboseInputs {
-			scriptSig := &ScriptSig{
-				Asm: item.ScriptSig.Asm,
-				Hex: item.ScriptSig.Hex,
-			}
-			inputs[j] = &TransactionVerboseInput{
-				TxId:        item.TxID,
-				OutputIndex: item.OutputIndex,
-				ScriptSig:   scriptSig,
-				Sequence:    item.Sequence,
-			}
+	for i, transactionVerboseDatum := range message.TransactionVerboseData {
+		protoTransactionVerboseDatum := &TransactionVerboseData{}
+		err := protoTransactionVerboseDatum.fromAppMessage(transactionVerboseDatum)
+		if err != nil {
+			return err
 		}
-		outputs := make([]*TransactionVerboseOutput, len(data.TransactionVerboseOutputs))
-		for j, item := range data.TransactionVerboseOutputs {
-			scriptPubKey := &ScriptPubKeyResult{
-				Asm:     item.ScriptPubKey.Asm,
-				Hex:     item.ScriptPubKey.Hex,
-				Type:    item.ScriptPubKey.Type,
-				Address: item.ScriptPubKey.Address,
-			}
-			outputs[j] = &TransactionVerboseOutput{
-				Value:        item.Value,
-				Index:        item.Index,
-				ScriptPubKey: scriptPubKey,
-			}
-		}
-		transactionVerboseData[i] = &TransactionVerboseData{
-			Hex:                       data.Hex,
-			TxId:                      data.TxID,
-			Hash:                      data.Hash,
-			Size:                      data.Size,
-			Version:                   data.Version,
-			LockTime:                  data.LockTime,
-			SubnetworkId:              data.SubnetworkID,
-			Gas:                       data.Gas,
-			PayloadHash:               data.PayloadHash,
-			Payload:                   data.Payload,
-			TransactionVerboseInputs:  inputs,
-			TransactionVerboseOutputs: outputs,
-			BlockHash:                 data.BlockHash,
-			AcceptedBy:                data.AcceptedBy,
-			IsInMempool:               data.IsInMempool,
-			Time:                      data.Time,
-			BlockTime:                 data.BlockTime,
-		}
+		transactionVerboseData[i] = protoTransactionVerboseDatum
 	}
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
@@ -212,6 +131,105 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 		SelectedParentHash:     message.SelectedParentHash,
 		ChildHashes:            message.ChildHashes,
 		AcceptedBlockHashes:    message.AcceptedBlockHashes,
+	}
+	return nil
+}
+
+func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseData, error) {
+	inputs := make([]*appmessage.TransactionVerboseInput, len(x.TransactionVerboseInputs))
+	for j, item := range x.TransactionVerboseInputs {
+		scriptSig := &appmessage.ScriptSig{
+			Asm: item.ScriptSig.Asm,
+			Hex: item.ScriptSig.Hex,
+		}
+		inputs[j] = &appmessage.TransactionVerboseInput{
+			TxID:        item.TxId,
+			OutputIndex: item.OutputIndex,
+			ScriptSig:   scriptSig,
+			Sequence:    item.Sequence,
+		}
+	}
+	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
+	for j, item := range x.TransactionVerboseOutputs {
+		scriptPubKey := &appmessage.ScriptPubKeyResult{
+			Asm:     item.ScriptPubKey.Asm,
+			Hex:     item.ScriptPubKey.Hex,
+			Type:    item.ScriptPubKey.Type,
+			Address: item.ScriptPubKey.Address,
+		}
+		outputs[j] = &appmessage.TransactionVerboseOutput{
+			Value:        item.Value,
+			Index:        item.Index,
+			ScriptPubKey: scriptPubKey,
+		}
+	}
+	return &appmessage.TransactionVerboseData{
+		Hex:                       x.Hex,
+		TxID:                      x.TxId,
+		Hash:                      x.Hash,
+		Size:                      x.Size,
+		Version:                   x.Version,
+		LockTime:                  x.LockTime,
+		SubnetworkID:              x.SubnetworkId,
+		Gas:                       x.Gas,
+		PayloadHash:               x.PayloadHash,
+		Payload:                   x.Payload,
+		TransactionVerboseInputs:  inputs,
+		TransactionVerboseOutputs: outputs,
+		BlockHash:                 x.BlockHash,
+		AcceptedBy:                x.AcceptedBy,
+		IsInMempool:               x.IsInMempool,
+		Time:                      x.Time,
+		BlockTime:                 x.BlockTime,
+	}, nil
+}
+
+func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionVerboseData) error {
+	inputs := make([]*TransactionVerboseInput, len(message.TransactionVerboseInputs))
+	for j, item := range message.TransactionVerboseInputs {
+		scriptSig := &ScriptSig{
+			Asm: item.ScriptSig.Asm,
+			Hex: item.ScriptSig.Hex,
+		}
+		inputs[j] = &TransactionVerboseInput{
+			TxId:        item.TxID,
+			OutputIndex: item.OutputIndex,
+			ScriptSig:   scriptSig,
+			Sequence:    item.Sequence,
+		}
+	}
+	outputs := make([]*TransactionVerboseOutput, len(message.TransactionVerboseOutputs))
+	for j, item := range message.TransactionVerboseOutputs {
+		scriptPubKey := &ScriptPubKeyResult{
+			Asm:     item.ScriptPubKey.Asm,
+			Hex:     item.ScriptPubKey.Hex,
+			Type:    item.ScriptPubKey.Type,
+			Address: item.ScriptPubKey.Address,
+		}
+		outputs[j] = &TransactionVerboseOutput{
+			Value:        item.Value,
+			Index:        item.Index,
+			ScriptPubKey: scriptPubKey,
+		}
+	}
+	*x = TransactionVerboseData{
+		Hex:                       message.Hex,
+		TxId:                      message.TxID,
+		Hash:                      message.Hash,
+		Size:                      message.Size,
+		Version:                   message.Version,
+		LockTime:                  message.LockTime,
+		SubnetworkId:              message.SubnetworkID,
+		Gas:                       message.Gas,
+		PayloadHash:               message.PayloadHash,
+		Payload:                   message.Payload,
+		TransactionVerboseInputs:  inputs,
+		TransactionVerboseOutputs: outputs,
+		BlockHash:                 message.BlockHash,
+		AcceptedBy:                message.AcceptedBy,
+		IsInMempool:               message.IsInMempool,
+		Time:                      message.Time,
+		BlockTime:                 message.BlockTime,
 	}
 	return nil
 }

@@ -17,13 +17,19 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return errorMessage, nil
 	}
 
-	_, ok := context.Mempool.FetchTxDesc(txID)
+	txDesc, ok := context.Mempool.FetchTxDesc(txID)
 	if !ok {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("transaction is not in the pool")
 		return errorMessage, nil
 	}
 
-	response := appmessage.NewGetMempoolEntryResponseMessage()
+	transactionVerboseData, err := context.BuildTransactionVerboseData(txDesc.Tx.MsgTx(), txID.String(),
+		nil, "", nil, true)
+	if err != nil {
+		return nil, err
+	}
+
+	response := appmessage.NewGetMempoolEntryResponseMessage(txDesc.Fee, transactionVerboseData)
 	return response, nil
 }

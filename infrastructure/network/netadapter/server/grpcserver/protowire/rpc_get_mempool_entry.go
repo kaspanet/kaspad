@@ -16,22 +16,35 @@ func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessag
 }
 
 func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
+	var rpcErr *appmessage.RPCError
 	if x.GetMempoolEntryResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetMempoolEntryResponse.Error.Message}
+		rpcErr = &appmessage.RPCError{Message: x.GetMempoolEntryResponse.Error.Message}
+	}
+	transactionVerboseData, err := x.GetMempoolEntryResponse.TransactionVerboseData.toAppMessage()
+	if err != nil {
+		return nil, err
 	}
 	return &appmessage.GetMempoolEntryResponseMessage{
-		Error: err,
+		Fee:                    x.GetMempoolEntryResponse.Fee,
+		TransactionVerboseData: transactionVerboseData,
+		Error:                  rpcErr,
 	}, nil
 }
 
 func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
-	var err *RPCError
+	var rpcErr *RPCError
 	if message.Error != nil {
-		err = &RPCError{Message: message.Error.Message}
+		rpcErr = &RPCError{Message: message.Error.Message}
+	}
+	transactionVerboseData := &TransactionVerboseData{}
+	err := transactionVerboseData.fromAppMessage(message.TransactionVerboseData)
+	if err != nil {
+		return err
 	}
 	x.GetMempoolEntryResponse = &GetMempoolEntryResponseMessage{
-		Error: err,
+		Fee:                    message.Fee,
+		TransactionVerboseData: transactionVerboseData,
+		Error:                  rpcErr,
 	}
 	return nil
 }
