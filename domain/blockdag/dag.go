@@ -560,7 +560,7 @@ func (dag *BlockDAG) addValidTip(newValidTip *blockNode) error {
 	for validTip := range dag.validTips {
 		// We use isInPastOfAny on newValidTip.parents instead of
 		// isInPast on newValidTip because newValidTip does not
-		// yet have reachability data associated with it.
+		// necessarily have reachability data associated with it yet.
 		isInPastOfNewValidTip, err := dag.isInPastOfAny(validTip, newValidTip.parents)
 		if err != nil {
 			return err
