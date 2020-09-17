@@ -197,6 +197,11 @@ func checkTransactionAmountRanges(tx *util.Tx) error {
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
+		if sompi == 0 {
+			return ruleError(ErrBadTxOutValue, "transaction output value has to be at least "+
+				"one sompi")
+		}
+
 		// Binary arithmetic guarantees that any overflow is detected and reported.
 		// This is impossible for Kaspa, but perhaps possible if an alt increases
 		// the total money supply.
