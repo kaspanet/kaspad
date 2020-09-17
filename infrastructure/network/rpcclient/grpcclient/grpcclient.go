@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -33,7 +34,8 @@ func Connect(address string) (*GRPCClient, error) {
 	}
 
 	grpcClient := protowire.NewRPCClient(gRPCConnection)
-	stream, err := grpcClient.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name))
+	stream, err := grpcClient.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
+		grpc.MaxCallRecvMsgSize(grpcserver.MaxMessageSize), grpc.MaxCallSendMsgSize(grpcserver.MaxMessageSize))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
