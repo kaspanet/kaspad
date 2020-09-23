@@ -70,6 +70,8 @@ message KaspadMessage {
     NotifyFinalityConflictsResponseMessage notifyFinalityConflictsResponse = 1040;
     FinalityConflictNotificationMessage finalityConflictNotification = 1041;
     FinalityConflictResolvedNotificationMessage finalityConflictResolvedNotification = 1042;
+    GetMempoolEntriesRequestMessage getMempoolEntriesRequest = 1043;
+    GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
   }
 }
 
@@ -361,16 +363,31 @@ message GetSelectedTipHashResponseMessage{
   RPCError error = 1000;
 }
 
+// mempool entries start
+message MempoolEntry{
+  uint64 fee = 1;
+  TransactionVerboseData transactionVerboseData = 2;
+}
+
 message GetMempoolEntryRequestMessage{
   string txId = 1;
 }
 
 message GetMempoolEntryResponseMessage{
-  uint64 fee = 1;
-  TransactionVerboseData transactionVerboseData = 2;
+  MempoolEntry entry = 1;
 
   RPCError error = 1000;
 }
+
+message GetMempoolEntriesRequestMessage{
+}
+
+message GetMempoolEntriesResponseMessage{
+  repeated MempoolEntry entries = 1;
+
+  RPCError error = 1000;
+}
+// mempool entries end
 
 message GetConnectedPeerInfoRequestMessage{
 }
