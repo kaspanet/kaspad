@@ -12,9 +12,7 @@ func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, 
 	if err != nil {
 		return nil, err
 	}
-	listener.SetOnBlockAddedListener(func(notification *appmessage.BlockAddedNotificationMessage) error {
-		return router.OutgoingRoute().Enqueue(notification)
-	})
+	listener.PropagateBlockAddedNotifications()
 
 	response := appmessage.NewNotifyBlockAddedResponseMessage()
 	return response, nil
