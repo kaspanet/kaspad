@@ -21,9 +21,7 @@ func NewGetMempoolEntryRequestMessage(txID string) *GetMempoolEntryRequestMessag
 // its respective RPC message
 type GetMempoolEntryResponseMessage struct {
 	baseMessage
-	Entry                  *MempoolEntry
-	Fee                    uint64
-	TransactionVerboseData *TransactionVerboseData
+	Entry *MempoolEntry
 
 	Error *RPCError
 }
