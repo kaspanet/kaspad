@@ -15,8 +15,8 @@ type NotificationManager struct {
 
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
-	notifyOnBlockAdded   bool
-	notifyOnChainChanged bool
+	propagateBlockAddedNotifications   bool
+	propagateChainChangedNotifications bool
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -61,7 +61,7 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 	defer nm.RUnlock()
 
 	for router, listener := range nm.listeners {
-		if listener.notifyOnBlockAdded {
+		if listener.propagateBlockAddedNotifications {
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -77,7 +77,7 @@ func (nm *NotificationManager) NotifyChainChanged(notification *appmessage.Chain
 	defer nm.RUnlock()
 
 	for router, listener := range nm.listeners {
-		if listener.notifyOnChainChanged {
+		if listener.propagateChainChangedNotifications {
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -89,19 +89,19 @@ func (nm *NotificationManager) NotifyChainChanged(notification *appmessage.Chain
 
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
-		notifyOnBlockAdded:   false,
-		notifyOnChainChanged: false,
+		propagateBlockAddedNotifications:   false,
+		propagateChainChangedNotifications: false,
 	}
 }
 
 // PropagateBlockAddedNotifications instructs the listener to send block added notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateBlockAddedNotifications() {
-	nl.notifyOnBlockAdded = true
+	nl.propagateBlockAddedNotifications = true
 }
 
 // PropagateChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateChainChangedNotifications() {
-	nl.notifyOnChainChanged = true
+	nl.propagateChainChangedNotifications = true
 }
