@@ -48,11 +48,19 @@ func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UT
 		return nil, err
 	}
 
-	return dag.calcTxSequenceLockFromInputsWithUTXOEntries(node, tx, inputsWithUTXOEntries)
+	return dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, inputsWithUTXOEntries)
 }
 
-func (dag *BlockDAG) calcTxSequenceLockFromInputsWithUTXOEntries(
-	node *blockNode, tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcTxSequenceLockFromReferencedUTXOEntries(
+	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.calcTxSequenceLockFromReferencedUTXOEntries(dag.selectedTip(), tx, referencedUTXOEntries)
+}
+
+func (dag *BlockDAG) calcTxSequenceLockFromReferencedUTXOEntries(
+	node *blockNode, tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -66,9 +74,8 @@ func (dag *BlockDAG) calcTxSequenceLockFromInputsWithUTXOEntries(
 		return sequenceLock, nil
 	}
 
-	for _, txInAndReferencedUTXOEntry := range inputsWithUTXOEntries {
-		txIn := txInAndReferencedUTXOEntry.txIn
-		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
+	for i, txIn := range tx.MsgTx().TxIn {
+		utxoEntry := referencedUTXOEntries[i]
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
