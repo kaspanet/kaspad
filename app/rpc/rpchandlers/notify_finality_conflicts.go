@@ -12,12 +12,8 @@ func HandleNotifyFinalityConflicts(context *rpccontext.Context, router *router.R
 	if err != nil {
 		return nil, err
 	}
-	listener.SetOnFinalityConflictListener(func(notification *appmessage.FinalityConflictNotificationMessage) error {
-		return router.OutgoingRoute().Enqueue(notification)
-	})
-	listener.SetOnFinalityConflictResolvedListener(func(notification *appmessage.FinalityConflictResolvedNotificationMessage) error {
-		return router.OutgoingRoute().Enqueue(notification)
-	})
+	listener.PropagateFinalityConflictNotifications()
+	listener.PropagateFinalityConflictResolvedNotifications()
 
 	response := appmessage.NewNotifyFinalityConflictsResponseMessage()
 	return response, nil

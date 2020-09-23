@@ -18,9 +18,7 @@ func HandleNotifyChainChanged(context *rpccontext.Context, router *router.Router
 	if err != nil {
 		return nil, err
 	}
-	listener.SetOnChainChangedListener(func(message *appmessage.ChainChangedNotificationMessage) error {
-		return router.OutgoingRoute().Enqueue(message)
-	})
+	listener.PropagateChainChangedNotifications()
 
 	response := appmessage.NewNotifyChainChangedResponseMessage()
 	return response, nil

@@ -19,7 +19,10 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 		return err
 	}
 	if f.onBlockAddedToDAGHandler != nil {
-		f.onBlockAddedToDAGHandler(block)
+		err := f.onBlockAddedToDAGHandler(block)
+		if err != nil {
+			return err
+		}
 	}
 
 	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
