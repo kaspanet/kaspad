@@ -142,14 +142,14 @@ func (nl *NotificationListener) PropagateChainChangedNotifications() {
 	nl.propagateChainChangedNotifications = true
 }
 
-// SetOnFinalityConflictListener instructs the listener to send finality conflict notifications
+// PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications
 // to the remote listener
-func (nl *NotificationListener) SetOnFinalityConflictListener() {
+func (nl *NotificationListener) PropagateFinalityConflictNotifications() {
 	nl.propagateFinalityConflictNotifications = true
 }
 
-// SetOnFinalityConflictResolvedListener instructs the listener to send finality conflict resolved notifications
+// PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
 // to the remote listener
-func (nl *NotificationListener) SetOnFinalityConflictResolvedListener() {
+func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications() {
 	nl.propagateFinalityConflictResolvedNotifications = true
 }
