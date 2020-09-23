@@ -31,6 +31,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetBlockDAGInfoRequestMessage:         rpchandlers.HandleGetBlockDAGInfo,
 	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
 	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
+	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

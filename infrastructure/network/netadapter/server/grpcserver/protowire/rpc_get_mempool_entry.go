@@ -1,6 +1,8 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+)
 
 func (x *KaspadMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetMempoolEntryRequestMessage{
@@ -20,18 +22,17 @@ func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Messa
 	if x.GetMempoolEntryResponse.Error != nil {
 		rpcErr = &appmessage.RPCError{Message: x.GetMempoolEntryResponse.Error.Message}
 	}
-	var transactionVerboseData *appmessage.TransactionVerboseData
-	if x.GetMempoolEntryResponse.TransactionVerboseData != nil {
+	var entry *appmessage.MempoolEntry
+	if x.GetMempoolEntryResponse.Entry != nil {
 		var err error
-		transactionVerboseData, err = x.GetMempoolEntryResponse.TransactionVerboseData.toAppMessage()
+		entry, err = x.GetMempoolEntryResponse.Entry.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
 	return &appmessage.GetMempoolEntryResponseMessage{
-		Fee:                    x.GetMempoolEntryResponse.Fee,
-		TransactionVerboseData: transactionVerboseData,
-		Error:                  rpcErr,
+		Entry: entry,
+		Error: rpcErr,
 	}, nil
 }
 
@@ -40,17 +41,47 @@ func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessa
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
-	transactionVerboseData := &TransactionVerboseData{}
-	if message.TransactionVerboseData != nil {
-		err := transactionVerboseData.fromAppMessage(message.TransactionVerboseData)
+	entry := new(MempoolEntry)
+	if message.Entry != nil {
+		err := entry.fromAppMessage(message.Entry)
 		if err != nil {
 			return err
 		}
 	}
 	x.GetMempoolEntryResponse = &GetMempoolEntryResponseMessage{
+		Entry: entry,
+		Error: rpcErr,
+	}
+	return nil
+}
+
+func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
+	var txVerboseData *appmessage.TransactionVerboseData
+	if x.TransactionVerboseData != nil {
+		var err error
+		txVerboseData, err = x.TransactionVerboseData.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &appmessage.MempoolEntry{
+		Fee:                    x.Fee,
+		TransactionVerboseData: txVerboseData,
+	}, nil
+}
+
+func (x *MempoolEntry) fromAppMessage(message *appmessage.MempoolEntry) error {
+	var txVerboseData *TransactionVerboseData
+	if message.TransactionVerboseData != nil {
+		txVerboseData = new(TransactionVerboseData)
+		err := txVerboseData.fromAppMessage(message.TransactionVerboseData)
+		if err != nil {
+			return err
+		}
+	}
+	*x = MempoolEntry{
 		Fee:                    message.Fee,
-		TransactionVerboseData: transactionVerboseData,
-		Error:                  rpcErr,
+		TransactionVerboseData: txVerboseData,
 	}
 	return nil
 }

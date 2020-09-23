@@ -21,10 +21,17 @@ func NewGetMempoolEntryRequestMessage(txID string) *GetMempoolEntryRequestMessag
 // its respective RPC message
 type GetMempoolEntryResponseMessage struct {
 	baseMessage
+	Entry                  *MempoolEntry
 	Fee                    uint64
 	TransactionVerboseData *TransactionVerboseData
 
 	Error *RPCError
+}
+
+// MempoolEntry represents a transaction in the mempool.
+type MempoolEntry struct {
+	Fee                    uint64
+	TransactionVerboseData *TransactionVerboseData
 }
 
 // Command returns the protocol command string for the message
@@ -35,7 +42,9 @@ func (msg *GetMempoolEntryResponseMessage) Command() MessageCommand {
 // NewGetMempoolEntryResponseMessage returns a instance of the message
 func NewGetMempoolEntryResponseMessage(fee uint64, transactionVerboseData *TransactionVerboseData) *GetMempoolEntryResponseMessage {
 	return &GetMempoolEntryResponseMessage{
-		Fee:                    fee,
-		TransactionVerboseData: transactionVerboseData,
+		Entry: &MempoolEntry{
+			Fee:                    fee,
+			TransactionVerboseData: transactionVerboseData,
+		},
 	}
 }
