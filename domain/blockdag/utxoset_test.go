@@ -19,7 +19,7 @@ func prepareDatabaseForTest(t *testing.T, testName string) (*dbaccess.DatabaseCo
 	var err error
 	tmpDir, err := ioutil.TempDir("", "utxoset_test")
 	if err != nil {
-		t.Errorf("error creating temp dir: %s", err)
+		t.Fatalf("error creating temp dir: %s", err)
 		return nil, nil
 	}
 
@@ -27,7 +27,7 @@ func prepareDatabaseForTest(t *testing.T, testName string) (*dbaccess.DatabaseCo
 	_ = os.RemoveAll(dbPath)
 	databaseContext, err := dbaccess.New(dbPath)
 	if err != nil {
-		t.Errorf("error creating db: %s", err)
+		t.Fatalf("error creating db: %s", err)
 		return nil, nil
 	}
 

@@ -17,13 +17,13 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness2, appHarness3)
 
 	app2OnBlockAddedChan := make(chan *appmessage.BlockHeader)
-	setOnBlockAddedHandler(t, appHarness2, func(header *appmessage.BlockHeader) {
-		app2OnBlockAddedChan <- header
+	setOnBlockAddedHandler(t, appHarness2, func(notification *appmessage.BlockAddedNotificationMessage) {
+		app2OnBlockAddedChan <- &notification.Block.Header
 	})
 
 	app3OnBlockAddedChan := make(chan *appmessage.BlockHeader)
-	setOnBlockAddedHandler(t, appHarness3, func(header *appmessage.BlockHeader) {
-		app3OnBlockAddedChan <- header
+	setOnBlockAddedHandler(t, appHarness3, func(notification *appmessage.BlockAddedNotificationMessage) {
+		app3OnBlockAddedChan <- &notification.Block.Header
 	})
 
 	block := mineNextBlock(t, appHarness1)

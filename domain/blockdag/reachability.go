@@ -2,11 +2,13 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/pkg/errors"
 	"math"
 	"strings"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -268,6 +270,9 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 	rtn.children = append(rtn.children, child)
 	child.parent = rtn
 
+	modifiedNodes[rtn] = struct{}{}
+	modifiedNodes[child] = struct{}{}
+
 	// Temporarily set the child's interval to be empty, at
 	// the start of rtn's remaining interval. This is done
 	// so that child-of-rtn checks (e.g.
@@ -312,8 +317,6 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 		return err
 	}
 	child.interval = allocated
-	modifiedNodes[rtn] = struct{}{}
-	modifiedNodes[child] = struct{}{}
 	return nil
 }
 
@@ -896,7 +899,7 @@ func newReachabilityTree(dag *BlockDAG) *reachabilityTree {
 	}
 }
 
-func (rt *reachabilityTree) init(dbContext dbaccess.Context) error {
+func (rt *reachabilityTree) init(dbContext *dbaccess.DatabaseContext) error {
 	// Init the store
 	err := rt.store.init(dbContext)
 	if err != nil {
@@ -1160,15 +1163,12 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 	return nil
 }
 
-// isInPast returns true if `this` is in the past (exclusive) of `other`
+// isInPast returns true if `this` is in the past of `other`
 // in the DAG.
+//
+// Note: this method will return true if this == other
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
 func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, error) {
-	// By definition, a node is not in the past of itself.
-	if this == other {
-		return false, nil
-	}
-
 	// Check if this node is a reachability tree ancestor of the
 	// other node
 	isReachabilityTreeAncestor, err := rt.isReachabilityTreeAncestorOf(this, other)
@@ -1193,6 +1193,8 @@ func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, e
 }
 
 // isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.
+//
+// Note: this method will return true if this == other
 func (rt *reachabilityTree) isReachabilityTreeAncestorOf(this *blockNode, other *blockNode) (bool, error) {
 	thisTreeNode, err := rt.store.treeNodeByBlockNode(this)
 	if err != nil {

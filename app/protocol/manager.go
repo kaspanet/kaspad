@@ -27,18 +27,8 @@ func NewManager(cfg *config.Config, dag *blockdag.BlockDAG, netAdapter *netadapt
 	manager := Manager{
 		context: flowcontext.New(cfg, dag, addressManager, txPool, netAdapter, connectionManager),
 	}
-	netAdapter.SetRouterInitializer(manager.routerInitializer)
+	netAdapter.SetP2PRouterInitializer(manager.routerInitializer)
 	return &manager, nil
-}
-
-// Start starts the p2p protocol
-func (m *Manager) Start() error {
-	return m.context.NetAdapter().Start()
-}
-
-// Stop stops the p2p protocol
-func (m *Manager) Stop() error {
-	return m.context.NetAdapter().Stop()
 }
 
 // Peers returns the currently active peers
@@ -71,4 +61,14 @@ func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan err
 	}
 
 	return <-errChan
+}
+
+// SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
+func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowcontext.OnBlockAddedToDAGHandler) {
+	m.context.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
+}
+
+// SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler
+func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
+	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
 }

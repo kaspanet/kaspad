@@ -3,37 +3,29 @@ package grpcserver
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc/encoding/gzip"
-	"net"
-	"time"
-
-	"google.golang.org/grpc/peer"
-
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
+	"net"
 )
 
 type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
-	listeningAddrs     []string
+	listeningAddresses []string
 	server             *grpc.Server
 }
 
-const maxMessageSize = 1024 * 1024 * 10 // 10MB
+// MaxMessageSize is the max size allowed for a message
+const MaxMessageSize = 1024 * 1024 * 10 // 10MB
 
-// NewGRPCServer creates and starts a gRPC server, listening on the
-// provided addresses/ports
-func NewGRPCServer(listeningAddrs []string) (server.Server, error) {
-	s := &gRPCServer{
-		server:         grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
-		listeningAddrs: listeningAddrs,
+// newGRPCServer creates a gRPC server
+func newGRPCServer(listeningAddresses []string) *gRPCServer {
+	return &gRPCServer{
+		server:             grpc.NewServer(grpc.MaxRecvMsgSize(MaxMessageSize), grpc.MaxSendMsgSize(MaxMessageSize)),
+		listeningAddresses: listeningAddresses,
 	}
-	protowire.RegisterP2PServer(s.server, newP2PServer(s))
-
-	return s, nil
 }
 
 func (s *gRPCServer) Start() error {
@@ -41,14 +33,14 @@ func (s *gRPCServer) Start() error {
 		return errors.New("onConnectedHandler is nil")
 	}
 
-	for _, listenAddr := range s.listeningAddrs {
-		err := s.listenOn(listenAddr)
+	for _, listenAddress := range s.listeningAddresses {
+		err := s.listenOn(listenAddress)
 		if err != nil {
 			return err
 		}
 	}
 
-	log.Debugf("P2P server started with maxMessageSize %d", maxMessageSize)
+	log.Debugf("Server started with MaxMessageSize %d", MaxMessageSize)
 
 	return nil
 }
@@ -66,7 +58,7 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 		}
 	})
 
-	log.Infof("P2P server listening on %s", listenAddr)
+	log.Infof("Server listening on %s", listenAddr)
 	return nil
 }
 
@@ -81,43 +73,26 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 	s.onConnectedHandler = onConnectedHandler
 }
 
-// Connect connects to the given address
-// This is part of the Server interface
-func (s *gRPCServer) Connect(address string) (server.Connection, error) {
-	log.Infof("Dialing to %s", address)
-
-	const dialTimeout = 30 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
-	defer cancel()
-
-	gRPCConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to %s", address)
-	}
-
-	client := protowire.NewP2PClient(gRPCConnection)
-	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name))
-	if err != nil {
-		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
-	}
-
-	peerInfo, ok := peer.FromContext(stream.Context())
+func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStream) error {
+	peerInfo, ok := peer.FromContext(ctx)
 	if !ok {
-		return nil, errors.Errorf("error getting stream peer info from context for %s", address)
+		return errors.Errorf("Error getting stream peer info from context")
 	}
 	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
 	if !ok {
-		return nil, errors.Errorf("non-tcp addresses are not supported")
+		return errors.Errorf("non-tcp connections are not supported")
 	}
 
-	connection := newConnection(s, tcpAddress, true, stream)
+	connection := newConnection(s, tcpAddress, stream, nil)
 
-	err = s.onConnectedHandler(connection)
+	err := s.onConnectedHandler(connection)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	log.Infof("Connected to %s", address)
+	log.Infof("Incoming connection from %s", peerInfo.Addr)
 
-	return connection, nil
+	<-connection.stopChan
+
+	return nil
 }

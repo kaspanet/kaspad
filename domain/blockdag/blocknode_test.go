@@ -1,9 +1,10 @@
 package blockdag
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"testing"
 )
 
 // This test is to ensure the size BlueAnticoneSizesSize is serialized to the size of KType.

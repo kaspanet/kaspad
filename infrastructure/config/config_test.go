@@ -4,16 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"testing"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-)
-
-var (
-	rpcuserRegexp = regexp.MustCompile("(?m)^rpcuser=.+$")
-	rpcpassRegexp = regexp.MustCompile("(?m)^rpcpass=.+$")
 )
 
 func TestCreateDefaultConfigFile(t *testing.T) {
@@ -54,22 +48,8 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 	}()
 
 	err = createDefaultConfigFile(testpath)
-
 	if err != nil {
 		t.Fatalf("Failed to create a default config file: %v", err)
-	}
-
-	content, err := ioutil.ReadFile(testpath)
-	if err != nil {
-		t.Fatalf("Failed to read generated default config file: %v", err)
-	}
-
-	if !rpcuserRegexp.Match(content) {
-		t.Error("Could not find rpcuser in generated default config file.")
-	}
-
-	if !rpcpassRegexp.Match(content) {
-		t.Error("Could not find rpcpass in generated default config file.")
 	}
 }
 

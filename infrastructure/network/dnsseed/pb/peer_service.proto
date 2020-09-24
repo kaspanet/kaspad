@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "github.com/kaspanet/kaspad/pb";
+
+service PeerService {
+  rpc GetPeersList(GetPeersListRequest) returns (GetPeersListResponse) {}
+}
+
+message GetPeersListRequest {
+  uint64 serviceFlag = 1;
+  bytes subnetworkID = 2;
+  bool includeAllSubnetworks = 3;
+}
+
+message GetPeersListResponse {
+  repeated NetAddress addresses = 1;
+}
+
+message NetAddress {
+  int64 timestamp = 1;
+  uint64 services = 2;
+  bytes IP = 3;
+  uint32 port = 4;
+}

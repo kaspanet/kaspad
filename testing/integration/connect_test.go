@@ -6,7 +6,7 @@ import (
 )
 
 func connect(t *testing.T, incoming, outgoing *appHarness) {
-	err := outgoing.rpcClient.ConnectNode(incoming.p2pAddress)
+	err := outgoing.rpcClient.AddPeer(incoming.p2pAddress, false)
 	if err != nil {
 		t.Fatalf("Error connecting the nodes")
 	}
@@ -52,14 +52,14 @@ func isConnected(t *testing.T, appHarness1, appHarness2 *appHarness) bool {
 	var incomingConnected, outgoingConnected bool
 	app1ID, app2ID := appHarness1.app.P2PNodeID().String(), appHarness2.app.P2PNodeID().String()
 
-	for _, connectedPeer := range connectedPeerInfo1 {
+	for _, connectedPeer := range connectedPeerInfo1.Infos {
 		if connectedPeer.ID == app2ID {
 			incomingConnected = true
 			break
 		}
 	}
 
-	for _, connectedPeer := range connectedPeerInfo2 {
+	for _, connectedPeer := range connectedPeerInfo2.Infos {
 		if connectedPeer.ID == app1ID {
 			outgoingConnected = true
 			break

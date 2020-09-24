@@ -14,16 +14,15 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/pkg/errors"
 )
 
 func TestBlockCount(t *testing.T) {
@@ -238,19 +237,41 @@ func TestIsKnownBlock(t *testing.T) {
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimnetParams
-
-	blockVersion := int32(0x10000000)
+	dag, teardownFunc, err := DAGSetup("TestCalcSequenceLock", true, Config{
+		DAGParams: netParams,
+	})
+	if err != nil {
+		t.Fatalf("Error in DAGSetup: %+v", err)
+	}
+	defer teardownFunc()
 
 	// Generate enough synthetic blocks for the rest of the test
-	dag := newTestDAG(netParams)
 	node := dag.selectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := 5
 	for i := 0; i < numBlocksToGenerate; i++ {
-		blockTime = blockTime.Add(time.Second)
-		node = newTestNode(dag, blockSetFromSlice(node), blockVersion, 0, blockTime)
-		dag.index.AddNode(node)
-		dag.virtual.SetTips(blockSetFromSlice(node))
+		parents := blockSetFromSlice(node)
+
+		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		if err != nil {
+			t.Fatalf("block No. %d got unexpected error from PrepareBlockForTest: %+v", i, err)
+		}
+		block.Header.Timestamp = blockTime.Add(time.Second)
+
+		utilBlock := util.NewBlock(block)
+		isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("block No. %d got unexpected error from ProcessBlock: %+v", i, err)
+		}
+		if isOrphan || isDelayed {
+			t.Fatalf("Block No. %d is unexpectadly orphan: %t or delayed: %t", i, isOrphan, isDelayed)
+		}
+
+		var ok bool
+		node, ok = dag.index.LookupNode(block.BlockHash())
+		if !ok {
+			t.Errorf("Block No. %d not found in index after adding to dag", i)
+		}
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -283,13 +304,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).UnixMilliseconds()
+	medianTime := node.RelativeAncestor(5).PastMedianTime().UnixMilliseconds()
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime(dag).UnixMilliseconds()
+	nextMedianTime := node.PastMedianTime().UnixMilliseconds()
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -542,7 +563,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).UnixMilliseconds() -
+		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime().UnixMilliseconds() -
 			dag.genesis.Header().Timestamp.UnixMilliseconds()
 
 		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
@@ -674,7 +695,7 @@ func TestAcceptingInInit(t *testing.T) {
 		t.Fatalf("block %s does not exist in the DAG", testBlock.Hash())
 	}
 
-	if testNode.status&statusValid == 0 {
+	if testNode.status != statusValid {
 		t.Fatalf("testNode is unexpectedly invalid")
 	}
 }
@@ -739,7 +760,7 @@ func TestConfirmations(t *testing.T) {
 	}
 
 	// Check that each of the tips has a 0 confirmations
-	tips := dag.virtual.tips()
+	tips := dag.tips
 	for tip := range tips {
 		tipConfirmations, err := dag.blockConfirmations(tip)
 		if err != nil {
@@ -908,119 +929,6 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 }
 
-func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
-	testFinalizeNodesBelowFinalityPoint(t, true)
-	testFinalizeNodesBelowFinalityPoint(t, false)
-}
-
-func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
-	params := dagconfig.SimnetParams
-	params.K = 1
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", true, Config{
-		DAGParams: &params,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup DAG instance: %v", err)
-	}
-	defer teardownFunc()
-
-	blockVersion := int32(0x10000000)
-	blockTime := dag.genesis.Header().Timestamp
-
-	flushUTXODiffStore := func() {
-		dbTx, err := dag.databaseContext.NewTx()
-		if err != nil {
-			t.Fatalf("Failed to open database transaction: %s", err)
-		}
-		defer dbTx.RollbackUnlessClosed()
-		err = dag.utxoDiffStore.flushToDB(dbTx)
-		if err != nil {
-			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
-		}
-		dag.utxoDiffStore.clearDirtyEntries()
-		err = dbTx.Commit()
-		if err != nil {
-			t.Fatalf("Failed to commit database transaction: %s", err)
-		}
-	}
-
-	addNode := func(parent *blockNode) *blockNode {
-		blockTime = blockTime.Add(time.Second)
-		node := newTestNode(dag, blockSetFromSlice(parent), blockVersion, 0, blockTime)
-		node.updateParentsChildren()
-		dag.index.AddNode(node)
-
-		// Put dummy diff data in dag.utxoDiffStore
-		err := dag.utxoDiffStore.setBlockDiff(node, NewUTXODiff())
-		if err != nil {
-			t.Fatalf("setBlockDiff: %s", err)
-		}
-		flushUTXODiffStore()
-		return node
-	}
-	finalityInterval := dag.FinalityInterval()
-	nodes := make([]*blockNode, 0, finalityInterval)
-	currentNode := dag.genesis
-	nodes = append(nodes, currentNode)
-	for i := uint64(0); i <= finalityInterval*2; i++ {
-		currentNode = addNode(currentNode)
-		nodes = append(nodes, currentNode)
-	}
-
-	// Manually set the last finality point
-	dag.lastFinalityPoint = nodes[finalityInterval-1]
-
-	// Don't unload diffData
-	currentDifference := maxBlueScoreDifferenceToKeepLoaded
-	maxBlueScoreDifferenceToKeepLoaded = math.MaxUint64
-	defer func() { maxBlueScoreDifferenceToKeepLoaded = currentDifference }()
-
-	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
-	flushUTXODiffStore()
-
-	for _, node := range nodes[:finalityInterval-1] {
-		if !node.isFinalized {
-			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
-		}
-		if _, ok := dag.utxoDiffStore.loaded[node]; deleteDiffData && ok {
-			t.Errorf("The diff data of node with blue score %d should have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		} else if !deleteDiffData && !ok {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
-		}
-
-		_, err := dag.utxoDiffStore.diffDataFromDB(node.hash)
-		exists := !dbaccess.IsNotFoundError(err)
-		if exists && err != nil {
-			t.Errorf("diffDataFromDB: %s", err)
-			continue
-		}
-
-		if deleteDiffData && exists {
-			t.Errorf("The diff data of node with blue score %d should have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-			continue
-		}
-
-		if !deleteDiffData && !exists {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
-			continue
-		}
-	}
-
-	for _, node := range nodes[finalityInterval-1:] {
-		if node.isFinalized {
-			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
-		}
-		if _, ok := dag.utxoDiffStore.loaded[node]; !ok {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded", node.blueScore)
-		}
-		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
-			t.Errorf("diffDataFromDB: %s", err)
-		} else if diffData == nil {
-			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database", node.blueScore)
-		}
-	}
-}
-
 func TestDAGIndexFailedStatus(t *testing.T) {
 	params := dagconfig.SimnetParams
 	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", true, Config{
@@ -1031,8 +939,14 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	invalidCbTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{}, []*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
-	txs := []*util.Tx{util.NewTx(invalidCbTx)}
+	// Create a block with non-finalized transaction so that it's flagged as invalid
+	coinbaseTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{},
+		[]*appmessage.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
+	invalidTxIn := appmessage.NewTxIn(appmessage.NewOutpoint(dag.Params.GenesisBlock.Transactions[0].TxID(), 0), nil)
+	invalidTxIn.Sequence = 0
+	invalidTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{invalidTxIn}, []*appmessage.TxOut{})
+	invalidTx.LockTime = math.MaxUint64
+	txs := []*util.Tx{util.NewTx(coinbaseTx), util.NewTx(invalidTx)}
 	hashMerkleRoot := BuildHashMerkleTreeStore(txs).Root()
 	invalidMsgBlock := appmessage.NewMsgBlock(
 		appmessage.NewBlockHeader(
@@ -1043,7 +957,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			dag.genesis.bits,
 			0),
 	)
-	invalidMsgBlock.AddTransaction(invalidCbTx)
+	invalidMsgBlock.AddTransaction(coinbaseTx)
+	invalidMsgBlock.AddTransaction(invalidTx)
 	invalidBlock := util.NewBlock(invalidMsgBlock)
 	isOrphan, isDelayed, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
 
@@ -1063,7 +978,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockNode wasn't added to the block index as expected")
 	}
-	if invalidBlockNode.status&statusValidateFailed != statusValidateFailed {
+	if invalidBlockNode.status != statusValidateFailed {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", statusValidateFailed, invalidBlockNode.status)
 	}
 
@@ -1072,7 +987,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlock.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockChild.AddTransaction(invalidTx)
 	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
@@ -1092,7 +1008,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockChild wasn't added to the block index as expected")
 	}
-	if invalidBlockChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+	if invalidBlockChildNode.status != statusInvalidAncestor {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
 	}
 
@@ -1101,7 +1017,8 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			invalidBlockChild.Hash(),
 		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
 	)
-	invalidMsgBlockGrandChild.AddTransaction(invalidCbTx)
+	invalidMsgBlockGrandChild.AddTransaction(coinbaseTx)
+	invalidMsgBlockGrandChild.AddTransaction(invalidTx)
 	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
 
 	isOrphan, isDelayed, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
@@ -1120,25 +1037,60 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	if !ok {
 		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
 	}
-	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+	if invalidBlockGrandChildNode.status != statusInvalidAncestor {
 		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
 	}
 }
 
-func testProcessBlockRuleError(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
+// testProcessBlockStatus submits the given block, and makes sure this block has got the expected status
+func testProcessBlockStatus(
+	t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedStatus blockStatus) {
+
+	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("%s: Error submitting block: %+v", testName, err)
+	}
+	if isDelayed {
+		t.Fatalf("%s: ProcessBlock: block is too far in the future", testName)
+	}
+	if isOrphan {
+		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
+	}
+
+	node, ok := dag.index.LookupNode(block.BlockHash())
+	if !ok {
+		t.Fatalf("%s: Error locating block %s after processing it", testName, block.BlockHash())
+	}
+
+	actualStatus := dag.index.BlockNodeStatus(node)
+	if actualStatus != expectedStatus {
+		t.Errorf("%s: Expected block status: '%s' but got '%s'", testName, expectedStatus, actualStatus)
+	}
+}
+
+func testProcessBlockRuleError(t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedRuleErr error) {
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 
 	err = checkRuleError(err, expectedRuleErr)
 	if err != nil {
-		t.Errorf("checkRuleError: %s", err)
+		t.Errorf("%s: checkRuleError: %s", err, testName)
 	}
 
 	if isDelayed {
-		t.Fatalf("ProcessBlock: block " +
-			"is too far in the future")
+		t.Fatalf("%s: ProcessBlock: block is too far in the future", testName)
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock: block got unexpectedly orphaned")
+		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
+	}
+}
+
+// makeNextSelectedTip plays with block's nonce until its hash is smaller than dag's selectedTip
+// It is the callers responsibility to make sure block's blue score is equal to selected tip's
+func makeNextSelectedTip(dag *BlockDAG, block *appmessage.MsgBlock) {
+	selectedTip := dag.selectedTip()
+
+	for daghash.Less(block.BlockHash(), selectedTip.hash) {
+		block.Header.Nonce++
 	}
 }
 
@@ -1180,7 +1132,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	blockWithTx1 := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{tx1})
 
-	// Check that a block will be rejected if it has a transaction that already exists in its past.
+	// Check that a block will be disqualified if it has a transaction that already exists in its past.
 	anotherBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
@@ -1194,9 +1146,9 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, anotherBlockWithTx1, ruleError(ErrOverwriteTx, ""))
+	testProcessBlockStatus(t, "anotherBlockWithTx1", dag, anotherBlockWithTx1, statusDisqualifiedFromChain)
 
-	// Check that a block will be rejected if it has a transaction that double spends
+	// Check that a block will be disqualified if it has a transaction that double spends
 	// a transaction from its past.
 	blockWithDoubleSpendForTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{blockWithTx1.BlockHash()}, nil)
 	if err != nil {
@@ -1211,16 +1163,18 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendForTx1, ruleError(ErrMissingTxOut, ""))
+	testProcessBlockStatus(t, "blockWithDoubleSpendForTx1", dag, blockWithDoubleSpendForTx1, statusDisqualifiedFromChain)
 
 	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{doubleSpendTx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
-	// Check that a block will not get rejected if it has a transaction that double spends
+	makeNextSelectedTip(dag, blockInAnticoneOfBlockWithTx1)
+
+	// Check that a block will not get disqualified if it has a transaction that double spends
 	// a transaction from its anticone.
-	testProcessBlockRuleError(t, dag, blockInAnticoneOfBlockWithTx1, nil)
+	testProcessBlockStatus(t, "blockInAnticoneOfBlockWithTx1", dag, blockInAnticoneOfBlockWithTx1, statusValid)
 
 	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
 	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1236,7 +1190,8 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendWithItself.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendWithItselfUtilTxs).Root()
 
-	testProcessBlockRuleError(t, dag, blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
+	testProcessBlockRuleError(t, "blockWithDoubleSpendWithItself", dag,
+		blockWithDoubleSpendWithItself, ruleError(ErrDoubleSpendInSameBlock, ""))
 
 	// Check that a block will be rejected if it has the same transaction twice.
 	blockWithDuplicateTransaction, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1251,7 +1206,8 @@ func TestDoubleSpends(t *testing.T) {
 		blockWithDuplicateTransactionUtilTxs[i] = util.NewTx(tx)
 	}
 	blockWithDuplicateTransaction.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDuplicateTransactionUtilTxs).Root()
-	testProcessBlockRuleError(t, dag, blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
+	testProcessBlockRuleError(t, "blockWithDuplicateTransaction", dag,
+		blockWithDuplicateTransaction, ruleError(ErrDuplicateTx, ""))
 }
 
 func TestUTXOCommitment(t *testing.T) {
@@ -1375,7 +1331,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	if !ok {
 		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
 	}
-	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
@@ -1388,7 +1344,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
 
 	// Get blockC's selectedParentMultiset again
-	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset(dag)
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset()
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}

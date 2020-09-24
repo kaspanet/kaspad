@@ -16,12 +16,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// blockStatus is a bit field representing the validation state of the block.
+// blockStatus is representing the validation state of the block.
 type blockStatus byte
 
 const (
 	// statusDataStored indicates that the block's payload is stored on disk.
-	statusDataStored blockStatus = 1 << iota
+	statusDataStored blockStatus = iota
 
 	// statusValid indicates that the block has been fully validated.
 	statusValid
@@ -32,12 +32,33 @@ const (
 	// statusInvalidAncestor indicates that one of the block's ancestors has
 	// has failed validation, thus the block is also invalid.
 	statusInvalidAncestor
+
+	// statusUTXOPendingVerification indicates that the block is pending verification against its past UTXO-Set, either
+	// because it was not yet verified since the block was never in the selected parent chain, or if the
+	// block violates finality.
+	statusUTXOPendingVerification
+
+	// statusDisqualifiedFromChain indicates that the block is not eligible to be a selected parent.
+	statusDisqualifiedFromChain
 )
+
+var blockStatusToString = map[blockStatus]string{
+	statusDataStored:              "statusDataStored",
+	statusValid:                   "statusValid",
+	statusValidateFailed:          "statusValidateFailed",
+	statusInvalidAncestor:         "statusInvalidAncestor",
+	statusUTXOPendingVerification: "statusUTXOPendingVerification",
+	statusDisqualifiedFromChain:   "statusDisqualifiedFromChain",
+}
+
+func (status blockStatus) String() string {
+	return blockStatusToString[status]
+}
 
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
-	return status&statusValid != 0
+	return status == statusValid
 }
 
 // KnownInvalid returns whether the block is known to be invalid. This may be
@@ -45,7 +66,7 @@ func (status blockStatus) KnownValid() bool {
 // invalid. This will return false for invalid blocks that have not been proven
 // invalid yet.
 func (status blockStatus) KnownInvalid() bool {
-	return status&(statusValidateFailed|statusInvalidAncestor) != 0
+	return status == statusValidateFailed || status == statusInvalidAncestor
 }
 
 // blockNode represents a block within the block DAG. The DAG is stored into
@@ -58,6 +79,9 @@ type blockNode struct {
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
+	// dag is the blockDAG in which this node resides
+	dag *BlockDAG
+
 	// parents is the parent blocks for this node.
 	parents blockSet
 
@@ -68,8 +92,11 @@ type blockNode struct {
 	// children are all the blocks that refer to this block as a parent
 	children blockSet
 
-	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
+	// blues are all blue blocks in this block's worldview that are in its merge set
 	blues []*blockNode
+
+	// reds are all red blocks in this block's worldview that are in its merge set
+	reds []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
@@ -81,7 +108,7 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// Some fields from block headers to aid in  reconstructing headers
+	// Some fields from block headers to aid in reconstructing headers
 	// from memory. These must be treated as immutable and are intentionally
 	// ordered to avoid padding on 64-bit platforms.
 	version              int32
@@ -94,12 +121,9 @@ type blockNode struct {
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
-	// only be accessed using the concurrent-safe NodeStatus method on
+	// only be accessed using the concurrent-safe BlockNodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
-
-	// isFinalized determines whether the node is below the finality point.
-	isFinalized bool
 }
 
 // newBlockNode returns a new block node for the given block header and parents, and the
@@ -108,6 +132,7 @@ type blockNode struct {
 // This function is NOT safe for concurrent access.
 func (dag *BlockDAG) newBlockNode(blockHeader *appmessage.BlockHeader, parents blockSet) (node *blockNode, selectedParentAnticone []*blockNode) {
 	node = &blockNode{
+		dag:                dag,
 		parents:            parents,
 		children:           make(blockSet),
 		blueScore:          math.MaxUint64, // Initialized to the max value to avoid collisions with the genesis block
@@ -205,13 +230,21 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) PastMedianTime(dag *BlockDAG) mstime.Time {
-	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
+func (node *blockNode) PastMedianTime() mstime.Time {
+	window := blueBlockWindow(node, 2*node.dag.TimestampDeviationTolerance-1)
 	medianTimestamp, err := window.medianTimestamp()
 	if err != nil {
 		panic(fmt.Sprintf("blueBlockWindow: %s", err))
 	}
 	return mstime.UnixMilliseconds(medianTimestamp)
+}
+
+func (node *blockNode) selectedParentMedianTime() mstime.Time {
+	medianTime := node.Header().Timestamp
+	if !node.isGenesis() {
+		medianTime = node.selectedParent.PastMedianTime()
+	}
+	return medianTime
 }
 
 func (node *blockNode) ParentHashes() []*daghash.Hash {
@@ -223,8 +256,8 @@ func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
-func (node *blockNode) finalityScore(dag *BlockDAG) uint64 {
-	return node.blueScore / uint64(dag.FinalityInterval())
+func (node *blockNode) finalityScore() uint64 {
+	return node.blueScore / node.dag.FinalityInterval()
 }
 
 // String returns a string that contains the block hash.
@@ -234,4 +267,112 @@ func (node blockNode) String() string {
 
 func (node *blockNode) time() mstime.Time {
 	return mstime.UnixMilliseconds(node.timestamp)
+}
+
+func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
+	if node.blueScore <= depth { // to prevent overflow of requiredBlueScore
+		depth = node.blueScore
+	}
+
+	current := node
+	requiredBlueScore := node.blueScore - depth
+
+	for current.blueScore >= requiredBlueScore {
+		if current.isGenesis() {
+			return current
+		}
+		current = current.selectedParent
+	}
+
+	return current
+}
+
+func (node *blockNode) finalityPoint() *blockNode {
+	return node.blockAtDepth(node.dag.FinalityInterval())
+}
+
+func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (bool, error) {
+	finalityPoint := node.finalityPoint()
+	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
+}
+
+func (node *blockNode) nonBoundedMergeDepthViolatingBlues() (blockSet, error) {
+	nonBoundedMergeDepthViolatingBlues := newBlockSet()
+
+	for _, blueNode := range node.blues {
+		notViolatingFinality, err := node.hasFinalityPointInOthersSelectedChain(blueNode)
+		if err != nil {
+			return nil, err
+		}
+		if notViolatingFinality {
+			nonBoundedMergeDepthViolatingBlues.add(blueNode)
+		}
+	}
+
+	return nonBoundedMergeDepthViolatingBlues, nil
+}
+
+func (node *blockNode) checkBoundedMergeDepth() error {
+	nonBoundedMergeDepthViolatingBlues, err := node.nonBoundedMergeDepthViolatingBlues()
+	if err != nil {
+		return err
+	}
+
+	finalityPoint := node.finalityPoint()
+	for _, red := range node.reds {
+		doesRedHaveFinalityPointInPast, err := node.dag.isInPast(finalityPoint, red)
+		if err != nil {
+			return err
+		}
+
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := node.dag.isInPastOfAny(red, nonBoundedMergeDepthViolatingBlues)
+		if err != nil {
+			return err
+		}
+
+		if !doesRedHaveFinalityPointInPast && !isRedInPastOfAnyNonFinalityViolatingBlue {
+			return ruleError(ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
+		}
+	}
+
+	return nil
+}
+
+func (node *blockNode) isViolatingFinality() (bool, error) {
+	if node.isGenesis() {
+		return false, nil
+	}
+
+	if node.dag.virtual.less(node) {
+		isVirtualFinalityPointInNodesSelectedChain, err := node.dag.isInSelectedParentChainOf(
+			node.dag.virtual.finalityPoint(), node.selectedParent) // use node.selectedParent because node still doesn't have reachability data
+		if err != nil {
+			return false, err
+		}
+		if !isVirtualFinalityPointInNodesSelectedChain {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (node *blockNode) checkMergeSizeLimit() error {
+	mergeSetSize := len(node.reds) + len(node.blues)
+
+	if mergeSetSize > mergeSetSizeLimit {
+		return ruleError(ErrViolatingMergeLimit,
+			fmt.Sprintf("The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit))
+	}
+
+	return nil
+}
+
+func (node *blockNode) hasValidChildren() bool {
+	for child := range node.children {
+		if node.dag.index.BlockNodeStatus(child) == statusValid {
+			return true
+		}
+	}
+	return false
 }

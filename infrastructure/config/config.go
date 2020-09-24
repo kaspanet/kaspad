@@ -6,8 +6,6 @@ package config
 
 import (
 	"bufio"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -93,20 +91,16 @@ type Flags struct {
 	BanDuration          time.Duration `long:"banduration" description:"How long to ban misbehaving peers. Valid time units are {s, m, h}. Minimum 1 second"`
 	BanThreshold         uint32        `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
 	Whitelists           []string      `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
-	RPCUser              string        `short:"u" long:"rpcuser" description:"Username for RPC connections"`
-	RPCPass              string        `short:"P" long:"rpcpass" default-mask:"-" description:"Password for RPC connections"`
-	RPCLimitUser         string        `long:"rpclimituser" description:"Username for limited RPC connections"`
-	RPCLimitPass         string        `long:"rpclimitpass" default-mask:"-" description:"Password for limited RPC connections"`
 	RPCListeners         []string      `long:"rpclisten" description:"Add an interface/port to listen for RPC connections (default port: 16110, testnet: 16210)"`
 	RPCCert              string        `long:"rpccert" description:"File containing the certificate file"`
 	RPCKey               string        `long:"rpckey" description:"File containing the certificate key"`
 	RPCMaxClients        int           `long:"rpcmaxclients" description:"Max number of RPC clients for standard connections"`
 	RPCMaxWebsockets     int           `long:"rpcmaxwebsockets" description:"Max number of RPC websocket connections"`
 	RPCMaxConcurrentReqs int           `long:"rpcmaxconcurrentreqs" description:"Max number of concurrent RPC requests that may be processed concurrently"`
-	DisableRPC           bool          `long:"norpc" description:"Disable built-in RPC server -- NOTE: The RPC server is disabled by default if no rpcuser/rpcpass or rpclimituser/rpclimitpass is specified"`
-	DisableTLS           bool          `long:"notls" description:"Disable TLS for the RPC server -- NOTE: This is only allowed if the RPC server is bound to localhost"`
+	DisableRPC           bool          `long:"norpc" description:"Disable built-in RPC server"`
 	DisableDNSSeed       bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
 	DNSSeed              string        `long:"dnsseed" description:"Override DNS seeds with specified hostname (Only 1 hostname allowed)"`
+	GRPCSeed             string        `long:"grpcseed" description:"Hostname of gRPC server for seeding peers"`
 	ExternalIPs          []string      `long:"externalip" description:"Add an ip to the list of local addresses we claim to listen on to peers"`
 	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
@@ -319,24 +313,6 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		return nil, nil, err
 	}
 
-	if !cfg.DisableRPC {
-		if cfg.RPCUser == "" {
-			str := "%s: rpcuser cannot be empty"
-			err := errors.Errorf(str, funcName)
-			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
-		}
-
-		if cfg.RPCPass == "" {
-			str := "%s: rpcpass cannot be empty"
-			err := errors.Errorf(str, funcName)
-			fmt.Fprintln(os.Stderr, err)
-			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
-		}
-	}
-
 	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, nil, err
@@ -478,46 +454,16 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		}
 	}
 
-	// Check to make sure limited and admin users don't have the same username
-	if cfg.RPCUser == cfg.RPCLimitUser && cfg.RPCUser != "" {
-		str := "%s: --rpcuser and --rpclimituser must not specify the " +
-			"same username"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// Check to make sure limited and admin users don't have the same password
-	if cfg.RPCPass == cfg.RPCLimitPass && cfg.RPCPass != "" {
-		str := "%s: --rpcpass and --rpclimitpass must not specify the " +
-			"same password"
-		err := errors.Errorf(str, funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
-	}
-
-	// The RPC server is disabled if no username or password is provided.
-	if (cfg.RPCUser == "" || cfg.RPCPass == "") &&
-		(cfg.RPCLimitUser == "" || cfg.RPCLimitPass == "") {
-		cfg.DisableRPC = true
-	}
-
 	if cfg.DisableRPC {
 		log.Infof("RPC service is disabled")
 	}
 
-	// Default RPC to listen on localhost only.
+	// Add the default RPC listener if none were specified. The default
+	// RPC listener is all addresses on the RPC listen port for the
+	// network we are to connect to.
 	if !cfg.DisableRPC && len(cfg.RPCListeners) == 0 {
-		addrs, err := net.LookupHost("localhost")
-		if err != nil {
-			return nil, nil, err
-		}
-		cfg.RPCListeners = make([]string, 0, len(addrs))
-		for _, addr := range addrs {
-			addr = net.JoinHostPort(addr, cfg.NetParams().RPCPort)
-			cfg.RPCListeners = append(cfg.RPCListeners, addr)
+		cfg.RPCListeners = []string{
+			net.JoinHostPort("", cfg.NetParams().RPCPort),
 		}
 	}
 
@@ -610,36 +556,6 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		return nil, nil, err
 	}
 
-	// Only allow TLS to be disabled if the RPC is bound to localhost
-	// addresses.
-	if !cfg.DisableRPC && cfg.DisableTLS {
-		allowedTLSListeners := map[string]struct{}{
-			"localhost": {},
-			"127.0.0.1": {},
-			"::1":       {},
-		}
-		for _, addr := range cfg.RPCListeners {
-			host, _, err := net.SplitHostPort(addr)
-			if err != nil {
-				str := "%s: RPC listen interface '%s' is " +
-					"invalid: %s"
-				err := errors.Errorf(str, funcName, addr, err)
-				fmt.Fprintln(os.Stderr, err)
-				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
-			}
-			if _, ok := allowedTLSListeners[host]; !ok {
-				str := "%s: the --notls option may not be used " +
-					"when binding RPC to non localhost " +
-					"addresses: %s"
-				err := errors.Errorf(str, funcName, addr)
-				fmt.Fprintln(os.Stderr, err)
-				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
-			}
-		}
-	}
-
 	// Disallow --addpeer and --connect used together
 	if len(cfg.AddPeers) > 0 && len(cfg.ConnectPeers) > 0 {
 		str := "%s: --addpeer and --connect can not be used together"
@@ -714,22 +630,6 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	sampleConfigPath := filepath.Join(path, sampleConfigFilename)
 
-	// We generate a random user and password
-	randomBytes := make([]byte, 20)
-	_, err = rand.Read(randomBytes)
-	if err != nil {
-		return err
-	}
-	generatedRPCUser := base64.StdEncoding.EncodeToString(randomBytes)
-	rpcUserString := fmt.Sprintf("rpcuser=%s\n", generatedRPCUser)
-
-	_, err = rand.Read(randomBytes)
-	if err != nil {
-		return err
-	}
-	generatedRPCPass := base64.StdEncoding.EncodeToString(randomBytes)
-	rpcPassString := fmt.Sprintf("rpcpass=%s\n", generatedRPCPass)
-
 	dest, err := os.OpenFile(destinationPath,
 		os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -737,37 +637,19 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	// If the sample config file is missing because e.g. kaspad was
-	// installed using go install, simply create the destination
-	// file and write the RPC credentials into it as is.
-	if _, err := os.Stat(sampleConfigPath); os.IsNotExist(err) {
-		toWrite := rpcUserString + rpcPassString
-		if _, err := dest.WriteString(toWrite); err != nil {
-			return err
-		}
-		return nil
-	}
-
 	src, err := os.Open(sampleConfigPath)
 	if err != nil {
 		return err
 	}
 	defer src.Close()
 
-	// We copy every line from the sample config file to the destination,
-	// only replacing the two lines for rpcuser and rpcpass
+	// We copy every line from the sample config file to the destination
 	reader := bufio.NewReader(src)
 	for err != io.EOF {
 		var line string
 		line, err = reader.ReadString('\n')
 		if err != nil && err != io.EOF {
 			return err
-		}
-
-		if strings.Contains(line, "rpcuser=") {
-			line = rpcUserString
-		} else if strings.Contains(line, "rpcpass=") {
-			line = rpcPassString
 		}
 
 		if _, err := dest.WriteString(line); err != nil {

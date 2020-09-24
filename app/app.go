@@ -10,6 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
+	"github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/domain/mempool"
@@ -20,8 +21,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpc"
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )
@@ -29,9 +28,9 @@ import (
 // App is a wrapper for all the kaspad services
 type App struct {
 	cfg               *config.Config
-	rpcServer         *rpc.Server
 	addressManager    *addressmanager.AddressManager
 	protocolManager   *protocol.Manager
+	rpcManager        *rpc.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
 
@@ -47,18 +46,14 @@ func (a *App) Start() {
 
 	log.Trace("Starting kaspad")
 
-	err := a.protocolManager.Start()
+	err := a.netAdapter.Start()
 	if err != nil {
-		panics.Exit(log, fmt.Sprintf("Error starting the p2p protocol: %+v", err))
+		panics.Exit(log, fmt.Sprintf("Error starting the net adapter: %+v", err))
 	}
 
 	a.maybeSeedFromDNS()
 
 	a.connectionManager.Start()
-
-	if !a.cfg.DisableRPC {
-		a.rpcServer.Start()
-	}
 }
 
 // Stop gracefully shuts down all the kaspad services.
@@ -73,17 +68,9 @@ func (a *App) Stop() {
 
 	a.connectionManager.Stop()
 
-	err := a.protocolManager.Stop()
+	err := a.netAdapter.Stop()
 	if err != nil {
-		log.Errorf("Error stopping the p2p protocol: %+v", err)
-	}
-
-	// Shutdown the RPC server if it's not disabled.
-	if !a.cfg.DisableRPC {
-		err := a.rpcServer.Stop()
-		if err != nil {
-			log.Errorf("Error stopping rpcServer: %+v", err)
-		}
+		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
 	err = a.addressManager.Stop()
@@ -126,20 +113,70 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	rpcServer, err := setupRPC(
-		cfg, dag, txMempool, sigCache, acceptanceIndex, connectionManager, addressManager, protocolManager)
-	if err != nil {
-		return nil, err
-	}
+	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex)
 
 	return &App{
 		cfg:               cfg,
-		rpcServer:         rpcServer,
 		protocolManager:   protocolManager,
+		rpcManager:        rpcManager,
 		connectionManager: connectionManager,
 		netAdapter:        netAdapter,
 		addressManager:    addressManager,
 	}, nil
+}
+
+func setupRPC(
+	cfg *config.Config,
+	txMempool *mempool.TxPool,
+	dag *blockdag.BlockDAG,
+	sigCache *txscript.SigCache,
+	netAdapter *netadapter.NetAdapter,
+	protocolManager *protocol.Manager,
+	connectionManager *connmanager.ConnectionManager,
+	addressManager *addressmanager.AddressManager,
+	acceptanceIndex *indexers.AcceptanceIndex) *rpc.Manager {
+
+	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
+	rpcManager := rpc.NewManager(cfg, netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex)
+	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
+	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
+	dag.Subscribe(func(notification *blockdag.Notification) {
+		err := handleBlockDAGNotifications(notification, acceptanceIndex, rpcManager)
+		if err != nil {
+			panic(err)
+		}
+	})
+	return rpcManager
+}
+
+func handleBlockDAGNotifications(notification *blockdag.Notification,
+	acceptanceIndex *indexers.AcceptanceIndex, rpcManager *rpc.Manager) error {
+
+	switch notification.Type {
+	case blockdag.NTChainChanged:
+		if acceptanceIndex == nil {
+			return nil
+		}
+		chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
+		err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
+			chainChangedNotificationData.AddedChainBlockHashes)
+		if err != nil {
+			return err
+		}
+	case blockdag.NTFinalityConflict:
+		finalityConflictNotificationData := notification.Data.(*blockdag.FinalityConflictNotificationData)
+		err := rpcManager.NotifyFinalityConflict(finalityConflictNotificationData.ViolatingBlockHash.String())
+		if err != nil {
+			return err
+		}
+	case blockdag.NTFinalityConflictResolved:
+		finalityConflictResolvedNotificationData := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
+		err := rpcManager.NotifyFinalityConflictResolved(finalityConflictResolvedNotificationData.FinalityBlockHash.String())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (a *App) maybeSeedFromDNS() {
@@ -149,6 +186,13 @@ func (a *App) maybeSeedFromDNS() {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.
+				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+			})
+	}
+
+	if a.cfg.GRPCSeed != "" {
+		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
+			func(addresses []*appmessage.NetAddress) {
 				a.addressManager.AddAddresses(addresses, addresses[0], nil)
 			})
 	}
@@ -204,38 +248,6 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 	}
 
 	return mempool.New(&mempoolConfig)
-}
-
-func setupRPC(cfg *config.Config,
-	dag *blockdag.BlockDAG,
-	txMempool *mempool.TxPool,
-	sigCache *txscript.SigCache,
-	acceptanceIndex *indexers.AcceptanceIndex,
-	connectionManager *connmanager.ConnectionManager,
-	addressManager *addressmanager.AddressManager,
-	protocolManager *protocol.Manager) (*rpc.Server, error) {
-
-	if !cfg.DisableRPC {
-		policy := mining.Policy{
-			BlockMaxMass: cfg.BlockMaxMass,
-		}
-		blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy, txMempool, dag, sigCache)
-
-		rpcServer, err := rpc.NewRPCServer(cfg, dag, txMempool, acceptanceIndex, blockTemplateGenerator,
-			connectionManager, addressManager, protocolManager)
-		if err != nil {
-			return nil, err
-		}
-
-		// Signal process shutdown when the RPC server requests it.
-		spawn("setupRPC-handleShutdownRequest", func() {
-			<-rpcServer.RequestedProcessShutdown()
-			signal.ShutdownRequestChannel <- struct{}{}
-		})
-
-		return rpcServer, nil
-	}
-	return nil, nil
 }
 
 // P2PNodeID returns the network ID associated with this App

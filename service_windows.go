@@ -68,7 +68,7 @@ func (s *kaspadService) Execute(args []string, r <-chan svc.ChangeRequest, chang
 	// be properly logged
 	doneChan := make(chan error)
 	startedChan := make(chan struct{})
-	spawn(func() {
+	spawn("kaspadMain-windows", func() {
 		err := kaspadMain(startedChan)
 		doneChan <- err
 	})

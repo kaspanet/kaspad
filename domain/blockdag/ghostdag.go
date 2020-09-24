@@ -1,9 +1,10 @@
 package blockdag
 
 import (
+	"sort"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"sort"
 )
 
 // ghostdag runs the GHOSTDAG protocol and updates newNode.blues,
@@ -39,84 +40,95 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 	})
 
 	for _, blueCandidate := range selectedParentAnticone {
-		candidateBluesAnticoneSizes := make(map[*blockNode]dagconfig.KType)
-		var candidateAnticoneSize dagconfig.KType
-		possiblyBlue := true
-
-		// Iterate over all blocks in the blue set of newNode that are not in the past
-		// of blueCandidate, and check for each one of them if blueCandidate potentially
-		// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
-		// of blueCandidate to be over K.
-		for chainBlock := newNode; possiblyBlue; chainBlock = chainBlock.selectedParent {
-			// If blueCandidate is in the future of chainBlock, it means
-			// that all remaining blues are in the past of chainBlock and thus
-			// in the past of blueCandidate. In this case we know for sure that
-			// the anticone of blueCandidate will not exceed K, and we can mark
-			// it as blue.
-			//
-			// newNode is always in the future of blueCandidate, so there's
-			// no point in checking it.
-			if chainBlock != newNode {
-				if isAncestorOfBlueCandidate, err := dag.isInPast(chainBlock, blueCandidate); err != nil {
-					return nil, err
-				} else if isAncestorOfBlueCandidate {
-					break
-				}
-			}
-
-			for _, block := range chainBlock.blues {
-				// Skip blocks that exist in the past of blueCandidate.
-				if isAncestorOfBlueCandidate, err := dag.isInPast(block, blueCandidate); err != nil {
-					return nil, err
-				} else if isAncestorOfBlueCandidate {
-					continue
-				}
-
-				candidateBluesAnticoneSizes[block], err = dag.blueAnticoneSize(block, newNode)
-				if err != nil {
-					return nil, err
-				}
-				candidateAnticoneSize++
-
-				if candidateAnticoneSize > dag.Params.K {
-					// k-cluster violation: The candidate's blue anticone exceeded k
-					possiblyBlue = false
-					break
-				}
-
-				if candidateBluesAnticoneSizes[block] == dag.Params.K {
-					// k-cluster violation: A block in candidate's blue anticone already
-					// has k blue blocks in its own anticone
-					possiblyBlue = false
-					break
-				}
-
-				// This is a sanity check that validates that a blue
-				// block's blue anticone is not already larger than K.
-				if candidateBluesAnticoneSizes[block] > dag.Params.K {
-					return nil, errors.New("found blue anticone size larger than k")
-				}
-			}
+		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := dag.checkBlueCandidate(newNode, blueCandidate)
+		if err != nil {
+			return nil, err
 		}
 
-		if possiblyBlue {
+		if isBlue {
 			// No k-cluster violation found, we can now set the candidate block as blue
 			newNode.blues = append(newNode.blues, blueCandidate)
 			newNode.bluesAnticoneSizes[blueCandidate] = candidateAnticoneSize
 			for blue, blueAnticoneSize := range candidateBluesAnticoneSizes {
 				newNode.bluesAnticoneSizes[blue] = blueAnticoneSize + 1
 			}
-
-			// The maximum length of node.blues can be K+1 because
-			// it contains the selected parent.
-			if dagconfig.KType(len(newNode.blues)) == dag.Params.K+1 {
-				break
-			}
+		} else {
+			newNode.reds = append(newNode.reds, blueCandidate)
 		}
 	}
 
 	newNode.blueScore = newNode.selectedParent.blueScore + uint64(len(newNode.blues))
+
 	return selectedParentAnticone, nil
+}
+
+func (dag *BlockDAG) checkBlueCandidate(newNode *blockNode, blueCandidate *blockNode) (
+	isBlue bool, candidateAnticoneSize dagconfig.KType, candidateBluesAnticoneSizes map[*blockNode]dagconfig.KType,
+	err error) {
+
+	// The maximum length of node.blues can be K+1 because
+	// it contains the selected parent.
+	if dagconfig.KType(len(newNode.blues)) == dag.Params.K+1 {
+		return false, 0, nil, nil
+	}
+
+	candidateBluesAnticoneSizes = make(map[*blockNode]dagconfig.KType)
+
+	// Iterate over all blocks in the blue set of newNode that are not in the past
+	// of blueCandidate, and check for each one of them if blueCandidate potentially
+	// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
+	// of blueCandidate to be over K.
+	for chainBlock := newNode; ; chainBlock = chainBlock.selectedParent {
+		// If blueCandidate is in the future of chainBlock, it means
+		// that all remaining blues are in the past of chainBlock and thus
+		// in the past of blueCandidate. In this case we know for sure that
+		// the anticone of blueCandidate will not exceed K, and we can mark
+		// it as blue.
+		//
+		// newNode is always in the future of blueCandidate, so there's
+		// no point in checking it.
+		if chainBlock != newNode {
+			if isAncestorOfBlueCandidate, err := dag.isInPast(chainBlock, blueCandidate); err != nil {
+				return false, 0, nil, err
+			} else if isAncestorOfBlueCandidate {
+				break
+			}
+		}
+
+		for _, block := range chainBlock.blues {
+			// Skip blocks that exist in the past of blueCandidate.
+			if isAncestorOfBlueCandidate, err := dag.isInPast(block, blueCandidate); err != nil {
+				return false, 0, nil, err
+			} else if isAncestorOfBlueCandidate {
+				continue
+			}
+
+			candidateBluesAnticoneSizes[block], err = dag.blueAnticoneSize(block, newNode)
+			if err != nil {
+				return false, 0, nil, err
+			}
+			candidateAnticoneSize++
+
+			if candidateAnticoneSize > dag.Params.K {
+				// k-cluster violation: The candidate's blue anticone exceeded k
+				return false, 0, nil, nil
+			}
+
+			if candidateBluesAnticoneSizes[block] == dag.Params.K {
+				// k-cluster violation: A block in candidate's blue anticone already
+				// has k blue blocks in its own anticone
+				return false, 0, nil, nil
+			}
+
+			// This is a sanity check that validates that a blue
+			// block's blue anticone is not already larger than K.
+			if candidateBluesAnticoneSizes[block] > dag.Params.K {
+				return false, 0, nil, errors.New("found blue anticone size larger than k")
+			}
+		}
+	}
+
+	return true, candidateAnticoneSize, candidateBluesAnticoneSizes, nil
 }
 
 // selectedParentAnticone returns the blocks in the anticone of the selected parent of the given node.

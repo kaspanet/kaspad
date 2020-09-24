@@ -6,9 +6,11 @@ package blockdag
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
-	"sync"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -59,6 +61,18 @@ func (bi *blockIndex) LookupNode(hash *daghash.Hash) (*blockNode, bool) {
 	return node, ok
 }
 
+func (bi *blockIndex) LookupNodes(hashes []*daghash.Hash) ([]*blockNode, error) {
+	blocks := make([]*blockNode, 0, len(hashes))
+	for _, hash := range hashes {
+		node, ok := bi.LookupNode(hash)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find block with hash %s", hash)
+		}
+		blocks = append(blocks, node)
+	}
+	return blocks, nil
+}
+
 // AddNode adds the provided node to the block index and marks it as dirty.
 // Duplicate entries are not checked so it is up to caller to avoid adding them.
 //
@@ -78,36 +92,23 @@ func (bi *blockIndex) addNode(node *blockNode) {
 	bi.index[*node.hash] = node
 }
 
-// NodeStatus provides concurrent-safe access to the status field of a node.
+// BlockNodeStatus provides concurrent-safe access to the status field of a node.
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) NodeStatus(node *blockNode) blockStatus {
+func (bi *blockIndex) BlockNodeStatus(node *blockNode) blockStatus {
 	bi.RLock()
 	defer bi.RUnlock()
 	status := node.status
 	return status
 }
 
-// SetStatusFlags flips the provided status flags on the block node to on,
-// regardless of whether they were on or off previously. This does not unset any
-// flags currently on.
+// SetBlockNodeStatus changes the status of a blockNode
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) SetStatusFlags(node *blockNode, flags blockStatus) {
+func (bi *blockIndex) SetBlockNodeStatus(node *blockNode, newStatus blockStatus) {
 	bi.Lock()
 	defer bi.Unlock()
-	node.status |= flags
-	bi.dirty[node] = struct{}{}
-}
-
-// UnsetStatusFlags flips the provided status flags on the block node to off,
-// regardless of whether they were on or off previously.
-//
-// This function is safe for concurrent access.
-func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
-	bi.Lock()
-	defer bi.Unlock()
-	node.status &^= flags
+	node.status = newStatus
 	bi.dirty[node] = struct{}{}
 }
 
@@ -165,7 +166,7 @@ func lookupParentNodes(block *util.Block, dag *BlockDAG) (blockSet, error) {
 		if !ok {
 			str := fmt.Sprintf("parent block %s is unknown", parentHash)
 			return nil, ruleError(ErrParentBlockUnknown, str)
-		} else if dag.index.NodeStatus(node).KnownInvalid() {
+		} else if dag.index.BlockNodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("parent block %s is known to be invalid", parentHash)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}

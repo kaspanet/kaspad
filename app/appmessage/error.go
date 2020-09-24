@@ -32,3 +32,16 @@ func (e *MessageError) Error() string {
 func messageError(f string, desc string) *MessageError {
 	return &MessageError{Func: f, Description: desc}
 }
+
+// RPCError represents an error arriving from the RPC
+type RPCError struct {
+	Message string
+}
+
+// RPCErrorf formats according to a format specifier and returns the string
+// as an RPCError.
+func RPCErrorf(format string, args ...interface{}) *RPCError {
+	return &RPCError{
+		Message: fmt.Sprintf(format, args...),
+	}
+}

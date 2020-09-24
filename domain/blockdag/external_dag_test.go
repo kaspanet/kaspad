@@ -16,152 +16,9 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
-
-// TestFinality checks that the finality mechanism works as expected.
-// This is how the flow goes:
-// 1) We build a chain of params.FinalityInterval blocks and call its tip altChainTip.
-// 2) We build another chain (let's call it mainChain) of 2 * params.FinalityInterval
-// blocks, which points to genesis, and then we check that the block in that
-// chain with height of params.FinalityInterval is marked as finality point (This is
-// very predictable, because the blue score of each new block in a chain is the
-// parents plus one).
-// 3) We make a new child to block with height (2 * params.FinalityInterval - 1)
-// in mainChain, and we check that connecting it to the DAG
-// doesn't affect the last finality point.
-// 4) We make a block that points to genesis, and check that it
-// gets rejected because its blue score is lower then the last finality
-// point.
-// 5) We make a block that points to altChainTip, and check that it
-// gets rejected because it doesn't have the last finality point in
-// its selected parent chain.
-func TestFinality(t *testing.T) {
-	params := dagconfig.SimnetParams
-	params.K = 1
-	params.FinalityDuration = 100 * params.TargetTimePerBlock
-	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", true, blockdag.Config{
-		DAGParams: &params,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup DAG instance: %v", err)
-	}
-	defer teardownFunc()
-	buildNodeToDag := func(parentHashes []*daghash.Hash) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, parentHashes, nil, false)
-		if err != nil {
-			return nil, err
-		}
-		block := util.NewBlock(msgBlock)
-
-		isOrphan, isDelayed, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
-		if err != nil {
-			return nil, err
-		}
-		if isDelayed {
-			return nil, errors.Errorf("ProcessBlock: block " +
-				"is too far in the future")
-		}
-		if isOrphan {
-			return nil, errors.Errorf("ProcessBlock: unexpected returned orphan block")
-		}
-
-		return block, nil
-	}
-
-	genesis := util.NewBlock(params.GenesisBlock)
-	currentNode := genesis
-
-	// First we build a chain of params.FinalityInterval blocks for future use
-	for i := uint64(0); i < dag.FinalityInterval(); i++ {
-		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
-	}
-
-	altChainTip := currentNode
-
-	// Now we build a new chain of 2 * params.FinalityInterval blocks, pointed to genesis, and
-	// we expect the block with height 1 * params.FinalityInterval to be the last finality point
-	currentNode = genesis
-	for i := uint64(0); i < dag.FinalityInterval(); i++ {
-		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
-	}
-
-	expectedFinalityPoint := currentNode
-
-	for i := uint64(0); i < dag.FinalityInterval(); i++ {
-		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
-	}
-
-	if !dag.LastFinalityPointHash().IsEqual(expectedFinalityPoint.Hash()) {
-		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", expectedFinalityPoint, dag.LastFinalityPointHash())
-	}
-
-	// Here we check that even if we create a parallel tip (a new tip with
-	// the same parents as the current one) with the same blue score as the
-	// current tip, it still won't affect the last finality point.
-	_, err = buildNodeToDag(currentNode.MsgBlock().Header.ParentHashes)
-	if err != nil {
-		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-	}
-	if !dag.LastFinalityPointHash().IsEqual(expectedFinalityPoint.Hash()) {
-		t.Errorf("TestFinality: dag.lastFinalityPoint was unexpectly changed")
-	}
-
-	// Here we check that a block with lower blue score than the last finality
-	// point will get rejected
-	fakeCoinbaseTx, err := dag.NextBlockCoinbaseTransaction(nil, nil)
-	if err != nil {
-		t.Errorf("NextBlockCoinbaseTransaction: %s", err)
-	}
-	merkleRoot := blockdag.BuildHashMerkleTreeStore([]*util.Tx{fakeCoinbaseTx}).Root()
-	beforeFinalityBlock := appmessage.NewMsgBlock(&appmessage.BlockHeader{
-		Version:              0x10000000,
-		ParentHashes:         []*daghash.Hash{genesis.Hash()},
-		HashMerkleRoot:       merkleRoot,
-		AcceptedIDMerkleRoot: &daghash.ZeroHash,
-		UTXOCommitment:       &daghash.ZeroHash,
-		Timestamp:            dag.SelectedTipHeader().Timestamp,
-		Bits:                 genesis.MsgBlock().Header.Bits,
-	})
-	beforeFinalityBlock.AddTransaction(fakeCoinbaseTx.MsgTx())
-	_, _, err = dag.ProcessBlock(util.NewBlock(beforeFinalityBlock), blockdag.BFNoPoWCheck)
-	if err == nil {
-		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
-	}
-	var ruleErr blockdag.RuleError
-	if errors.As(err, &ruleErr) {
-		if ruleErr.ErrorCode != blockdag.ErrFinality {
-			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", blockdag.ErrFinality, ruleErr.ErrorCode)
-		}
-	} else {
-		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", err)
-	}
-
-	// Here we check that a block that doesn't have the last finality point in
-	// its selected parent chain will get rejected
-	_, err = buildNodeToDag([]*daghash.Hash{altChainTip.Hash()})
-	if err == nil {
-		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
-	}
-	if errors.As(err, &ruleErr) {
-		if ruleErr.ErrorCode != blockdag.ErrFinality {
-			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", blockdag.ErrFinality, ruleErr.ErrorCode)
-		}
-	} else {
-		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", ruleErr)
-	}
-}
 
 // TestFinalityInterval tests that the finality interval is
 // smaller then appmessage.MaxInvPerMsg, so when a peer receives
@@ -231,7 +88,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil, false)
+	block1, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{params.GenesisHash}, nil)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -279,7 +136,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{chainedTxIn}, []*appmessage.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{tx}, false)
+	block2, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{tx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -299,8 +156,8 @@ func TestChainedTransactions(t *testing.T) {
 	} else {
 		var ruleErr blockdag.RuleError
 		if ok := errors.As(err, &ruleErr); ok {
-			if ruleErr.ErrorCode != blockdag.ErrMissingTxOut {
-				t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrMissingTxOut, ruleErr.ErrorCode)
+			if ruleErr.ErrorCode != blockdag.ErrChainedTransactions {
+				t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrChainedTransactions, ruleErr.ErrorCode)
 			}
 		} else {
 			t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
@@ -325,7 +182,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	nonChainedTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonChainedTxIn}, []*appmessage.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{nonChainedTx}, false)
+	block3, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{block1.BlockHash()}, []*appmessage.MsgTx{nonChainedTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -382,9 +239,9 @@ func TestOrderInDiffFromAcceptanceData(t *testing.T) {
 		}
 
 		// Create the block
-		msgBlock, err := mining.PrepareBlockForTest(dag, []*daghash.Hash{previousBlock.Hash()}, txs, false)
+		msgBlock, err := blockdag.PrepareBlockForTest(dag, []*daghash.Hash{previousBlock.Hash()}, txs)
 		if err != nil {
-			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %s", err)
+			t.Fatalf("TestOrderInDiffFromAcceptanceData: Failed to prepare block: %+v", err)
 		}
 
 		// Add the block to the DAG
@@ -439,7 +296,7 @@ func TestGasLimit(t *testing.T) {
 
 	cbTxs := []*appmessage.MsgTx{}
 	for i := 0; i < 4; i++ {
-		fundsBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), nil, false)
+		fundsBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), nil)
 		if err != nil {
 			t.Fatalf("PrepareBlockForTest: %v", err)
 		}
@@ -491,7 +348,7 @@ func TestGasLimit(t *testing.T) {
 	tx2 := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{tx2In}, []*appmessage.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1, tx2}, true)
+	overLimitBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, tx2})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -526,7 +383,7 @@ func TestGasLimit(t *testing.T) {
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1, overflowGasTx}, true)
+	overflowGasBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1, overflowGasTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -560,7 +417,7 @@ func TestGasLimit(t *testing.T) {
 	nonExistentSubnetworkTx := appmessage.NewSubnetworkMsgTx(appmessage.TxVersion, []*appmessage.TxIn{nonExistentSubnetworkTxIn},
 		[]*appmessage.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
+	nonExistentSubnetworkBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{nonExistentSubnetworkTx, overflowGasTx})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -581,7 +438,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, dag.TipHashes(), []*appmessage.MsgTx{tx1}, true)
+	validBlock, err := blockdag.PrepareBlockForTest(dag, dag.VirtualParentHashes(), []*appmessage.MsgTx{tx1})
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

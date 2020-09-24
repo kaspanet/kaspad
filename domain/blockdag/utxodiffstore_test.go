@@ -113,7 +113,7 @@ func TestClearOldEntries(t *testing.T) {
 	// Add 10 blocks
 	blockNodes := make([]*blockNode, 10)
 	for i := 0; i < 10; i++ {
-		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), nil)
+		processedBlock := PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentHashes(), nil)
 
 		node, ok := dag.index.LookupNode(processedBlock.BlockHash())
 		if !ok {
@@ -132,32 +132,10 @@ func TestClearOldEntries(t *testing.T) {
 
 	// Add 10 more blocks on top of the others
 	for i := 0; i < 10; i++ {
-		PrepareAndProcessBlockForTest(t, dag, dag.TipHashes(), nil)
+		PrepareAndProcessBlockForTest(t, dag, dag.VirtualParentHashes(), nil)
 	}
 
 	// Make sure that all the old nodes no longer exist in the loaded set
-	for _, node := range blockNodes {
-		_, ok := dag.utxoDiffStore.loaded[node]
-		if ok {
-			t.Fatalf("TestClearOldEntries: diffData for node %s is in the loaded set", node.hash)
-		}
-	}
-
-	// Add a block on top of the genesis to force the retrieval of all diffData
-	processedBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
-	node, ok := dag.index.LookupNode(processedBlock.BlockHash())
-	if !ok {
-		t.Fatalf("TestClearOldEntries: missing blockNode for hash %s", processedBlock.BlockHash())
-	}
-
-	// Make sure that the child-of-genesis node is in the loaded set, since it
-	// is a tip.
-	_, ok = dag.utxoDiffStore.loaded[node]
-	if !ok {
-		t.Fatalf("TestClearOldEntries: diffData for node %s is not in the loaded set", node.hash)
-	}
-
-	// Make sure that all the old nodes still do not exist in the loaded set
 	for _, node := range blockNodes {
 		_, ok := dag.utxoDiffStore.loaded[node]
 		if ok {
