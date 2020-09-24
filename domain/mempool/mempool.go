@@ -53,6 +53,8 @@ type Config struct {
 
 	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
 	DAG *blockdag.BlockDAG
+
+	CalcTxSequenceLockFromReferencedUTXOEntries func(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error)
 }
 
 // Policy houses the policy (configuration parameters) which is used to
@@ -155,12 +157,12 @@ func (mpSet *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (
 }
 
 // addTx adds a transaction to the mempool UTXO set. It assumes that it doesn't double spend another transaction
-// in the mempool, and that its outputs doesn't exist in the mempool UTXO set.
-func (mpSet *mempoolUTXOSet) addTx(tx *util.Tx) {
+// in the mempool, and that its outputs doesn't exist in the mempool UTXO set, and returns error otherwise.
+func (mpSet *mempoolUTXOSet) addTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
 		if existingTx, exists := mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; exists {
-			panic(errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, existingTx.ID()))
+			return errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, existingTx.ID())
 		}
 		mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint] = tx
 	}
@@ -168,19 +170,20 @@ func (mpSet *mempoolUTXOSet) addTx(tx *util.Tx) {
 	for i, txOut := range msgTx.TxOut {
 		outpoint := appmessage.NewOutpoint(tx.ID(), uint32(i))
 		if _, exists := mpSet.poolUnspentOutputs[*outpoint]; exists {
-			panic(errors.Errorf("outpoint %s already exists", outpoint))
+			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
 		mpSet.poolUnspentOutputs[*outpoint] = blockdag.NewUTXOEntry(txOut, false, blockdag.UnacceptedBlueScore)
 	}
+	return nil
 }
 
 // removeTx removes a transaction to the mempool UTXO set.
 // Note: it doesn't re-add its previous outputs to the mempool UTXO set.
-func (mpSet *mempoolUTXOSet) removeTx(tx *util.Tx) {
+func (mpSet *mempoolUTXOSet) removeTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
 		if _, exists := mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; !exists {
-			panic(errors.Errorf("outpoint %s doesn't exist", txIn.PreviousOutpoint))
+			return errors.Errorf("outpoint %s doesn't exist", txIn.PreviousOutpoint)
 		}
 		delete(mpSet.transactionByPreviousOutpoint, txIn.PreviousOutpoint)
 	}
@@ -188,10 +191,12 @@ func (mpSet *mempoolUTXOSet) removeTx(tx *util.Tx) {
 	for i := range msgTx.TxOut {
 		outpoint := appmessage.NewOutpoint(tx.ID(), uint32(i))
 		if _, exists := mpSet.poolUnspentOutputs[*outpoint]; !exists {
-			panic(errors.Errorf("outpoint %s doesn't exist", outpoint))
+			return errors.Errorf("outpoint %s doesn't exist", outpoint)
 		}
 		delete(mpSet.poolUnspentOutputs, *outpoint)
 	}
+
+	return nil
 }
 
 func (mpSet *mempoolUTXOSet) poolTransactionBySpendingOutpoint(outpoint appmessage.Outpoint) (*util.Tx, bool) {
@@ -522,7 +527,11 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 			continue
 		}
 
-		mp.cleanTransactionFromSets(tx)
+		err := mp.cleanTransactionFromSets(tx)
+		if err != nil {
+			return err
+		}
+
 		mp.updateBlockTransactionDependentChainTransactions(tx)
 	}
 
@@ -552,7 +561,10 @@ func (mp *TxPool) removeTransactionAndItsDependentTransactions(tx *util.Tx) erro
 		mp.removeChainTransaction(tx)
 	}
 
-	mp.cleanTransactionFromSets(tx)
+	err := mp.cleanTransactionFromSets(tx)
+	if err != nil {
+		return err
+	}
 
 	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
@@ -561,11 +573,17 @@ func (mp *TxPool) removeTransactionAndItsDependentTransactions(tx *util.Tx) erro
 
 // cleanTransactionFromSets removes the transaction from all mempool related transaction sets.
 // It assumes that any dependent transaction is already cleaned from the mempool.
-func (mp *TxPool) cleanTransactionFromSets(tx *util.Tx) {
-	mp.mempoolUTXOSet.removeTx(tx)
+func (mp *TxPool) cleanTransactionFromSets(tx *util.Tx) error {
+	err := mp.mempoolUTXOSet.removeTx(tx)
+	if err != nil {
+		return err
+	}
+
 	txID := *tx.ID()
 	delete(mp.pool, txID)
 	delete(mp.chainedTransactions, txID)
+
+	return nil
 }
 
 // updateBlockTransactionDependentChainTransactions processes the dependencies of a
@@ -680,7 +698,10 @@ func (mp *TxPool) addTransaction(tx *util.Tx, mass uint64, fee uint64, parentsIn
 		}
 	}
 
-	mp.mempoolUTXOSet.addTx(tx)
+	err := mp.mempoolUTXOSet.addTx(tx)
+	if err != nil {
+		return nil, err
+	}
 
 	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
 
@@ -915,7 +936,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	// Don't allow the transaction into the mempool unless its sequence
 	// lock is active, meaning that it'll be allowed into the next block
 	// with respect to its defined relative lock times.
-	sequenceLock, err := mp.cfg.DAG.CalcTxSequenceLockFromReferencedUTXOEntries(tx, spentUTXOEntries)
+	sequenceLock, err := mp.cfg.CalcTxSequenceLockFromReferencedUTXOEntries(tx, spentUTXOEntries)
 	if err != nil {
 		var dagRuleErr blockdag.RuleError
 		if ok := errors.As(err, &dagRuleErr); ok {

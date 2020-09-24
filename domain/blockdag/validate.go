@@ -360,7 +360,7 @@ func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (txMass uin
 			"allowed limit of %d", tx.ID(), txMass, appmessage.MaxMassAcceptedByBlock)
 		return 0, ruleError(ErrTxMassTooHigh, str)
 	}
-	return 0, nil
+	return txMass, nil
 }
 
 func calcTxMassFromInputsWithUTXOEntries(

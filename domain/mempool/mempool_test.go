@@ -69,8 +69,7 @@ func (s *fakeDAG) SetMedianTimePast(mtp mstime.Time) {
 	s.medianTimePast = mtp
 }
 
-func calcSequenceLock(tx *util.Tx,
-	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
+func calcTxSequenceLockFromReferencedUTXOEntries(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
 		Milliseconds:   -1,
@@ -339,8 +338,8 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:   1000, // 1 sompi per byte
 				MaxTxVersion:    1,
 			},
-			CalcSequenceLockNoLock: calcSequenceLock,
-			SigCache:               nil,
+			CalcTxSequenceLockFromReferencedUTXOEntries: calcTxSequenceLockFromReferencedUTXOEntries,
+			SigCache: nil,
 		}),
 	}
 
@@ -646,10 +645,8 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(appmessage.NewNativeMsgTx(1, nil, []*appmessage.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
-	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), currentBlueScore+1); err != nil {
+	if err := harness.txPool.mempoolUTXOSet.addTx(p2shTx); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !isAccepted {
-		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
 	}
 
 	txIns := []*appmessage.TxIn{{
@@ -691,8 +688,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	// Checks that transactions get rejected from mempool if sequence lock is not active
-	harness.txPool.cfg.CalcSequenceLockNoLock = func(tx *util.Tx,
-		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
+	harness.txPool.cfg.CalcTxSequenceLockFromReferencedUTXOEntries = func(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
 			Milliseconds:   math.MaxInt64,
@@ -714,7 +710,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err.Error() != expectedErrStr {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
-	harness.txPool.cfg.CalcSequenceLockNoLock = calcSequenceLock
+	harness.txPool.cfg.CalcTxSequenceLockFromReferencedUTXOEntries = calcTxSequenceLockFromReferencedUTXOEntries
 
 	// Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
 	tx, err = harness.createTx(spendableOuts[4], 0, 1000)
@@ -1523,7 +1519,8 @@ func TestCount(t *testing.T) {
 		}
 	}
 
-	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+	// Mimic a situation where the first transaction is found in a block
+	err = harness.txPool.removeTransactions(chainedTxns[:1])
 	if err != nil {
 		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
 	}
@@ -1636,80 +1633,22 @@ func TestHandleNewBlock(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction 1: %v", err)
 	}
-	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx(), blockTx2.MsgTx())
-
-	// Create block and add its transactions to UTXO set
-	block := util.NewBlock(&dummyBlock)
-	for i, tx := range block.Transactions() {
-		if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
-			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
-		} else if !isAccepted {
-			t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.ID())
-		}
-	}
+	block := blockdag.PrepareAndProcessBlockForTest(t, harness.txPool.cfg.DAG, harness.txPool.cfg.DAG.TipHashes(), []*appmessage.MsgTx{blockTx1.MsgTx(), blockTx2.MsgTx()})
+	//dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx(), blockTx2.MsgTx())
+	//
+	//// Create block and add its transactions to UTXO set
+	//block := util.NewBlock(&dummyBlock)
+	//for i, tx := range block.Transactions() {
+	//	if err := harness.txPool.mempoolUTXOSet.addTx(tx); err != nil {
+	//		t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
+	//	}
+	//}
 
 	// Handle new block by pool
-	_, err = harness.txPool.HandleNewBlock(block)
+	_, err = harness.txPool.HandleNewBlock(util.NewBlock(block))
 
 	// ensure that orphan transaction moved to main pool
 	testPoolMembership(tc, orphanTx, false, true, false)
-}
-
-// dummyBlock defines a block on the block DAG. It is used to test block operations.
-var dummyBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
-		Version: 1,
-		ParentHashes: []*daghash.Hash{
-			{
-				0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
-				0x78, 0x6b, 0x03, 0x1d, 0xa3, 0x48, 0x3c, 0x45,
-				0x3f, 0xc3, 0x2e, 0xd4, 0x53, 0x5b, 0x6f, 0x26,
-				0x26, 0xb0, 0x48, 0x4f, 0x09, 0x00, 0x00, 0x00,
-			}, // Mainnet genesis
-			{
-				0xc1, 0x5b, 0x71, 0xfe, 0x20, 0x70, 0x0f, 0xd0,
-				0x08, 0x49, 0x88, 0x1b, 0x32, 0xb5, 0xbd, 0x13,
-				0x17, 0xbe, 0x75, 0xe7, 0x29, 0x46, 0xdd, 0x03,
-				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
-			}}, // Simnet genesis
-		HashMerkleRoot: &daghash.Hash{
-			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
-			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
-			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
-			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
-		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: mstime.UnixMilliseconds(1529483563000), // 2018-06-20 08:32:43 +0000 UTC
-		Bits:      0x1e00ffff,                             // 503382015
-		Nonce:     0x000ae53f,                             // 714047
-	},
-	Transactions: []*appmessage.MsgTx{
-		{
-			Version: 1,
-			TxIn:    []*appmessage.TxIn{},
-			TxOut: []*appmessage.TxOut{
-				{
-					Value: 0x12a05f200, // 5000000000
-					ScriptPubKey: []byte{
-						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
-						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
-						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-					},
-				},
-			},
-			LockTime:     0,
-			SubnetworkID: *subnetworkid.SubnetworkIDCoinbase,
-			Payload: []byte{
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00,
-			},
-			PayloadHash: &daghash.Hash{
-				0x14, 0x06, 0xe0, 0x58, 0x81, 0xe2, 0x99, 0x36,
-				0x77, 0x66, 0xd3, 0x13, 0xe2, 0x6c, 0x05, 0x56,
-				0x4e, 0xc9, 0x1b, 0xf7, 0x21, 0xd3, 0x17, 0x26,
-				0xbd, 0x6e, 0x46, 0xe6, 0x06, 0x89, 0x53, 0x9a,
-			},
-		},
-	},
 }
 
 func TestTransactionGas(t *testing.T) {
