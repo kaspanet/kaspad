@@ -31,6 +31,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetBlockDAGInfoRequestMessage:         rpchandlers.HandleGetBlockDAGInfo,
 	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
 	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
+	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
@@ -42,16 +43,12 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 	if err != nil {
 		panic(err)
 	}
-	spawn("routerInitializer-handleIncomingMessages", func() {
-		err := m.handleIncomingMessages(router, incomingRoute)
-		m.handleError(err, netConnection)
-	})
+	m.context.NotificationManager.AddListener(router)
 
-	notificationListener := m.context.NotificationManager.AddListener(router)
-	spawn("routerInitializer-handleOutgoingNotifications", func() {
+	spawn("routerInitializer-handleIncomingMessages", func() {
 		defer m.context.NotificationManager.RemoveListener(router)
 
-		err := m.handleOutgoingNotifications(notificationListener)
+		err := m.handleIncomingMessages(router, incomingRoute)
 		m.handleError(err, netConnection)
 	})
 }
@@ -72,15 +69,6 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 			return err
 		}
 		err = outgoingRoute.Enqueue(response)
-		if err != nil {
-			return err
-		}
-	}
-}
-
-func (m *Manager) handleOutgoingNotifications(notificationListener *rpccontext.NotificationListener) error {
-	for {
-		err := notificationListener.ProcessNextNotification()
 		if err != nil {
 			return err
 		}

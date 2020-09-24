@@ -506,6 +506,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetMempoolEntriesRequestMessage:
+		payload := new(KaspadMessage_GetMempoolEntriesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetMempoolEntriesResponseMessage:
+		payload := new(KaspadMessage_GetMempoolEntriesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
