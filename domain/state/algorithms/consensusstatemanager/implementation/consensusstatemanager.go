@@ -20,3 +20,14 @@ func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *appmessage.Outpoint) 
 func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return nil
 }
+
+func (csm *ConsensusStateManager) SerializedUTXOSet() []byte {
+	return nil
+}
+
+func (csm *ConsensusStateManager) UpdateConsensusState(block *appmessage.MsgBlock) {
+}
+
+func (csm *ConsensusStateManager) ValidateBlockTransactions(block *appmessage.MsgBlock) error {
+	return nil
+}
