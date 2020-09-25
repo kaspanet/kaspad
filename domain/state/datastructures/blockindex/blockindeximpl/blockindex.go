@@ -1,4 +1,4 @@
-package blocknodestoreimpl
+package blockindeximpl
 
 type BlockIndex struct {
 }

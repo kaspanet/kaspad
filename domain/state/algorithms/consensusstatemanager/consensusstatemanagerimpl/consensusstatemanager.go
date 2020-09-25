@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/model"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/consensusstatestore"
+	"github.com/kaspanet/kaspad/domain/state/datastructures/multisetstore"
+	"github.com/kaspanet/kaspad/domain/state/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -12,13 +14,21 @@ type ConsensusStateManager struct {
 	dagParams *dagconfig.Params
 
 	consensusStateStore consensusstatestore.ConsensusStateStore
+	multisetStore       multisetstore.MultisetStore
+	utxoDiffStore       utxodiffstore.UTXODiffStore
 }
 
-func New(dagParams *dagconfig.Params, consensusStateStore consensusstatestore.ConsensusStateStore) *ConsensusStateManager {
+func New(
+	dagParams *dagconfig.Params,
+	consensusStateStore consensusstatestore.ConsensusStateStore,
+	multisetStore multisetstore.MultisetStore,
+	utxoDiffStore utxodiffstore.UTXODiffStore) *ConsensusStateManager {
 	return &ConsensusStateManager{
 		dagParams: dagParams,
 
 		consensusStateStore: consensusStateStore,
+		multisetStore:       multisetStore,
+		utxoDiffStore:       utxoDiffStore,
 	}
 }
 
