@@ -1,4 +1,12 @@
 package consensusstatemanager
 
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/model"
+	"github.com/kaspanet/kaspad/util"
+)
+
 type ConsensusStateManager interface {
+	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
+	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
 }
