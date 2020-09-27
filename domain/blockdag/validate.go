@@ -819,7 +819,6 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions() {
-		log.Criticalf("tx %s in block %s", tx.ID(), block.Hash())
 		if !IsFinalizedTransaction(tx, node.blueScore, blockTime) {
 			str := fmt.Sprintf("block contains unfinalized "+
 				"transaction %s", tx.ID())

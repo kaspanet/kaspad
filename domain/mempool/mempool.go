@@ -1015,7 +1015,7 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool) ([]*TxDesc, error) {
-	log.Criticalf("Processing transaction %s", tx.ID())
+	log.Tracef("Processing transaction %s", tx.ID())
 
 	// Protect concurrent access.
 	mp.mtx.Lock()
