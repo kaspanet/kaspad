@@ -2,16 +2,16 @@ package blocktemplatebuilderimpl
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/state"
+	"github.com/kaspanet/kaspad/domain/kaspadstate"
 )
 
 type BlockTemplateBuilder struct {
-	state *state.State
+	kaspadState *kaspadstate.KaspadState
 }
 
-func New(state *state.State) *BlockTemplateBuilder {
+func New(kaspadState *kaspadstate.KaspadState) *BlockTemplateBuilder {
 	return &BlockTemplateBuilder{
-		state: state,
+		kaspadState: kaspadState,
 	}
 }
 

@@ -2,17 +2,17 @@ package mempoolimpl
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/state"
+	"github.com/kaspanet/kaspad/domain/kaspadstate"
 	"github.com/kaspanet/kaspad/util"
 )
 
 type Mempool struct {
-	state *state.State
+	kaspadState *kaspadstate.KaspadState
 }
 
-func New(state *state.State) *Mempool {
+func New(kaspadState *kaspadstate.KaspadState) *Mempool {
 	return &Mempool{
-		state: state,
+		kaspadState: kaspadState,
 	}
 }
 
