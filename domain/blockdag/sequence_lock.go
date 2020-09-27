@@ -51,6 +51,8 @@ func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UT
 	return dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, inputsWithUTXOEntries)
 }
 
+// CalcTxSequenceLockFromReferencedUTXOEntries computes the relative lock-times for the passed
+// transaction, with the given referenced UTXO entries. See CalcSequenceLock for further details.
 func (dag *BlockDAG) CalcTxSequenceLockFromReferencedUTXOEntries(
 	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
 	dag.dagLock.RLock()
