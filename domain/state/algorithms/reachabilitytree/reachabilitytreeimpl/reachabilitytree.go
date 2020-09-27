@@ -3,6 +3,8 @@ package reachabilitytreeimpl
 import (
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/reachabilitydatastore"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type ReachabilityTree struct {
@@ -17,4 +19,12 @@ func New(
 		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
 	}
+}
+
+func (rt *ReachabilityTree) AddNode(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
+
+}
+
+func (rt *ReachabilityTree) IsInPastOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
+	return false
 }

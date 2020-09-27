@@ -2,7 +2,9 @@ package dagtraversalmanagerimpl
 
 import (
 	"github.com/kaspanet/kaspad/domain/state/algorithms/dagtopologymanager"
+	"github.com/kaspanet/kaspad/domain/state/algorithms/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/state/algorithms/ghostdagmanager"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type DAGTraversalManager struct {
@@ -17,4 +19,12 @@ func New(
 		dagTopologyManager: dagTopologyManager,
 		ghostdagManager:    ghostdagManager,
 	}
+}
+
+func (dtm *DAGTraversalManager) BlockAtDepth(uint64) *daghash.Hash {
+	return nil
+}
+
+func (dtm *DAGTraversalManager) SelectedParentIterator(highHash *daghash.Hash) dagtraversalmanager.SelectedParentIterator {
+	return nil
 }

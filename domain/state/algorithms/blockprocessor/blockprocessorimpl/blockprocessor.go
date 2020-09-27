@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/state/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockindex"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockmessagestore"
+	"github.com/kaspanet/kaspad/domain/state/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -27,6 +28,7 @@ type BlockProcessor struct {
 	acceptanceDataStore   acceptancedatastore.AcceptanceDataStore
 	blockIndex            blockindex.BlockIndex
 	blockMessageStore     blockmessagestore.BlockMessageStore
+	blockStatusStore      blockstatusstore.BlockStatusStore
 }
 
 func New(
@@ -39,7 +41,8 @@ func New(
 	reachabilityTree reachabilitytree.ReachabilityTree,
 	acceptanceDataStore acceptancedatastore.AcceptanceDataStore,
 	blockIndex blockindex.BlockIndex,
-	blockMessageStore blockmessagestore.BlockMessageStore) *BlockProcessor {
+	blockMessageStore blockmessagestore.BlockMessageStore,
+	blockStatusStore blockstatusstore.BlockStatusStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,
@@ -53,6 +56,7 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blockIndex:            blockIndex,
 		blockMessageStore:     blockMessageStore,
+		blockStatusStore:      blockStatusStore,
 	}
 }
 

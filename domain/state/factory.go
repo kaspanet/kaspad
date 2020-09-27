@@ -14,6 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockindex/blockindeximpl"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockmessagestore/blockmessagestoreimpl"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/blockrelationstore/blockrelationstoreimpl"
+	"github.com/kaspanet/kaspad/domain/state/datastructures/blockstatusstore/blockstatusstoreimpl"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/consensusstatestore/consensusstatestoreimpl"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/ghostdagdatastore/ghostdagdatastoreimpl"
 	"github.com/kaspanet/kaspad/domain/state/datastructures/multisetstore/multisetstoreimpl"
@@ -36,6 +37,7 @@ func (f *factory) NewState(dagParams *dagconfig.Params, databaseContext *dbacces
 	blockIndex := blockindeximpl.New()
 	blockMessageStore := blockmessagestoreimpl.New()
 	blockRelationStore := blockrelationstoreimpl.New()
+	blockStatusStore := blockstatusstoreimpl.New()
 	multisetStore := multisetstoreimpl.New()
 	pruningPointStore := pruningpointstoreimpl.New()
 	reachabilityDataStore := reachabilitydatastoreimpl.New()
@@ -75,7 +77,8 @@ func (f *factory) NewState(dagParams *dagconfig.Params, databaseContext *dbacces
 		reachabilityTree,
 		acceptanceDataStore,
 		blockIndex,
-		blockMessageStore)
+		blockMessageStore,
+		blockStatusStore)
 
 	return &state{
 		consensusStateManager: consensusStateManager,

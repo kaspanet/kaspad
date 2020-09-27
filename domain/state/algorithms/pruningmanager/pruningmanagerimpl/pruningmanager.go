@@ -18,3 +18,7 @@ func New(
 		pruningPointStore:   pruningPointStore,
 	}
 }
+
+func (pm *PruningManager) UpdatePruningPointAndPruneIfRequired() {
+
+}
