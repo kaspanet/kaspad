@@ -89,7 +89,7 @@ type Policy struct {
 type TxDesc struct {
 	mining.TxDesc
 
-	// depCount is not 0 for dependent transaction. Dependent transaction is
+	// depCount is not 0 for a chained transaction. A chained transaction is
 	// one that is accepted to pool, but cannot be mined in next block because it
 	// depends on outputs of accepted, but still not mined transaction
 	depCount int
@@ -510,17 +510,12 @@ func (mp *TxPool) HaveTransaction(txID *daghash.TxID) bool {
 	return haveTx
 }
 
-// removeTransactions is the internal function which implements the public
-// RemoveTransactions. See the comment for RemoveTransactions for more details.
-//
-// This method, in contrast to removeTransactionAndItsDependentTransactions (singular), creates one utxoDiff
-// and calls removeTransactionWithDiff on it for every transaction. This is an
-// optimization to save us a good amount of allocations (specifically in
-// UTXODiff.WithDiff) every time we accept a block.
+// removeBlockTransactionsFromPool removes the transactions that are found in the block
+// from the mempool, and move their chained mempool transactions (if any) to the main pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
-	for _, tx := range txs {
+func (mp *TxPool) removeBlockTransactionsFromPool(block *util.Block) error {
+	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
 		txID := tx.ID()
 
 		if _, exists := mp.fetchTxDesc(txID); !exists {
@@ -532,7 +527,7 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 			return err
 		}
 
-		mp.updateBlockTransactionDependentChainTransactions(tx)
+		mp.updateBlockTransactionChainedTransactions(tx)
 	}
 
 	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
@@ -540,17 +535,16 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	return nil
 }
 
-// removeTransactionAndItsDependentTransactions is the internal function which implements the public
-// RemoveTransaction. See the comment for RemoveTransaction for more details.
+// removeTransactionAndItsChainedTransactions removes a transaction and all of its chained transaction from the mempool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransactionAndItsDependentTransactions(tx *util.Tx) error {
+func (mp *TxPool) removeTransactionAndItsChainedTransactions(tx *util.Tx) error {
 	txID := tx.ID()
 	// Remove any transactions which rely on this one.
 	for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 		prevOut := appmessage.Outpoint{TxID: *txID, Index: i}
 		if txRedeemer, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(prevOut); exists {
-			err := mp.removeTransactionAndItsDependentTransactions(txRedeemer)
+			err := mp.removeTransactionAndItsChainedTransactions(txRedeemer)
 			if err != nil {
 				return err
 			}
@@ -572,7 +566,9 @@ func (mp *TxPool) removeTransactionAndItsDependentTransactions(tx *util.Tx) erro
 }
 
 // cleanTransactionFromSets removes the transaction from all mempool related transaction sets.
-// It assumes that any dependent transaction is already cleaned from the mempool.
+// It assumes that any chained transaction is already cleaned from the mempool.
+//
+// This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) cleanTransactionFromSets(tx *util.Tx) error {
 	err := mp.mempoolUTXOSet.removeTx(tx)
 	if err != nil {
@@ -586,9 +582,12 @@ func (mp *TxPool) cleanTransactionFromSets(tx *util.Tx) error {
 	return nil
 }
 
-// updateBlockTransactionDependentChainTransactions processes the dependencies of a
-// transaction that was included in a block and was just now removed from the mempool
-func (mp *TxPool) updateBlockTransactionDependentChainTransactions(tx *util.Tx) {
+// updateBlockTransactionChainedTransactions processes the dependencies of a
+// transaction that was included in a block and was just now removed from the mempool.
+//
+// This function MUST be called with the mempool lock held (for writes).
+
+func (mp *TxPool) updateBlockTransactionChainedTransactions(tx *util.Tx) {
 	prevOut := appmessage.Outpoint{TxID: *tx.ID()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		// Skip to the next available output if there are none.
@@ -613,6 +612,8 @@ func (mp *TxPool) updateBlockTransactionDependentChainTransactions(tx *util.Tx) 
 }
 
 // removeChainTransaction removes a chain transaction and all of its relation as a result of double spend.
+//
+// This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeChainTransaction(tx *util.Tx) {
 	delete(mp.chainedTransactions, *tx.ID())
 	for _, txIn := range tx.MsgTx().TxIn {
@@ -620,48 +621,17 @@ func (mp *TxPool) removeChainTransaction(tx *util.Tx) {
 	}
 }
 
-// RemoveTransaction removes the passed transaction from the mempool. When the
-// removeDependants flag is set, any transactions that depend on the removed
-// transaction (that is to say, redeem outputs from it) will also be removed
-// recursively from the mempool, as they would otherwise become orphans.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
-	// Protect concurrent access.
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-	return mp.removeTransactionAndItsDependentTransactions(tx)
-}
-
-// RemoveTransactions removes the passed transactions from the mempool.
-//
-// This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
-	// Protect concurrent access.
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-	return mp.removeTransactions(txs)
-}
-
-// RemoveDoubleSpends removes all transactions which spend outputs spent by the
+// removeDoubleSpends removes all transactions which spend outputs spent by the
 // passed transaction from the memory pool. Removing those transactions then
 // leads to removing all transactions which rely on them, recursively. This is
 // necessary when a block is connected to the DAG because the block may
-// contain transactions which were previously unknown to the memory pool.
 //
-// This function is safe for concurrent access.
-func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) error {
-	// Protect concurrent access.
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-	return mp.removeDoubleSpends(tx)
-}
-
+// This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeDoubleSpends(tx *util.Tx) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(txIn.PreviousOutpoint); ok {
 			if !txRedeemer.ID().IsEqual(tx.ID()) {
-				err := mp.removeTransactionAndItsDependentTransactions(txRedeemer)
+				err := mp.removeTransactionAndItsChainedTransactions(txRedeemer)
 				if err != nil {
 					return err
 				}
@@ -1142,8 +1112,6 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 	acceptedTxns := mp.processOrphans(acceptedTx)
@@ -1226,11 +1194,11 @@ func (mp *TxPool) Count() int {
 	return count
 }
 
-// DepCount returns the number of dependent transactions in the main pool. It does not
+// ChainedCount returns the number of chained transactions in the mempool. It does not
 // include the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) DepCount() int {
+func (mp *TxPool) ChainedCount() int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 	return len(mp.chainedTransactions)
@@ -1303,8 +1271,6 @@ func (mp *TxPool) LastUpdated() mstime.Time {
 // transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
 	// Protect concurrent access.
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
@@ -1315,7 +1281,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block) ([]*util.Tx, error) {
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.removeTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
+	err := mp.removeBlockTransactionsFromPool(block)
 	if err != nil {
 		return nil, err
 	}

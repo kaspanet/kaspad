@@ -10,7 +10,7 @@ import (
 // re-selecting virtual parents in such a way that given finalityBlock will be in virtual's selectedParentChain
 func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) error {
 	dag.dagLock.Lock()
-	defer dag.dagLock.RUnlock()
+	defer dag.dagLock.Unlock()
 
 	finalityBlock, ok := dag.index.LookupNode(finalityBlockHash)
 	if !ok {

@@ -792,7 +792,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	// Then we assume tx3 is already in the DAG, so we need to remove
 	// transactions that spends the same outpoints from the mempool
-	harness.txPool.RemoveDoubleSpends(tx3)
+	harness.txPool.removeDoubleSpends(tx3)
 	// Ensures that only the transaction that double spends the same
 	// funds as tx3 is removed, and the other one remains unaffected
 	testPoolMembership(tc, tx1, false, false, false)
@@ -1128,10 +1128,10 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[3], false, true, true)
 	testPoolMembership(tc, chainedTxns[4], false, true, true)
 
-	// Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
-	err = harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
+	// Checks that all of the transaction that are dependent on it get removed
+	err = harness.txPool.removeTransactionAndItsChainedTransactions(chainedTxns[1])
 	if err != nil {
-		t.Fatalf("RemoveTransaction: %v", err)
+		t.Fatalf("removeTransactionAndItsChainedTransactions: %v", err)
 	}
 	testPoolMembership(tc, chainedTxns[1], false, false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false, false)
@@ -1514,17 +1514,21 @@ func TestCount(t *testing.T) {
 		if err != nil {
 			t.Errorf("ProcessTransaction: unexpected error: %v", err)
 		}
-		if harness.txPool.Count()+harness.txPool.DepCount() != i+1 {
+		if harness.txPool.Count()+harness.txPool.ChainedCount() != i+1 {
 			t.Errorf("TestCount: txPool expected to have %v transactions but got %v", i+1, harness.txPool.Count())
 		}
 	}
 
 	// Mimic a situation where the first transaction is found in a block
-	err = harness.txPool.removeTransactions(chainedTxns[:1])
+	fakeBlock := appmessage.NewMsgBlock(&appmessage.BlockHeader{})
+	fakeCoinbase := &appmessage.MsgTx{}
+	fakeBlock.AddTransaction(fakeCoinbase)
+	fakeBlock.AddTransaction(chainedTxns[0].MsgTx())
+	err = harness.txPool.removeBlockTransactionsFromPool(util.NewBlock(fakeBlock))
 	if err != nil {
 		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
 	}
-	if harness.txPool.Count()+harness.txPool.DepCount() != 2 {
+	if harness.txPool.Count()+harness.txPool.ChainedCount() != 2 {
 		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
 	}
 }
