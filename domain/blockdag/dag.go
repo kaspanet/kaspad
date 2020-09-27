@@ -94,7 +94,8 @@ type BlockDAG struct {
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
 
-	tips blockSet
+	maxUTXOCacheSize uint64
+	tips             blockSet
 
 	// validTips is a set of blocks with the status "valid", which have no valid descendants.
 	// Note that some validTips might not be actual tips.
@@ -122,6 +123,7 @@ func New(config *Config) (*BlockDAG, error) {
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
 		startTime:                      mstime.Now(),
+		maxUTXOCacheSize:               config.MaxUTXOCacheSize,
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)

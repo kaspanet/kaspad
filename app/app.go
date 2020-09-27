@@ -201,13 +201,14 @@ func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, int
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 
 	dag, err := blockdag.New(&blockdag.Config{
-		Interrupt:       interrupt,
-		DatabaseContext: databaseContext,
-		DAGParams:       cfg.NetParams(),
-		TimeSource:      blockdag.NewTimeSource(),
-		SigCache:        sigCache,
-		IndexManager:    indexManager,
-		SubnetworkID:    cfg.SubnetworkID,
+		Interrupt:        interrupt,
+		DatabaseContext:  databaseContext,
+		DAGParams:        cfg.NetParams(),
+		TimeSource:       blockdag.NewTimeSource(),
+		SigCache:         sigCache,
+		IndexManager:     indexManager,
+		SubnetworkID:     cfg.SubnetworkID,
+		MaxUTXOCacheSize: cfg.MaxUTXOCacheSize,
 	})
 	return dag, err
 }

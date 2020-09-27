@@ -1,14 +1,46 @@
 package blockdag
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
+
+func prepareDatabaseForTest(t *testing.T, testName string) (*dbaccess.DatabaseContext, func()) {
+	var err error
+	tmpDir, err := ioutil.TempDir("", "utxoset_test")
+	if err != nil {
+		t.Fatalf("error creating temp dir: %s", err)
+		return nil, nil
+	}
+
+	dbPath := filepath.Join(tmpDir, testName)
+	_ = os.RemoveAll(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+		return nil, nil
+	}
+
+	// Setup a teardown function for cleaning up. This function is
+	// returned to the caller to be invoked when it is done testing.
+	teardown := func() {
+		databaseContext.Close()
+		os.RemoveAll(dbPath)
+	}
+
+	return databaseContext, teardown
+
+}
 
 // TestUTXOCollection makes sure that utxoCollection cloning and string representations work as expected.
 func TestUTXOCollection(t *testing.T) {
@@ -619,7 +651,7 @@ func (d *UTXODiff) equal(other *UTXODiff) bool {
 }
 
 func (fus *FullUTXOSet) equal(other *FullUTXOSet) bool {
-	return reflect.DeepEqual(fus.utxoCollection, other.utxoCollection)
+	return reflect.DeepEqual(fus.utxoCache, other.utxoCache)
 }
 
 func (dus *DiffUTXOSet) equal(other *DiffUTXOSet) bool {
@@ -642,7 +674,10 @@ func TestFullUTXOSet(t *testing.T) {
 	}
 
 	// Test fullUTXOSet creation
-	emptySet := NewFullUTXOSet()
+	fullUTXOCacheSize := config.DefaultConfig().MaxUTXOCacheSize
+	db, teardown := prepareDatabaseForTest(t, "TestDiffUTXOSet")
+	defer teardown()
+	emptySet := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
 	if len(emptySet.collection()) != 0 {
 		t.Errorf("new set is not empty")
 	}
@@ -668,7 +703,8 @@ func TestFullUTXOSet(t *testing.T) {
 	} else if isAccepted {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
-	emptySet = &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}}
+	emptySet = NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+	emptySet.add(outpoint0, utxoEntry0)
 	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
@@ -676,7 +712,7 @@ func TestFullUTXOSet(t *testing.T) {
 	}
 
 	// Test fullUTXOSet collection
-	if !reflect.DeepEqual(emptySet.collection(), emptySet.utxoCollection) {
+	if !reflect.DeepEqual(emptySet.collection(), emptySet.utxoCache) {
 		t.Errorf("collection does not equal the set's utxoCollection")
 	}
 
@@ -704,9 +740,12 @@ func TestDiffUTXOSet(t *testing.T) {
 		toAdd:    utxoCollection{outpoint0: utxoEntry0},
 		toRemove: utxoCollection{outpoint1: utxoEntry1},
 	}
+	fullUTXOCacheSize := config.DefaultConfig().MaxUTXOCacheSize
+	db, teardown := prepareDatabaseForTest(t, "TestDiffUTXOSet")
+	defer teardown()
 
 	// Test diffUTXOSet creation
-	emptySet := NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff())
+	emptySet := NewDiffUTXOSet(NewFullUTXOSetFromContext(db, fullUTXOCacheSize), NewUTXODiff())
 	if collection, err := emptySet.collection(); err != nil {
 		t.Errorf("Error getting emptySet collection: %s", err)
 	} else if len(collection) != 0 {
@@ -726,7 +765,7 @@ func TestDiffUTXOSet(t *testing.T) {
 	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(withDiffUTXOSet.UTXODiff, withDiff) {
 		t.Errorf("WithDiff is of unexpected composition")
 	}
-	_, err = NewDiffUTXOSet(NewFullUTXOSet(), diff).WithDiff(diff)
+	_, err = NewDiffUTXOSet(NewFullUTXOSetFromContext(db, fullUTXOCacheSize), diff).WithDiff(diff)
 	if err == nil {
 		t.Errorf("WithDiff unexpectedly succeeded")
 	}
@@ -748,14 +787,14 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "empty base, empty diff",
 			diffSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -767,14 +806,18 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "empty base, one member in diff toAdd",
 			diffSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint0: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint0, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -786,7 +829,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "empty base, one member in diff toRemove",
 			diffSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{outpoint0: utxoEntry0},
@@ -800,19 +843,23 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "one member in base toAdd, one member in diff toAdd",
 			diffSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint0, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint1: utxoEntry1},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
-				base: &FullUTXOSet{
-					utxoCollection: utxoCollection{
-						outpoint0: utxoEntry0,
-						outpoint1: utxoEntry1,
-					},
-				},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint0, utxoEntry0)
+					futxo.add(outpoint1, utxoEntry1)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -827,16 +874,18 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "one member in base toAdd, same one member in diff toRemove",
 			diffSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint0, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{outpoint0: utxoEntry0},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
-				base: &FullUTXOSet{
-					utxoCollection: utxoCollection{},
-				},
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -949,6 +998,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	txOut0 := &appmessage.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	coinbaseTX := appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, []*appmessage.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
+	fullUTXOCacheSize := config.DefaultConfig().MaxUTXOCacheSize
+	db, teardown := prepareDatabaseForTest(t, "TestDiffUTXOSet")
+	defer teardown()
 
 	// transaction1 spends coinbaseTX
 	id1 := coinbaseTX.TxID()
@@ -982,11 +1034,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	}{
 		{
 			name:        "add coinbase transaction to empty set",
-			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
+			startSet:    NewDiffUTXOSet(NewFullUTXOSetFromContext(db, fullUTXOCacheSize), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*appmessage.MsgTx{coinbaseTX},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint1: utxoEntry0},
 					toRemove: utxoCollection{},
@@ -995,11 +1047,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name:        "add regular transaction to empty set",
-			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
+			startSet:    NewDiffUTXOSet(NewFullUTXOSetFromContext(db, fullUTXOCacheSize), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -1009,7 +1061,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add transaction to set with its input in base",
 			startSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint1, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -1018,7 +1074,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint1, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint2: utxoEntry1},
 					toRemove: utxoCollection{outpoint1: utxoEntry0},
@@ -1028,7 +1088,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add transaction to set with its input in diff toAdd",
 			startSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint1: utxoEntry0},
 					toRemove: utxoCollection{},
@@ -1037,7 +1097,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint2: utxoEntry1},
 					toRemove: utxoCollection{},
@@ -1047,7 +1107,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add transaction to set with its input in diff toAdd and its output in diff toRemove",
 			startSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint1: utxoEntry0},
 					toRemove: utxoCollection{outpoint2: utxoEntry1},
@@ -1056,7 +1116,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*appmessage.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
-				base: NewFullUTXOSet(),
+				base: NewFullUTXOSetFromContext(db, fullUTXOCacheSize),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -1066,7 +1126,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add two transactions, one spending the other, to set with the first input in base",
 			startSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint1, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -1075,7 +1139,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*appmessage.MsgTx{transaction1, transaction2},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
+				base: func() *FullUTXOSet {
+					futxo := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+					futxo.add(outpoint1, utxoEntry0)
+					return futxo
+				}(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{outpoint3: utxoEntry2},
 					toRemove: utxoCollection{outpoint1: utxoEntry0},
@@ -1108,7 +1176,7 @@ testLoop:
 
 // collection returns a collection of all UTXOs in this set
 func (fus *FullUTXOSet) collection() utxoCollection {
-	return fus.utxoCollection.clone()
+	return fus.utxoCache.clone()
 }
 
 // collection returns a collection of all UTXOs in this set

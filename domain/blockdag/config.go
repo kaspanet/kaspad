@@ -51,4 +51,8 @@ type Config struct {
 	// DatabaseContext is the context in which all database queries related to
 	// this DAG are going to run.
 	DatabaseContext *dbaccess.DatabaseContext
+
+	// MaxUTXOCacheSize is the Max size of loaded UTXO into ram from the disk in bytes
+	// to support UTXO lazy-load
+	MaxUTXOCacheSize uint64
 }

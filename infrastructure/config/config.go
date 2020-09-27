@@ -51,10 +51,11 @@ const (
 	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
-	DefaultMaxOrphanTxSize = 100000
-	defaultSigCacheMaxSize = 100000
-	sampleConfigFilename   = "sample-kaspad.conf"
-	defaultAcceptanceIndex = false
+	DefaultMaxOrphanTxSize  = 100000
+	defaultSigCacheMaxSize  = 100000
+	sampleConfigFilename    = "sample-kaspad.conf"
+	defaultAcceptanceIndex  = false
+	defaultMaxUTXOCacheSize = 5000000000
 )
 
 var (
@@ -121,6 +122,7 @@ type Flags struct {
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
+	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	NetworkFlags
 }
 
@@ -186,6 +188,7 @@ func defaultFlags() *Flags {
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		AcceptanceIndex:      defaultAcceptanceIndex,
+		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
 	}
 }
 

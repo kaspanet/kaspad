@@ -211,12 +211,6 @@ func (dag *BlockDAG) initDAGState() error {
 		return err
 	}
 
-	log.Debugf("Loading UTXO set...")
-	fullUTXOCollection, err := dag.initUTXOSet()
-	if err != nil {
-		return err
-	}
-
 	log.Debugf("Loading reachability data...")
 	err = dag.reachabilityTree.init(dag.databaseContext)
 	if err != nil {
@@ -227,12 +221,6 @@ func (dag *BlockDAG) initDAGState() error {
 	err = dag.multisetStore.init(dag.databaseContext)
 	if err != nil {
 		return err
-	}
-
-	log.Debugf("Applying the loaded utxoCollection to the virtual block...")
-	dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
-	if err != nil {
-		return errors.Wrap(err, "Error loading UTXOSet")
 	}
 
 	log.Debugf("Applying the stored tips to the virtual block...")
