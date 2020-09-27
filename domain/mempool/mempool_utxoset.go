@@ -82,7 +82,7 @@ func (mpSet *mempoolUTXOSet) poolTransactionBySpendingOutpoint(outpoint appmessa
 	return tx, exists
 }
 
-func (mp *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*blockdag.UTXOEntry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
+func (mpSet *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*blockdag.UTXOEntry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
 	msgTx := tx.MsgTx()
 	spentUTXOEntries = make([]*blockdag.UTXOEntry, len(msgTx.TxIn))
 	missingParents = make([]*daghash.TxID, 0)
@@ -90,7 +90,7 @@ func (mp *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOE
 
 	isOrphan := false
 	for i, txIn := range msgTx.TxIn {
-		entry, isInPool, exists := mp.utxoEntryByOutpoint(txIn.PreviousOutpoint)
+		entry, isInPool, exists := mpSet.utxoEntryByOutpoint(txIn.PreviousOutpoint)
 		if !exists {
 			isOrphan = true
 			missingParents = append(missingParents, &txIn.PreviousOutpoint.TxID)
