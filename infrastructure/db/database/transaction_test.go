@@ -7,9 +7,10 @@ package database_test
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func TestTransactionPut(t *testing.T) {
@@ -304,59 +305,6 @@ func testTransactionDelete(t *testing.T, db database.Database, testName string) 
 	if !exists {
 		t.Fatalf("%s: Has "+
 			"unexpectedly returned that the value does not exist", testName)
-	}
-}
-
-func TestTransactionAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	testForAllDatabaseTypes(t, "TestTransactionAppendToStoreAndRetrieveFromStore", testTransactionAppendToStoreAndRetrieveFromStore)
-}
-
-func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {
-	// Begin a new transaction
-	dbTx, err := db.Begin()
-	if err != nil {
-		t.Fatalf("%s: Begin "+
-			"unexpectedly failed: %s", testName, err)
-	}
-	defer func() {
-		err := dbTx.RollbackUnlessClosed()
-		if err != nil {
-			t.Fatalf("%s: RollbackUnlessClosed "+
-				"unexpectedly failed: %s", testName, err)
-		}
-	}()
-
-	// Append some data into the store
-	storeName := "store"
-	data := []byte("data")
-	location, err := dbTx.AppendToStore(storeName, data)
-	if err != nil {
-		t.Fatalf("%s: AppendToStore "+
-			"unexpectedly failed: %s", testName, err)
-	}
-
-	// Retrieve the data and make sure it's equal to what was appended
-	retrievedData, err := dbTx.RetrieveFromStore(storeName, location)
-	if err != nil {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"unexpectedly failed: %s", testName, err)
-	}
-	if !bytes.Equal(retrievedData, data) {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"returned unexpected data. Want: %s, got: %s",
-			testName, string(data), string(retrievedData))
-	}
-
-	// Make sure that an invalid location returns ErrNotFound
-	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
-	_, err = dbTx.RetrieveFromStore(storeName, fakeLocation)
-	if err == nil {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"unexpectedly succeeded", testName)
-	}
-	if !database.IsNotFoundError(err) {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"returned wrong error: %s", testName, err)
 	}
 }
 

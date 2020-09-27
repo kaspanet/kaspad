@@ -19,18 +19,6 @@ type DataAccessor interface {
 	// return an error if the key doesn't exist.
 	Delete(key *Key) error
 
-	// AppendToStore appends the given data to the store
-	// defined by storeName. This function returns a serialized
-	// location handle that's meant to be stored and later used
-	// when querying the data that has just now been inserted.
-	AppendToStore(storeName string, data []byte) ([]byte, error)
-
-	// RetrieveFromStore retrieves data from the store defined by
-	// storeName using the given serialized location handle. It
-	// returns ErrNotFound if the location does not exist. See
-	// AppendToStore for further details.
-	RetrieveFromStore(storeName string, location []byte) ([]byte, error)
-
 	// Cursor begins a new cursor over the given bucket.
 	Cursor(bucket *Bucket) (Cursor, error)
 }

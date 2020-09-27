@@ -6,16 +6,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	blockStoreName = "blocks"
-)
-
 var (
-	blockLocationsBucket = database.MakeBucket([]byte("block-locations"))
+	blocksBucket = database.MakeBucket([]byte("blocks"))
 )
 
-func blockLocationKey(hash *daghash.Hash) *database.Key {
-	return blockLocationsBucket.Key(hash[:])
+func blockKey(hash *daghash.Hash) *database.Key {
+	return blocksBucket.Key(hash[:])
 }
 
 // StoreBlock stores the given block in the database.
@@ -35,14 +31,7 @@ func StoreBlock(context *TxContext, hash *daghash.Hash, blockBytes []byte) error
 	}
 
 	// Write the block's bytes to the block store
-	blockLocation, err := accessor.AppendToStore(blockStoreName, blockBytes)
-	if err != nil {
-		return err
-	}
-
-	// Write the block's hash to the blockLocations bucket
-	blockLocationsKey := blockLocationKey(hash)
-	err = accessor.Put(blockLocationsKey, blockLocation)
+	err = accessor.Put(blockKey(hash), blockBytes)
 	if err != nil {
 		return err
 	}
@@ -58,9 +47,7 @@ func HasBlock(context Context, hash *daghash.Hash) (bool, error) {
 		return false, err
 	}
 
-	blockLocationsKey := blockLocationKey(hash)
-
-	return accessor.Has(blockLocationsKey)
+	return accessor.Has(blockKey(hash))
 }
 
 // FetchBlock returns the block of the given hash. Returns
@@ -72,19 +59,5 @@ func FetchBlock(context Context, hash *daghash.Hash) ([]byte, error) {
 		return nil, err
 	}
 
-	blockLocationsKey := blockLocationKey(hash)
-	blockLocation, err := accessor.Get(blockLocationsKey)
-	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, errors.Wrapf(err,
-				"block %s not found", hash)
-		}
-		return nil, err
-	}
-	bytes, err := accessor.RetrieveFromStore(blockStoreName, blockLocation)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
+	return accessor.Get(blockKey(hash))
 }

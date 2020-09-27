@@ -1,9 +1,10 @@
 package ldb
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func TestTransactionCloseErrors(t *testing.T) {
@@ -122,8 +123,8 @@ func TestTransactionCloseErrors(t *testing.T) {
 
 			// Make sure that the test function returns a "closed transaction" error
 			// for both the commitTx and the rollbackTx
-			for _, closedTx := range []*LevelDBTransaction{commitTx, rollbackTx} {
-				err = test.function(closedTx)
+			for _, closedTx := range []database.Transaction{commitTx, rollbackTx} {
+				err = test.function(closedTx.(*LevelDBTransaction))
 				if test.shouldReturnError {
 					if err == nil {
 						t.Fatalf("TestTransactionCloseErrors: %s "+

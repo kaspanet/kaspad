@@ -2,10 +2,11 @@ package database_test
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ffldb"
 	"io/ioutil"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
 type databasePrepareFunc func(t *testing.T, testName string) (db database.Database, name string, teardownFunc func())
@@ -14,17 +15,17 @@ type databasePrepareFunc func(t *testing.T, testName string) (db database.Databa
 // prepares a separate database type for testing.
 // See testForAllDatabaseTypes for further details.
 var databasePrepareFuncs = []databasePrepareFunc{
-	prepareFFLDBForTest,
+	prepareLDBForTest,
 }
 
-func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()) {
+func prepareLDBForTest(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()) {
 	// Create a temp db to run tests against
 	path, err := ioutil.TempDir("", testName)
 	if err != nil {
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	db, err = ffldb.Open(path)
+	db, err = ldb.NewLevelDB(path)
 	if err != nil {
 		t.Fatalf("%s: Open unexpectedly "+
 			"failed: %s", testName, err)
@@ -36,7 +37,7 @@ func prepareFFLDBForTest(t *testing.T, testName string) (db database.Database, n
 				"failed: %s", testName, err)
 		}
 	}
-	return db, "ffldb", teardownFunc
+	return db, "ldb", teardownFunc
 }
 
 // testForAllDatabaseTypes runs the given testFunc for every database

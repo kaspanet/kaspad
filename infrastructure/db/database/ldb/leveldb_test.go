@@ -1,10 +1,11 @@
 package ldb
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"io/ioutil"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func prepareDatabaseForTest(t *testing.T, testName string) (ldb *LevelDB, teardownFunc func()) {

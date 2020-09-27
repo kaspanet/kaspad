@@ -7,8 +7,9 @@ package database_test
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func TestDatabasePut(t *testing.T) {
@@ -164,44 +165,5 @@ func testDatabaseDelete(t *testing.T, db database.Database, testName string) {
 	if exists {
 		t.Fatalf("%s: Has "+
 			"unexpectedly returned that the value exists", testName)
-	}
-}
-
-func TestDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T) {
-	testForAllDatabaseTypes(t, "TestDatabaseAppendToStoreAndRetrieveFromStore", testDatabaseAppendToStoreAndRetrieveFromStore)
-}
-
-func testDatabaseAppendToStoreAndRetrieveFromStore(t *testing.T, db database.Database, testName string) {
-	// Append some data into the store
-	storeName := "store"
-	data := []byte("data")
-	location, err := db.AppendToStore(storeName, data)
-	if err != nil {
-		t.Fatalf("%s: AppendToStore "+
-			"unexpectedly failed: %s", testName, err)
-	}
-
-	// Retrieve the data and make sure it's equal to what was appended
-	retrievedData, err := db.RetrieveFromStore(storeName, location)
-	if err != nil {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"unexpectedly failed: %s", testName, err)
-	}
-	if !bytes.Equal(retrievedData, data) {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"returned unexpected data. Want: %s, got: %s",
-			testName, string(data), string(retrievedData))
-	}
-
-	// Make sure that an invalid location returns ErrNotFound
-	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
-	_, err = db.RetrieveFromStore(storeName, fakeLocation)
-	if err == nil {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"unexpectedly succeeded", testName)
-	}
-	if !database.IsNotFoundError(err) {
-		t.Fatalf("%s: RetrieveFromStore "+
-			"returned wrong error: %s", testName, err)
 	}
 }

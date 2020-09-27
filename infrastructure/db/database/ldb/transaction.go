@@ -28,7 +28,7 @@ type LevelDBTransaction struct {
 }
 
 // Begin begins a new transaction.
-func (db *LevelDB) Begin() (*LevelDBTransaction, error) {
+func (db *LevelDB) Begin() (database.Transaction, error) {
 	snapshot, err := db.ldb.GetSnapshot()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -131,10 +131,10 @@ func (tx *LevelDBTransaction) Delete(key *database.Key) error {
 }
 
 // Cursor begins a new cursor over the given bucket.
-func (tx *LevelDBTransaction) Cursor(bucket *database.Bucket) (*LevelDBCursor, error) {
+func (tx *LevelDBTransaction) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot open a cursor from a closed transaction")
 	}
 
-	return tx.db.Cursor(bucket), nil
+	return tx.db.Cursor(bucket)
 }

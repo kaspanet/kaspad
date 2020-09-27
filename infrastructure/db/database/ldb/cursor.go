@@ -18,13 +18,14 @@ type LevelDBCursor struct {
 }
 
 // Cursor begins a new cursor over the given prefix.
-func (db *LevelDB) Cursor(bucket *database.Bucket) *LevelDBCursor {
+func (db *LevelDB) Cursor(bucket *database.Bucket) (database.Cursor, error) {
 	ldbIterator := db.ldb.NewIterator(util.BytesPrefix(bucket.Path()), nil)
+
 	return &LevelDBCursor{
 		ldbIterator: ldbIterator,
 		bucket:      bucket,
 		isClosed:    false,
-	}
+	}, nil
 }
 
 // Next moves the iterator to the next key/value pair. It returns whether the
