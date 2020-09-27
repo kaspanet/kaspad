@@ -24,12 +24,12 @@ type txValidateItem struct {
 // inputs. It provides several channels for communication and a processing
 // function that is intended to be in run multiple goroutines.
 type txValidator struct {
-	validateChan chan *txValidateItem
-	quitChan     chan struct{}
-	resultChan   chan error
-	utxoSet      UTXOSet
-	flags        txscript.ScriptFlags
-	sigCache     *txscript.SigCache
+	validateChan          chan *txValidateItem
+	quitChan              chan struct{}
+	resultChan            chan error
+	referencedUTXOEntries []*UTXOEntry
+	flags                 txscript.ScriptFlags
+	sigCache              *txscript.SigCache
 }
 
 // sendResult sends the result of a script pair validation on the internal
@@ -51,19 +51,8 @@ out:
 	for {
 		select {
 		case txVI := <-v.validateChan:
-			// Ensure the referenced input utxo is available.
 			txIn := txVI.txIn
-			entry, ok := v.utxoSet.Get(txIn.PreviousOutpoint)
-			if !ok {
-				str := fmt.Sprintf("unable to find unspent "+
-					"output %s referenced from "+
-					"transaction %s input %d",
-					txIn.PreviousOutpoint, txVI.tx.ID(),
-					txVI.txInIndex)
-				err := ruleError(ErrMissingTxOut, str)
-				v.sendResult(err)
-				break out
-			}
+			entry := v.referencedUTXOEntries[txVI.txInIndex]
 
 			// Create a new script engine for the script pair.
 			sigScript := txIn.SignatureScript
@@ -164,20 +153,20 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 
 // newTxValidator returns a new instance of txValidator to be used for
 // validating transaction scripts asynchronously.
-func newTxValidator(utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
+func newTxValidator(referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
 	return &txValidator{
-		validateChan: make(chan *txValidateItem),
-		quitChan:     make(chan struct{}),
-		resultChan:   make(chan error),
-		utxoSet:      utxoSet,
-		sigCache:     sigCache,
-		flags:        flags,
+		validateChan:          make(chan *txValidateItem),
+		quitChan:              make(chan struct{}),
+		resultChan:            make(chan error),
+		referencedUTXOEntries: referencedUTXOEntries,
+		sigCache:              sigCache,
+		flags:                 flags,
 	}
 }
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func ValidateTransactionScripts(tx *util.Tx, referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
@@ -192,6 +181,6 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 	}
 
 	// Validate all of the inputs.
-	validator := newTxValidator(utxoSet, flags, sigCache)
+	validator := newTxValidator(referencedUTXOEntries, flags, sigCache)
 	return validator.Validate(txValItems)
 }

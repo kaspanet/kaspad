@@ -43,16 +43,26 @@ func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*Sequ
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
-	inputsWithUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
+	referencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
 	if err != nil {
 		return nil, err
 	}
 
-	return dag.calcTxSequenceLockFromInputsWithUTXOEntries(node, tx, inputsWithUTXOEntries)
+	return dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, referencedUTXOEntries)
 }
 
-func (dag *BlockDAG) calcTxSequenceLockFromInputsWithUTXOEntries(
-	node *blockNode, tx *util.Tx, inputsWithUTXOEntries []*txInputAndUTXOEntry) (*SequenceLock, error) {
+// CalcTxSequenceLockFromReferencedUTXOEntries computes the relative lock-times for the passed
+// transaction, with the given referenced UTXO entries. See CalcSequenceLock for further details.
+func (dag *BlockDAG) CalcTxSequenceLockFromReferencedUTXOEntries(
+	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.calcTxSequenceLockFromReferencedUTXOEntries(dag.selectedTip(), tx, referencedUTXOEntries)
+}
+
+func (dag *BlockDAG) calcTxSequenceLockFromReferencedUTXOEntries(
+	node *blockNode, tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -66,9 +76,8 @@ func (dag *BlockDAG) calcTxSequenceLockFromInputsWithUTXOEntries(
 		return sequenceLock, nil
 	}
 
-	for _, txInAndReferencedUTXOEntry := range inputsWithUTXOEntries {
-		txIn := txInAndReferencedUTXOEntry.txIn
-		utxoEntry := txInAndReferencedUTXOEntry.utxoEntry
+	for i, txIn := range tx.MsgTx().TxIn {
+		utxoEntry := referencedUTXOEntries[i]
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when

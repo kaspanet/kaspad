@@ -21,7 +21,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
@@ -240,9 +239,7 @@ func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript
 			MinRelayTxFee:   cfg.MinRelayTxFee,
 			MaxTxVersion:    1,
 		},
-		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
-			return dag.CalcSequenceLockNoLock(tx, utxoSet)
-		},
+		CalcTxSequenceLockFromReferencedUTXOEntries: dag.CalcTxSequenceLockFromReferencedUTXOEntries,
 		SigCache: sigCache,
 		DAG:      dag,
 	}
