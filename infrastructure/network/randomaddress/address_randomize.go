@@ -31,7 +31,7 @@ func (amc *AddressRandomize) RandomAddress(addresses []*appmessage.NetAddress) *
 
 // RandomAddresses returns count addresses at random from input list
 func (amc *AddressRandomize) RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress {
-	result := make([]*appmessage.NetAddress, count)
+	result := make([]*appmessage.NetAddress, 0, count)
 	if len(addresses) > 0 {
 		randomIndexes := rand.Perm(len(addresses))
 		for i := 0; i < count; i++ {

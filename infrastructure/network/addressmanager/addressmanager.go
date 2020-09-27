@@ -136,7 +136,7 @@ func (am *AddressManager) Addresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, len(am.addresses))
+	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
 	for _, address := range am.addresses {
 		result = append(result, address.netAddress)
 	}
@@ -149,7 +149,7 @@ func (am *AddressManager) NotBannedAddressesWithException(exceptions []*appmessa
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, len(am.addresses))
+	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
 	for key, address := range am.addresses {
 		if !address.isBanned && !exceptionsKeys[key] {
 			result = append(result, address.netAddress)

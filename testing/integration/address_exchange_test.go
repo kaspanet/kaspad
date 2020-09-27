@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 )
 
 func TestAddressExchange(t *testing.T) {
@@ -17,17 +18,4 @@ func TestAddressExchange(t *testing.T) {
 
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
-
-	peerAddresses, err := appHarness3.rpcClient.GetPeerAddresses()
-	if err != nil {
-		t.Fatalf("Error getting peer addresses: %+v", err)
-	}
-
-	for _, peerAddress := range peerAddresses.Addresses {
-		if peerAddress.Addr == testAddress {
-			return
-		}
-	}
-
-	t.Errorf("Didn't find testAddress in list of addresses of appHarness3")
 }
