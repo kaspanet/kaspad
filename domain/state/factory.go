@@ -28,8 +28,7 @@ type Factory interface {
 	NewState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) State
 }
 
-type factory struct {
-}
+type factory struct{}
 
 func (f *factory) NewState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) State {
 	// Data Structures
