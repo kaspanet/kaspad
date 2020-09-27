@@ -43,12 +43,12 @@ func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*Sequ
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
-	inputsWithUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
+	referencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
 	if err != nil {
 		return nil, err
 	}
 
-	return dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, inputsWithUTXOEntries)
+	return dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, referencedUTXOEntries)
 }
 
 // CalcTxSequenceLockFromReferencedUTXOEntries computes the relative lock-times for the passed

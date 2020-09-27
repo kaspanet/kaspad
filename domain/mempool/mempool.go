@@ -486,19 +486,19 @@ func (mp *TxPool) updateBlockTransactionChainedTransactions(tx *util.Tx) {
 	for txOutIdx := range tx.MsgTx().TxOut {
 		// Skip to the next available output if there are none.
 		prevOut.Index = uint32(txOutIdx)
-		txD, exists := mp.chainedTransactionByPreviousOutpoint[prevOut]
+		txDesc, exists := mp.chainedTransactionByPreviousOutpoint[prevOut]
 		if !exists {
 			continue
 		}
 
-		txD.depCount--
+		txDesc.depCount--
 		// If the transaction is not chained anymore, move it into the main pool
-		if txD.depCount == 0 {
+		if txDesc.depCount == 0 {
 			// Transaction may be already removed by recursive calls, if removeRedeemers is true.
 			// So avoid moving it into main pool
-			if _, ok := mp.chainedTransactions[*txD.Tx.ID()]; ok {
-				delete(mp.chainedTransactions, *txD.Tx.ID())
-				mp.pool[*txD.Tx.ID()] = txD
+			if _, ok := mp.chainedTransactions[*txDesc.Tx.ID()]; ok {
+				delete(mp.chainedTransactions, *txDesc.Tx.ID())
+				mp.pool[*txDesc.Tx.ID()] = txDesc
 			}
 		}
 		delete(mp.chainedTransactionByPreviousOutpoint, prevOut)
@@ -519,6 +519,7 @@ func (mp *TxPool) removeChainTransaction(tx *util.Tx) {
 // passed transaction from the memory pool. Removing those transactions then
 // leads to removing all transactions which rely on them, recursively. This is
 // necessary when a block is connected to the DAG because the block may
+// contain transactions which were previously unknown to the memory pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeDoubleSpends(tx *util.Tx) error {
@@ -589,17 +590,6 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 	}
 
 	return nil
-}
-
-// CheckSpend checks whether the passed outpoint is already spent by a
-// transaction in the mempool. If that's the case the spending transaction will
-// be returned, if not nil will be returned.
-func (mp *TxPool) CheckSpend(op appmessage.Outpoint) *util.Tx {
-	mp.mtx.RLock()
-	defer mp.mtx.RUnlock()
-	txR, _ := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(op)
-
-	return txR
 }
 
 // This function MUST be called with the mempool lock held (for reads).
@@ -901,7 +891,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	}
 
 	// Add to transaction pool.
-	txD, err := mp.addTransaction(tx, mass, txFee, parentsInPool)
+	txDesc, err := mp.addTransaction(tx, mass, txFee, parentsInPool)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -909,7 +899,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, rejectDupOrphans bool) ([]
 	log.Debugf("Accepted transaction %s (pool size: %d)", txID,
 		len(mp.pool))
 
-	return nil, txD, nil
+	return nil, txDesc, nil
 }
 
 // processOrphans is the internal function which implements the public
@@ -1025,7 +1015,7 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool) ([]*TxDesc, error) {
-	log.Tracef("Processing transaction %s", tx.ID())
+	log.Criticalf("Processing transaction %s", tx.ID())
 
 	// Protect concurrent access.
 	mp.mtx.Lock()

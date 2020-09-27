@@ -51,7 +51,6 @@ out:
 	for {
 		select {
 		case txVI := <-v.validateChan:
-			// Ensure the referenced input utxo is available.
 			txIn := txVI.txIn
 			entry := v.referencedUTXOEntries[txVI.txInIndex]
 

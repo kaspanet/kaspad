@@ -1425,9 +1425,9 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	testPoolMembership(tc, doubleSpendTx, false, false, false)
 }
 
-// TestCheckSpend tests that CheckSpend returns the expected spends found in
+// TestPoolTransactionBySpendingOutpoint tests that poolTransactionBySpendingOutpoint returns the expected spends found in
 // the mempool.
-func TestCheckSpend(t *testing.T) {
+func TestPoolTransactionBySpendingOutpoint(t *testing.T) {
 	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.SimnetParams, 1, "TestCheckSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -1438,8 +1438,8 @@ func TestCheckSpend(t *testing.T) {
 	// The mempool is empty, so none of the spendable outputs should have a
 	// spend there.
 	for _, op := range outputs {
-		spend := harness.txPool.CheckSpend(op.outpoint)
-		if spend != nil {
+		spend, ok := harness.txPool.mempoolUTXOSet.poolTransactionBySpendingOutpoint(op.outpoint)
+		if ok {
 			t.Fatalf("Unexpeced spend found in pool: %v", spend)
 		}
 	}
@@ -1462,7 +1462,7 @@ func TestCheckSpend(t *testing.T) {
 	// The first tx in the chain should be the spend of the spendable
 	// output.
 	op := outputs[0].outpoint
-	spend := harness.txPool.CheckSpend(op)
+	spend, _ := harness.txPool.mempoolUTXOSet.poolTransactionBySpendingOutpoint(op)
 	if spend != chainedTxns[0] {
 		t.Fatalf("expected %v to be spent by %v, instead "+
 			"got %v", op, chainedTxns[0], spend)
@@ -1475,7 +1475,7 @@ func TestCheckSpend(t *testing.T) {
 			Index: 0,
 		}
 		expSpend := chainedTxns[i+1]
-		spend = harness.txPool.CheckSpend(op)
+		spend, _ = harness.txPool.mempoolUTXOSet.poolTransactionBySpendingOutpoint(op)
 		if spend != expSpend {
 			t.Fatalf("expected %v to be spent by %v, instead "+
 				"got %v", op, expSpend, spend)
@@ -1487,7 +1487,7 @@ func TestCheckSpend(t *testing.T) {
 		TxID:  *chainedTxns[txChainLength-1].ID(),
 		Index: 0,
 	}
-	spend = harness.txPool.CheckSpend(op)
+	spend, _ = harness.txPool.mempoolUTXOSet.poolTransactionBySpendingOutpoint(op)
 	if spend != nil {
 		t.Fatalf("Unexpeced spend found in pool: %v", spend)
 	}

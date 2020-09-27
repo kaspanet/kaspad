@@ -22,10 +22,10 @@ type mempoolUTXOSet struct {
 	dag                           *blockdag.BlockDAG
 }
 
-func (mpSet *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (entry *blockdag.UTXOEntry, isInPool bool, exists bool) {
-	entry, exists = mpSet.dag.GetUTXOEntry(outpoint)
+func (mpus *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (entry *blockdag.UTXOEntry, isInPool bool, exists bool) {
+	entry, exists = mpus.dag.GetUTXOEntry(outpoint)
 	if !exists {
-		entry, exists := mpSet.poolUnspentOutputs[outpoint]
+		entry, exists := mpus.poolUnspentOutputs[outpoint]
 		if !exists {
 			return nil, false, false
 		}
@@ -36,53 +36,53 @@ func (mpSet *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (
 
 // addTx adds a transaction to the mempool UTXO set. It assumes that it doesn't double spend another transaction
 // in the mempool, and that its outputs doesn't exist in the mempool UTXO set, and returns error otherwise.
-func (mpSet *mempoolUTXOSet) addTx(tx *util.Tx) error {
+func (mpus *mempoolUTXOSet) addTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
-		if existingTx, exists := mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; exists {
+		if existingTx, exists := mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; exists {
 			return errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, existingTx.ID())
 		}
-		mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint] = tx
+		mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint] = tx
 	}
 
 	for i, txOut := range msgTx.TxOut {
 		outpoint := appmessage.NewOutpoint(tx.ID(), uint32(i))
-		if _, exists := mpSet.poolUnspentOutputs[*outpoint]; exists {
+		if _, exists := mpus.poolUnspentOutputs[*outpoint]; exists {
 			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
-		mpSet.poolUnspentOutputs[*outpoint] = blockdag.NewUTXOEntry(txOut, false, blockdag.UnacceptedBlueScore)
+		mpus.poolUnspentOutputs[*outpoint] = blockdag.NewUTXOEntry(txOut, false, blockdag.UnacceptedBlueScore)
 	}
 	return nil
 }
 
 // removeTx removes a transaction to the mempool UTXO set.
 // Note: it doesn't re-add its previous outputs to the mempool UTXO set.
-func (mpSet *mempoolUTXOSet) removeTx(tx *util.Tx) error {
+func (mpus *mempoolUTXOSet) removeTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
-		if _, exists := mpSet.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; !exists {
+		if _, exists := mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; !exists {
 			return errors.Errorf("outpoint %s doesn't exist", txIn.PreviousOutpoint)
 		}
-		delete(mpSet.transactionByPreviousOutpoint, txIn.PreviousOutpoint)
+		delete(mpus.transactionByPreviousOutpoint, txIn.PreviousOutpoint)
 	}
 
 	for i := range msgTx.TxOut {
 		outpoint := appmessage.NewOutpoint(tx.ID(), uint32(i))
-		if _, exists := mpSet.poolUnspentOutputs[*outpoint]; !exists {
+		if _, exists := mpus.poolUnspentOutputs[*outpoint]; !exists {
 			return errors.Errorf("outpoint %s doesn't exist", outpoint)
 		}
-		delete(mpSet.poolUnspentOutputs, *outpoint)
+		delete(mpus.poolUnspentOutputs, *outpoint)
 	}
 
 	return nil
 }
 
-func (mpSet *mempoolUTXOSet) poolTransactionBySpendingOutpoint(outpoint appmessage.Outpoint) (*util.Tx, bool) {
-	tx, exists := mpSet.transactionByPreviousOutpoint[outpoint]
+func (mpus *mempoolUTXOSet) poolTransactionBySpendingOutpoint(outpoint appmessage.Outpoint) (*util.Tx, bool) {
+	tx, exists := mpus.transactionByPreviousOutpoint[outpoint]
 	return tx, exists
 }
 
-func (mpSet *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*blockdag.UTXOEntry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
+func (mpus *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*blockdag.UTXOEntry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
 	msgTx := tx.MsgTx()
 	spentUTXOEntries = make([]*blockdag.UTXOEntry, len(msgTx.TxIn))
 	missingParents = make([]*daghash.TxID, 0)
@@ -90,7 +90,7 @@ func (mpSet *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUT
 
 	isOrphan := false
 	for i, txIn := range msgTx.TxIn {
-		entry, isInPool, exists := mpSet.utxoEntryByOutpoint(txIn.PreviousOutpoint)
+		entry, isInPool, exists := mpus.utxoEntryByOutpoint(txIn.PreviousOutpoint)
 		if !exists {
 			isOrphan = true
 			missingParents = append(missingParents, &txIn.PreviousOutpoint.TxID)
