@@ -2,7 +2,7 @@ package dbaccess
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ffldb"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
 // DatabaseContext represents a context in which all database queries run
@@ -13,7 +13,7 @@ type DatabaseContext struct {
 
 // New creates a new DatabaseContext with database is in the specified `path`
 func New(path string) (*DatabaseContext, error) {
-	db, err := ffldb.Open(path)
+	db, err := ldb.NewLevelDB(path)
 	if err != nil {
 		return nil, err
 	}

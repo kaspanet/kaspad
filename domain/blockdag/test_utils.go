@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ffldb/ldb"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/subnetworkid"

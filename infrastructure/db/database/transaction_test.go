@@ -7,9 +7,10 @@ package database_test
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func TestTransactionPut(t *testing.T) {
@@ -335,8 +336,28 @@ func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.
 			"unexpectedly failed: %s", testName, err)
 	}
 
+	err = dbTx.Commit()
+	if err != nil {
+		t.Fatalf("%s: Commit "+
+			"unexpectedly failed: %s", testName, err)
+	}
+
+	// Begin another transaction
+	dbTx2, err := db.Begin()
+	if err != nil {
+		t.Fatalf("%s: Begin "+
+			"unexpectedly failed: %s", testName, err)
+	}
+	defer func() {
+		err := dbTx.RollbackUnlessClosed()
+		if err != nil {
+			t.Fatalf("%s: RollbackUnlessClosed "+
+				"unexpectedly failed: %s", testName, err)
+		}
+	}()
+
 	// Retrieve the data and make sure it's equal to what was appended
-	retrievedData, err := dbTx.RetrieveFromStore(storeName, location)
+	retrievedData, err := dbTx2.RetrieveFromStore(storeName, location)
 	if err != nil {
 		t.Fatalf("%s: RetrieveFromStore "+
 			"unexpectedly failed: %s", testName, err)
@@ -349,7 +370,7 @@ func testTransactionAppendToStoreAndRetrieveFromStore(t *testing.T, db database.
 
 	// Make sure that an invalid location returns ErrNotFound
 	fakeLocation := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
-	_, err = dbTx.RetrieveFromStore(storeName, fakeLocation)
+	_, err = dbTx2.RetrieveFromStore(storeName, fakeLocation)
 	if err == nil {
 		t.Fatalf("%s: RetrieveFromStore "+
 			"unexpectedly succeeded", testName)

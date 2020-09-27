@@ -3,13 +3,14 @@ package ldb
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
-func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor *LevelDBCursor,
+func validateCurrentCursorKeyAndValue(t *testing.T, testName string, cursor database.Cursor,
 	expectedKey *database.Key, expectedValue []byte) {
 
 	cursorKey, err := cursor.Key()
@@ -70,7 +71,11 @@ func TestCursorSanity(t *testing.T) {
 	}
 
 	// Open a new cursor
-	cursor := ldb.Cursor(bucket)
+	cursor, err := ldb.Cursor(bucket)
+	if err != nil {
+		t.Fatalf("TestCursorSanity: ldb.Cursor "+
+			"unexpectedly failed: %s", err)
+	}
 	defer func() {
 		err := cursor.Close()
 		if err != nil {
@@ -90,7 +95,7 @@ func TestCursorSanity(t *testing.T) {
 	validateCurrentCursorKeyAndValue(t, "TestCursorSanity", cursor, expectedKey, expectedValue)
 
 	// Seek to a non-existant key
-	err := cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
+	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("TestCursorSanity: Seek " +
 			"unexpectedly succeeded")
@@ -145,31 +150,31 @@ func TestCursorCloseErrors(t *testing.T) {
 		// function is the LevelDBCursor function that we're
 		// verifying returns an error after the cursor had
 		// been closed.
-		function func(dbTx *LevelDBCursor) error
+		function func(dbTx database.Cursor) error
 	}{
 		{
 			name: "Seek",
-			function: func(cursor *LevelDBCursor) error {
+			function: func(cursor database.Cursor) error {
 				return cursor.Seek(database.MakeBucket().Key([]byte{}))
 			},
 		},
 		{
 			name: "Key",
-			function: func(cursor *LevelDBCursor) error {
+			function: func(cursor database.Cursor) error {
 				_, err := cursor.Key()
 				return err
 			},
 		},
 		{
 			name: "Value",
-			function: func(cursor *LevelDBCursor) error {
+			function: func(cursor database.Cursor) error {
 				_, err := cursor.Value()
 				return err
 			},
 		},
 		{
 			name: "Close",
-			function: func(cursor *LevelDBCursor) error {
+			function: func(cursor database.Cursor) error {
 				return cursor.Close()
 			},
 		},
@@ -181,10 +186,14 @@ func TestCursorCloseErrors(t *testing.T) {
 			defer teardownFunc()
 
 			// Open a new cursor
-			cursor := ldb.Cursor(database.MakeBucket())
+			cursor, err := ldb.Cursor(database.MakeBucket())
+			if err != nil {
+				t.Fatalf("TestCursorCloseErrors: ldb.Cursor "+
+					"unexpectedly failed: %s", err)
+			}
 
 			// Close the cursor
-			err := cursor.Close()
+			err = cursor.Close()
 			if err != nil {
 				t.Fatalf("TestCursorCloseErrors: Close "+
 					"unexpectedly failed: %s", err)
@@ -223,10 +232,14 @@ func TestCursorCloseFirstAndNext(t *testing.T) {
 	}
 
 	// Open a new cursor
-	cursor := ldb.Cursor(database.MakeBucket([]byte("bucket")))
+	cursor, err := ldb.Cursor(database.MakeBucket([]byte("bucket")))
+	if err != nil {
+		t.Fatalf("TestCursorCloseFirstAndNext: ldb.Cursor "+
+			"unexpectedly failed: %s", err)
+	}
 
 	// Close the cursor
-	err := cursor.Close()
+	err = cursor.Close()
 	if err != nil {
 		t.Fatalf("TestCursorCloseFirstAndNext: Close "+
 			"unexpectedly failed: %s", err)
