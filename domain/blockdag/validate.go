@@ -354,7 +354,7 @@ func (dag *BlockDAG) checkProofOfWork(header *appmessage.BlockHeader, flags Beha
 // the maximum allowed limit. Currently, it is equivalent to the block mass limit.
 // See CalcTxMass for further details.
 func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (txMass uint64, err error) {
-	txMass = calcTxMassFromInputsWithUTXOEntries(tx, referencedUTXOEntries)
+	txMass = calcTxMassFromReferencedUTXOEntries(tx, referencedUTXOEntries)
 	if txMass > appmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
 			"allowed limit of %d", tx.ID(), txMass, appmessage.MaxMassAcceptedByBlock)
@@ -363,7 +363,7 @@ func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (txMass uin
 	return txMass, nil
 }
 
-func calcTxMassFromInputsWithUTXOEntries(
+func calcTxMassFromReferencedUTXOEntries(
 	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) uint64 {
 
 	if tx.IsCoinBase() {
@@ -1068,12 +1068,12 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 }
 
 func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
-	inputsWithUTXOEntries []*UTXOEntry, medianTime mstime.Time) error {
+	referencedUTXOEntries []*UTXOEntry, medianTime mstime.Time) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
 	// active.
-	sequenceLock, err := dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, inputsWithUTXOEntries)
+	sequenceLock, err := dag.calcTxSequenceLockFromReferencedUTXOEntries(node, tx, referencedUTXOEntries)
 	if err != nil {
 		return err
 	}
@@ -1156,7 +1156,7 @@ func (dag *BlockDAG) checkTxCoinbaseMaturity(
 func (dag *BlockDAG) checkTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry,
 	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
 
-	txMass := calcTxMassFromInputsWithUTXOEntries(tx, referencedUTXOEntries)
+	txMass := calcTxMassFromReferencedUTXOEntries(tx, referencedUTXOEntries)
 
 	accumulatedMassAfter = accumulatedMassBefore + txMass
 
@@ -1174,7 +1174,7 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry
 func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) ([]*UTXOEntry, error) {
 
 	txIns := tx.MsgTx().TxIn
-	inputsWithUTXOEntries := make([]*UTXOEntry, 0, len(txIns))
+	referencedUTXOEntries := make([]*UTXOEntry, 0, len(txIns))
 
 	for txInIndex, txIn := range txIns {
 		utxoEntry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -1186,10 +1186,10 @@ func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) ([]*
 			return nil, ruleError(ErrMissingTxOut, str)
 		}
 
-		inputsWithUTXOEntries = append(inputsWithUTXOEntries, utxoEntry)
+		referencedUTXOEntries = append(referencedUTXOEntries, utxoEntry)
 	}
 
-	return inputsWithUTXOEntries, nil
+	return referencedUTXOEntries, nil
 }
 
 func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) (uint64, error) {
