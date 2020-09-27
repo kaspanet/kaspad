@@ -138,30 +138,3 @@ func (tx *LevelDBTransaction) Cursor(bucket *database.Bucket) (database.Cursor, 
 
 	return tx.db.Cursor(bucket)
 }
-
-// AppendToStore appends the given data to the flat
-// file store defined by storeName. This function
-// returns a serialized location handle that's meant
-// to be stored and later used when querying the data
-// that has just now been inserted.
-// This method is part of the DataAccessor interface.
-func (tx *LevelDBTransaction) AppendToStore(storeName string, data []byte) ([]byte, error) {
-	if tx.isClosed {
-		return nil, errors.New("cannot append to store on a closed transaction")
-	}
-
-	return appendToStore(tx, storeName, data)
-}
-
-// RetrieveFromStore retrieves data from the store defined by
-// storeName using the given serialized location handle. It
-// returns ErrNotFound if the location does not exist. See
-// AppendToStore for further details.
-// This method is part of the DataAccessor interface.
-func (tx *LevelDBTransaction) RetrieveFromStore(storeName string, location []byte) ([]byte, error) {
-	if tx.isClosed {
-		return nil, errors.New("cannot retrieve from store on a closed transaction")
-	}
-
-	return retrieveFromStore(tx, storeName, location)
-}

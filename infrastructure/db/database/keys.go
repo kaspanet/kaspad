@@ -3,8 +3,6 @@ package database
 import (
 	"bytes"
 	"encoding/hex"
-
-	"github.com/pkg/errors"
 )
 
 var bucketSeparator = []byte("/")
@@ -14,18 +12,6 @@ var bucketSeparator = []byte("/")
 type Key struct {
 	bucket *Bucket
 	suffix []byte
-}
-
-func KeyFromBytes(keyBytes []byte) (*Key, error) {
-	separatorIndex := bytes.LastIndex(keyBytes, bucketSeparator)
-	if separatorIndex == -1 {
-		return nil, errors.Errorf("No separator `%s` in key `%s`", bucketSeparator, keyBytes)
-	}
-
-	bucket := MakeBucket(keyBytes[:separatorIndex])
-	key := bucket.Key(keyBytes[separatorIndex+1:])
-
-	return key, nil
 }
 
 // Bytes returns the full key bytes that are consisted
