@@ -1638,15 +1638,6 @@ func TestHandleNewBlock(t *testing.T) {
 		t.Fatalf("unable to create transaction 1: %v", err)
 	}
 	block := blockdag.PrepareAndProcessBlockForTest(t, harness.txPool.cfg.DAG, harness.txPool.cfg.DAG.TipHashes(), []*appmessage.MsgTx{blockTx1.MsgTx(), blockTx2.MsgTx()})
-	//dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx(), blockTx2.MsgTx())
-	//
-	//// Create block and add its transactions to UTXO set
-	//block := util.NewBlock(&dummyBlock)
-	//for i, tx := range block.Transactions() {
-	//	if err := harness.txPool.mempoolUTXOSet.addTx(tx); err != nil {
-	//		t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
-	//	}
-	//}
 
 	// Handle new block by pool
 	_, err = harness.txPool.HandleNewBlock(util.NewBlock(block))
