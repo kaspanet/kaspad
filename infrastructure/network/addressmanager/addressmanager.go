@@ -68,7 +68,9 @@ var ErrAddressNotFound = errors.New("address not found")
 
 // NetAddressKey returns a key of the ip address to use it in maps.
 func netAddressKey(netAddress *appmessage.NetAddress) AddressKey {
-	return AddressKey(append(netAddress.IP, byte(netAddress.Port), byte(netAddress.Port>>8)))
+	key := make([]byte, len(netAddress.IP), len(netAddress.IP)+2)
+	copy(key, netAddress.IP)
+	return AddressKey(append(key, byte(netAddress.Port), byte(netAddress.Port>>8)))
 }
 
 // netAddressKeys returns a key of the ip address to use it in maps.
