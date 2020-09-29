@@ -8,15 +8,15 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-const secondsBeforeStop = 5
+const pauseBeforeShutDown = time.Second
 
 // HandleShutDown handles the respectively named RPC command
 func HandleShutDown(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	log.Warn("Stop RPC called.", secondsBeforeStop)
+	log.Warn("Stop RPC called.")
 
-	// Wait a few seconds before stopping, to allow time to return the response to the caller
+	// Wait a second before stopping, to allow time to return the response to the caller
 	spawn("ShutDown", func() {
-		<-time.After(5 * time.Second)
+		<-time.After(pauseBeforeShutDown)
 		close(context.ShutDownChan)
 	})
 
