@@ -520,6 +520,13 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.ShutDownRequestMessage:
+		payload := new(KaspadMessage_ShutDownRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *appmessage.ShutDownResponseMessage:
 		payload := new(KaspadMessage_ShutDownResponse)
 		err := payload.fromAppMessage(message)
