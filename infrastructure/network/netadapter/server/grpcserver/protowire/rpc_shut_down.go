@@ -7,7 +7,7 @@ func (x *KaspadMessage_ShutDownRequest) toAppMessage() (appmessage.Message, erro
 }
 
 func (x *KaspadMessage_ShutDownRequest) fromAppMessage(_ *appmessage.ShutDownRequestMessage) error {
-	x.ShutDownRequest = &ShutDownRequest{}
+	x.ShutDownRequest = &ShutDownRequestMessage{}
 	return nil
 }
 
@@ -26,7 +26,7 @@ func (x *KaspadMessage_ShutDownResponse) fromAppMessage(message *appmessage.Shut
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	x.ShutDownResponse = &ShutDownResponse{
+	x.ShutDownResponse = &ShutDownResponseMessage{
 		Error: err,
 	}
 	return nil

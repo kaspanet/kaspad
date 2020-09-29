@@ -11,11 +11,11 @@ import (
 const pauseBeforeShutDown = time.Second
 
 // HandleShutDown handles the respectively named RPC command
-func HandleShutDown(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	log.Warn("Stop RPC called.")
+func HandleShutDown(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+	log.Warn("ShutDown RPC called.")
 
-	// Wait a second before stopping, to allow time to return the response to the caller
-	spawn("ShutDown", func() {
+	// Wait a second before shutting down, to allow time to return the response to the caller
+	spawn("HandleShutDown-pauseAndShutDown", func() {
 		<-time.After(pauseBeforeShutDown)
 		close(context.ShutDownChan)
 	})
