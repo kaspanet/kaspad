@@ -23,7 +23,7 @@ type Context struct {
 	Mempool                *mempool.TxPool
 	AddressManager         *addressmanager.AddressManager
 	AcceptanceIndex        *indexers.AcceptanceIndex
-	StopChan               chan<- struct{}
+	ShutDownChan           chan<- struct{}
 
 	BlockTemplateState  *BlockTemplateState
 	NotificationManager *NotificationManager
@@ -39,7 +39,7 @@ func NewContext(cfg *config.Config,
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
 	acceptanceIndex *indexers.AcceptanceIndex,
-	stopChan chan<- struct{}) *Context {
+	shutDownChan chan<- struct{}) *Context {
 
 	context := &Context{
 		Config:                 cfg,
@@ -51,7 +51,7 @@ func NewContext(cfg *config.Config,
 		Mempool:                mempool,
 		AddressManager:         addressManager,
 		AcceptanceIndex:        acceptanceIndex,
-		StopChan:               stopChan,
+		ShutDownChan:           shutDownChan,
 	}
 	context.BlockTemplateState = NewBlockTemplateState(context)
 	context.NotificationManager = NewNotificationManager()

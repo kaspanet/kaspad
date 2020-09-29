@@ -10,16 +10,16 @@ import (
 
 const secondsBeforeStop = 5
 
-// HandleStop handles the respectively named RPC command
-func HandleStop(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+// HandleShutDown handles the respectively named RPC command
+func HandleShutDown(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	log.Warn("Stop RPC called.", secondsBeforeStop)
 
 	// Wait a few seconds before stopping, to allow time to return the response to the caller
-	spawn("Stop", func() {
+	spawn("ShutDown", func() {
 		<-time.After(5 * time.Second)
-		close(context.StopChan)
+		close(context.ShutDownChan)
 	})
 
-	response := appmessage.NewStopResponseMessage()
+	response := appmessage.NewShutDownResponseMessage()
 	return response, nil
 }

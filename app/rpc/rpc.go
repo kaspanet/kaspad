@@ -32,7 +32,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
 	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
 	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
-	appmessage.CmdStopRequestMessage:                    rpchandlers.HandleStop,
+	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleShutDown,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

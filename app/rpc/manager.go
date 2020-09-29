@@ -32,7 +32,7 @@ func NewManager(
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
 	acceptanceIndex *indexers.AcceptanceIndex,
-	stopChan chan<- struct{}) *Manager {
+	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
 		context: rpccontext.NewContext(
@@ -45,7 +45,7 @@ func NewManager(
 			mempool,
 			addressManager,
 			acceptanceIndex,
-			stopChan,
+			shutDownChan,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)

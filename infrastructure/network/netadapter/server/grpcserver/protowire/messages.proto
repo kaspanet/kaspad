@@ -72,8 +72,8 @@ message KaspadMessage {
     FinalityConflictResolvedNotificationMessage finalityConflictResolvedNotification = 1042;
     GetMempoolEntriesRequestMessage getMempoolEntriesRequest = 1043;
     GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
-    StopRequest stopRequest = 1045;
-    StopResponse stopResponse = 1046;
+    ShutDownRequest shutDownRequest = 1045;
+    ShutDownResponse shutDownResponse = 1046;
   }
 }
 
@@ -614,10 +614,10 @@ message FinalityConflictResolvedNotificationMessage{
   string finalityBlockHash = 1;
 }
 
-message StopRequest{
+message ShutDownRequest{
 }
 
-message StopResponse{
+message ShutDownResponse{
   RPCError error = 1000;
 }
 

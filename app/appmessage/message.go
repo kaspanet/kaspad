@@ -99,8 +99,8 @@ const (
 	CmdFinalityConflictResolvedNotificationMessage
 	CmdGetMempoolEntriesRequestMessage
 	CmdGetMempoolEntriesResponseMessage
-	CmdStopRequestMessage
-	CmdStopResponseMessage
+	CmdShutDownRequestMessage
+	CmdShutDownResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
