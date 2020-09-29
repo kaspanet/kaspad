@@ -12,7 +12,7 @@ const secondsBeforeStop = 5
 
 // HandleStop handles the respectively named RPC command
 func HandleStop(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	log.Warnf("Stop RPC called.", secondsBeforeStop)
+	log.Warn("Stop RPC called.", secondsBeforeStop)
 
 	// Wait a few seconds before stopping, to allow time to return the response to the caller
 	spawn("Stop", func() {
