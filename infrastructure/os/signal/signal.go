@@ -20,7 +20,7 @@ var interruptSignals = []os.Signal{os.Interrupt}
 // InterruptListener listens for OS Signals such as SIGINT (Ctrl+C) and shutdown
 // requests from shutdownRequestChannel. It returns a channel that is closed
 // when either signal is received.
-func InterruptListener() <-chan struct{} {
+func InterruptListener() chan struct{} {
 	c := make(chan struct{})
 	go func() {
 		interruptChannel := make(chan os.Signal, 1)

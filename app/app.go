@@ -83,13 +83,13 @@ func (a *App) Stop() {
 // New returns a new App instance configured to listen on addr for the
 // kaspa network type specified by dagParams. Use start to begin accepting
 // connections from peers.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{}) (*App, error) {
+func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt chan<- struct{}) (*App, error) {
 	indexManager, acceptanceIndex := setupIndexes(cfg)
 
 	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
 
 	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, databaseContext, interrupt, sigCache, indexManager)
+	dag, err := setupDAG(cfg, databaseContext, sigCache, indexManager)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex)
+	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex, interrupt)
 
 	return &App{
 		cfg:               cfg,
@@ -122,6 +122,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrup
 		netAdapter:        netAdapter,
 		addressManager:    addressManager,
 	}, nil
+
 }
 
 func setupRPC(
@@ -133,10 +134,12 @@ func setupRPC(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex) *rpc.Manager {
+	acceptanceIndex *indexers.AcceptanceIndex,
+	stopChan chan<- struct{},
+) *rpc.Manager {
 
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc.NewManager(cfg, netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex)
+	rpcManager := rpc.NewManager(cfg, netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex, stopChan)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 	dag.Subscribe(func(notification *blockdag.Notification) {
@@ -196,11 +199,10 @@ func (a *App) maybeSeedFromDNS() {
 			})
 	}
 }
-func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt <-chan struct{},
+func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext,
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 
 	dag, err := blockdag.New(&blockdag.Config{
-		Interrupt:        interrupt,
 		DatabaseContext:  databaseContext,
 		DAGParams:        cfg.NetParams(),
 		TimeSource:       blockdag.NewTimeSource(),

@@ -23,14 +23,14 @@ type Context struct {
 	Mempool                *mempool.TxPool
 	AddressManager         *addressmanager.AddressManager
 	AcceptanceIndex        *indexers.AcceptanceIndex
+	StopChan               chan<- struct{}
 
 	BlockTemplateState  *BlockTemplateState
 	NotificationManager *NotificationManager
 }
 
 // NewContext creates a new RPC context
-func NewContext(
-	cfg *config.Config,
+func NewContext(cfg *config.Config,
 	netAdapter *netadapter.NetAdapter,
 	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
@@ -38,7 +38,9 @@ func NewContext(
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex) *Context {
+	acceptanceIndex *indexers.AcceptanceIndex,
+	stopChan chan<- struct{}) *Context {
+
 	context := &Context{
 		Config:                 cfg,
 		NetAdapter:             netAdapter,
@@ -49,6 +51,7 @@ func NewContext(
 		Mempool:                mempool,
 		AddressManager:         addressManager,
 		AcceptanceIndex:        acceptanceIndex,
+		StopChan:               stopChan,
 	}
 	context.BlockTemplateState = NewBlockTemplateState(context)
 	context.NotificationManager = NewNotificationManager()
