@@ -31,7 +31,8 @@ func NewManager(
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex) *Manager {
+	acceptanceIndex *indexers.AcceptanceIndex,
+	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
 		context: rpccontext.NewContext(
@@ -44,6 +45,7 @@ func NewManager(
 			mempool,
 			addressManager,
 			acceptanceIndex,
+			shutDownChan,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
