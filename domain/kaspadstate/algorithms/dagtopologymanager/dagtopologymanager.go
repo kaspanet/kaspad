@@ -3,7 +3,6 @@ package dagtopologymanager
 import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -19,10 +18,6 @@ func New(
 		reachabilityTree:   reachabilityTree,
 		blockRelationStore: blockRelationStore,
 	}
-}
-
-func (dtm *DAGTopologyManager) AddBlock(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
-
 }
 
 func (dtm *DAGTopologyManager) Parents(blockHash *daghash.Hash) []*daghash.Hash {

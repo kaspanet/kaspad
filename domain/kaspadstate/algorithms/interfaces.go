@@ -25,12 +25,10 @@ type ConsensusStateManager interface {
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
 
 	SerializedUTXOSet() []byte
-	UpdateConsensusState(block *appmessage.MsgBlock)
-	ValidateBlockTransactions(block *appmessage.MsgBlock) error
+	CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges
 }
 
 type DAGTopologyManager interface {
-	AddBlock(dbTx *dbaccess.TxContext, blockHash *daghash.Hash)
 	Parents(blockHash *daghash.Hash) []*daghash.Hash
 	Children(blockHash *daghash.Hash) []*daghash.Hash
 	IsParentOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
@@ -45,12 +43,12 @@ type DAGTraversalManager interface {
 }
 
 type GHOSTDAGManager interface {
-	GHOSTDAG(blockHash *daghash.Hash)
+	GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData
 	BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData
 }
 
 type PruningManager interface {
-	UpdatePruningPointAndPruneIfRequired()
+	FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash
 }
 
 type ReachabilityTree interface {

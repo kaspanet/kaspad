@@ -3,6 +3,7 @@ package pruningmanager
 import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type PruningManager struct {
@@ -19,6 +20,6 @@ func New(
 	}
 }
 
-func (pm *PruningManager) UpdatePruningPointAndPruneIfRequired() {
-
+func (pm *PruningManager) FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash {
+	return nil
 }

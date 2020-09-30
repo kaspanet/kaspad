@@ -21,8 +21,8 @@ func New(
 	}
 }
 
-func (gm *GHOSTDAGManager) GHOSTDAG(blockHash *daghash.Hash) {
-
+func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData {
+	return nil
 }
 
 func (gm *GHOSTDAGManager) BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData {

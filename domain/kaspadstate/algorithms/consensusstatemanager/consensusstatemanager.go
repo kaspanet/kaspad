@@ -42,9 +42,6 @@ func (csm *ConsensusStateManager) SerializedUTXOSet() []byte {
 	return nil
 }
 
-func (csm *ConsensusStateManager) UpdateConsensusState(block *appmessage.MsgBlock) {
-}
-
-func (csm *ConsensusStateManager) ValidateBlockTransactions(block *appmessage.MsgBlock) error {
+func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges {
 	return nil
 }
