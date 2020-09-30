@@ -10,6 +10,12 @@ import (
 // returned to the caller so the application can determine whether to exit (when
 // running as a service) or launch in normal interactive mode.
 func serviceMain(main MainFunc, description *ServiceDescription, cfg *config.Config) (bool, error) {
+	service := newService(main, description, cfg)
+
+	if cfg.ServiceOptions.ServiceCommand != "" {
+		return true, service.performServiceCommand()
+	}
+
 	// Don't run as a service if we're running interactively (or that can't
 	// be determined due to an error).
 	isInteractive, err := svc.IsAnInteractiveSession()
@@ -18,12 +24,6 @@ func serviceMain(main MainFunc, description *ServiceDescription, cfg *config.Con
 	}
 	if isInteractive {
 		return false, nil
-	}
-
-	service := newService(main, description, cfg)
-
-	if cfg.ServiceOptions.ServiceCommand != "" {
-		return true, service.performServiceCommand()
 	}
 
 	err = service.Start()
