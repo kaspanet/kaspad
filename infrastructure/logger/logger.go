@@ -53,6 +53,7 @@ var (
 	dnssLog = BackendLog.Logger("DNSS")
 	snvrLog = BackendLog.Logger("SNVR")
 	ibdsLog = BackendLog.Logger("IBDS")
+	wsvcLog = BackendLog.Logger("WSVC")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -83,7 +84,8 @@ var SubsystemTags = struct {
 	NTAR,
 	DNSS,
 	SNVR,
-	IBDS string
+	IBDS,
+	WSVC string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -112,6 +114,7 @@ var SubsystemTags = struct {
 	DNSS: "DNSS",
 	SNVR: "SNVR",
 	IBDS: "IBDS",
+	WSVC: "WSVC",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -143,6 +146,7 @@ var subsystemLoggers = map[string]*Logger{
 	SubsystemTags.DNSS: dnssLog,
 	SubsystemTags.SNVR: snvrLog,
 	SubsystemTags.IBDS: ibdsLog,
+	SubsystemTags.WSVC: wsvcLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.
