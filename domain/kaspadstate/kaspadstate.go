@@ -2,8 +2,7 @@ package kaspadstate
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockprocessor"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/consensusstatemanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
 	domainmodel "github.com/kaspanet/kaspad/domain/model"
 	"github.com/kaspanet/kaspad/util"
@@ -18,8 +17,8 @@ type KaspadState interface {
 }
 
 type kaspadState struct {
-	blockProcessor        blockprocessor.BlockProcessor
-	consensusStateManager consensusstatemanager.ConsensusStateManager
+	blockProcessor        algorithms.BlockProcessor
+	consensusStateManager algorithms.ConsensusStateManager
 }
 
 func (s *kaspadState) BuildBlock(transactionSelector domainmodel.TransactionSelector) *appmessage.MsgBlock {

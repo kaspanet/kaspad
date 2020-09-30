@@ -1,4 +1,4 @@
-package dagtraversalmanager
+package model
 
 type SelectedParentIterator interface {
 }

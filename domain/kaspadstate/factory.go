@@ -2,14 +2,14 @@ package kaspadstate
 
 import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockprocessor/blockprocessorimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockvalidator/blockvalidatorimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/consensusstatemanager/consensusstatemanagerimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtopologymanager/dagtopologymanagerimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtraversalmanager/dagtraversalmanagerimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/ghostdagmanager/ghostdagmanagerimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/pruningmanager/pruningmanagerimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/reachabilitytree/reachabilitytreeimpl"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockprocessor"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockvalidator"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/consensusstatemanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtopologymanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtraversalmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/pruningmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/reachabilitytree"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockindex"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockmessagestore"
@@ -45,28 +45,28 @@ func (f *factory) NewKaspadState(dagParams *dagconfig.Params, databaseContext *d
 	ghostdagDataStore := ghostdagdatastore.New()
 
 	// Algorithms
-	blockValidator := blockvalidatorimpl.New()
-	reachabilityTree := reachabilitytreeimpl.New(
+	blockValidator := blockvalidator.New()
+	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
-	dagTopologyManager := dagtopologymanagerimpl.New(
+	dagTopologyManager := dagtopologymanager.New(
 		reachabilityTree,
 		blockRelationStore)
-	ghostdagManager := ghostdagmanagerimpl.New(
+	ghostdagManager := ghostdagmanager.New(
 		dagTopologyManager,
 		ghostdagDataStore)
-	dagTraversalManager := dagtraversalmanagerimpl.New(
+	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
-	pruningManager := pruningmanagerimpl.New(
+	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningPointStore)
-	consensusStateManager := consensusstatemanagerimpl.New(
+	consensusStateManager := consensusstatemanager.New(
 		dagParams,
 		consensusStateStore,
 		multisetStore,
 		utxoDiffStore)
-	blockProcessor := blockprocessorimpl.New(
+	blockProcessor := blockprocessor.New(
 		dagParams,
 		databaseContext,
 		consensusStateManager,
