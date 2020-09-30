@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
+// BlockProcessor ...
 type BlockProcessor struct {
 	dagParams       *dagconfig.Params
 	databaseContext *dbaccess.DatabaseContext
@@ -24,6 +25,7 @@ type BlockProcessor struct {
 	blockStatusStore      datastructures.BlockStatusStore
 }
 
+// New ...
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *dbaccess.DatabaseContext,
@@ -53,10 +55,12 @@ func New(
 	}
 }
 
+// BuildBlock ...
 func (bp *BlockProcessor) BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
 	return nil
 }
 
+// ValidateAndInsertBlock ...
 func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
 	return nil
 }

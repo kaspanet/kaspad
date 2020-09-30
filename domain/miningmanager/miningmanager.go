@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 )
 
+// MiningManager ...
 type MiningManager interface {
 	GetBlockTemplate() *appmessage.MsgBlock
 	HandleNewBlock(block *appmessage.MsgBlock)

@@ -6,12 +6,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/mempoolimpl"
 )
 
+// Factory ...
 type Factory interface {
 	NewMiningManager(kaspadState *kaspadstate.KaspadState) MiningManager
 }
 
 type factory struct{}
 
+// NewMiningManager ...
 func (f *factory) NewMiningManager(kaspadState *kaspadstate.KaspadState) MiningManager {
 	mempool := mempoolimpl.New(kaspadState)
 	blockTemplateBuilder := blocktemplatebuilderimpl.New(kaspadState)
@@ -22,6 +24,7 @@ func (f *factory) NewMiningManager(kaspadState *kaspadstate.KaspadState) MiningM
 	}
 }
 
+// NewFactory ...
 func NewFactory() Factory {
 	return &factory{}
 }

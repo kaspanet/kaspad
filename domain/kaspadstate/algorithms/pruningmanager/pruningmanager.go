@@ -6,11 +6,13 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// PruningManager ...
 type PruningManager struct {
 	dagTraversalManager algorithms.DAGTraversalManager
 	pruningPointStore   datastructures.PruningPointStore
 }
 
+// New ...
 func New(
 	dagTraversalManager algorithms.DAGTraversalManager,
 	pruningPointStore datastructures.PruningPointStore) *PruningManager {
@@ -20,6 +22,7 @@ func New(
 	}
 }
 
+// FindPruningPoint ...
 func (pm *PruningManager) FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash {
 	return nil
 }

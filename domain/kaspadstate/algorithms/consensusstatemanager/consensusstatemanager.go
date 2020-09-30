@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
+// ConsensusStateManager ...
 type ConsensusStateManager struct {
 	dagParams *dagconfig.Params
 
@@ -16,6 +17,7 @@ type ConsensusStateManager struct {
 	utxoDiffStore       datastructures.UTXODiffStore
 }
 
+// New ...
 func New(
 	dagParams *dagconfig.Params,
 	consensusStateStore datastructures.ConsensusStateStore,
@@ -30,18 +32,22 @@ func New(
 	}
 }
 
+// UTXOByOutpoint ...
 func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry {
 	return nil
 }
 
+// ValidateTransaction ...
 func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return nil
 }
 
+// SerializedUTXOSet ...
 func (csm *ConsensusStateManager) SerializedUTXOSet() []byte {
 	return nil
 }
 
+// CalculateConsensusStateChanges ...
 func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges {
 	return nil
 }

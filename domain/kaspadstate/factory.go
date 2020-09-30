@@ -24,6 +24,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
+// Factory ...
 type Factory interface {
 	NewKaspadState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) KaspadState
 }
@@ -85,6 +86,7 @@ func (f *factory) NewKaspadState(dagParams *dagconfig.Params, databaseContext *d
 	}
 }
 
+// NewFactory ...
 func NewFactory() Factory {
 	return &factory{}
 }

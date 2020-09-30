@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
+// KaspadState ...
 type KaspadState interface {
 	BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error

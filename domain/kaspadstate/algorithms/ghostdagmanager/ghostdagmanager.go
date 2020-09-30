@@ -7,11 +7,13 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
+// GHOSTDAGManager ...
 type GHOSTDAGManager struct {
 	dagTopologyManager algorithms.DAGTopologyManager
 	ghostdagDataStore  datastructures.GHOSTDAGDataStore
 }
 
+// New ...
 func New(
 	dagTopologyManager algorithms.DAGTopologyManager,
 	ghostdagDataStore datastructures.GHOSTDAGDataStore) *GHOSTDAGManager {
@@ -21,10 +23,12 @@ func New(
 	}
 }
 
+// GHOSTDAG ...
 func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData {
 	return nil
 }
 
+// BlockData ...
 func (gm *GHOSTDAGManager) BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData {
 	return nil
 }

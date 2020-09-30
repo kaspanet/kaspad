@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
+// Mempool ...
 type Mempool interface {
 	HandleNewBlock(block *appmessage.MsgBlock)
 	Transactions() []*util.Tx
