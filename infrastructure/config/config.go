@@ -124,6 +124,7 @@ type Flags struct {
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	NetworkFlags
+	ServiceOptions *ServiceOptions
 }
 
 // Config defines the configuration options for kaspad.
@@ -141,7 +142,7 @@ type Config struct {
 
 // serviceOptions defines the configuration options for the daemon as a service on
 // Windows.
-type serviceOptions struct {
+type ServiceOptions struct {
 	ServiceCommand string `short:"s" long:"service" description:"Service command {install, remove, start, stop}"`
 }
 
@@ -160,10 +161,10 @@ func cleanAndExpandPath(path string) string {
 }
 
 // newConfigParser returns a new command line flags parser.
-func newConfigParser(cfgFlags *Flags, so *serviceOptions, options flags.Options) *flags.Parser {
+func newConfigParser(cfgFlags *Flags, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfgFlags, options)
 	if runtime.GOOS == "windows" {
-		parser.AddGroup("Service Options", "Service Options", so)
+		parser.AddGroup("Service Options", "Service Options", cfgFlags.ServiceOptions)
 	}
 	return parser
 }
@@ -189,6 +190,7 @@ func defaultFlags() *Flags {
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		AcceptanceIndex:      defaultAcceptanceIndex,
 		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
+		ServiceOptions:       &ServiceOptions{},
 	}
 }
 
@@ -214,15 +216,12 @@ func DefaultConfig() *Config {
 func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	cfgFlags := defaultFlags()
 
-	// Service options which are only added on Windows.
-	serviceOpts := serviceOptions{}
-
 	// Pre-parse the command line options to see if an alternative config
 	// file or the version flag was specified. Any errors aside from the
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
-	preParser := newConfigParser(preCfg, &serviceOpts, flags.HelpFlag)
+	preParser := newConfigParser(preCfg, flags.HelpFlag)
 	_, err = preParser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
@@ -242,20 +241,9 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		os.Exit(0)
 	}
 
-	// Perform service command and exit if specified. Invalid service
-	// commands show an appropriate error. Only runs on Windows since
-	// the RunServiceCommand function will be nil when not on Windows.
-	if serviceOpts.ServiceCommand != "" && RunServiceCommand != nil {
-		err := RunServiceCommand(serviceOpts.ServiceCommand)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-		os.Exit(0)
-	}
-
 	// Load additional config from file.
 	var configFileError error
-	parser := newConfigParser(cfgFlags, &serviceOpts, flags.Default)
+	parser := newConfigParser(cfgFlags, flags.Default)
 	cfg = &Config{
 		Flags: cfgFlags,
 	}
