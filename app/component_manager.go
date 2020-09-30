@@ -80,9 +80,8 @@ func (a *ComponentManager) Stop() {
 	return
 }
 
-// NewComponentManager returns a new ComponentManager instance configured to listen on addr for the
-// kaspa network type specified by dagParams. Use start to begin accepting
-// connections from peers.
+// NewComponentManager returns a new ComponentManager instance.
+// Use Start() to begin all services within this ComponentManager
 func NewComponentManager(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt chan<- struct{}) (*ComponentManager, error) {
 	indexManager, acceptanceIndex := setupIndexes(cfg)
 
@@ -199,6 +198,7 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 			})
 	}
 }
+
 func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext,
 	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
 
