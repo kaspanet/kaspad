@@ -13,13 +13,16 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/os/limits"
+
+	"github.com/kaspanet/kaspad/infrastructure/executor"
+
 	"github.com/kaspanet/kaspad/app"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/os/limits"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
@@ -179,15 +182,13 @@ func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
 	return dbaccess.New(dbPath)
 }
 
-func main() {
-	// Use all processor cores.
-	runtime.GOMAXPROCS(runtime.NumCPU())
+var desiredLimits = &limits.DesiredLimits{
+	FileLimitWant: 2048,
+	FileLimitMin:  1024,
+}
 
-	// Up some limits.
-	if err := limits.SetLimits(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to set limits: %s\n", err)
-		os.Exit(1)
-	}
+func main() {
+	executor.Initialize(desiredLimits)
 
 	// Call serviceMain on Windows to handle running as a service. When
 	// the return isService flag is true, exit now since we ran as a
