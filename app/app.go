@@ -2,259 +2,193 @@ package app
 
 import (
 	"fmt"
-	"sync/atomic"
+	"os"
+	"path/filepath"
+	"runtime"
+	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol"
-	"github.com/kaspanet/kaspad/app/rpc"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
-	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/domain/mining"
-	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+
+	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
+	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/kaspanet/kaspad/version"
+
 	"github.com/kaspanet/kaspad/util/panics"
+
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/os/execenv"
+	"github.com/kaspanet/kaspad/infrastructure/os/limits"
+	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
 )
 
-// App is a wrapper for all the kaspad services
-type App struct {
-	cfg               *config.Config
-	addressManager    *addressmanager.AddressManager
-	protocolManager   *protocol.Manager
-	rpcManager        *rpc.Manager
-	connectionManager *connmanager.ConnectionManager
-	netAdapter        *netadapter.NetAdapter
-
-	started, shutdown int32
+var desiredLimits = &limits.DesiredLimits{
+	FileLimitWant: 2048,
+	FileLimitMin:  1024,
 }
 
-// Start launches all the kaspad services.
-func (a *App) Start() {
-	// Already started?
-	if atomic.AddInt32(&a.started, 1) != 1 {
-		return
-	}
-
-	log.Trace("Starting kaspad")
-
-	err := a.netAdapter.Start()
-	if err != nil {
-		panics.Exit(log, fmt.Sprintf("Error starting the net adapter: %+v", err))
-	}
-
-	a.maybeSeedFromDNS()
-
-	a.connectionManager.Start()
+var serviceDescription = &winservice.ServiceDescription{
+	Name:        "kaspadsvc",
+	DisplayName: "Kaspad Service",
+	Description: "Downloads and stays synchronized with the Kaspa blockDAG and " +
+		"provides DAG services to applications.",
 }
 
-// Stop gracefully shuts down all the kaspad services.
-func (a *App) Stop() {
-	// Make sure this only happens once.
-	if atomic.AddInt32(&a.shutdown, 1) != 1 {
-		log.Infof("Kaspad is already in the process of shutting down")
-		return
-	}
-
-	log.Warnf("Kaspad shutting down")
-
-	a.connectionManager.Stop()
-
-	err := a.netAdapter.Stop()
-	if err != nil {
-		log.Errorf("Error stopping the net adapter: %+v", err)
-	}
-
-	err = a.addressManager.Stop()
-	if err != nil {
-		log.Errorf("Error stopping address manager: %s", err)
-	}
-
-	return
+type kaspadApp struct {
+	cfg *config.Config
 }
 
-// New returns a new App instance configured to listen on addr for the
-// kaspa network type specified by dagParams. Use start to begin accepting
-// connections from peers.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt chan<- struct{}) (*App, error) {
-	indexManager, acceptanceIndex := setupIndexes(cfg)
+func StartApp() error {
+	execenv.Initialize(desiredLimits)
 
-	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
-
-	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, databaseContext, sigCache, indexManager)
+	// Load configuration and parse command line. This function also
+	// initializes logging and configures it accordingly.
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		return nil, err
+		fmt.Fprint(os.Stderr, err)
+		return err
 	}
+	defer panics.HandlePanic(log, "MAIN", nil)
 
-	txMempool := setupMempool(cfg, dag, sigCache)
+	app := &kaspadApp{cfg: cfg}
 
-	netAdapter, err := netadapter.NewNetAdapter(cfg)
-	if err != nil {
-		return nil, err
-	}
-	addressManager, err := addressmanager.New(cfg, databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
-	if err != nil {
-		return nil, err
-	}
-	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
-	if err != nil {
-		return nil, err
-	}
-	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex, interrupt)
-
-	return &App{
-		cfg:               cfg,
-		protocolManager:   protocolManager,
-		rpcManager:        rpcManager,
-		connectionManager: connectionManager,
-		netAdapter:        netAdapter,
-		addressManager:    addressManager,
-	}, nil
-
-}
-
-func setupRPC(
-	cfg *config.Config,
-	txMempool *mempool.TxPool,
-	dag *blockdag.BlockDAG,
-	sigCache *txscript.SigCache,
-	netAdapter *netadapter.NetAdapter,
-	protocolManager *protocol.Manager,
-	connectionManager *connmanager.ConnectionManager,
-	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex,
-	shutDownChan chan<- struct{},
-) *rpc.Manager {
-
-	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc.NewManager(cfg, netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex, shutDownChan)
-	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
-	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
-	dag.Subscribe(func(notification *blockdag.Notification) {
-		err := handleBlockDAGNotifications(notification, acceptanceIndex, rpcManager)
+	// Call serviceMain on Windows to handle running as a service. When
+	// the return isService flag is true, exit now since we ran as a
+	// service. Otherwise, just fall through to normal operation.
+	if runtime.GOOS == "windows" {
+		isService, err := winservice.WinServiceMain(app.main, serviceDescription, cfg)
 		if err != nil {
-			panic(err)
+			return err
 		}
-	})
-	return rpcManager
-}
-
-func handleBlockDAGNotifications(notification *blockdag.Notification,
-	acceptanceIndex *indexers.AcceptanceIndex, rpcManager *rpc.Manager) error {
-
-	switch notification.Type {
-	case blockdag.NTChainChanged:
-		if acceptanceIndex == nil {
+		if isService {
 			return nil
 		}
-		chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
-		err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
-			chainChangedNotificationData.AddedChainBlockHashes)
+	}
+
+	return app.main(nil)
+}
+
+func (app *kaspadApp) main(startedChan chan<- struct{}) error {
+	// Get a channel that will be closed when a shutdown signal has been
+	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
+	// another subsystem such as the RPC server.
+	interrupt := signal.InterruptListener()
+	defer log.Info("Shutdown complete")
+
+	// Show version at startup.
+	log.Infof("Version %s", version.Version())
+
+	// Enable http profiling server if requested.
+	if app.cfg.Profile != "" {
+		profiling.Start(app.cfg.Profile, log)
+	}
+
+	// Perform upgrades to kaspad as new versions require it.
+	if err := doUpgrades(); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Return now if an interrupt signal was triggered.
+	if signal.InterruptRequested(interrupt) {
+		return nil
+	}
+
+	if app.cfg.ResetDatabase {
+		err := removeDatabase(app.cfg)
 		if err != nil {
-			return err
-		}
-	case blockdag.NTFinalityConflict:
-		finalityConflictNotificationData := notification.Data.(*blockdag.FinalityConflictNotificationData)
-		err := rpcManager.NotifyFinalityConflict(finalityConflictNotificationData.ViolatingBlockHash.String())
-		if err != nil {
-			return err
-		}
-	case blockdag.NTFinalityConflictResolved:
-		finalityConflictResolvedNotificationData := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
-		err := rpcManager.NotifyFinalityConflictResolved(finalityConflictResolvedNotificationData.FinalityBlockHash.String())
-		if err != nil {
+			log.Error(err)
 			return err
 		}
 	}
+
+	// Open the database
+	databaseContext, err := openDB(app.cfg)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	defer func() {
+		log.Infof("Gracefully shutting down the database...")
+		err := databaseContext.Close()
+		if err != nil {
+			log.Errorf("Failed to close the database: %s", err)
+		}
+	}()
+
+	// Return now if an interrupt signal was triggered.
+	if signal.InterruptRequested(interrupt) {
+		return nil
+	}
+
+	// Drop indexes and exit if requested.
+	if app.cfg.DropAcceptanceIndex {
+		if err := indexers.DropAcceptanceIndex(databaseContext); err != nil {
+			log.Errorf("%s", err)
+			return err
+		}
+
+		return nil
+	}
+
+	// Create componentManager and start it.
+	componentManager, err := NewComponentManager(app.cfg, databaseContext, interrupt)
+	if err != nil {
+		log.Errorf("Unable to start kaspad: %+v", err)
+		return err
+	}
+
+	defer func() {
+		log.Infof("Gracefully shutting down kaspad...")
+
+		shutdownDone := make(chan struct{})
+		go func() {
+			componentManager.Stop()
+			shutdownDone <- struct{}{}
+		}()
+
+		const shutdownTimeout = 2 * time.Minute
+
+		select {
+		case <-shutdownDone:
+		case <-time.After(shutdownTimeout):
+			log.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
+		}
+		log.Infof("Kaspad shutdown complete")
+	}()
+
+	componentManager.Start()
+
+	if startedChan != nil {
+		startedChan <- struct{}{}
+	}
+
+	// Wait until the interrupt signal is received from an OS signal or
+	// shutdown is requested through one of the subsystems such as the RPC
+	// server.
+	<-interrupt
 	return nil
 }
 
-func (a *App) maybeSeedFromDNS() {
-	if !a.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
-			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
-				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
-			})
-	}
-
-	if a.cfg.GRPCSeed != "" {
-		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
-			func(addresses []*appmessage.NetAddress) {
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
-			})
-	}
-}
-func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext,
-	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
-
-	dag, err := blockdag.New(&blockdag.Config{
-		DatabaseContext:  databaseContext,
-		DAGParams:        cfg.NetParams(),
-		TimeSource:       blockdag.NewTimeSource(),
-		SigCache:         sigCache,
-		IndexManager:     indexManager,
-		SubnetworkID:     cfg.SubnetworkID,
-		MaxUTXOCacheSize: cfg.MaxUTXOCacheSize,
-	})
-	return dag, err
+// doUpgrades performs upgrades to kaspad as new versions require it.
+// currently it's a placeholder we got from kaspad upstream, that does nothing
+func doUpgrades() error {
+	return nil
 }
 
-func setupIndexes(cfg *config.Config) (blockdag.IndexManager, *indexers.AcceptanceIndex) {
-	// Create indexes if needed.
-	var indexes []indexers.Indexer
-	var acceptanceIndex *indexers.AcceptanceIndex
-	if cfg.AcceptanceIndex {
-		log.Info("acceptance index is enabled")
-		acceptanceIndex = indexers.NewAcceptanceIndex()
-		indexes = append(indexes, acceptanceIndex)
-	}
-
-	// Create an index manager if any of the optional indexes are enabled.
-	if len(indexes) < 0 {
-		return nil, nil
-	}
-	indexManager := indexers.NewManager(indexes)
-	return indexManager, acceptanceIndex
+// dbPath returns the path to the block database given a database type.
+func databasePath(cfg *config.Config) string {
+	return filepath.Join(cfg.DataDir, "db")
 }
 
-func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
-	mempoolConfig := mempool.Config{
-		Policy: mempool.Policy{
-			AcceptNonStd:    cfg.RelayNonStd,
-			MaxOrphanTxs:    cfg.MaxOrphanTxs,
-			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MinRelayTxFee:   cfg.MinRelayTxFee,
-			MaxTxVersion:    1,
-		},
-		CalcTxSequenceLockFromReferencedUTXOEntries: dag.CalcTxSequenceLockFromReferencedUTXOEntries,
-		SigCache: sigCache,
-		DAG:      dag,
-	}
-
-	return mempool.New(&mempoolConfig)
+func removeDatabase(cfg *config.Config) error {
+	dbPath := databasePath(cfg)
+	return os.RemoveAll(dbPath)
 }
 
-// P2PNodeID returns the network ID associated with this App
-func (a *App) P2PNodeID() *id.ID {
-	return a.netAdapter.ID()
-}
-
-// AddressManager returns the AddressManager associated with this App
-func (a *App) AddressManager() *addressmanager.AddressManager {
-	return a.addressManager
+func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
+	dbPath := databasePath(cfg)
+	log.Infof("Loading database from '%s'", dbPath)
+	return dbaccess.New(dbPath)
 }

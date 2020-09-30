@@ -10,7 +10,7 @@ import (
 )
 
 type appHarness struct {
-	app                     *app.App
+	app                     *app.ComponentManager
 	rpcClient               *testRPCClient
 	p2pAddress              string
 	rpcAddress              string
@@ -108,7 +108,7 @@ func teardownHarness(t *testing.T, harness *appHarness) {
 
 func setApp(t *testing.T, harness *appHarness) {
 	var err error
-	harness.app, err = app.New(harness.config, harness.databaseContext, make(chan struct{}))
+	harness.app, err = app.NewComponentManager(harness.config, harness.databaseContext, make(chan struct{}))
 	if err != nil {
 		t.Fatalf("Error creating app: %+v", err)
 	}
