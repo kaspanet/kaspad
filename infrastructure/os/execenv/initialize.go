@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/os/limits"
 )
 
+// Initialize initializes the execution environment required to run kaspad
 func Initialize(desiredLimits *limits.DesiredLimits) {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())

@@ -139,7 +139,7 @@ type Config struct {
 	SubnetworkID  *subnetworkid.SubnetworkID // nil in full nodes
 }
 
-// serviceOptions defines the configuration options for the daemon as a service on
+// ServiceOptions defines the configuration options for the daemon as a service on
 // Windows.
 type ServiceOptions struct {
 	ServiceCommand string `short:"s" long:"service" description:"Service command {install, remove, start, stop}"`

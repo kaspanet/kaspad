@@ -15,7 +15,7 @@ import (
 )
 
 // Service houses the main service handler which handles all service
-// updates and launching kaspadMain.
+// updates and launching the application's main.
 type Service struct {
 	main        MainFunc
 	description *ServiceDescription
@@ -31,6 +31,7 @@ func newService(main MainFunc, description *ServiceDescription, cfg *config.Conf
 	}
 }
 
+// Start starts the srevice
 func (s *Service) Start() error {
 	elog, err := eventlog.Open(s.description.Name)
 	if err != nil {

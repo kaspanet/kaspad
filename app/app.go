@@ -38,6 +38,7 @@ type kaspadApp struct {
 	cfg *config.Config
 }
 
+// StartApp starts the kaspad app, and blocks until it finishes running
 func StartApp() error {
 	execenv.Initialize(desiredLimits)
 
