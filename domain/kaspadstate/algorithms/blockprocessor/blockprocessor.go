@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
-	"github.com/kaspanet/kaspad/domain/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 

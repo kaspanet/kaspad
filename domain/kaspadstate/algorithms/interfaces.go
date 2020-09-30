@@ -3,14 +3,13 @@ package algorithms
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
-	domainmodel "github.com/kaspanet/kaspad/domain/model"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type BlockProcessor interface {
-	BuildBlock(transactionSelector domainmodel.TransactionSelector) *appmessage.MsgBlock
+	BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 }
 
