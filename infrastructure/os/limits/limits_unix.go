@@ -7,41 +7,39 @@
 package limits
 
 import (
-	"github.com/pkg/errors"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
-const (
-	fileLimitWant = 2048
-	fileLimitMin  = 1024
-)
+const ()
 
 // SetLimits raises some process limits to values which allow kaspad and
 // associated utilities to run.
-func SetLimits() error {
+func SetLimits(desiredLimits *DesiredLimits) error {
 	var rLimit syscall.Rlimit
 
 	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
 		return err
 	}
-	if rLimit.Cur > fileLimitWant {
+	if rLimit.Cur > desiredLimits.FileLimitWant {
 		return nil
 	}
-	if rLimit.Max < fileLimitMin {
+	if rLimit.Max < desiredLimits.FileLimitMin {
 		err = errors.Errorf("need at least %d file descriptors",
-			fileLimitMin)
+			desiredLimits.FileLimitMin)
 		return err
 	}
-	if rLimit.Max < fileLimitWant {
+	if rLimit.Max < desiredLimits.FileLimitWant {
 		rLimit.Cur = rLimit.Max
 	} else {
-		rLimit.Cur = fileLimitWant
+		rLimit.Cur = desiredLimits.FileLimitWant
 	}
 	err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 	if err != nil {
 		// try min value
-		rLimit.Cur = fileLimitMin
+		rLimit.Cur = desiredLimits.FileLimitMin
 		err = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
 		if err != nil {
 			return err
