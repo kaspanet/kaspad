@@ -2,7 +2,7 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
 	"github.com/kaspanet/kaspad/util"
 )
 

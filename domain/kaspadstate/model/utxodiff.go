@@ -1,4 +1,4 @@
-package utxodiffstore
+package model
 
 type UTXODiff struct {
 }

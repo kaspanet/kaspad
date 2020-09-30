@@ -10,17 +10,17 @@ import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/ghostdagmanager/ghostdagmanagerimpl"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/pruningmanager/pruningmanagerimpl"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/reachabilitytree/reachabilitytreeimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/acceptancedatastore/acceptancedatastoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockindex/blockindeximpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockmessagestore/blockmessagestoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockrelationstore/blockrelationstoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockstatusstore/blockstatusstoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/consensusstatestore/consensusstatestoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/ghostdagdatastore/ghostdagdatastoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/multisetstore/multisetstoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/pruningpointstore/pruningpointstoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/reachabilitydatastore/reachabilitydatastoreimpl"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/utxodiffstore/utxodiffstoreimpl"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/acceptancedatastore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockindex"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockmessagestore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockrelationstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockstatusstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/consensusstatestore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/ghostdagdatastore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/multisetstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/pruningpointstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/reachabilitydatastore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -32,17 +32,17 @@ type factory struct{}
 
 func (f *factory) NewKaspadState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) KaspadState {
 	// Data Structures
-	acceptanceDataStore := acceptancedatastoreimpl.New()
-	blockIndex := blockindeximpl.New()
-	blockMessageStore := blockmessagestoreimpl.New()
-	blockRelationStore := blockrelationstoreimpl.New()
-	blockStatusStore := blockstatusstoreimpl.New()
-	multisetStore := multisetstoreimpl.New()
-	pruningPointStore := pruningpointstoreimpl.New()
-	reachabilityDataStore := reachabilitydatastoreimpl.New()
-	utxoDiffStore := utxodiffstoreimpl.New()
-	consensusStateStore := consensusstatestoreimpl.New()
-	ghostdagDataStore := ghostdagdatastoreimpl.New()
+	acceptanceDataStore := acceptancedatastore.New()
+	blockIndex := blockindex.New()
+	blockMessageStore := blockmessagestore.New()
+	blockRelationStore := blockrelationstore.New()
+	blockStatusStore := blockstatusstore.New()
+	multisetStore := multisetstore.New()
+	pruningPointStore := pruningpointstore.New()
+	reachabilityDataStore := reachabilitydatastore.New()
+	utxoDiffStore := utxodiffstore.New()
+	consensusStateStore := consensusstatestore.New()
+	ghostdagDataStore := ghostdagdatastore.New()
 
 	// Algorithms
 	blockValidator := blockvalidatorimpl.New()

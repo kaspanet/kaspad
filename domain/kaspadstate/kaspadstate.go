@@ -4,12 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/consensusstatemanager"
-	"github.com/kaspanet/kaspad/domain/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
+	domainmodel "github.com/kaspanet/kaspad/domain/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
 type KaspadState interface {
-	BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock
+	BuildBlock(transactionSelector domainmodel.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
@@ -21,7 +22,7 @@ type kaspadState struct {
 	consensusStateManager consensusstatemanager.ConsensusStateManager
 }
 
-func (s *kaspadState) BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+func (s *kaspadState) BuildBlock(transactionSelector domainmodel.TransactionSelector) *appmessage.MsgBlock {
 	return s.blockProcessor.BuildBlock(transactionSelector)
 }
 

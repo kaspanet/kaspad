@@ -1,4 +1,4 @@
-package ghostdagdatastore
+package model
 
 import "github.com/kaspanet/kaspad/util/daghash"
 

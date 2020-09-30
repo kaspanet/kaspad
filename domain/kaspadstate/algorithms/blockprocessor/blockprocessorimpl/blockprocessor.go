@@ -8,10 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/reachabilitytree"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/acceptancedatastore"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockindex"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockmessagestore"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockstatusstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
 	"github.com/kaspanet/kaspad/domain/model"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -25,10 +22,10 @@ type BlockProcessor struct {
 	blockValidator        blockvalidator.BlockValidator
 	dagTopologyManager    dagtopologymanager.DAGTopologyManager
 	reachabilityTree      reachabilitytree.ReachabilityTree
-	acceptanceDataStore   acceptancedatastore.AcceptanceDataStore
-	blockIndex            blockindex.BlockIndex
-	blockMessageStore     blockmessagestore.BlockMessageStore
-	blockStatusStore      blockstatusstore.BlockStatusStore
+	acceptanceDataStore   datastructures.AcceptanceDataStore
+	blockIndex            datastructures.BlockIndex
+	blockMessageStore     datastructures.BlockMessageStore
+	blockStatusStore      datastructures.BlockStatusStore
 }
 
 func New(
@@ -39,10 +36,10 @@ func New(
 	blockValidator blockvalidator.BlockValidator,
 	dagTopologyManager dagtopologymanager.DAGTopologyManager,
 	reachabilityTree reachabilitytree.ReachabilityTree,
-	acceptanceDataStore acceptancedatastore.AcceptanceDataStore,
-	blockIndex blockindex.BlockIndex,
-	blockMessageStore blockmessagestore.BlockMessageStore,
-	blockStatusStore blockstatusstore.BlockStatusStore) *BlockProcessor {
+	acceptanceDataStore datastructures.AcceptanceDataStore,
+	blockIndex datastructures.BlockIndex,
+	blockMessageStore datastructures.BlockMessageStore,
+	blockStatusStore datastructures.BlockStatusStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,

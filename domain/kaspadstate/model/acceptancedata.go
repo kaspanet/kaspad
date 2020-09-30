@@ -1,4 +1,4 @@
-package acceptancedatastore
+package model
 
 type AcceptanceData struct {
 }

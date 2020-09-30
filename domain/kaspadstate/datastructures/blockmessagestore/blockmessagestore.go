@@ -6,7 +6,17 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-type BlockMessageStore interface {
-	Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, msgBlock *appmessage.MsgBlock)
-	Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *appmessage.MsgBlock
+type BlockMessageStore struct {
+}
+
+func New() *BlockMessageStore {
+	return &BlockMessageStore{}
+}
+
+func (bms *BlockMessageStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, msgBlock *appmessage.MsgBlock) {
+
+}
+
+func (bms *BlockMessageStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *appmessage.MsgBlock {
+	return nil
 }

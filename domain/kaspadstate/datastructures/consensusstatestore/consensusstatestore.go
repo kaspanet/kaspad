@@ -2,12 +2,21 @@ package consensusstatestore
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/utxodiffstore"
-	"github.com/kaspanet/kaspad/domain/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-type ConsensusStateStore interface {
-	UpdateWithDiff(dbTx *dbaccess.TxContext, utxoDiff *utxodiffstore.UTXODiff)
-	UTXOByOutpoint(dbContext dbaccess.Context, outpoint *appmessage.Outpoint) *model.UTXOEntry
+type ConsensusStateStore struct {
+}
+
+func New() *ConsensusStateStore {
+	return &ConsensusStateStore{}
+}
+
+func (css *ConsensusStateStore) UpdateWithDiff(dbTx *dbaccess.TxContext, utxoDiff *model.UTXODiff) {
+
+}
+
+func (css *ConsensusStateStore) UTXOByOutpoint(dbContext dbaccess.Context, outpoint *appmessage.Outpoint) *model.UTXOEntry {
+	return nil
 }

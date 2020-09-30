@@ -2,17 +2,17 @@ package pruningmanagerimpl
 
 import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtraversalmanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/pruningpointstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
 )
 
 type PruningManager struct {
 	dagTraversalManager dagtraversalmanager.DAGTraversalManager
-	pruningPointStore   pruningpointstore.PruningPointStore
+	pruningPointStore   datastructures.PruningPointStore
 }
 
 func New(
 	dagTraversalManager dagtraversalmanager.DAGTraversalManager,
-	pruningPointStore pruningpointstore.PruningPointStore) *PruningManager {
+	pruningPointStore datastructures.PruningPointStore) *PruningManager {
 	return &PruningManager{
 		dagTraversalManager: dagTraversalManager,
 		pruningPointStore:   pruningPointStore,

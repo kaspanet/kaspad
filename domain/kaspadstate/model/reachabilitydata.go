@@ -1,4 +1,4 @@
-package reachabilitydatastore
+package model
 
 type ReachabilityData struct {
 }

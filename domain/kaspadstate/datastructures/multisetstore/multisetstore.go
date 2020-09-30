@@ -6,7 +6,17 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-type MultisetStore interface {
-	Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet)
-	Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *secp256k1.MultiSet
+type MultisetStore struct {
+}
+
+func New() *MultisetStore {
+	return &MultisetStore{}
+}
+
+func (ms *MultisetStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
+
+}
+
+func (ms *MultisetStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *secp256k1.MultiSet {
+	return nil
 }

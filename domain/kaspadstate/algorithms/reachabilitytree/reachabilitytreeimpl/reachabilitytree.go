@@ -1,20 +1,19 @@
 package reachabilitytreeimpl
 
 import (
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockrelationstore"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/reachabilitydatastore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 type ReachabilityTree struct {
-	blockRelationStore    blockrelationstore.BlockRelationStore
-	reachabilityDataStore reachabilitydatastore.ReachabilityDataStore
+	blockRelationStore    datastructures.BlockRelationStore
+	reachabilityDataStore datastructures.ReachabilityDataStore
 }
 
 func New(
-	blockRelationStore blockrelationstore.BlockRelationStore,
-	reachabilityDataStore reachabilitydatastore.ReachabilityDataStore) *ReachabilityTree {
+	blockRelationStore datastructures.BlockRelationStore,
+	reachabilityDataStore datastructures.ReachabilityDataStore) *ReachabilityTree {
 	return &ReachabilityTree{
 		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,

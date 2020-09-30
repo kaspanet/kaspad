@@ -1,4 +1,4 @@
-package blockrelationstore
+package model
 
 type BlockRelations struct {
 }
