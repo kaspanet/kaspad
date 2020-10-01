@@ -26,7 +26,7 @@ func newAddrManagerForTest(t *testing.T, testName string) (addressManager *Addre
 }
 
 func TestBestLocalAddress(t *testing.T) {
-	localAddrs := []*appmessage.NetAddress{
+	localAddrs := []appmessage.NetAddress{
 		{IP: net.ParseIP("192.168.0.100")},
 		{IP: net.ParseIP("::1")},
 		{IP: net.ParseIP("fe80::1")},
@@ -79,7 +79,9 @@ func TestBestLocalAddress(t *testing.T) {
 		}
 	}
 
-	amgr.AddLocalAddresses(localAddrs...)
+	for _, localAddr := range localAddrs {
+		amgr.localAddresses.addLocalNetAddress(&localAddr, InterfacePrio)
+	}
 
 	// Test against want1
 	for x, test := range tests {
@@ -93,7 +95,7 @@ func TestBestLocalAddress(t *testing.T) {
 
 	// Add a public IP to the list of local addresses.
 	localAddr := appmessage.NetAddress{IP: net.ParseIP("204.124.8.100")}
-	amgr.AddLocalAddresses(&localAddr)
+	amgr.localAddresses.addLocalNetAddress(&localAddr, InterfacePrio)
 
 	// Test against want2
 	for x, test := range tests {

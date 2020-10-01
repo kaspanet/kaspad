@@ -79,30 +79,6 @@ var (
 )
 
 const (
-	// TriedBucketCount is the number of buckets we split tried
-	// addresses over.
-	TriedBucketCount = 64
-
-	// NewBucketCount is the number of buckets that we spread new addresses
-	// over.
-	NewBucketCount = 1024
-
-	// numMissingDays is the number of days before which we assume an
-	// address has vanished if we have not seen it announced  in that long.
-	numMissingDays = 30
-
-	// numRetries is the number of tried without a single success before
-	// we assume an address is bad.
-	numRetries = 3
-
-	// maxFailures is the maximum number of failures we will accept without
-	// a success before considering an address bad.
-	maxFailures = 10
-
-	// minBadDays is the number of days since the last success before we
-	// will consider evicting an address.
-	minBadDays = 7
-
 	// GetAddressesMax is the most addresses that we will send in response
 	// to a getAddress (in practise the most addresses we will return from a
 	// call to AddressCache()).
@@ -231,8 +207,8 @@ func IsValid(na *appmessage.NetAddress) bool {
 // IsRoutable returns whether or not the passed address is routable over
 // the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
-func (am *AddressManager) IsRoutable(na *appmessage.NetAddress) bool {
-	if am.cfg.AcceptUnroutable() {
+func IsRoutable(na *appmessage.NetAddress, acceptUnroutable bool) bool {
+	if acceptUnroutable {
 		return !IsLocal(na)
 	}
 
@@ -250,7 +226,7 @@ func (am *AddressManager) GroupKey(na *appmessage.NetAddress) string {
 	if IsLocal(na) {
 		return "local"
 	}
-	if !am.IsRoutable(na) {
+	if !IsRoutable(na, am.cfg.AcceptUnroutable) {
 		return "unroutable"
 	}
 	if IsIPv4(na) {

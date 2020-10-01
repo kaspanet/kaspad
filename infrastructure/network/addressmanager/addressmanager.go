@@ -5,19 +5,12 @@
 package addressmanager
 
 import (
-	"net"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/randomaddress"
 	"github.com/pkg/errors"
 )
-
-// Configer is the interface for the config needed for the AddressManager.
-type Configer interface {
-	AcceptUnroutable() bool
-}
 
 // AddressRandomizer is the interface for the randomizer needed for the AddressManager.
 type AddressRandomizer interface {
@@ -25,37 +18,8 @@ type AddressRandomizer interface {
 	RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress
 }
 
-// Config implement addressManagerConfig interface and represent the wrrapper for the config.Config needed for the AddressManager.
-type Config struct {
-	cfg *config.Config
-}
-
-// NewConfig returns a new address manager Config.
-func NewConfig(cfg *config.Config) *Config {
-	return &Config{
-		cfg: cfg,
-	}
-}
-
-// AcceptUnroutable specifies whether this network accepts unroutable
-// IP addresses, such as 10.0.0.0/8
-func (amc *Config) AcceptUnroutable() bool {
-	return amc.cfg.NetParams().AcceptUnroutable
-}
-
-// AddressManager provides a concurrency safe address manager for caching potential
-// peers on the Kaspa network.
-type AddressManager struct {
-	addresses map[AddressKey]*netAddressWrapper
-	mutex     sync.Mutex
-	cfg       Configer
-	random    AddressRandomizer
-}
-
-type netAddressWrapper struct {
+type addressEntry struct {
 	netAddress *appmessage.NetAddress
-	isBanned   bool
-	isLocal    bool
 }
 
 // AddressKey represents a "string" key of the ip addresses
@@ -84,12 +48,30 @@ func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[AddressKey]bool
 	return result
 }
 
+// AddressManager provides a concurrency safe address manager for caching potential
+// peers on the Kaspa network.
+type AddressManager struct {
+	addresses       map[AddressKey]*addressEntry
+	bannedAddresses map[AddressKey]*addressEntry
+	localAddresses  *localAddressManager
+	mutex           sync.Mutex
+	cfg             *Config
+	random          AddressRandomizer
+}
+
 // New returns a new Kaspa address manager.
-func New(cfg Configer) (*AddressManager, error) {
+func New(cfg *Config) (*AddressManager, error) {
+	localAddresses, err := newLocalAddressManager(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	return &AddressManager{
-		addresses: map[AddressKey]*netAddressWrapper{},
-		random:    randomaddress.NewAddressRandomize(),
-		cfg:       cfg,
+		addresses:       map[AddressKey]*addressEntry{},
+		bannedAddresses: map[AddressKey]*addressEntry{},
+		localAddresses:  localAddresses,
+		random:          randomaddress.NewAddressRandomize(),
+		cfg:             cfg,
 	}, nil
 }
 
@@ -99,37 +81,29 @@ func (am *AddressManager) AddAddresses(addresses ...*appmessage.NetAddress) {
 	defer am.mutex.Unlock()
 
 	for _, address := range addresses {
-		if !am.IsRoutable(address) {
+		if !IsRoutable(address, am.cfg.AcceptUnroutable) {
 			continue
 		}
 
 		key := netAddressKey(address)
-		if _, ok := am.addresses[key]; !ok {
-			am.addresses[key] = &netAddressWrapper{
+		_, ok := am.addresses[key]
+
+		if !ok {
+			am.addresses[key] = &addressEntry{
 				netAddress: address,
 			}
 		}
 	}
 }
 
-// AddLocalAddresses adds local netAddresses to the address manager
-func (am *AddressManager) AddLocalAddresses(addresses ...*appmessage.NetAddress) {
+// RemoveAddresses removes addresses from the address manager
+func (am *AddressManager) RemoveAddresses(addresses ...*appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	for _, address := range addresses {
-		if !am.IsRoutable(address) {
-			continue
-		}
-
 		key := netAddressKey(address)
-		if _, ok := am.addresses[key]; !ok {
-			am.addresses[key] = &netAddressWrapper{
-				netAddress: address,
-				isLocal:    true,
-			}
-		}
-
+		delete(am.addresses, key)
 	}
 }
 
@@ -153,7 +127,7 @@ func (am *AddressManager) NotBannedAddressesWithException(exceptions []*appmessa
 
 	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
 	for key, address := range am.addresses {
-		if !address.isBanned && !exceptionsKeys[key] {
+		if !exceptionsKeys[key] {
 			result = append(result, address.netAddress)
 		}
 	}
@@ -176,34 +150,7 @@ func (am *AddressManager) RandomAddresses(count int, exceptions []*appmessage.Ne
 // BestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
 func (am *AddressManager) BestLocalAddress(remoteAddress *appmessage.NetAddress) *appmessage.NetAddress {
-	am.mutex.Lock()
-	defer am.mutex.Unlock()
-
-	bestReach := 0
-	var bestAddress *appmessage.NetAddress
-	for _, address := range am.addresses {
-		if address.isLocal {
-			reach := reachabilityFrom(address.netAddress, remoteAddress, am.cfg.AcceptUnroutable())
-			if reach > bestReach {
-				bestReach = reach
-				bestAddress = address.netAddress
-			}
-		}
-	}
-
-	if bestAddress == nil {
-		// Send something unroutable if nothing suitable.
-		var ip net.IP
-		if !IsIPv4(remoteAddress) {
-			ip = net.IPv6zero
-		} else {
-			ip = net.IPv4zero
-		}
-		services := appmessage.SFNodeNetwork | appmessage.SFNodeBloom
-		bestAddress = appmessage.NewNetAddressIPPort(ip, 0, services)
-	}
-
-	return bestAddress
+	return am.localAddresses.bestLocalAddress(remoteAddress)
 }
 
 // Ban marks the given address as banned
@@ -212,8 +159,11 @@ func (am *AddressManager) Ban(address *appmessage.NetAddress) error {
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	if address, ok := am.addresses[key]; ok {
-		address.isBanned = true
+	addressEntry, ok := am.addresses[key]
+
+	if ok {
+		delete(am.addresses, key)
+		am.bannedAddresses[key] = addressEntry
 		return nil
 	}
 
@@ -227,8 +177,11 @@ func (am *AddressManager) Unban(address *appmessage.NetAddress) error {
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	if address, ok := am.addresses[key]; ok {
-		address.isBanned = false
+	addressEntry, ok := am.bannedAddresses[key]
+
+	if ok {
+		delete(am.bannedAddresses, key)
+		am.addresses[key] = addressEntry
 		return nil
 	}
 
@@ -242,88 +195,16 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	if address, ok := am.addresses[key]; ok {
-		return address.isBanned, nil
+	_, ok := am.bannedAddresses[key]
+	if ok {
+		return true, nil
+	}
+
+	_, ok = am.addresses[key]
+	if ok {
+		return false, nil
 	}
 
 	return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
 		"is not registered with the address manager", address.TCPAddress())
-}
-
-// reachabilityFrom returns the relative reachability of the provided local
-// address to the provided remote address.
-func reachabilityFrom(localAddress, remoteAddress *appmessage.NetAddress, acceptUnroutable bool) int {
-	const (
-		Unreachable = 0
-		Default     = iota
-		Teredo
-		Ipv6Weak
-		Ipv4
-		Ipv6Strong
-		Private
-	)
-
-	IsRoutable := func(na *appmessage.NetAddress) bool {
-		if acceptUnroutable {
-			return !IsLocal(na)
-		}
-
-		return IsValid(na) && !(IsRFC1918(na) || IsRFC2544(na) ||
-			IsRFC3927(na) || IsRFC4862(na) || IsRFC3849(na) ||
-			IsRFC4843(na) || IsRFC5737(na) || IsRFC6598(na) ||
-			IsLocal(na) || (IsRFC4193(na)))
-	}
-
-	if !IsRoutable(remoteAddress) {
-		return Unreachable
-	}
-
-	if IsRFC4380(remoteAddress) {
-		if !IsRoutable(localAddress) {
-			return Default
-		}
-
-		if IsRFC4380(localAddress) {
-			return Teredo
-		}
-
-		if IsIPv4(localAddress) {
-			return Ipv4
-		}
-
-		return Ipv6Weak
-	}
-
-	if IsIPv4(remoteAddress) {
-		if IsRoutable(localAddress) && IsIPv4(localAddress) {
-			return Ipv4
-		}
-		return Unreachable
-	}
-
-	/* ipv6 */
-	var tunnelled bool
-	// Is our v6 is tunnelled?
-	if IsRFC3964(localAddress) || IsRFC6052(localAddress) || IsRFC6145(localAddress) {
-		tunnelled = true
-	}
-
-	if !IsRoutable(localAddress) {
-		return Default
-	}
-
-	if IsRFC4380(localAddress) {
-		return Teredo
-	}
-
-	if IsIPv4(localAddress) {
-		return Ipv4
-	}
-
-	if tunnelled {
-		// only prioritise ipv6 if we aren't tunnelling it.
-		return Ipv6Weak
-	}
-
-	return Ipv6Strong
 }

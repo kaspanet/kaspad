@@ -137,7 +137,7 @@ func TestIPTypes(t *testing.T) {
 			t.Errorf("IsValid %s\n got: %v want: %v", test.in.IP, rv, test.valid)
 		}
 
-		if rv := amgr.IsRoutable(&test.in); rv != test.routable {
+		if rv := IsRoutable(&test.in, amgr.cfg.AcceptUnroutable); rv != test.routable {
 			t.Errorf("IsRoutable %s\n got: %v want: %v", test.in.IP, rv, test.routable)
 		}
 	}
