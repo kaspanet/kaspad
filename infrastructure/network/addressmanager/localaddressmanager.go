@@ -84,7 +84,7 @@ func (lam *localAddressManager) addLocalNetAddress(netAddress *appmessage.NetAdd
 	return nil
 }
 
-// BestLocalAddress returns the most appropriate local address to use
+// bestLocalAddress returns the most appropriate local address to use
 // for the given remote address.
 func (lam *localAddressManager) bestLocalAddress(remoteAddress *appmessage.NetAddress) *appmessage.NetAddress {
 	lam.mutex.Lock()

@@ -5,6 +5,7 @@
 package addressmanager
 
 import (
+	"encoding/binary"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -32,9 +33,13 @@ var ErrAddressNotFound = errors.New("address not found")
 
 // NetAddressKey returns a key of the ip address to use it in maps.
 func netAddressKey(netAddress *appmessage.NetAddress) AddressKey {
-	key := make([]byte, len(netAddress.IP), len(netAddress.IP)+2)
+	port := make([]byte, 2, 2)
+	binary.LittleEndian.PutUint16(port, netAddress.Port)
+
+	key := make([]byte, len(netAddress.IP), len(netAddress.IP)+len(port))
 	copy(key, netAddress.IP)
-	return AddressKey(append(key, byte(netAddress.Port), byte(netAddress.Port>>8)))
+
+	return AddressKey(append(key, port...))
 }
 
 // netAddressKeys returns a key of the ip address to use it in maps.
@@ -75,36 +80,46 @@ func New(cfg *Config) (*AddressManager, error) {
 	}, nil
 }
 
+func (am *AddressManager) addAddressNoLock(address *appmessage.NetAddress) {
+	if !IsRoutable(address, am.cfg.AcceptUnroutable) {
+		return
+	}
+
+	key := netAddressKey(address)
+	_, ok := am.addresses[key]
+	if !ok {
+		am.addresses[key] = &addressEntry{
+			netAddress: address,
+		}
+	}
+}
+
+// AddAddress adds address to the address manager
+func (am *AddressManager) AddAddress(address *appmessage.NetAddress) {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	am.addAddressNoLock(address)
+}
+
 // AddAddresses adds addresses to the address manager
 func (am *AddressManager) AddAddresses(addresses ...*appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	for _, address := range addresses {
-		if !IsRoutable(address, am.cfg.AcceptUnroutable) {
-			continue
-		}
-
-		key := netAddressKey(address)
-		_, ok := am.addresses[key]
-
-		if !ok {
-			am.addresses[key] = &addressEntry{
-				netAddress: address,
-			}
-		}
+		am.addAddressNoLock(address)
 	}
 }
 
-// RemoveAddresses removes addresses from the address manager
-func (am *AddressManager) RemoveAddresses(addresses ...*appmessage.NetAddress) {
+// RemoveAddress removes addresses from the address manager
+func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	for _, address := range addresses {
-		key := netAddressKey(address)
-		delete(am.addresses, key)
-	}
+	key := netAddressKey(address)
+	delete(am.addresses, key)
+	delete(am.bannedAddresses, key)
 }
 
 // Addresses returns all addresses
