@@ -30,6 +30,11 @@ func (pm *PruningManager) FindNextPruningPoint(blockHash *daghash.Hash) (found b
 	return false, nil, nil
 }
 
+// PruningPoint ...
+func (pm *PruningManager) PruningPoint() *daghash.Hash {
+	return nil
+}
+
 // SerializedUTXOSet ...
 func (pm *PruningManager) SerializedUTXOSet() []byte {
 	return nil
