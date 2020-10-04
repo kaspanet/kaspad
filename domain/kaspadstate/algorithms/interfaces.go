@@ -54,7 +54,7 @@ type GHOSTDAGManager interface {
 
 // PruningManager ...
 type PruningManager interface {
-	FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash
+	FindNextPruningPoint(blockHash *daghash.Hash) (found bool, newPruningPoint *daghash.Hash, newPruningPointUTXOSet model.ReadOnlyUTXOSet)
 	SerializedUTXOSet() []byte
 }
 
