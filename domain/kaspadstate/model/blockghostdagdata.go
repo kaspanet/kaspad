@@ -6,8 +6,8 @@ import "github.com/kaspanet/kaspad/util/daghash"
 type BlockGHOSTDAGData struct {
 }
 
-// Blues ...
-func (bgd *BlockGHOSTDAGData) Blues() []*daghash.Hash {
+// MergeSetBlues ...
+func (bgd *BlockGHOSTDAGData) MergeSetBlues() []*daghash.Hash {
 	return nil
 }
 
@@ -16,8 +16,13 @@ func (bgd *BlockGHOSTDAGData) BlueScore() uint64 {
 	return 0
 }
 
-// Reds ...
-func (bgd *BlockGHOSTDAGData) Reds() []*daghash.Hash {
+// MergeSetReds ...
+func (bgd *BlockGHOSTDAGData) MergeSetReds() []*daghash.Hash {
+	return nil
+}
+
+// MergeSet ...
+func (bgd *BlockGHOSTDAGData) MergeSet() []*daghash.Hash {
 	return nil
 }
 
