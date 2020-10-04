@@ -360,6 +360,7 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 	return dag.reachabilityTree.isInPast(this, other)
 }
 
+// GetHeaders returns DAG headers ordered by blue score, starts from the given hash with the given direction.
 func (dag *BlockDAG) GetHeaders(startHash *daghash.Hash, maxHeaders uint64,
 	isAscending bool) ([]*appmessage.BlockHeader, error) {
 
@@ -370,7 +371,6 @@ func (dag *BlockDAG) GetHeaders(startHash *daghash.Hash, maxHeaders uint64,
 	return dag.getHeadersDescending(startHash, maxHeaders)
 }
 
-// getHeadersDescending returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
 func (dag *BlockDAG) getHeadersDescending(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
 	highNode := &dag.virtual.blockNode
 	if highHash != nil {

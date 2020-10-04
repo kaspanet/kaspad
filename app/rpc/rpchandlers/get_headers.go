@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// HandleGetBlockDAGInfo handles the respectively named RPC command
+// HandleGetHeaders handles the respectively named RPC command
 func HandleGetHeaders(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getHeadersRequest := request.(*appmessage.GetHeadersRequestMessage)
 	dag := context.DAG

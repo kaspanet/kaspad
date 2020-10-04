@@ -2,7 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetBlockDAGInfo sends an RPC request respective to the function's name and returns the RPC server's response
+// GetHeaders sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetHeaders(startHash string, limit uint64, isAscending bool) (*appmessage.GetHeadersResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetHeadersRequestMessage(startHash, limit, isAscending))
 	if err != nil {
