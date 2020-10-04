@@ -64,6 +64,8 @@ message KaspadMessage {
     GetBlockCountResponseMessage getBlockCountResponse = 1034;
     GetBlockDagInfoRequestMessage getBlockDagInfoRequest = 1035;
     GetBlockDagInfoResponseMessage getBlockDagInfoResponse = 1036;
+    GetHeadersRequestMessage getHeadersRequest = 1037;
+    GetHeadersResponseMessage getHeadersResponse = 1038;
   }
 }
 
@@ -560,6 +562,17 @@ message GetBlockDagInfoResponseMessage{
   double difficulty = 4;
   int64 pastMedianTime = 5;
   RPCError error = 6;
+}
+
+message GetHeadersRequestMessage{
+  string startHash = 1;
+  uint64 limit = 2;
+  bool isAscending = 3;
+}
+
+message GetHeadersResponseMessage{
+  repeated string headers = 1;
+  RPCError error = 2;
 }
 
 service RPC {
