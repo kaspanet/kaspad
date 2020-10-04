@@ -55,12 +55,14 @@ func New(
 	}
 }
 
-// BuildBlock ...
+// BuildBlock builds a block over the current state, with the transactions
+// selected by the given transactionSelector
 func (bp *BlockProcessor) BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
 	return nil
 }
 
-// ValidateAndInsertBlock ...
+// ValidateAndInsertBlock validates the given block and, if valid, applies it
+// to the current state
 func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
 	return nil
 }

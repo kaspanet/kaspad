@@ -32,12 +32,13 @@ func New(
 	}
 }
 
-// UTXOByOutpoint ...
+// UTXOByOutpoint returns a UTXOEntry matching the given outpoint
 func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry {
 	return nil
 }
 
-// ValidateTransaction ...
+// ValidateTransaction validates the given transaction against the
+// current state using the given utxoEntries
 func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return nil
 }

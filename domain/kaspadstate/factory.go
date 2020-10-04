@@ -24,13 +24,14 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// Factory ...
+// Factory instantiates new KaspadStates
 type Factory interface {
 	NewKaspadState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) KaspadState
 }
 
 type factory struct{}
 
+// NewKaspadState instantiates a new KaspadState
 func (f *factory) NewKaspadState(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) KaspadState {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
@@ -86,7 +87,7 @@ func (f *factory) NewKaspadState(dagParams *dagconfig.Params, databaseContext *d
 	}
 }
 
-// NewFactory ...
+// NewFactory creates a new KaspadState factory
 func NewFactory() Factory {
 	return &factory{}
 }
