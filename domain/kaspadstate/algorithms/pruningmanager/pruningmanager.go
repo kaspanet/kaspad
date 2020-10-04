@@ -3,6 +3,7 @@ package pruningmanager
 import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -23,8 +24,10 @@ func New(
 }
 
 // FindPruningPoint ...
-func (pm *PruningManager) FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash {
-	return nil
+func (pm *PruningManager) FindNextPruningPoint(blockHash *daghash.Hash) (found bool,
+	newPruningPoint *daghash.Hash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
+
+	return false, nil, nil
 }
 
 // SerializedUTXOSet ...

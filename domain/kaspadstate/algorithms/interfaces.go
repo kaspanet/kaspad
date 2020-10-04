@@ -61,5 +61,6 @@ type PruningManager interface {
 // ReachabilityTree ...
 type ReachabilityTree interface {
 	AddNode(dbTx *dbaccess.TxContext, blockHash *daghash.Hash)
-	IsInPastOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
+	IsReachabilityAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
+	IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
 }

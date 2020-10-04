@@ -27,7 +27,12 @@ func (rt *ReachabilityTree) AddNode(dbTx *dbaccess.TxContext, blockHash *daghash
 
 }
 
-// IsInPastOf ...
-func (rt *ReachabilityTree) IsInPastOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
+// IsReachabilityAncestorOf ...
+func (rt *ReachabilityTree) IsReachabilityAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
+	return false
+}
+
+// IsDAGAncestorOf ...
+func (rt *ReachabilityTree) IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
 	return false
 }
