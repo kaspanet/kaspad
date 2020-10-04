@@ -2,29 +2,26 @@ package miningmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate"
-	"github.com/kaspanet/kaspad/domain/miningmanager/blocktemplatebuilder/blocktemplatebuilderimpl"
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/mempoolimpl"
+	"github.com/kaspanet/kaspad/domain/miningmanager/blocktemplatebuilder"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 )
 
-// Factory ...
+// Factory instantiates new mining managers
 type Factory interface {
 	NewMiningManager(kaspadState *kaspadstate.KaspadState) MiningManager
 }
 
 type factory struct{}
 
-// NewMiningManager ...
+// NewMiningManager instantiate a new mining manager
 func (f *factory) NewMiningManager(kaspadState *kaspadstate.KaspadState) MiningManager {
-	mempool := mempoolimpl.New(kaspadState)
-	blockTemplateBuilder := blocktemplatebuilderimpl.New(kaspadState)
-
 	return &miningManager{
-		mempool:              mempool,
-		blockTemplateBuilder: blockTemplateBuilder,
+		mempool:              mempool.New(kaspadState),
+		blockTemplateBuilder: blocktemplatebuilder.New(kaspadState),
 	}
 }
 
-// NewFactory ...
+// NewFactory creates a new mining manager factory
 func NewFactory() Factory {
 	return &factory{}
 }
