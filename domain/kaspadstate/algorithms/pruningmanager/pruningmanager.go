@@ -26,3 +26,8 @@ func New(
 func (pm *PruningManager) FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash {
 	return nil
 }
+
+// SerializedUTXOSet ...
+func (pm *PruningManager) SerializedUTXOSet() []byte {
+	return nil
+}

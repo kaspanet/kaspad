@@ -27,7 +27,6 @@ type ConsensusStateManager interface {
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
 
-	SerializedUTXOSet() []byte
 	CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges
 }
 
@@ -56,6 +55,7 @@ type GHOSTDAGManager interface {
 // PruningManager ...
 type PruningManager interface {
 	FindPruningPoint(blockHash *daghash.Hash) *daghash.Hash
+	SerializedUTXOSet() []byte
 }
 
 // ReachabilityTree ...
