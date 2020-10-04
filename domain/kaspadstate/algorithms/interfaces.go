@@ -3,7 +3,6 @@ package algorithms
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -61,7 +60,7 @@ type PruningManager interface {
 
 // ReachabilityTree ...
 type ReachabilityTree interface {
-	AddNode(dbTx *dbaccess.TxContext, blockHash *daghash.Hash)
 	IsReachabilityAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
 	IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
+	ReachabilityChangeset(blockHash *daghash.Hash) *model.ReachabilityChangeset
 }
