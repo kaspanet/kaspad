@@ -421,7 +421,10 @@ func (mp *TxPool) removeBlockTransactionsFromPool(block *util.Block) error {
 			return err
 		}
 
-		mp.updateBlockTransactionChainedTransactions(tx)
+		err = mp.updateBlockTransactionChainedTransactions(tx)
+		if err != nil {
+			return err
+		}
 	}
 
 	atomic.StoreInt64(&mp.lastUpdated, mstime.Now().UnixMilliseconds())
@@ -481,7 +484,7 @@ func (mp *TxPool) cleanTransactionFromSets(tx *util.Tx) error {
 //
 // This function MUST be called with the mempool lock held (for writes).
 
-func (mp *TxPool) updateBlockTransactionChainedTransactions(tx *util.Tx) {
+func (mp *TxPool) updateBlockTransactionChainedTransactions(tx *util.Tx) error {
 	prevOut := appmessage.Outpoint{TxID: *tx.ID()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		// Skip to the next available output if there are none.
@@ -494,15 +497,15 @@ func (mp *TxPool) updateBlockTransactionChainedTransactions(tx *util.Tx) {
 		txDesc.depCount--
 		// If the transaction is not chained anymore, move it into the main pool
 		if txDesc.depCount == 0 {
-			// Transaction may be already removed by recursive calls, if removeRedeemers is true.
-			// So avoid moving it into main pool
-			if _, ok := mp.chainedTransactions[*txDesc.Tx.ID()]; ok {
-				delete(mp.chainedTransactions, *txDesc.Tx.ID())
-				mp.pool[*txDesc.Tx.ID()] = txDesc
+			if _, ok := mp.chainedTransactions[*txDesc.Tx.ID()]; !ok {
+				return errors.Errorf("transactions %s is not found in the chained transaction map", txDesc.Tx.ID())
 			}
+			delete(mp.chainedTransactions, *txDesc.Tx.ID())
+			mp.pool[*txDesc.Tx.ID()] = txDesc
 		}
 		delete(mp.chainedTransactionByPreviousOutpoint, prevOut)
 	}
+	return nil
 }
 
 // removeChainTransaction removes a chain transaction and all of its relation as a result of double spend.

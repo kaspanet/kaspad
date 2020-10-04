@@ -40,7 +40,7 @@ func (mpus *mempoolUTXOSet) addTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
 		if existingTx, exists := mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; exists {
-			return errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, existingTx.ID())
+			return errors.Errorf("outpoint %s is spent by the mempool transaction %s", txIn.PreviousOutpoint, existingTx.ID())
 		}
 		mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint] = tx
 	}
@@ -55,7 +55,7 @@ func (mpus *mempoolUTXOSet) addTx(tx *util.Tx) error {
 	return nil
 }
 
-// removeTx removes a transaction to the mempool UTXO set.
+// removeTx removes a transaction from the mempool UTXO set.
 // Note: it doesn't re-add its previous outputs to the mempool UTXO set.
 func (mpus *mempoolUTXOSet) removeTx(tx *util.Tx) error {
 	msgTx := tx.MsgTx()
