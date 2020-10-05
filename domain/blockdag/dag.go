@@ -412,17 +412,30 @@ func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, erro
 	return false, nil
 }
 
-// GetTopHeaders returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
-func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
+// GetHeaders returns DAG headers ordered by blue score, starts from the given hash with the given direction.
+func (dag *BlockDAG) GetHeaders(startHash *daghash.Hash, maxHeaders uint64,
+	isAscending bool) ([]*appmessage.BlockHeader, error) {
+
+	dag.RLock()
+	defer dag.RUnlock()
+
+	if isAscending {
+		return dag.getHeadersAscending(startHash, maxHeaders)
+	}
+
+	return dag.getHeadersDescending(startHash, maxHeaders)
+}
+
+func (dag *BlockDAG) getHeadersDescending(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
 	highNode := dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
 		highNode, ok = dag.index.LookupNode(highHash)
 		if !ok {
-			return nil, errors.Errorf("Couldn't find the high hash %s in the dag", highHash)
+			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", highHash)
 		}
 	}
-	headers := make([]*appmessage.BlockHeader, 0, highNode.blueScore)
+	headers := make([]*appmessage.BlockHeader, 0, maxHeaders)
 	queue := newDownHeap()
 	queue.pushSet(highNode.parents)
 
@@ -433,6 +446,31 @@ func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([
 			visited.add(current)
 			headers = append(headers, current.Header())
 			queue.pushSet(current.parents)
+		}
+	}
+	return headers, nil
+}
+
+func (dag *BlockDAG) getHeadersAscending(lowHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
+	lowNode := dag.genesis
+	if lowHash != nil {
+		var ok bool
+		lowNode, ok = dag.index.LookupNode(lowHash)
+		if !ok {
+			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", lowHash)
+		}
+	}
+	headers := make([]*appmessage.BlockHeader, 0, maxHeaders)
+	queue := newUpHeap()
+	queue.pushSet(lowNode.children)
+
+	visited := newBlockSet()
+	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
+		current := queue.pop()
+		if !visited.contains(current) {
+			visited.add(current)
+			headers = append(headers, current.Header())
+			queue.pushSet(current.children)
 		}
 	}
 	return headers, nil

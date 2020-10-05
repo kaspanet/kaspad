@@ -23,7 +23,7 @@ import (
 func TestTx(t *testing.T) {
 	pver := ProtocolVersion
 
-	txIDStr := "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+	txIDStr := "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 	txID, err := daghash.NewTxIDFromStr(txIDStr)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
