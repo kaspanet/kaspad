@@ -312,6 +312,8 @@ func TestHashCmp(t *testing.T) {
 	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	hashEndFF, _ := NewHashFromStr("00000000000000000000000000000000000000000000000000000000000000FF")
+	hashStartFF, _ := NewHashFromStr("FF00000000000000000000000000000000000000000000000000000000000000")
 
 	tests := []struct {
 		name     string
@@ -326,6 +328,8 @@ func TestHashCmp(t *testing.T) {
 		{"2 vs 1", hash2, hash1, 1},
 		{"2 vs 0", hash2, hash0, 1},
 		{"0 vs 2", hash0, hash2, -1},
+		{"hashEndFF vs hashStartFF", hashEndFF, hashStartFF, -1},
+		{"hashStartFF vs hashEndFF", hashStartFF, hashEndFF, 1},
 	}
 
 	for _, test := range tests {
@@ -342,6 +346,8 @@ func TestHashLess(t *testing.T) {
 	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	hashEndFF, _ := NewHashFromStr("00000000000000000000000000000000000000000000000000000000000000FF")
+	hashStartFF, _ := NewHashFromStr("FF00000000000000000000000000000000000000000000000000000000000000")
 
 	tests := []struct {
 		name     string
@@ -356,6 +362,8 @@ func TestHashLess(t *testing.T) {
 		{"2 vs 1", hash2, hash1, false},
 		{"2 vs 0", hash2, hash0, false},
 		{"0 vs 2", hash0, hash2, true},
+		{"hashEndFF vs hashStartFF", hashEndFF, hashStartFF, true},
+		{"hashStartFF vs hashEndFF", hashStartFF, hashEndFF, false},
 	}
 
 	for _, test := range tests {
@@ -403,6 +411,8 @@ func TestSort(t *testing.T) {
 	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
 	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+	hashEndFF, _ := NewHashFromStr("00000000000000000000000000000000000000000000000000000000000000FF")
+	hashStartFF, _ := NewHashFromStr("FF00000000000000000000000000000000000000000000000000000000000000")
 
 	tests := []struct {
 		name     string
@@ -411,10 +421,10 @@ func TestSort(t *testing.T) {
 	}{
 		{"empty", []*Hash{}, []*Hash{}},
 		{"single item", []*Hash{hash0}, []*Hash{hash0}},
-		{"already sorted", []*Hash{hash0, hash1, hash2, hash3}, []*Hash{hash0, hash1, hash2, hash3}},
-		{"inverted", []*Hash{hash3, hash2, hash1, hash0}, []*Hash{hash0, hash1, hash2, hash3}},
-		{"shuffled", []*Hash{hash2, hash3, hash0, hash1}, []*Hash{hash0, hash1, hash2, hash3}},
-		{"with duplicates", []*Hash{hash2, hash3, hash0, hash1, hash1}, []*Hash{hash0, hash1, hash1, hash2, hash3}},
+		{"already sorted", []*Hash{hash0, hashEndFF, hash1, hash2, hash3, hashStartFF}, []*Hash{hash0, hashEndFF, hash1, hash2, hash3, hashStartFF}},
+		{"inverted", []*Hash{hashStartFF, hash3, hash2, hash1, hashEndFF, hash0}, []*Hash{hash0, hashEndFF, hash1, hash2, hash3, hashStartFF}},
+		{"shuffled", []*Hash{hash2, hashEndFF, hash3, hash0, hashStartFF, hash1}, []*Hash{hash0, hashEndFF, hash1, hash2, hash3, hashStartFF}},
+		{"with duplicates", []*Hash{hashEndFF, hash2, hash3, hashEndFF, hash0, hash1, hash1, hashStartFF}, []*Hash{hash0, hashEndFF, hashEndFF, hash1, hash1, hash2, hash3, hashStartFF}},
 	}
 
 	for _, test := range tests {
@@ -444,7 +454,6 @@ func TestHash_Cmp(t *testing.T) {
 			t.Fatalf("Failed generating a random hash '%s'", err)
 		} else if n != len(hash) {
 			t.Fatalf("Failed generating a random hash, expected reading: %d. instead read: %d.", len(hash), n)
-
 		}
 		hashBig := HashToBig(&hash)
 		// Iterate bit by bit, flip it and compare.
@@ -452,6 +461,13 @@ func TestHash_Cmp(t *testing.T) {
 			newHash := hashFlipBit(hash, bit)
 			if hash.Cmp(&newHash) != hashBig.Cmp(HashToBig(&newHash)) {
 				t.Errorf("Hash.Cmp disagrees with big.Int.Cmp newHash: %s, hash: %s", newHash, hash)
+			}
+		}
+		for bit := 0; bit < HashSize*8; bit++ {
+			flippedFromLeft := hashFlipBit(hash, bit)
+			flippedFromRight := hashFlipBit(hash, HashSize*8-bit-1)
+			if flippedFromLeft.Cmp(&flippedFromRight) != HashToBig(&flippedFromLeft).Cmp(HashToBig(&flippedFromRight)) {
+				t.Errorf("Hash.Cmp disagrees with big.Int.Cmp flippedFromLeft: %s, flippedFromRight: %s", flippedFromLeft, flippedFromRight)
 			}
 		}
 	}
@@ -462,7 +478,19 @@ func BenchmarkHash_Cmp(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		hash0.Cmp(hash0)
+	}
+}
+
+func BenchmarkHash_Equal(b *testing.B) {
+	hash0, err := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		hash0.IsEqual(hash0)
 	}
 }
