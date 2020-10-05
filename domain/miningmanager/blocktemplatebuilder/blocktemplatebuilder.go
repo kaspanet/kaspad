@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// BlockTemplateBuilder ...
+// BlockTemplateBuilder creates block templates for a miner to consume
 type BlockTemplateBuilder struct {
 	consensus *consensus.Consensus
 }
