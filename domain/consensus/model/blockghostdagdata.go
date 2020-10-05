@@ -4,6 +4,10 @@ import "github.com/kaspanet/kaspad/util/daghash"
 
 // BlockGHOSTDAGData ...
 type BlockGHOSTDAGData struct {
+	blueScore      uint64
+	selectedParent *daghash.Hash
+	mergeSetBlues  []*daghash.Hash
+	mergeSetReds   []*daghash.Hash
 }
 
 // MergeSetBlues ...

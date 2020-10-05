@@ -10,8 +10,8 @@ import (
 
 // AcceptanceDataStore ...
 type AcceptanceDataStore interface {
-	Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.AcceptanceData)
-	Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.AcceptanceData
+	Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData)
+	Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockAcceptanceData
 }
 
 // BlockIndex ...
