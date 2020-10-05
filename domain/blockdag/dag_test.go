@@ -214,7 +214,7 @@ func TestIsKnownBlock(t *testing.T) {
 		{hash: "732c891529619d43b5aeb3df42ba25dea483a8c0aded1cf585751ebabea28f29", want: true},
 
 		// Random hashes should not be available.
-		{hash: "123", want: false},
+		{hash: "1234567812345678123456781234567812345678123456781234567812345678", want: false},
 	}
 
 	for i, test := range tests {
