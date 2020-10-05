@@ -37,8 +37,8 @@ func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *appmessage.Outpoint) 
 	return nil
 }
 
-// ValidateTransaction validates the given transaction against the
-// current state using the given utxoEntries
+// ValidateTransaction validates the given transaction using
+// the given utxoEntries
 func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return nil
 }

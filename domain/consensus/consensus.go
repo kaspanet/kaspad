@@ -40,8 +40,8 @@ func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEnt
 	return s.consensusStateManager.UTXOByOutpoint(outpoint)
 }
 
-// ValidateTransaction validates the given transaction against the
-// current state using the given utxoEntries
+// ValidateTransaction validates the given transaction using
+// the given utxoEntries
 func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
 }
