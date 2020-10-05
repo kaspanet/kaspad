@@ -23,9 +23,9 @@ func New(
 	}
 }
 
-// IsReachabilityAncestorOf returns true if blockHashA is an ancestor
-// of blockHashB in the reachability tree. Note that this does not
-// necessarily mean that it isn't its ancestor in the DAG.
+// IsReachabilityTreeAncestorOf returns true if blockHashA is an
+// ancestor of blockHashB in the reachability tree. Note that this
+// does not necessarily mean that it isn't its ancestor in the DAG.
 func (rt *ReachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
 	return false
 }
