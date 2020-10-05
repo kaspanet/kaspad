@@ -65,9 +65,8 @@ type txsForBlockTemplate struct {
 //   Once the sum of probabilities of marked transactions is greater than
 //   rebalanceThreshold percent of the sum of probabilities of all transactions,
 //   rebalance.
-func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address, extraNonce uint64) (*txsForBlockTemplate, error) {
-	// Fetch the source transactions.
-	sourceTxs := g.txSource.MiningDescs()
+func (g *BlkTmplGenerator) selectTxs(mempoolTransactions []*TxDesc, payToAddress util.Address,
+	extraNonce uint64) (*txsForBlockTemplate, error) {
 
 	// Create a new txsForBlockTemplate struct, onto which all selectedTxs
 	// will be appended.
@@ -78,7 +77,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address, extraNonce uint6
 
 	// Collect candidateTxs while excluding txs that will certainly not
 	// be selected.
-	candidateTxs := g.collectCandidatesTxs(sourceTxs)
+	candidateTxs := g.collectCandidatesTxs(mempoolTransactions)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(candidateTxs))
