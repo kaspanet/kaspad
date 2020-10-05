@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// PruningManager ...
+// PruningManager resolves and manages the current pruning point
 type PruningManager struct {
 	dagTraversalManager processes.DAGTraversalManager
 	pruningPointStore   datastructures.PruningPointStore

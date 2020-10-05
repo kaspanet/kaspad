@@ -9,7 +9,8 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// BlockProcessor ...
+// BlockProcessor is responsible for processing incoming blocks
+// and creating blocks from the current state
 type BlockProcessor struct {
 	dagParams       *dagconfig.Params
 	databaseContext *dbaccess.DatabaseContext

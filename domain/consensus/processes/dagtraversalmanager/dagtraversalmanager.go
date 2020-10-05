@@ -6,7 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// DAGTraversalManager ...
+// DAGTraversalManager exposes methods for travering blocks
+// in the DAG
 type DAGTraversalManager struct {
 	dagTopologyManager processes.DAGTopologyManager
 	ghostdagManager    processes.GHOSTDAGManager

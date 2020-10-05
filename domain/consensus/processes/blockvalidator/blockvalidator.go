@@ -2,7 +2,8 @@ package blockvalidator
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// BlockValidator ...
+// BlockValidator exposes a set of validation classes, after which
+// it's possible to determine whether a block is valid
 type BlockValidator struct {
 }
 

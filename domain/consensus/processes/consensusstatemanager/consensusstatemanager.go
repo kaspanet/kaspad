@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// ConsensusStateManager ...
+// ConsensusStateManager manages the node's consensus state
 type ConsensusStateManager struct {
 	dagParams *dagconfig.Params
 

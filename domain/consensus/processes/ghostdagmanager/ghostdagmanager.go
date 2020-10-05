@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// GHOSTDAGManager ...
+// GHOSTDAGManager resolves and manages GHOSTDAG block data
 type GHOSTDAGManager struct {
 	dagTopologyManager processes.DAGTopologyManager
 	ghostdagDataStore  datastructures.GHOSTDAGDataStore

@@ -6,7 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// DAGTopologyManager ...
+// DAGTopologyManager exposes methods for querying relationships
+// between blocks in the DAG
 type DAGTopologyManager struct {
 	reachabilityTree   processes.ReachabilityTree
 	blockRelationStore datastructures.BlockRelationStore

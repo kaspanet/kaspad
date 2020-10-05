@@ -6,7 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// ReachabilityTree ...
+// ReachabilityTree maintains a structure that allows to answer
+// reachability queries in sub-linear time
 type ReachabilityTree struct {
 	blockRelationStore    datastructures.BlockRelationStore
 	reachabilityDataStore datastructures.ReachabilityDataStore
