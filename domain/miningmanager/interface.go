@@ -6,7 +6,7 @@ import (
 )
 
 // Mempool maintains a set of known transactions that
-// have no yet been added to any block
+// are intended to be mined into new blocks
 type Mempool interface {
 	HandleNewBlock(block *appmessage.MsgBlock)
 	Transactions() []*util.Tx
