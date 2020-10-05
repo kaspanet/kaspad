@@ -57,7 +57,9 @@ func New(
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *BlockProcessor) BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+func (bp *BlockProcessor) BuildBlock(scriptPublicKey []byte, extraData []byte,
+	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+
 	return nil
 }
 

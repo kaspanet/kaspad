@@ -9,7 +9,7 @@ import (
 
 // BlockProcessor ...
 type BlockProcessor interface {
-	BuildBlock(transactionSelector model.TransactionSelector) *appmessage.MsgBlock
+	BuildBlock(scriptPublicKey []byte, extraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 }
 
