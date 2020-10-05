@@ -243,3 +243,68 @@ func TestBlockSetUnion(t *testing.T) {
 		}
 	}
 }
+
+func TestBlockSetAreAllIn(t *testing.T) {
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
+	node3 := &blockNode{hash: &daghash.Hash{30}}
+
+	tests := []struct {
+		name           string
+		set            blockSet
+		other          blockSet
+		expectedResult bool
+	}{
+		{
+			name:           "two empty sets",
+			set:            blockSetFromSlice(),
+			other:          blockSetFromSlice(),
+			expectedResult: true,
+		},
+		{
+			name:           "set empty, other full",
+			set:            blockSetFromSlice(),
+			other:          blockSetFromSlice(node1, node2, node3),
+			expectedResult: true,
+		},
+		{
+			name:           "set full, other empty",
+			set:            blockSetFromSlice(node1, node2, node3),
+			other:          blockSetFromSlice(),
+			expectedResult: false,
+		},
+		{
+			name:           "same node in both",
+			set:            blockSetFromSlice(node1),
+			other:          blockSetFromSlice(node1),
+			expectedResult: true,
+		},
+		{
+			name:           "different node in both",
+			set:            blockSetFromSlice(node1),
+			other:          blockSetFromSlice(node2),
+			expectedResult: false,
+		},
+		{
+			name:           "set is subset of other",
+			set:            blockSetFromSlice(node1, node2),
+			other:          blockSetFromSlice(node2, node1, node3),
+			expectedResult: true,
+		},
+		{
+			name:           "other is subset of set",
+			set:            blockSetFromSlice(node2, node1, node3),
+			other:          blockSetFromSlice(node1, node2),
+			expectedResult: false,
+		},
+	}
+
+	for _, test := range tests {
+		result := test.set.areAllIn(test.other)
+
+		if result != test.expectedResult {
+			t.Errorf("blockSet.areAllIn: unexpected result in test '%s'. "+
+				"Expected: '%t', got: '%t'", test.name, test.expectedResult, result)
+		}
+	}
+}

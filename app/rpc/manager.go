@@ -31,7 +31,8 @@ func NewManager(
 	blockTemplateGenerator *mining.BlkTmplGenerator,
 	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex) *Manager {
+	acceptanceIndex *indexers.AcceptanceIndex,
+	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
 		context: rpccontext.NewContext(
@@ -44,6 +45,7 @@ func NewManager(
 			mempool,
 			addressManager,
 			acceptanceIndex,
+			shutDownChan,
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
@@ -52,11 +54,11 @@ func NewManager(
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) {
+func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) error {
 	m.context.BlockTemplateState.NotifyBlockAdded(block)
 
 	notification := appmessage.NewBlockAddedNotificationMessage(block.MsgBlock())
-	m.context.NotificationManager.NotifyBlockAdded(notification)
+	return m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
 // NotifyChainChanged notifies the manager that the DAG's selected parent chain has changed
@@ -70,8 +72,19 @@ func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, ad
 		removedChainBlockHashStrings[i] = removedChainBlockHash.String()
 	}
 	notification := appmessage.NewChainChangedNotificationMessage(removedChainBlockHashStrings, addedChainBlocks)
-	m.context.NotificationManager.NotifyChainChanged(notification)
-	return nil
+	return m.context.NotificationManager.NotifyChainChanged(notification)
+}
+
+// NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
+func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
+	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
+	return m.context.NotificationManager.NotifyFinalityConflict(notification)
+}
+
+// NotifyFinalityConflictResolved notifies the manager that a finality conflict in the DAG has been resolved
+func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
+	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
+	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }
 
 // NotifyTransactionAddedToMempool notifies the manager that a transaction has been added to the mempool

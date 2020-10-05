@@ -6,10 +6,11 @@ package appmessage
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
+	"io"
+	"math"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -60,7 +61,11 @@ type BlockHeader struct {
 
 // NumParentBlocks return the number of entries in ParentHashes
 func (h *BlockHeader) NumParentBlocks() byte {
-	return byte(len(h.ParentHashes))
+	numParents := len(h.ParentHashes)
+	if numParents > math.MaxUint8 {
+		panic(errors.Errorf("number of parents is %d, which is more than one byte can fit", numParents))
+	}
+	return byte(numParents)
 }
 
 // BlockHash computes the block identifier hash for the given block header.

@@ -47,13 +47,13 @@ type BlockTemplateState struct {
 
 	context *Context
 
-	lastTxUpdate  mstime.Time
-	lastGenerated mstime.Time
-	tipHashes     []*daghash.Hash
-	minTimestamp  mstime.Time
-	template      *mining.BlockTemplate
-	notifyMap     map[string]map[int64]chan struct{}
-	payAddress    util.Address
+	lastTxUpdate        mstime.Time
+	lastGenerated       mstime.Time
+	virtualParentHashes []*daghash.Hash
+	minTimestamp        mstime.Time
+	template            *mining.BlockTemplate
+	notifyMap           map[string]map[int64]chan struct{}
+	payAddress          util.Address
 }
 
 // NewBlockTemplateState returns a new instance of a BlockTemplateState with all internal
@@ -79,10 +79,10 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 	// generated.
 	var msgBlock *appmessage.MsgBlock
 	var targetDifficulty string
-	tipHashes := bt.context.DAG.TipHashes()
+	virtualParentHashes := bt.context.DAG.VirtualParentHashes()
 	template := bt.template
-	if template == nil || bt.tipHashes == nil ||
-		!daghash.AreEqual(bt.tipHashes, tipHashes) ||
+	if template == nil || bt.virtualParentHashes == nil ||
+		!daghash.AreEqual(bt.virtualParentHashes, virtualParentHashes) ||
 		bt.payAddress.String() != payAddress.String() ||
 		(bt.lastTxUpdate != lastTxUpdate &&
 			mstime.Now().After(bt.lastGenerated.Add(time.Second*
@@ -91,7 +91,7 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 		// Reset the previous best hash the block template was generated
 		// against so any errors below cause the next invocation to try
 		// again.
-		bt.tipHashes = nil
+		bt.virtualParentHashes = nil
 
 		// Create a new block template that has a coinbase which anyone
 		// can redeem. This is only acceptable because the returned
@@ -122,7 +122,7 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 		bt.template = template
 		bt.lastGenerated = mstime.Now()
 		bt.lastTxUpdate = lastTxUpdate
-		bt.tipHashes = tipHashes
+		bt.virtualParentHashes = virtualParentHashes
 		bt.minTimestamp = minTimestamp
 		bt.payAddress = payAddress
 
@@ -133,7 +133,7 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 
 		// Notify any clients that are long polling about the new
 		// template.
-		bt.notifyLongPollers(tipHashes, lastTxUpdate)
+		bt.notifyLongPollers(virtualParentHashes, lastTxUpdate)
 	} else {
 		// At this point, there is a saved block template and another
 		// request for a template was made, but either the available
@@ -234,7 +234,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
 	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
-	longPollID := bt.encodeLongPollID(bt.tipHashes, bt.payAddress, bt.lastGenerated)
+	longPollID := bt.encodeLongPollID(bt.virtualParentHashes, bt.payAddress, bt.lastGenerated)
 
 	// Check whether this node is synced with the rest of of the
 	// network. There's almost never a good reason to mine on top
@@ -250,7 +250,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 		Bits:                 strconv.FormatInt(int64(header.Bits), 16),
 		CurrentTime:          header.Timestamp.UnixMilliseconds(),
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		MassLimit:            appmessage.MaxMassPerBlock,
+		MassLimit:            appmessage.MaxMassAcceptedByBlock,
 		Transactions:         transactions,
 		HashMerkleRoot:       header.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
@@ -273,12 +273,12 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (bt *BlockTemplateState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated mstime.Time) {
+func (bt *BlockTemplateState) notifyLongPollers(parentHashes []*daghash.Hash, lastGenerated mstime.Time) {
 	// Notify anything that is waiting for a block template update from
-	// hashes which are not the current tip hashes.
-	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
+	// hashes which are not the current parent hashes.
+	parentHashesStr := daghash.JoinHashesStrings(parentHashes, "")
 	for hashesStr, channels := range bt.notifyMap {
-		if hashesStr != tipHashesStr {
+		if hashesStr != parentHashesStr {
 			for _, c := range channels {
 				close(c)
 			}
@@ -294,7 +294,7 @@ func (bt *BlockTemplateState) notifyLongPollers(tipHashes []*daghash.Hash, lastG
 
 	// Return now if there is nothing registered for updates to the current
 	// best block hash.
-	channels, ok := bt.notifyMap[tipHashesStr]
+	channels, ok := bt.notifyMap[parentHashesStr]
 	if !ok {
 		return
 	}
@@ -313,7 +313,7 @@ func (bt *BlockTemplateState) notifyLongPollers(tipHashes []*daghash.Hash, lastG
 	// Remove the entry altogether if there are no more registered
 	// channels.
 	if len(channels) == 0 {
-		delete(bt.notifyMap, tipHashesStr)
+		delete(bt.notifyMap, parentHashesStr)
 	}
 }
 
@@ -341,14 +341,14 @@ func (bt *BlockTemplateState) NotifyMempoolTx() {
 
 		// No need to notify anything if no block templates have been generated
 		// yet.
-		if bt.tipHashes == nil || bt.lastGenerated.IsZero() {
+		if bt.virtualParentHashes == nil || bt.lastGenerated.IsZero() {
 			return
 		}
 
 		if mstime.Now().After(bt.lastGenerated.Add(time.Second *
 			blockTemplateRegenerateSeconds)) {
 
-			bt.notifyLongPollers(bt.tipHashes, lastUpdated)
+			bt.notifyLongPollers(bt.virtualParentHashes, lastUpdated)
 		}
 	})
 }
@@ -412,14 +412,14 @@ func (bt *BlockTemplateState) BlockTemplateOrLongPollChan(longPollID string,
 // without requiring a different channel for each client.
 //
 // This function MUST be called with the state locked.
-func (bt *BlockTemplateState) templateUpdateChan(tipHashes []*daghash.Hash, lastGenerated int64) chan struct{} {
-	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
+func (bt *BlockTemplateState) templateUpdateChan(parentHashes []*daghash.Hash, lastGenerated int64) chan struct{} {
+	parentHashesStr := daghash.JoinHashesStrings(parentHashes, "")
 	// Either get the current list of channels waiting for updates about
 	// changes to block template for the parent hashes or create a new one.
-	channels, ok := bt.notifyMap[tipHashesStr]
+	channels, ok := bt.notifyMap[parentHashesStr]
 	if !ok {
 		m := make(map[int64]chan struct{})
-		bt.notifyMap[tipHashesStr] = m
+		bt.notifyMap[parentHashesStr] = m
 		channels = m
 	}
 

@@ -113,13 +113,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		}
 	}
 
-	// Block 3 should fail to connect since it's already inserted.
-	err = dag.CheckConnectBlockTemplateNoLock(blocks[3])
-	if err == nil {
-		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
-			"on block 3")
-	}
-
 	// Block 4 should connect successfully to tip of chain.
 	err = dag.CheckConnectBlockTemplateNoLock(blocks[4])
 	if err != nil {
@@ -488,7 +481,7 @@ func TestPastMedianTime(t *testing.T) {
 	node := newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag))
+		tip.PastMedianTime())
 
 	header := node.Header()
 	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
@@ -501,7 +494,7 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime(dag).Add(time.Second))
+		tip.PastMedianTime().Add(time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
@@ -514,7 +507,7 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(dag, blockSetFromSlice(tip),
 		blockVersion,
 		0,
-		tip.PastMedianTime(dag).Add(-time.Second))
+		tip.PastMedianTime().Add(-time.Second))
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)

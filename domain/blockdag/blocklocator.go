@@ -169,9 +169,15 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		visited.add(current)
-		isCurrentAncestorOfLowNode, err := dag.isInPast(current, lowNode)
-		if err != nil {
-			return nil, err
+		var isCurrentAncestorOfLowNode bool
+		if current == lowNode {
+			isCurrentAncestorOfLowNode = false
+		} else {
+			var err error
+			isCurrentAncestorOfLowNode, err = dag.isInPast(current, lowNode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if isCurrentAncestorOfLowNode {
 			continue

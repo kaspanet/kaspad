@@ -63,8 +63,11 @@ func (c *RPCClient) route(command appmessage.MessageCommand) *routerpkg.Route {
 	return c.rpcRouter.routes[command]
 }
 
+// ErrRPC is an error in the RPC protocol
+var ErrRPC = errors.New("rpc error")
+
 func (c *RPCClient) convertRPCError(rpcError *appmessage.RPCError) error {
-	return errors.Errorf("received error response from RPC: %s", rpcError.Message)
+	return errors.Wrap(ErrRPC, rpcError.Message)
 }
 
 // SetLogger uses a specified Logger to output package logging info

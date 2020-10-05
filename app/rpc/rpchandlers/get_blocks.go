@@ -12,7 +12,7 @@ import (
 const (
 	// maxBlocksInGetBlocksResponse is the max amount of blocks that are
 	// allowed in a GetBlocksResult.
-	maxBlocksInGetBlocksResponse = 1000
+	maxBlocksInGetBlocksResponse = 100
 )
 
 // HandleGetBlocks handles the respectively named RPC command

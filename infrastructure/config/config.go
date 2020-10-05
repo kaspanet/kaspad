@@ -51,10 +51,11 @@ const (
 	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
-	DefaultMaxOrphanTxSize = 100000
-	defaultSigCacheMaxSize = 100000
-	sampleConfigFilename   = "sample-kaspad.conf"
-	defaultAcceptanceIndex = false
+	DefaultMaxOrphanTxSize  = 100000
+	defaultSigCacheMaxSize  = 100000
+	sampleConfigFilename    = "sample-kaspad.conf"
+	defaultAcceptanceIndex  = false
+	defaultMaxUTXOCacheSize = 5000000000
 )
 
 var (
@@ -106,7 +107,6 @@ type Flags struct {
 	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
-	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
 	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
@@ -121,7 +121,9 @@ type Flags struct {
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
+	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	NetworkFlags
+	ServiceOptions *ServiceOptions
 }
 
 // Config defines the configuration options for kaspad.
@@ -137,9 +139,9 @@ type Config struct {
 	SubnetworkID  *subnetworkid.SubnetworkID // nil in full nodes
 }
 
-// serviceOptions defines the configuration options for the daemon as a service on
+// ServiceOptions defines the configuration options for the daemon as a service on
 // Windows.
-type serviceOptions struct {
+type ServiceOptions struct {
 	ServiceCommand string `short:"s" long:"service" description:"Service command {install, remove, start, stop}"`
 }
 
@@ -158,10 +160,10 @@ func cleanAndExpandPath(path string) string {
 }
 
 // newConfigParser returns a new command line flags parser.
-func newConfigParser(cfgFlags *Flags, so *serviceOptions, options flags.Options) *flags.Parser {
+func newConfigParser(cfgFlags *Flags, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(cfgFlags, options)
 	if runtime.GOOS == "windows" {
-		parser.AddGroup("Service Options", "Service Options", so)
+		parser.AddGroup("Service Options", "Service Options", cfgFlags.ServiceOptions)
 	}
 	return parser
 }
@@ -186,6 +188,8 @@ func defaultFlags() *Flags {
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		AcceptanceIndex:      defaultAcceptanceIndex,
+		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
+		ServiceOptions:       &ServiceOptions{},
 	}
 }
 
@@ -208,24 +212,20 @@ func DefaultConfig() *Config {
 // The above results in kaspad functioning properly without any config settings
 // while still allowing the user to override settings with config files and
 // command line options. Command line options always take precedence.
-func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
+func LoadConfig() (*Config, error) {
 	cfgFlags := defaultFlags()
-
-	// Service options which are only added on Windows.
-	serviceOpts := serviceOptions{}
 
 	// Pre-parse the command line options to see if an alternative config
 	// file or the version flag was specified. Any errors aside from the
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
 	preCfg := cfgFlags
-	preParser := newConfigParser(preCfg, &serviceOpts, flags.HelpFlag)
-	_, err = preParser.Parse()
+	preParser := newConfigParser(preCfg, flags.HelpFlag)
+	_, err := preParser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
 		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
-			fmt.Fprintln(os.Stderr, err)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -239,21 +239,10 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		os.Exit(0)
 	}
 
-	// Perform service command and exit if specified. Invalid service
-	// commands show an appropriate error. Only runs on Windows since
-	// the RunServiceCommand function will be nil when not on Windows.
-	if serviceOpts.ServiceCommand != "" && RunServiceCommand != nil {
-		err := RunServiceCommand(serviceOpts.ServiceCommand)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
-		os.Exit(0)
-	}
-
 	// Load additional config from file.
 	var configFileError error
-	parser := newConfigParser(cfgFlags, &serviceOpts, flags.Default)
-	cfg = &Config{
+	parser := newConfigParser(cfgFlags, flags.Default)
+	cfg := &Config{
 		Flags: cfgFlags,
 	}
 	if !preCfg.Simnet || preCfg.ConfigFile !=
@@ -262,31 +251,27 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error creating a "+
-					"default config file: %s\n", err)
+				return nil, errors.Wrap(err, "Error creating a default config file")
 			}
 		}
 
 		err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 		if err != nil {
 			if pErr := &(os.PathError{}); !errors.As(err, &pErr) {
-				fmt.Fprintf(os.Stderr, "Error parsing config "+
-					"file: %s\n", err)
-				fmt.Fprintln(os.Stderr, usageMessage)
-				return nil, nil, err
+				return nil, errors.Wrapf(err, "Error parsing config file: %s\n\n%s", err, usageMessage)
 			}
 			configFileError = err
 		}
 	}
 
 	// Parse command line options again to ensure they take precedence.
-	remainingArgs, err = parser.Parse()
+	_, err = parser.Parse()
 	if err != nil {
 		var flagsErr *flags.Error
 		if ok := errors.As(err, &flagsErr); !ok || flagsErr.Type != flags.ErrHelp {
-			fmt.Fprintln(os.Stderr, usageMessage)
+			return nil, errors.Wrapf(err, "Error parsing command line arguments: %s\n\n%s", err, usageMessage)
 		}
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Create the home directory if it doesn't already exist.
@@ -306,13 +291,12 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 
 		str := "%s: Failed to create home directory: %s"
 		err := errors.Errorf(str, funcName, err)
-		fmt.Fprintln(os.Stderr, err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = cfg.ResolveNetwork(parser)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Set the default policy for relaying non-standard transactions
@@ -327,7 +311,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	case cfg.RejectNonStd:
 		relayNonStd = false
 	case cfg.RelayNonStd:
@@ -364,7 +348,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf("%s: %s", funcName, err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Validate profile port number
@@ -375,7 +359,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 			err := errors.Errorf(str, funcName)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -385,7 +369,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName, cfg.BanDuration)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Validate any given whitelisted IP addresses and networks.
@@ -402,7 +386,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 					err = errors.Errorf(str, funcName, addr)
 					fmt.Fprintln(os.Stderr, err)
 					fmt.Fprintln(os.Stderr, usageMessage)
-					return nil, nil, err
+					return nil, err
 				}
 				var bits int
 				if ip.To4() == nil {
@@ -427,7 +411,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// --proxy or --connect without --listen disables listening.
@@ -470,7 +454,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName, cfg.RPCMaxConcurrentReqs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Validate the the minrelaytxfee.
@@ -480,7 +464,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Disallow 0 and negative min tx fees.
@@ -489,7 +473,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName, cfg.MinRelayTxFee)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Limit the max block mass to a sane value.
@@ -502,7 +486,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 			blockMaxMassMax, cfg.BlockMaxMass)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Limit the max orphan count to a sane value.
@@ -512,7 +496,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName, cfg.MaxOrphanTxs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Look for illegal characters in the user agent comments.
@@ -523,7 +507,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 				funcName)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -534,7 +518,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 			funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Add default port to all listener addresses if needed and remove
@@ -542,7 +526,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	cfg.Listeners, err = network.NormalizeAddresses(cfg.Listeners,
 		cfg.NetParams().DefaultPort)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Add default port to all rpc listener addresses if needed and remove
@@ -550,7 +534,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	cfg.RPCListeners, err = network.NormalizeAddresses(cfg.RPCListeners,
 		cfg.NetParams().RPCPort)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Disallow --addpeer and --connect used together
@@ -559,7 +543,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Add default port to all added peer addresses if needed and remove
@@ -567,13 +551,13 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 	cfg.AddPeers, err = network.NormalizeAddresses(cfg.AddPeers,
 		cfg.NetParams().DefaultPort)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cfg.ConnectPeers, err = network.NormalizeAddresses(cfg.ConnectPeers,
 		cfg.NetParams().DefaultPort)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Setup dial and DNS resolution (lookup) functions depending on the
@@ -590,7 +574,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 			err := errors.Errorf(str, funcName, cfg.Proxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
-			return nil, nil, err
+			return nil, err
 		}
 
 		proxy := &socks.Proxy{
@@ -608,7 +592,7 @@ func LoadConfig() (cfg *Config, remainingArgs []string, err error) {
 		log.Warnf("%s", configFileError)
 	}
 
-	return cfg, remainingArgs, nil
+	return cfg, nil
 }
 
 // createDefaultConfig copies the file sample-kaspad.conf to the given destination path,

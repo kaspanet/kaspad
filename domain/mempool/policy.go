@@ -80,7 +80,7 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) 
 // context of this function is one whose referenced public key script is of a
 // standard form and, for pay-to-script-hash, does not have more than
 // maxStandardP2SHSigOps signature operations.
-func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
+func checkInputsStandard(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) error {
 	// NOTE: The reference implementation also does a coinbase check here,
 	// but coinbases have already been rejected prior to calling this
 	// function so no need to recheck.
@@ -89,7 +89,7 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 		// It is safe to elide existence and index checks here since
 		// they have already been checked prior to calling this
 		// function.
-		entry, _ := utxoSet.Get(txIn.PreviousOutpoint)
+		entry := referencedUTXOEntries[i]
 		originScriptPubKey := entry.ScriptPubKey()
 		switch txscript.GetScriptClass(originScriptPubKey) {
 		case txscript.ScriptHashTy:

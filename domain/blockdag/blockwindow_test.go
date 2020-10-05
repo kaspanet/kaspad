@@ -1,12 +1,13 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 func TestBlueBlockWindow(t *testing.T) {
@@ -53,12 +54,12 @@ func TestBlueBlockWindow(t *testing.T) {
 		{
 			parents:                          []string{"C", "D"},
 			id:                               "E",
-			expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"C", "D"},
 			id:                               "F",
-			expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"A"},
@@ -73,37 +74,37 @@ func TestBlueBlockWindow(t *testing.T) {
 		{
 			parents:                          []string{"H", "F"},
 			id:                               "I",
-			expectedWindowWithGenesisPadding: []string{"F", "C", "D", "B", "A", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"F", "D", "C", "B", "A", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"I"},
 			id:                               "J",
-			expectedWindowWithGenesisPadding: []string{"I", "F", "C", "D", "B", "A", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"I", "F", "D", "C", "B", "A", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"J"},
 			id:                               "K",
-			expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "D", "B", "A", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "C", "B", "A", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"K"},
 			id:                               "L",
-			expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "D", "B", "A", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "C", "B", "A", "A", "A"},
 		},
 		{
 			parents:                          []string{"L"},
 			id:                               "M",
-			expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "D", "B", "A", "A"},
+			expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "C", "B", "A", "A"},
 		},
 		{
 			parents:                          []string{"M"},
 			id:                               "N",
-			expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "D", "B", "A"},
+			expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "C", "B", "A"},
 		},
 		{
 			parents:                          []string{"N"},
 			id:                               "O",
-			expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "B"},
+			expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "C", "B"},
 		},
 	}
 
@@ -117,13 +118,13 @@ func TestBlueBlockWindow(t *testing.T) {
 
 		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
 		if err != nil {
-			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %v", blockData.id, err)
+			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %+v", blockData.id, err)
 		}
 
 		utilBlock := util.NewBlock(block)
 		isOrphan, isDelayed, err := dag.ProcessBlock(utilBlock, BFNoPoWCheck)
 		if err != nil {
-			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %v", blockData.id, err)
+			t.Fatalf("dag.ProcessBlock got unexpected error for block %v: %+v", blockData.id, err)
 		}
 		if isDelayed {
 			t.Fatalf("block %s "+

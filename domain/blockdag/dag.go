@@ -6,12 +6,11 @@ package blockdag
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -87,8 +86,6 @@ type BlockDAG struct {
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
-	lastFinalityPoint *blockNode
-
 	utxoDiffStore *utxoDiffStore
 	multisetStore *multisetStore
 
@@ -96,6 +93,13 @@ type BlockDAG struct {
 
 	recentBlockProcessingTimestamps []mstime.Time
 	startTime                       mstime.Time
+
+	maxUTXOCacheSize uint64
+	tips             blockSet
+
+	// validTips is a set of blocks with the status "valid", which have no valid descendants.
+	// Note that some validTips might not be actual tips.
+	validTips blockSet
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -119,6 +123,7 @@ func New(config *Config) (*BlockDAG, error) {
 		blockCount:                     0,
 		subnetworkID:                   config.SubnetworkID,
 		startTime:                      mstime.Now(),
+		maxUTXOCacheSize:               config.MaxUTXOCacheSize,
 	}
 
 	dag.virtual = newVirtualBlock(dag, nil)
@@ -241,7 +246,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
-	return dag.virtual.tips().bluest().PastMedianTime(dag)
+	return dag.virtual.selectedParent.PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -308,7 +313,17 @@ func (dag *BlockDAG) BlockCount() uint64 {
 
 // TipHashes returns the hashes of the DAG's tips
 func (dag *BlockDAG) TipHashes() []*daghash.Hash {
-	return dag.virtual.tips().hashes()
+	return dag.tips.hashes()
+}
+
+// ValidTipHashes returns the hashes of the DAG's valid tips
+func (dag *BlockDAG) ValidTipHashes() []*daghash.Hash {
+	return dag.validTips.hashes()
+}
+
+// VirtualParentHashes returns the hashes of the virtual block's parents
+func (dag *BlockDAG) VirtualParentHashes() []*daghash.Hash {
+	return dag.virtual.parents.hashes()
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -356,13 +371,50 @@ func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash,
 	return node.selectedParent.hash, nil
 }
 
-func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
-	return dag.reachabilityTree.isInPast(this, other)
+// isInPast returns true if `node` is in the past of `other`
+//
+// Note: this method will return true if `node == other`
+func (dag *BlockDAG) isInPast(node *blockNode, other *blockNode) (bool, error) {
+	return dag.reachabilityTree.isInPast(node, other)
+}
+
+// isInPastOfAny returns true if `node` is in the past of any of `others`
+//
+// Note: this method will return true if `node` is in `others`
+func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, error) {
+	for other := range others {
+		isInPast, err := dag.isInPast(node, other)
+		if err != nil {
+			return false, err
+		}
+		if isInPast {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// isInPastOfAny returns true if any one of `nodes` is in the past of any of `others`
+//
+// Note: this method will return true if `other` is in `nodes`
+func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, error) {
+	for node := range nodes {
+		isInPast, err := dag.isInPast(node, other)
+		if err != nil {
+			return false, err
+		}
+		if isInPast {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // GetTopHeaders returns the top appmessage.MaxBlockHeadersPerMsg block headers ordered by blue score.
 func (dag *BlockDAG) GetTopHeaders(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
-	highNode := &dag.virtual.blockNode
+	highNode := dag.virtual.blockNode
 	if highHash != nil {
 		var ok bool
 		highNode, ok = dag.index.LookupNode(highHash)
@@ -443,5 +495,191 @@ func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
 	if !ok {
 		return false
 	}
-	return dag.index.NodeStatus(node).KnownInvalid()
+	return dag.index.BlockNodeStatus(node).KnownInvalid()
+}
+
+func (dag *BlockDAG) addTip(tip *blockNode) (
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
+
+	newTips := dag.tips.clone()
+	for parent := range tip.parents {
+		newTips.remove(parent)
+	}
+
+	newTips.add(tip)
+
+	return dag.setTips(newTips)
+}
+
+func (dag *BlockDAG) setTips(newTips blockSet) (
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
+
+	didVirtualParentsChange, chainUpdates, err = dag.updateVirtualParents(newTips, dag.virtual.finalityPoint())
+	if err != nil {
+		return false, nil, err
+	}
+
+	dag.tips = newTips
+
+	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *blockNode) (
+	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
+
+	var newVirtualParents blockSet
+	// If only genesis is the newTips - we are still initializing the DAG and not all structures required
+	// for calling dag.selectVirtualParents have been initialized yet.
+	// Specifically - this function would be called with finalityPoint = dag.virtual.finalityPoint(), which has
+	// not been initialized to anything real yet.
+	//
+	// Therefore, in this case - simply pick genesis as virtual's only parent
+	if newTips.isOnlyGenesis() {
+		newVirtualParents = newTips
+	} else {
+		newVirtualParents, err = dag.selectVirtualParents(newTips, finalityPoint)
+		if err != nil {
+			return false, nil, err
+		}
+	}
+
+	oldVirtualParents := dag.virtual.parents
+	didVirtualParentsChange = !oldVirtualParents.isEqual(newVirtualParents)
+
+	if !didVirtualParentsChange {
+		return false, &selectedParentChainUpdates{}, nil
+	}
+
+	oldSelectedParent := dag.virtual.selectedParent
+	dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
+	chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
+
+	return didVirtualParentsChange, chainUpdates, nil
+}
+
+func (dag *BlockDAG) addValidTip(newValidTip *blockNode) error {
+	newValidTips := dag.validTips.clone()
+	for validTip := range dag.validTips {
+		// We use isInPastOfAny on newValidTip.parents instead of
+		// isInPast on newValidTip because newValidTip does not
+		// necessarily have reachability data associated with it yet.
+		isInPastOfNewValidTip, err := dag.isInPastOfAny(validTip, newValidTip.parents)
+		if err != nil {
+			return err
+		}
+		if isInPastOfNewValidTip {
+			newValidTips.remove(validTip)
+		}
+	}
+
+	newValidTips.add(newValidTip)
+
+	dag.validTips = newValidTips
+	return nil
+}
+
+func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {
+	selected := newBlockSet()
+
+	candidatesHeap := newDownHeap()
+	candidatesHeap.pushSet(tips)
+
+	// If the first candidate has been disqualified from the chain or violates finality -
+	// it cannot be virtual's parent, since it will make it virtual's selectedParent - disqualifying virtual itself.
+	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with
+	// its parents that have no disqualified children
+	disqualifiedCandidates := newBlockSet()
+	for {
+		if candidatesHeap.Len() == 0 {
+			return nil, errors.New("virtual has no valid parent candidates")
+		}
+		selectedParentCandidate := candidatesHeap.pop()
+
+		if dag.index.BlockNodeStatus(selectedParentCandidate) == statusValid {
+			isFinalityPointInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityPoint, selectedParentCandidate)
+			if err != nil {
+				return nil, err
+			}
+
+			if isFinalityPointInSelectedParentChain {
+				selected.add(selectedParentCandidate)
+				break
+			}
+		}
+
+		disqualifiedCandidates.add(selectedParentCandidate)
+
+		for parent := range selectedParentCandidate.parents {
+			if parent.children.areAllIn(disqualifiedCandidates) {
+				candidatesHeap.Push(parent)
+			}
+		}
+	}
+
+	mergeSetSize := 1 // starts counting from 1 because selectedParent is already in the mergeSet
+
+	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
+		candidate := candidatesHeap.pop()
+
+		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
+		mergeSetIncrease, err := dag.mergeSetIncrease(candidate, selected)
+		if err != nil {
+			return nil, err
+		}
+
+		if mergeSetSize+mergeSetIncrease > mergeSetSizeLimit {
+			continue
+		}
+
+		selected.add(candidate)
+		mergeSetSize += mergeSetIncrease
+	}
+
+	tempVirtual, _ := dag.newBlockNode(nil, selected)
+
+	boundedMergeBreakingParents, err := dag.boundedMergeBreakingParents(tempVirtual)
+	if err != nil {
+		return nil, err
+	}
+	selected = selected.subtract(boundedMergeBreakingParents)
+
+	return selected, nil
+}
+
+func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (int, error) {
+	visited := newBlockSet()
+	queue := newDownHeap()
+	queue.Push(candidate)
+	mergeSetIncrease := 1 // starts with 1 for the candidate itself
+
+	for queue.Len() > 0 {
+		current := queue.pop()
+		isInPastOfSelected, err := dag.isInPastOfAny(current, selected)
+		if err != nil {
+			return 0, err
+		}
+		if isInPastOfSelected {
+			continue
+		}
+		mergeSetIncrease++
+
+		for parent := range current.parents {
+			if !visited.contains(parent) {
+				visited.add(parent)
+				queue.Push(parent)
+			}
+		}
+	}
+
+	return mergeSetIncrease, nil
+}
+
+func (dag *BlockDAG) saveState(dbTx *dbaccess.TxContext) error {
+	state := &dagState{
+		TipHashes:            dag.TipHashes(),
+		ValidTipHashes:       dag.ValidTipHashes(),
+		VirtualParentsHashes: dag.VirtualParentHashes(),
+		LocalSubnetworkID:    dag.subnetworkID,
+	}
+	return saveDAGState(dbTx, state)
 }

@@ -9,13 +9,6 @@ import (
 
 // Config is a descriptor which specifies the blockDAG instance configuration.
 type Config struct {
-	// Interrupt specifies a channel the caller can close to signal that
-	// long running operations, such as catching up indexes or performing
-	// database migrations, should be interrupted.
-	//
-	// This field can be nil if the caller does not desire the behavior.
-	Interrupt <-chan struct{}
-
 	// DAGParams identifies which DAG parameters the DAG is associated
 	// with.
 	//
@@ -51,4 +44,8 @@ type Config struct {
 	// DatabaseContext is the context in which all database queries related to
 	// this DAG are going to run.
 	DatabaseContext *dbaccess.DatabaseContext
+
+	// MaxUTXOCacheSize is the Max size of loaded UTXO into ram from the disk in bytes
+	// to support UTXO lazy-load
+	MaxUTXOCacheSize uint64
 }

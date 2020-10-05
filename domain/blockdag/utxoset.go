@@ -1,14 +1,17 @@
 package blockdag
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"sort"
 	"strings"
+	"unsafe"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
@@ -157,7 +160,7 @@ func (uc utxoCollection) containsWithBlueScore(outpoint appmessage.Outpoint, blu
 
 // clone returns a clone of this collection
 func (uc utxoCollection) clone() utxoCollection {
-	clone := utxoCollection{}
+	clone := make(utxoCollection, len(uc))
 	for outpoint, entry := range uc {
 		clone.add(outpoint, entry)
 	}
@@ -484,29 +487,27 @@ type UTXOSet interface {
 
 // FullUTXOSet represents a full list of transaction outputs and their values
 type FullUTXOSet struct {
-	utxoCollection
+	utxoCache        utxoCollection
+	dbContext        dbaccess.Context
+	estimatedSize    uint64
+	maxUTXOCacheSize uint64
+	outpointBuff     *bytes.Buffer
 }
 
 // NewFullUTXOSet creates a new utxoSet with full list of transaction outputs and their values
 func NewFullUTXOSet() *FullUTXOSet {
 	return &FullUTXOSet{
-		utxoCollection: utxoCollection{},
+		utxoCache: utxoCollection{},
 	}
 }
 
-// newFullUTXOSetFromUTXOCollection converts a utxoCollection to a FullUTXOSet
-func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
-	var err error
-	multiset := secp256k1.NewMultiset()
-	for outpoint, utxoEntry := range collection {
-		multiset, err = addUTXOToMultiset(multiset, utxoEntry, &outpoint)
-		if err != nil {
-			return nil, err
-		}
-	}
+// NewFullUTXOSetFromContext creates a new utxoSet and map the data context with caching
+func NewFullUTXOSetFromContext(context dbaccess.Context, cacheSize uint64) *FullUTXOSet {
 	return &FullUTXOSet{
-		utxoCollection: collection,
-	}, nil
+		dbContext:        context,
+		maxUTXOCacheSize: cacheSize,
+		utxoCache:        make(utxoCollection),
+	}
 }
 
 // diffFrom returns the difference between this utxoSet and another
@@ -564,15 +565,93 @@ func (fus *FullUTXOSet) containsInputs(tx *appmessage.MsgTx) bool {
 	return true
 }
 
+// contains returns a boolean value indicating whether a UTXO entry is in the set
+func (fus *FullUTXOSet) contains(outpoint appmessage.Outpoint) bool {
+	_, ok := fus.Get(outpoint)
+	return ok
+}
+
 // clone returns a clone of this utxoSet
 func (fus *FullUTXOSet) clone() UTXOSet {
-	return &FullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
+	return &FullUTXOSet{
+		utxoCache:        fus.utxoCache.clone(),
+		dbContext:        fus.dbContext,
+		estimatedSize:    fus.estimatedSize,
+		maxUTXOCacheSize: fus.maxUTXOCacheSize,
+	}
+}
+
+// get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
+func (fus *FullUTXOSet) get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
+	return fus.Get(outpoint)
+}
+
+// getSizeOfUTXOEntryAndOutpoint returns estimated size of UTXOEntry & Outpoint in bytes
+func getSizeOfUTXOEntryAndOutpoint(entry *UTXOEntry) uint64 {
+	const staticSize = uint64(unsafe.Sizeof(UTXOEntry{}) + unsafe.Sizeof(appmessage.Outpoint{}))
+	return staticSize + uint64(len(entry.scriptPubKey))
+}
+
+// checkAndCleanCachedData checks the FullUTXOSet estimated size and clean it if it reaches the limit
+func (fus *FullUTXOSet) checkAndCleanCachedData() {
+	if fus.estimatedSize > fus.maxUTXOCacheSize {
+		fus.utxoCache = make(utxoCollection)
+		fus.estimatedSize = 0
+	}
+}
+
+// add adds a new UTXO entry to this FullUTXOSet
+func (fus *FullUTXOSet) add(outpoint appmessage.Outpoint, entry *UTXOEntry) {
+	fus.utxoCache[outpoint] = entry
+	fus.estimatedSize += getSizeOfUTXOEntryAndOutpoint(entry)
+	fus.checkAndCleanCachedData()
+}
+
+// remove removes a UTXO entry from this collection if it exists
+func (fus *FullUTXOSet) remove(outpoint appmessage.Outpoint) {
+	entry, ok := fus.utxoCache.get(outpoint)
+	if ok {
+		delete(fus.utxoCache, outpoint)
+		fus.estimatedSize -= getSizeOfUTXOEntryAndOutpoint(entry)
+	}
 }
 
 // Get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
+// If the UTXOEntry doesn't not exist in the memory then check in the database
 func (fus *FullUTXOSet) Get(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
-	utxoEntry, ok := fus.utxoCollection[outpoint]
-	return utxoEntry, ok
+	utxoEntry, ok := fus.utxoCache[outpoint]
+	if ok {
+		return utxoEntry, ok
+	}
+
+	if fus.outpointBuff == nil {
+		fus.outpointBuff = bytes.NewBuffer(make([]byte, outpointSerializeSize))
+	}
+
+	fus.outpointBuff.Reset()
+	err := serializeOutpoint(fus.outpointBuff, &outpoint)
+	if err != nil {
+		return nil, false
+	}
+
+	key := fus.outpointBuff.Bytes()
+	value, err := dbaccess.GetFromUTXOSet(fus.dbContext, key)
+
+	if err != nil {
+		return nil, false
+	}
+
+	entry, err := deserializeUTXOEntry(bytes.NewReader(value))
+	if err != nil {
+		return nil, false
+	}
+
+	fus.add(outpoint, entry)
+	return entry, true
+}
+
+func (fus *FullUTXOSet) String() string {
+	return fus.utxoCache.String()
 }
 
 // DiffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff

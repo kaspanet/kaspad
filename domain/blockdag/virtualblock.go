@@ -5,8 +5,9 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
+
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // virtualBlock is a virtual block whose parents are the tips of the DAG.
@@ -14,7 +15,7 @@ type virtualBlock struct {
 	mtx     sync.Mutex
 	dag     *BlockDAG
 	utxoSet *FullUTXOSet
-	blockNode
+	*blockNode
 
 	// selectedParentChainSet is a block set that includes all the blocks
 	// that belong to the chain of selected parents from the virtual block.
@@ -27,28 +28,16 @@ type virtualBlock struct {
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
-func newVirtualBlock(dag *BlockDAG, tips blockSet) *virtualBlock {
+func newVirtualBlock(dag *BlockDAG, parents blockSet) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual virtualBlock
 	virtual.dag = dag
-	virtual.utxoSet = NewFullUTXOSet()
+	virtual.utxoSet = NewFullUTXOSetFromContext(dag.databaseContext, dag.maxUTXOCacheSize)
 	virtual.selectedParentChainSet = newBlockSet()
 	virtual.selectedParentChainSlice = nil
-	virtual.setTips(tips)
+	virtual.blockNode, _ = dag.newBlockNode(nil, parents)
 
 	return &virtual
-}
-
-// setTips replaces the tips of the virtual block with the blocks in the
-// given blockSet. This only differs from the exported version in that it
-// is up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) setTips(tips blockSet) *chainUpdates {
-	oldSelectedParent := v.selectedParent
-	node, _ := v.dag.newBlockNode(nil, tips)
-	v.blockNode = *node
-	return v.updateSelectedParentSet(oldSelectedParent)
 }
 
 // updateSelectedParentSet updates the selectedParentSet to match the
@@ -59,7 +48,7 @@ func (v *virtualBlock) setTips(tips blockSet) *chainUpdates {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *chainUpdates {
+func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *selectedParentChainUpdates {
 	var intersectionNode *blockNode
 	nodesToAdd := make([]*blockNode, 0)
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
@@ -101,53 +90,8 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *ch
 	}
 	v.selectedParentChainSlice = append(v.selectedParentChainSlice, nodesToAdd...)
 
-	return &chainUpdates{
+	return &selectedParentChainUpdates{
 		removedChainBlockHashes: removedChainBlockHashes,
 		addedChainBlockHashes:   addedChainBlockHashes,
 	}
-}
-
-// SetTips replaces the tips of the virtual block with the blocks in the
-// given blockSet.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) SetTips(tips blockSet) {
-	v.mtx.Lock()
-	defer v.mtx.Unlock()
-	v.setTips(tips)
-}
-
-// addTip adds the given tip to the set of tips in the virtual block.
-// All former tips that happen to be the given tips parents are removed
-// from the set. This only differs from the exported version in that it
-// is up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) addTip(newTip *blockNode) *chainUpdates {
-	updatedTips := v.tips().clone()
-	for parent := range newTip.parents {
-		updatedTips.remove(parent)
-	}
-
-	updatedTips.add(newTip)
-	return v.setTips(updatedTips)
-}
-
-// AddTip adds the given tip to the set of tips in the virtual block.
-// All former tips that happen to be the given tip's parents are removed
-// from the set.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) AddTip(newTip *blockNode) *chainUpdates {
-	v.mtx.Lock()
-	defer v.mtx.Unlock()
-	return v.addTip(newTip)
-}
-
-// tips returns the current tip block nodes for the DAG. It will return
-// an empty blockSet if there is no tip.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) tips() blockSet {
-	return v.parents
 }

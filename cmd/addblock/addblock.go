@@ -5,9 +5,10 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"runtime"
+
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/infrastructure/os/limits"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -77,7 +78,7 @@ func realMain() error {
 func main() {
 	// Use all processor cores and up some limits.
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	if err := limits.SetLimits(); err != nil {
+	if err := limits.SetLimits(nil); err != nil {
 		os.Exit(1)
 	}
 

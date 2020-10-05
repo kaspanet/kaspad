@@ -78,7 +78,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCollection[appmessage.Outpoint{TxID: txID, Index: index}] = entry
+		utxoSet.utxoCache[appmessage.Outpoint{TxID: txID, Index: index}] = entry
 	}
 
 	return utxoSet, nil

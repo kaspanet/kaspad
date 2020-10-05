@@ -77,7 +77,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	testFiles := []string{
 		"blk_0_to_4.dat",
-		"blk_3B.dat",
 	}
 
 	var blocks []*util.Block
@@ -110,7 +109,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	db1DAG, teardown, err := blockdag.DAGSetup("", false, db1Config)
 	if err != nil {
-		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
+		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %+v", err)
 	}
 	if teardown != nil {
 		defer teardown()
@@ -178,7 +177,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	db2DAG, teardown, err := blockdag.DAGSetup("", false, db2Config)
 	if err != nil {
-		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %v", err)
+		t.Fatalf("TestAcceptanceIndexRecover: Failed to setup DAG instance: %+v", err)
 	}
 	if teardown != nil {
 		defer teardown()

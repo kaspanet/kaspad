@@ -203,6 +203,9 @@ const (
 	// is also an ancestor of another parent
 	ErrInvalidParentsRelation
 
+	// ErrTooManyParents indicates that a block points to more then `MaxNumParentBlocks` parents
+	ErrTooManyParents
+
 	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
 	// submitted with BFDisallowDelay flag raised.
 	ErrDelayedBlockIsNotAllowed
@@ -210,6 +213,20 @@ const (
 	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
 	// BFDisallowOrphans flag raised.
 	ErrOrphanBlockIsNotAllowed
+
+	// ErrViolatingBoundedMergeDepth indicates that a block is violating finality from
+	// its own point of view
+	ErrViolatingBoundedMergeDepth
+
+	// ErrViolatingMergeLimit indicates that a block merges more than mergeLimit blocks
+	ErrViolatingMergeLimit
+
+	// ErrChainedTransactions indicates that a block contains a transaction that spends an output of a transaction
+	// In the same block
+	ErrChainedTransactions
+
+	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
+	ErrSelectedParentDisqualifiedFromChain
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.

@@ -12,23 +12,27 @@ import (
 type handler func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
 
 var handlers = map[appmessage.MessageCommand]handler{
-	appmessage.CmdGetCurrentNetworkRequestMessage:    rpchandlers.HandleGetCurrentNetwork,
-	appmessage.CmdSubmitBlockRequestMessage:          rpchandlers.HandleSubmitBlock,
-	appmessage.CmdGetBlockTemplateRequestMessage:     rpchandlers.HandleGetBlockTemplate,
-	appmessage.CmdNotifyBlockAddedRequestMessage:     rpchandlers.HandleNotifyBlockAdded,
-	appmessage.CmdGetPeerAddressesRequestMessage:     rpchandlers.HandleGetPeerAddresses,
-	appmessage.CmdGetSelectedTipHashRequestMessage:   rpchandlers.HandleGetSelectedTipHash,
-	appmessage.CmdGetMempoolEntryRequestMessage:      rpchandlers.HandleGetMempoolEntry,
-	appmessage.CmdGetConnectedPeerInfoRequestMessage: rpchandlers.HandleGetConnectedPeerInfo,
-	appmessage.CmdAddPeerRequestMessage:              rpchandlers.HandleAddPeer,
-	appmessage.CmdSubmitTransactionRequestMessage:    rpchandlers.HandleSubmitTransaction,
-	appmessage.CmdNotifyChainChangedRequestMessage:   rpchandlers.HandleNotifyChainChanged,
-	appmessage.CmdGetBlockRequestMessage:             rpchandlers.HandleGetBlock,
-	appmessage.CmdGetSubnetworkRequestMessage:        rpchandlers.HandleGetSubnetwork,
-	appmessage.CmdGetChainFromBlockRequestMessage:    rpchandlers.HandleGetChainFromBlock,
-	appmessage.CmdGetBlocksRequestMessage:            rpchandlers.HandleGetBlocks,
-	appmessage.CmdGetBlockCountRequestMessage:        rpchandlers.HandleGetBlockCount,
-	appmessage.CmdGetBlockDAGInfoRequestMessage:      rpchandlers.HandleGetBlockDAGInfo,
+	appmessage.CmdGetCurrentNetworkRequestMessage:       rpchandlers.HandleGetCurrentNetwork,
+	appmessage.CmdSubmitBlockRequestMessage:             rpchandlers.HandleSubmitBlock,
+	appmessage.CmdGetBlockTemplateRequestMessage:        rpchandlers.HandleGetBlockTemplate,
+	appmessage.CmdNotifyBlockAddedRequestMessage:        rpchandlers.HandleNotifyBlockAdded,
+	appmessage.CmdGetPeerAddressesRequestMessage:        rpchandlers.HandleGetPeerAddresses,
+	appmessage.CmdGetSelectedTipHashRequestMessage:      rpchandlers.HandleGetSelectedTipHash,
+	appmessage.CmdGetMempoolEntryRequestMessage:         rpchandlers.HandleGetMempoolEntry,
+	appmessage.CmdGetConnectedPeerInfoRequestMessage:    rpchandlers.HandleGetConnectedPeerInfo,
+	appmessage.CmdAddPeerRequestMessage:                 rpchandlers.HandleAddPeer,
+	appmessage.CmdSubmitTransactionRequestMessage:       rpchandlers.HandleSubmitTransaction,
+	appmessage.CmdNotifyChainChangedRequestMessage:      rpchandlers.HandleNotifyChainChanged,
+	appmessage.CmdGetBlockRequestMessage:                rpchandlers.HandleGetBlock,
+	appmessage.CmdGetSubnetworkRequestMessage:           rpchandlers.HandleGetSubnetwork,
+	appmessage.CmdGetChainFromBlockRequestMessage:       rpchandlers.HandleGetChainFromBlock,
+	appmessage.CmdGetBlocksRequestMessage:               rpchandlers.HandleGetBlocks,
+	appmessage.CmdGetBlockCountRequestMessage:           rpchandlers.HandleGetBlockCount,
+	appmessage.CmdGetBlockDAGInfoRequestMessage:         rpchandlers.HandleGetBlockDAGInfo,
+	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
+	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
+	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
+	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleShutDown,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
@@ -40,16 +44,12 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 	if err != nil {
 		panic(err)
 	}
-	spawn("routerInitializer-handleIncomingMessages", func() {
-		err := m.handleIncomingMessages(router, incomingRoute)
-		m.handleError(err, netConnection)
-	})
+	m.context.NotificationManager.AddListener(router)
 
-	notificationListener := m.context.NotificationManager.AddListener(router)
-	spawn("routerInitializer-handleOutgoingNotifications", func() {
+	spawn("routerInitializer-handleIncomingMessages", func() {
 		defer m.context.NotificationManager.RemoveListener(router)
 
-		err := m.handleOutgoingNotifications(notificationListener)
+		err := m.handleIncomingMessages(router, incomingRoute)
 		m.handleError(err, netConnection)
 	})
 }
@@ -70,15 +70,6 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 			return err
 		}
 		err = outgoingRoute.Enqueue(response)
-		if err != nil {
-			return err
-		}
-	}
-}
-
-func (m *Manager) handleOutgoingNotifications(notificationListener *rpccontext.NotificationListener) error {
-	for {
-		err := notificationListener.ProcessNextNotification()
 		if err != nil {
 			return err
 		}

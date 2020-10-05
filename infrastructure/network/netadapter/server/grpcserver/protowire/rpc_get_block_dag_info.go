@@ -19,12 +19,13 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) toAppMessage() (appmessage.Messa
 		err = &appmessage.RPCError{Message: x.GetBlockDagInfoResponse.Error.Message}
 	}
 	return &appmessage.GetBlockDAGInfoResponseMessage{
-		NetworkName:    x.GetBlockDagInfoResponse.NetworkName,
-		BlockCount:     x.GetBlockDagInfoResponse.BlockCount,
-		TipHashes:      x.GetBlockDagInfoResponse.TipHashes,
-		Difficulty:     x.GetBlockDagInfoResponse.Difficulty,
-		PastMedianTime: x.GetBlockDagInfoResponse.PastMedianTime,
-		Error:          err,
+		NetworkName:         x.GetBlockDagInfoResponse.NetworkName,
+		BlockCount:          x.GetBlockDagInfoResponse.BlockCount,
+		TipHashes:           x.GetBlockDagInfoResponse.TipHashes,
+		VirtualParentHashes: x.GetBlockDagInfoResponse.VirtualParentHashes,
+		Difficulty:          x.GetBlockDagInfoResponse.Difficulty,
+		PastMedianTime:      x.GetBlockDagInfoResponse.PastMedianTime,
+		Error:               err,
 	}, nil
 }
 
@@ -34,12 +35,13 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) fromAppMessage(message *appmessa
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetBlockDagInfoResponse = &GetBlockDagInfoResponseMessage{
-		NetworkName:    message.NetworkName,
-		BlockCount:     message.BlockCount,
-		TipHashes:      message.TipHashes,
-		Difficulty:     message.Difficulty,
-		PastMedianTime: message.PastMedianTime,
-		Error:          err,
+		NetworkName:         message.NetworkName,
+		BlockCount:          message.BlockCount,
+		TipHashes:           message.TipHashes,
+		VirtualParentHashes: message.VirtualParentHashes,
+		Difficulty:          message.Difficulty,
+		PastMedianTime:      message.PastMedianTime,
+		Error:               err,
 	}
 	return nil
 }
