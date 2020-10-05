@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// ReachabilityDataStore ...
+// ReachabilityDataStore represents a store of ReachabilityData
 type ReachabilityDataStore struct {
 }
 
-// New ...
+// New instantiates a new ReachabilityDataStore
 func New() *ReachabilityDataStore {
 	return &ReachabilityDataStore{}
 }

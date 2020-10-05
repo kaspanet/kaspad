@@ -25,7 +25,7 @@ type BlockProcessor struct {
 	blockStatusStore      datastructures.BlockStatusStore
 }
 
-// New ...
+// New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *dbaccess.DatabaseContext,

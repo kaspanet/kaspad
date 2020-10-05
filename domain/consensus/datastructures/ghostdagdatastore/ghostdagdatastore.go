@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// GHOSTDAGDataStore ...
+// GHOSTDAGDataStore represents a store of BlockGHOSTDAGData
 type GHOSTDAGDataStore struct {
 }
 
-// New ...
+// New instantiates a new GHOSTDAGDataStore
 func New() *GHOSTDAGDataStore {
 	return &GHOSTDAGDataStore{}
 }

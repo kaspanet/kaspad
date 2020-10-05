@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// ConsensusStateStore ...
+// ConsensusStateStore represents a store for the current consensus state
 type ConsensusStateStore struct {
 }
 
-// New ...
+// New instantiates a new ConsensusStateStore
 func New() *ConsensusStateStore {
 	return &ConsensusStateStore{}
 }

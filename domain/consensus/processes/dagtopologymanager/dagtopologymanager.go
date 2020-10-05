@@ -12,7 +12,7 @@ type DAGTopologyManager struct {
 	blockRelationStore datastructures.BlockRelationStore
 }
 
-// New ...
+// New instantiates a new DAGTopologyManager
 func New(
 	reachabilityTree processes.ReachabilityTree,
 	blockRelationStore datastructures.BlockRelationStore) *DAGTopologyManager {

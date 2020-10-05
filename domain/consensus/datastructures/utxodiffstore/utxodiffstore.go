@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// UTXODiffStore ...
+// UTXODiffStore represents a store of UTXODiffs
 type UTXODiffStore struct {
 }
 
-// New ...
+// New instantiates a new UTXODiffStore
 func New() *UTXODiffStore {
 	return &UTXODiffStore{}
 }

@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// MultisetStore ...
+// MultisetStore represents a store of Multisets
 type MultisetStore struct {
 }
 
-// New ...
+// New instantiates a new MultisetStore
 func New() *MultisetStore {
 	return &MultisetStore{}
 }

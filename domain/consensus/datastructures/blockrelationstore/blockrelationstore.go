@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// BlockRelationStore ...
+// BlockRelationStore represents a store of BlockRelations
 type BlockRelationStore struct {
 }
 
-// New ...
+// New instantiates a new BlockRelationStore
 func New() *BlockRelationStore {
 	return &BlockRelationStore{}
 }

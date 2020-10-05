@@ -5,11 +5,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// PruningPointStore ...
+// PruningPointStore represents a store for the current pruning point
 type PruningPointStore struct {
 }
 
-// New ...
+// New instantiates a new PruningPointStore
 func New() *PruningPointStore {
 	return &PruningPointStore{}
 }

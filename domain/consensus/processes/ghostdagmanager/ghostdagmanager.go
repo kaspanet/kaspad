@@ -13,7 +13,7 @@ type GHOSTDAGManager struct {
 	ghostdagDataStore  datastructures.GHOSTDAGDataStore
 }
 
-// New ...
+// New instantiates a new GHOSTDAGManager
 func New(
 	dagTopologyManager processes.DAGTopologyManager,
 	ghostdagDataStore datastructures.GHOSTDAGDataStore) *GHOSTDAGManager {

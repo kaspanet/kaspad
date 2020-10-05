@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// AcceptanceDataStore ...
+// AcceptanceDataStore represents a store of AcceptanceData
 type AcceptanceDataStore struct {
 }
 
-// New ...
+// New instantiates a new AcceptanceDataStore
 func New() *AcceptanceDataStore {
 	return &AcceptanceDataStore{}
 }

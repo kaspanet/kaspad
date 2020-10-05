@@ -5,11 +5,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// BlockIndex ...
+// BlockIndex represents a store of known block hashes
 type BlockIndex struct {
 }
 
-// New ...
+// New instantiates a new BlockIndex
 func New() *BlockIndex {
 	return &BlockIndex{}
 }

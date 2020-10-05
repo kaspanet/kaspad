@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// BlockMessageStore ...
+// BlockMessageStore represents a store of MsgBlock
 type BlockMessageStore struct {
 }
 
-// New ...
+// New instantiates a new BlockMessageStore
 func New() *BlockMessageStore {
 	return &BlockMessageStore{}
 }

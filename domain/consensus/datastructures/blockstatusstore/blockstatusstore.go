@@ -6,11 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-// BlockStatusStore ...
+// BlockStatusStore represents a store of BlockStatuses
 type BlockStatusStore struct {
 }
 
-// New ...
+// New instantiates a new BlockStatusStore
 func New() *BlockStatusStore {
 	return &BlockStatusStore{}
 }

@@ -12,7 +12,7 @@ type ReachabilityTree struct {
 	reachabilityDataStore datastructures.ReachabilityDataStore
 }
 
-// New ...
+// New instantiates a new ReachabilityTree
 func New(
 	blockRelationStore datastructures.BlockRelationStore,
 	reachabilityDataStore datastructures.ReachabilityDataStore) *ReachabilityTree {

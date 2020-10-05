@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/app/appmessage"
 type BlockValidator struct {
 }
 
-// New ...
+// New instantiates a new BlockValidator
 func New() *BlockValidator {
 	return &BlockValidator{}
 }

@@ -17,7 +17,7 @@ type ConsensusStateManager struct {
 	utxoDiffStore       datastructures.UTXODiffStore
 }
 
-// New ...
+// New instantiates a new ConsensusStateManager
 func New(
 	dagParams *dagconfig.Params,
 	consensusStateStore datastructures.ConsensusStateStore,

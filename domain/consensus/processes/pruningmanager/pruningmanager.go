@@ -13,7 +13,7 @@ type PruningManager struct {
 	pruningPointStore   datastructures.PruningPointStore
 }
 
-// New ...
+// New instantiates a new PruningManager
 func New(
 	dagTraversalManager processes.DAGTraversalManager,
 	pruningPointStore datastructures.PruningPointStore) *PruningManager {
@@ -23,7 +23,7 @@ func New(
 	}
 }
 
-// FindPruningPoint ...
+// FindNextPruningPoint ...
 func (pm *PruningManager) FindNextPruningPoint(blockHash *daghash.Hash) (found bool,
 	newPruningPoint *daghash.Hash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
