@@ -1,4 +1,4 @@
-package randomaddress
+package addressmanager
 
 import (
 	"math/rand"

@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/randomaddress"
 	"github.com/pkg/errors"
 )
 
@@ -75,7 +74,7 @@ func New(cfg *Config) (*AddressManager, error) {
 		addresses:       map[AddressKey]*addressEntry{},
 		bannedAddresses: map[AddressKey]*addressEntry{},
 		localAddresses:  localAddresses,
-		random:          randomaddress.NewAddressRandomize(),
+		random:          NewAddressRandomize(),
 		cfg:             cfg,
 	}, nil
 }
@@ -127,10 +126,15 @@ func (am *AddressManager) Addresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
+	result := make([]*appmessage.NetAddress, 0, len(am.addresses)+len(am.bannedAddresses))
 	for _, address := range am.addresses {
 		result = append(result, address.netAddress)
 	}
+
+	for _, address := range am.bannedAddresses {
+		result = append(result, address.netAddress)
+	}
+
 	return result
 }
 
@@ -140,7 +144,7 @@ func (am *AddressManager) NotBannedAddressesWithException(exceptions []*appmessa
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
+	result := make([]*appmessage.NetAddress, 0, len(am.addresses)-len(exceptions))
 	for key, address := range am.addresses {
 		if !exceptionsKeys[key] {
 			result = append(result, address.netAddress)
