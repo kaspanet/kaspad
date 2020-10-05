@@ -23,12 +23,14 @@ func New(
 	}
 }
 
-// BlockAtDepth ...
-func (dtm *DAGTraversalManager) BlockAtDepth(uint64) *daghash.Hash {
+// BlockAtDepth returns the hash of the block that's at the
+// given depth from the virtual block
+func (dtm *DAGTraversalManager) BlockAtDepth(depth uint64) *daghash.Hash {
 	return nil
 }
 
-// SelectedParentIterator ...
+// SelectedParentIterator creates an iterator over the selected
+// parent chain of the given highHash
 func (dtm *DAGTraversalManager) SelectedParentIterator(highHash *daghash.Hash) model.SelectedParentIterator {
 	return nil
 }

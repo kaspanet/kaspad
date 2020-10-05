@@ -23,12 +23,14 @@ func New(
 	}
 }
 
-// GHOSTDAG ...
+// GHOSTDAG calculates GHOSTDAG data for the block represented
+// by the given blockParents
 func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData {
 	return nil
 }
 
-// BlockData ...
+// BlockData returns previously calculated GHOSTDAG data for
+// the given blockHash
 func (gm *GHOSTDAGManager) BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData {
 	return nil
 }

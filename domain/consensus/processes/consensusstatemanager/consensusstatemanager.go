@@ -43,7 +43,8 @@ func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxo
 	return nil
 }
 
-// CalculateConsensusStateChanges ...
+// CalculateConsensusStateChanges returns a set of changes that must occur in order
+// to transition the current consensus state into the one including the given block
 func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges {
 	return nil
 }

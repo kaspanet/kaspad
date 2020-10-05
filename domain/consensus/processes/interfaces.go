@@ -67,7 +67,7 @@ type PruningManager interface {
 // ReachabilityTree maintains a structure that allows to answer
 // reachability queries in sub-linear time
 type ReachabilityTree interface {
-	IsReachabilityAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
+	IsReachabilityTreeAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
 	IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
 	ReachabilityChangeset(blockHash *daghash.Hash, blockGHOSTDAGData *model.BlockGHOSTDAGData) *model.ReachabilityChangeset
 }
