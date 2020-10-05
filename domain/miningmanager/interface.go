@@ -15,5 +15,5 @@ type Mempool interface {
 
 // BlockTemplateBuilder builds block templates for miners to consume
 type BlockTemplateBuilder interface {
-	GetBlockTemplate() *appmessage.MsgBlock
+	GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock
 }

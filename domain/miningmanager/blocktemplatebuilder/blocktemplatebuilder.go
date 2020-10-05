@@ -3,6 +3,7 @@ package blocktemplatebuilder
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/kaspadstate"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // BlockTemplateBuilder ...
@@ -18,6 +19,6 @@ func New(kaspadState *kaspadstate.KaspadState) *BlockTemplateBuilder {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (btb *BlockTemplateBuilder) GetBlockTemplate() *appmessage.MsgBlock {
+func (btb *BlockTemplateBuilder) GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock {
 	return nil
 }

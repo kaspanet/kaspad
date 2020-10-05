@@ -2,12 +2,13 @@ package miningmanager
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate() *appmessage.MsgBlock
+	GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock
 	HandleNewBlock(block *appmessage.MsgBlock)
 	ValidateAndInsertTransaction(transaction *appmessage.MsgTx) error
 }
@@ -18,8 +19,8 @@ type miningManager struct {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate() *appmessage.MsgBlock {
-	return mm.blockTemplateBuilder.GetBlockTemplate()
+func (mm *miningManager) GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock {
+	return mm.blockTemplateBuilder.GetBlockTemplate(payAddress, extraData)
 }
 
 // HandleNewBlock handles a new block that was just added to the DAG
