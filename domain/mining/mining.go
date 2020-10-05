@@ -176,10 +176,17 @@ func NewBlkTmplGenerator(policy *Policy,
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address, extraNonce uint64) (*BlockTemplate, error) {
+
+	mempoolTransactions := g.txSource.MiningDescs()
+
+	// The lock is called only after MiningDescs() to avoid a potential deadlock:
+	// MiningDescs() requires the TxPool's read lock, and TxPool.ProcessTransaction
+	// requires the dag's read lock, so if NewBlockTemplate will call the lock before, it
+	// might cause a dead lock.
 	g.dag.Lock()
 	defer g.dag.Unlock()
 
-	txsForBlockTemplate, err := g.selectTxs(payToAddress, extraNonce)
+	txsForBlockTemplate, err := g.selectTxs(mempoolTransactions, payToAddress, extraNonce)
 	if err != nil {
 		return nil, errors.Errorf("failed to select transactions: %s", err)
 	}

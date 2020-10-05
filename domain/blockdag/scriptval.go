@@ -16,9 +16,10 @@ import (
 
 // txValidateItem holds a transaction along with which input to validate.
 type txValidateItem struct {
-	txInIndex int
-	txIn      *appmessage.TxIn
-	tx        *util.Tx
+	txInIndex             int
+	txIn                  *appmessage.TxIn
+	tx                    *util.Tx
+	referencedUTXOEntries []*UTXOEntry
 }
 
 // txValidator provides a type which asynchronously validates transaction
@@ -28,7 +29,6 @@ type txValidator struct {
 	validateChan chan *txValidateItem
 	quitChan     chan struct{}
 	resultChan   chan error
-	utxoSet      UTXOSet
 	flags        txscript.ScriptFlags
 	sigCache     *txscript.SigCache
 }
@@ -52,19 +52,8 @@ out:
 	for {
 		select {
 		case txVI := <-v.validateChan:
-			// Ensure the referenced input utxo is available.
 			txIn := txVI.txIn
-			entry, ok := v.utxoSet.Get(txIn.PreviousOutpoint)
-			if !ok {
-				str := fmt.Sprintf("unable to find unspent "+
-					"output %s referenced from "+
-					"transaction %s input %d",
-					txIn.PreviousOutpoint, txVI.tx.ID(),
-					txVI.txInIndex)
-				err := ruleError(ErrMissingTxOut, str)
-				v.sendResult(err)
-				break out
-			}
+			entry := txVI.referencedUTXOEntries[txVI.txInIndex]
 
 			// Create a new script engine for the script pair.
 			sigScript := txIn.SignatureScript
@@ -165,12 +154,11 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 
 // newTxValidator returns a new instance of txValidator to be used for
 // validating transaction scripts asynchronously.
-func newTxValidator(utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
+func newTxValidator(flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
 	return &txValidator{
 		validateChan: make(chan *txValidateItem),
 		quitChan:     make(chan struct{}),
 		resultChan:   make(chan error),
-		utxoSet:      utxoSet,
 		sigCache:     sigCache,
 		flags:        flags,
 	}
@@ -178,22 +166,23 @@ func newTxValidator(utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscr
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func ValidateTransactionScripts(tx *util.Tx, referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
 	txValItems := make([]*txValidateItem, 0, len(txIns))
 	for txInIdx, txIn := range txIns {
 		txVI := &txValidateItem{
-			txInIndex: txInIdx,
-			txIn:      txIn,
-			tx:        tx,
+			txInIndex:             txInIdx,
+			txIn:                  txIn,
+			tx:                    tx,
+			referencedUTXOEntries: referencedUTXOEntries,
 		}
 		txValItems = append(txValItems, txVI)
 	}
 
 	// Validate all of the inputs.
-	validator := newTxValidator(utxoSet, flags, sigCache)
+	validator := newTxValidator(flags, sigCache)
 	return validator.Validate(txValItems)
 }
 
@@ -208,18 +197,24 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	}
 	txValItems := make([]*txValidateItem, 0, numInputs)
 	for _, tx := range transactions {
+		referencedUTXOEntries, err := getReferencedUTXOEntries(tx, utxoSet)
+		if err != nil {
+			return err
+		}
+
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
 			txVI := &txValidateItem{
-				txInIndex: txInIdx,
-				txIn:      txIn,
-				tx:        tx,
+				txInIndex:             txInIdx,
+				txIn:                  txIn,
+				tx:                    tx,
+				referencedUTXOEntries: referencedUTXOEntries,
 			}
 			txValItems = append(txValItems, txVI)
 		}
 	}
 
 	// Validate all of the inputs.
-	validator := newTxValidator(utxoSet, scriptFlags, sigCache)
+	validator := newTxValidator(scriptFlags, sigCache)
 	start := time.Now()
 	if err := validator.Validate(txValItems); err != nil {
 		return err
