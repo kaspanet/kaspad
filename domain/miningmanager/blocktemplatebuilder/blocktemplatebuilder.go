@@ -2,19 +2,19 @@ package blocktemplatebuilder
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/kaspadstate"
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // BlockTemplateBuilder ...
 type BlockTemplateBuilder struct {
-	kaspadState *kaspadstate.KaspadState
+	consensus *consensus.Consensus
 }
 
 // New creates a new BlockTemplateBuilder
-func New(kaspadState *kaspadstate.KaspadState) *BlockTemplateBuilder {
+func New(consensus *consensus.Consensus) *BlockTemplateBuilder {
 	return &BlockTemplateBuilder{
-		kaspadState: kaspadState,
+		consensus: consensus,
 	}
 }
 

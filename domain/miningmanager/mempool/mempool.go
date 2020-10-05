@@ -2,20 +2,20 @@ package mempool
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/kaspadstate"
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // Mempool maintains a set of known transactions that
 // have no yet been added to any block
 type Mempool struct {
-	kaspadState *kaspadstate.KaspadState
+	consensus *consensus.Consensus
 }
 
 // New create a new Mempool
-func New(kaspadState *kaspadstate.KaspadState) *Mempool {
+func New(consensus *consensus.Consensus) *Mempool {
 	return &Mempool{
-		kaspadState: kaspadState,
+		consensus: consensus,
 	}
 }
 
