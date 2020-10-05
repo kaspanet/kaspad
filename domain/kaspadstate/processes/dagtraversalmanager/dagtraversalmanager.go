@@ -1,21 +1,21 @@
 package dagtraversalmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // DAGTraversalManager ...
 type DAGTraversalManager struct {
-	dagTopologyManager algorithms.DAGTopologyManager
-	ghostdagManager    algorithms.GHOSTDAGManager
+	dagTopologyManager processes.DAGTopologyManager
+	ghostdagManager    processes.GHOSTDAGManager
 }
 
 // New ...
 func New(
-	dagTopologyManager algorithms.DAGTopologyManager,
-	ghostdagManager algorithms.GHOSTDAGManager) *DAGTraversalManager {
+	dagTopologyManager processes.DAGTopologyManager,
+	ghostdagManager processes.GHOSTDAGManager) *DAGTraversalManager {
 	return &DAGTraversalManager{
 		dagTopologyManager: dagTopologyManager,
 		ghostdagManager:    ghostdagManager,

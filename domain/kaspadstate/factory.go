@@ -2,14 +2,6 @@ package kaspadstate
 
 import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockprocessor"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/blockvalidator"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/consensusstatemanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtopologymanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/dagtraversalmanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/ghostdagmanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/pruningmanager"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms/reachabilitytree"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockindex"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/blockmessagestore"
@@ -21,6 +13,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/pruningpointstore"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures/utxodiffstore"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/blockprocessor"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/blockvalidator"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/consensusstatemanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/dagtopologymanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/dagtraversalmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/pruningmanager"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes/reachabilitytree"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 

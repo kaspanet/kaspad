@@ -3,9 +3,9 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -14,11 +14,11 @@ type BlockProcessor struct {
 	dagParams       *dagconfig.Params
 	databaseContext *dbaccess.DatabaseContext
 
-	consensusStateManager algorithms.ConsensusStateManager
-	pruningManager        algorithms.PruningManager
-	blockValidator        algorithms.BlockValidator
-	dagTopologyManager    algorithms.DAGTopologyManager
-	reachabilityTree      algorithms.ReachabilityTree
+	consensusStateManager processes.ConsensusStateManager
+	pruningManager        processes.PruningManager
+	blockValidator        processes.BlockValidator
+	dagTopologyManager    processes.DAGTopologyManager
+	reachabilityTree      processes.ReachabilityTree
 	acceptanceDataStore   datastructures.AcceptanceDataStore
 	blockIndex            datastructures.BlockIndex
 	blockMessageStore     datastructures.BlockMessageStore
@@ -29,11 +29,11 @@ type BlockProcessor struct {
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *dbaccess.DatabaseContext,
-	consensusStateManager algorithms.ConsensusStateManager,
-	pruningManager algorithms.PruningManager,
-	blockValidator algorithms.BlockValidator,
-	dagTopologyManager algorithms.DAGTopologyManager,
-	reachabilityTree algorithms.ReachabilityTree,
+	consensusStateManager processes.ConsensusStateManager,
+	pruningManager processes.PruningManager,
+	blockValidator processes.BlockValidator,
+	dagTopologyManager processes.DAGTopologyManager,
+	reachabilityTree processes.ReachabilityTree,
 	acceptanceDataStore datastructures.AcceptanceDataStore,
 	blockIndex datastructures.BlockIndex,
 	blockMessageStore datastructures.BlockMessageStore,

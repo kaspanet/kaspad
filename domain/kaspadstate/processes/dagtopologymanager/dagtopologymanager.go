@@ -1,20 +1,20 @@
 package dagtopologymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // DAGTopologyManager ...
 type DAGTopologyManager struct {
-	reachabilityTree   algorithms.ReachabilityTree
+	reachabilityTree   processes.ReachabilityTree
 	blockRelationStore datastructures.BlockRelationStore
 }
 
 // New ...
 func New(
-	reachabilityTree algorithms.ReachabilityTree,
+	reachabilityTree processes.ReachabilityTree,
 	blockRelationStore datastructures.BlockRelationStore) *DAGTopologyManager {
 	return &DAGTopologyManager{
 		reachabilityTree:   reachabilityTree,

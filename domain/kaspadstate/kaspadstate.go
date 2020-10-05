@@ -2,8 +2,8 @@ package kaspadstate
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -17,8 +17,8 @@ type KaspadState interface {
 }
 
 type kaspadState struct {
-	blockProcessor        algorithms.BlockProcessor
-	consensusStateManager algorithms.ConsensusStateManager
+	blockProcessor        processes.BlockProcessor
+	consensusStateManager processes.ConsensusStateManager
 }
 
 // BuildBlock builds a block over the current state, with the transactions

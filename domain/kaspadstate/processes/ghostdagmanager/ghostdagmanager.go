@@ -1,21 +1,21 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/kaspadstate/algorithms"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/datastructures"
 	"github.com/kaspanet/kaspad/domain/kaspadstate/model"
+	"github.com/kaspanet/kaspad/domain/kaspadstate/processes"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // GHOSTDAGManager ...
 type GHOSTDAGManager struct {
-	dagTopologyManager algorithms.DAGTopologyManager
+	dagTopologyManager processes.DAGTopologyManager
 	ghostdagDataStore  datastructures.GHOSTDAGDataStore
 }
 
 // New ...
 func New(
-	dagTopologyManager algorithms.DAGTopologyManager,
+	dagTopologyManager processes.DAGTopologyManager,
 	ghostdagDataStore datastructures.GHOSTDAGDataStore) *GHOSTDAGManager {
 	return &GHOSTDAGManager{
 		dagTopologyManager: dagTopologyManager,

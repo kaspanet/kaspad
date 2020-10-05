@@ -1,4 +1,4 @@
-package algorithms
+package processes
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
