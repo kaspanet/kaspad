@@ -15,12 +15,12 @@ func New() *BlockRelationStore {
 	return &BlockRelationStore{}
 }
 
-// Insert ...
+// Insert inserts the given blockRelationData for the given blockHash
 func (brs *BlockRelationStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockRelationData *model.BlockRelations) {
 
 }
 
-// Get ...
+// Get gets the blockRelationData associated with the given blockHash
 func (brs *BlockRelationStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockRelations {
 	return nil
 }

@@ -15,12 +15,12 @@ func New() *UTXODiffStore {
 	return &UTXODiffStore{}
 }
 
-// Insert ...
+// Insert inserts the given utxoDiff for the given blockHash
 func (uds *UTXODiffStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, utxoDiff *model.UTXODiff) {
 
 }
 
-// Get ...
+// Get gets the utxoDiff associated with the given blockHash
 func (uds *UTXODiffStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.UTXODiff {
 	return nil
 }

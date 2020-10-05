@@ -15,12 +15,12 @@ func New() *MultisetStore {
 	return &MultisetStore{}
 }
 
-// Insert ...
+// Insert inserts the given multiset for the given blockHash
 func (ms *MultisetStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
 
 }
 
-// Get ...
+// Get gets the multiset associated with the given blockHash
 func (ms *MultisetStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *secp256k1.MultiSet {
 	return nil
 }

@@ -14,12 +14,12 @@ func New() *PruningPointStore {
 	return &PruningPointStore{}
 }
 
-// Insert ...
-func (pps *PruningPointStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
+// Update updates the pruning point to be the given blockHash
+func (pps *PruningPointStore) Update(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
 
 }
 
-// Get ...
+// Get gets the current pruning point
 func (pps *PruningPointStore) Get(dbContext dbaccess.Context) *daghash.Hash {
 	return nil
 }

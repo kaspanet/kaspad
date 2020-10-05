@@ -15,12 +15,12 @@ func New() *ConsensusStateStore {
 	return &ConsensusStateStore{}
 }
 
-// Update ...
+// Update updates the store with the given utxoDiff
 func (css *ConsensusStateStore) Update(dbTx *dbaccess.TxContext, utxoDiff *model.UTXODiff) {
 
 }
 
-// UTXOByOutpoint ...
+// UTXOByOutpoint gets the utxoEntry associated with the given outpoint
 func (css *ConsensusStateStore) UTXOByOutpoint(dbContext dbaccess.Context, outpoint *appmessage.Outpoint) *model.UTXOEntry {
 	return nil
 }

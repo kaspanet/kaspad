@@ -15,12 +15,12 @@ func New() *BlockMessageStore {
 	return &BlockMessageStore{}
 }
 
-// Insert ...
+// Insert inserts the given msgBlock for the given blockHash
 func (bms *BlockMessageStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, msgBlock *appmessage.MsgBlock) {
 
 }
 
-// Get ...
+// Get gets the msgBlock associated with the given blockHash
 func (bms *BlockMessageStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *appmessage.MsgBlock {
 	return nil
 }

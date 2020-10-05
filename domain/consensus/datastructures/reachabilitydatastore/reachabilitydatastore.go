@@ -15,12 +15,12 @@ func New() *ReachabilityDataStore {
 	return &ReachabilityDataStore{}
 }
 
-// Insert ...
+// Insert inserts the given reachabilityData for the given blockHash
 func (rds *ReachabilityDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, reachabilityData *model.ReachabilityData) {
 
 }
 
-// Get ...
+// Get gets the reachabilityData associated with the given blockHash
 func (rds *ReachabilityDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.ReachabilityData {
 	return nil
 }

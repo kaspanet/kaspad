@@ -14,12 +14,12 @@ func New() *BlockIndex {
 	return &BlockIndex{}
 }
 
-// Insert ...
+// Insert inserts the given blockHash
 func (bi *BlockIndex) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
 
 }
 
-// Exists ...
+// Exists returns whether the given blockHash exists in the store
 func (bi *BlockIndex) Exists(dbContext dbaccess.Context, blockHash *daghash.Hash) bool {
 	return false
 }

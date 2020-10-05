@@ -15,12 +15,12 @@ func New() *BlockStatusStore {
 	return &BlockStatusStore{}
 }
 
-// Insert ...
+// Insert inserts the given blockStatus for the given blockHash
 func (bss *BlockStatusStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockStatus model.BlockStatus) {
 
 }
 
-// Get ...
+// Get gets the blockStatus associated with the given blockHash
 func (bss *BlockStatusStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) model.BlockStatus {
 	return 0
 }

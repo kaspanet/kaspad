@@ -58,7 +58,7 @@ type MultisetStore interface {
 
 // PruningPointStore represents a store for the current pruning point
 type PruningPointStore interface {
-	Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash)
+	Update(dbTx *dbaccess.TxContext, blockHash *daghash.Hash)
 	Get(dbContext dbaccess.Context) *daghash.Hash
 }
 

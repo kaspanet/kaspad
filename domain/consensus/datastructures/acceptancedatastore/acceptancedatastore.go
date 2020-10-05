@@ -15,12 +15,12 @@ func New() *AcceptanceDataStore {
 	return &AcceptanceDataStore{}
 }
 
-// Insert ...
+// Insert inserts the given acceptanceData for the given blockHash
 func (ads *AcceptanceDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
 
 }
 
-// Get ...
+// Get gets the acceptanceData associated with the given blockHash
 func (ads *AcceptanceDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockAcceptanceData {
 	return nil
 }
