@@ -963,8 +963,8 @@ func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiI
 	lastSompiIn := totalSompiInBefore
 	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
-	if totalSompiInBefore < lastSompiIn ||
-		totalSompiInBefore > util.MaxSompi {
+	if totalSompiInAfter < lastSompiIn ||
+		totalSompiInAfter > util.MaxSompi {
 		str := fmt.Sprintf("total value of all transaction "+
 			"inputs is %d which is higher than max "+
 			"allowed value of %d", totalSompiInBefore,
