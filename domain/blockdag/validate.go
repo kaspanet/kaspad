@@ -960,10 +960,9 @@ func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiI
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
-	lastSompiIn := totalSompiInBefore
 	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
-	if totalSompiInAfter < lastSompiIn ||
+	if totalSompiInAfter < totalSompiInBefore ||
 		totalSompiInAfter > util.MaxSompi {
 		str := fmt.Sprintf("total value of all transaction "+
 			"inputs is %d which is higher than max "+
