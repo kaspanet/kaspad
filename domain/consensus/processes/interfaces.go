@@ -19,6 +19,8 @@ type BlockValidator interface {
 	ValidateHeaderInContext(block *appmessage.MsgBlock) error
 	ValidateBodyInIsolation(block *appmessage.MsgBlock) error
 	ValidateBodyInContext(block *appmessage.MsgBlock) error
+	ValidateAgainstPastUTXO(block *appmessage.MsgBlock) error
+	ValidateFinality(block *appmessage.MsgBlock) error
 }
 
 // ConsensusStateManager ...

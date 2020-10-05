@@ -30,3 +30,13 @@ func (bv *BlockValidator) ValidateBodyInIsolation(block *appmessage.MsgBlock) er
 func (bv *BlockValidator) ValidateBodyInContext(block *appmessage.MsgBlock) error {
 	return nil
 }
+
+// ValidateAgainstPastUTXO ...
+func (bv *BlockValidator) ValidateAgainstPastUTXO(block *appmessage.MsgBlock) error {
+	return nil
+}
+
+// ValidateFinality ...
+func (bv *BlockValidator) ValidateFinality(block *appmessage.MsgBlock) error {
+	return nil
+}
