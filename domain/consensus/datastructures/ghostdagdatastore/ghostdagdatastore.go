@@ -15,8 +15,8 @@ func New() *GHOSTDAGDataStore {
 	return &GHOSTDAGDataStore{}
 }
 
-// Set ...
-func (gds *GHOSTDAGDataStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+// Insert ...
+func (gds *GHOSTDAGDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 
 }
 

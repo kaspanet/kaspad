@@ -15,8 +15,8 @@ func New() *AcceptanceDataStore {
 	return &AcceptanceDataStore{}
 }
 
-// Set ...
-func (ads *AcceptanceDataStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
+// Insert ...
+func (ads *AcceptanceDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
 
 }
 

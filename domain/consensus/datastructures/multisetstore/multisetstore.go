@@ -15,8 +15,8 @@ func New() *MultisetStore {
 	return &MultisetStore{}
 }
 
-// Set ...
-func (ms *MultisetStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
+// Insert ...
+func (ms *MultisetStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
 
 }
 

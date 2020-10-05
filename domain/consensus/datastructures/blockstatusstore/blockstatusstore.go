@@ -15,8 +15,8 @@ func New() *BlockStatusStore {
 	return &BlockStatusStore{}
 }
 
-// Set ...
-func (bss *BlockStatusStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockStatus model.BlockStatus) {
+// Insert ...
+func (bss *BlockStatusStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockStatus model.BlockStatus) {
 
 }
 

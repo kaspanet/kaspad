@@ -15,8 +15,8 @@ func New() *ReachabilityDataStore {
 	return &ReachabilityDataStore{}
 }
 
-// Set ...
-func (rds *ReachabilityDataStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, reachabilityData *model.ReachabilityData) {
+// Insert ...
+func (rds *ReachabilityDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, reachabilityData *model.ReachabilityData) {
 
 }
 

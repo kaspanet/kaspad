@@ -15,8 +15,8 @@ func New() *UTXODiffStore {
 	return &UTXODiffStore{}
 }
 
-// Set ...
-func (uds *UTXODiffStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, utxoDiff *model.UTXODiff) {
+// Insert ...
+func (uds *UTXODiffStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, utxoDiff *model.UTXODiff) {
 
 }
 

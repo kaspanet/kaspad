@@ -15,8 +15,8 @@ func New() *ConsensusStateStore {
 	return &ConsensusStateStore{}
 }
 
-// UpdateWithDiff ...
-func (css *ConsensusStateStore) UpdateWithDiff(dbTx *dbaccess.TxContext, utxoDiff *model.UTXODiff) {
+// Update ...
+func (css *ConsensusStateStore) Update(dbTx *dbaccess.TxContext, utxoDiff *model.UTXODiff) {
 
 }
 

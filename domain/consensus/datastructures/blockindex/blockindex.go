@@ -14,8 +14,8 @@ func New() *BlockIndex {
 	return &BlockIndex{}
 }
 
-// Add ...
-func (bi *BlockIndex) Add(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
+// Insert ...
+func (bi *BlockIndex) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
 
 }
 

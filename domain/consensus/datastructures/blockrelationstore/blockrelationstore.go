@@ -15,8 +15,8 @@ func New() *BlockRelationStore {
 	return &BlockRelationStore{}
 }
 
-// Set ...
-func (brs *BlockRelationStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockRelationData *model.BlockRelations) {
+// Insert ...
+func (brs *BlockRelationStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockRelationData *model.BlockRelations) {
 
 }
 

@@ -15,8 +15,8 @@ func New() *BlockMessageStore {
 	return &BlockMessageStore{}
 }
 
-// Set ...
-func (bms *BlockMessageStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, msgBlock *appmessage.MsgBlock) {
+// Insert ...
+func (bms *BlockMessageStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, msgBlock *appmessage.MsgBlock) {
 
 }
 

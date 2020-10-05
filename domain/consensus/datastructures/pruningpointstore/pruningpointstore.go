@@ -14,8 +14,8 @@ func New() *PruningPointStore {
 	return &PruningPointStore{}
 }
 
-// Set ...
-func (pps *PruningPointStore) Set(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
+// Insert ...
+func (pps *PruningPointStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
 
 }
 
