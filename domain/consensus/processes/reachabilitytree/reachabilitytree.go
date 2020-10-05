@@ -33,6 +33,8 @@ func (rt *ReachabilityTree) IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB
 }
 
 // ReachabilityChangeset ...
-func (rt *ReachabilityTree) ReachabilityChangeset(blockHash *daghash.Hash) *model.ReachabilityChangeset {
+func (rt *ReachabilityTree) ReachabilityChangeset(blockHash *daghash.Hash,
+	blockGHOSTDAGData *model.BlockGHOSTDAGData) *model.ReachabilityChangeset {
+
 	return nil
 }

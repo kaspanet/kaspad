@@ -64,5 +64,5 @@ type PruningManager interface {
 type ReachabilityTree interface {
 	IsReachabilityAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
 	IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool
-	ReachabilityChangeset(blockHash *daghash.Hash) *model.ReachabilityChangeset
+	ReachabilityChangeset(blockHash *daghash.Hash, blockGHOSTDAGData *model.BlockGHOSTDAGData) *model.ReachabilityChangeset
 }
