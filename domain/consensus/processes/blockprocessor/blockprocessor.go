@@ -58,7 +58,7 @@ func New(
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *BlockProcessor) BuildBlock(scriptPublicKey []byte, extraData []byte,
+func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
 	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
 
 	return nil

@@ -10,7 +10,7 @@ import (
 // BlockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
 type BlockProcessor interface {
-	BuildBlock(scriptPublicKey []byte, extraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
+	BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 }
 

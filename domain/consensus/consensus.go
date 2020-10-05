@@ -23,10 +23,10 @@ type consensus struct {
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (s *consensus) BuildBlock(scriptPublicKey []byte, extraData []byte,
+func (s *consensus) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
 	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
 
-	return s.blockProcessor.BuildBlock(scriptPublicKey, extraData, transactionSelector)
+	return s.blockProcessor.BuildBlock(coinbaseScriptPublicKey, coinbaseExtraData, transactionSelector)
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
