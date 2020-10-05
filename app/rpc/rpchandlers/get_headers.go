@@ -43,9 +43,7 @@ func HandleGetHeaders(context *rpccontext.Context, _ *router.Router, request app
 	for i, header := range headers {
 		err := header.Serialize(&buf)
 		if err != nil {
-			errorMessage := &appmessage.GetHeadersResponseMessage{}
-			errorMessage.Error = appmessage.RPCErrorf("Failed to serialize block header: %s", err)
-			return errorMessage, nil
+			return nil, err
 		}
 		headersHex[i] = hex.EncodeToString(buf.Bytes())
 		buf.Reset()
