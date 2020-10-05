@@ -627,10 +627,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
 	}
 
-	dummyPrevOutTxID, err := daghash.NewTxIDFromStr("01")
-	if err != nil {
-		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
-	}
+	dummyPrevOutTxID := &daghash.TxID{}
 	dummyPrevOut := appmessage.Outpoint{TxID: *dummyPrevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 

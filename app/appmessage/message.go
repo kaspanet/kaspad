@@ -91,6 +91,8 @@ const (
 	CmdGetBlockCountResponseMessage
 	CmdGetBlockDAGInfoRequestMessage
 	CmdGetBlockDAGInfoResponseMessage
+	CmdGetHeadersRequestMessage
+	CmdGetHeadersResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -158,6 +160,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetBlockCountResponseMessage:        "GetBlockCountResponse",
 	CmdGetBlockDAGInfoRequestMessage:       "GetBlockDAGInfoRequest",
 	CmdGetBlockDAGInfoResponseMessage:      "GetBlockDAGInfoResponse",
+	CmdGetHeadersRequestMessage:            "GetHeadersRequest",
+	CmdGetHeadersResponseMessage:           "GetHeadersResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

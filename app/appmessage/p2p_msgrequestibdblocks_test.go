@@ -18,7 +18,7 @@ func TestRequstIBDBlocks(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+	hashStr = "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 	highHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
