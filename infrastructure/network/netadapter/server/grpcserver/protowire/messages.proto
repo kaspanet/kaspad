@@ -572,7 +572,7 @@ message GetHeadersRequestMessage{
 
 message GetHeadersResponseMessage{
   repeated string headers = 1;
-  RPCError error = 2;
+  RPCError error = 1000;
 }
 
 service RPC {
