@@ -364,6 +364,9 @@ func (dag *BlockDAG) isInPast(this *blockNode, other *blockNode) (bool, error) {
 func (dag *BlockDAG) GetHeaders(startHash *daghash.Hash, maxHeaders uint64,
 	isAscending bool) ([]*appmessage.BlockHeader, error) {
 
+	dag.RLock()
+	defer dag.RUnlock()
+
 	if isAscending {
 		return dag.getHeadersAscending(startHash, maxHeaders)
 	}
