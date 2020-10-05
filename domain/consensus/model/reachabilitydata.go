@@ -1,6 +1,7 @@
 package model
 
-// ReachabilityData ...
+// ReachabilityData holds the set of data required to answer
+// reachability queries
 type ReachabilityData struct {
 	treeNode          *reachabilityTreeNode
 	futureCoveringSet futureCoveringTreeNodeSet
