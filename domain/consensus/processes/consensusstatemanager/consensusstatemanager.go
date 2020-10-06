@@ -51,8 +51,8 @@ func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessa
 }
 
 // ResolveFinalityConflict resolves an existing finality conflict
-// using the given blockHash
-func (csm *ConsensusStateManager) ResolveFinalityConflict(blockHash *daghash.Hash) {
+// using the given newFinalityBlockHash
+func (csm *ConsensusStateManager) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
 
 }
 

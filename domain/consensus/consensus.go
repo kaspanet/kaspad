@@ -14,7 +14,7 @@ type Consensus interface {
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
-	ResolveFinalityConflict(blockHash *daghash.Hash)
+	ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash)
 
 	SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler)
 	SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler)
@@ -53,9 +53,9 @@ func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*mod
 }
 
 // ResolveFinalityConflict resolves an existing finality conflict
-// using the given blockHash
-func (s *consensus) ResolveFinalityConflict(blockHash *daghash.Hash) {
-	s.consensusStateManager.ResolveFinalityConflict(blockHash)
+// using the given finalityBlockHash
+func (s *consensus) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
+	s.consensusStateManager.ResolveFinalityConflict(newFinalityBlockHash)
 }
 
 // SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the consensus
