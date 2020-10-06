@@ -5,15 +5,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(scriptPublicKey []byte, extraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
-
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
+	ResolveFinalityConflict(blockHash *daghash.Hash)
 
 	SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler)
 	SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler)
@@ -49,6 +50,12 @@ func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEnt
 // the given utxoEntries
 func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
+}
+
+// ResolveFinalityConflict resolves an existing finality conflict
+// using the given blockHash
+func (s *consensus) ResolveFinalityConflict(blockHash *daghash.Hash) {
+	s.consensusStateManager.ResolveFinalityConflict(blockHash)
 }
 
 // SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the consensus
