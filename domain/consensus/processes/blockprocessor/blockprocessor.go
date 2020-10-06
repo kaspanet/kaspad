@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // BlockProcessor is responsible for processing incoming blocks
@@ -61,26 +62,43 @@ func New(
 func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
 	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
 
+	start := mstime.Now()
+	log.Debugf("BuildBlock start")
+
+	log.Debugf("BuildBlock end. Took: %s", mstime.Since(start))
 	return nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
 func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
+	start := mstime.Now()
+	log.Debugf("ValidateAndInsertBlock start")
+
+	log.Debugf("ValidateAndInsertBlock end. Took: %s", mstime.Since(start))
 	return nil
 }
 
 // SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the block processor
 func (bp *BlockProcessor) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler) {
+	start := mstime.Now()
+	log.Debugf("SetOnBlockAddedToDAGHandler start")
 
+	log.Debugf("SetOnBlockAddedToDAGHandler end. Took: %s", mstime.Since(start))
 }
 
 // SetOnChainChangedHandler set the onBlockAddedToDAGHandler for the block processor
 func (bp *BlockProcessor) SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler) {
+	start := mstime.Now()
+	log.Debugf("SetOnChainChangedHandler start")
 
+	log.Debugf("SetOnChainChangedHandler end. Took: %s", mstime.Since(start))
 }
 
 // SetOnFinalityConflictHandler set the onBlockAddedToDAGHandler for the block processor
 func (bp *BlockProcessor) SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler) {
+	start := mstime.Now()
+	log.Debugf("SetOnFinalityConflictHandler start")
 
+	log.Debugf("SetOnFinalityConflictHandler end. Took: %s", mstime.Since(start))
 }
