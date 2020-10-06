@@ -5,8 +5,8 @@ package model
 // score of the block that accepts the tx, its public key script, and how
 // much it pays.
 type UTXOEntry struct {
-	amount          uint64
-	scriptPublicKey []byte // The public key script for the output.
-	blockBlueScore  uint64 // Blue score of the block accepting the tx.
-	isCoinbase      bool
+	Amount          uint64
+	ScriptPublicKey []byte // The public key script for the output.
+	BlockBlueScore  uint64 // Blue score of the block accepting the tx.
+	IsCoinbase      bool
 }

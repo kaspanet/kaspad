@@ -4,9 +4,9 @@ import "github.com/kaspanet/kaspad/app/appmessage"
 
 // UTXODiff represents a diff between two UTXO Sets.
 type UTXODiff struct {
-	ToAdd    utxoCollection
-	ToRemove utxoCollection
+	ToAdd    UTXOCollection
+	ToRemove UTXOCollection
 }
 
-// utxoCollection represents a set of UTXOs indexed by their outpoints
-type utxoCollection map[appmessage.Outpoint]*UTXOEntry
+// UTXOCollection represents a set of UTXOs indexed by their outpoints
+type UTXOCollection map[appmessage.Outpoint]*UTXOEntry
