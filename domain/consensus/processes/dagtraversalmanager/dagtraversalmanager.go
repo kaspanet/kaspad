@@ -24,8 +24,8 @@ func New(
 }
 
 // BlockAtDepth returns the hash of the block that's at the
-// given depth from the virtual block
-func (dtm *DAGTraversalManager) BlockAtDepth(depth uint64) *daghash.Hash {
+// given depth from the given highHash
+func (dtm *DAGTraversalManager) BlockAtDepth(highHash *daghash.Hash, depth uint64) *daghash.Hash {
 	return nil
 }
 

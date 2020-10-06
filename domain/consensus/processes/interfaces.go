@@ -53,7 +53,7 @@ type DAGTopologyManager interface {
 // DAGTraversalManager exposes methods for travering blocks
 // in the DAG
 type DAGTraversalManager interface {
-	BlockAtDepth(uint64) *daghash.Hash
+	BlockAtDepth(highHash *daghash.Hash, depth uint64) *daghash.Hash
 	SelectedParentIterator(highHash *daghash.Hash) model.SelectedParentIterator
 }
 
