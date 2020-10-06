@@ -46,7 +46,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
-	// Algorithms
+	// Processes
 	blockValidator := blockvalidator.New()
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
