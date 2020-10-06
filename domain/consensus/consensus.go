@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Consensus maintains the current core state of the node
@@ -14,7 +13,6 @@ type Consensus interface {
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
-	ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash)
 }
 
 type consensus struct {
@@ -45,10 +43,4 @@ func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEnt
 // the given utxoEntries
 func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
-}
-
-// ResolveFinalityConflict resolves an existing finality conflict
-// using the given finalityBlockHash
-func (s *consensus) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
-	s.consensusStateManager.ResolveFinalityConflict(newFinalityBlockHash)
 }

@@ -30,7 +30,6 @@ type ConsensusStateManager interface {
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
 	CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges
-	ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash)
 }
 
 // DAGTopologyManager exposes methods for querying relationships
