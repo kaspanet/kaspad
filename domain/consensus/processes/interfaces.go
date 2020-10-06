@@ -12,10 +12,6 @@ import (
 type BlockProcessor interface {
 	BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
-
-	SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler)
-	SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler)
-	SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler)
 }
 
 // BlockValidator exposes a set of validation classes, after which
@@ -35,8 +31,6 @@ type ConsensusStateManager interface {
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
 	CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges
 	ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash)
-
-	SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler)
 }
 
 // DAGTopologyManager exposes methods for querying relationships

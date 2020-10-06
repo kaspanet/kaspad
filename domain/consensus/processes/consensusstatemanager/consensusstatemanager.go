@@ -55,9 +55,3 @@ func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessa
 func (csm *ConsensusStateManager) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
 
 }
-
-// SetOnFinalityConflictResolvedHandler set the onBlockAddedToDAGHandler for
-// the consensus state manager
-func (csm *ConsensusStateManager) SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler) {
-
-}
