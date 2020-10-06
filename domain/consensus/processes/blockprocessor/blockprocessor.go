@@ -69,18 +69,3 @@ func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExt
 func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
 	return nil
 }
-
-// SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler) {
-
-}
-
-// SetOnChainChangedHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler) {
-
-}
-
-// SetOnFinalityConflictHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler) {
-
-}
