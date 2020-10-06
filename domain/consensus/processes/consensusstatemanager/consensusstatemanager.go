@@ -48,3 +48,9 @@ func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxo
 func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges {
 	return nil
 }
+
+// SetOnFinalityConflictResolvedHandler set the onBlockAddedToDAGHandler for
+// the consensus state manager
+func (csm *ConsensusStateManager) SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler) {
+
+}

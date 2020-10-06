@@ -14,6 +14,11 @@ type Consensus interface {
 
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
+
+	SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler)
+	SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler)
+	SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler)
+	SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler)
 }
 
 type consensus struct {
@@ -44,4 +49,24 @@ func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEnt
 // the given utxoEntries
 func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
+}
+
+// SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the consensus
+func (s *consensus) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler) {
+	s.blockProcessor.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
+}
+
+// SetOnChainChangedHandler set the onBlockAddedToDAGHandler for the consensus
+func (s *consensus) SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler) {
+	s.blockProcessor.SetOnChainChangedHandler(onChainChangedHandler)
+}
+
+// SetOnFinalityConflictHandler set the onBlockAddedToDAGHandler for the consensus
+func (s *consensus) SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler) {
+	s.blockProcessor.SetOnFinalityConflictHandler(onFinalityConflictHandler)
+}
+
+// SetOnFinalityConflictResolvedHandler set the onBlockAddedToDAGHandler for the consensus
+func (s *consensus) SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler) {
+	s.consensusStateManager.SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler)
 }
