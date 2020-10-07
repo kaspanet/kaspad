@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // ConsensusStateManager manages the node's consensus state
@@ -48,16 +47,4 @@ func (csm *ConsensusStateManager) ValidateTransaction(transaction *util.Tx, utxo
 // to transition the current consensus state into the one including the given block
 func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *appmessage.MsgBlock) *model.ConsensusStateChanges {
 	return nil
-}
-
-// ResolveFinalityConflict resolves an existing finality conflict
-// using the given newFinalityBlockHash
-func (csm *ConsensusStateManager) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
-
-}
-
-// SetOnFinalityConflictResolvedHandler set the onBlockAddedToDAGHandler for
-// the consensus state manager
-func (csm *ConsensusStateManager) SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler) {
-
 }

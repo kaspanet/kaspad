@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Consensus maintains the current core state of the node
@@ -14,12 +13,6 @@ type Consensus interface {
 	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
 	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
 	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
-	ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash)
-
-	SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler)
-	SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler)
-	SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler)
-	SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler)
 }
 
 type consensus struct {
@@ -50,30 +43,4 @@ func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEnt
 // the given utxoEntries
 func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
 	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
-}
-
-// ResolveFinalityConflict resolves an existing finality conflict
-// using the given finalityBlockHash
-func (s *consensus) ResolveFinalityConflict(newFinalityBlockHash *daghash.Hash) {
-	s.consensusStateManager.ResolveFinalityConflict(newFinalityBlockHash)
-}
-
-// SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the consensus
-func (s *consensus) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler) {
-	s.blockProcessor.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
-}
-
-// SetOnChainChangedHandler set the onBlockAddedToDAGHandler for the consensus
-func (s *consensus) SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler) {
-	s.blockProcessor.SetOnChainChangedHandler(onChainChangedHandler)
-}
-
-// SetOnFinalityConflictHandler set the onBlockAddedToDAGHandler for the consensus
-func (s *consensus) SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler) {
-	s.blockProcessor.SetOnFinalityConflictHandler(onFinalityConflictHandler)
-}
-
-// SetOnFinalityConflictResolvedHandler set the onBlockAddedToDAGHandler for the consensus
-func (s *consensus) SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler model.OnFinalityConflictResolvedHandler) {
-	s.consensusStateManager.SetOnFinalityConflictResolvedHandler(onFinalityConflictResolvedHandler)
 }

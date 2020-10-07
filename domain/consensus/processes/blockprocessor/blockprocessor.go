@@ -78,27 +78,3 @@ func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) err
 	log.Debugf("ValidateAndInsertBlock end. Took: %s", mstime.Since(start))
 	return nil
 }
-
-// SetOnBlockAddedToDAGHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler model.OnBlockAddedToDAGHandler) {
-	start := mstime.Now()
-	log.Debugf("SetOnBlockAddedToDAGHandler start")
-
-	log.Debugf("SetOnBlockAddedToDAGHandler end. Took: %s", mstime.Since(start))
-}
-
-// SetOnChainChangedHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnChainChangedHandler(onChainChangedHandler model.OnChainChangedHandler) {
-	start := mstime.Now()
-	log.Debugf("SetOnChainChangedHandler start")
-
-	log.Debugf("SetOnChainChangedHandler end. Took: %s", mstime.Since(start))
-}
-
-// SetOnFinalityConflictHandler set the onBlockAddedToDAGHandler for the block processor
-func (bp *BlockProcessor) SetOnFinalityConflictHandler(onFinalityConflictHandler model.OnFinalityConflictHandler) {
-	start := mstime.Now()
-	log.Debugf("SetOnFinalityConflictHandler start")
-
-	log.Debugf("SetOnFinalityConflictHandler end. Took: %s", mstime.Since(start))
-}
