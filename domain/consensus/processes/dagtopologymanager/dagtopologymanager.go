@@ -1,22 +1,21 @@
 package dagtopologymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // DAGTopologyManager exposes methods for querying relationships
 // between blocks in the DAG
 type DAGTopologyManager struct {
-	reachabilityTree   processes.ReachabilityTree
-	blockRelationStore datastructures.BlockRelationStore
+	reachabilityTree   model.ReachabilityTree
+	blockRelationStore model.BlockRelationStore
 }
 
 // New instantiates a new DAGTopologyManager
 func New(
-	reachabilityTree processes.ReachabilityTree,
-	blockRelationStore datastructures.BlockRelationStore) *DAGTopologyManager {
+	reachabilityTree model.ReachabilityTree,
+	blockRelationStore model.BlockRelationStore) *DAGTopologyManager {
 	return &DAGTopologyManager{
 		reachabilityTree:   reachabilityTree,
 		blockRelationStore: blockRelationStore,

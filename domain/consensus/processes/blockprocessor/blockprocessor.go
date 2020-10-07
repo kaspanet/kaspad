@@ -2,9 +2,7 @@ package blockprocessor
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -15,30 +13,30 @@ type BlockProcessor struct {
 	dagParams       *dagconfig.Params
 	databaseContext *dbaccess.DatabaseContext
 
-	consensusStateManager processes.ConsensusStateManager
-	pruningManager        processes.PruningManager
-	blockValidator        processes.BlockValidator
-	dagTopologyManager    processes.DAGTopologyManager
-	reachabilityTree      processes.ReachabilityTree
-	acceptanceDataStore   datastructures.AcceptanceDataStore
-	blockIndex            datastructures.BlockIndex
-	blockMessageStore     datastructures.BlockMessageStore
-	blockStatusStore      datastructures.BlockStatusStore
+	consensusStateManager model.ConsensusStateManager
+	pruningManager        model.PruningManager
+	blockValidator        model.BlockValidator
+	dagTopologyManager    model.DAGTopologyManager
+	reachabilityTree      model.ReachabilityTree
+	acceptanceDataStore   model.AcceptanceDataStore
+	blockIndex            model.BlockIndex
+	blockMessageStore     model.BlockMessageStore
+	blockStatusStore      model.BlockStatusStore
 }
 
 // New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *dbaccess.DatabaseContext,
-	consensusStateManager processes.ConsensusStateManager,
-	pruningManager processes.PruningManager,
-	blockValidator processes.BlockValidator,
-	dagTopologyManager processes.DAGTopologyManager,
-	reachabilityTree processes.ReachabilityTree,
-	acceptanceDataStore datastructures.AcceptanceDataStore,
-	blockIndex datastructures.BlockIndex,
-	blockMessageStore datastructures.BlockMessageStore,
-	blockStatusStore datastructures.BlockStatusStore) *BlockProcessor {
+	consensusStateManager model.ConsensusStateManager,
+	pruningManager model.PruningManager,
+	blockValidator model.BlockValidator,
+	dagTopologyManager model.DAGTopologyManager,
+	reachabilityTree model.ReachabilityTree,
+	acceptanceDataStore model.AcceptanceDataStore,
+	blockIndex model.BlockIndex,
+	blockMessageStore model.BlockMessageStore,
+	blockStatusStore model.BlockStatusStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,

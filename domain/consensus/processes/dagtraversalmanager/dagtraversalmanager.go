@@ -2,21 +2,20 @@ package dagtraversalmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // DAGTraversalManager exposes methods for travering blocks
 // in the DAG
 type DAGTraversalManager struct {
-	dagTopologyManager processes.DAGTopologyManager
-	ghostdagManager    processes.GHOSTDAGManager
+	dagTopologyManager model.DAGTopologyManager
+	ghostdagManager    model.GHOSTDAGManager
 }
 
 // New instantiates a new DAGTraversalManager
 func New(
-	dagTopologyManager processes.DAGTopologyManager,
-	ghostdagManager processes.GHOSTDAGManager) *DAGTraversalManager {
+	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager) *DAGTraversalManager {
 	return &DAGTraversalManager{
 		dagTopologyManager: dagTopologyManager,
 		ghostdagManager:    ghostdagManager,

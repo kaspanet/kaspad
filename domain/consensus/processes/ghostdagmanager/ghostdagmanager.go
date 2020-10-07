@@ -1,22 +1,20 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // GHOSTDAGManager resolves and manages GHOSTDAG block data
 type GHOSTDAGManager struct {
-	dagTopologyManager processes.DAGTopologyManager
-	ghostdagDataStore  datastructures.GHOSTDAGDataStore
+	dagTopologyManager model.DAGTopologyManager
+	ghostdagDataStore  model.GHOSTDAGDataStore
 }
 
 // New instantiates a new GHOSTDAGManager
 func New(
-	dagTopologyManager processes.DAGTopologyManager,
-	ghostdagDataStore datastructures.GHOSTDAGDataStore) *GHOSTDAGManager {
+	dagTopologyManager model.DAGTopologyManager,
+	ghostdagDataStore model.GHOSTDAGDataStore) *GHOSTDAGManager {
 	return &GHOSTDAGManager{
 		dagTopologyManager: dagTopologyManager,
 		ghostdagDataStore:  ghostdagDataStore,

@@ -3,7 +3,6 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -16,8 +15,8 @@ type Consensus interface {
 }
 
 type consensus struct {
-	blockProcessor        processes.BlockProcessor
-	consensusStateManager processes.ConsensusStateManager
+	blockProcessor        model.BlockProcessor
+	consensusStateManager model.ConsensusStateManager
 }
 
 // BuildBlock builds a block over the current state, with the transactions

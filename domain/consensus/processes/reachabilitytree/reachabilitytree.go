@@ -1,7 +1,6 @@
 package reachabilitytree
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -9,14 +8,14 @@ import (
 // ReachabilityTree maintains a structure that allows to answer
 // reachability queries in sub-linear time
 type ReachabilityTree struct {
-	blockRelationStore    datastructures.BlockRelationStore
-	reachabilityDataStore datastructures.ReachabilityDataStore
+	blockRelationStore    model.BlockRelationStore
+	reachabilityDataStore model.ReachabilityDataStore
 }
 
 // New instantiates a new ReachabilityTree
 func New(
-	blockRelationStore datastructures.BlockRelationStore,
-	reachabilityDataStore datastructures.ReachabilityDataStore) *ReachabilityTree {
+	blockRelationStore model.BlockRelationStore,
+	reachabilityDataStore model.ReachabilityDataStore) *ReachabilityTree {
 	return &ReachabilityTree{
 		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
