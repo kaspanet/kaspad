@@ -11,9 +11,11 @@ import (
 
 // HandleGetPeerAddresses handles the respectively named RPC command
 func HandleGetPeerAddresses(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	netAaddresses := context.AddressManager.Addresses()
-	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(netAaddresses))
-	for i, netAddress := range netAaddresses {
+	netAddresses := context.AddressManager.Addresses()
+	netAddresses = append(netAddresses, context.AddressManager.BannedAddresses()...)
+
+	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(netAddresses))
+	for i, netAddress := range netAddresses {
 		port := strconv.FormatUint(uint64(netAddress.Port), 10)
 		addressWithPort := net.JoinHostPort(netAddress.IP.String(), port)
 		addresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}

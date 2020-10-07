@@ -5,17 +5,21 @@ import "github.com/kaspanet/kaspad/app/appmessage"
 // checkOutgoingConnections goes over all activeOutgoing and makes sure they are still active.
 // Then it opens connections so that we have targetOutgoing active connections
 func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
-	var connectedAddresses []*appmessage.NetAddress
 	for address := range c.activeOutgoing {
 		connection, ok := connSet.get(address)
 		if ok { // connection is still connected
 			connSet.remove(connection)
-			connectedAddresses = append(connectedAddresses, connection.NetAddress())
 			continue
 		}
 
 		// if connection is dead - remove from list of active ones
 		delete(c.activeOutgoing, address)
+	}
+
+	connections := c.netAdapter.P2PConnections()
+	connectedAddresses := make([]*appmessage.NetAddress, len(connections))
+	for i, connection := range c.netAdapter.P2PConnections() {
+		connectedAddresses[i] = connection.NetAddress()
 	}
 
 	liveConnections := len(c.activeOutgoing)
@@ -27,15 +31,9 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
-	connectionAttempts := connectionsNeededCount * 2
-	netAddresses := c.addressManager.RandomAddresses(connectionAttempts, connectedAddresses)
+	netAddresses := c.addressManager.RandomAddresses(connectionsNeededCount, connectedAddresses)
 
 	for _, netAddress := range netAddresses {
-		// Return in case we've already reached or surpassed our target
-		if len(c.activeOutgoing) >= c.targetOutgoing {
-			return
-		}
-
 		addressString := netAddress.TCPAddress().String()
 
 		log.Debugf("Connecting to %s because we have %d outgoing connections and the target is "+
