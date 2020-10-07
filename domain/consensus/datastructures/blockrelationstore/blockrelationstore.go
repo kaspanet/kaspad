@@ -2,7 +2,6 @@ package blockrelationstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -16,11 +15,11 @@ func New() *BlockRelationStore {
 }
 
 // Insert inserts the given blockRelationData for the given blockHash
-func (brs *BlockRelationStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockRelationData *model.BlockRelations) {
+func (brs *BlockRelationStore) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash, blockRelationData *model.BlockRelations) {
 
 }
 
 // Get gets the blockRelationData associated with the given blockHash
-func (brs *BlockRelationStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockRelations {
+func (brs *BlockRelationStore) Get(dbContext model.ContextProxy, blockHash *daghash.Hash) *model.BlockRelations {
 	return nil
 }

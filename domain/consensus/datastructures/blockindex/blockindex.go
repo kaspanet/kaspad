@@ -1,7 +1,7 @@
 package blockindex
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -15,11 +15,11 @@ func New() *BlockIndex {
 }
 
 // Insert inserts the given blockHash
-func (bi *BlockIndex) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash) {
+func (bi *BlockIndex) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash) {
 
 }
 
 // Exists returns whether the given blockHash exists in the store
-func (bi *BlockIndex) Exists(dbContext dbaccess.Context, blockHash *daghash.Hash) bool {
+func (bi *BlockIndex) Exists(dbContext model.ContextProxy, blockHash *daghash.Hash) bool {
 	return false
 }

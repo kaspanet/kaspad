@@ -2,7 +2,6 @@ package acceptancedatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -16,11 +15,11 @@ func New() *AcceptanceDataStore {
 }
 
 // Insert inserts the given acceptanceData for the given blockHash
-func (ads *AcceptanceDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
+func (ads *AcceptanceDataStore) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
 
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *AcceptanceDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockAcceptanceData {
+func (ads *AcceptanceDataStore) Get(dbContext model.ContextProxy, blockHash *daghash.Hash) *model.BlockAcceptanceData {
 	return nil
 }

@@ -2,7 +2,7 @@ package multisetstore
 
 import (
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -16,11 +16,11 @@ func New() *MultisetStore {
 }
 
 // Insert inserts the given multiset for the given blockHash
-func (ms *MultisetStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
+func (ms *MultisetStore) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
 
 }
 
 // Get gets the multiset associated with the given blockHash
-func (ms *MultisetStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *secp256k1.MultiSet {
+func (ms *MultisetStore) Get(dbContext model.ContextProxy, blockHash *daghash.Hash) *secp256k1.MultiSet {
 	return nil
 }
