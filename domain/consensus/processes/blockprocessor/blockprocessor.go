@@ -79,7 +79,11 @@ func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExt
 }
 
 func (bp *BlockProcessor) selectParentsForNewBlock() []*daghash.Hash {
-	return nil
+	virtualParentHashes := bp.consensusStateStore.VirtualParents()
+	if len(virtualParentHashes) < appmessage.MaxBlockParents {
+		return virtualParentHashes
+	}
+	return virtualParentHashes[:appmessage.MaxBlockParents]
 }
 
 func (bp *BlockProcessor) buildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
