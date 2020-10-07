@@ -7,6 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
@@ -25,6 +27,7 @@ type BlockProcessor struct {
 	blockIndex            datastructures.BlockIndex
 	blockMessageStore     datastructures.BlockMessageStore
 	blockStatusStore      datastructures.BlockStatusStore
+	consensusStateStore   datastructures.ConsensusStateStore
 }
 
 // New instantiates a new BlockProcessor
@@ -39,7 +42,8 @@ func New(
 	acceptanceDataStore datastructures.AcceptanceDataStore,
 	blockIndex datastructures.BlockIndex,
 	blockMessageStore datastructures.BlockMessageStore,
-	blockStatusStore datastructures.BlockStatusStore) *BlockProcessor {
+	blockStatusStore datastructures.BlockStatusStore,
+	consensusStateStore datastructures.ConsensusStateStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,
@@ -54,6 +58,7 @@ func New(
 		blockIndex:            blockIndex,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
+		consensusStateStore:   consensusStateStore,
 	}
 }
 
@@ -65,7 +70,21 @@ func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExt
 	start := mstime.Now()
 	log.Debugf("BuildBlock start")
 
+	parents := bp.selectParentsForNewBlock()
+	transactions := transactionSelector(bp.consensusStateStore.FullUTXOSet())
+	block := bp.buildBlock(coinbaseScriptPublicKey, coinbaseExtraData, parents, transactions)
+
 	log.Debugf("BuildBlock end. Took: %s", mstime.Since(start))
+	return block
+}
+
+func (bp *BlockProcessor) selectParentsForNewBlock() []*daghash.Hash {
+	return nil
+}
+
+func (bp *BlockProcessor) buildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
+	parentHashes []*daghash.Hash, transactions []*util.Tx) *appmessage.MsgBlock {
+
 	return nil
 }
 
@@ -75,6 +94,30 @@ func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) err
 	start := mstime.Now()
 	log.Debugf("ValidateAndInsertBlock start")
 
+	blockStatus, err := bp.validateBlock(block)
+	if err != nil {
+		return err
+	}
+	if blockStatus != model.StatusValid {
+		return bp.insertInvalidBlock(block, blockStatus)
+	}
+	err = bp.insertBlock(block)
+	if err != nil {
+		return err
+	}
+
 	log.Debugf("ValidateAndInsertBlock end. Took: %s", mstime.Since(start))
+	return nil
+}
+
+func (bp *BlockProcessor) validateBlock(block *appmessage.MsgBlock) (model.BlockStatus, error) {
+	return model.StatusValid, nil
+}
+
+func (bp *BlockProcessor) insertBlock(block *appmessage.MsgBlock) error {
+	return nil
+}
+
+func (bp *BlockProcessor) insertInvalidBlock(block *appmessage.MsgBlock, blockStatus model.BlockStatus) error {
 	return nil
 }
