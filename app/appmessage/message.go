@@ -101,6 +101,8 @@ const (
 	CmdGetMempoolEntriesResponseMessage
 	CmdShutDownRequestMessage
 	CmdShutDownResponseMessage
+	CmdGetHeadersRequestMessage
+	CmdGetHeadersResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -176,6 +178,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdFinalityConflictResolvedNotificationMessage: "FinalityConflictResolvedNotification",
 	CmdGetMempoolEntriesRequestMessage:             "GetMempoolEntriesRequestMessage",
 	CmdGetMempoolEntriesResponseMessage:            "GetMempoolEntriesResponseMessage",
+	CmdGetHeadersRequestMessage:                    "GetHeadersRequest",
+	CmdGetHeadersResponseMessage:                   "GetHeadersResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

@@ -19,12 +19,12 @@ const HashSize = 32
 // TxIDSize of array used to store TxID. See TxID.
 const TxIDSize = HashSize
 
-// MaxHashStringSize is the maximum length of a Hash hash string.
-const MaxHashStringSize = HashSize * 2
+// HashStringSize is the length of a Hash hash string.
+const HashStringSize = HashSize * 2
 
 // ErrHashStrSize describes an error that indicates the caller specified a hash
-// string that has too many characters.
-var ErrHashStrSize = errors.Errorf("max hash string length is %d bytes", MaxHashStringSize)
+// string that hasn't the correct number of characters.
+var ErrHashStrSize = errors.Errorf("hash string length should be %d bytes", HashStringSize)
 
 // Hash is used in several of the kaspa messages and common structures. It
 // typically represents the double sha256 of data.
@@ -172,7 +172,7 @@ func NewTxIDFromStr(idStr string) (*TxID, error) {
 // destination.
 func Decode(dst *Hash, src string) error {
 	// Return error if hash string is too long.
-	if len(src) > MaxHashStringSize {
+	if len(src) != HashStringSize {
 		return ErrHashStrSize
 	}
 
