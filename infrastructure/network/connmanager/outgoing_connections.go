@@ -18,7 +18,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 	connections := c.netAdapter.P2PConnections()
 	connectedAddresses := make([]*appmessage.NetAddress, len(connections))
-	for i, connection := range c.netAdapter.P2PConnections() {
+	for i, connection := range connections {
 		connectedAddresses[i] = connection.NetAddress()
 	}
 

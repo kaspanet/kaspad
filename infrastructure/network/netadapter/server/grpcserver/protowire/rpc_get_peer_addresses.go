@@ -19,9 +19,14 @@ func (x *KaspadMessage_GetPeerAddressesResponse) toAppMessage() (appmessage.Mess
 	for i, address := range x.GetPeerAddressesResponse.Addresses {
 		addresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
 	}
+	bannedAddresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(x.GetPeerAddressesResponse.BannedAddresses))
+	for i, address := range x.GetPeerAddressesResponse.BannedAddresses {
+		bannedAddresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
+	}
 	return &appmessage.GetPeerAddressesResponseMessage{
-		Addresses: addresses,
-		Error:     err,
+		Addresses:       addresses,
+		BannedAddresses: bannedAddresses,
+		Error:           err,
 	}, nil
 }
 
@@ -34,9 +39,14 @@ func (x *KaspadMessage_GetPeerAddressesResponse) fromAppMessage(message *appmess
 	for i, address := range message.Addresses {
 		addresses[i] = &GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
 	}
+	bannedAddresses := make([]*GetPeerAddressesKnownAddressMessage, len(message.BannedAddresses))
+	for i, address := range message.BannedAddresses {
+		bannedAddresses[i] = &GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
+	}
 	x.GetPeerAddressesResponse = &GetPeerAddressesResponseMessage{
-		Addresses: addresses,
-		Error:     err,
+		Addresses:       addresses,
+		BannedAddresses: bannedAddresses,
+		Error:           err,
 	}
 	return nil
 }

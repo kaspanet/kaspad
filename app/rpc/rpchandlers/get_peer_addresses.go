@@ -12,14 +12,19 @@ import (
 // HandleGetPeerAddresses handles the respectively named RPC command
 func HandleGetPeerAddresses(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
 	netAddresses := context.AddressManager.Addresses()
-	netAddresses = append(netAddresses, context.AddressManager.BannedAddresses()...)
-
-	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(netAddresses))
+	addressMessages := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(netAddresses))
 	for i, netAddress := range netAddresses {
-		port := strconv.FormatUint(uint64(netAddress.Port), 10)
-		addressWithPort := net.JoinHostPort(netAddress.IP.String(), port)
-		addresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}
+		addressWithPort := net.JoinHostPort(netAddress.IP.String(), strconv.FormatUint(uint64(netAddress.Port), 10))
+		addressMessages[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}
 	}
-	response := appmessage.NewGetPeerAddressesResponseMessage(addresses)
+
+	bannedAddresses := context.AddressManager.BannedAddresses()
+	bannedAddressMessages := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(bannedAddresses))
+	for i, netAddress := range bannedAddresses {
+		addressWithPort := net.JoinHostPort(netAddress.IP.String(), strconv.FormatUint(uint64(netAddress.Port), 10))
+		bannedAddressMessages[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}
+	}
+
+	response := appmessage.NewGetPeerAddressesResponseMessage(addressMessages, bannedAddressMessages)
 	return response, nil
 }
