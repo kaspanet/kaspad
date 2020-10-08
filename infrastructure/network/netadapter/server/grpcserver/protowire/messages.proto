@@ -356,6 +356,7 @@ message GetPeerAddressesRequestMessage{
 
 message GetPeerAddressesResponseMessage{
   repeated GetPeerAddressesKnownAddressMessage addresses = 1;
+  repeated GetPeerAddressesKnownAddressMessage bannedAddresses = 2;
   RPCError error = 1000;
 }
 

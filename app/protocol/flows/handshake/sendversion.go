@@ -56,7 +56,7 @@ func (flow *sendVersionFlow) start() error {
 	subnetworkID := flow.Config().SubnetworkID
 
 	// Version message.
-	localAddress := flow.AddressManager().GetBestLocalAddress(flow.peer.Connection().NetAddress())
+	localAddress := flow.AddressManager().BestLocalAddress(flow.peer.Connection().NetAddress())
 	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
 		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
