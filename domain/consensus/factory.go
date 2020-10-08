@@ -52,6 +52,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
+		databaseContext,
 		reachabilityTree,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
