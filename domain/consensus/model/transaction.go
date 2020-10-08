@@ -34,3 +34,5 @@ type DomainTransactionOutput struct {
 	Value           uint64
 	ScriptPublicKey []byte
 }
+
+type DomainTransactionID DomainHash
