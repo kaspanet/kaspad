@@ -1,7 +1,6 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
@@ -20,6 +19,6 @@ func (css *ConsensusStateStore) Update(dbTx model.TxContextProxy, utxoDiff *mode
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.ContextProxy, outpoint *appmessage.Outpoint) *model.UTXOEntry {
+func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.ContextProxy, outpoint *model.DomainOutpoint) *model.UTXOEntry {
 	return nil
 }

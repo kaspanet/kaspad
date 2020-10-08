@@ -1,7 +1,6 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
@@ -57,13 +56,13 @@ func New(
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+	transactionSelector model.TransactionSelector) *model.DomainBlock {
 
 	return nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
+func (bp *BlockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
 	return nil
 }
