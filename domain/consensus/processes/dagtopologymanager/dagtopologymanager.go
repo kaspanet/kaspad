@@ -39,24 +39,12 @@ func (dtm *DAGTopologyManager) Children(blockHash *daghash.Hash) []*daghash.Hash
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
 func (dtm *DAGTopologyManager) IsParentOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
-	bParents := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB).Parents
-	for _, hash := range bParents {
-		if *hash == *blockHashA {
-			return true
-		}
-	}
-	return false
+	return isHashInSlice(blockHashA, dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB).Parents)
 }
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
 func (dtm *DAGTopologyManager) IsChildOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
-	bChildren := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB).Children
-	for _, hash := range bChildren {
-		if *hash == *blockHashA {
-			return true
-		}
-	}
-	return false
+	return isHashInSlice(blockHashA, dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB).Children)
 }
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
@@ -67,4 +55,13 @@ func (dtm *DAGTopologyManager) IsAncestorOf(blockHashA *daghash.Hash, blockHashB
 // IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
 func (dtm *DAGTopologyManager) IsDescendantOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashB, blockHashA)
+}
+
+func isHashInSlice(hash *daghash.Hash, hashes []*daghash.Hash) bool {
+	for _, h := range hashes {
+		if *h == *hash {
+			return true
+		}
+	}
+	return false
 }
