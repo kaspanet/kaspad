@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 type DomainTransaction struct {
@@ -10,7 +9,7 @@ type DomainTransaction struct {
 	Inputs       []*DomainTransactionInput
 	Outputs      []*DomainTransactionOutput
 	LockTime     uint64
-	SubnetworkID *subnetworkid.SubnetworkID
+	SubnetworkID *DomainSubnetworkID
 	Gas          uint64
 	PayloadHash  *daghash.Hash
 	Payload      []byte
