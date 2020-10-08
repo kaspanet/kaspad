@@ -1,0 +1,37 @@
+package model
+
+import (
+	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/util/subnetworkid"
+)
+
+type DomainTransaction struct {
+	Version      int32
+	Inputs       []*DomainTransactionInput
+	Outputs      []*DomainTransactionOutput
+	LockTime     uint64
+	SubnetworkID *subnetworkid.SubnetworkID
+	Gas          uint64
+	PayloadHash  *daghash.Hash
+	Payload      []byte
+
+	Hash  *daghash.Hash
+	ID    *daghash.TxID
+	Index int
+}
+
+type DomainTransactionInput struct {
+	PreviousOutpoint *DomainOutpoint
+	SignatureScript  []byte
+	Sequence         uint64
+}
+
+type DomainOutpoint struct {
+	ID    *daghash.TxID
+	Index uint32
+}
+
+type DomainTransactionOutput struct {
+	Value           uint64
+	ScriptPublicKey []byte
+}
