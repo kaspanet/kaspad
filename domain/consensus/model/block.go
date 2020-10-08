@@ -1,9 +1,5 @@
 package model
 
-import (
-	"github.com/kaspanet/kaspad/util/mstime"
-)
-
 type DomainBlock struct {
 	Header       *DomainBlockHeader
 	Transactions []*DomainTransaction
@@ -17,7 +13,7 @@ type DomainBlockHeader struct {
 	HashMerkleRoot       *DomainHash
 	AcceptedIDMerkleRoot *DomainHash
 	UTXOCommitment       *DomainHash
-	Timestamp            mstime.Time
+	Timestamp            *DomainTime
 	Bits                 uint32
 	Nonce                uint64
 }
