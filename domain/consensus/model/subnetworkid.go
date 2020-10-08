@@ -1,8 +1,5 @@
 package model
 
-// IDLength of array used to store the subnetwork ID
-const IDLength = 20
-
 // DomainSubnetworkID is the domain representation of a Subnetwork ID
 type DomainSubnetworkID [20]byte
 
