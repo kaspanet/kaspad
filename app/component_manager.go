@@ -72,11 +72,6 @@ func (a *ComponentManager) Stop() {
 		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
-	err = a.addressManager.Stop()
-	if err != nil {
-		log.Errorf("Error stopping address manager: %s", err)
-	}
-
 	return
 }
 
@@ -99,18 +94,22 @@ func NewComponentManager(cfg *config.Config, databaseContext *dbaccess.DatabaseC
 	if err != nil {
 		return nil, err
 	}
-	addressManager, err := addressmanager.New(cfg, databaseContext)
+
+	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg))
 	if err != nil {
 		return nil, err
 	}
+
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
 	}
+
 	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
 	if err != nil {
 		return nil, err
 	}
+
 	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex, interrupt)
 
 	return &ComponentManager{
@@ -187,14 +186,14 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
 				// source. So we'll take first returned address as source.
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+				a.addressManager.AddAddresses(addresses...)
 			})
 	}
 
 	if a.cfg.GRPCSeed != "" {
 		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 			func(addresses []*appmessage.NetAddress) {
-				a.addressManager.AddAddresses(addresses, addresses[0], nil)
+				a.addressManager.AddAddresses(addresses...)
 			})
 	}
 }

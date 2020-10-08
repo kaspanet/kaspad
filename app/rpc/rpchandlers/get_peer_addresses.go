@@ -1,6 +1,9 @@
 package rpchandlers
 
 import (
+	"net"
+	"strconv"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -8,14 +11,20 @@ import (
 
 // HandleGetPeerAddresses handles the respectively named RPC command
 func HandleGetPeerAddresses(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	peersState, err := context.AddressManager.PeersStateForSerialization()
-	if err != nil {
-		return nil, err
+	netAddresses := context.AddressManager.Addresses()
+	addressMessages := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(netAddresses))
+	for i, netAddress := range netAddresses {
+		addressWithPort := net.JoinHostPort(netAddress.IP.String(), strconv.FormatUint(uint64(netAddress.Port), 10))
+		addressMessages[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}
 	}
-	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(peersState.Addresses))
-	for i, address := range peersState.Addresses {
-		addresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: string(address.Address)}
+
+	bannedAddresses := context.AddressManager.BannedAddresses()
+	bannedAddressMessages := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(bannedAddresses))
+	for i, netAddress := range bannedAddresses {
+		addressWithPort := net.JoinHostPort(netAddress.IP.String(), strconv.FormatUint(uint64(netAddress.Port), 10))
+		bannedAddressMessages[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: addressWithPort}
 	}
-	response := appmessage.NewGetPeerAddressesResponseMessage(addresses)
+
+	response := appmessage.NewGetPeerAddressesResponseMessage(addressMessages, bannedAddressMessages)
 	return response, nil
 }

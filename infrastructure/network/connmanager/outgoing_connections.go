@@ -1,5 +1,7 @@
 package connmanager
 
+import "github.com/kaspanet/kaspad/app/appmessage"
+
 // checkOutgoingConnections goes over all activeOutgoing and makes sure they are still active.
 // Then it opens connections so that we have targetOutgoing active connections
 func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
@@ -14,6 +16,12 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		delete(c.activeOutgoing, address)
 	}
 
+	connections := c.netAdapter.P2PConnections()
+	connectedAddresses := make([]*appmessage.NetAddress, len(connections))
+	for i, connection := range connections {
+		connectedAddresses[i] = connection.NetAddress()
+	}
+
 	liveConnections := len(c.activeOutgoing)
 	if c.targetOutgoing == liveConnections {
 		return
@@ -23,47 +31,21 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
-	connectionAttempts := connectionsNeededCount * 2
-	for i := 0; i < connectionAttempts; i++ {
-		// Return in case we've already reached or surpassed our target
-		if len(c.activeOutgoing) >= c.targetOutgoing {
-			return
-		}
+	netAddresses := c.addressManager.RandomAddresses(connectionsNeededCount, connectedAddresses)
 
-		address := c.addressManager.GetAddress()
-		if address == nil {
-			log.Warnf("No more addresses available")
-			return
-		}
+	for _, netAddress := range netAddresses {
+		addressString := netAddress.TCPAddress().String()
 
-		netAddress := address.NetAddress()
-		tcpAddress := netAddress.TCPAddress()
-		addressString := tcpAddress.String()
-
-		if c.connectionExists(addressString) {
-			log.Debugf("Fetched address %s from address manager but it's already connected. Skipping...", addressString)
-			continue
-		}
-
-		isBanned, err := c.addressManager.IsBanned(netAddress)
-		if err != nil {
-			log.Infof("Couldn't resolve whether %s is banned: %s", addressString, err)
-			continue
-		}
-		if isBanned {
-			continue
-		}
-
-		c.addressManager.Attempt(netAddress)
 		log.Debugf("Connecting to %s because we have %d outgoing connections and the target is "+
 			"%d", addressString, len(c.activeOutgoing), c.targetOutgoing)
-		err = c.initiateConnection(addressString)
+
+		err := c.initiateConnection(addressString)
 		if err != nil {
 			log.Infof("Couldn't connect to %s: %s", addressString, err)
+			c.addressManager.RemoveAddress(netAddress)
 			continue
 		}
 
-		c.addressManager.Connected(netAddress)
 		c.activeOutgoing[addressString] = struct{}{}
 	}
 }

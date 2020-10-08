@@ -20,10 +20,6 @@ type ReceiveAddressesContext interface {
 func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) error {
 
-	if !context.AddressManager().NeedMoreAddresses() {
-		return nil
-	}
-
 	subnetworkID := peer.SubnetworkID()
 	msgGetAddresses := appmessage.NewMsgRequestAddresses(false, subnetworkID)
 	err := outgoingRoute.Enqueue(msgGetAddresses)
@@ -51,7 +47,6 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
 	}
 
-	sourceAddress := peer.Connection().NetAddress()
-	context.AddressManager().AddAddresses(msgAddresses.AddrList, sourceAddress, msgAddresses.SubnetworkID)
+	context.AddressManager().AddAddresses(msgAddresses.AddrList...)
 	return nil
 }

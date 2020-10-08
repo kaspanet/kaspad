@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"testing"
+
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 )
 
 func TestAddressExchange(t *testing.T) {

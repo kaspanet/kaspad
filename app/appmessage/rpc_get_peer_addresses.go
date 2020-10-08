@@ -20,7 +20,8 @@ func NewGetPeerAddressesRequestMessage() *GetPeerAddressesRequestMessage {
 // its respective RPC message
 type GetPeerAddressesResponseMessage struct {
 	baseMessage
-	Addresses []*GetPeerAddressesKnownAddressMessage
+	Addresses       []*GetPeerAddressesKnownAddressMessage
+	BannedAddresses []*GetPeerAddressesKnownAddressMessage
 
 	Error *RPCError
 }
@@ -31,9 +32,10 @@ func (msg *GetPeerAddressesResponseMessage) Command() MessageCommand {
 }
 
 // NewGetPeerAddressesResponseMessage returns a instance of the message
-func NewGetPeerAddressesResponseMessage(addresses []*GetPeerAddressesKnownAddressMessage) *GetPeerAddressesResponseMessage {
+func NewGetPeerAddressesResponseMessage(addresses []*GetPeerAddressesKnownAddressMessage, bannedAddresses []*GetPeerAddressesKnownAddressMessage) *GetPeerAddressesResponseMessage {
 	return &GetPeerAddressesResponseMessage{
-		Addresses: addresses,
+		Addresses:       addresses,
+		BannedAddresses: bannedAddresses,
 	}
 }
 

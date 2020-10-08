@@ -5,15 +5,16 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"net"
 	"testing"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 // TestIPTypes ensures the various functions which determine the type of an IP
 // address based on RFCs work as intended.
 func TestIPTypes(t *testing.T) {
-	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP")
 	defer teardown()
 	type ipTest struct {
 		in       appmessage.NetAddress
@@ -136,7 +137,7 @@ func TestIPTypes(t *testing.T) {
 			t.Errorf("IsValid %s\n got: %v want: %v", test.in.IP, rv, test.valid)
 		}
 
-		if rv := amgr.IsRoutable(&test.in); rv != test.routable {
+		if rv := IsRoutable(&test.in, amgr.cfg.AcceptUnroutable); rv != test.routable {
 			t.Errorf("IsRoutable %s\n got: %v want: %v", test.in.IP, rv, test.routable)
 		}
 	}
@@ -145,7 +146,7 @@ func TestIPTypes(t *testing.T) {
 // TestGroupKey tests the GroupKey function to ensure it properly groups various
 // IP addresses.
 func TestGroupKey(t *testing.T) {
-	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP", nil)
+	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP")
 	defer teardown()
 
 	tests := []struct {

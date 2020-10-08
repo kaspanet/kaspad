@@ -5,8 +5,9 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"net"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 var (
@@ -75,6 +76,13 @@ var (
 
 	// heNet defines the Hurricane Electric IPv6 address block.
 	heNet = ipNet("2001:470::", 32, 128)
+)
+
+const (
+	// GetAddressesMax is the most addresses that we will send in response
+	// to a getAddress (in practise the most addresses we will return from a
+	// call to AddressCache()).
+	GetAddressesMax = 2500
 )
 
 // ipNet returns a net.IPNet struct given the passed IP address string, number
@@ -199,8 +207,8 @@ func IsValid(na *appmessage.NetAddress) bool {
 // IsRoutable returns whether or not the passed address is routable over
 // the public internet. This is true as long as the address is valid and is not
 // in any reserved ranges.
-func (am *AddressManager) IsRoutable(na *appmessage.NetAddress) bool {
-	if am.cfg.NetParams().AcceptUnroutable {
+func IsRoutable(na *appmessage.NetAddress, acceptUnroutable bool) bool {
+	if acceptUnroutable {
 		return !IsLocal(na)
 	}
 
@@ -218,7 +226,7 @@ func (am *AddressManager) GroupKey(na *appmessage.NetAddress) string {
 	if IsLocal(na) {
 		return "local"
 	}
-	if !am.IsRoutable(na) {
+	if !IsRoutable(na, am.cfg.AcceptUnroutable) {
 		return "unroutable"
 	}
 	if IsIPv4(na) {
