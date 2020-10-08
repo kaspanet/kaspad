@@ -2,7 +2,6 @@ package ghostdagdatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // GHOSTDAGDataStore represents a store of BlockGHOSTDAGData
@@ -15,11 +14,11 @@ func New() *GHOSTDAGDataStore {
 }
 
 // Insert inserts the given blockGHOSTDAGData for the given blockHash
-func (gds *GHOSTDAGDataStore) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (gds *GHOSTDAGDataStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *GHOSTDAGDataStore) Get(dbContext model.ContextProxy, blockHash *daghash.Hash) *model.BlockGHOSTDAGData {
+func (gds *GHOSTDAGDataStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) *model.BlockGHOSTDAGData {
 	return nil
 }

@@ -2,7 +2,6 @@ package ghostdagmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // GHOSTDAGManager resolves and manages GHOSTDAG block data
@@ -23,12 +22,12 @@ func New(
 
 // GHOSTDAG calculates GHOSTDAG data for the block represented
 // by the given blockParents
-func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData {
+func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*model.DomainHash) *model.BlockGHOSTDAGData {
 	return nil
 }
 
 // BlockData returns previously calculated GHOSTDAG data for
 // the given blockHash
-func (gm *GHOSTDAGManager) BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData {
+func (gm *GHOSTDAGManager) BlockData(blockHash *model.DomainHash) *model.BlockGHOSTDAGData {
 	return nil
 }

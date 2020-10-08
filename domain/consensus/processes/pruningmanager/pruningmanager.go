@@ -2,7 +2,6 @@ package pruningmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // PruningManager resolves and manages the current pruning point
@@ -23,14 +22,14 @@ func New(
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
-func (pm *PruningManager) FindNextPruningPoint(blockHash *daghash.Hash) (found bool,
-	newPruningPoint *daghash.Hash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
+func (pm *PruningManager) FindNextPruningPoint(blockHash *model.DomainHash) (found bool,
+	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 	return false, nil, nil
 }
 
 // PruningPoint returns the hash of the current pruning point
-func (pm *PruningManager) PruningPoint() *daghash.Hash {
+func (pm *PruningManager) PruningPoint() *model.DomainHash {
 	return nil
 }
 

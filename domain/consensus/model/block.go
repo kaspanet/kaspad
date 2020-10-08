@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
@@ -9,15 +8,15 @@ type DomainBlock struct {
 	Header       *DomainBlockHeader
 	Transactions []*DomainTransaction
 
-	Hash *daghash.Hash
+	Hash *DomainHash
 }
 
 type DomainBlockHeader struct {
 	Version              int32
-	ParentHashes         []*daghash.Hash
-	HashMerkleRoot       *daghash.Hash
-	AcceptedIDMerkleRoot *daghash.Hash
-	UTXOCommitment       *daghash.Hash
+	ParentHashes         []*DomainHash
+	HashMerkleRoot       *DomainHash
+	AcceptedIDMerkleRoot *DomainHash
+	UTXOCommitment       *DomainHash
 	Timestamp            mstime.Time
 	Bits                 uint32
 	Nonce                uint64

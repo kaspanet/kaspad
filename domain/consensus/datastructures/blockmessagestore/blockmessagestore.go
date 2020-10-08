@@ -2,7 +2,6 @@ package blockmessagestore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // BlockMessageStore represents a store of MsgBlock
@@ -15,11 +14,11 @@ func New() *BlockMessageStore {
 }
 
 // Insert inserts the given msgBlock for the given blockHash
-func (bms *BlockMessageStore) Insert(dbTx model.TxContextProxy, blockHash *daghash.Hash, msgBlock *model.DomainBlock) {
+func (bms *BlockMessageStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, msgBlock *model.DomainBlock) {
 
 }
 
 // Get gets the msgBlock associated with the given blockHash
-func (bms *BlockMessageStore) Get(dbContext model.ContextProxy, blockHash *daghash.Hash) *model.DomainBlock {
+func (bms *BlockMessageStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
 	return nil
 }
