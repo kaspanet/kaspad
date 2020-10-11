@@ -2,8 +2,6 @@ package reachabilitydatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // ReachabilityDataStore represents a store of ReachabilityData
@@ -16,11 +14,11 @@ func New() *ReachabilityDataStore {
 }
 
 // Insert inserts the given reachabilityData for the given blockHash
-func (rds *ReachabilityDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, reachabilityData *model.ReachabilityData) {
+func (rds *ReachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, reachabilityData *model.ReachabilityData) {
 
 }
 
 // Get gets the reachabilityData associated with the given blockHash
-func (rds *ReachabilityDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.ReachabilityData {
+func (rds *ReachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.ReachabilityData {
 	return nil
 }

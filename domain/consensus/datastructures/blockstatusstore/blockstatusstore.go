@@ -2,8 +2,6 @@ package blockstatusstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // BlockStatusStore represents a store of BlockStatuses
@@ -16,11 +14,11 @@ func New() *BlockStatusStore {
 }
 
 // Insert inserts the given blockStatus for the given blockHash
-func (bss *BlockStatusStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, blockStatus model.BlockStatus) {
+func (bss *BlockStatusStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockStatus model.BlockStatus) {
 
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *BlockStatusStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) model.BlockStatus {
+func (bss *BlockStatusStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) model.BlockStatus {
 	return 0
 }

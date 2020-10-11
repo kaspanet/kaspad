@@ -1,22 +1,19 @@
 package pruningmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // PruningManager resolves and manages the current pruning point
 type PruningManager struct {
-	dagTraversalManager processes.DAGTraversalManager
-	pruningPointStore   datastructures.PruningPointStore
+	dagTraversalManager model.DAGTraversalManager
+	pruningPointStore   model.PruningPointStore
 }
 
 // New instantiates a new PruningManager
 func New(
-	dagTraversalManager processes.DAGTraversalManager,
-	pruningPointStore datastructures.PruningPointStore) *PruningManager {
+	dagTraversalManager model.DAGTraversalManager,
+	pruningPointStore model.PruningPointStore) *PruningManager {
 	return &PruningManager{
 		dagTraversalManager: dagTraversalManager,
 		pruningPointStore:   pruningPointStore,
@@ -25,14 +22,14 @@ func New(
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
-func (pm *PruningManager) FindNextPruningPoint(blockHash *daghash.Hash) (found bool,
-	newPruningPoint *daghash.Hash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
+func (pm *PruningManager) FindNextPruningPoint(blockHash *model.DomainHash) (found bool,
+	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 	return false, nil, nil
 }
 
 // PruningPoint returns the hash of the current pruning point
-func (pm *PruningManager) PruningPoint() *daghash.Hash {
+func (pm *PruningManager) PruningPoint() *model.DomainHash {
 	return nil
 }
 
