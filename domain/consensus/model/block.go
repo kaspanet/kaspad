@@ -15,7 +15,7 @@ type DomainBlockHeader struct {
 	HashMerkleRoot       *DomainHash
 	AcceptedIDMerkleRoot *DomainHash
 	UTXOCommitment       *DomainHash
-	Timestamp            *DomainTime
+	TimeInMilliseconds   int64
 	Bits                 uint32
 	Nonce                uint64
 }
