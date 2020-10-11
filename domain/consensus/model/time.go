@@ -6,7 +6,7 @@ const (
 	nanosecondsInAMillisecond = int64(time.Millisecond / time.Nanosecond)
 )
 
-// Time is domain representation of time.Time that guarantees that all
+// DomainTime is domain representation of time.Time that guarantees that all
 // of its methods will return times with millisecond precision.
 type DomainTime struct {
 	time time.Time

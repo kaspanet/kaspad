@@ -1,5 +1,6 @@
 package model
 
+// DomainBlock represents a Kaspa block
 type DomainBlock struct {
 	Header       *DomainBlockHeader
 	Transactions []*DomainTransaction
@@ -7,6 +8,7 @@ type DomainBlock struct {
 	Hash *DomainHash
 }
 
+// DomainBlockHeader represents the header part of a Kaspa block
 type DomainBlockHeader struct {
 	Version              int32
 	ParentHashes         []*DomainHash
