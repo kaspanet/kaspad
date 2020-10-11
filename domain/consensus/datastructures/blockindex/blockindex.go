@@ -14,11 +14,11 @@ func New() *BlockIndex {
 }
 
 // Insert inserts the given blockHash
-func (bi *BlockIndex) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash) {
+func (bi *BlockIndex) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
 
 }
 
 // Exists returns whether the given blockHash exists in the store
-func (bi *BlockIndex) Exists(dbContext model.ContextProxy, blockHash *model.DomainHash) bool {
+func (bi *BlockIndex) Exists(dbContext model.DBContextProxy, blockHash *model.DomainHash) bool {
 	return false
 }

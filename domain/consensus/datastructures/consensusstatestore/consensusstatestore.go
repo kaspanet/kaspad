@@ -14,11 +14,11 @@ func New() *ConsensusStateStore {
 }
 
 // Update updates the store with the given utxoDiff
-func (css *ConsensusStateStore) Update(dbTx model.TxContextProxy, utxoDiff *model.UTXODiff) {
+func (css *ConsensusStateStore) Update(dbTx model.DBTxProxy, utxoDiff *model.UTXODiff) {
 
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.ContextProxy, outpoint *model.DomainOutpoint) *model.UTXOEntry {
+func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) *model.UTXOEntry {
 	return nil
 }

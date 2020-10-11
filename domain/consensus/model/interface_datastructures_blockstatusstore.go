@@ -2,6 +2,6 @@ package model
 
 // BlockStatusStore represents a store of BlockStatuses
 type BlockStatusStore interface {
-	Insert(dbTx TxContextProxy, blockHash *DomainHash, blockStatus BlockStatus)
-	Get(dbContext ContextProxy, blockHash *DomainHash) BlockStatus
+	Insert(dbTx DBTxProxy, blockHash *DomainHash, blockStatus BlockStatus)
+	Get(dbContext DBContextProxy, blockHash *DomainHash) BlockStatus
 }

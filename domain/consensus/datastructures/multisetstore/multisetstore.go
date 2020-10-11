@@ -14,11 +14,11 @@ func New() *MultisetStore {
 }
 
 // Insert inserts the given multiset for the given blockHash
-func (ms *MultisetStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, multiset model.Multiset) {
+func (ms *MultisetStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, multiset model.Multiset) {
 
 }
 
 // Get gets the multiset associated with the given blockHash
-func (ms *MultisetStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) model.Multiset {
+func (ms *MultisetStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) model.Multiset {
 	return nil
 }

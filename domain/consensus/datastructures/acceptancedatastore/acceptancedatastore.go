@@ -14,11 +14,11 @@ func New() *AcceptanceDataStore {
 }
 
 // Insert inserts the given acceptanceData for the given blockHash
-func (ads *AcceptanceDataStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, acceptanceData *model.BlockAcceptanceData) {
+func (ads *AcceptanceDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, acceptanceData *model.BlockAcceptanceData) {
 
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *AcceptanceDataStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) *model.BlockAcceptanceData {
+func (ads *AcceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockAcceptanceData {
 	return nil
 }

@@ -14,11 +14,11 @@ func New() *PruningPointStore {
 }
 
 // Update updates the pruning point to be the given blockHash
-func (pps *PruningPointStore) Update(dbTx model.TxContextProxy, blockHash *model.DomainHash) {
+func (pps *PruningPointStore) Update(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
 
 }
 
 // Get gets the current pruning point
-func (pps *PruningPointStore) Get(dbContext model.ContextProxy) *model.DomainHash {
+func (pps *PruningPointStore) Get(dbContext model.DBContextProxy) *model.DomainHash {
 	return nil
 }

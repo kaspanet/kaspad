@@ -14,11 +14,11 @@ func New() *GHOSTDAGDataStore {
 }
 
 // Insert inserts the given blockGHOSTDAGData for the given blockHash
-func (gds *GHOSTDAGDataStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (gds *GHOSTDAGDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *GHOSTDAGDataStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) *model.BlockGHOSTDAGData {
+func (gds *GHOSTDAGDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockGHOSTDAGData {
 	return nil
 }

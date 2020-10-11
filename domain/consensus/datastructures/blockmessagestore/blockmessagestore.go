@@ -14,11 +14,11 @@ func New() *BlockMessageStore {
 }
 
 // Insert inserts the given msgBlock for the given blockHash
-func (bms *BlockMessageStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, msgBlock *model.DomainBlock) {
+func (bms *BlockMessageStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, msgBlock *model.DomainBlock) {
 
 }
 
 // Get gets the msgBlock associated with the given blockHash
-func (bms *BlockMessageStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
+func (bms *BlockMessageStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
 	return nil
 }

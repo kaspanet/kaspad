@@ -14,11 +14,11 @@ func New() *BlockStatusStore {
 }
 
 // Insert inserts the given blockStatus for the given blockHash
-func (bss *BlockStatusStore) Insert(dbTx model.TxContextProxy, blockHash *model.DomainHash, blockStatus model.BlockStatus) {
+func (bss *BlockStatusStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockStatus model.BlockStatus) {
 
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *BlockStatusStore) Get(dbContext model.ContextProxy, blockHash *model.DomainHash) model.BlockStatus {
+func (bss *BlockStatusStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) model.BlockStatus {
 	return 0
 }
