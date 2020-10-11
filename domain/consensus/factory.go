@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningpointstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
@@ -56,8 +57,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		reachabilityTree,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
+		databaseContext,
 		dagTopologyManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		model.KType(dagParams.K))
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
