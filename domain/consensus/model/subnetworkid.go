@@ -1,5 +1,7 @@
 package model
 
+const SubnetworkIDSize = 20
+
 // DomainSubnetworkID is the domain representation of a Subnetwork ID
 type DomainSubnetworkID [20]byte
 

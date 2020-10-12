@@ -1,4 +1,6 @@
 package model
 
+const HashSize = 32
+
 // DomainHash is the domain representation of a daghash.Hash
-type DomainHash [32]byte
+type DomainHash [HashSize]byte

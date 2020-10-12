@@ -2,33 +2,29 @@ package blockvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"math/big"
 )
 
 // BlockValidator exposes a set of validation classes, after which
 // it's possible to determine whether a block is valid
 type BlockValidator struct {
+	powMax                     *big.Int
+	skipPoW                    bool
+	genesisHash                *model.DomainHash
+	enableNonNativeSubnetworks bool
 }
 
 // New instantiates a new BlockValidator
-func New() *BlockValidator {
-	return &BlockValidator{}
-}
-
-// ValidateHeaderInIsolation validates block headers in isolation from the current
-// consensus state
-func (bv *BlockValidator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
-	return nil
+func New(powMax *big.Int, skipPoW bool) *BlockValidator {
+	return &BlockValidator{
+		powMax:  powMax,
+		skipPoW: skipPoW,
+	}
 }
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
 func (bv *BlockValidator) ValidateHeaderInContext(block *model.DomainBlock) error {
-	return nil
-}
-
-// ValidateBodyInIsolation validates block bodies in isolation from the current
-// consensus state
-func (bv *BlockValidator) ValidateBodyInIsolation(block *model.DomainBlock) error {
 	return nil
 }
 
