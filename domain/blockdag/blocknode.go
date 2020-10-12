@@ -119,6 +119,8 @@ type blockNode struct {
 	acceptedIDMerkleRoot *daghash.Hash
 	utxoCommitment       *daghash.Hash
 
+	finality *blockNode
+
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
 	// only be accessed using the concurrent-safe BlockNodeStatus method on
@@ -288,7 +290,10 @@ func (node *blockNode) blockAtDepth(depth uint64) *blockNode {
 }
 
 func (node *blockNode) finalityPoint() *blockNode {
-	return node.blockAtDepth(node.dag.FinalityInterval())
+	if node.finality == nil {
+		node.finality = node.blockAtDepth(node.dag.FinalityInterval())
+	}
+	return node.finality
 }
 
 func (node *blockNode) hasFinalityPointInOthersSelectedChain(other *blockNode) (bool, error) {

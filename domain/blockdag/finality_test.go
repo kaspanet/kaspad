@@ -184,7 +184,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 	block1 := PrepareAndProcessBlockForTest(t, dagBuild, []*daghash.Hash{dagBuild.genesis.hash}, nil)
 
 	// Create a chain
-	selectedChain := make([]*appmessage.MsgBlock, 0, finalityInterval+1)
+	selectedChain := make([]*appmessage.MsgBlock, 0, finalityInterval+2)
 	parent := block1.BlockHash()
 	// Make sure this is always bigger than `blocksChain2` so it will stay the selected chain
 	for i := 0; i < finalityInterval+2; i++ {
@@ -231,7 +231,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 		t.Fatalf("expected mergeDepthViolatingTop to violate merge depth")
 	}
 
-	kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(dagReal, []*daghash.Hash{blocksChain2[len(blocksChain2)-2].BlockHash(), selectedChain[len(selectedChain)-3].BlockHash()})
+	// the location of the parents in the slices need to be both `-X` so the `selectedChain` one will have higher blueScore (it's a chain longer by 1)
+	kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(dagReal, []*daghash.Hash{blocksChain2[len(blocksChain2)-3].BlockHash(), selectedChain[len(selectedChain)-3].BlockHash()})
 	if isViolatingMergeDepth {
 		t.Fatalf("expected blueKosherizingBlock to not violate merge depth")
 	}
