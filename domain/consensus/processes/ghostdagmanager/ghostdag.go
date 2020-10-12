@@ -25,7 +25,7 @@ import (
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	newBlockData := &model.BlockGHOSTDAGData{
-		MergeSetBlues:      make([]*model.DomainHash, 0, gm.k),
+		MergeSetBlues:      make([]*model.DomainHash, 0),
 		MergeSetReds:       make([]*model.DomainHash, 0),
 		BluesAnticoneSizes: make(map[model.DomainHash]model.KType),
 	}
@@ -71,7 +71,7 @@ func (gm *GHOSTDAGManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 		return false, 0, nil, nil
 	}
 
-	candidateBluesAnticoneSizes = make(map[model.DomainHash]model.KType)
+	candidateBluesAnticoneSizes = make(map[model.DomainHash]model.KType, gm.k)
 
 	// Iterate over all blocks in the blue set of newNode that are not in the past
 	// of blueCandidate, and check for each one of them if blueCandidate potentially
