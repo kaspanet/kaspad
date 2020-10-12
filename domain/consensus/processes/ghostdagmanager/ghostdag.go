@@ -30,7 +30,7 @@ func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.Bl
 		BluesAnticoneSizes: make(map[model.DomainHash]model.KType),
 	}
 
-	newBlockData.SelectedParent = gm.bluest(blockParents)
+	newBlockData.SelectedParent = gm.findSelectedParent(blockParents)
 	mergeSet := gm.mergeSet(newBlockData.SelectedParent, blockParents)
 
 	for _, blueCandidate := range mergeSet {

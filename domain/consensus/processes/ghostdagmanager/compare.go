@@ -2,14 +2,14 @@ package ghostdagmanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
-func (gm *GHOSTDAGManager) bluest(blockHashes []*model.DomainHash) *model.DomainHash {
-	var bluestBlockHash *model.DomainHash
-	for _, hash := range blockHashes {
-		if bluestBlockHash == nil || gm.less(bluestBlockHash, hash) {
-			bluestBlockHash = hash
+func (gm *GHOSTDAGManager) findSelectedParent(parentHashes []*model.DomainHash) *model.DomainHash {
+	var selectedParent *model.DomainHash
+	for _, hash := range parentHashes {
+		if selectedParent == nil || gm.less(selectedParent, hash) {
+			selectedParent = hash
 		}
 	}
-	return bluestBlockHash
+	return selectedParent
 }
 
 func (gm *GHOSTDAGManager) less(blockA, blockB *model.DomainHash) bool {
