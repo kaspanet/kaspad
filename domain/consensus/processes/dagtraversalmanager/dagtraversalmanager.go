@@ -33,6 +33,9 @@ func (dtm *DAGTraversalManager) SelectedParentIterator(highHash *model.DomainHas
 	return nil
 }
 
+// ChainBlockAtBlueScore returns the hash of the smallest block
+// with a blue score greater than the given blueScore in the
+// virtual block's selected parent chain
 func (dtm *DAGTraversalManager) ChainBlockAtBlueScore(blueScore uint64) *model.DomainHash {
 	return nil
 }

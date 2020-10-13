@@ -2,9 +2,9 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockmessagestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/feedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
@@ -35,7 +35,7 @@ type factory struct{}
 func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
-	blockMessageStore := blockmessagestore.New()
+	blockStore := blockstore.New()
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
 	multisetStore := multisetstore.New()
@@ -78,7 +78,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		dagTopologyManager,
 		reachabilityTree,
 		acceptanceDataStore,
-		blockMessageStore,
+		blockStore,
 		blockStatusStore,
 		feeDataStore)
 

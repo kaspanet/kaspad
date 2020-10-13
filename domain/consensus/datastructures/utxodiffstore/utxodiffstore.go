@@ -22,6 +22,8 @@ func (uds *UTXODiffStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHa
 func (uds *UTXODiffStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.UTXODiff {
 	return nil
 }
+
+// Delete deletes the utxoDiff associated with the given blockHash
 func (uds *UTXODiffStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
 
 }

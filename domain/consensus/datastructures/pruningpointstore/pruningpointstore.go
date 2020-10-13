@@ -18,10 +18,12 @@ func (pps *PruningPointStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash
 
 }
 
+// PruningPoint gets the current pruning point
 func (pps *PruningPointStore) PruningPoint(dbContext model.DBContextProxy) *model.DomainHash {
 	return nil
 }
 
+// PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
 func (pps *PruningPointStore) PruningPointSerializedUTXOSet(dbContext model.DBContextProxy) []byte {
 	return nil
 }

@@ -23,6 +23,7 @@ func (ms *MultisetStore) Get(dbContext model.DBContextProxy, blockHash *model.Do
 	return nil
 }
 
+// Delete deletes the multiset associated with the given blockHash
 func (ms *MultisetStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
 
 }
