@@ -67,7 +67,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		dagParams,
 		consensusStateStore,
 		multisetStore,
-		utxoDiffStore)
+		utxoDiffStore,
+		blockStore)
 	validator := validatorpkg.New(consensusStateManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
