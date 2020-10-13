@@ -57,21 +57,3 @@ func (bv *Validator) ValidateFinality(block *model.DomainBlock) error {
 func (bv *Validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
 	return 0, nil
 }
-
-// validateTransactionInIsolation validates transactions in isolation from the current
-// consensus state
-func (bv *Validator) validateTransactionInIsolation(transaction *model.DomainTransaction) error {
-	return nil
-}
-
-// validateTransactionInContext validates transactions in the context of the current
-// consensus state
-func (bv *Validator) validateTransactionInContext(transaction *model.DomainTransaction) error {
-	return nil
-}
-
-// validateTransactionAgainstUTXO validates transactions in the context of the current
-// UTXO Set
-func (bv *Validator) validateTransactionAgainstUTXO(transaction *model.DomainTransaction) error {
-	return nil
-}
