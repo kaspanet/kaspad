@@ -3,6 +3,7 @@ package model
 // UTXODiffStore represents a store of UTXODiffs
 type UTXODiffStore interface {
 	Insert(dbTx DBTxProxy, blockHash *DomainHash, utxoDiff *UTXODiff, utxoDiffChild *DomainHash)
-	Get(dbContext DBContextProxy, blockHash *DomainHash) *UTXODiff
+	UTXODiff(dbContext DBContextProxy, blockHash *DomainHash) *UTXODiff
+	UTXODiffChild(dbContext DBContextProxy, blockHash *DomainHash) *DomainHash
 	Delete(dbTx DBTxProxy, blockHash *DomainHash)
 }

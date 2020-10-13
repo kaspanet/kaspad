@@ -18,8 +18,13 @@ func (uds *UTXODiffStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHa
 
 }
 
-// Get gets the utxoDiff associated with the given blockHash
-func (uds *UTXODiffStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.UTXODiff {
+// UTXODiff gets the utxoDiff associated with the given blockHash
+func (uds *UTXODiffStore) UTXODiff(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.UTXODiff {
+	return nil
+}
+
+// UTXODiffChild gets the utxoDiff child associated with the given blockHash
+func (uds *UTXODiffStore) UTXODiffChild(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainHash {
 	return nil
 }
 
