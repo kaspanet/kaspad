@@ -4,4 +4,5 @@ package model
 type UTXODiffStore interface {
 	Insert(dbTx DBTxProxy, blockHash *DomainHash, utxoDiff *UTXODiff)
 	Get(dbContext DBContextProxy, blockHash *DomainHash) *UTXODiff
+	Delete(dbTx DBTxProxy, blockHash *DomainHash)
 }
