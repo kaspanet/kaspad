@@ -8,11 +8,14 @@ import (
 // it's possible to determine whether either a block or a
 // transaction is valid
 type Validator struct {
+	consensusStateManager model.ConsensusStateManager
 }
 
 // New instantiates a new Validator
-func New() *Validator {
-	return &Validator{}
+func New(consensusStateManager model.ConsensusStateManager) *Validator {
+	return &Validator{
+		consensusStateManager: consensusStateManager,
+	}
 }
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current

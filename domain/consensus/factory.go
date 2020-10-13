@@ -47,7 +47,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	feeDataStore := feedatastore.New()
 
 	// Processes
-	validator := validatorpkg.New()
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
@@ -69,6 +68,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		consensusStateStore,
 		multisetStore,
 		utxoDiffStore)
+	validator := validatorpkg.New(consensusStateManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		databaseContext,

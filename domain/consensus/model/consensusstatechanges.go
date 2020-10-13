@@ -5,6 +5,7 @@ package model
 type ConsensusStateChanges struct {
 	AcceptanceData  *BlockAcceptanceData
 	VirtualUTXODiff *UTXODiff
+	NewTips         []*DomainHash
 
 	NewBlockUTXODiff  *UTXODiff
 	NewBlockMultiset  Multiset
