@@ -60,15 +60,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		pruningStore)
 	consensusStateManager := consensusstatemanager.New(
 		dagParams,
 		consensusStateStore,
 		multisetStore,
 		utxoDiffStore,
 		blockStore)
+	pruningManager := pruningmanager.New(
+		dagTraversalManager,
+		pruningStore,
+		dagTopologyManager,
+		blockStatusStore,
+		consensusStateManager)
 	validator := validatorpkg.New(consensusStateManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
