@@ -23,6 +23,7 @@ func (bss *BlockStatusStore) Get(dbContext model.DBContextProxy, blockHash *mode
 	return 0
 }
 
+// Exists returns true if the blockStatus for the given blockHash exists
 func (bss *BlockStatusStore) Exists(dbContext model.DBContextProxy, blockHash *model.DomainHash) bool {
 	return false
 }
