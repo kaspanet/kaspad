@@ -4,4 +4,5 @@ package model
 type MultisetStore interface {
 	Insert(dbTx DBTxProxy, blockHash *DomainHash, multiset Multiset)
 	Get(dbContext DBContextProxy, blockHash *DomainHash) Multiset
+	Delete(dbTx DBTxProxy, blockHash *DomainHash)
 }

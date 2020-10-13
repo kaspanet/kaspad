@@ -60,6 +60,16 @@ func (dtm *DAGTopologyManager) IsDescendantOf(blockHashA *model.DomainHash, bloc
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashB, blockHashA)
 }
 
+// IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
+func (dtm *DAGTopologyManager) IsAncestorOfAny(blockHash *model.DomainHash, potentialDescendants []*model.DomainHash) bool {
+	return false
+}
+
+// IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
+func (dtm *DAGTopologyManager) IsInSelectedParentChainOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
+	return false
+}
+
 func isHashInSlice(hash *model.DomainHash, hashes []*model.DomainHash) bool {
 	for _, h := range hashes {
 		if *h == *hash {

@@ -6,23 +6,32 @@ import (
 
 // PruningManager resolves and manages the current pruning point
 type PruningManager struct {
-	dagTraversalManager model.DAGTraversalManager
-	pruningPointStore   model.PruningPointStore
+	dagTraversalManager   model.DAGTraversalManager
+	pruningStore          model.PruningStore
+	dagTopologyManager    model.DAGTopologyManager
+	blockStatusStore      model.BlockStatusStore
+	consensusStateManager model.ConsensusStateManager
 }
 
 // New instantiates a new PruningManager
 func New(
 	dagTraversalManager model.DAGTraversalManager,
-	pruningPointStore model.PruningPointStore) *PruningManager {
+	pruningStore model.PruningStore,
+	dagTopologyManager model.DAGTopologyManager,
+	blockStatusStore model.BlockStatusStore,
+	consensusStateManager model.ConsensusStateManager) *PruningManager {
 	return &PruningManager{
-		dagTraversalManager: dagTraversalManager,
-		pruningPointStore:   pruningPointStore,
+		dagTraversalManager:   dagTraversalManager,
+		pruningStore:          pruningStore,
+		dagTopologyManager:    dagTopologyManager,
+		blockStatusStore:      blockStatusStore,
+		consensusStateManager: consensusStateManager,
 	}
 }
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
-func (pm *PruningManager) FindNextPruningPoint(blockHash *model.DomainHash) (found bool,
+func (pm *PruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
 	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 	return false, nil, nil

@@ -18,9 +18,9 @@ type BlockProcessor struct {
 	dagTopologyManager    model.DAGTopologyManager
 	reachabilityTree      model.ReachabilityTree
 	acceptanceDataStore   model.AcceptanceDataStore
-	blockIndex            model.BlockIndex
-	blockMessageStore     model.BlockMessageStore
+	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
+	feeDataStore          model.FeeDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -33,9 +33,9 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	reachabilityTree model.ReachabilityTree,
 	acceptanceDataStore model.AcceptanceDataStore,
-	blockIndex model.BlockIndex,
-	blockMessageStore model.BlockMessageStore,
-	blockStatusStore model.BlockStatusStore) *BlockProcessor {
+	blockMessageStore model.BlockStore,
+	blockStatusStore model.BlockStatusStore,
+	feeDataStore model.FeeDataStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,
@@ -47,9 +47,9 @@ func New(
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
-		blockIndex:            blockIndex,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
+		feeDataStore:          feeDataStore,
 	}
 }
 
