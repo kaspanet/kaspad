@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
@@ -46,12 +47,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	ghostdagDataStore := ghostdagdatastore.New()
 	feeDataStore := feedatastore.New()
 
+	domainDBContext := database.NewDomainDBContext(databaseContext)
+
 	// Processes
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
-		databaseContext,
+		domainDBContext,
 		reachabilityTree,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
@@ -61,6 +64,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		dagTopologyManager,
 		ghostdagManager)
 	consensusStateManager := consensusstatemanager.New(
+		domainDBContext,
 		dagParams,
 		consensusStateStore,
 		multisetStore,
@@ -75,7 +79,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	validator := validatorpkg.New(consensusStateManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
-		databaseContext,
+		domainDBContext,
 		consensusStateManager,
 		pruningManager,
 		validator,
