@@ -22,3 +22,8 @@ func (ads *AcceptanceDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.Do
 func (ads *AcceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockAcceptanceData {
 	return nil
 }
+
+// Delete deletes the acceptanceData associated with the given blockHash
+func (ads *AcceptanceDataStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
+
+}
