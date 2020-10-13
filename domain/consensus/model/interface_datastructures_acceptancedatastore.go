@@ -4,4 +4,5 @@ package model
 type AcceptanceDataStore interface {
 	Insert(dbTx DBTxProxy, blockHash *DomainHash, acceptanceData *BlockAcceptanceData)
 	Get(dbContext DBContextProxy, blockHash *DomainHash) *BlockAcceptanceData
+	Delete(dbTx DBTxProxy, blockHash *DomainHash)
 }
