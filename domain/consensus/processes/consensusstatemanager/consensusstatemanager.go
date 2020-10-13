@@ -34,12 +34,6 @@ func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint)
 	return nil
 }
 
-// ValidateTransaction validates the given transaction using
-// the given utxoEntries
-func (csm *ConsensusStateManager) ValidateTransaction(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
-	return nil
-}
-
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
 func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock) *model.ConsensusStateChanges {

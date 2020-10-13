@@ -6,15 +6,16 @@ import (
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
-	BuildBlock(scriptPublicKey []byte, extraData []byte, transactionSelector model.TransactionSelector) *model.DomainBlock
+	BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte, transactionSelector model.TransactionSelector) *model.DomainBlock
 	ValidateAndInsertBlock(block *model.DomainBlock) error
 	UTXOByOutpoint(outpoint *model.DomainOutpoint) *model.UTXOEntry
-	ValidateTransaction(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error
+	ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error)
 }
 
 type consensus struct {
 	blockProcessor        model.BlockProcessor
 	consensusStateManager model.ConsensusStateManager
+	transactionValidator  model.TransactionValidator
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -38,6 +39,6 @@ func (s *consensus) UTXOByOutpoint(outpoint *model.DomainOutpoint) *model.UTXOEn
 
 // ValidateTransaction validates the given transaction using
 // the given utxoEntries
-func (s *consensus) ValidateTransaction(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
-	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
+func (s *consensus) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
+	return s.transactionValidator.ValidateTransactionAndCalculateFee(transaction, utxoEntries)
 }
