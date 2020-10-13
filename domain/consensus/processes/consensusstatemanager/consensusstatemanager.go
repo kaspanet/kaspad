@@ -39,7 +39,10 @@ func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint)
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, parents []*model.DomainHash, transactions []*model.DomainTransaction, isDisqualified bool) (stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges, virtualGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, isDisqualified bool) (
+	stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges,
+	virtualGHOSTDAGData *model.BlockGHOSTDAGData) {
+
 	return nil, nil, nil
 }
 
