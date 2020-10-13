@@ -19,6 +19,6 @@ func (bms *BlockMessageStore) Insert(dbTx model.DBTxProxy, blockHash *model.Doma
 }
 
 // Get gets the msgBlock associated with the given blockHash
-func (bms *BlockMessageStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
+func (bms *BlockMessageStore) Block(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
 	return nil
 }
