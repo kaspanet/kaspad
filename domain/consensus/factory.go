@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/feedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningpointstore"
@@ -43,6 +44,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
+	feeDataStore := feedatastore.New()
 
 	// Processes
 	validator := validatorpkg.New()
@@ -77,7 +79,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		reachabilityTree,
 		acceptanceDataStore,
 		blockMessageStore,
-		blockStatusStore)
+		blockStatusStore,
+		feeDataStore)
 
 	return &consensus{
 		consensusStateManager: consensusStateManager,

@@ -20,6 +20,7 @@ type BlockProcessor struct {
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockMessageStore
 	blockStatusStore      model.BlockStatusStore
+	feeDataStore          model.FeeDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -33,7 +34,8 @@ func New(
 	reachabilityTree model.ReachabilityTree,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockMessageStore,
-	blockStatusStore model.BlockStatusStore) *BlockProcessor {
+	blockStatusStore model.BlockStatusStore,
+	feeDataStore model.FeeDataStore) *BlockProcessor {
 
 	return &BlockProcessor{
 		dagParams:          dagParams,
@@ -47,6 +49,7 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
+		feeDataStore:          feeDataStore,
 	}
 }
 
