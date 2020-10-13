@@ -4,4 +4,5 @@ package model
 type BlockStatusStore interface {
 	Insert(dbTx DBTxProxy, blockHash *DomainHash, blockStatus BlockStatus)
 	Get(dbContext DBContextProxy, blockHash *DomainHash) BlockStatus
+	Exists(dbContext DBContextProxy, blockHash *DomainHash) bool
 }
