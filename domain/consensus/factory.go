@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockindex"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockmessagestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
@@ -19,7 +18,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/validator"
+	validatorpkg "github.com/kaspanet/kaspad/domain/consensus/processes/validator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -35,7 +34,6 @@ type factory struct{}
 func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
-	blockIndex := blockindex.New()
 	blockMessageStore := blockmessagestore.New()
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
@@ -47,7 +45,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	ghostdagDataStore := ghostdagdatastore.New()
 
 	// Processes
-	validator := validator.New()
+	validator := validatorpkg.New()
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
@@ -78,7 +76,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		dagTopologyManager,
 		reachabilityTree,
 		acceptanceDataStore,
-		blockIndex,
 		blockMessageStore,
 		blockStatusStore)
 

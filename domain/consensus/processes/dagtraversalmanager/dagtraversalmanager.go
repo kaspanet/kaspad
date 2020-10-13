@@ -32,3 +32,7 @@ func (dtm *DAGTraversalManager) BlockAtDepth(highHash *model.DomainHash, depth u
 func (dtm *DAGTraversalManager) SelectedParentIterator(highHash *model.DomainHash) model.SelectedParentIterator {
 	return nil
 }
+
+func (dtm *DAGTraversalManager) ChainBlockAtBlueScore(blueScore uint64) *model.DomainHash {
+	return nil
+}

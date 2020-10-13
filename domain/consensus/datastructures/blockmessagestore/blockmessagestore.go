@@ -22,3 +22,11 @@ func (bms *BlockMessageStore) Insert(dbTx model.DBTxProxy, blockHash *model.Doma
 func (bms *BlockMessageStore) Block(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
 	return nil
 }
+
+func (bms *BlockMessageStore) Blocks(dbContext model.DBContextProxy, blockHashes []*model.DomainHash) []*model.DomainBlock {
+	return nil
+}
+
+func (bms *BlockMessageStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
+
+}

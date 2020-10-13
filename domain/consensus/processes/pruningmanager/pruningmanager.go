@@ -22,7 +22,7 @@ func New(
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
-func (pm *PruningManager) FindNextPruningPoint(blockHash *model.DomainHash) (found bool,
+func (pm *PruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
 	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 	return false, nil, nil

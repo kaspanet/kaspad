@@ -22,3 +22,7 @@ func (ms *MultisetStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHas
 func (ms *MultisetStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) model.Multiset {
 	return nil
 }
+
+func (ms *MultisetStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
+
+}

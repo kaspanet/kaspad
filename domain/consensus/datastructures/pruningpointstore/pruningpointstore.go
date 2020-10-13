@@ -13,12 +13,15 @@ func New() *PruningPointStore {
 	return &PruningPointStore{}
 }
 
-// Update updates the pruning point to be the given blockHash
-func (pps *PruningPointStore) Update(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
+// Update updates the pruning state
+func (pps *PruningPointStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash *model.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 }
 
-// Get gets the current pruning point
-func (pps *PruningPointStore) Get(dbContext model.DBContextProxy) *model.DomainHash {
+func (pps *PruningPointStore) PruningPoint(dbContext model.DBContextProxy) *model.DomainHash {
+	return nil
+}
+
+func (pps *PruningPointStore) PruningPointSerializedUTXOSet(dbContext model.DBContextProxy) []byte {
 	return nil
 }

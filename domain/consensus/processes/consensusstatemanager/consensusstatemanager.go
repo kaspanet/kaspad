@@ -36,6 +36,22 @@ func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint)
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock) *model.ConsensusStateChanges {
+func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, parents []*model.DomainHash, transactions []*model.DomainTransaction, isDisqualified bool) (stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges, virtualGHOSTDAGData *model.BlockGHOSTDAGData) {
+	return nil, nil, nil
+}
+
+func (csm *ConsensusStateManager) CalculateAcceptanceDataAndMultiset(blockHash *model.DomainHash) (*model.BlockAcceptanceData, model.Multiset) {
+	return nil, nil
+}
+
+func (csm *ConsensusStateManager) Tips() []*model.DomainHash {
+	return nil
+}
+
+func (csm *ConsensusStateManager) VirtualData() (medianTime int64, blueScore uint64) {
+	return 0, 0
+}
+
+func (csm *ConsensusStateManager) RestoreUTXOSet(blockHash *model.DomainHash) model.ReadOnlyUTXOSet {
 	return nil
 }
