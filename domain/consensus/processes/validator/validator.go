@@ -2,12 +2,23 @@ package validator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"math/big"
 )
 
 // Validator exposes a set of validation classes, after which
 // it's possible to determine whether either a block or a
 // transaction is valid
 type Validator struct {
+	powMax                         *big.Int
+	skipPoW                        bool
+	genesisHash                    *model.DomainHash
+	enableNonNativeSubnetworks     bool
+	disableDifficultyAdjustment    bool
+	powMaxBits                     uint32
+	difficultyAdjustmentWindowSize uint64
+
+	dagTopologyManager    model.DAGTopologyManager
+	ghostdagManager       model.GHOSTDAGManager
 	consensusStateManager model.ConsensusStateManager
 }
 
@@ -16,35 +27,6 @@ func New(consensusStateManager model.ConsensusStateManager) *Validator {
 	return &Validator{
 		consensusStateManager: consensusStateManager,
 	}
-}
-
-// ValidateHeaderInIsolation validates block headers in isolation from the current
-// consensus state
-func (bv *Validator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
-	return nil
-}
-
-// ValidateHeaderInContext validates block headers in the context of the current
-// consensus state
-func (bv *Validator) ValidateHeaderInContext(block *model.DomainBlock) error {
-	return nil
-}
-
-// ValidateBodyInIsolation validates block bodies in isolation from the current
-// consensus state
-func (bv *Validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
-	return nil
-}
-
-// ValidateBodyInContext validates block bodies in the context of the current
-// consensus state
-func (bv *Validator) ValidateBodyInContext(block *model.DomainBlock) error {
-	return nil
-}
-
-// ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (bv *Validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
-	return nil
 }
 
 // ValidateFinality makes sure the block does not violate finality

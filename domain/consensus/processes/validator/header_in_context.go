@@ -1,4 +1,4 @@
-package blockvalidator
+package validator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -7,7 +7,7 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (bv *BlockValidator) ValidateHeaderInContext(header *model.DomainBlockHeader) error {
+func (bv *Validator) ValidateHeaderInContext(header *model.DomainBlockHeader) error {
 	err := bv.checkParentsIncest(header)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (bv *BlockValidator) ValidateHeaderInContext(header *model.DomainBlockHeade
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (bv *BlockValidator) checkParentsIncest(header *model.DomainBlockHeader) error {
+func (bv *Validator) checkParentsIncest(header *model.DomainBlockHeader) error {
 	for _, parentA := range header.ParentHashes {
 		for _, parentB := range header.ParentHashes {
 			if *parentA == *parentB {
@@ -52,18 +52,18 @@ func (bv *BlockValidator) checkParentsIncest(header *model.DomainBlockHeader) er
 	return nil
 }
 
-func (bv *BlockValidator) validateDifficulty(header *model.DomainBlockHeader) error {
+func (bv *Validator) validateDifficulty(header *model.DomainBlockHeader) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
 	panic("unimplemented")
 }
 
-func (bv *BlockValidator) validateMedianTime(header *model.DomainBlockHeader) error {
+func (bv *Validator) validateMedianTime(header *model.DomainBlockHeader) error {
 	panic("unimplemented")
 }
 
-func (bv *BlockValidator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {
+func (bv *Validator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {
 	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
 
 	const mergeSetSizeLimit = 1000

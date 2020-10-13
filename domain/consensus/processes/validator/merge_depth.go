@@ -1,8 +1,8 @@
-package blockvalidator
+package validator
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
-func (bv *BlockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
+func (bv *Validator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
 	nonBoundedMergeDepthViolatingBlues, err := bv.nonBoundedMergeDepthViolatingBlues(ghostdagData)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (bv *BlockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTD
 	return nil
 }
 
-func (bv *BlockValidator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.BlockGHOSTDAGData) ([]*model.DomainHash, error) {
+func (bv *Validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.BlockGHOSTDAGData) ([]*model.DomainHash, error) {
 	nonBoundedMergeDepthViolatingBlues := make([]*model.DomainHash, 0, len(ghostdagData.MergeSetBlues))
 
 	for _, blueNode := range ghostdagData.MergeSetBlues {
@@ -44,7 +44,7 @@ func (bv *BlockValidator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model
 	return nonBoundedMergeDepthViolatingBlues, nil
 }
 
-func (bv *BlockValidator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *blockNode) (bool, error) {
+func (bv *Validator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *blockNode) (bool, error) {
 	finalityPoint := node.finalityPoint()
 	return node.dag.isInSelectedParentChainOf(finalityPoint, other)
 }

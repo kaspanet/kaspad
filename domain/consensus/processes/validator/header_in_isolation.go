@@ -1,4 +1,4 @@
-package blockvalidator
+package validator
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (bv *BlockValidator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) error {
+func (bv *Validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
@@ -34,7 +34,7 @@ func (bv *BlockValidator) ValidateHeaderInIsolation(header *model.DomainBlockHea
 	return nil
 }
 
-func (bv *BlockValidator) checkParentsLimit(header *model.DomainBlockHeader) error {
+func (bv *Validator) checkParentsLimit(header *model.DomainBlockHeader) error {
 	hash := hashserialization.HeaderHash(header)
 	if len(header.ParentHashes) == 0 && *hash != *bv.genesisHash {
 		return ruleerrors.Errorf(ruleerrors.ErrNoParents, "block has no parents")
@@ -55,7 +55,7 @@ func (bv *BlockValidator) checkParentsLimit(header *model.DomainBlockHeader) err
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (bv *BlockValidator) checkProofOfWork(header *model.DomainBlockHeader) error {
+func (bv *Validator) checkProofOfWork(header *model.DomainBlockHeader) error {
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
