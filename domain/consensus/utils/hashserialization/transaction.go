@@ -3,10 +3,8 @@ package hashserialization
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactions"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 	"io"
 )
@@ -18,6 +16,9 @@ type txEncoding uint8
 const (
 	txEncodingFull txEncoding = 0
 
+	// TODO: Consider if we need to ever exclude the payload, or use a different approach to partial nodes
+	// where we'll get rid of PayloadHash field, never exclude the payload when hashing, and provide
+	// partial nodes with their relevant block region with a merkle proof.
 	txEncodingExcludePayload txEncoding = 1 << iota
 
 	txEncodingExcludeSignatureScript
@@ -40,21 +41,21 @@ func TransactionHash(tx *model.DomainTransaction) *model.DomainHash {
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
-func TransactionID(tx *model.DomainTransaction) *daghash.TxID {
+func TransactionID(tx *model.DomainTransaction) *model.DomainTransactionID {
 	// Encode the transaction, replace signature script with zeroes, cut off
 	// payload and calculate double sha256 on the result.
 	var encodingFlags txEncoding
-	if !transactions.IsCoinBase(tx) {
+	if !transactionhelper.IsCoinBase(tx) {
 		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
 	}
-	writer := daghash.NewDoubleHashWriter()
+	writer := hashes.NewDoubleHashWriter()
 	err := serializeTransaction(writer, tx, encodingFlags)
 	if err != nil {
 		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
 		// and we assume we never construct malformed transactions.
 		panic(errors.Wrap(err, "TransactionID() failed. this should never fail for structurally-valid transactions"))
 	}
-	txID := daghash.TxID(writer.Finalize())
+	txID := model.DomainTransactionID(writer.Finalize())
 	return &txID
 }
 
@@ -100,33 +101,31 @@ func serializeTransaction(w io.Writer, tx *model.DomainTransaction, encodingFlag
 		return err
 	}
 
-	if *tx.SubnetworkID != *subnetworks.SubnetworkIDNative {
-		// TODO: Move to transaction validation
-		//if subnetworks.IsBuiltIn(tx.SubnetworkID) && tx.Gas != 0 {
-		//	str := "Transactions from built-in should have 0 gas"
-		//	return messageError("MsgTx.KaspaEncode", str)
-		//}
+	// TODO: Move to transaction validation
+	//if subnetworks.IsBuiltIn(tx.SubnetworkID) && tx.Gas != 0 {
+	//	str := "Transactions from built-in should have 0 gas"
+	//	return messageError("MsgTx.KaspaEncode", str)
+	//}
 
-		err = binaryserializer.PutUint64(w, littleEndian, tx.Gas)
+	err = binaryserializer.PutUint64(w, littleEndian, tx.Gas)
+	if err != nil {
+		return err
+	}
+
+	err = WriteElement(w, tx.PayloadHash)
+	if err != nil {
+		return err
+	}
+
+	if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
+		err = writeVarBytes(w, tx.Payload)
 		if err != nil {
 			return err
 		}
-
-		err = WriteElement(w, tx.PayloadHash)
+	} else {
+		err = writeVarBytes(w, []byte{})
 		if err != nil {
 			return err
-		}
-
-		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
-			err = writeVarBytes(w, tx.Payload)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = writeVarBytes(w, []byte{})
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -148,7 +147,7 @@ func serializeTransaction(w io.Writer, tx *model.DomainTransaction, encodingFlag
 // writeTransactionInput encodes ti to the kaspa protocol encoding for a transaction
 // input to w.
 func writeTransactionInput(w io.Writer, ti *model.DomainTransactionInput, encodingFlags txEncoding) error {
-	err := writeOutpoint(w, ti.PreviousOutpoint)
+	err := writeOutpoint(w, &ti.PreviousOutpoint)
 	if err != nil {
 		return err
 	}

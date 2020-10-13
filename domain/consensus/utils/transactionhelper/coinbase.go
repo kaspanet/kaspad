@@ -1,4 +1,4 @@
-package transactions
+package transactionhelper
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"

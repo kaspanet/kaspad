@@ -42,8 +42,8 @@ func hashMerkleBranches(left, right *model.DomainHash) *model.DomainHash {
 	return &hash
 }
 
-// CalcHashMerkleRoot creates a merkle tree from a slice of transactions, based
-// on their hash. See `merkleRoot` for more info.
+// CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.
+// See `merkleRoot` for more info.
 func CalcHashMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHash {
 	txHashes := make([]*model.DomainHash, len(transactions))
 	for i, tx := range transactions {
@@ -52,44 +52,17 @@ func CalcHashMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHa
 	return merkleRoot(txHashes)
 }
 
-// BuildIDMerkleTreeStore creates a merkle tree from a slice of transactions, based
-// on their ID. See `merkleRoot` for more info.
-func BuildIDMerkleTreeStore(transactions []*model.DomainTransaction) *model.DomainHash {
+// CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
+// See `merkleRoot` for more info.
+func CalcIDMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHash {
 	txIDs := make([]*model.DomainHash, len(transactions))
 	for i, tx := range transactions {
-		txIDs[i] = (*model.DomainHash)(tx.ID())
+		txIDs[i] = (*model.DomainHash)(hashserialization.TransactionID(tx))
 	}
 	return merkleRoot(txIDs)
 }
 
-// merkleRoot creates a merkle tree from a slice of hashes,
-// stores it using a linear array, and returns a slice of the backing array. A
-// linear array was chosen as opposed to an actual tree structure since it uses
-// about half as much memory. The following describes a merkle tree and how it
-// is stored in a linear array.
-//
-// A merkle tree is a tree in which every non-leaf node is the hash of its
-// children nodes. A diagram depicting how this works for kaspa transactions
-// where h(x) is a double sha256 follows:
-//
-//	         root = h1234 = h(h12 + h34)
-//	        /                           \
-//	  h12 = h(h1 + h2)            h34 = h(h3 + h4)
-//	   /            \              /            \
-//	h1 = h(tx1)  h2 = h(tx2)    h3 = h(tx3)  h4 = h(tx4)
-//
-// The above stored as a linear array is as follows:
-//
-// 	[h1 h2 h3 h4 h12 h34 root]
-//
-// As the above shows, the merkle root is always the last element in the array.
-//
-// The number of inputs is not always a power of two which results in a
-// balanced tree structure as above. In that case, parent nodes with no
-// children are also zero and parent nodes with only a single left node
-// are calculated by concatenating the left node with itself before hashing.
-// Since this function uses nodes that are pointers to the hashes, empty nodes
-// will be nil.
+// merkleRoot creates a merkle tree from a slice of hashes, and returns its root.
 func merkleRoot(hashes []*model.DomainHash) *model.DomainHash {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.

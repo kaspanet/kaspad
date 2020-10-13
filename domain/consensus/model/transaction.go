@@ -18,14 +18,14 @@ type DomainTransaction struct {
 
 // DomainTransactionInput represents a Kaspa transaction input
 type DomainTransactionInput struct {
-	PreviousOutpoint *DomainOutpoint
+	PreviousOutpoint DomainOutpoint
 	SignatureScript  []byte
 	Sequence         uint64
 }
 
 // DomainOutpoint represents a Kaspa transaction outpoint
 type DomainOutpoint struct {
-	ID    *DomainTransactionID
+	ID    DomainTransactionID
 	Index uint32
 }
 
