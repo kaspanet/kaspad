@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/feedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningpointstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -39,7 +39,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
 	multisetStore := multisetstore.New()
-	pruningPointStore := pruningpointstore.New()
+	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New()
 	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
@@ -62,7 +62,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagManager)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
-		pruningPointStore)
+		pruningStore)
 	consensusStateManager := consensusstatemanager.New(
 		dagParams,
 		consensusStateStore,

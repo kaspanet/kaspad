@@ -7,16 +7,16 @@ import (
 // PruningManager resolves and manages the current pruning point
 type PruningManager struct {
 	dagTraversalManager model.DAGTraversalManager
-	pruningPointStore   model.PruningStore
+	pruningStore        model.PruningStore
 }
 
 // New instantiates a new PruningManager
 func New(
 	dagTraversalManager model.DAGTraversalManager,
-	pruningPointStore model.PruningStore) *PruningManager {
+	pruningStore model.PruningStore) *PruningManager {
 	return &PruningManager{
 		dagTraversalManager: dagTraversalManager,
-		pruningPointStore:   pruningPointStore,
+		pruningStore:        pruningStore,
 	}
 }
 
