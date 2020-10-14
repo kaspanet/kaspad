@@ -29,11 +29,6 @@ func New(consensusStateManager model.ConsensusStateManager) *Validator {
 	}
 }
 
-// ValidateFinality makes sure the block does not violate finality
-func (bv *Validator) ValidateFinality(block *model.DomainBlock) error {
-	return nil
-}
-
 // ValidateTransactionAndCalculateFee validates the given transaction using
 // the given utxoEntries. It also returns the transaction's fee
 func (bv *Validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
