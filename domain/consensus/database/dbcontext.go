@@ -16,6 +16,16 @@ func (ddc *DomainDBContext) FetchBlockRelation(blockHash *model.DomainHash) (*mo
 	return nil, nil
 }
 
+func (ddc *DomainDBContext) NewTx() (*DomainTxContext, error) {
+	txContext, err := ddc.dbContext.NewTx()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewDomainTxContext(txContext), nil
+}
+
 // NewDomainDBContext creates a new DomainDBContext
 func NewDomainDBContext(dbContext *dbaccess.DatabaseContext) *DomainDBContext {
 	return &DomainDBContext{dbContext: dbContext}
