@@ -25,7 +25,7 @@ func serializeHeader(w io.Writer, header *model.DomainBlockHeader) error {
 func HeaderHash(header *model.DomainBlockHeader) *model.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
-	writer := hashes.NewDoubleHashWriter()
+	writer := hashes.NewHashWriter()
 	err := serializeHeader(writer, header)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.

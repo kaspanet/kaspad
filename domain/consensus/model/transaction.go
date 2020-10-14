@@ -6,9 +6,9 @@ type DomainTransaction struct {
 	Inputs       []*DomainTransactionInput
 	Outputs      []*DomainTransactionOutput
 	LockTime     uint64
-	SubnetworkID *DomainSubnetworkID
+	SubnetworkID DomainSubnetworkID
 	Gas          uint64
-	PayloadHash  *DomainHash
+	PayloadHash  DomainHash
 	Payload      []byte
 
 	Hash  *DomainHash

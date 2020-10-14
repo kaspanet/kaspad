@@ -27,16 +27,16 @@ func nextPowerOfTwo(n int) int {
 // function used to aid in the generation of a merkle tree.
 func hashMerkleBranches(left, right *model.DomainHash) *model.DomainHash {
 	// Concatenate the left and right nodes.
-	w := hashes.NewDoubleHashWriter()
+	w := hashes.NewHashWriter()
 
 	_, err := w.Write(left[:])
 	if err != nil {
-		panic(errors.New("this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
 
 	_, err = w.Write(right[:])
 	if err != nil {
-		panic(errors.New("this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
 	hash := w.Finalize()
 	return &hash

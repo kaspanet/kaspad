@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
@@ -100,8 +101,8 @@ func (bv *Validator) checkNoNonNativeTransactions(block *model.DomainBlock) erro
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
 	if !bv.enableNonNativeSubnetworks {
 		for _, tx := range block.Transactions {
-			if !(*tx.SubnetworkID == *subnetworks.SubnetworkIDNative ||
-				*tx.SubnetworkID == *subnetworks.SubnetworkIDCoinbase) {
+			if !(tx.SubnetworkID == subnetworks.SubnetworkIDNative ||
+				tx.SubnetworkID == subnetworks.SubnetworkIDCoinbase) {
 				return ruleerrors.Errorf(ruleerrors.ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
 			}
 		}
@@ -110,8 +111,15 @@ func (bv *Validator) checkNoNonNativeTransactions(block *model.DomainBlock) erro
 }
 
 func (bv *Validator) checkTransactionsInIsolation(block *model.DomainBlock) error {
-	// TODO implement this
-	panic("unimplemented")
+	for _, tx := range block.Transactions {
+		err := bv.checkTransactionInIsolation(tx)
+		if err != nil {
+			return errors.Wrapf(err, "transaction %s failed isolation "+
+				"check", hashserialization.TransactionID(tx))
+		}
+	}
+
+	return nil
 }
 
 func (bv *Validator) checkBlockHashMerkleRoot(block *model.DomainBlock) error {

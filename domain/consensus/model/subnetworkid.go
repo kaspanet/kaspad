@@ -3,7 +3,7 @@ package model
 const SubnetworkIDSize = 20
 
 // DomainSubnetworkID is the domain representation of a Subnetwork ID
-type DomainSubnetworkID [20]byte
+type DomainSubnetworkID [SubnetworkIDSize]byte
 
 var (
 	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data

@@ -28,9 +28,3 @@ func New(consensusStateManager model.ConsensusStateManager) *Validator {
 		consensusStateManager: consensusStateManager,
 	}
 }
-
-// ValidateTransactionAndCalculateFee validates the given transaction using
-// the given utxoEntries. It also returns the transaction's fee
-func (bv *Validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
-	return 0, nil
-}

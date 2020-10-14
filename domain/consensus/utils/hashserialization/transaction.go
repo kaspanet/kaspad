@@ -27,7 +27,7 @@ const (
 func TransactionHash(tx *model.DomainTransaction) *model.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
-	writer := hashes.NewDoubleHashWriter()
+	writer := hashes.NewHashWriter()
 	err := serializeTransaction(writer, tx, txEncodingExcludePayload)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
@@ -48,7 +48,7 @@ func TransactionID(tx *model.DomainTransaction) *model.DomainTransactionID {
 	if !transactionhelper.IsCoinBase(tx) {
 		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
 	}
-	writer := hashes.NewDoubleHashWriter()
+	writer := hashes.NewHashWriter()
 	err := serializeTransaction(writer, tx, encodingFlags)
 	if err != nil {
 		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
