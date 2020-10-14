@@ -16,6 +16,7 @@ func (ddc *DomainDBContext) FetchBlockRelation(blockHash *model.DomainHash) (*mo
 	return nil, nil
 }
 
+// NewTx returns an instance of DomainTxContext with a new database transaction
 func (ddc *DomainDBContext) NewTx() (*DomainTxContext, error) {
 	txContext, err := ddc.dbContext.NewTx()
 
