@@ -1,16 +1,16 @@
 package blockprocessor
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
 // BlockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
 type BlockProcessor struct {
 	dagParams       *dagconfig.Params
-	databaseContext *dbaccess.DatabaseContext
+	databaseContext *database.DomainDBContext
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -26,7 +26,7 @@ type BlockProcessor struct {
 // New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
-	databaseContext *dbaccess.DatabaseContext,
+	databaseContext *database.DomainDBContext,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,

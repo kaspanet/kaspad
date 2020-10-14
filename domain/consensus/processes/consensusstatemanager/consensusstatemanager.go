@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -9,6 +10,7 @@ import (
 type ConsensusStateManager struct {
 	dagParams *dagconfig.Params
 
+	databaseContext     *database.DomainDBContext
 	consensusStateStore model.ConsensusStateStore
 	multisetStore       model.MultisetStore
 	utxoDiffStore       model.UTXODiffStore
@@ -17,14 +19,17 @@ type ConsensusStateManager struct {
 
 // New instantiates a new ConsensusStateManager
 func New(
+	databaseContext *database.DomainDBContext,
 	dagParams *dagconfig.Params,
 	consensusStateStore model.ConsensusStateStore,
 	multisetStore model.MultisetStore,
 	utxoDiffStore model.UTXODiffStore,
 	blockStore model.BlockStore) *ConsensusStateManager {
+
 	return &ConsensusStateManager{
 		dagParams: dagParams,
 
+		databaseContext:     databaseContext,
 		consensusStateStore: consensusStateStore,
 		multisetStore:       multisetStore,
 		utxoDiffStore:       utxoDiffStore,
