@@ -17,12 +17,17 @@ type BlockAndTransactionValidator interface {
 // transaction is valid
 type validator struct {
 	consensusStateManager model.ConsensusStateManager
+	difficultyManager     model.DifficultyManager
 }
 
 // New instantiates a new validator
-func New(consensusStateManager model.ConsensusStateManager) BlockAndTransactionValidator {
+func New(
+	consensusStateManager model.ConsensusStateManager,
+	difficultyManager model.DifficultyManager) BlockAndTransactionValidator {
+
 	return &validator{
 		consensusStateManager: consensusStateManager,
+		difficultyManager:     difficultyManager,
 	}
 }
 

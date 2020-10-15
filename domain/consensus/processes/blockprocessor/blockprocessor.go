@@ -17,6 +17,7 @@ type blockProcessor struct {
 	blockValidator        model.BlockValidator
 	dagTopologyManager    model.DAGTopologyManager
 	reachabilityTree      model.ReachabilityTree
+	difficultyManager     model.DifficultyManager
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
@@ -32,6 +33,7 @@ func New(
 	blockValidator model.BlockValidator,
 	dagTopologyManager model.DAGTopologyManager,
 	reachabilityTree model.ReachabilityTree,
+	difficultyManager model.DifficultyManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
@@ -44,6 +46,7 @@ func New(
 		blockValidator:     blockValidator,
 		dagTopologyManager: dagTopologyManager,
 		reachabilityTree:   reachabilityTree,
+		difficultyManager:  difficultyManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
