@@ -22,3 +22,8 @@ func (css *ConsensusStateStore) Update(dbTx model.DBTxProxy, consensusStateChang
 func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) *model.UTXOEntry {
 	return nil
 }
+
+// Tips returns the current tips
+func (css *ConsensusStateStore) Tips(dbContext model.DBContextProxy) []*model.DomainHash {
+	return nil
+}

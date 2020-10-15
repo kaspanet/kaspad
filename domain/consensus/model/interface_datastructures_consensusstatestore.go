@@ -4,4 +4,5 @@ package model
 type ConsensusStateStore interface {
 	Update(dbTx DBTxProxy, consensusStateChanges *ConsensusStateChanges)
 	UTXOByOutpoint(dbContext DBContextProxy, outpoint *DomainOutpoint) *UTXOEntry
+	Tips(dbContext DBContextProxy) []*DomainHash
 }
