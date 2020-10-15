@@ -222,6 +222,10 @@ const (
 
 	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
 	ErrSelectedParentDisqualifiedFromChain
+
+	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
+	// allowed limits.
+	ErrBlockSizeTooHigh
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -276,6 +280,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrViolatingBoundedMergeDepth:          "ErrViolatingBoundedMergeDepth",
 	ErrSelectedParentDisqualifiedFromChain: "ErrSelectedParentDisqualifiedFromChain",
 	ErrChainedTransactions:                 "ErrChainedTransactions",
+	ErrBlockSizeTooHigh:                    "ErrBlockSizeTooHigh",
 }
 
 // String returns the ErrorCode as a human-readable name.

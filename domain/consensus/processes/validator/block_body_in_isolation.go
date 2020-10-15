@@ -14,7 +14,12 @@ import (
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
 func (bv *Validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
-	err := bv.checkBlockContainsAtLeastOneTransaction(block)
+	err := bv.checkBlockSize(block)
+	if err != nil {
+		return err
+	}
+
+	err = bv.checkBlockContainsAtLeastOneTransaction(block)
 	if err != nil {
 		return err
 	}
@@ -186,5 +191,21 @@ func (bv *Validator) checkBlockHasNoChainedTransactions(block *model.DomainBlock
 
 func (bv *Validator) validateGasLimit(block *model.DomainBlock) error {
 	// TODO: implement this
+	return nil
+}
+
+func (bv *Validator) checkBlockSize(block *model.DomainBlock) error {
+	size := uint64(0)
+	size += bv.headerEstimatedSerializedSize(block.Header)
+
+	for _, tx := range block.Transactions {
+		sizeBefore := size
+		size += bv.transactionEstimatedSerializedSize(tx)
+		const maxBlockSize = 1_000_000
+		if size > maxBlockSize || size < sizeBefore {
+			return ruleerrors.Errorf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)
+		}
+	}
+
 	return nil
 }

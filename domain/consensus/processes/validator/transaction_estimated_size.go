@@ -4,7 +4,8 @@ import "github.com/kaspanet/kaspad/domain/consensus/model"
 
 // transactionEstimatedSerializedSize is the estimated size of a transaction in some
 // serialization. This has to be deterministic, but not necessarily accurate, since
-// it's only used as the size component in the transaction mass calculation.
+// it's only used as the size component in the transaction mass and block size limit
+// calculation.
 func (bv *Validator) transactionEstimatedSerializedSize(tx *model.DomainTransaction) uint64 {
 	size := uint64(0)
 

@@ -9,7 +9,25 @@ import (
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
 func (bv *Validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
-	consensusStateChanges := bv.consensusStateManager.CalculateConsensusStateChanges(block)
+	acceptanceData, multiset := bv.consensusStateManager.CalculateAcceptanceDataAndMultiset(block)
+
+	err := bv.validateAcceptedIDMerkleRoot(block, acceptanceData)
+	if err != nil {
+		return err
+	}
+
+	err = bv.validateAcceptedIDMerkleRoot(block, acceptanceData)
+	if err != nil {
+		return err
+	}
+
+	err = bv.validateUTXOCommitment(block, multiset)
+	if err != nil {
+		return err
+	}
+
+	checkTransactionInContext
+
 	return nil
 }
 
@@ -46,4 +64,16 @@ func (bv *Validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAc
 
 	acceptedIDMerkleTree := BuildIDMerkleTreeStore(acceptedTxs)
 	return acceptedIDMerkleTree.Root()
+}
+
+func (bv *Validator) validateUTXOCommitment(block *model.DomainBlock, multiset model.Multiset) error {
+	calculatedMultisetHash := multiset.Hash()
+	if calculatedMultisetHash != block.Header.UTXOCommitment {
+		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", node.hash,
+			node.utxoCommitment, calculatedMultisetHash)
+		return ruleError(ErrBadUTXOCommitment, str)
+	}
+
+	return nil
 }
