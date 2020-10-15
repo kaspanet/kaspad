@@ -68,6 +68,6 @@ func (csm *ConsensusStateManager) VirtualData() (medianTime int64, blueScore uin
 }
 
 // RestoreUTXOSet calculates and returns the UTXOSet of the given blockHash
-func (csm *ConsensusStateManager) RestoreUTXOSet(blockHash *model.DomainHash) model.ReadOnlyUTXOSet {
+func (csm *ConsensusStateManager) RestorePastUTXOSet(blockHash *model.DomainHash) model.ReadOnlyUTXOSet {
 	return nil
 }

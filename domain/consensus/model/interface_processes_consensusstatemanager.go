@@ -8,5 +8,5 @@ type ConsensusStateManager interface {
 	CalculateAcceptanceDataAndMultiset(blockHash *DomainHash) (*BlockAcceptanceData, Multiset)
 	Tips() []*DomainHash
 	VirtualData() (medianTime int64, blueScore uint64)
-	RestoreUTXOSet(blockHash *DomainHash) ReadOnlyUTXOSet
+	RestorePastUTXOSet(blockHash *DomainHash) ReadOnlyUTXOSet
 }
