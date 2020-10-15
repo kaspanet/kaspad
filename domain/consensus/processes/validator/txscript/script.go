@@ -6,12 +6,10 @@ package txscript
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // SigHashType represents hash type bits at the end of a signature.
@@ -252,32 +250,32 @@ func canonicalPush(pop parsedOpcode) bool {
 // calculating the signature hash. It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
-func shallowCopyTx(tx *appmessage.MsgTx) appmessage.MsgTx {
+func shallowCopyTx(tx *model.DomainTransaction) model.DomainTransaction {
 	// As an additional memory optimization, use contiguous backing arrays
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays. This avoids a lot of small
 	// allocations.
 	// Specifically avoid using appmessage.NewMsgTx() to prevent correcting errors by
 	// auto-generating various fields.
-	txCopy := appmessage.MsgTx{
+	txCopy := model.DomainTransaction{
 		Version:      tx.Version,
-		TxIn:         make([]*appmessage.TxIn, len(tx.TxIn)),
-		TxOut:        make([]*appmessage.TxOut, len(tx.TxOut)),
+		Inputs:       make([]*model.DomainTransactionInput, len(tx.Inputs)),
+		Outputs:      make([]*model.DomainTransactionOutput, len(tx.Outputs)),
 		LockTime:     tx.LockTime,
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
 		PayloadHash:  tx.PayloadHash,
 		Payload:      tx.Payload,
 	}
-	txIns := make([]appmessage.TxIn, len(tx.TxIn))
-	for i, oldTxIn := range tx.TxIn {
+	txIns := make([]model.DomainTransactionInput, len(tx.Inputs))
+	for i, oldTxIn := range tx.Inputs {
 		txIns[i] = *oldTxIn
-		txCopy.TxIn[i] = &txIns[i]
+		txCopy.Inputs[i] = &txIns[i]
 	}
-	txOuts := make([]appmessage.TxOut, len(tx.TxOut))
-	for i, oldTxOut := range tx.TxOut {
+	txOuts := make([]model.DomainTransactionOutput, len(tx.Outputs))
+	for i, oldTxOut := range tx.Outputs {
 		txOuts[i] = *oldTxOut
-		txCopy.TxOut[i] = &txOuts[i]
+		txCopy.Outputs[i] = &txOuts[i]
 	}
 	return txCopy
 }
@@ -285,7 +283,7 @@ func shallowCopyTx(tx *appmessage.MsgTx) appmessage.MsgTx {
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *appmessage.MsgTx, idx int) (*daghash.Hash, error) {
+func CalcSignatureHash(script []byte, hashType SigHashType, tx *model.DomainTransaction, idx int) (*model.DomainHash, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
@@ -296,14 +294,14 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *appmessage.MsgTx
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *appmessage.MsgTx, idx int) (*daghash.Hash, error) {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *model.DomainTransaction, idx int) (*model.DomainHash, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
 	// Since transactions can have more inputs than outputs, this means it
 	// is improper to use SigHashSingle on input indices that don't have a
 	// corresponding output.
-	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.TxOut) {
+	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.Outputs) {
 		return nil, scriptError(ErrInvalidSigHashSingleIndex, "sigHashSingle index out of bounds")
 	}
 
@@ -311,40 +309,40 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *appmessa
 	// script for all inputs that are not currently being processed.
 	txCopy := shallowCopyTx(tx)
 	txCopy.Payload = []byte{}
-	for i := range txCopy.TxIn {
+	for i := range txCopy.Inputs {
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
 			// above only returns a valid script.
 			sigScript, _ := unparseScript(script)
-			txCopy.TxIn[idx].SignatureScript = sigScript
+			txCopy.Inputs[idx].SignatureScript = sigScript
 		} else {
-			txCopy.TxIn[i].SignatureScript = nil
+			txCopy.Inputs[i].SignatureScript = nil
 		}
 	}
 
 	switch hashType & sigHashMask {
 	case SigHashNone:
-		txCopy.TxOut = txCopy.TxOut[0:0] // Empty slice.
-		for i := range txCopy.TxIn {
+		txCopy.Outputs = txCopy.Outputs[0:0] // Empty slice.
+		for i := range txCopy.Inputs {
 			if i != idx {
-				txCopy.TxIn[i].Sequence = 0
+				txCopy.Inputs[i].Sequence = 0
 			}
 		}
 
 	case SigHashSingle:
 		// Resize output array to up to and including requested index.
-		txCopy.TxOut = txCopy.TxOut[:idx+1]
+		txCopy.Outputs = txCopy.Outputs[:idx+1]
 
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
-			txCopy.TxOut[i].Value = 0
-			txCopy.TxOut[i].ScriptPubKey = nil
+			txCopy.Outputs[i].Value = 0
+			txCopy.Outputs[i].ScriptPublicKey = nil
 		}
 
 		// Sequence on all other inputs is 0, too.
-		for i := range txCopy.TxIn {
+		for i := range txCopy.Inputs {
 			if i != idx {
-				txCopy.TxIn[i].Sequence = 0
+				txCopy.Inputs[i].Sequence = 0
 			}
 		}
 
@@ -358,17 +356,13 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *appmessa
 		// Nothing special here.
 	}
 	if hashType&SigHashAnyOneCanPay != 0 {
-		txCopy.TxIn = txCopy.TxIn[idx : idx+1]
+		txCopy.Inputs = txCopy.Inputs[idx : idx+1]
 	}
 
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	writer := daghash.NewDoubleHashWriter()
-	txCopy.Serialize(writer)
-	binary.Write(writer, binary.LittleEndian, hashType)
-	hash := writer.Finalize()
-	return &hash, nil
+	return hashserialization.TransactionHashForSigning(&txCopy, uint32(hashType)), nil
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

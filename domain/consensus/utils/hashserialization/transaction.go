@@ -24,6 +24,27 @@ const (
 	txEncodingExcludeSignatureScript
 )
 
+func TransactionHashForSigning(tx *model.DomainTransaction, hashType uint32) *model.DomainHash {
+	// Encode the header and double sha256 everything prior to the number of
+	// transactions.
+	writer := hashes.NewHashWriter()
+	err := serializeTransaction(writer, tx, txEncodingExcludePayload)
+	if err != nil {
+		// It seems like this could only happen if the writer returned an error.
+		// and this writer should never return an error (no allocations or possible failures)
+		// the only non-writer error path here is unknown types in `WriteElement`
+		panic(errors.Wrap(err, "TransactionHashForSigning() failed. this should never fail for structurally-valid transactions"))
+	}
+
+	err = WriteElement(writer, hashType)
+	if err != nil {
+		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
+	}
+
+	res := writer.Finalize()
+	return &res
+}
+
 func TransactionHash(tx *model.DomainTransaction) *model.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
