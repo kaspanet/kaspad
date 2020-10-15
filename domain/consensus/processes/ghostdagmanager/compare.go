@@ -2,21 +2,35 @@ package ghostdagmanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
-func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) *model.DomainHash {
+func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) (*model.DomainHash, error) {
 	var selectedParent *model.DomainHash
 	for _, hash := range parentHashes {
-		if selectedParent == nil || gm.less(selectedParent, hash) {
+		if selectedParent == nil {
+			selectedParent = hash
+			continue
+		}
+		isHashBiggerThanSelectedParent, err := gm.less(selectedParent, hash)
+		if err != nil {
+			return nil, err
+		}
+		if isHashBiggerThanSelectedParent {
 			selectedParent = hash
 		}
 	}
-	return selectedParent
+	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) bool {
-	blockAGHOSTDAGData := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
-	blockBGHOSTDAGData := gm.ghostdagDataStore.Get(gm.databaseContext, blockB)
+func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) (bool, error) {
+	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
+	if err != nil {
+		return false, err
+	}
+	blockBGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockB)
+	if err != nil {
+		return false, err
+	}
 	chosenSelectedParent := gm.ChooseSelectedParent(blockA, blockAGHOSTDAGData, blockB, blockBGHOSTDAGData)
-	return chosenSelectedParent == blockB
+	return chosenSelectedParent == blockB, nil
 }
 
 func (gm *ghostdagManager) ChooseSelectedParent(

@@ -31,6 +31,6 @@ func New(
 
 // BlockData returns previously calculated GHOSTDAG data for
 // the given blockHash
-func (gm *ghostdagManager) BlockData(blockHash *model.DomainHash) *model.BlockGHOSTDAGData {
+func (gm *ghostdagManager) BlockData(blockHash *model.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gm.ghostdagDataStore.Get(gm.databaseContext, blockHash)
 }

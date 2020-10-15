@@ -14,21 +14,21 @@ func New() model.BlockStore {
 }
 
 // Insert inserts the given block for the given blockHash
-func (bms *blockStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, msgBlock *model.DomainBlock) {
-
+func (bms *blockStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, msgBlock *model.DomainBlock) error {
+	return nil
 }
 
 // Block gets the block associated with the given blockHash
-func (bms *blockStore) Block(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.DomainBlock {
-	return nil
+func (bms *blockStore) Block(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.DomainBlock, error) {
+	return nil, nil
 }
 
 // Blocks gets the blocks associated with the given blockHashes
-func (bms *blockStore) Blocks(dbContext model.DBContextProxy, blockHashes []*model.DomainHash) []*model.DomainBlock {
-	return nil
+func (bms *blockStore) Blocks(dbContext model.DBContextProxy, blockHashes []*model.DomainHash) ([]*model.DomainBlock, error) {
+	return nil, nil
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bms *blockStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
-
+func (bms *blockStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) error {
+	return nil
 }

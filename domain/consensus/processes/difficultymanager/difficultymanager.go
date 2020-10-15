@@ -18,6 +18,6 @@ func New(ghostdagManager model.GHOSTDAGManager) model.DifficultyManager {
 }
 
 // RequiredDifficulty returns the difficulty required for some block
-func (dm *difficultyManager) RequiredDifficulty(parents []*model.DomainHash) uint32 {
-	return 0
+func (dm *difficultyManager) RequiredDifficulty(parents []*model.DomainHash) (uint32, error) {
+	return 0, nil
 }

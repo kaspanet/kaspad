@@ -18,6 +18,6 @@ func New(ghostdagManager model.GHOSTDAGManager) model.PastMedianTimeManager {
 }
 
 // PastMedianTime returns the past median time for some block
-func (pmtm *pastMedianTimeManager) PastMedianTime(blockGHOSTDAGData *model.BlockGHOSTDAGData) int64 {
-	return 0
+func (pmtm *pastMedianTimeManager) PastMedianTime(blockGHOSTDAGData *model.BlockGHOSTDAGData) (int64, error) {
+	return 0, nil
 }

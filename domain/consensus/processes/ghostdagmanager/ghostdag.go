@@ -30,8 +30,15 @@ func (gm *ghostdagManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.Bl
 		BluesAnticoneSizes: make(map[model.DomainHash]model.KType),
 	}
 
-	newBlockData.SelectedParent = gm.findSelectedParent(blockParents)
-	mergeSet := gm.mergeSet(newBlockData.SelectedParent, blockParents)
+	selectedParent, err := gm.findSelectedParent(blockParents)
+	if err != nil {
+		return nil, err
+	}
+	newBlockData.SelectedParent = selectedParent
+	mergeSet, err := gm.mergeSet(newBlockData.SelectedParent, blockParents)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, blueCandidate := range mergeSet {
 		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData, blueCandidate)
@@ -51,8 +58,11 @@ func (gm *ghostdagManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.Bl
 		}
 	}
 
-	newBlockData.BlueScore = gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.SelectedParent).BlueScore +
-		uint64(len(newBlockData.MergeSetBlues))
+	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.SelectedParent)
+	if err != nil {
+		return nil, err
+	}
+	newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
 
 	return newBlockData, nil
 }
@@ -96,8 +106,13 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 			return false, 0, nil, nil
 		}
 
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, chainBlock.blockData.SelectedParent)
+		if err != nil {
+			return false, 0, nil, err
+		}
+
 		chainBlock = chainBlockData{hash: chainBlock.blockData.SelectedParent,
-			blockData: gm.ghostdagDataStore.Get(gm.databaseContext, chainBlock.blockData.SelectedParent),
+			blockData: selectedParentGHOSTDAGData,
 		}
 	}
 
@@ -120,7 +135,10 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	// We check if chainBlock is not the new block by checking if it has a hash.
 	if chainBlock.hash != nil {
-		isAncestorOfBlueCandidate := gm.dagTopologyManager.IsAncestorOf(chainBlock.hash, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(chainBlock.hash, blueCandidate)
+		if err != nil {
+			return false, false, err
+		}
 		if isAncestorOfBlueCandidate {
 			return true, false, nil
 		}
@@ -128,7 +146,10 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	for _, block := range chainBlock.blockData.MergeSetBlues {
 		// Skip blocks that exist in the past of blueCandidate.
-		isAncestorOfBlueCandidate := gm.dagTopologyManager.IsAncestorOf(block, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(block, blueCandidate)
+		if err != nil {
+			return false, false, nil
+		}
 
 		if isAncestorOfBlueCandidate {
 			continue
@@ -171,7 +192,11 @@ func (gm *ghostdagManager) blueAnticoneSize(block *model.DomainHash, context *mo
 		if current.SelectedParent == nil {
 			break
 		}
-		current = gm.ghostdagDataStore.Get(gm.databaseContext, current.SelectedParent)
+		var err error
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, current.SelectedParent)
+		if err != nil {
+			return 0, err
+		}
 	}
 	return 0, errors.Errorf("block %s is not in blue set of the given context", block)
 }

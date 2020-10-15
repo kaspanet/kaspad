@@ -6,7 +6,7 @@ import (
 )
 
 func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
-	blockParents []*model.DomainHash) []*model.DomainHash {
+	blockParents []*model.DomainHash) ([]*model.DomainHash, error) {
 
 	mergeSetMap := make(map[model.DomainHash]struct{}, gm.k)
 	mergeSetSlice := make([]*model.DomainHash, 0, gm.k)
@@ -27,7 +27,10 @@ func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 		current, queue = queue[0], queue[1:]
 		// For each parent of the current block we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
-		currentParents := gm.dagTopologyManager.Parents(current)
+		currentParents, err := gm.dagTopologyManager.Parents(current)
+		if err != nil {
+			return nil, err
+		}
 		for _, parent := range currentParents {
 			if _, ok := mergeSetMap[*parent]; ok {
 				continue
@@ -37,7 +40,10 @@ func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 				continue
 			}
 
-			isAncestorOfSelectedParent := gm.dagTopologyManager.IsAncestorOf(parent, selecteParent)
+			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(parent, selecteParent)
+			if err != nil {
+				return nil, err
+			}
 
 			if isAncestorOfSelectedParent {
 				selectedParentPast[*parent] = struct{}{}
@@ -50,9 +56,26 @@ func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 		}
 	}
 
-	sort.Slice(mergeSetSlice, func(i, j int) bool {
-		return gm.less(mergeSetSlice[i], mergeSetSlice[j])
-	})
+	err := gm.sortMergeSet(mergeSetSlice)
+	if err != nil {
+		return nil, err
+	}
 
-	return mergeSetSlice
+	return mergeSetSlice, nil
+}
+
+func (gm *ghostdagManager) sortMergeSet(mergeSetSlice []*model.DomainHash) error {
+	var err error
+	sort.Slice(mergeSetSlice, func(i, j int) bool {
+		if err != nil {
+			return false
+		}
+		isLess, lessErr := gm.less(mergeSetSlice[i], mergeSetSlice[j])
+		if lessErr != nil {
+			err = lessErr
+			return false
+		}
+		return isLess
+	})
+	return err
 }

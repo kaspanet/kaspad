@@ -65,9 +65,9 @@ func New(
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (bp *blockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) *model.DomainBlock {
+	transactionSelector model.TransactionSelector) (*model.DomainBlock, error) {
 
-	return nil
+	return nil, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it

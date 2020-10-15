@@ -32,18 +32,18 @@ func New(
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
 func (pm *pruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
-	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
+	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet, err error) {
 
-	return false, nil, nil
+	return false, nil, nil, nil
 }
 
 // PruningPoint returns the hash of the current pruning point
-func (pm *pruningManager) PruningPoint() *model.DomainHash {
-	return nil
+func (pm *pruningManager) PruningPoint() (*model.DomainHash, error) {
+	return nil, nil
 }
 
 // SerializedUTXOSet returns the serialized UTXO set of the
 // current pruning point
-func (pm *pruningManager) SerializedUTXOSet() []byte {
-	return nil
+func (pm *pruningManager) SerializedUTXOSet() ([]byte, error) {
+	return nil, nil
 }

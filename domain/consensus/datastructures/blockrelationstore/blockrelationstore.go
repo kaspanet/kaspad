@@ -14,11 +14,11 @@ func New() model.BlockRelationStore {
 }
 
 // Insert inserts the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockRelationData *model.BlockRelations) {
-
+func (brs *blockRelationStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockRelationData *model.BlockRelations) error {
+	return nil
 }
 
 // Get gets the blockRelationData associated with the given blockHash
-func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockRelations {
-	return nil
+func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.BlockRelations, error) {
+	return nil, nil
 }

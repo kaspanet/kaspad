@@ -14,16 +14,16 @@ func New() model.MultisetStore {
 }
 
 // Insert inserts the given multiset for the given blockHash
-func (ms *multisetStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, multiset model.Multiset) {
-
-}
-
-// Get gets the multiset associated with the given blockHash
-func (ms *multisetStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) model.Multiset {
+func (ms *multisetStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, multiset model.Multiset) error {
 	return nil
 }
 
-// Delete deletes the multiset associated with the given blockHash
-func (ms *multisetStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) {
+// Get gets the multiset associated with the given blockHash
+func (ms *multisetStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (model.Multiset, error) {
+	return nil, nil
+}
 
+// Delete deletes the multiset associated with the given blockHash
+func (ms *multisetStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) error {
+	return nil
 }
