@@ -72,7 +72,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		consensusStateStore,
 		multisetStore,
 		utxoDiffStore,
-		blockStore)
+		blockStore,
+		ghostdagManager)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningStore,
