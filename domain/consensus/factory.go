@@ -100,6 +100,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		reachabilityTree,
 		difficultyManager,
 		pastMedianTimeManager,
+		ghostdagManager,
 		acceptanceDataStore,
 		blockStore,
 		blockStatusStore,

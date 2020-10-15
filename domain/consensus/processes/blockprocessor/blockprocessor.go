@@ -18,6 +18,7 @@ type blockProcessor struct {
 	dagTopologyManager    model.DAGTopologyManager
 	reachabilityTree      model.ReachabilityTree
 	difficultyManager     model.DifficultyManager
+	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
@@ -36,6 +37,7 @@ func New(
 	reachabilityTree model.ReachabilityTree,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
+	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
@@ -50,6 +52,7 @@ func New(
 		reachabilityTree:      reachabilityTree,
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
+		ghostdagManager:       ghostdagManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
