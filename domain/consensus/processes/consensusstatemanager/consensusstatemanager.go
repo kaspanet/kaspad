@@ -51,9 +51,9 @@ func (csm *consensusStateManager) CalculateConsensusStateChanges(block *model.Do
 	return nil, nil, nil
 }
 
-// CalculateAcceptanceDataAndMultiset calculates and returns the acceptance data and the
+// CalculateAcceptanceDataAndUTXOMultiset calculates and returns the acceptance data and the
 // multiset associated with the given blockHash
-func (csm *consensusStateManager) CalculateAcceptanceDataAndMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
+func (csm *consensusStateManager) CalculateAcceptanceDataAndUTXOMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
 	*model.BlockAcceptanceData, model.Multiset) {
 
 	return nil, nil
