@@ -13,8 +13,8 @@ func New() *ConsensusStateStore {
 	return &ConsensusStateStore{}
 }
 
-// Update updates the store with the given utxoDiff
-func (css *ConsensusStateStore) Update(dbTx model.DBTxProxy, utxoDiff *model.UTXODiff) {
+// Update updates the store with the given consensusStateChanges
+func (css *ConsensusStateStore) Update(dbTx model.DBTxProxy, consensusStateChanges *model.ConsensusStateChanges) {
 
 }
 
