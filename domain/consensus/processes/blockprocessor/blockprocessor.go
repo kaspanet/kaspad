@@ -6,9 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
-// BlockProcessor is responsible for processing incoming blocks
+// blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
-type BlockProcessor struct {
+type blockProcessor struct {
 	dagParams       *dagconfig.Params
 	databaseContext *database.DomainDBContext
 
@@ -23,7 +23,7 @@ type BlockProcessor struct {
 	feeDataStore          model.FeeDataStore
 }
 
-// New instantiates a new BlockProcessor
+// New instantiates a new blockProcessor
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *database.DomainDBContext,
@@ -35,9 +35,9 @@ func New(
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
-	feeDataStore model.FeeDataStore) *BlockProcessor {
+	feeDataStore model.FeeDataStore) model.BlockProcessor {
 
-	return &BlockProcessor{
+	return &blockProcessor{
 		dagParams:          dagParams,
 		databaseContext:    databaseContext,
 		pruningManager:     pruningManager,
@@ -55,7 +55,7 @@ func New(
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
+func (bp *blockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
 	transactionSelector model.TransactionSelector) *model.DomainBlock {
 
 	return nil
@@ -63,6 +63,6 @@ func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExt
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *BlockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
 	return nil
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
-// ConsensusStateManager manages the node's consensus state
-type ConsensusStateManager struct {
+// consensusStateManager manages the node's consensus state
+type consensusStateManager struct {
 	dagParams *dagconfig.Params
 
 	databaseContext     *database.DomainDBContext
@@ -17,16 +17,16 @@ type ConsensusStateManager struct {
 	blockStore          model.BlockStore
 }
 
-// New instantiates a new ConsensusStateManager
+// New instantiates a new consensusStateManager
 func New(
 	databaseContext *database.DomainDBContext,
 	dagParams *dagconfig.Params,
 	consensusStateStore model.ConsensusStateStore,
 	multisetStore model.MultisetStore,
 	utxoDiffStore model.UTXODiffStore,
-	blockStore model.BlockStore) *ConsensusStateManager {
+	blockStore model.BlockStore) model.ConsensusStateManager {
 
-	return &ConsensusStateManager{
+	return &consensusStateManager{
 		dagParams: dagParams,
 
 		databaseContext:     databaseContext,
@@ -38,13 +38,13 @@ func New(
 }
 
 // UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (csm *ConsensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint) *model.UTXOEntry {
+func (csm *consensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint) *model.UTXOEntry {
 	return nil
 }
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, isDisqualified bool) (
+func (csm *consensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, isDisqualified bool) (
 	stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges,
 	virtualGHOSTDAGData *model.BlockGHOSTDAGData) {
 
@@ -53,23 +53,23 @@ func (csm *ConsensusStateManager) CalculateConsensusStateChanges(block *model.Do
 
 // CalculateAcceptanceDataAndMultiset calculates and returns the acceptance data and the
 // multiset associated with the given blockHash
-func (csm *ConsensusStateManager) CalculateAcceptanceDataAndMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
+func (csm *consensusStateManager) CalculateAcceptanceDataAndMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
 	*model.BlockAcceptanceData, model.Multiset) {
 
 	return nil, nil
 }
 
 // Tips returns the current DAG tips
-func (csm *ConsensusStateManager) Tips() []*model.DomainHash {
+func (csm *consensusStateManager) Tips() []*model.DomainHash {
 	return nil
 }
 
 // VirtualData returns the medianTime and blueScore of the current virtual block
-func (csm *ConsensusStateManager) VirtualData() (medianTime int64, blueScore uint64) {
+func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uint64) {
 	return 0, 0
 }
 
 // RestoreUTXOSet calculates and returns the UTXOSet of the given blockHash
-func (csm *ConsensusStateManager) RestorePastUTXOSet(blockHash *model.DomainHash) model.ReadOnlyUTXOSet {
+func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *model.DomainHash) model.ReadOnlyUTXOSet {
 	return nil
 }

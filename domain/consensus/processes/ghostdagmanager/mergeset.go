@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-func (gm *GHOSTDAGManager) mergeSet(selecteParent *model.DomainHash,
+func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 	blockParents []*model.DomainHash) []*model.DomainHash {
 
 	mergeSetMap := make(map[model.DomainHash]struct{}, gm.k)

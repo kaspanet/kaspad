@@ -23,7 +23,7 @@ import (
 //    BluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
-func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gm *ghostdagManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	newBlockData := &model.BlockGHOSTDAGData{
 		MergeSetBlues:      make([]*model.DomainHash, 0),
 		MergeSetReds:       make([]*model.DomainHash, 0),
@@ -62,7 +62,7 @@ type chainBlockData struct {
 	blockData *model.BlockGHOSTDAGData
 }
 
-func (gm *GHOSTDAGManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *model.DomainHash) (
+func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *model.DomainHash) (
 	isBlue bool, candidateAnticoneSize model.KType, candidateBluesAnticoneSizes map[model.DomainHash]model.KType, err error) {
 
 	// The maximum length of node.blues can be K+1 because
@@ -104,7 +104,7 @@ func (gm *GHOSTDAGManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 	return true, candidateAnticoneSize, candidateBluesAnticoneSizes, nil
 }
 
-func (gm *GHOSTDAGManager) checkBlueCandidateWithChainBlock(newBlockData *model.BlockGHOSTDAGData,
+func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.BlockGHOSTDAGData,
 	chainBlock chainBlockData, blueCandidate *model.DomainHash,
 	candidateBluesAnticoneSizes map[model.DomainHash]model.KType,
 	candidateAnticoneSize *model.KType) (isBlue, isRed bool, err error) {
@@ -163,7 +163,7 @@ func (gm *GHOSTDAGManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (gm *GHOSTDAGManager) blueAnticoneSize(block *model.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+func (gm *ghostdagManager) blueAnticoneSize(block *model.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes[*block]; ok {
 			return blueAnticoneSize, nil

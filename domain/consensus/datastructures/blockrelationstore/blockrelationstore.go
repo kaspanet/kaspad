@@ -4,21 +4,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// BlockRelationStore represents a store of BlockRelations
-type BlockRelationStore struct {
+// blockRelationStore represents a store of BlockRelations
+type blockRelationStore struct {
 }
 
-// New instantiates a new BlockRelationStore
-func New() *BlockRelationStore {
-	return &BlockRelationStore{}
+// New instantiates a new blockRelationStore
+func New() model.BlockRelationStore {
+	return &blockRelationStore{}
 }
 
 // Insert inserts the given blockRelationData for the given blockHash
-func (brs *BlockRelationStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockRelationData *model.BlockRelations) {
+func (brs *blockRelationStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockRelationData *model.BlockRelations) {
 
 }
 
 // Get gets the blockRelationData associated with the given blockHash
-func (brs *BlockRelationStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockRelations {
+func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.BlockRelations {
 	return nil
 }

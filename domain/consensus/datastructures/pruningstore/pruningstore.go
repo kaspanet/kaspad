@@ -4,26 +4,26 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// PruningStore represents a store for the current pruning state
-type PruningStore struct {
+// pruningStore represents a store for the current pruning state
+type pruningStore struct {
 }
 
-// New instantiates a new PruningStore
-func New() *PruningStore {
-	return &PruningStore{}
+// New instantiates a new pruningStore
+func New() model.PruningStore {
+	return &pruningStore{}
 }
 
 // Update updates the pruning state
-func (pps *PruningStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash *model.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) {
+func (pps *pruningStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash *model.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) {
 
 }
 
 // PruningPoint gets the current pruning point
-func (pps *PruningStore) PruningPoint(dbContext model.DBContextProxy) *model.DomainHash {
+func (pps *pruningStore) PruningPoint(dbContext model.DBContextProxy) *model.DomainHash {
 	return nil
 }
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
-func (pps *PruningStore) PruningPointSerializedUTXOSet(dbContext model.DBContextProxy) []byte {
+func (pps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBContextProxy) []byte {
 	return nil
 }

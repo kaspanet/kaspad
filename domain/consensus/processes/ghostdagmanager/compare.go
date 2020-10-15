@@ -2,7 +2,7 @@ package ghostdagmanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
-func (gm *GHOSTDAGManager) findSelectedParent(parentHashes []*model.DomainHash) *model.DomainHash {
+func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) *model.DomainHash {
 	var selectedParent *model.DomainHash
 	for _, hash := range parentHashes {
 		if selectedParent == nil || gm.less(selectedParent, hash) {
@@ -12,7 +12,7 @@ func (gm *GHOSTDAGManager) findSelectedParent(parentHashes []*model.DomainHash) 
 	return selectedParent
 }
 
-func (gm *GHOSTDAGManager) less(blockA, blockB *model.DomainHash) bool {
+func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) bool {
 	blockABlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockA).BlueScore
 	blockBBlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockB).BlueScore
 	if blockABlueScore == blockBBlueScore {

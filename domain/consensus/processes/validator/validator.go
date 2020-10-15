@@ -4,56 +4,64 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// Validator exposes a set of validation classes, after which
+// BlockAndTransactionValidator exposes a set of validation
+// classes, after which it's possible to determine whether
+// either a block or a transaction is valid
+type BlockAndTransactionValidator interface {
+	model.BlockValidator
+	model.TransactionValidator
+}
+
+// validator exposes a set of validation classes, after which
 // it's possible to determine whether either a block or a
 // transaction is valid
-type Validator struct {
+type validator struct {
 	consensusStateManager model.ConsensusStateManager
 }
 
-// New instantiates a new Validator
-func New(consensusStateManager model.ConsensusStateManager) *Validator {
-	return &Validator{
+// New instantiates a new validator
+func New(consensusStateManager model.ConsensusStateManager) BlockAndTransactionValidator {
+	return &validator{
 		consensusStateManager: consensusStateManager,
 	}
 }
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (bv *Validator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
+func (v *validator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (bv *Validator) ValidateHeaderInContext(block *model.DomainBlock) error {
+func (v *validator) ValidateHeaderInContext(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (bv *Validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
+func (v *validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (bv *Validator) ValidateBodyInContext(block *model.DomainBlock) error {
+func (v *validator) ValidateBodyInContext(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (bv *Validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
+func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateFinality makes sure the block does not violate finality
-func (bv *Validator) ValidateFinality(block *model.DomainBlock) error {
+func (v *validator) ValidateFinality(block *model.DomainBlock) error {
 	return nil
 }
 
 // ValidateTransactionAndCalculateFee validates the given transaction using
 // the given utxoEntries. It also returns the transaction's fee
-func (bv *Validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
+func (v *validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
 	return 0, nil
 }
