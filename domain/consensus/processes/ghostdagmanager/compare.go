@@ -13,12 +13,28 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) 
 }
 
 func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) bool {
-	blockABlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockA).BlueScore
-	blockBBlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockB).BlueScore
+	blockAGHOSTDAGData := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
+	blockBGHOSTDAGData := gm.ghostdagDataStore.Get(gm.databaseContext, blockB)
+	chosenSelectedParent := gm.ChooseSelectedParent(blockA, blockAGHOSTDAGData, blockB, blockBGHOSTDAGData)
+	return chosenSelectedParent == blockB
+}
+
+func (gm *ghostdagManager) ChooseSelectedParent(
+	blockHashA *model.DomainHash, blockAGHOSTDAGData *model.BlockGHOSTDAGData,
+	blockHashB *model.DomainHash, blockBGHOSTDAGData *model.BlockGHOSTDAGData) *model.DomainHash {
+
+	blockABlueScore := blockAGHOSTDAGData.BlueScore
+	blockBBlueScore := blockBGHOSTDAGData.BlueScore
 	if blockABlueScore == blockBBlueScore {
-		return hashesLess(blockA, blockB)
+		if hashesLess(blockHashA, blockHashB) {
+			return blockHashB
+		}
+		return blockHashA
 	}
-	return blockABlueScore < blockBBlueScore
+	if blockABlueScore < blockBBlueScore {
+		return blockHashB
+	}
+	return blockHashA
 }
 
 func hashesLess(a, b *model.DomainHash) bool {

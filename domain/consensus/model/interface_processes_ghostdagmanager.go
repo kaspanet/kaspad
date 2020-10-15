@@ -4,4 +4,7 @@ package model
 type GHOSTDAGManager interface {
 	GHOSTDAG(blockParents []*DomainHash) (*BlockGHOSTDAGData, error)
 	BlockData(blockHash *DomainHash) *BlockGHOSTDAGData
+	ChooseSelectedParent(
+		blockHashA *DomainHash, blockAGHOSTDAGData *BlockGHOSTDAGData,
+		blockHashB *DomainHash, blockBGHOSTDAGData *BlockGHOSTDAGData) *DomainHash
 }
