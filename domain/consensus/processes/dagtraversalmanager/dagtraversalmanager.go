@@ -21,12 +21,6 @@ func New(
 	}
 }
 
-// BlockAtDepth returns the hash of the block that's at the
-// given depth from the given highHash
-func (dtm *dagTraversalManager) BlockAtDepth(highHash *model.DomainHash, depth uint64) *model.DomainHash {
-	return nil
-}
-
 // SelectedParentIterator creates an iterator over the selected
 // parent chain of the given highHash
 func (dtm *dagTraversalManager) SelectedParentIterator(highHash *model.DomainHash) model.SelectedParentIterator {
@@ -35,7 +29,7 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *model.DomainHas
 
 // ChainBlockAtBlueScore returns the hash of the smallest block
 // with a blue score greater than the given blueScore in the
-// virtual block's selected parent chain
-func (dtm *dagTraversalManager) ChainBlockAtBlueScore(blueScore uint64) *model.DomainHash {
+// block with the given highHash's selected parent chain
+func (dtm *dagTraversalManager) ChainBlockAtBlueScore(highHash *model.DomainHash, blueScore uint64) *model.DomainHash {
 	return nil
 }
