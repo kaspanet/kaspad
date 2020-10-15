@@ -18,6 +18,7 @@ type blockProcessor struct {
 	dagTopologyManager    model.DAGTopologyManager
 	reachabilityTree      model.ReachabilityTree
 	difficultyManager     model.DifficultyManager
+	pastMedianTimeManager model.PastMedianTimeManager
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
@@ -34,19 +35,21 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	reachabilityTree model.ReachabilityTree,
 	difficultyManager model.DifficultyManager,
+	pastMedianTimeManager model.PastMedianTimeManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
 	feeDataStore model.FeeDataStore) model.BlockProcessor {
 
 	return &blockProcessor{
-		dagParams:          dagParams,
-		databaseContext:    databaseContext,
-		pruningManager:     pruningManager,
-		blockValidator:     blockValidator,
-		dagTopologyManager: dagTopologyManager,
-		reachabilityTree:   reachabilityTree,
-		difficultyManager:  difficultyManager,
+		dagParams:             dagParams,
+		databaseContext:       databaseContext,
+		pruningManager:        pruningManager,
+		blockValidator:        blockValidator,
+		dagTopologyManager:    dagTopologyManager,
+		reachabilityTree:      reachabilityTree,
+		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,

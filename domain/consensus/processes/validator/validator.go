@@ -18,16 +18,19 @@ type BlockAndTransactionValidator interface {
 type validator struct {
 	consensusStateManager model.ConsensusStateManager
 	difficultyManager     model.DifficultyManager
+	pastMedianTimeManager model.PastMedianTimeManager
 }
 
 // New instantiates a new validator
 func New(
 	consensusStateManager model.ConsensusStateManager,
-	difficultyManager model.DifficultyManager) BlockAndTransactionValidator {
+	difficultyManager model.DifficultyManager,
+	pastMedianTimeManager model.PastMedianTimeManager) BlockAndTransactionValidator {
 
 	return &validator{
 		consensusStateManager: consensusStateManager,
 		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
 	}
 }
 
