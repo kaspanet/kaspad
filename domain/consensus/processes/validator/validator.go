@@ -16,6 +16,7 @@ type Validator struct {
 	disableDifficultyAdjustment    bool
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
+	blockCoinbaseMaturity          uint64
 
 	dagTopologyManager    model.DAGTopologyManager
 	ghostdagManager       model.GHOSTDAGManager
