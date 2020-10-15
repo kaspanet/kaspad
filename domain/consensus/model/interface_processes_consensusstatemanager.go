@@ -5,7 +5,7 @@ type ConsensusStateManager interface {
 	UTXOByOutpoint(outpoint *DomainOutpoint) *UTXOEntry
 	CalculateConsensusStateChanges(block *DomainBlock, isDisqualified bool) (
 		stateChanges *ConsensusStateChanges, utxoDiffChanges *UTXODiffChanges, virtualGHOSTDAGData *BlockGHOSTDAGData)
-	CalculateAcceptanceDataAndMultiset(blockHash *DomainHash) (*BlockAcceptanceData, Multiset)
+	CalculateAcceptanceDataAndMultiset(blockGHOSTDAGData *BlockGHOSTDAGData) (*BlockAcceptanceData, Multiset)
 	Tips() []*DomainHash
 	VirtualData() (medianTime int64, blueScore uint64)
 	RestorePastUTXOSet(blockHash *DomainHash) ReadOnlyUTXOSet
