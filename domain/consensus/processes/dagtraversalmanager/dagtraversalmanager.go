@@ -27,9 +27,10 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *model.DomainHas
 	return nil, nil
 }
 
-// ChainBlockAtBlueScore returns the hash of the highest block
-// with a blue score lower than the given blueScore in the
-// block with the given highHash's selected parent chain
-func (dtm *dagTraversalManager) ChainBlockAtBlueScore(highHash *model.DomainHash, blueScore uint64) (*model.DomainHash, error) {
+// HighestChainBlockBelowBlueScore returns the hash of the
+// highest block with a blue score lower than the given
+// blueScore in the block with the given highHash's selected
+// parent chain
+func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *model.DomainHash, blueScore uint64) (*model.DomainHash, error) {
 	return nil, nil
 }
