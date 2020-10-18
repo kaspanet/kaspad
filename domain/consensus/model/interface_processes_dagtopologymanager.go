@@ -11,4 +11,7 @@ type DAGTopologyManager interface {
 	IsDescendantOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	IsAncestorOfAny(blockHash *DomainHash, potentialDescendants []*DomainHash) (bool, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
+
+	Tips() ([]*DomainHash, error)
+	SetTips(tipHashes []*DomainHash) error
 }

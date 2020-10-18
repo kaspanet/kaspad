@@ -90,3 +90,13 @@ func isHashInSlice(hash *model.DomainHash, hashes []*model.DomainHash) bool {
 	}
 	return false
 }
+
+// Tips returns the current DAG tips
+func (dtm *dagTopologyManager) Tips() ([]*model.DomainHash, error) {
+	panic("implement me")
+}
+
+// SetTips set the current DAG tips to the given tipHashes
+func (dtm *dagTopologyManager) SetTips(tipHashes []*model.DomainHash) error {
+	panic("implement me")
+}

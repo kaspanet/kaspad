@@ -62,11 +62,6 @@ func (csm *consensusStateManager) CalculateAcceptanceDataAndUTXOMultiset(blockGH
 	return nil, nil, nil
 }
 
-// Tips returns the current DAG tips
-func (csm *consensusStateManager) Tips() ([]*model.DomainHash, error) {
-	return nil, nil
-}
-
 // VirtualData returns the medianTime and blueScore of the current virtual block
 func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uint64, err error) {
 	return 0, 0, nil
