@@ -2,6 +2,7 @@ package miningmanager
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -14,8 +15,8 @@ type MiningManager interface {
 }
 
 type miningManager struct {
-	mempool              Mempool
-	blockTemplateBuilder BlockTemplateBuilder
+	mempool              model.Mempool
+	blockTemplateBuilder model.BlockTemplateBuilder
 }
 
 // GetBlockTemplate creates a block template for a miner to consume

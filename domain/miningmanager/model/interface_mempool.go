@@ -1,4 +1,4 @@
-package miningmanager
+package model
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -11,9 +11,4 @@ type Mempool interface {
 	HandleNewBlock(block *appmessage.MsgBlock)
 	Transactions() []*util.Tx
 	ValidateAndInsertTransaction(transaction *appmessage.MsgTx) error
-}
-
-// BlockTemplateBuilder builds block templates for miners to consume
-type BlockTemplateBuilder interface {
-	GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock
 }

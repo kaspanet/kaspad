@@ -3,18 +3,21 @@ package blocktemplatebuilder
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // BlockTemplateBuilder creates block templates for a miner to consume
 type BlockTemplateBuilder struct {
 	consensus *consensus.Consensus
+	mempool   model.Mempool
 }
 
 // New creates a new BlockTemplateBuilder
-func New(consensus *consensus.Consensus) *BlockTemplateBuilder {
+func New(consensus *consensus.Consensus, mempool model.Mempool) *BlockTemplateBuilder {
 	return &BlockTemplateBuilder{
 		consensus: consensus,
+		mempool:   mempool,
 	}
 }
 
