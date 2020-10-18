@@ -23,7 +23,6 @@ type blockProcessor struct {
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
-	feeDataStore          model.FeeDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -40,8 +39,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
-	blockStatusStore model.BlockStatusStore,
-	feeDataStore model.FeeDataStore) model.BlockProcessor {
+	blockStatusStore model.BlockStatusStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -58,7 +56,6 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
-		feeDataStore:          feeDataStore,
 	}
 }
 
