@@ -4,14 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// BlockAndTransactionValidator exposes a set of validation
-// classes, after which it's possible to determine whether
-// either a block or a transaction is valid
-type BlockAndTransactionValidator interface {
-	model.BlockValidator
-	model.TransactionValidator
-}
-
 // validator exposes a set of validation classes, after which
 // it's possible to determine whether either a block or a
 // transaction is valid
@@ -25,7 +17,10 @@ type validator struct {
 func New(
 	consensusStateManager model.ConsensusStateManager,
 	difficultyManager model.DifficultyManager,
-	pastMedianTimeManager model.PastMedianTimeManager) BlockAndTransactionValidator {
+	pastMedianTimeManager model.PastMedianTimeManager) interface {
+	model.BlockValidator
+	model.TransactionValidator
+} {
 
 	return &validator{
 		consensusStateManager: consensusStateManager,
