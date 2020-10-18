@@ -12,16 +12,16 @@ import (
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (bv *Validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) error {
+func (v *validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
-	err := bv.checkProofOfWork(header)
+	err := v.checkProofOfWork(header)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkParentsLimit(header)
+	err = v.checkParentsLimit(header)
 	if err != nil {
 		return err
 	}
@@ -34,9 +34,9 @@ func (bv *Validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) 
 	return nil
 }
 
-func (bv *Validator) checkParentsLimit(header *model.DomainBlockHeader) error {
+func (v *validator) checkParentsLimit(header *model.DomainBlockHeader) error {
 	hash := hashserialization.HeaderHash(header)
-	if len(header.ParentHashes) == 0 && *hash != *bv.genesisHash {
+	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
 		return ruleerrors.Errorf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
@@ -55,7 +55,7 @@ func (bv *Validator) checkParentsLimit(header *model.DomainBlockHeader) error {
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (bv *Validator) checkProofOfWork(header *model.DomainBlockHeader) error {
+func (v *validator) checkProofOfWork(header *model.DomainBlockHeader) error {
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -64,15 +64,15 @@ func (bv *Validator) checkProofOfWork(header *model.DomainBlockHeader) error {
 	}
 
 	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(bv.powMax) > 0 {
+	if target.Cmp(v.powMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, bv.powMax)
+			"higher than max of %064x", target, v.powMax)
 		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, str)
 	}
 
 	// The block hash must be less than the claimed target unless the flag
 	// to avoid proof of work checks is set.
-	if !bv.skipPoW {
+	if !v.skipPoW {
 		// The block hash must be less than the claimed target.
 		hash := hashserialization.HeaderHash(header)
 		hashNum := hashes.ToBig(hash)

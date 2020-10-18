@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
@@ -12,11 +13,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
 	validatorpkg "github.com/kaspanet/kaspad/domain/consensus/processes/validator"
@@ -46,41 +50,57 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	ghostdagDataStore := ghostdagdatastore.New()
 	feeDataStore := feedatastore.New()
 
+	domainDBContext := database.NewDomainDBContext(databaseContext)
+
 	// Processes
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
-		databaseContext,
+		domainDBContext,
 		reachabilityTree,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
+		databaseContext,
 		dagTopologyManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		model.KType(dagParams.K))
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
 	consensusStateManager := consensusstatemanager.New(
+		domainDBContext,
 		dagParams,
 		consensusStateStore,
 		multisetStore,
 		utxoDiffStore,
-		blockStore)
+		blockStore,
+		ghostdagManager)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningStore,
 		dagTopologyManager,
 		blockStatusStore,
 		consensusStateManager)
-	validator := validatorpkg.New(consensusStateManager)
+	difficultyManager := difficultymanager.New(
+		ghostdagManager)
+	pastMedianTimeManager := pastmediantimemanager.New(
+		ghostdagManager)
+	validator := validatorpkg.New(
+		consensusStateManager,
+		difficultyManager,
+		pastMedianTimeManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
-		databaseContext,
+		domainDBContext,
 		consensusStateManager,
 		pruningManager,
 		validator,
 		dagTopologyManager,
 		reachabilityTree,
+		difficultyManager,
+		pastMedianTimeManager,
+		ghostdagManager,
 		acceptanceDataStore,
 		blockStore,
 		blockStatusStore,

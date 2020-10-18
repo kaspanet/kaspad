@@ -4,21 +4,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// ReachabilityDataStore represents a store of ReachabilityData
-type ReachabilityDataStore struct {
+// reachabilityDataStore represents a store of ReachabilityData
+type reachabilityDataStore struct {
 }
 
 // New instantiates a new ReachabilityDataStore
-func New() *ReachabilityDataStore {
-	return &ReachabilityDataStore{}
+func New() model.ReachabilityDataStore {
+	return &reachabilityDataStore{}
 }
 
 // Insert inserts the given reachabilityData for the given blockHash
-func (rds *ReachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, reachabilityData *model.ReachabilityData) {
-
+func (rds *reachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, reachabilityData *model.ReachabilityData) error {
+	return nil
 }
 
 // Get gets the reachabilityData associated with the given blockHash
-func (rds *ReachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) *model.ReachabilityData {
-	return nil
+func (rds *reachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.ReachabilityData, error) {
+	return nil, nil
 }

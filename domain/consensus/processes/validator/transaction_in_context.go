@@ -8,32 +8,32 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-func (bv *Validator) checkTransactionInContext(tx *model.DomainTransaction, ghostdagData *model.BlockGHOSTDAGData,
+func (v *validator) checkTransactionInContext(tx *model.DomainTransaction, ghostdagData *model.BlockGHOSTDAGData,
 	utxoEntries []*model.UTXOEntry) (txFee uint64, err error) {
 
-	err = bv.checkTxCoinbaseMaturity(ghostdagData, tx, utxoEntries)
+	err = v.checkTxCoinbaseMaturity(ghostdagData, tx, utxoEntries)
 	if err != nil {
 		return 0, nil
 	}
 
-	totalSompiIn, err := bv.checkTxInputAmounts(utxoEntries)
+	totalSompiIn, err := v.checkTxInputAmounts(utxoEntries)
 	if err != nil {
 		return 0, nil
 	}
 
-	totalSompiOut, err := bv.checkTxOutputAmounts(tx, totalSompiIn)
+	totalSompiOut, err := v.checkTxOutputAmounts(tx, totalSompiIn)
 	if err != nil {
 		return 0, nil
 	}
 
 	txFee = totalSompiIn - totalSompiOut
 
-	err = bv.checkTxSequenceLock(node, tx, utxoEntries, selectedParentMedianTime)
+	err = v.checkTxSequenceLock(node, tx, utxoEntries, selectedParentMedianTime)
 	if err != nil {
 		return 0, nil
 	}
 
-	err = bv.validateTransactionScripts(tx, utxoEntries)
+	err = v.validateTransactionScripts(tx, utxoEntries)
 	if err != nil {
 		return 0, err
 	}
@@ -41,7 +41,7 @@ func (bv *Validator) checkTransactionInContext(tx *model.DomainTransaction, ghos
 	return txFee, nil
 }
 
-func (bv *Validator) checkTxCoinbaseMaturity(
+func (v *validator) checkTxCoinbaseMaturity(
 	ghostdagData *model.BlockGHOSTDAGData, tx *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
 	txBlueScore := ghostdagData.BlueScore
 	for i, txIn := range tx.Inputs {
@@ -50,14 +50,14 @@ func (bv *Validator) checkTxCoinbaseMaturity(
 		if utxoEntry.IsCoinbase {
 			originBlueScore := utxoEntry.BlockBlueScore
 			blueScoreSincePrev := txBlueScore - originBlueScore
-			if blueScoreSincePrev < bv.blockCoinbaseMaturity {
+			if blueScoreSincePrev < v.blockCoinbaseMaturity {
 
 				return ruleerrors.Errorf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from blue score %d "+
 					"to blue score %d before required maturity "+
 					"of %d", txIn.PreviousOutpoint,
 					originBlueScore, txBlueScore,
-					bv.blockCoinbaseMaturity)
+					v.blockCoinbaseMaturity)
 			}
 		}
 	}
@@ -65,7 +65,7 @@ func (bv *Validator) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (bv *Validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (totalSompiIn uint64, err error) {
+func (v *validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (totalSompiIn uint64, err error) {
 
 	totalSompiIn = 0
 
@@ -77,7 +77,7 @@ func (bv *Validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (t
 		// a transaction are in a unit value known as a sompi. One
 		// kaspa is a quantity of sompi as defined by the
 		// SompiPerKaspa constant.
-		totalSompiIn, err = bv.checkEntryAmounts(utxoEntry, totalSompiIn)
+		totalSompiIn, err = v.checkEntryAmounts(utxoEntry, totalSompiIn)
 		if err != nil {
 			return 0, err
 		}
@@ -86,7 +86,7 @@ func (bv *Validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (t
 	return totalSompiIn, nil
 }
 
-func (bv *Validator) checkEntryAmounts(entry *model.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *validator) checkEntryAmounts(entry *model.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
@@ -102,7 +102,7 @@ func (bv *Validator) checkEntryAmounts(entry *model.UTXOEntry, totalSompiInBefor
 	return totalSompiInAfter, nil
 }
 
-func (bv *Validator) checkTxOutputAmounts(tx *model.DomainTransaction, totalSompiIn uint64) (uint64, error) {
+func (v *validator) checkTxOutputAmounts(tx *model.DomainTransaction, totalSompiIn uint64) (uint64, error) {
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
@@ -120,7 +120,7 @@ func (bv *Validator) checkTxOutputAmounts(tx *model.DomainTransaction, totalSomp
 	return totalSompiOut, nil
 }
 
-func (bv *Validator) checkTxSequenceLock(node *blockNode, tx *util.Tx,
+func (v *validator) checkTxSequenceLock(node *blockNode, tx *util.Tx,
 	referencedUTXOEntries []*UTXOEntry, medianTime mstime.Time) error {
 
 	// A transaction can only be included within a block
@@ -140,7 +140,7 @@ func (bv *Validator) checkTxSequenceLock(node *blockNode, tx *util.Tx,
 	return nil
 }
 
-func (bv *Validator) validateTransactionScripts(tx *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
+func (v *validator) validateTransactionScripts(tx *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript

@@ -5,21 +5,29 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 )
 
-func (bv *Validator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
-	nonBoundedMergeDepthViolatingBlues, err := bv.nonBoundedMergeDepthViolatingBlues(ghostdagData)
+func (v *validator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
+	nonBoundedMergeDepthViolatingBlues, err := v.nonBoundedMergeDepthViolatingBlues(ghostdagData)
 	if err != nil {
 		return err
 	}
 
-	finalityPoint := bv.finalityPoint(ghostdagData)
+	finalityPoint := v.finalityPoint(ghostdagData)
 	for _, red := range ghostdagData.MergeSetReds {
-		doesRedHaveFinalityPointInPast := bv.dagTopologyManager.IsAncestorOf(finalityPoint, red)
+		doesRedHaveFinalityPointInPast, err := v.dagTopologyManager.IsAncestorOf(finalityPoint, red)
+		if err != nil {
+			return err
+		}
+
 		if doesRedHaveFinalityPointInPast {
 			continue
 		}
 
-		isRedInPastOfAnyNonFinalityViolatingBlue := bv.dagTopologyManager.IsAncestorOfAny(red,
+		isRedInPastOfAnyNonFinalityViolatingBlue, err := v.dagTopologyManager.IsAncestorOfAny(red,
 			nonBoundedMergeDepthViolatingBlues)
+		if err != nil {
+			return err
+		}
+
 		if !isRedInPastOfAnyNonFinalityViolatingBlue {
 			return ruleerrors.Errorf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
@@ -28,11 +36,11 @@ func (bv *Validator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGDat
 	return nil
 }
 
-func (bv *Validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.BlockGHOSTDAGData) ([]*model.DomainHash, error) {
+func (v *validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.BlockGHOSTDAGData) ([]*model.DomainHash, error) {
 	nonBoundedMergeDepthViolatingBlues := make([]*model.DomainHash, 0, len(ghostdagData.MergeSetBlues))
 
 	for _, blue := range ghostdagData.MergeSetBlues {
-		notViolatingFinality := bv.hasFinalityPointInOthersSelectedChain(ghostdagData, blue)
+		notViolatingFinality := v.hasFinalityPointInOthersSelectedChain(ghostdagData, blue)
 		if notViolatingFinality {
 			nonBoundedMergeDepthViolatingBlues = append(nonBoundedMergeDepthViolatingBlues, blue)
 		}
@@ -41,11 +49,11 @@ func (bv *Validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.Bloc
 	return nonBoundedMergeDepthViolatingBlues, nil
 }
 
-func (bv *Validator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *model.DomainHash) bool {
-	finalityPoint := bv.finalityPoint(ghostdagData)
-	return bv.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, other)
+func (v *validator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *model.DomainHash) bool {
+	finalityPoint := v.finalityPoint(ghostdagData)
+	return v.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, other)
 }
 
-func (bv *Validator) finalityPoint(ghostdagData *model.BlockGHOSTDAGData) *model.DomainHash {
+func (v *validator) finalityPoint(ghostdagData *model.BlockGHOSTDAGData) *model.DomainHash {
 	panic("unimplemented")
 }

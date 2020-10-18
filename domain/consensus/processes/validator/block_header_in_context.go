@@ -7,24 +7,28 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (bv *Validator) ValidateHeaderInContext(header *model.DomainBlockHeader) error {
-	err := bv.checkParentsIncest(header)
+func (v *validator) ValidateHeaderInContext(header *model.DomainBlockHeader) error {
+	err := v.checkParentsIncest(header)
 	if err != nil {
 		return err
 	}
 
-	err = bv.validateDifficulty(header)
+	err = v.validateDifficulty(header)
 	if err != nil {
 		return err
 	}
 
-	err = bv.validateMedianTime(header)
+	err = v.validateMedianTime(header)
 	if err != nil {
 		return err
 	}
 
-	ghostdagData := bv.ghostdagManager.GHOSTDAG(header.ParentHashes)
-	err = bv.checkMergeSizeLimit(ghostdagData)
+	ghostdagData, err := v.ghostdagManager.GHOSTDAG(header.ParentHashes)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkMergeSizeLimit(ghostdagData)
 	if err != nil {
 		return err
 	}
@@ -33,14 +37,14 @@ func (bv *Validator) ValidateHeaderInContext(header *model.DomainBlockHeader) er
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (bv *Validator) checkParentsIncest(header *model.DomainBlockHeader) error {
+func (v *validator) checkParentsIncest(header *model.DomainBlockHeader) error {
 	for _, parentA := range header.ParentHashes {
 		for _, parentB := range header.ParentHashes {
 			if *parentA == *parentB {
 				continue
 			}
 
-			if bv.dagTopologyManager.IsAncestorOf(parentA, parentB) {
+			if v.dagTopologyManager.IsAncestorOf(parentA, parentB) {
 				return ruleerrors.Errorf(ruleerrors.ErrInvalidParentsRelation, "parent %s is an "+
 					"ancestor of another parent %s",
 					parentA,
@@ -52,18 +56,18 @@ func (bv *Validator) checkParentsIncest(header *model.DomainBlockHeader) error {
 	return nil
 }
 
-func (bv *Validator) validateDifficulty(header *model.DomainBlockHeader) error {
+func (v *validator) validateDifficulty(header *model.DomainBlockHeader) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
 	panic("unimplemented")
 }
 
-func (bv *Validator) validateMedianTime(header *model.DomainBlockHeader) error {
+func (v *validator) validateMedianTime(header *model.DomainBlockHeader) error {
 	panic("unimplemented")
 }
 
-func (bv *Validator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {
+func (v *validator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {
 	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
 
 	const mergeSetSizeLimit = 1000

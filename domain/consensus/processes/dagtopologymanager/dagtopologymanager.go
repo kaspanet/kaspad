@@ -3,23 +3,23 @@ package dagtopologymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// DAGTopologyManager exposes methods for querying relationships
+// dagTopologyManager exposes methods for querying relationships
 // between blocks in the DAG
-type DAGTopologyManager struct {
+type dagTopologyManager struct {
 	reachabilityTree   model.ReachabilityTree
 	blockRelationStore model.BlockRelationStore
-	databaseContext    *dbaccess.DatabaseContext
+	databaseContext    *database.DomainDBContext
 }
 
 // New instantiates a new DAGTopologyManager
 func New(
-	databaseContext *dbaccess.DatabaseContext,
+	databaseContext *database.DomainDBContext,
 	reachabilityTree model.ReachabilityTree,
-	blockRelationStore model.BlockRelationStore) *DAGTopologyManager {
-	return &DAGTopologyManager{
+	blockRelationStore model.BlockRelationStore) model.DAGTopologyManager {
+
+	return &dagTopologyManager{
 		databaseContext:    databaseContext,
 		reachabilityTree:   reachabilityTree,
 		blockRelationStore: blockRelationStore,
@@ -27,46 +27,58 @@ func New(
 }
 
 // Parents returns the DAG parents of the given blockHash
-func (dtm *DAGTopologyManager) Parents(blockHash *model.DomainHash) []*model.DomainHash {
-	dbContext := database.NewDomainDBContext(dtm.databaseContext)
-	return dtm.blockRelationStore.Get(dbContext, blockHash).Parents
+func (dtm *dagTopologyManager) Parents(blockHash *model.DomainHash) ([]*model.DomainHash, error) {
+	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	return blockRelations.Parents, nil
 }
 
 // Children returns the DAG children of the given blockHash
-func (dtm *DAGTopologyManager) Children(blockHash *model.DomainHash) []*model.DomainHash {
-	dbContext := database.NewDomainDBContext(dtm.databaseContext)
-	return dtm.blockRelationStore.Get(dbContext, blockHash).Children
+func (dtm *dagTopologyManager) Children(blockHash *model.DomainHash) ([]*model.DomainHash, error) {
+	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	return blockRelations.Children, nil
 }
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
-func (dtm *DAGTopologyManager) IsParentOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
-	dbContext := database.NewDomainDBContext(dtm.databaseContext)
-	return isHashInSlice(blockHashA, dtm.blockRelationStore.Get(dbContext, blockHashB).Parents)
+func (dtm *dagTopologyManager) IsParentOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	if err != nil {
+		return false, err
+	}
+	return isHashInSlice(blockHashA, blockRelations.Parents), nil
 }
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
-func (dtm *DAGTopologyManager) IsChildOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
-	dbContext := database.NewDomainDBContext(dtm.databaseContext)
-	return isHashInSlice(blockHashA, dtm.blockRelationStore.Get(dbContext, blockHashB).Children)
+func (dtm *dagTopologyManager) IsChildOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	if err != nil {
+		return false, err
+	}
+	return isHashInSlice(blockHashA, blockRelations.Children), nil
 }
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
-func (dtm *DAGTopologyManager) IsAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
+func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashA, blockHashB)
 }
 
 // IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
-func (dtm *DAGTopologyManager) IsDescendantOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
+func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashB, blockHashA)
 }
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
-func (dtm *DAGTopologyManager) IsAncestorOfAny(blockHash *model.DomainHash, potentialDescendants []*model.DomainHash) bool {
+func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *model.DomainHash, potentialDescendants []*model.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
-func (dtm *DAGTopologyManager) IsInSelectedParentChainOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) bool {
+func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 

@@ -8,20 +8,20 @@ import (
 )
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (bv *Validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
-	acceptanceData, multiset := bv.consensusStateManager.CalculateAcceptanceDataAndMultiset(block)
+func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
+	acceptanceData, multiset := v.consensusStateManager.CalculateAcceptanceDataAndMultiset(block)
 
-	err := bv.validateAcceptedIDMerkleRoot(block, acceptanceData)
+	err := v.validateAcceptedIDMerkleRoot(block, acceptanceData)
 	if err != nil {
 		return err
 	}
 
-	err = bv.validateAcceptedIDMerkleRoot(block, acceptanceData)
+	err = v.validateAcceptedIDMerkleRoot(block, acceptanceData)
 	if err != nil {
 		return err
 	}
 
-	err = bv.validateUTXOCommitment(block, multiset)
+	err = v.validateUTXOCommitment(block, multiset)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (bv *Validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
 	return nil
 }
 
-func (bv *Validator) validateAcceptedIDMerkleRoot(block *model.DomainBlock, consensusStateChanges model.ConsensusStateChanges) error {
+func (v *validator) validateAcceptedIDMerkleRoot(block *model.DomainBlock, consensusStateChanges model.ConsensusStateChanges) error {
 	// Genesis block doesn't have acceptance data to validate
 	if len(block.Header.ParentHashes) == 0 {
 		return nil
@@ -48,7 +48,7 @@ func (bv *Validator) validateAcceptedIDMerkleRoot(block *model.DomainBlock, cons
 	return nil
 }
 
-func (bv *Validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAcceptanceData) *daghash.Hash {
+func (v *validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
 	for _, blockTxsAcceptanceData := range multiBlockTxsAcceptanceData {
 		for _, txAcceptance := range blockTxsAcceptanceData.TxAcceptanceData {
@@ -66,7 +66,7 @@ func (bv *Validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAc
 	return acceptedIDMerkleTree.Root()
 }
 
-func (bv *Validator) validateUTXOCommitment(block *model.DomainBlock, multiset model.Multiset) error {
+func (v *validator) validateUTXOCommitment(block *model.DomainBlock, multiset model.Multiset) error {
 	calculatedMultisetHash := multiset.Hash()
 	if calculatedMultisetHash != block.Header.UTXOCommitment {
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+

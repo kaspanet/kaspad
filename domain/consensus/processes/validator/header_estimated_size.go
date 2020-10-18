@@ -5,7 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model"
 // headerEstimatedSerializedSize is the estimated size of a block header in some
 // serialization. This has to be deterministic, but not necessarily accurate, since
 // it's only used to check block size limit violation.
-func (bv *Validator) headerEstimatedSerializedSize(header *model.DomainBlockHeader) uint64 {
+func (v *validator) headerEstimatedSerializedSize(header *model.DomainBlockHeader) uint64 {
 	size := uint64(0)
 	size += 4 // Version (int32)
 

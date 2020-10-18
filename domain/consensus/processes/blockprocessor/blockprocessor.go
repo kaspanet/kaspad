@@ -1,22 +1,25 @@
 package blockprocessor
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// BlockProcessor is responsible for processing incoming blocks
+// blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
-type BlockProcessor struct {
+type blockProcessor struct {
 	dagParams       *dagconfig.Params
-	databaseContext *dbaccess.DatabaseContext
+	databaseContext *database.DomainDBContext
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
 	blockValidator        model.BlockValidator
 	dagTopologyManager    model.DAGTopologyManager
 	reachabilityTree      model.ReachabilityTree
+	difficultyManager     model.DifficultyManager
+	ghostdagManager       model.GHOSTDAGManager
+	pastMedianTimeManager model.PastMedianTimeManager
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
@@ -26,24 +29,30 @@ type BlockProcessor struct {
 // New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
-	databaseContext *dbaccess.DatabaseContext,
+	databaseContext *database.DomainDBContext,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,
 	dagTopologyManager model.DAGTopologyManager,
 	reachabilityTree model.ReachabilityTree,
+	difficultyManager model.DifficultyManager,
+	pastMedianTimeManager model.PastMedianTimeManager,
+	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
-	feeDataStore model.FeeDataStore) *BlockProcessor {
+	feeDataStore model.FeeDataStore) model.BlockProcessor {
 
-	return &BlockProcessor{
-		dagParams:          dagParams,
-		databaseContext:    databaseContext,
-		pruningManager:     pruningManager,
-		blockValidator:     blockValidator,
-		dagTopologyManager: dagTopologyManager,
-		reachabilityTree:   reachabilityTree,
+	return &blockProcessor{
+		dagParams:             dagParams,
+		databaseContext:       databaseContext,
+		pruningManager:        pruningManager,
+		blockValidator:        blockValidator,
+		dagTopologyManager:    dagTopologyManager,
+		reachabilityTree:      reachabilityTree,
+		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
+		ghostdagManager:       ghostdagManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
@@ -55,14 +64,14 @@ func New(
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) *model.DomainBlock {
+func (bp *blockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
+	transactionSelector model.TransactionSelector) (*model.DomainBlock, error) {
 
-	return nil
+	return nil, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *BlockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
 	return nil
 }

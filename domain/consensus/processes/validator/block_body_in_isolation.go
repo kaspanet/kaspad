@@ -13,53 +13,53 @@ import (
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (bv *Validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
-	err := bv.checkBlockSize(block)
+func (v *validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
+	err := v.checkBlockSize(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockContainsAtLeastOneTransaction(block)
+	err = v.checkBlockContainsAtLeastOneTransaction(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkFirstBlockTransactionIsCoinbase(block)
+	err = v.checkFirstBlockTransactionIsCoinbase(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockContainsOnlyOneCoinbase(block)
+	err = v.checkBlockContainsOnlyOneCoinbase(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkTransactionsInIsolation(block)
+	err = v.checkTransactionsInIsolation(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockHashMerkleRoot(block)
+	err = v.checkBlockHashMerkleRoot(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockDuplicateTransactions(block)
+	err = v.checkBlockDuplicateTransactions(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockDoubleSpends(block)
+	err = v.checkBlockDoubleSpends(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.checkBlockHasNoChainedTransactions(block)
+	err = v.checkBlockHasNoChainedTransactions(block)
 	if err != nil {
 		return err
 	}
 
-	err = bv.validateGasLimit(block)
+	err = v.validateGasLimit(block)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (bv *Validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
 	return nil
 }
 
-func (bv *Validator) checkBlockContainsAtLeastOneTransaction(block *model.DomainBlock) error {
+func (v *validator) checkBlockContainsAtLeastOneTransaction(block *model.DomainBlock) error {
 	if len(block.Transactions) == 0 {
 		return ruleerrors.Errorf(ruleerrors.ErrNoTransactions, "block does not contain "+
 			"any transactions")
@@ -75,7 +75,7 @@ func (bv *Validator) checkBlockContainsAtLeastOneTransaction(block *model.Domain
 	return nil
 }
 
-func (bv *Validator) checkFirstBlockTransactionIsCoinbase(block *model.DomainBlock) error {
+func (v *validator) checkFirstBlockTransactionIsCoinbase(block *model.DomainBlock) error {
 	if !transactionhelper.IsCoinBase(block.Transactions[transactionhelper.CoinbaseTransactionIndex]) {
 		return ruleerrors.Errorf(ruleerrors.ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
@@ -83,7 +83,7 @@ func (bv *Validator) checkFirstBlockTransactionIsCoinbase(block *model.DomainBlo
 	return nil
 }
 
-func (bv *Validator) checkBlockContainsOnlyOneCoinbase(block *model.DomainBlock) error {
+func (v *validator) checkBlockContainsOnlyOneCoinbase(block *model.DomainBlock) error {
 	for i, tx := range block.Transactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 		if transactionhelper.IsCoinBase(tx) {
 			return ruleerrors.Errorf(ruleerrors.ErrMultipleCoinbases, "block contains second coinbase at "+
@@ -93,7 +93,7 @@ func (bv *Validator) checkBlockContainsOnlyOneCoinbase(block *model.DomainBlock)
 	return nil
 }
 
-func (bv *Validator) checkBlockTransactionOrder(block *model.DomainBlock) error {
+func (v *validator) checkBlockTransactionOrder(block *model.DomainBlock) error {
 	for i, tx := range block.Transactions[util.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworks.Less(tx.SubnetworkID, block.Transactions[i].SubnetworkID) {
 			return ruleerrors.Errorf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
@@ -102,9 +102,9 @@ func (bv *Validator) checkBlockTransactionOrder(block *model.DomainBlock) error 
 	return nil
 }
 
-func (bv *Validator) checkNoNonNativeTransactions(block *model.DomainBlock) error {
+func (v *validator) checkNoNonNativeTransactions(block *model.DomainBlock) error {
 	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !bv.enableNonNativeSubnetworks {
+	if !v.enableNonNativeSubnetworks {
 		for _, tx := range block.Transactions {
 			if !(tx.SubnetworkID == subnetworks.SubnetworkIDNative ||
 				tx.SubnetworkID == subnetworks.SubnetworkIDCoinbase) {
@@ -115,9 +115,9 @@ func (bv *Validator) checkNoNonNativeTransactions(block *model.DomainBlock) erro
 	return nil
 }
 
-func (bv *Validator) checkTransactionsInIsolation(block *model.DomainBlock) error {
+func (v *validator) checkTransactionsInIsolation(block *model.DomainBlock) error {
 	for _, tx := range block.Transactions {
-		err := bv.checkTransactionInIsolation(tx)
+		err := v.checkTransactionInIsolation(tx)
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
 				"check", hashserialization.TransactionID(tx))
@@ -127,9 +127,9 @@ func (bv *Validator) checkTransactionsInIsolation(block *model.DomainBlock) erro
 	return nil
 }
 
-func (bv *Validator) checkBlockHashMerkleRoot(block *model.DomainBlock) error {
+func (v *validator) checkBlockHashMerkleRoot(block *model.DomainBlock) error {
 	calculatedHashMerkleRoot := merkle.CalcHashMerkleRoot(block.Transactions)
-	if *block.Header.HashMerkleRoot != *calculatedHashMerkleRoot {
+	if block.Header.HashMerkleRoot != *calculatedHashMerkleRoot {
 		return ruleerrors.Errorf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			block.Header.HashMerkleRoot, calculatedHashMerkleRoot)
@@ -137,7 +137,7 @@ func (bv *Validator) checkBlockHashMerkleRoot(block *model.DomainBlock) error {
 	return nil
 }
 
-func (bv *Validator) checkBlockDuplicateTransactions(block *model.DomainBlock) error {
+func (v *validator) checkBlockDuplicateTransactions(block *model.DomainBlock) error {
 	existingTxIDs := make(map[model.DomainTransactionID]struct{})
 	for _, tx := range block.Transactions {
 		id := hashserialization.TransactionID(tx)
@@ -150,7 +150,7 @@ func (bv *Validator) checkBlockDuplicateTransactions(block *model.DomainBlock) e
 	return nil
 }
 
-func (bv *Validator) checkBlockDoubleSpends(block *model.DomainBlock) error {
+func (v *validator) checkBlockDoubleSpends(block *model.DomainBlock) error {
 	usedOutpoints := make(map[model.DomainOutpoint]*model.DomainTransactionID)
 	for _, tx := range block.Transactions {
 		for _, input := range tx.Inputs {
@@ -166,7 +166,7 @@ func (bv *Validator) checkBlockDoubleSpends(block *model.DomainBlock) error {
 	return nil
 }
 
-func (bv *Validator) checkBlockHasNoChainedTransactions(block *model.DomainBlock) error {
+func (v *validator) checkBlockHasNoChainedTransactions(block *model.DomainBlock) error {
 
 	transactions := block.Transactions
 	transactionsSet := make(map[model.DomainTransactionID]struct{}, len(transactions))
@@ -189,18 +189,18 @@ func (bv *Validator) checkBlockHasNoChainedTransactions(block *model.DomainBlock
 	return nil
 }
 
-func (bv *Validator) validateGasLimit(block *model.DomainBlock) error {
+func (v *validator) validateGasLimit(block *model.DomainBlock) error {
 	// TODO: implement this
 	return nil
 }
 
-func (bv *Validator) checkBlockSize(block *model.DomainBlock) error {
+func (v *validator) checkBlockSize(block *model.DomainBlock) error {
 	size := uint64(0)
-	size += bv.headerEstimatedSerializedSize(block.Header)
+	size += v.headerEstimatedSerializedSize(block.Header)
 
 	for _, tx := range block.Transactions {
 		sizeBefore := size
-		size += bv.transactionEstimatedSerializedSize(tx)
+		size += v.transactionEstimatedSerializedSize(tx)
 		const maxBlockSize = 1_000_000
 		if size > maxBlockSize || size < sizeBefore {
 			return ruleerrors.Errorf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)

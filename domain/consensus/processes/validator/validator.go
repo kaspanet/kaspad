@@ -5,10 +5,10 @@ import (
 	"math/big"
 )
 
-// Validator exposes a set of validation classes, after which
+// validator exposes a set of validation classes, after which
 // it's possible to determine whether either a block or a
 // transaction is valid
-type Validator struct {
+type validator struct {
 	powMax                         *big.Int
 	skipPoW                        bool
 	genesisHash                    *model.DomainHash
@@ -21,11 +21,22 @@ type Validator struct {
 	dagTopologyManager    model.DAGTopologyManager
 	ghostdagManager       model.GHOSTDAGManager
 	consensusStateManager model.ConsensusStateManager
+	difficultyManager     model.DifficultyManager
+	pastMedianTimeManager model.PastMedianTimeManager
 }
 
-// New instantiates a new Validator
-func New(consensusStateManager model.ConsensusStateManager) *Validator {
-	return &Validator{
+// New instantiates a new BlockAndTransactionValidator
+func New(
+	consensusStateManager model.ConsensusStateManager,
+	difficultyManager model.DifficultyManager,
+	pastMedianTimeManager model.PastMedianTimeManager) interface {
+	model.BlockValidator
+	model.TransactionValidator
+} {
+
+	return &validator{
 		consensusStateManager: consensusStateManager,
+		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
 	}
 }

@@ -16,8 +16,8 @@ const (
 	MassPerSigOp = 10000
 )
 
-func (bv *Validator) transactionMassStandalonePart(tx *model.DomainTransaction) uint64 {
-	size := bv.transactionEstimatedSerializedSize(tx)
+func (v *validator) transactionMassStandalonePart(tx *model.DomainTransaction) uint64 {
+	size := v.transactionEstimatedSerializedSize(tx)
 
 	totalScriptPubKeySize := uint64(0)
 	for _, output := range tx.Outputs {

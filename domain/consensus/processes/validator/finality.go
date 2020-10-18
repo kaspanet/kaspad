@@ -3,7 +3,7 @@ package validator
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
 // ValidateFinality makes sure the block does not violate finality
-func (bv *Validator) ValidateFinality(block *model.DomainBlock) error {
+func (v *validator) ValidateFinality(block *model.DomainBlock) error {
 	// genesis block can't violate finality
 	if len(block.Header.ParentHashes) == 0 {
 		return nil
