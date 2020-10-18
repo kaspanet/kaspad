@@ -1,24 +1,26 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/util"
+	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/miningmanager/model"
 )
 
-// BlockTemplateBuilder creates block templates for a miner to consume
-type BlockTemplateBuilder struct {
+// blockTemplateBuilder creates block templates for a miner to consume
+type blockTemplateBuilder struct {
 	consensus *consensus.Consensus
+	mempool   model.Mempool
 }
 
-// New creates a new BlockTemplateBuilder
-func New(consensus *consensus.Consensus) *BlockTemplateBuilder {
-	return &BlockTemplateBuilder{
+// New creates a new blockTemplateBuilder
+func New(consensus *consensus.Consensus, mempool model.Mempool) model.BlockTemplateBuilder {
+	return &blockTemplateBuilder{
 		consensus: consensus,
+		mempool:   mempool,
 	}
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (btb *BlockTemplateBuilder) GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock {
+func (btb *blockTemplateBuilder) GetBlockTemplate(payAddress model.DomainAddress, extraData []byte) *consensusmodel.DomainBlock {
 	return nil
 }
