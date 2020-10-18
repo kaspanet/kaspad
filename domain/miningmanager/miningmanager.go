@@ -3,13 +3,12 @@ package miningmanager
 import (
 	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate(payAddress util.Address, extraData []byte) *consensusmodel.DomainBlock
+	GetBlockTemplate(payAddress model.DomainAddress, extraData []byte) *consensusmodel.DomainBlock
 	HandleNewBlock(block *consensusmodel.DomainBlock)
 	ValidateAndInsertTransaction(transaction *consensusmodel.DomainTransaction) error
 }
@@ -20,7 +19,7 @@ type miningManager struct {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate(payAddress util.Address, extraData []byte) *consensusmodel.DomainBlock {
+func (mm *miningManager) GetBlockTemplate(payAddress model.DomainAddress, extraData []byte) *consensusmodel.DomainBlock {
 	return mm.blockTemplateBuilder.GetBlockTemplate(payAddress, extraData)
 }
 
