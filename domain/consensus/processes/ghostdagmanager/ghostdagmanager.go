@@ -14,7 +14,7 @@ type ghostdagManager struct {
 	k                  model.KType
 }
 
-// New instantiates a new ghostdagManager
+// New instantiates a new GHOSTDAGManager
 func New(
 	databaseContext *dbaccess.DatabaseContext,
 	dagTopologyManager model.DAGTopologyManager,

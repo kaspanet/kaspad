@@ -18,7 +18,7 @@ type consensusStateManager struct {
 	ghostdagManager     model.GHOSTDAGManager
 }
 
-// New instantiates a new consensusStateManager
+// New instantiates a new ConsensusStateManager
 func New(
 	databaseContext *database.DomainDBContext,
 	dagParams *dagconfig.Params,

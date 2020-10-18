@@ -13,7 +13,7 @@ type dagTopologyManager struct {
 	databaseContext    *database.DomainDBContext
 }
 
-// New instantiates a new dagTopologyManager
+// New instantiates a new DAGTopologyManager
 func New(
 	databaseContext *database.DomainDBContext,
 	reachabilityTree model.ReachabilityTree,

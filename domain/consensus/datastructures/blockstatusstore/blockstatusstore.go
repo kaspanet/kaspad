@@ -8,7 +8,7 @@ import (
 type blockStatusStore struct {
 }
 
-// New instantiates a new blockStatusStore
+// New instantiates a new BlockStatusStore
 func New() model.BlockStatusStore {
 	return &blockStatusStore{}
 }

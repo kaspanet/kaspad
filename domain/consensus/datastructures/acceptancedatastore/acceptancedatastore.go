@@ -8,7 +8,7 @@ import (
 type acceptanceDataStore struct {
 }
 
-// New instantiates a new acceptanceDataStore
+// New instantiates a new AcceptanceDataStore
 func New() model.AcceptanceDataStore {
 	return &acceptanceDataStore{}
 }

@@ -10,7 +10,7 @@ type difficultyManager struct {
 	ghostdagManager model.GHOSTDAGManager
 }
 
-// New instantiates a new difficultyManager
+// New instantiates a new DifficultyManager
 func New(ghostdagManager model.GHOSTDAGManager) model.DifficultyManager {
 	return &difficultyManager{
 		ghostdagManager: ghostdagManager,

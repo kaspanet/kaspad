@@ -8,7 +8,7 @@ import (
 type ghostdagDataStore struct {
 }
 
-// New instantiates a new ghostdagDataStore
+// New instantiates a new GHOSTDAGDataStore
 func New() model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{}
 }

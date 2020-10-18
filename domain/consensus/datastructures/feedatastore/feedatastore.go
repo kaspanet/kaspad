@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model"
 type feeDataStore struct {
 }
 
-// New instantiates a new feeDataStore
+// New instantiates a new FeeDataStore
 func New() model.FeeDataStore {
 	return &feeDataStore{}
 }

@@ -11,7 +11,7 @@ type dagTraversalManager struct {
 	ghostdagManager    model.GHOSTDAGManager
 }
 
-// New instantiates a new dagTraversalManager
+// New instantiates a new DAGTraversalManager
 func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {

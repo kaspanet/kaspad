@@ -13,7 +13,7 @@ type pruningManager struct {
 	consensusStateManager model.ConsensusStateManager
 }
 
-// New instantiates a new pruningManager
+// New instantiates a new PruningManager
 func New(
 	dagTraversalManager model.DAGTraversalManager,
 	pruningStore model.PruningStore,

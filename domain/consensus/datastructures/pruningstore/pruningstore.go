@@ -8,7 +8,7 @@ import (
 type pruningStore struct {
 }
 
-// New instantiates a new pruningStore
+// New instantiates a new PruningStore
 func New() model.PruningStore {
 	return &pruningStore{}
 }

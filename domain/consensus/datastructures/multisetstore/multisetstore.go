@@ -8,7 +8,7 @@ import (
 type multisetStore struct {
 }
 
-// New instantiates a new multisetStore
+// New instantiates a new MultisetStore
 func New() model.MultisetStore {
 	return &multisetStore{}
 }

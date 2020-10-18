@@ -11,7 +11,7 @@ type reachabilityTree struct {
 	reachabilityDataStore model.ReachabilityDataStore
 }
 
-// New instantiates a new reachabilityTree
+// New instantiates a new ReachabilityTree
 func New(
 	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore) model.ReachabilityTree {

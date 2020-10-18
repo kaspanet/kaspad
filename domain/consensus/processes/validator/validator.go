@@ -21,7 +21,7 @@ type validator struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 }
 
-// New instantiates a new validator
+// New instantiates a new BlockAndTransactionValidator
 func New(
 	consensusStateManager model.ConsensusStateManager,
 	difficultyManager model.DifficultyManager,

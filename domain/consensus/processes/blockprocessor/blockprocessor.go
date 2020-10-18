@@ -26,7 +26,7 @@ type blockProcessor struct {
 	feeDataStore          model.FeeDataStore
 }
 
-// New instantiates a new blockProcessor
+// New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
 	databaseContext *database.DomainDBContext,

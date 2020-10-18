@@ -8,7 +8,7 @@ import (
 type utxoDiffStore struct {
 }
 
-// New instantiates a new utxoDiffStore
+// New instantiates a new UTXODiffStore
 func New() model.UTXODiffStore {
 	return &utxoDiffStore{}
 }

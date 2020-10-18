@@ -8,7 +8,7 @@ import (
 type consensusStateStore struct {
 }
 
-// New instantiates a new consensusStateStore
+// New instantiates a new ConsensusStateStore
 func New() model.ConsensusStateStore {
 	return &consensusStateStore{}
 }

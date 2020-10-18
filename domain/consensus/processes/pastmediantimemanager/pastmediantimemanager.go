@@ -10,7 +10,7 @@ type pastMedianTimeManager struct {
 	ghostdagManager model.GHOSTDAGManager
 }
 
-// New instantiates a new pastMedianTimeManager
+// New instantiates a new PastMedianTimeManager
 func New(ghostdagManager model.GHOSTDAGManager) model.PastMedianTimeManager {
 	return &pastMedianTimeManager{
 		ghostdagManager: ghostdagManager,

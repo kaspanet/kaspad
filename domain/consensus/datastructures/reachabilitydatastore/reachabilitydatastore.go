@@ -8,7 +8,7 @@ import (
 type reachabilityDataStore struct {
 }
 
-// New instantiates a new reachabilityDataStore
+// New instantiates a new ReachabilityDataStore
 func New() model.ReachabilityDataStore {
 	return &reachabilityDataStore{}
 }
