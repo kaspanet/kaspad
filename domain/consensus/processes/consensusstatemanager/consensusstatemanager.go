@@ -70,9 +70,20 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	return nil
 }
 
+// CalculateAcceptanceDataAndMultiset calculates and returns the acceptance data and the
+// multiset associated with the given blockHash
+func (csm *consensusStateManager) CalculateAcceptanceDataAndMultiset(blockHash *model.BlockGHOSTDAGData) (*model.BlockAcceptanceData, model.Multiset) {
+	return nil, nil
+}
+
+// Tips returns the current DAG tips
+func (csm *consensusStateManager) Tips() []*externalapi.DomainHash {
+	return nil
+}
+
 // VirtualData returns data on the current virtual block
 func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData, err error) {
-	panic("implement me")
+	return nil, nil
 }
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
