@@ -14,7 +14,7 @@ func New() model.BlockRelationStore {
 }
 
 // Insert inserts the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockRelationData *model.BlockRelations) error {
+func (brs *blockRelationStore) Update(dbTx model.DBTxProxy, blockHash *model.DomainHash, parentHashes []*model.DomainHash) error {
 	return nil
 }
 
