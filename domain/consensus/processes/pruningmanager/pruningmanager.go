@@ -4,8 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// PruningManager resolves and manages the current pruning point
-type PruningManager struct {
+// pruningManager resolves and manages the current pruning point
+type pruningManager struct {
 	dagTraversalManager   model.DAGTraversalManager
 	pruningStore          model.PruningStore
 	dagTopologyManager    model.DAGTopologyManager
@@ -19,8 +19,8 @@ func New(
 	pruningStore model.PruningStore,
 	dagTopologyManager model.DAGTopologyManager,
 	blockStatusStore model.BlockStatusStore,
-	consensusStateManager model.ConsensusStateManager) *PruningManager {
-	return &PruningManager{
+	consensusStateManager model.ConsensusStateManager) model.PruningManager {
+	return &pruningManager{
 		dagTraversalManager:   dagTraversalManager,
 		pruningStore:          pruningStore,
 		dagTopologyManager:    dagTopologyManager,
@@ -31,19 +31,19 @@ func New(
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash. If none found, returns false
-func (pm *PruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
-	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet) {
+func (pm *pruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
+	newPruningPoint *model.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet, err error) {
 
-	return false, nil, nil
+	return false, nil, nil, nil
 }
 
 // PruningPoint returns the hash of the current pruning point
-func (pm *PruningManager) PruningPoint() *model.DomainHash {
-	return nil
+func (pm *pruningManager) PruningPoint() (*model.DomainHash, error) {
+	return nil, nil
 }
 
 // SerializedUTXOSet returns the serialized UTXO set of the
 // current pruning point
-func (pm *PruningManager) SerializedUTXOSet() []byte {
-	return nil
+func (pm *pruningManager) SerializedUTXOSet() ([]byte, error) {
+	return nil, nil
 }

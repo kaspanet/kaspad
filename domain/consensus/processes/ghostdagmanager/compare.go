@@ -2,23 +2,53 @@ package ghostdagmanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
-func (gm *GHOSTDAGManager) findSelectedParent(parentHashes []*model.DomainHash) *model.DomainHash {
+func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) (*model.DomainHash, error) {
 	var selectedParent *model.DomainHash
 	for _, hash := range parentHashes {
-		if selectedParent == nil || gm.less(selectedParent, hash) {
+		if selectedParent == nil {
+			selectedParent = hash
+			continue
+		}
+		isHashBiggerThanSelectedParent, err := gm.less(selectedParent, hash)
+		if err != nil {
+			return nil, err
+		}
+		if isHashBiggerThanSelectedParent {
 			selectedParent = hash
 		}
 	}
-	return selectedParent
+	return selectedParent, nil
 }
 
-func (gm *GHOSTDAGManager) less(blockA, blockB *model.DomainHash) bool {
-	blockABlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockA).BlueScore
-	blockBBlueScore := gm.ghostdagDataStore.Get(gm.databaseContext, blockB).BlueScore
-	if blockABlueScore == blockBBlueScore {
-		return hashesLess(blockA, blockB)
+func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) (bool, error) {
+	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
+	if err != nil {
+		return false, err
 	}
-	return blockABlueScore < blockBBlueScore
+	blockBGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockB)
+	if err != nil {
+		return false, err
+	}
+	chosenSelectedParent := gm.ChooseSelectedParent(blockA, blockAGHOSTDAGData, blockB, blockBGHOSTDAGData)
+	return chosenSelectedParent == blockB, nil
+}
+
+func (gm *ghostdagManager) ChooseSelectedParent(
+	blockHashA *model.DomainHash, blockAGHOSTDAGData *model.BlockGHOSTDAGData,
+	blockHashB *model.DomainHash, blockBGHOSTDAGData *model.BlockGHOSTDAGData) *model.DomainHash {
+
+	blockABlueScore := blockAGHOSTDAGData.BlueScore
+	blockBBlueScore := blockBGHOSTDAGData.BlueScore
+	if blockABlueScore == blockBBlueScore {
+		if hashesLess(blockHashA, blockHashB) {
+			return blockHashB
+		}
+		return blockHashA
+	}
+	if blockABlueScore < blockBBlueScore {
+		return blockHashB
+	}
+	return blockHashA
 }
 
 func hashesLess(a, b *model.DomainHash) bool {

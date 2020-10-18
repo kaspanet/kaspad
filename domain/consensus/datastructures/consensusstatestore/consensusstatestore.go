@@ -4,21 +4,26 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// ConsensusStateStore represents a store for the current consensus state
-type ConsensusStateStore struct {
+// consensusStateStore represents a store for the current consensus state
+type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New() *ConsensusStateStore {
-	return &ConsensusStateStore{}
+func New() model.ConsensusStateStore {
+	return &consensusStateStore{}
 }
 
-// Update updates the store with the given utxoDiff
-func (css *ConsensusStateStore) Update(dbTx model.DBTxProxy, utxoDiff *model.UTXODiff) {
-
+// Update updates the store with the given consensusStateChanges
+func (css *consensusStateStore) Update(dbTx model.DBTxProxy, consensusStateChanges *model.ConsensusStateChanges) error {
+	return nil
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *ConsensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) *model.UTXOEntry {
-	return nil
+func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) (*model.UTXOEntry, error) {
+	return nil, nil
+}
+
+// Tips returns the current tips
+func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*model.DomainHash, error) {
+	return nil, nil
 }
