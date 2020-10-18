@@ -4,8 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
-// DifficultyManager provides a method to resolve the
-// difficulty value of a block
+// pastMedianTimeManager provides a method to resolve the
+// past median time of a block
 type pastMedianTimeManager struct {
 	ghostdagManager model.GHOSTDAGManager
 }
