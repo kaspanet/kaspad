@@ -1,7 +1,7 @@
 package miningmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
+	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -9,9 +9,9 @@ import (
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock
-	HandleNewBlock(block *appmessage.MsgBlock)
-	ValidateAndInsertTransaction(transaction *appmessage.MsgTx) error
+	GetBlockTemplate(payAddress util.Address, extraData []byte) *consensusmodel.DomainBlock
+	HandleNewBlock(block *consensusmodel.DomainBlock)
+	ValidateAndInsertTransaction(transaction *consensusmodel.DomainTransaction) error
 }
 
 type miningManager struct {
@@ -20,18 +20,18 @@ type miningManager struct {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock {
+func (mm *miningManager) GetBlockTemplate(payAddress util.Address, extraData []byte) *consensusmodel.DomainBlock {
 	return mm.blockTemplateBuilder.GetBlockTemplate(payAddress, extraData)
 }
 
 // HandleNewBlock handles a new block that was just added to the DAG
-func (mm *miningManager) HandleNewBlock(block *appmessage.MsgBlock) {
+func (mm *miningManager) HandleNewBlock(block *consensusmodel.DomainBlock) {
 	mm.mempool.HandleNewBlock(block)
 }
 
 // ValidateAndInsertTransaction validates the given transaction, and
 // adds it to the set of known transactions that have not yet been
 // added to any block
-func (mm *miningManager) ValidateAndInsertTransaction(transaction *appmessage.MsgTx) error {
+func (mm *miningManager) ValidateAndInsertTransaction(transaction *consensusmodel.DomainTransaction) error {
 	return mm.mempool.ValidateAndInsertTransaction(transaction)
 }

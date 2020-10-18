@@ -1,11 +1,11 @@
 package model
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
+	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/util"
 )
 
 // BlockTemplateBuilder builds block templates for miners to consume
 type BlockTemplateBuilder interface {
-	GetBlockTemplate(payAddress util.Address, extraData []byte) *appmessage.MsgBlock
+	GetBlockTemplate(payAddress util.Address, extraData []byte) *consensusmodel.DomainBlock
 }
