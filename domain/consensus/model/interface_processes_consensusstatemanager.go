@@ -8,4 +8,5 @@ type ConsensusStateManager interface {
 	CalculateAcceptanceDataAndUTXOMultiset(blockGHOSTDAGData *BlockGHOSTDAGData) (*BlockAcceptanceData, Multiset, error)
 	VirtualData() (medianTime int64, blueScore uint64, err error)
 	RestorePastUTXOSet(blockHash *DomainHash) (ReadOnlyUTXOSet, error)
+	RestoreDiffFromVirtual(utxoDiff *UTXODiff, virtualDiffParentHash *DomainHash) (*UTXODiff, error)
 }

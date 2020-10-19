@@ -71,3 +71,9 @@ func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uin
 func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *model.DomainHash) (model.ReadOnlyUTXOSet, error) {
 	return nil, nil
 }
+
+// RestoreDiffFromVirtual restores the diff between the given virtualDiffParentHash
+// and the virtual
+func (csm *consensusStateManager) RestoreDiffFromVirtual(utxoDiff *model.UTXODiff, virtualDiffParentHash *model.DomainHash) (*model.UTXODiff, error) {
+	panic("implement me")
+}
