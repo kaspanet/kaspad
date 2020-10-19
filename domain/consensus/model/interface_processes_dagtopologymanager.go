@@ -13,5 +13,5 @@ type DAGTopologyManager interface {
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 
 	Tips() ([]*DomainHash, error)
-	SetTips(tipHashes []*DomainHash) error
+	AddTip(tipHash *DomainHash) error
 }

@@ -96,7 +96,7 @@ func (dtm *dagTopologyManager) Tips() ([]*model.DomainHash, error) {
 	panic("implement me")
 }
 
-// SetTips set the current DAG tips to the given tipHashes
-func (dtm *dagTopologyManager) SetTips(tipHashes []*model.DomainHash) error {
+// AddTip adds the given tip to the current DAG tips
+func (dtm *dagTopologyManager) AddTip(tipHash *model.DomainHash) error {
 	panic("implement me")
 }
