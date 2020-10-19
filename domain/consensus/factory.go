@@ -24,6 +24,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/utxodiffmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -86,11 +87,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	pastMedianTimeManager := pastmediantimemanager.New(
 		ghostdagManager)
 	transactionValidator := transactionvalidator.New()
+	utxoDiffManager := utxodiffmanager.New()
 	blockValidator := blockvalidator.New(
 		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
-		transactionValidator)
+		transactionValidator,
+		utxoDiffManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		domainDBContext,
