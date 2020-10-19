@@ -48,7 +48,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 			maxNum = score
 		}
 	}
-	myScore = maxNum
+	myScore = maxNum + 1
 
 	/* Goal: iterate h's past and divide it to : blue, blues, reds.
 	   Notes:

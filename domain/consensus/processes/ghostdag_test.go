@@ -3,31 +3,111 @@ package processes
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
+	"reflect"
 	"testing"
 )
 
 func TestGHOSTDA(t *testing.T) {
-	t.Errorf("helo") //keep running
-	if false {
-		t.Fatalf("The test failed") // string - //stop
+	//t.Errorf("helo") //keep running
+	//if false {
+	//	t.Fatalf("The test failed") // string - //stop
+	//}
+
+	type testGhostdagData struct {
+		hash    *model.DomainHash
+		parents []*model.DomainHash
+
+		expectedBlueScore      uint64
+		expectedSelectedParent *model.DomainHash
+		expectedMergeSetBlues  []*model.DomainHash
+		expectedMergeSetReds   []*model.DomainHash
 	}
 
-	dagTopology := &DAGTopologyManagerImpl{}
-	ghostdagDataStore := &GHOSTDAGDataStoreImpl{}
-	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 10)
+	genesisHash := &model.DomainHash{}
+	dagTopology := &DAGTopologyManagerImpl{
+		parentsMap: make(map[model.DomainHash][]*model.DomainHash),
+	}
+	dagTopology.parentsMap[*genesisHash] = nil
 
+	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
+		dagMap: make(map[model.DomainHash]*model.BlockGHOSTDAGData),
+	}
+	ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
+		BlueScore:          1,
+		SelectedParent:     nil,
+		MergeSetBlues:      nil,
+		MergeSetReds:       nil,
+		BluesAnticoneSizes: nil,
+	}
+
+	dag := []testGhostdagData{
+		{
+			hash:                   &model.DomainHash{1},
+			parents:                []*model.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+			expectedMergeSetReds:   nil,
+		},
+		{
+			hash:                   &model.DomainHash{2},
+			parents:                []*model.DomainHash{{1}},
+			expectedBlueScore:      3,
+			expectedSelectedParent: &model.DomainHash{1},
+			expectedMergeSetBlues:  []*model.DomainHash{{1}},
+			expectedMergeSetReds:   nil,
+		},
+		{
+			hash:                   &model.DomainHash{3},
+			parents:                []*model.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+			expectedMergeSetReds:   nil,
+		},
+	}
+
+	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 10)
+	for i, testBlockData := range dag {
+		dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
+		ghostdagData, err := g.GHOSTDAG(testBlockData.parents)
+		if err != nil {
+			t.Fatalf("test #%d failed: GHOSTDAG error: %s", i, err)
+		}
+
+		if testBlockData.expectedBlueScore != ghostdagData.BlueScore {
+			t.Fatalf("test #%d failed: expected blue score %d but got %d", i, testBlockData.expectedBlueScore, ghostdagData.BlueScore)
+		}
+
+		if *testBlockData.expectedSelectedParent != *ghostdagData.SelectedParent {
+			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
+		}
+
+		if reflect.DeepEqual(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
+			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+		}
+
+		if reflect.DeepEqual(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
+			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+		}
+
+		err = ghostdagDataStore.Insert(nil, testBlockData.hash, ghostdagData)
+		if err != nil {
+			t.Fatalf("test #%d failed: Insert error: %s", i, err)
+		}
+	}
 }
 
 type GHOSTDAGDataStoreImpl struct {
-	dagMap map[*model.DomainHash]*model.BlockGHOSTDAGData
+	dagMap map[model.DomainHash]*model.BlockGHOSTDAGData
 }
 
 func (ds *GHOSTDAGDataStoreImpl) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) error {
-	ds.dagMap[blockHash] = blockGHOSTDAGData
+	ds.dagMap[*blockHash] = blockGHOSTDAGData
 	return nil
 }
 func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.BlockGHOSTDAGData, error) {
-	v, ok := ds.dagMap[blockHash]
+	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil
 	}
@@ -37,12 +117,12 @@ func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBContextProxy, blockHash *
 //candidateBluesAnticoneSizes = make(map[model.DomainHash]model.KType, gm.k)
 type DAGTopologyManagerImpl struct {
 	//dagMap map[*model.DomainHash] *model.BlockGHOSTDAGData
-	parentsMap map[*model.DomainHash][]*model.DomainHash
+	parentsMap map[model.DomainHash][]*model.DomainHash
 }
 
 //Implemented//
 func (dt *DAGTopologyManagerImpl) Parents(blockHash *model.DomainHash) ([]*model.DomainHash, error) {
-	v, ok := dt.parentsMap[blockHash]
+	v, ok := dt.parentsMap[*blockHash]
 	if !ok {
 		return make([]*model.DomainHash, 0), nil
 	} else {
@@ -64,7 +144,7 @@ func (dt *DAGTopologyManagerImpl) IsChildOf(blockHashA *model.DomainHash, blockH
 
 //Implemented//
 func (dt *DAGTopologyManagerImpl) IsAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
-	bParents, ok := dt.parentsMap[blockHashB]
+	bParents, ok := dt.parentsMap[*blockHashB]
 	if !ok {
 		return false, nil
 	}
