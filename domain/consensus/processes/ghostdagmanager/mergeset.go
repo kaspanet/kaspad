@@ -1,17 +1,17 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sort"
 )
 
-func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
-	blockParents []*model.DomainHash) ([]*model.DomainHash, error) {
+func (gm *ghostdagManager) mergeSet(selecteParent *externalapi.DomainHash,
+	blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	mergeSetMap := make(map[model.DomainHash]struct{}, gm.k)
-	mergeSetSlice := make([]*model.DomainHash, 0, gm.k)
-	selectedParentPast := make(map[model.DomainHash]struct{})
-	queue := []*model.DomainHash{}
+	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k)
+	mergeSetSlice := make([]*externalapi.DomainHash, 0, gm.k)
+	selectedParentPast := make(map[externalapi.DomainHash]struct{})
+	queue := []*externalapi.DomainHash{}
 	// Queueing all parents (other than the selected parent itself) for processing.
 	for _, parent := range blockParents {
 		if *parent == *selecteParent {
@@ -23,7 +23,7 @@ func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 	}
 
 	for len(queue) > 0 {
-		var current *model.DomainHash
+		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
 		// For each parent of the current block we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
@@ -64,7 +64,7 @@ func (gm *ghostdagManager) mergeSet(selecteParent *model.DomainHash,
 	return mergeSetSlice, nil
 }
 
-func (gm *ghostdagManager) sortMergeSet(mergeSetSlice []*model.DomainHash) error {
+func (gm *ghostdagManager) sortMergeSet(mergeSetSlice []*externalapi.DomainHash) error {
 	var err error
 	sort.Slice(mergeSetSlice, func(i, j int) bool {
 		if err != nil {

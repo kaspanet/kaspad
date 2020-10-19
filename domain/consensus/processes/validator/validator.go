@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // validator exposes a set of validation classes, after which
@@ -31,40 +32,40 @@ func New(
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (v *validator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
+func (v *validator) ValidateHeaderInIsolation(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *validator) ValidateHeaderInContext(block *model.DomainBlock) error {
+func (v *validator) ValidateHeaderInContext(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *validator) ValidateBodyInIsolation(block *model.DomainBlock) error {
+func (v *validator) ValidateBodyInIsolation(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *validator) ValidateBodyInContext(block *model.DomainBlock) error {
+func (v *validator) ValidateBodyInContext(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
+func (v *validator) ValidateAgainstPastUTXO(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateFinality makes sure the block does not violate finality
-func (v *validator) ValidateFinality(block *model.DomainBlock) error {
+func (v *validator) ValidateFinality(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
 // and populates it with any missing consensus data
-func (v *validator) ValidateTransactionAndPopulateWithConsensusData(transaction *model.DomainTransaction) error {
+func (v *validator) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
 	return nil
 }

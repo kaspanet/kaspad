@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -11,7 +12,7 @@ type DomainTxContext struct {
 }
 
 // StoreBlockRelation stores the given BlockRelation
-func (dtc *DomainTxContext) StoreBlockRelation(blockHash *model.DomainHash, blockRelationData *model.BlockRelations) error {
+func (dtc *DomainTxContext) StoreBlockRelation(blockHash *externalapi.DomainHash, blockRelationData *model.BlockRelations) error {
 	// TODO: return dbaccess.StoreBlockRelation(ddc.dbTx, blockHash, blockRelationData)
 	return nil
 }

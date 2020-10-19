@@ -2,6 +2,7 @@ package blockrelationstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // blockRelationStore represents a store of BlockRelations
@@ -14,11 +15,11 @@ func New() model.BlockRelationStore {
 }
 
 // Insert inserts the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Update(dbTx model.DBTxProxy, blockHash *model.DomainHash, parentHashes []*model.DomainHash) error {
+func (brs *blockRelationStore) Update(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
 	return nil
 }
 
 // Get gets the blockRelationData associated with the given blockHash
-func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.BlockRelations, error) {
+func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	return nil, nil
 }

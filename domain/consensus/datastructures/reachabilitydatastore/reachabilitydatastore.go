@@ -2,6 +2,7 @@ package reachabilitydatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // reachabilityDataStore represents a store of ReachabilityData
@@ -14,11 +15,11 @@ func New() model.ReachabilityDataStore {
 }
 
 // Insert inserts the given reachabilityData for the given blockHash
-func (rds *reachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, reachabilityData *model.ReachabilityData) error {
+func (rds *reachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) error {
 	return nil
 }
 
 // Get gets the reachabilityData associated with the given blockHash
-func (rds *reachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.ReachabilityData, error) {
+func (rds *reachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 	return nil, nil
 }

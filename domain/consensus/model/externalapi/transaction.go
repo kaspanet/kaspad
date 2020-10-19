@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 // DomainTransaction represents a Kaspa transaction
 type DomainTransaction struct {

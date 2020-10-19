@@ -2,7 +2,7 @@ package mempool
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
-	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/model"
 )
 
@@ -20,17 +20,17 @@ func New(consensus *consensus.Consensus) model.Mempool {
 }
 
 // HandleNewBlock handles a new block that was just added to the DAG
-func (mp *mempool) HandleNewBlock(block *consensusmodel.DomainBlock) {
+func (mp *mempool) HandleNewBlock(block *externalapi.DomainBlock) {
 
 }
 
 // Transactions returns all the transactions in the mempool
-func (mp *mempool) Transactions() []*consensusmodel.DomainTransaction {
+func (mp *mempool) Transactions() []*externalapi.DomainTransaction {
 	return nil
 }
 
 // ValidateAndInsertTransaction validates the given transaction, and
 // adds it to the mempool
-func (mp *mempool) ValidateAndInsertTransaction(transaction *consensusmodel.DomainTransaction) error {
+func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction) error {
 	return nil
 }

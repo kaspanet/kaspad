@@ -1,13 +1,13 @@
 package model
 
 import (
-	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // Mempool maintains a set of known transactions that
 // are intended to be mined into new blocks
 type Mempool interface {
-	HandleNewBlock(block *consensusmodel.DomainBlock)
-	Transactions() []*consensusmodel.DomainTransaction
-	ValidateAndInsertTransaction(transaction *consensusmodel.DomainTransaction) error
+	HandleNewBlock(block *externalapi.DomainBlock)
+	Transactions() []*externalapi.DomainTransaction
+	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction) error
 }
