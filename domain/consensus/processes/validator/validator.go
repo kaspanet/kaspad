@@ -63,8 +63,8 @@ func (v *validator) ValidateFinality(block *model.DomainBlock) error {
 	return nil
 }
 
-// ValidateTransactionAndCalculateFee validates the given transaction using
-// the given utxoEntries. It also returns the transaction's fee
-func (v *validator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
-	return 0, nil
+// ValidateTransactionAndPopulateWithConsensusData validates the given transaction
+// and populates it with any missing consensus data
+func (v *validator) ValidateTransactionAndPopulateWithConsensusData(transaction *model.DomainTransaction) error {
+	return nil
 }

@@ -6,10 +6,9 @@ import (
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
-	BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte, transactionSelector model.TransactionSelector) (*model.DomainBlock, error)
+	BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte, transactions []*model.DomainTransaction) (*model.DomainBlock, error)
 	ValidateAndInsertBlock(block *model.DomainBlock) error
-	UTXOByOutpoint(outpoint *model.DomainOutpoint) (*model.UTXOEntry, error)
-	ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error)
+	ValidateTransactionAndPopulateWithConsensusData(transaction *model.DomainTransaction) error
 }
 
 type consensus struct {
@@ -21,9 +20,9 @@ type consensus struct {
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) (*model.DomainBlock, error) {
+	transactions []*model.DomainTransaction) (*model.DomainBlock, error) {
 
-	return s.blockProcessor.BuildBlock(coinbaseScriptPublicKey, coinbaseExtraData, transactionSelector)
+	return s.blockProcessor.BuildBlock(coinbaseScriptPublicKey, coinbaseExtraData, transactions)
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
@@ -32,13 +31,8 @@ func (s *consensus) ValidateAndInsertBlock(block *model.DomainBlock) error {
 	return s.blockProcessor.ValidateAndInsertBlock(block)
 }
 
-// UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (s *consensus) UTXOByOutpoint(outpoint *model.DomainOutpoint) (*model.UTXOEntry, error) {
-	return s.consensusStateManager.UTXOByOutpoint(outpoint)
-}
-
-// ValidateTransaction validates the given transaction using
-// the given utxoEntries
-func (s *consensus) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
-	return s.transactionValidator.ValidateTransactionAndCalculateFee(transaction, utxoEntries)
+// ValidateTransactionAndPopulateWithConsensusData validates the given transaction
+// and populates it with any missing consensus data
+func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *model.DomainTransaction) error {
+	return s.transactionValidator.ValidateTransactionAndPopulateWithConsensusData(transaction)
 }
