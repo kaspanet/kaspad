@@ -1,9 +1,12 @@
 package ghostdagmanager
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
-func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) (*model.DomainHash, error) {
-	var selectedParent *model.DomainHash
+func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	var selectedParent *externalapi.DomainHash
 	for _, hash := range parentHashes {
 		if selectedParent == nil {
 			selectedParent = hash
@@ -20,7 +23,7 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*model.DomainHash) 
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) (bool, error) {
+func (gm *ghostdagManager) less(blockA, blockB *externalapi.DomainHash) (bool, error) {
 	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
 	if err != nil {
 		return false, err
@@ -34,8 +37,8 @@ func (gm *ghostdagManager) less(blockA, blockB *model.DomainHash) (bool, error) 
 }
 
 func (gm *ghostdagManager) ChooseSelectedParent(
-	blockHashA *model.DomainHash, blockAGHOSTDAGData *model.BlockGHOSTDAGData,
-	blockHashB *model.DomainHash, blockBGHOSTDAGData *model.BlockGHOSTDAGData) *model.DomainHash {
+	blockHashA *externalapi.DomainHash, blockAGHOSTDAGData *model.BlockGHOSTDAGData,
+	blockHashB *externalapi.DomainHash, blockBGHOSTDAGData *model.BlockGHOSTDAGData) *externalapi.DomainHash {
 
 	blockABlueScore := blockAGHOSTDAGData.BlueScore
 	blockBBlueScore := blockBGHOSTDAGData.BlueScore
@@ -51,7 +54,7 @@ func (gm *ghostdagManager) ChooseSelectedParent(
 	return blockHashA
 }
 
-func hashesLess(a, b *model.DomainHash) bool {
+func hashesLess(a, b *externalapi.DomainHash) bool {
 	// We compare the hashes backwards because Hash is stored as a little endian byte array.
 	for i := len(a) - 1; i >= 0; i-- {
 		switch {

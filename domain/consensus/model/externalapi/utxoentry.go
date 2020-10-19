@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 // UTXOEntry houses details about an individual transaction output in a utxo
 // set such as whether or not it was contained in a coinbase tx, the blue

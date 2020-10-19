@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 // DomainTransaction represents a Kaspa transaction
 type DomainTransaction struct {
@@ -11,9 +11,8 @@ type DomainTransaction struct {
 	PayloadHash  *DomainHash
 	Payload      []byte
 
-	Hash  *DomainHash
-	ID    *DomainTransactionID
-	Index int
+	Fee  uint64
+	Mass uint64
 }
 
 // DomainTransactionInput represents a Kaspa transaction input
@@ -21,6 +20,8 @@ type DomainTransactionInput struct {
 	PreviousOutpoint *DomainOutpoint
 	SignatureScript  []byte
 	Sequence         uint64
+
+	UTXOEntry *UTXOEntry
 }
 
 // DomainOutpoint represents a Kaspa transaction outpoint

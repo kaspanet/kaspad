@@ -2,6 +2,7 @@ package acceptancedatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // acceptanceDataStore represents a store of AcceptanceData
@@ -14,16 +15,16 @@ func New() model.AcceptanceDataStore {
 }
 
 // Insert inserts the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, acceptanceData *model.BlockAcceptanceData) error {
+func (ads *acceptanceDataStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) error {
 	return nil
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.BlockAcceptanceData, error) {
+func (ads *acceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockAcceptanceData, error) {
 	return nil, nil
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) error {
+func (ads *acceptanceDataStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
 	return nil
 }

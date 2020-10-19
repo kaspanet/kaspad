@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -41,13 +42,13 @@ func New(
 }
 
 // UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (csm *consensusStateManager) UTXOByOutpoint(outpoint *model.DomainOutpoint) (*model.UTXOEntry, error) {
+func (csm *consensusStateManager) UTXOByOutpoint(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
 	return nil, nil
 }
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *consensusStateManager) CalculateConsensusStateChanges(block *model.DomainBlock, isDisqualified bool) (
+func (csm *consensusStateManager) CalculateConsensusStateChanges(block *externalapi.DomainBlock, isDisqualified bool) (
 	stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges,
 	virtualGHOSTDAGData *model.BlockGHOSTDAGData, err error) {
 
@@ -63,7 +64,7 @@ func (csm *consensusStateManager) CalculateAcceptanceDataAndUTXOMultiset(blockGH
 }
 
 // Tips returns the current DAG tips
-func (csm *consensusStateManager) Tips() ([]*model.DomainHash, error) {
+func (csm *consensusStateManager) Tips() ([]*externalapi.DomainHash, error) {
 	return nil, nil
 }
 
@@ -73,6 +74,6 @@ func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uin
 }
 
 // RestoreUTXOSet calculates and returns the UTXOSet of the given blockHash
-func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *model.DomainHash) (model.ReadOnlyUTXOSet, error) {
+func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *externalapi.DomainHash) (model.ReadOnlyUTXOSet, error) {
 	return nil, nil
 }

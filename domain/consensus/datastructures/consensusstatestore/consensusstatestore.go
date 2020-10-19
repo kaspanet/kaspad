@@ -2,6 +2,7 @@ package consensusstatestore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // consensusStateStore represents a store for the current consensus state
@@ -19,11 +20,11 @@ func (css *consensusStateStore) Update(dbTx model.DBTxProxy, consensusStateChang
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) (*model.UTXOEntry, error) {
+func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
 	return nil, nil
 }
 
 // Tips returns the current tips
-func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*model.DomainHash, error) {
+func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*externalapi.DomainHash, error) {
 	return nil, nil
 }

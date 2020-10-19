@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -11,7 +12,7 @@ type DomainDBContext struct {
 }
 
 // FetchBlockRelation retrieves the BlockRelation for the given blockHash
-func (ddc *DomainDBContext) FetchBlockRelation(blockHash *model.DomainHash) (*model.BlockRelations, error) {
+func (ddc *DomainDBContext) FetchBlockRelation(blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	// TODO: return dbaccess.FetchBlockRelations(ddc.dbContext, blockHash)
 	return nil, nil
 }

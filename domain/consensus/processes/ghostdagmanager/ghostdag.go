@@ -2,6 +2,7 @@ package ghostdagmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -23,11 +24,11 @@ import (
 //    BluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
-func (gm *ghostdagManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gm *ghostdagManager) GHOSTDAG(blockParents []*externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	newBlockData := &model.BlockGHOSTDAGData{
-		MergeSetBlues:      make([]*model.DomainHash, 0),
-		MergeSetReds:       make([]*model.DomainHash, 0),
-		BluesAnticoneSizes: make(map[model.DomainHash]model.KType),
+		MergeSetBlues:      make([]*externalapi.DomainHash, 0),
+		MergeSetReds:       make([]*externalapi.DomainHash, 0),
+		BluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
 	}
 
 	selectedParent, err := gm.findSelectedParent(blockParents)
@@ -68,12 +69,12 @@ func (gm *ghostdagManager) GHOSTDAG(blockParents []*model.DomainHash) (*model.Bl
 }
 
 type chainBlockData struct {
-	hash      *model.DomainHash
+	hash      *externalapi.DomainHash
 	blockData *model.BlockGHOSTDAGData
 }
 
-func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *model.DomainHash) (
-	isBlue bool, candidateAnticoneSize model.KType, candidateBluesAnticoneSizes map[model.DomainHash]model.KType, err error) {
+func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *externalapi.DomainHash) (
+	isBlue bool, candidateAnticoneSize model.KType, candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType, err error) {
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
@@ -81,7 +82,7 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 		return false, 0, nil, nil
 	}
 
-	candidateBluesAnticoneSizes = make(map[model.DomainHash]model.KType, gm.k)
+	candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]model.KType, gm.k)
 
 	// Iterate over all blocks in the blue set of newNode that are not in the past
 	// of blueCandidate, and check for each one of them if blueCandidate potentially
@@ -120,8 +121,8 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 }
 
 func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.BlockGHOSTDAGData,
-	chainBlock chainBlockData, blueCandidate *model.DomainHash,
-	candidateBluesAnticoneSizes map[model.DomainHash]model.KType,
+	chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
+	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType,
 	candidateAnticoneSize *model.KType) (isBlue, isRed bool, err error) {
 
 	// If blueCandidate is in the future of chainBlock, it means
@@ -184,7 +185,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (gm *ghostdagManager) blueAnticoneSize(block *model.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes[*block]; ok {
 			return blueAnticoneSize, nil
