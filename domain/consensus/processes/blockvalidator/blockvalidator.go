@@ -12,6 +12,7 @@ type blockValidator struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
 	utxoDiffManager       model.UTXODiffManager
+	acceptanceManager     model.AcceptanceManager
 }
 
 // New instantiates a new BlockValidator
@@ -20,7 +21,8 @@ func New(
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
-	utxoDiffManager model.UTXODiffManager) model.BlockValidator {
+	utxoDiffManager model.UTXODiffManager,
+	acceptanceManager model.AcceptanceManager) model.BlockValidator {
 
 	return &blockValidator{
 		consensusStateManager: consensusStateManager,
@@ -28,6 +30,7 @@ func New(
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
 		utxoDiffManager:       utxoDiffManager,
+		acceptanceManager:     acceptanceManager,
 	}
 }
 

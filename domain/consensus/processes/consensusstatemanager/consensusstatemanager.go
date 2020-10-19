@@ -16,6 +16,7 @@ type consensusStateManager struct {
 	utxoDiffStore       model.UTXODiffStore
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
+	acceptanceManager   model.AcceptanceManager
 }
 
 // New instantiates a new ConsensusStateManager
@@ -26,7 +27,8 @@ func New(
 	multisetStore model.MultisetStore,
 	utxoDiffStore model.UTXODiffStore,
 	blockStore model.BlockStore,
-	ghostdagManager model.GHOSTDAGManager) model.ConsensusStateManager {
+	ghostdagManager model.GHOSTDAGManager,
+	acceptanceManager model.AcceptanceManager) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams: dagParams,
@@ -37,6 +39,7 @@ func New(
 		utxoDiffStore:       utxoDiffStore,
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
+		acceptanceManager:   acceptanceManager,
 	}
 }
 
@@ -52,14 +55,6 @@ func (csm *consensusStateManager) CalculateConsensusStateChanges(block *model.Do
 	virtualGHOSTDAGData *model.BlockGHOSTDAGData, err error) {
 
 	return nil, nil, nil, nil
-}
-
-// CalculateAcceptanceDataAndUTXOMultiset calculates and returns the acceptance data and the
-// multiset associated with the given blockHash
-func (csm *consensusStateManager) CalculateAcceptanceDataAndUTXOMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
-	*model.BlockAcceptanceData, model.Multiset, error) {
-
-	return nil, nil, nil
 }
 
 // VirtualData returns the medianTime and blueScore of the current virtual block

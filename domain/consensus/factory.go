@@ -13,6 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/acceptancemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
@@ -68,6 +69,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
+	utxoDiffManager := utxodiffmanager.New()
+	acceptanceManager := acceptancemanager.New(utxoDiffManager)
 	consensusStateManager := consensusstatemanager.New(
 		domainDBContext,
 		dagParams,
@@ -75,7 +78,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		multisetStore,
 		utxoDiffStore,
 		blockStore,
-		ghostdagManager)
+		ghostdagManager,
+		acceptanceManager)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningStore,
@@ -87,13 +91,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	pastMedianTimeManager := pastmediantimemanager.New(
 		ghostdagManager)
 	transactionValidator := transactionvalidator.New()
-	utxoDiffManager := utxodiffmanager.New()
 	blockValidator := blockvalidator.New(
 		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
-		utxoDiffManager)
+		utxoDiffManager,
+		acceptanceManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		domainDBContext,

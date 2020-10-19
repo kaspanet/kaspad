@@ -15,12 +15,12 @@ func New() model.UTXODiffManager {
 }
 
 // StoreUTXODiff stores the given utxoDiff for the given blockHash
-func (u utxoDiffManager) StoreUTXODiff(blockHash *model.DomainHash, utxoDiff *model.UTXODiff) error {
+func (u *utxoDiffManager) StoreUTXODiff(blockHash *model.DomainHash, utxoDiff *model.UTXODiff) error {
 	panic("implement me")
 }
 
 // RestoreBlockDiffFromVirtualDiffParent restores the UTXO diff of
 // the block for the given blockHash.
-func (u utxoDiffManager) RestoreBlockDiffFromVirtualDiffParent(blockHash *model.DomainHash) (utxoDiff *model.UTXODiff, virtualDiffParentHash *model.DomainHash, err error) {
+func (u *utxoDiffManager) RestoreBlockDiffFromVirtualDiffParent(blockHash *model.DomainHash) (utxoDiff *model.UTXODiff, virtualDiffParentHash *model.DomainHash, err error) {
 	panic("implement me")
 }
