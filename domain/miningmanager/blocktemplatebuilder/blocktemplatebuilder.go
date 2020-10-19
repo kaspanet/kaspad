@@ -21,6 +21,6 @@ func New(consensus *consensus.Consensus, mempool miningmanagerapi.Mempool) minin
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (btb *blockTemplateBuilder) GetBlockTemplate(payAddress miningmanagerapi.DomainAddress, extraData []byte) *consensusexternalapi.DomainBlock {
+func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.CoinbaseData) *consensusexternalapi.DomainBlock {
 	return nil
 }

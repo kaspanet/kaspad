@@ -65,7 +65,7 @@ func New(
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *blockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
+func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.CoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	return nil, nil
