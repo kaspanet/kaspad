@@ -1354,3 +1354,136 @@ func TestPastUTXOMultiSet(t *testing.T) {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed")
 	}
 }
+
+func TestDAGTraversal(t *testing.T) {
+	contain := func(slice []*daghash.Hash, hash *daghash.Hash) bool {
+		for _, item := range slice {
+			if item.IsEqual(hash) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestDAGTraversal", true, Config{
+		DAGParams: &dagconfig.SimnetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// generate block A parents
+	parentBlockAHashes := []*daghash.Hash{}
+	for i := 0; i < 5; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+		parentBlockAHashes = append(parentBlockAHashes, block.BlockHash())
+	}
+	daghash.Sort(parentBlockAHashes)
+	// create block A
+	msgBlockA := PrepareAndProcessBlockForTest(t, dag, parentBlockAHashes, nil)
+	blockA, ok := dag.index.LookupNode(msgBlockA.BlockHash())
+	if !ok {
+		t.Fatalf("block %s was not found", msgBlockA.BlockHash())
+	}
+	// generate block A children
+	childBlockAHashes := []*daghash.Hash{}
+	for i := 0; i < 7; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{msgBlockA.BlockHash()}, nil)
+		childBlockAHashes = append(childBlockAHashes, block.BlockHash())
+	}
+	daghash.Sort(childBlockAHashes)
+	// check parents of block A
+	if !daghash.AreEqual(parentBlockAHashes, blockA.parents.hashes()) {
+		t.Fatalf("block %s parents do not match", msgBlockA.BlockHash())
+	}
+	// check children of block A
+	if !daghash.AreEqual(childBlockAHashes, blockA.children.hashes()) {
+		t.Fatalf("block %s children do not match", msgBlockA.BlockHash())
+	}
+	// check children for parent block A
+	for child := range blockA.children {
+		if !contain(child.ParentHashes(), blockA.hash) {
+			t.Fatalf("block %s parent doesn't match", child.hash)
+		}
+	}
+	// check parents for child block A
+	for parent := range blockA.parents {
+		if !contain(parent.children.hashes(), blockA.hash) {
+			t.Fatalf("block %s child doesn't match", parent.hash)
+		}
+	}
+	// generate block B parents
+	parentBlockBHashes := []*daghash.Hash{}
+	for i := 0; i < 3; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{dag.genesis.hash}, nil)
+		parentBlockBHashes = append(parentBlockBHashes, block.BlockHash())
+	}
+	sharedParents := []*daghash.Hash{parentBlockAHashes[0], parentBlockAHashes[1]}
+	parentBlockBHashes = append(parentBlockBHashes, sharedParents...)
+	daghash.Sort(parentBlockBHashes)
+	// create block B
+	msgBlockB := PrepareAndProcessBlockForTest(t, dag, parentBlockBHashes, nil)
+	blockB, ok := dag.index.LookupNode(msgBlockB.BlockHash())
+	if !ok {
+		t.Fatalf("block %s was not found", msgBlockB.BlockHash())
+	}
+	// generate block B children
+	childBlockBHashes := []*daghash.Hash{}
+	for i := 0; i < 7; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{msgBlockB.BlockHash()}, nil)
+		childBlockBHashes = append(childBlockBHashes, block.BlockHash())
+	}
+	sharedChildren := []*daghash.Hash{}
+	for i := 0; i < 2; i++ {
+		block := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{msgBlockA.BlockHash(), msgBlockB.BlockHash()}, nil)
+		sharedChildren = append(sharedChildren, block.BlockHash())
+	}
+	childBlockBHashes = append(childBlockBHashes, sharedChildren...)
+	daghash.Sort(childBlockBHashes)
+	// check parents of block B
+	if !daghash.AreEqual(parentBlockBHashes, blockB.parents.hashes()) {
+		t.Fatalf("block %s parents do not match", msgBlockB.BlockHash())
+	}
+	// check children of block B
+	if !daghash.AreEqual(childBlockBHashes, blockB.children.hashes()) {
+		t.Fatalf("block %s children do not match", msgBlockB.BlockHash())
+	}
+	// check children for parent block B
+	for child := range blockB.children {
+		if !contain(child.ParentHashes(), blockB.hash) {
+			t.Fatalf("block %s parent doesn't match", child.hash)
+		}
+	}
+	// check parents for child block B
+	for parent := range blockB.parents {
+		if !contain(parent.children.hashes(), blockB.hash) {
+			t.Fatalf("block %s child doesn't match", parent.hash)
+		}
+	}
+	// check children of block A are not children of block B except shared
+	for child := range blockA.children {
+		if contain(sharedChildren, child.hash) != contain(blockB.children.hashes(), child.hash) {
+			t.Fatalf("block %s is child of block A and B", child.hash)
+		}
+	}
+	// check children of block B are not children of block A except shared
+	for child := range blockB.children {
+		if contain(sharedChildren, child.hash) != contain(blockA.children.hashes(), child.hash) {
+			t.Fatalf("block %s is child of block A and B", child.hash)
+		}
+	}
+	// check parents of block A are not parents of block B except shared
+	for parent := range blockA.parents {
+		if contain(sharedParents, parent.hash) != contain(blockB.parents.hashes(), parent.hash) {
+			t.Fatalf("block %s is parent of block A and B", parent.hash)
+		}
+	}
+	// check parents of block B are not parents of block A except shared
+	for parent := range blockB.parents {
+		if contain(sharedParents, parent.hash) != contain(blockA.parents.hashes(), parent.hash) {
+			t.Fatalf("block %s is parent of block A and B", parent.hash)
+		}
+	}
+}
