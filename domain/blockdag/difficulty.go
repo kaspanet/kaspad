@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/util/bigintpool"
 	"github.com/kaspanet/kaspad/util/mstime"
 
@@ -13,9 +14,9 @@ import (
 
 // requiredDifficulty calculates the required difficulty for a
 // block given its bluest parent.
-func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime mstime.Time) uint32 {
+func (dag *BlockDAG) requiredDifficulty(bluestParent *blocknode.Node, newBlockTime mstime.Time) uint32 {
 	// Genesis block.
-	if dag.Params.DisableDifficultyAdjustment || bluestParent == nil || bluestParent.blueScore < dag.difficultyAdjustmentWindowSize+1 {
+	if dag.Params.DisableDifficultyAdjustment || bluestParent == nil || bluestParent.BlueScore < dag.difficultyAdjustmentWindowSize+1 {
 		return dag.powMaxBits
 	}
 
@@ -56,6 +57,6 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ms
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) NextRequiredDifficulty(timestamp mstime.Time) uint32 {
-	difficulty := dag.requiredDifficulty(dag.virtual.parents.bluest(), timestamp)
+	difficulty := dag.requiredDifficulty(dag.virtual.Parents.Bluest(), timestamp)
 	return difficulty
 }

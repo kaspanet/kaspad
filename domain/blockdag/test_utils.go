@@ -23,6 +23,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/opt"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -214,18 +215,18 @@ func opTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 // Therefore, this might skew the test results in a way where blocks that should have been status UTXOPendingVerification have
 // some other status.
 func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactions []*appmessage.MsgTx) (*appmessage.MsgBlock, error) {
-	parents := newBlockSet()
+	parents := blocknode.NewSet()
 	for _, hash := range parentHashes {
-		parent, ok := dag.index.LookupNode(hash)
+		parent, ok := dag.Index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("parent %s was not found", hash)
 		}
-		parents.add(parent)
+		parents.Add(parent)
 	}
 	node, _ := dag.newBlockNode(nil, parents)
 
-	if dag.index.BlockNodeStatus(node.selectedParent) == statusUTXOPendingVerification {
-		err := resolveNodeStatusForTest(node.selectedParent)
+	if dag.Index.BlockNodeStatus(node.SelectedParent) == blocknode.StatusUTXOPendingVerification {
+		err := resolveNodeStatusForTest(dag, node.SelectedParent)
 		if err != nil {
 			return nil, err
 		}
@@ -238,7 +239,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 
 	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 
-	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := dag.calcMultiset(node, txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +264,7 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		return nil, err
 	}
 
-	blockTransactions[0], err = node.expectedCoinbaseTransaction(
+	blockTransactions[0], err = dag.expectedCoinbaseTransaction(node,
 		txsAcceptanceData, coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
@@ -292,30 +293,30 @@ func PrepareBlockForTest(dag *BlockDAG, parentHashes []*daghash.Hash, transactio
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
-	timestamp := node.parents.bluest().PastMedianTime()
+	timestamp := dag.PastMedianTime(node.Parents.Bluest())
 	msgBlock.Header = appmessage.BlockHeader{
 		Version: blockVersion,
 
 		// We use parents.hashes() and not parentHashes because parents.hashes() is sorted.
-		ParentHashes:         parents.hashes(),
+		ParentHashes:         parents.Hashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: calculatedAccepetedIDMerkleRoot,
 		UTXOCommitment:       &calculatedMultisetHash,
 		Timestamp:            timestamp,
-		Bits:                 dag.requiredDifficulty(node.parents.bluest(), timestamp),
+		Bits:                 dag.requiredDifficulty(node.Parents.Bluest(), timestamp),
 	}
 
 	return &msgBlock, nil
 }
 
-func resolveNodeStatusForTest(node *blockNode) error {
-	dbTx, err := node.dag.databaseContext.NewTx()
+func resolveNodeStatusForTest(dag *BlockDAG, node *blocknode.Node) error {
+	dbTx, err := dag.DatabaseContext.NewTx()
 	if err != nil {
 		return err
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	err = node.dag.resolveNodeStatus(node, dbTx)
+	err = dag.resolveNodeStatus(node, dbTx)
 	if err != nil {
 		return err
 	}

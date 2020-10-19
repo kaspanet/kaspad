@@ -5,6 +5,8 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"reflect"
 	"testing"
 
@@ -14,8 +16,8 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-func buildNode(t *testing.T, dag *BlockDAG, parents blockSet) *blockNode {
-	block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+func buildNode(t *testing.T, dag *BlockDAG, parents blocknode.Set) *blocknode.Node {
+	block, err := PrepareBlockForTest(dag, parents.Hashes(), nil)
 	if err != nil {
 		t.Fatalf("error in PrepareBlockForTest: %s", err)
 	}
@@ -55,12 +57,12 @@ func TestTips(t *testing.T) {
 	//  \    X
 	//   <- 4 <- 6
 	node0 := dag.genesis
-	node1 := buildNode(t, dag, blockSetFromSlice(node0))
-	node2 := buildNode(t, dag, blockSetFromSlice(node1))
-	node3 := buildNode(t, dag, blockSetFromSlice(node0))
-	node4 := buildNode(t, dag, blockSetFromSlice(node0))
-	node5 := buildNode(t, dag, blockSetFromSlice(node3, node4))
-	node6 := buildNode(t, dag, blockSetFromSlice(node3, node4))
+	node1 := buildNode(t, dag, blocknode.SetFromSlice(node0))
+	node2 := buildNode(t, dag, blocknode.SetFromSlice(node1))
+	node3 := buildNode(t, dag, blocknode.SetFromSlice(node0))
+	node4 := buildNode(t, dag, blocknode.SetFromSlice(node0))
+	node5 := buildNode(t, dag, blocknode.SetFromSlice(node3, node4))
+	node6 := buildNode(t, dag, blocknode.SetFromSlice(node3, node4))
 
 	// Given an empty VirtualBlock, each of the following test cases will:
 	// Set its tips to tipsToSet
@@ -69,37 +71,37 @@ func TestTips(t *testing.T) {
 	// Call .selectedTip() on it and compare the result to expectedSelectedParent
 	tests := []struct {
 		name                   string
-		tipsToSet              []*blockNode
-		tipsToAdd              []*blockNode
-		expectedTips           blockSet
-		expectedSelectedParent *blockNode
+		tipsToSet              []*blocknode.Node
+		tipsToAdd              []*blocknode.Node
+		expectedTips           blocknode.Set
+		expectedSelectedParent *blocknode.Node
 	}{
 		{
 			name:                   "virtual with genesis tip",
-			tipsToSet:              []*blockNode{node0},
-			tipsToAdd:              []*blockNode{},
-			expectedTips:           blockSetFromSlice(node0),
+			tipsToSet:              []*blocknode.Node{node0},
+			tipsToAdd:              []*blocknode.Node{},
+			expectedTips:           blocknode.SetFromSlice(node0),
 			expectedSelectedParent: node0,
 		},
 		{
 			name:                   "virtual with genesis tip, add child of genesis",
-			tipsToSet:              []*blockNode{node0},
-			tipsToAdd:              []*blockNode{node1},
-			expectedTips:           blockSetFromSlice(node1),
+			tipsToSet:              []*blocknode.Node{node0},
+			tipsToAdd:              []*blocknode.Node{node1},
+			expectedTips:           blocknode.SetFromSlice(node1),
 			expectedSelectedParent: node1,
 		},
 		{
 			name:                   "virtual with genesis, add a full DAG",
-			tipsToSet:              []*blockNode{node0},
-			tipsToAdd:              []*blockNode{node1, node2, node3, node4, node5, node6},
-			expectedTips:           blockSetFromSlice(node2, node5, node6),
+			tipsToSet:              []*blocknode.Node{node0},
+			tipsToAdd:              []*blocknode.Node{node1, node2, node3, node4, node5, node6},
+			expectedTips:           blocknode.SetFromSlice(node2, node5, node6),
 			expectedSelectedParent: node6,
 		},
 	}
 
 	for _, test := range tests {
 		// Set the tips. This will be the initial state
-		_, _, err := dag.setTips(blockSetFromSlice(test.tipsToSet...))
+		_, _, err := dag.setTips(blocknode.SetFromSlice(test.tipsToSet...))
 		if err != nil {
 			t.Fatalf("%s: Error setting tips: %+v", test.name, err)
 		}
@@ -121,7 +123,7 @@ func TestTips(t *testing.T) {
 		}
 
 		// Ensure that the virtual block's selectedParent is now equal to expectedSelectedParent
-		resultSelectedTip := dag.virtual.selectedParent
+		resultSelectedTip := dag.virtual.SelectedParent
 		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedParent) {
 			t.Errorf("%s: unexpected selected tip. "+
 				"Expected: %v, got: %v.", test.name, test.expectedSelectedParent, resultSelectedTip)
@@ -141,83 +143,83 @@ func TestSelectedPath(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	initialPath := blockSetFromSlice(dag.genesis)
+	initialPath := blocknode.SetFromSlice(dag.genesis)
 	tip := dag.genesis
 	for i := 0; i < 5; i++ {
-		tipBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tip.hash}, nil)
+		tipBlock := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{tip.Hash}, nil)
 
 		var ok bool
-		tip, ok = dag.index.LookupNode(tipBlock.BlockHash())
+		tip, ok = dag.Index.LookupNode(tipBlock.BlockHash())
 		if !ok {
 			t.Fatalf("Couldn't lookup node that was just added")
 		}
 
-		initialPath.add(tip)
+		initialPath.Add(tip)
 	}
 	initialTip := tip
 
-	firstPath := initialPath.clone()
+	firstPath := initialPath.Clone()
 	for i := 0; i < 5; i++ {
-		tip = buildNode(t, dag, blockSetFromSlice(tip))
-		firstPath.add(tip)
+		tip = buildNode(t, dag, blocknode.SetFromSlice(tip))
+		firstPath.Add(tip)
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
-	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, firstPath) {
+	if !reflect.DeepEqual(dag.virtual.SelectedParentChainSet, firstPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v",
-			dag.virtual.selectedParent, firstPath)
+			dag.virtual.SelectedParent, firstPath)
 	}
-	// We expect that selectedParentChainSlice should have all the blocks we've added so far
+	// We expect that SelectedParentChainSlice should have all the blocks we've added so far
 	wantLen := 11
-	gotLen := len(dag.virtual.selectedParentChainSlice)
+	gotLen := len(dag.virtual.SelectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have the expected length. got %d, want %d",
+		t.Fatalf("TestSelectedPath: SelectedParentChainSlice doesn't have the expected length. got %d, want %d",
 			gotLen, wantLen)
 	}
 
-	secondPath := initialPath.clone()
+	secondPath := initialPath.Clone()
 	tip = initialTip
 	for i := 0; i < 100; i++ {
-		tip = buildNode(t, dag, blockSetFromSlice(tip))
-		secondPath.add(tip)
+		tip = buildNode(t, dag, blocknode.SetFromSlice(tip))
+		secondPath.Add(tip)
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
-	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
+	if !reflect.DeepEqual(dag.virtual.SelectedParentChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v",
-			dag.virtual.selectedParent, firstPath)
+			dag.virtual.SelectedParent, firstPath)
 	}
-	// We expect that selectedParentChainSlice should have all the blocks we've added so far except the old chain
+	// We expect that SelectedParentChainSlice should have all the blocks we've added so far except the old chain
 	wantLen = 106
-	gotLen = len(dag.virtual.selectedParentChainSlice)
+	gotLen = len(dag.virtual.SelectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have"+
+		t.Fatalf("TestSelectedPath: SelectedParentChainSlice doesn't have"+
 			"the expected length, possibly because it didn't handle the re-org as expected. got %d, want %d", gotLen, wantLen)
 	}
 
 	tip = initialTip
 	for i := 0; i < 3; i++ {
-		tip = buildNode(t, dag, blockSetFromSlice(tip))
+		tip = buildNode(t, dag, blocknode.SetFromSlice(tip))
 	}
 	// Because we added a very short chain, the selected path should not be affected.
-	if !reflect.DeepEqual(dag.virtual.selectedParentChainSet, secondPath) {
+	if !reflect.DeepEqual(dag.virtual.SelectedParentChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v",
-			dag.virtual.selectedParent, firstPath)
+			dag.virtual.SelectedParent, firstPath)
 	}
-	// We expect that selectedParentChainSlice not to change
+	// We expect that SelectedParentChainSlice not to change
 	wantLen = 106
-	gotLen = len(dag.virtual.selectedParentChainSlice)
+	gotLen = len(dag.virtual.SelectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't"+
+		t.Fatalf("TestSelectedPath: SelectedParentChainSlice doesn't"+
 			"have the expected length, possibly due to unexpected did an unexpected re-org. got %d, want %d", gotLen, wantLen)
 	}
 
 	// We call updateSelectedParentSet manually without updating the tips, to check if it panics
-	virtual2 := newVirtualBlock(dag, nil)
+	virtual2 := newVirtualBlock(utxo.NewFullUTXOSetFromContext(dag.DatabaseContext, dag.maxUTXOCacheSize), nil, dag.Now().UnixMilliseconds())
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatalf("updateSelectedParentSet didn't panic")
 		}
 	}()
-	virtual2.updateSelectedParentSet(buildNode(t, dag, blockSetFromSlice()))
+	virtual2.updateSelectedParentSet(buildNode(t, dag, blocknode.SetFromSlice()))
 }
 
 // TestChainUpdates makes sure the chainUpdates from setTips are correct:
@@ -241,28 +243,28 @@ func TestChainUpdates(t *testing.T) {
 	genesis := dag.genesis
 
 	// Create the main-chain to be removed
-	var toBeRemovedNodes []*blockNode
+	var toBeRemovedNodes []*blocknode.Node
 	toBeRemovedTip := genesis
 	for i := 0; i < 9; i++ {
-		toBeRemovedTip = buildNode(t, dag, blockSetFromSlice(toBeRemovedTip))
+		toBeRemovedTip = buildNode(t, dag, blocknode.SetFromSlice(toBeRemovedTip))
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
 
 	// Create the side-chain to be added
-	var toBeAddedNodes []*blockNode
+	var toBeAddedNodes []*blocknode.Node
 	toBeAddedTip := genesis
 	for i := 0; i < 8; i++ {
-		toBeAddedTip = buildNode(t, dag, blockSetFromSlice(toBeAddedTip))
+		toBeAddedTip = buildNode(t, dag, blocknode.SetFromSlice(toBeAddedTip))
 		toBeAddedNodes = append(toBeAddedNodes, toBeAddedTip)
 	}
 
-	err = resolveNodeStatusForTest(toBeAddedTip)
+	err = resolveNodeStatusForTest(dag, toBeAddedTip)
 	if err != nil {
 		t.Fatalf("Error resolving status of toBeAddedTip: %+v", err)
 	}
 
 	// Set the virtual tip to be the tip of the toBeAdded side-chain
-	_, chainUpdates, err := dag.setTips(blockSetFromSlice(toBeAddedTip))
+	_, chainUpdates, err := dag.setTips(blocknode.SetFromSlice(toBeAddedTip))
 	if err != nil {
 		t.Fatalf("Error setting tips: %+v", err)
 	}
@@ -274,9 +276,9 @@ func TestChainUpdates(t *testing.T) {
 	}
 	for i, removedHash := range chainUpdates.removedChainBlockHashes {
 		correspondingRemovedNode := toBeRemovedNodes[len(toBeRemovedNodes)-1-i]
-		if !removedHash.IsEqual(correspondingRemovedNode.hash) {
+		if !removedHash.IsEqual(correspondingRemovedNode.Hash) {
 			t.Fatalf("TestChainUpdates: wrong removed hash. "+
-				"Got: %s, want: %s", removedHash, correspondingRemovedNode.hash)
+				"Got: %s, want: %s", removedHash, correspondingRemovedNode.Hash)
 		}
 	}
 
@@ -287,9 +289,9 @@ func TestChainUpdates(t *testing.T) {
 	}
 	for i, addedHash := range chainUpdates.addedChainBlockHashes {
 		correspondingAddedNode := toBeAddedNodes[i]
-		if !addedHash.IsEqual(correspondingAddedNode.hash) {
+		if !addedHash.IsEqual(correspondingAddedNode.Hash) {
 			t.Fatalf("TestChainUpdates: wrong added hash. "+
-				"Got: %s, want: %s", addedHash, correspondingAddedNode.hash)
+				"Got: %s, want: %s", addedHash, correspondingAddedNode.Hash)
 		}
 	}
 }

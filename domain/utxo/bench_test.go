@@ -1,4 +1,4 @@
-package blockdag
+package utxo
 
 import (
 	"strconv"
@@ -8,12 +8,12 @@ import (
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-func generateNewUTXOEntry(index uint64) (appmessage.Outpoint, *UTXOEntry) {
+func generateNewUTXOEntry(index uint64) (appmessage.Outpoint, *Entry) {
 	txSuffix := strconv.FormatUint(index, 10)
 	txStr := "0000000000000000000000000000000000000000000000000000000000000000"
 	txID, _ := daghash.NewTxIDFromStr(txStr[0:len(txStr)-len(txSuffix)] + txSuffix)
 	outpoint := *appmessage.NewOutpoint(txID, 0)
-	utxoEntry := NewUTXOEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
+	utxoEntry := NewEntry(&appmessage.TxOut{ScriptPubKey: []byte{}, Value: index}, true, index)
 
 	return outpoint, utxoEntry
 }
@@ -23,7 +23,7 @@ func generateUtxoCollection(startIndex uint64, numItems uint64) utxoCollection {
 
 	for i := uint64(0); i < numItems; i++ {
 		outpoint, utxoEntry := generateNewUTXOEntry(startIndex + i)
-		uc.add(outpoint, utxoEntry)
+		uc.Add(outpoint, utxoEntry)
 	}
 
 	return uc
@@ -43,27 +43,27 @@ func BenchmarkDiffFrom(b *testing.B) {
 	uc4 := generateUtxoCollection(startIndex, numOfEntries)
 
 	tests := []struct {
-		this  *UTXODiff
-		other *UTXODiff
+		this  *Diff
+		other *Diff
 	}{
 		{
-			this: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc2,
+			this: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc2,
 			},
-			other: &UTXODiff{
-				toAdd:    uc3,
-				toRemove: uc4,
+			other: &Diff{
+				ToAdd:    uc3,
+				ToRemove: uc4,
 			},
 		},
 		{
-			this: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc2,
+			this: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc2,
 			},
-			other: &UTXODiff{
-				toAdd:    uc3,
-				toRemove: uc1,
+			other: &Diff{
+				ToAdd:    uc3,
+				ToRemove: uc1,
 			},
 		},
 	}
@@ -78,7 +78,7 @@ func BenchmarkDiffFrom(b *testing.B) {
 	}
 }
 
-// BenchmarkWithDiff performs a benchmark on how long it takes to apply provided diff to this diff
+// BenchmarkWithDiff performs a benchmark on how long it takes to apply provided Diff to this Diff
 func BenchmarkWithDiff(b *testing.B) {
 	var numOfEntries uint64 = 100
 	var startIndex uint64 = 0
@@ -91,37 +91,37 @@ func BenchmarkWithDiff(b *testing.B) {
 	uc4 := generateUtxoCollection(startIndex, numOfEntries)
 
 	tests := []struct {
-		this  *UTXODiff
-		other *UTXODiff
+		this  *Diff
+		other *Diff
 	}{
 		{
-			this: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc2,
+			this: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc2,
 			},
-			other: &UTXODiff{
-				toAdd:    uc3,
-				toRemove: uc4,
-			},
-		},
-		{
-			this: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc2,
-			},
-			other: &UTXODiff{
-				toAdd:    uc3,
-				toRemove: uc2,
+			other: &Diff{
+				ToAdd:    uc3,
+				ToRemove: uc4,
 			},
 		},
 		{
-			this: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc2,
+			this: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc2,
 			},
-			other: &UTXODiff{
-				toAdd:    uc1,
-				toRemove: uc3,
+			other: &Diff{
+				ToAdd:    uc3,
+				ToRemove: uc2,
+			},
+		},
+		{
+			this: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc2,
+			},
+			other: &Diff{
+				ToAdd:    uc1,
+				ToRemove: uc3,
 			},
 		},
 	}

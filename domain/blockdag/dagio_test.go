@@ -7,6 +7,8 @@ package blockdag
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"reflect"
 	"testing"
 
@@ -54,29 +56,29 @@ func hexToBytes(s string) []byte {
 func TestUTXOSerialization(t *testing.T) {
 	t.Parallel()
 
+	txOut1 := &appmessage.TxOut{
+		Value:        5000000000,
+		ScriptPubKey: hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+	}
+
+	txOut12 := &appmessage.TxOut{
+		Value:        1000000,
+		ScriptPubKey: hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+	}
+
 	tests := []struct {
 		name       string
-		entry      *UTXOEntry
+		entry      *utxo.Entry
 		serialized []byte
 	}{
 		{
-			name: "blue score 1, coinbase",
-			entry: &UTXOEntry{
-				amount:         5000000000,
-				scriptPubKey:   hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
-				blockBlueScore: 1,
-				packedFlags:    tfCoinbase,
-			},
+			name:       "blue score 1, coinbase",
+			entry:      utxo.NewEntry(txOut1, true, 1),
 			serialized: hexToBytes("01000000000000000100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 		},
 		{
-			name: "blue score 100001, not coinbase",
-			entry: &UTXOEntry{
-				amount:         1000000,
-				scriptPubKey:   hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
-				blockBlueScore: 100001,
-				packedFlags:    0,
-			},
+			name:       "blue score 100001, not coinbase",
+			entry:      utxo.NewEntry(txOut12, false, 100001),
 			serialized: hexToBytes("a1860100000000000040420f00000000001976a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 		},
 	}
@@ -84,7 +86,7 @@ func TestUTXOSerialization(t *testing.T) {
 	for i, test := range tests {
 		// Ensure the utxo entry serializes to the expected value.
 		w := &bytes.Buffer{}
-		err := serializeUTXOEntry(w, test.entry)
+		err := utxo.SerializeUTXOEntry(w, test.entry)
 		if err != nil {
 			t.Errorf("serializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
@@ -100,7 +102,7 @@ func TestUTXOSerialization(t *testing.T) {
 		}
 
 		// Deserialize to a utxo entry.gotBytes
-		utxoEntry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
+		utxoEntry, err := utxo.DeserializeUTXOEntry(bytes.NewReader(test.serialized))
 		if err != nil {
 			t.Errorf("deserializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
@@ -159,7 +161,7 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	for _, test := range tests {
 		// Ensure the expected error type is returned and the returned
 		// entry is nil.
-		entry, err := deserializeUTXOEntry(bytes.NewReader(test.serialized))
+		entry, err := utxo.DeserializeUTXOEntry(bytes.NewReader(test.serialized))
 		if err == nil {
 			t.Errorf("deserializeUTXOEntry (%s): didn't return an error",
 				test.name)

@@ -13,6 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
+
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
@@ -24,11 +27,11 @@ import (
 )
 
 // loadUTXOSet returns a utxo view loaded from a file.
-func loadUTXOSet(filename string) (UTXOSet, error) {
+func loadUTXOSet(filename string) (utxo.Set, error) {
 	// The utxostore file format is:
-	// <tx hash><output index><serialized utxo len><serialized utxo>
+	// <tx hash><output Index><serialized utxo len><serialized utxo>
 	//
-	// The output index and serialized utxo len are little endian uint32s
+	// The output Index and serialized utxo len are little endian uint32s
 	// and the serialized utxo uses the format described in dagio.go.
 
 	filename = filepath.Join("testdata", filename)
@@ -46,7 +49,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 	}
 	defer fi.Close()
 
-	utxoSet := NewFullUTXOSet()
+	utxoSet := utxo.NewFullUTXOSet()
 	for {
 		// Tx ID of the utxo entry.
 		var txID daghash.TxID
@@ -59,7 +62,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 			return nil, err
 		}
 
-		// Output index of the utxo entry.
+		// Output Index of the utxo entry.
 		var index uint32
 		err = binary.Read(r, binary.LittleEndian, &index)
 		if err != nil {
@@ -74,11 +77,11 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		}
 
 		// Deserialize the UTXO entry and add it to the UTXO set.
-		entry, err := deserializeUTXOEntry(r)
+		entry, err := utxo.DeserializeUTXOEntry(r)
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCache[appmessage.Outpoint{TxID: txID, Index: index}] = entry
+		utxoSet.Add(appmessage.Outpoint{TxID: txID, Index: index}, entry)
 	}
 
 	return utxoSet, nil
@@ -95,32 +98,34 @@ func (dag *BlockDAG) TestSetCoinbaseMaturity(maturity uint64) {
 // it is not usable with all functions and the tests must take care when making
 // use of it.
 func newTestDAG(params *dagconfig.Params) *BlockDAG {
-	index := newBlockIndex(params)
+	index := blocknode.NewIndex()
 	dag := &BlockDAG{
 		Params:                         params,
 		timeSource:                     NewTimeSource(),
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
-		index:                          index,
+		Index:                          index,
 	}
 
-	// Create a genesis block node and block index index populated with it
+	// Create a genesis block node and block Index Index populated with it
 	// on the above fake DAG.
-	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, newBlockSet())
+	dag.genesis, _ = dag.newBlockNode(&params.GenesisBlock.Header, blocknode.NewSet())
 	index.AddNode(dag.genesis)
 
-	dag.virtual = newVirtualBlock(dag, blockSetFromSlice(dag.genesis))
+	dag.virtual = newVirtualBlock(utxo.NewFullUTXOSetFromContext(dag.DatabaseContext, dag.maxUTXOCacheSize),
+		blocknode.SetFromSlice(dag.genesis),
+		dag.Now().UnixMilliseconds())
 	return dag
 }
 
 // newTestNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint32, timestamp mstime.Time) *blockNode {
+func newTestNode(dag *BlockDAG, parents blocknode.Set, blockVersion int32, bits uint32, timestamp mstime.Time) *blocknode.Node {
 	// Make up a header and create a block node from it.
 	header := &appmessage.BlockHeader{
 		Version:              blockVersion,
-		ParentHashes:         parents.hashes(),
+		ParentHashes:         parents.Hashes(),
 		Bits:                 bits,
 		Timestamp:            timestamp,
 		HashMerkleRoot:       &daghash.ZeroHash,
@@ -131,9 +136,9 @@ func newTestNode(dag *BlockDAG, parents blockSet, blockVersion int32, bits uint3
 	return node
 }
 
-func addNodeAsChildToParents(node *blockNode) {
-	for parent := range node.parents {
-		parent.children.add(node)
+func addNodeAsChildToParents(node *blocknode.Node) {
+	for parent := range node.Parents {
+		parent.Children.Add(node)
 	}
 }
 
@@ -174,8 +179,8 @@ func prepareAndProcessBlockByParentMsgBlocks(t *testing.T, dag *BlockDAG, parent
 	return PrepareAndProcessBlockForTest(t, dag, parentHashes, nil)
 }
 
-func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock) *blockNode {
-	node, ok := dag.index.LookupNode(block.BlockHash())
+func nodeByMsgBlock(t *testing.T, dag *BlockDAG, block *appmessage.MsgBlock) *blocknode.Node {
+	node, ok := dag.Index.LookupNode(block.BlockHash())
 	if !ok {
 		t.Fatalf("couldn't find block node with hash %s", block.BlockHash())
 	}

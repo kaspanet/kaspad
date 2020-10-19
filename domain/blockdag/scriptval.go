@@ -10,6 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -27,7 +28,7 @@ type txValidator struct {
 	validateChan          chan *txValidateItem
 	quitChan              chan struct{}
 	resultChan            chan error
-	referencedUTXOEntries []*UTXOEntry
+	referencedUTXOEntries []*utxo.Entry
 	flags                 txscript.ScriptFlags
 	sigCache              *txscript.SigCache
 }
@@ -153,7 +154,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 
 // newTxValidator returns a new instance of txValidator to be used for
 // validating transaction scripts asynchronously.
-func newTxValidator(referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
+func newTxValidator(referencedUTXOEntries []*utxo.Entry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
 	return &txValidator{
 		validateChan:          make(chan *txValidateItem),
 		quitChan:              make(chan struct{}),
@@ -166,7 +167,7 @@ func newTxValidator(referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFla
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *util.Tx, referencedUTXOEntries []*UTXOEntry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func ValidateTransactionScripts(tx *util.Tx, referencedUTXOEntries []*utxo.Entry, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn

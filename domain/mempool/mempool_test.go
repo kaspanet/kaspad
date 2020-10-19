@@ -24,6 +24,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -69,7 +70,7 @@ func (s *fakeDAG) SetMedianTimePast(mtp mstime.Time) {
 	s.medianTimePast = mtp
 }
 
-func calcTxSequenceLockFromReferencedUTXOEntries(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error) {
+func calcTxSequenceLockFromReferencedUTXOEntries(tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
 		Milliseconds:   -1,
@@ -685,7 +686,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	// Checks that transactions get rejected from mempool if sequence lock is not active
-	harness.txPool.cfg.CalcTxSequenceLockFromReferencedUTXOEntries = func(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error) {
+	harness.txPool.cfg.CalcTxSequenceLockFromReferencedUTXOEntries = func(tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
 			Milliseconds:   math.MaxInt64,

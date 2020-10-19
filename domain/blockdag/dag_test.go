@@ -6,12 +6,16 @@ package blockdag
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -24,6 +28,33 @@ import (
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 )
+
+func prepareDatabaseForTest(t *testing.T, testName string) (*dbaccess.DatabaseContext, func()) {
+	var err error
+	tmpDir, err := ioutil.TempDir("", "utxoset_test")
+	if err != nil {
+		t.Fatalf("error creating temp dir: %s", err)
+		return nil, nil
+	}
+
+	dbPath := filepath.Join(tmpDir, testName)
+	_ = os.RemoveAll(dbPath)
+	databaseContext, err := dbaccess.New(dbPath)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+		return nil, nil
+	}
+
+	// Setup a teardown function for cleaning up. This function is
+	// returned to the caller to be invoked when it is done testing.
+	teardown := func() {
+		databaseContext.Close()
+		os.RemoveAll(dbPath)
+	}
+
+	return databaseContext, teardown
+
+}
 
 func TestBlockCount(t *testing.T) {
 	// Load up blocks such that there is a fork in the DAG.
@@ -250,9 +281,9 @@ func TestCalcSequenceLock(t *testing.T) {
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := 5
 	for i := 0; i < numBlocksToGenerate; i++ {
-		parents := blockSetFromSlice(node)
+		parents := blocknode.SetFromSlice(node)
 
-		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		block, err := PrepareBlockForTest(dag, parents.Hashes(), nil)
 		if err != nil {
 			t.Fatalf("block No. %d got unexpected error from PrepareBlockForTest: %+v", i, err)
 		}
@@ -268,9 +299,9 @@ func TestCalcSequenceLock(t *testing.T) {
 		}
 
 		var ok bool
-		node, ok = dag.index.LookupNode(block.BlockHash())
+		node, ok = dag.Index.LookupNode(block.BlockHash())
 		if !ok {
-			t.Errorf("Block No. %d not found in index after adding to dag", i)
+			t.Errorf("Block No. %d not found in Index after adding to dag", i)
 		}
 	}
 
@@ -282,7 +313,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	fullUTXOCacheSize := config.DefaultConfig().MaxUTXOCacheSize
 	db, teardown := prepareDatabaseForTest(t, "TestCalcSequenceLock")
 	defer teardown()
-	utxoSet := NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
+	utxoSet := utxo.NewFullUTXOSetFromContext(db, fullUTXOCacheSize)
 	blueScore := uint64(numBlocksToGenerate) - 4
 	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), blueScore); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
@@ -295,7 +326,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// that the sequence lock heights are always calculated from the same
 	// point of view that they were originally calculated from for a given
 	// utxo. That is to say, the height prior to it.
-	utxo := appmessage.Outpoint{
+	utxoEntry := appmessage.Outpoint{
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
@@ -304,13 +335,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the past median time from the PoV of the input created above.
 	// The past median time for the input is the past median time from the PoV
 	// of the block *prior* to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime().UnixMilliseconds()
+	medianTime := dag.PastMedianTime(node.RelativeAncestor(5)).UnixMilliseconds()
 
 	// The median time calculated from the PoV of the best block in the
 	// test DAG. For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime().UnixMilliseconds()
+	nextMedianTime := dag.PastMedianTime(node).UnixMilliseconds()
 	nextBlockBlueScore := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -320,7 +351,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
-	if isAccepted, err := utxoSet.AddTx(unConfTx, UnacceptedBlueScore); err != nil {
+	if isAccepted, err := utxoSet.AddTx(unConfTx, utxo.UnacceptedBlueScore); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", unConfTx.TxID())
@@ -329,7 +360,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	tests := []struct {
 		name    string
 		tx      *appmessage.MsgTx
-		utxoSet UTXOSet
+		utxoSet utxo.Set
 		want    *SequenceLock
 	}{
 		// A transaction with a single input with max sequence number.
@@ -337,7 +368,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// should be disabled.
 		{
 			name:    "single input, max sequence number",
-			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: appmessage.MaxTxInSequenceNum}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxoEntry, Sequence: appmessage.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   -1,
@@ -352,7 +383,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// the targeted block.
 		{
 			name:    "single input, milliseconds lock time below time granularity",
-			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxoEntry, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   medianTime - 1,
@@ -364,7 +395,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// milliseconds after the median past time of the DAG.
 		{
 			name:    "single input, 1048575 milliseconds after median time",
-			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxoEntry, Sequence: LockTimeToSequence(true, 1048576)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   medianTime + 1048575,
@@ -381,13 +412,13 @@ func TestCalcSequenceLock(t *testing.T) {
 			name: "multiple varied inputs",
 			tx: appmessage.NewNativeMsgTx(1,
 				[]*appmessage.TxIn{{
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(false, 4),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence: LockTimeToSequence(false, 5) |
 						appmessage.SequenceLockTimeDisabled,
 				}},
@@ -404,7 +435,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// height of 2 meaning it can be included at height 3.
 		{
 			name:    "single input, lock-time in blocks",
-			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
+			tx:      appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{PreviousOutpoint: utxoEntry, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Milliseconds:   -1,
@@ -417,10 +448,10 @@ func TestCalcSequenceLock(t *testing.T) {
 		{
 			name: "two inputs, lock-times in seconds",
 			tx: appmessage.NewNativeMsgTx(1, []*appmessage.TxIn{{
-				PreviousOutpoint: utxo,
+				PreviousOutpoint: utxoEntry,
 				Sequence:         LockTimeToSequence(true, 5242880),
 			}, {
-				PreviousOutpoint: utxo,
+				PreviousOutpoint: utxoEntry,
 				Sequence:         LockTimeToSequence(true, 2621440),
 			}}, nil),
 			utxoSet: utxoSet,
@@ -437,10 +468,10 @@ func TestCalcSequenceLock(t *testing.T) {
 			name: "two inputs, lock-times in blocks",
 			tx: appmessage.NewNativeMsgTx(1,
 				[]*appmessage.TxIn{{
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(false, 1),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(false, 11),
 				}},
 				nil),
@@ -457,16 +488,16 @@ func TestCalcSequenceLock(t *testing.T) {
 			name: "four inputs, two lock-times in time, two lock-times in blocks",
 			tx: appmessage.NewNativeMsgTx(1,
 				[]*appmessage.TxIn{{
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(true, 2621440),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(true, 6815744),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(false, 3),
 				}, {
-					PreviousOutpoint: utxo,
+					PreviousOutpoint: utxoEntry,
 					Sequence:         LockTimeToSequence(false, 9),
 				}},
 				nil),
@@ -531,13 +562,13 @@ func TestCalcPastMedianTime(t *testing.T) {
 
 	dag := newTestDAG(netParams)
 	numBlocks := uint32(300)
-	nodes := make([]*blockNode, numBlocks)
+	nodes := make([]*blocknode.Node, numBlocks)
 	nodes[0] = dag.genesis
 	blockTime := dag.genesis.Header().Timestamp
 	for i := uint32(1); i < numBlocks; i++ {
 		blockTime = blockTime.Add(time.Second)
-		nodes[i] = newTestNode(dag, blockSetFromSlice(nodes[i-1]), blockVersion, 0, blockTime)
-		dag.index.AddNode(nodes[i])
+		nodes[i] = newTestNode(dag, blocknode.SetFromSlice(nodes[i-1]), blockVersion, 0, blockTime)
+		dag.Index.AddNode(nodes[i])
 	}
 
 	tests := []struct {
@@ -563,7 +594,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		millisecondsSinceGenesis := nodes[test.blockNumber].PastMedianTime().UnixMilliseconds() -
+		millisecondsSinceGenesis := dag.PastMedianTime(nodes[test.blockNumber]).UnixMilliseconds() -
 			dag.genesis.Header().Timestamp.UnixMilliseconds()
 
 		if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
@@ -648,13 +679,13 @@ func TestAcceptingInInit(t *testing.T) {
 	genesisBlock := blocks[0]
 	testBlock := blocks[1]
 
-	// Create a test blockNode with an unvalidated status
-	genesisNode, ok := dag.index.LookupNode(genesisBlock.Hash())
+	// Create a test Node with an unvalidated status
+	genesisNode, ok := dag.Index.LookupNode(genesisBlock.Hash())
 	if !ok {
 		t.Fatalf("genesis block does not exist in the DAG")
 	}
-	testNode, _ := dag.newBlockNode(&testBlock.MsgBlock().Header, blockSetFromSlice(genesisNode))
-	testNode.status = statusDataStored
+	testNode, _ := dag.newBlockNode(&testBlock.MsgBlock().Header, blocknode.SetFromSlice(genesisNode))
+	testNode.Status = blocknode.StatusDataStored
 
 	// Manually add the test block to the database
 	dbTx, err := databaseContext.NewTx()
@@ -667,14 +698,14 @@ func TestAcceptingInInit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to store block: %s", err)
 	}
-	dbTestNode, err := serializeBlockNode(testNode)
+	dbTestNode, err := blocknode.SerializeNode(testNode)
 	if err != nil {
-		t.Fatalf("Failed to serialize blockNode: %s", err)
+		t.Fatalf("Failed to serialize Node: %s", err)
 	}
-	key := blockIndexKey(testNode.hash, testNode.blueScore)
+	key := blocknode.BlockIndexKey(testNode.Hash, testNode.BlueScore)
 	err = dbaccess.StoreIndexBlock(dbTx, key, dbTestNode)
 	if err != nil {
-		t.Fatalf("Failed to update block index: %s", err)
+		t.Fatalf("Failed to update block Index: %s", err)
 	}
 	err = dbTx.Commit()
 	if err != nil {
@@ -690,12 +721,12 @@ func TestAcceptingInInit(t *testing.T) {
 	}
 
 	// Make sure that the test node's status is valid
-	testNode, ok = dag.index.LookupNode(testBlock.Hash())
+	testNode, ok = dag.Index.LookupNode(testBlock.Hash())
 	if !ok {
 		t.Fatalf("block %s does not exist in the DAG", testBlock.Hash())
 	}
 
-	if testNode.status != statusValid {
+	if testNode.Status != blocknode.StatusValid {
 		t.Fatalf("testNode is unexpectedly invalid")
 	}
 }
@@ -816,7 +847,7 @@ func TestAcceptingBlock(t *testing.T) {
 	defer teardownFunc()
 	dag.TestSetCoinbaseMaturity(0)
 
-	acceptingBlockByMsgBlock := func(block *appmessage.MsgBlock) (*blockNode, error) {
+	acceptingBlockByMsgBlock := func(block *appmessage.MsgBlock) (*blocknode.Node, error) {
 		node := nodeByMsgBlock(t, dag, block)
 		return dag.acceptingBlock(node)
 	}
@@ -828,7 +859,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 	if genesisAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for genesis block. "+
-			"Want: nil, got: %s", genesisAcceptingBlock.hash)
+			"Want: nil, got: %s", genesisAcceptingBlock.Hash)
 	}
 
 	numChainBlocks := uint32(10)
@@ -847,7 +878,7 @@ func TestAcceptingBlock(t *testing.T) {
 		}
 		if expectedAcceptingBlockNode != chainAcceptingBlockNode {
 			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for chain block. "+
-				"Want: %s, got: %s", expectedAcceptingBlockNode.hash, chainAcceptingBlockNode.hash)
+				"Want: %s, got: %s", expectedAcceptingBlockNode.Hash, chainAcceptingBlockNode.Hash)
 		}
 	}
 
@@ -858,7 +889,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 	if tipAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
-			"Want: nil, got: %s", tipAcceptingBlock.hash)
+			"Want: nil, got: %s", tipAcceptingBlock.Hash)
 	}
 
 	// Generate a chain tip that will be in the anticone of the selected tip and
@@ -876,8 +907,8 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that branchingChainTip is in the virtual blues
 	isVirtualBlue := false
-	for _, virtualBlue := range dag.virtual.blues {
-		if branchingChainTip.BlockHash().IsEqual(virtualBlue.hash) {
+	for _, virtualBlue := range dag.virtual.Blues {
+		if branchingChainTip.BlockHash().IsEqual(virtualBlue.Hash) {
 			isVirtualBlue = true
 			break
 		}
@@ -894,7 +925,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 	if branchingChainTipAcceptionBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for branchingChainTipAcceptionBlock. "+
-			"Want: nil, got: %s", branchingChainTipAcceptionBlock.hash)
+			"Want: nil, got: %s", branchingChainTipAcceptionBlock.Hash)
 	}
 
 	// Add shorter side-chain
@@ -912,7 +943,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 	if expectedAcceptingBlock != intersectionAcceptingBlock {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for intersection block. "+
-			"Want: %s, got: %s", expectedAcceptingBlock.hash, intersectionAcceptingBlock.hash)
+			"Want: %s, got: %s", expectedAcceptingBlock.Hash, intersectionAcceptingBlock.Hash)
 	}
 
 	// Make sure that a block that is found in the red set of the selected tip
@@ -925,7 +956,7 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 	if sideChainTipAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for sideChainTip. "+
-			"Want: nil, got: %s", intersectionAcceptingBlock.hash)
+			"Want: nil, got: %s", intersectionAcceptingBlock.Hash)
 	}
 }
 
@@ -954,7 +985,7 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			[]*daghash.Hash{params.GenesisHash}, hashMerkleRoot,
 			&daghash.Hash{},
 			&daghash.Hash{},
-			dag.genesis.bits,
+			dag.genesis.Bits,
 			0),
 	)
 	invalidMsgBlock.AddTransaction(coinbaseTx)
@@ -974,18 +1005,18 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 			"is an orphan\n")
 	}
 
-	invalidBlockNode, ok := dag.index.LookupNode(invalidBlock.Hash())
+	invalidBlockNode, ok := dag.Index.LookupNode(invalidBlock.Hash())
 	if !ok {
-		t.Fatalf("invalidBlockNode wasn't added to the block index as expected")
+		t.Fatalf("invalidBlockNode wasn't added to the block Index as expected")
 	}
-	if invalidBlockNode.status != statusValidateFailed {
-		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", statusValidateFailed, invalidBlockNode.status)
+	if invalidBlockNode.Status != blocknode.StatusValidateFailed {
+		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", blocknode.StatusValidateFailed, invalidBlockNode.Status)
 	}
 
 	invalidMsgBlockChild := appmessage.NewMsgBlock(
 		appmessage.NewBlockHeader(1, []*daghash.Hash{
 			invalidBlock.Hash(),
-		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
+		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.Bits, 0),
 	)
 	invalidMsgBlockChild.AddTransaction(coinbaseTx)
 	invalidMsgBlockChild.AddTransaction(invalidTx)
@@ -1004,18 +1035,18 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("ProcessBlock incorrectly returned invalidBlockChild " +
 			"is an orphan\n")
 	}
-	invalidBlockChildNode, ok := dag.index.LookupNode(invalidBlockChild.Hash())
+	invalidBlockChildNode, ok := dag.Index.LookupNode(invalidBlockChild.Hash())
 	if !ok {
-		t.Fatalf("invalidBlockChild wasn't added to the block index as expected")
+		t.Fatalf("invalidBlockChild wasn't added to the block Index as expected")
 	}
-	if invalidBlockChildNode.status != statusInvalidAncestor {
-		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
+	if invalidBlockChildNode.Status != blocknode.StatusInvalidAncestor {
+		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", blocknode.StatusInvalidAncestor, invalidBlockChildNode.Status)
 	}
 
 	invalidMsgBlockGrandChild := appmessage.NewMsgBlock(
 		appmessage.NewBlockHeader(1, []*daghash.Hash{
 			invalidBlockChild.Hash(),
-		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
+		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.Bits, 0),
 	)
 	invalidMsgBlockGrandChild.AddTransaction(coinbaseTx)
 	invalidMsgBlockGrandChild.AddTransaction(invalidTx)
@@ -1033,18 +1064,18 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 		t.Fatalf("ProcessBlock incorrectly returned invalidBlockGrandChild " +
 			"is an orphan\n")
 	}
-	invalidBlockGrandChildNode, ok := dag.index.LookupNode(invalidBlockGrandChild.Hash())
+	invalidBlockGrandChildNode, ok := dag.Index.LookupNode(invalidBlockGrandChild.Hash())
 	if !ok {
-		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
+		t.Fatalf("invalidBlockGrandChild wasn't added to the block Index as expected")
 	}
-	if invalidBlockGrandChildNode.status != statusInvalidAncestor {
-		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
+	if invalidBlockGrandChildNode.Status != blocknode.StatusInvalidAncestor {
+		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", blocknode.StatusInvalidAncestor, invalidBlockGrandChildNode.Status)
 	}
 }
 
 // testProcessBlockStatus submits the given block, and makes sure this block has got the expected status
 func testProcessBlockStatus(
-	t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedStatus blockStatus) {
+	t *testing.T, testName string, dag *BlockDAG, block *appmessage.MsgBlock, expectedStatus blocknode.Status) {
 
 	isOrphan, isDelayed, err := dag.ProcessBlock(util.NewBlock(block), BFNoPoWCheck)
 	if err != nil {
@@ -1057,12 +1088,12 @@ func testProcessBlockStatus(
 		t.Fatalf("%s: ProcessBlock: block got unexpectedly orphaned", testName)
 	}
 
-	node, ok := dag.index.LookupNode(block.BlockHash())
+	node, ok := dag.Index.LookupNode(block.BlockHash())
 	if !ok {
 		t.Fatalf("%s: Error locating block %s after processing it", testName, block.BlockHash())
 	}
 
-	actualStatus := dag.index.BlockNodeStatus(node)
+	actualStatus := dag.Index.BlockNodeStatus(node)
 	if actualStatus != expectedStatus {
 		t.Errorf("%s: Expected block status: '%s' but got '%s'", testName, expectedStatus, actualStatus)
 	}
@@ -1089,7 +1120,7 @@ func testProcessBlockRuleError(t *testing.T, testName string, dag *BlockDAG, blo
 func makeNextSelectedTip(dag *BlockDAG, block *appmessage.MsgBlock) {
 	selectedTip := dag.selectedTip()
 
-	for daghash.Less(block.BlockHash(), selectedTip.hash) {
+	for daghash.Less(block.BlockHash(), selectedTip.Hash) {
 		block.Header.Nonce++
 	}
 }
@@ -1146,7 +1177,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	anotherBlockWithTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(anotherBlockWithTx1UtilTxs).Root()
 
-	testProcessBlockStatus(t, "anotherBlockWithTx1", dag, anotherBlockWithTx1, statusDisqualifiedFromChain)
+	testProcessBlockStatus(t, "anotherBlockWithTx1", dag, anotherBlockWithTx1, blocknode.StatusDisqualifiedFromChain)
 
 	// Check that a block will be disqualified if it has a transaction that double spends
 	// a transaction from its past.
@@ -1163,7 +1194,7 @@ func TestDoubleSpends(t *testing.T) {
 	}
 	blockWithDoubleSpendForTx1.Header.HashMerkleRoot = BuildHashMerkleTreeStore(blockWithDoubleSpendForTx1UtilTxs).Root()
 
-	testProcessBlockStatus(t, "blockWithDoubleSpendForTx1", dag, blockWithDoubleSpendForTx1, statusDisqualifiedFromChain)
+	testProcessBlockStatus(t, "blockWithDoubleSpendForTx1", dag, blockWithDoubleSpendForTx1, blocknode.StatusDisqualifiedFromChain)
 
 	blockInAnticoneOfBlockWithTx1, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, []*appmessage.MsgTx{doubleSpendTx1})
 	if err != nil {
@@ -1174,7 +1205,7 @@ func TestDoubleSpends(t *testing.T) {
 
 	// Check that a block will not get disqualified if it has a transaction that double spends
 	// a transaction from its anticone.
-	testProcessBlockStatus(t, "blockInAnticoneOfBlockWithTx1", dag, blockInAnticoneOfBlockWithTx1, statusValid)
+	testProcessBlockStatus(t, "blockInAnticoneOfBlockWithTx1", dag, blockInAnticoneOfBlockWithTx1, blocknode.StatusValid)
 
 	// Check that a block will be rejected if it has two transactions that spend the same UTXO.
 	blockWithDoubleSpendWithItself, err := PrepareBlockForTest(dag, []*daghash.Hash{fundingBlock.BlockHash()}, nil)
@@ -1267,30 +1298,30 @@ func TestUTXOCommitment(t *testing.T) {
 	blockD := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash(), blockC.BlockHash()}, blockDTxs)
 
 	// Get the pastUTXO of blockD
-	blockNodeD, ok := dag.index.LookupNode(blockD.BlockHash())
+	blockNodeD, ok := dag.Index.LookupNode(blockD.BlockHash())
 	if !ok {
-		t.Fatalf("TestUTXOCommitment: blockNode for block D not found")
+		t.Fatalf("TestUTXOCommitment: Node for block D not found")
 	}
 	blockDPastUTXO, _, _, _ := dag.pastUTXO(blockNodeD)
-	blockDPastDiffUTXOSet := blockDPastUTXO.(*DiffUTXOSet)
+	blockDPastDiffUTXOSet := blockDPastUTXO.(*utxo.DiffUTXOSet)
 
 	// Build a Multiset for block D
 	multiset := secp256k1.NewMultiset()
-	for outpoint, entry := range blockDPastDiffUTXOSet.base.utxoCache {
+	for outpoint, entry := range blockDPastDiffUTXOSet.Base.UTXOCache {
 		var err error
 		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
 		if err != nil {
 			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
 		}
 	}
-	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toAdd {
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.ToAdd {
 		var err error
 		multiset, err = addUTXOToMultiset(multiset, entry, &outpoint)
 		if err != nil {
 			t.Fatalf("TestUTXOCommitment: addUTXOToMultiset unexpectedly failed")
 		}
 	}
-	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.toRemove {
+	for outpoint, entry := range blockDPastDiffUTXOSet.UTXODiff.ToRemove {
 		var err error
 		multiset, err = removeUTXOFromMultiset(multiset, entry, &outpoint)
 		if err != nil {
@@ -1302,10 +1333,10 @@ func TestUTXOCommitment(t *testing.T) {
 	utxoCommitment := daghash.Hash(*multiset.Finalize())
 
 	// Make sure that the two commitments are equal
-	if !utxoCommitment.IsEqual(blockNodeD.utxoCommitment) {
+	if !utxoCommitment.IsEqual(blockNodeD.UTXOCommitment) {
 		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
 			"actual UTXO commitment don't match. Want: %s, got: %s",
-			utxoCommitment, blockNodeD.utxoCommitment)
+			utxoCommitment, blockNodeD.UTXOCommitment)
 	}
 }
 
@@ -1327,11 +1358,11 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	blockC := PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockB.BlockHash()}, nil)
 
 	// Take blockC's selectedParentMultiset
-	blockNodeC, ok := dag.index.LookupNode(blockC.BlockHash())
+	blockNodeC, ok := dag.Index.LookupNode(blockC.BlockHash())
 	if !ok {
-		t.Fatalf("TestPastUTXOMultiSet: blockNode for blockC not found")
+		t.Fatalf("TestPastUTXOMultiSet: Node for blockC not found")
 	}
-	blockCSelectedParentMultiset, err := blockNodeC.selectedParentMultiset()
+	blockCSelectedParentMultiset, err := dag.selectedParentMultiset(blockNodeC)
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}
@@ -1344,7 +1375,7 @@ func TestPastUTXOMultiSet(t *testing.T) {
 	PrepareAndProcessBlockForTest(t, dag, []*daghash.Hash{blockC.BlockHash()}, nil)
 
 	// Get blockC's selectedParentMultiset again
-	blockCSelectedParentMultiSetAfterAnotherBlock, err := blockNodeC.selectedParentMultiset()
+	blockCSelectedParentMultiSetAfterAnotherBlock, err := dag.selectedParentMultiset(blockNodeC)
 	if err != nil {
 		t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset unexpectedly failed: %s", err)
 	}

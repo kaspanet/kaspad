@@ -2,6 +2,8 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -25,7 +27,7 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet utxo.Set) (*SequenceLock, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -34,7 +36,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLo
 
 // CalcSequenceLockNoLock is lock free version of CalcSequenceLockWithLock
 // This function is unsafe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet utxo.Set) (*SequenceLock, error) {
 	return dag.calcTxSequenceLock(dag.selectedTip(), tx, utxoSet)
 }
 
@@ -42,7 +44,7 @@ func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet) (*Sequ
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UTXOSet) (*SequenceLock, error) {
+func (dag *BlockDAG) calcTxSequenceLock(node *blocknode.Node, tx *util.Tx, utxoSet utxo.Set) (*SequenceLock, error) {
 	referencedUTXOEntries, err := dag.getReferencedUTXOEntries(tx, utxoSet)
 	if err != nil {
 		return nil, err
@@ -54,7 +56,7 @@ func (dag *BlockDAG) calcTxSequenceLock(node *blockNode, tx *util.Tx, utxoSet UT
 // CalcTxSequenceLockFromReferencedUTXOEntries computes the relative lock-times for the passed
 // transaction, with the given referenced UTXO entries. See CalcSequenceLock for further details.
 func (dag *BlockDAG) CalcTxSequenceLockFromReferencedUTXOEntries(
-	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
+	tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (*SequenceLock, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -62,7 +64,7 @@ func (dag *BlockDAG) CalcTxSequenceLockFromReferencedUTXOEntries(
 }
 
 func (dag *BlockDAG) calcTxSequenceLockFromReferencedUTXOEntries(
-	node *blockNode, tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (*SequenceLock, error) {
+	node *blocknode.Node, tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (*SequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -84,7 +86,7 @@ func (dag *BlockDAG) calcTxSequenceLockFromReferencedUTXOEntries(
 		// evaluating its sequence blocks.
 		inputBlueScore := utxoEntry.BlockBlueScore()
 		if utxoEntry.IsUnaccepted() {
-			inputBlueScore = dag.virtual.blueScore
+			inputBlueScore = dag.virtual.BlueScore
 		}
 
 		// Given a sequence number, we apply the relative time lock
@@ -106,10 +108,10 @@ func (dag *BlockDAG) calcTxSequenceLockFromReferencedUTXOEntries(
 			// compute the past median time for the block prior to
 			// the one which accepted this referenced output.
 			blockNode := node
-			for blockNode.selectedParent.blueScore > inputBlueScore {
-				blockNode = blockNode.selectedParent
+			for blockNode.SelectedParent.BlueScore > inputBlueScore {
+				blockNode = blockNode.SelectedParent
 			}
-			medianTime := blockNode.PastMedianTime()
+			medianTime := dag.PastMedianTime(blockNode)
 
 			// Time based relative time-locks have a time granularity of
 			// appmessage.SequenceLockTimeGranularity, so we shift left by this

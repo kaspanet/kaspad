@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/utxo"
+
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -169,24 +172,25 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	dag.notifyBlockAccepted(block, chainUpdates, flags)
 
-	log.Debugf("Accepted block %s with status '%s'", newNode.hash, dag.index.BlockNodeStatus(newNode))
+	log.Debugf("Accepted block %s with status '%s'", newNode.Hash, dag.Index.BlockNodeStatus(newNode))
 
 	return nil
 }
 
 // createBlockNodeFromBlock generates a new block node for the given block
-// and stores it in the block index with statusDataStored.
+// and stores it in the block Index with statusDataStored.
 func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
-	newNode *blockNode, selectedParentAnticone []*blockNode, err error) {
+	newNode *blocknode.Node, selectedParentAnticone []*blocknode.Node, err error) {
 
-	// Create a new block node for the block and add it to the node index.
+	// Create a new block node for the block and add it to the node Index.
 	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
 		return nil, nil, err
 	}
 	newNode, selectedParentAnticone = dag.newBlockNode(&block.MsgBlock().Header, parents)
-	dag.index.AddNode(newNode)
-	dag.index.SetBlockNodeStatus(newNode, statusDataStored)
+
+	dag.Index.AddNode(newNode)
+	dag.Index.SetBlockNodeStatus(newNode, blocknode.StatusDataStored)
 
 	// Insert the block into the database if it's not already there. Even
 	// though it is possible the block will ultimately fail to connect, it
@@ -197,7 +201,7 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 	// expensive connection logic. It also has some other nice properties
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
-	dbTx, err := dag.databaseContext.NewTx()
+	dbTx, err := dag.DatabaseContext.NewTx()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,7 +216,7 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 			return nil, nil, err
 		}
 	}
-	err = dag.index.flushToDB(dbTx)
+	err = dag.Index.FlushToDB(dbTx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -226,10 +230,10 @@ func (dag *BlockDAG) createBlockNodeFromBlock(block *util.Block) (
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) connectBlock(newNode *blockNode,
-	block *util.Block, selectedParentAnticone []*blockNode, flags BehaviorFlags) (*selectedParentChainUpdates, error) {
+func (dag *BlockDAG) connectBlock(newNode *blocknode.Node,
+	block *util.Block, selectedParentAnticone []*blocknode.Node, flags BehaviorFlags) (*selectedParentChainUpdates, error) {
 
-	err := newNode.checkDAGRelations()
+	err := dag.checkDAGRelations(newNode)
 	if err != nil {
 		return nil, err
 	}
@@ -250,10 +254,10 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 
 	isNewSelectedTip := dag.isNewSelectedTip(newNode)
 	if !isNewSelectedTip {
-		dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
+		dag.Index.SetBlockNodeStatus(newNode, blocknode.StatusUTXOPendingVerification)
 	}
 
-	dbTx, err := dag.databaseContext.NewTx()
+	dbTx, err := dag.DatabaseContext.NewTx()
 	if err != nil {
 		return nil, err
 	}
@@ -264,15 +268,15 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 		if err != nil {
 			return nil, err
 		}
-		if dag.index.BlockNodeStatus(newNode) == statusValid {
-			isViolatingFinality, err := newNode.isViolatingFinality()
+		if dag.Index.BlockNodeStatus(newNode) == blocknode.StatusValid {
+			isViolatingFinality, err := dag.isViolatingFinality(newNode)
 			if err != nil {
 				return nil, err
 			}
 			if isViolatingFinality {
-				dag.index.SetBlockNodeStatus(newNode, statusUTXOPendingVerification)
+				dag.Index.SetBlockNodeStatus(newNode, blocknode.StatusUTXOPendingVerification)
 				dag.sendNotification(NTFinalityConflict, &FinalityConflictNotificationData{
-					ViolatingBlockHash: newNode.hash,
+					ViolatingBlockHash: newNode.Hash,
 				})
 			}
 		}
@@ -301,12 +305,12 @@ func (dag *BlockDAG) connectBlock(newNode *blockNode,
 	return chainUpdates, nil
 }
 
-// isNewSelectedTip determines if a new blockNode qualifies to be the next selectedTip
-func (dag *BlockDAG) isNewSelectedTip(newNode *blockNode) bool {
-	return newNode.isGenesis() || dag.selectedTip().less(newNode)
+// isNewSelectedTip determines if a new Node qualifies to be the next selectedTip
+func (dag *BlockDAG) isNewSelectedTip(newNode *blocknode.Node) bool {
+	return newNode.IsGenesis() || dag.selectedTip().Less(newNode)
 }
 
-func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxContext) (*selectedParentChainUpdates, error) {
+func (dag *BlockDAG) updateVirtualAndTips(node *blocknode.Node, dbTx *dbaccess.TxContext) (*selectedParentChainUpdates, error) {
 	didVirtualParentsChange, chainUpdates, err := dag.addTip(node)
 	if err != nil {
 		return nil, err
@@ -314,7 +318,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 
 	if didVirtualParentsChange {
 		// Build a UTXO set for the new virtual block
-		newVirtualUTXO, _, _, err := dag.pastUTXO(dag.virtual.blockNode)
+		newVirtualUTXO, _, _, err := dag.pastUTXO(dag.virtual.Node)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not restore past UTXO for virtual")
 		}
@@ -326,7 +330,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 		}
 
 		// It is now safe to meld the UTXO set to base.
-		diffSet := newVirtualUTXO.(*DiffUTXOSet)
+		diffSet := newVirtualUTXO.(*utxo.DiffUTXOSet)
 		virtualUTXODiff := diffSet.UTXODiff
 		err = dag.meldVirtualUTXO(diffSet)
 		if err != nil {
@@ -335,7 +339,7 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = updateUTXOSet(dbTx, virtualUTXODiff)
+		err = utxo.UpdateUTXOSet(dbTx, virtualUTXODiff)
 		if err != nil {
 			return nil, err
 		}
@@ -344,26 +348,26 @@ func (dag *BlockDAG) updateVirtualAndTips(node *blockNode, dbTx *dbaccess.TxCont
 }
 
 func (dag *BlockDAG) validateAndApplyUTXOSet(
-	node *blockNode, block *util.Block, dbTx *dbaccess.TxContext) error {
+	node *blocknode.Node, block *util.Block, dbTx *dbaccess.TxContext) error {
 
-	if !node.isGenesis() {
-		err := dag.resolveNodeStatus(node.selectedParent, dbTx)
+	if !node.IsGenesis() {
+		err := dag.resolveNodeStatus(node.SelectedParent, dbTx)
 		if err != nil {
 			return err
 		}
 
-		if dag.index.BlockNodeStatus(node.selectedParent) == statusDisqualifiedFromChain {
+		if dag.Index.BlockNodeStatus(node.SelectedParent) == blocknode.StatusDisqualifiedFromChain {
 			return ruleError(ErrSelectedParentDisqualifiedFromChain,
 				"Block's selected parent is disqualified from chain")
 		}
 	}
 
-	utxoVerificationData, err := node.verifyAndBuildUTXO(block.Transactions())
+	utxoVerificationData, err := dag.verifyAndBuildUTXO(node, block.Transactions())
 	if err != nil {
 		return errors.Wrapf(err, "error verifying UTXO for %s", node)
 	}
 
-	err = node.validateCoinbaseTransaction(dag, block, utxoVerificationData.txsAcceptanceData)
+	err = dag.validateCoinbaseTransaction(node, block, utxoVerificationData.txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -377,30 +381,30 @@ func (dag *BlockDAG) validateAndApplyUTXOSet(
 }
 
 func (dag *BlockDAG) applyUTXOSetChanges(
-	node *blockNode, utxoVerificationData *utxoVerificationOutput, dbTx *dbaccess.TxContext) error {
+	node *blocknode.Node, utxoVerificationData *utxoVerificationOutput, dbTx *dbaccess.TxContext) error {
 
-	dag.index.SetBlockNodeStatus(node, statusValid)
+	dag.Index.SetBlockNodeStatus(node, blocknode.StatusValid)
 
-	if !node.hasValidChildren() {
+	if !dag.hasValidChildren(node) {
 		err := dag.addValidTip(node)
 		if err != nil {
 			return err
 		}
 	}
 
-	dag.multisetStore.setMultiset(node, utxoVerificationData.newBlockMultiset)
+	dag.multisetStore.SetMultiset(node, utxoVerificationData.newBlockMultiset)
 
-	err := node.updateDiffAndDiffChild(utxoVerificationData.newBlockPastUTXO)
+	err := dag.updateDiffAndDiffChild(node, utxoVerificationData.newBlockPastUTXO)
 	if err != nil {
 		return err
 	}
 
-	if err := node.updateParentsDiffs(dag, utxoVerificationData.newBlockPastUTXO); err != nil {
+	if err := dag.updateParentsDiffs(node, utxoVerificationData.newBlockPastUTXO); err != nil {
 		return errors.Wrapf(err, "failed updating parents of %s", node)
 	}
 
 	if dag.indexManager != nil {
-		err := dag.indexManager.ConnectBlock(dbTx, node.hash, utxoVerificationData.txsAcceptanceData)
+		err := dag.indexManager.ConnectBlock(dbTx, node.Hash, utxoVerificationData.txsAcceptanceData)
 		if err != nil {
 			return err
 		}
@@ -409,10 +413,10 @@ func (dag *BlockDAG) applyUTXOSetChanges(
 	return nil
 }
 
-func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext) error {
-	blockStatus := dag.index.BlockNodeStatus(node)
-	if blockStatus != statusValid && blockStatus != statusDisqualifiedFromChain {
-		block, err := dag.fetchBlockByHash(node.hash)
+func (dag *BlockDAG) resolveNodeStatus(node *blocknode.Node, dbTx *dbaccess.TxContext) error {
+	blockStatus := dag.Index.BlockNodeStatus(node)
+	if blockStatus != blocknode.StatusValid && blockStatus != blocknode.StatusDisqualifiedFromChain {
+		block, err := dag.fetchBlockByHash(node.Hash)
 		if err != nil {
 			return err
 		}
@@ -422,14 +426,14 @@ func (dag *BlockDAG) resolveNodeStatus(node *blockNode, dbTx *dbaccess.TxContext
 			if !errors.As(err, &(RuleError{})) {
 				return err
 			}
-			dag.index.SetBlockNodeStatus(node, statusDisqualifiedFromChain)
+			dag.Index.SetBlockNodeStatus(node, blocknode.StatusDisqualifiedFromChain)
 		}
 	}
 	return nil
 }
 
-func (dag *BlockDAG) resolveNodeStatusInNewTransaction(node *blockNode) error {
-	dbTx, err := dag.databaseContext.NewTx()
+func (dag *BlockDAG) resolveNodeStatusInNewTransaction(node *blocknode.Node) error {
+	dbTx, err := dag.DatabaseContext.NewTx()
 	if err != nil {
 		return err
 	}
@@ -445,7 +449,7 @@ func (dag *BlockDAG) resolveNodeStatusInNewTransaction(node *blockNode) error {
 	return nil
 }
 
-func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*blockNode, dbTx *dbaccess.TxContext) (
+func (dag *BlockDAG) applyDAGChanges(node *blocknode.Node, selectedParentAnticone []*blocknode.Node, dbTx *dbaccess.TxContext) (
 	*selectedParentChainUpdates, error) {
 
 	// Add the block to the reachability tree
@@ -454,7 +458,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*
 		return nil, errors.Wrap(err, "failed adding block to the reachability tree")
 	}
 
-	node.updateParentsChildren()
+	node.UpdateParentsChildren()
 
 	chainUpdates, err := dag.updateVirtualAndTips(node, dbTx)
 	if err != nil {
@@ -465,12 +469,12 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, selectedParentAnticone []*
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxContext) error {
-	err := dag.index.flushToDB(dbTx)
+	err := dag.Index.FlushToDB(dbTx)
 	if err != nil {
 		return err
 	}
 
-	err = dag.utxoDiffStore.flushToDB(dbTx)
+	err = dag.UTXODiffStore.FlushToDB(dbTx)
 	if err != nil {
 		return err
 	}
@@ -480,7 +484,7 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 		return err
 	}
 
-	err = dag.multisetStore.flushToDB(dbTx)
+	err = dag.multisetStore.FlushToDB(dbTx)
 	if err != nil {
 		return err
 	}
@@ -507,15 +511,15 @@ func (dag *BlockDAG) saveChangesFromBlock(block *util.Block, dbTx *dbaccess.TxCo
 // If there exists a block C violating this, i.e., C is in node's merge set and node.finalityPoint's anticone,
 // then there must be a "kosherizing" block D in C's Future such that D is in node.blues
 // and node.finalityPoint is in D.SelectedChain
-func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, error) {
-	potentiallyKosherizingBlocks, err := node.nonBoundedMergeDepthViolatingBlues()
+func (dag *BlockDAG) boundedMergeBreakingParents(node *blocknode.Node) (blocknode.Set, error) {
+	potentiallyKosherizingBlocks, err := dag.nonBoundedMergeDepthViolatingBlues(node)
 	if err != nil {
 		return nil, err
 	}
-	badReds := []*blockNode{}
+	badReds := []*blocknode.Node{}
 
-	finalityPoint := node.finalityPoint()
-	for _, redBlock := range node.reds {
+	finalityPoint := dag.finalityPoint(node)
+	for _, redBlock := range node.Reds {
 		isFinalityPointInPast, err := dag.isInPast(finalityPoint, redBlock)
 		if err != nil {
 			return nil, err
@@ -540,8 +544,8 @@ func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, err
 		}
 	}
 
-	boundedMergeBreakingParents := newBlockSet()
-	for parent := range node.parents {
+	boundedMergeBreakingParents := blocknode.NewSet()
+	for parent := range node.Parents {
 		isBadRedInPast := false
 		for _, badRedBlock := range badReds {
 			isBadRedInPast, err = dag.isInPast(badRedBlock, parent)
@@ -554,31 +558,31 @@ func (dag *BlockDAG) boundedMergeBreakingParents(node *blockNode) (blockSet, err
 		}
 
 		if isBadRedInPast {
-			boundedMergeBreakingParents.add(parent)
+			boundedMergeBreakingParents.Add(parent)
 		}
 	}
 	return boundedMergeBreakingParents, nil
 }
 
 func (dag *BlockDAG) clearDirtyEntries() {
-	dag.index.clearDirtyEntries()
-	dag.utxoDiffStore.clearDirtyEntries()
-	dag.utxoDiffStore.clearOldEntries()
+	dag.Index.ClearDirtyEntries()
+	dag.UTXODiffStore.ClearDirtyEntries()
+	dag.UTXODiffStore.ClearOldEntries(dag.VirtualBlueScore(), dag.virtual.Parents)
 	dag.reachabilityTree.store.clearDirtyEntries()
-	dag.multisetStore.clearNewEntries()
+	dag.multisetStore.ClearNewEntries()
 }
 
-func (dag *BlockDAG) handleConnectBlockError(err error, newNode *blockNode) error {
+func (dag *BlockDAG) handleConnectBlockError(err error, newNode *blocknode.Node) error {
 	if errors.As(err, &RuleError{}) {
-		dag.index.SetBlockNodeStatus(newNode, statusValidateFailed)
+		dag.Index.SetBlockNodeStatus(newNode, blocknode.StatusValidateFailed)
 
-		dbTx, err := dag.databaseContext.NewTx()
+		dbTx, err := dag.DatabaseContext.NewTx()
 		if err != nil {
 			return err
 		}
 		defer dbTx.RollbackUnlessClosed()
 
-		err = dag.index.flushToDB(dbTx)
+		err = dag.Index.FlushToDB(dbTx)
 		if err != nil {
 			return err
 		}

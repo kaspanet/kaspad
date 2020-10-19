@@ -1,14 +1,28 @@
-package blockdag
+package utxo
 
 import (
 	"bytes"
+	"encoding/hex"
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"testing"
 )
 
+// hexToBytes converts the passed hex string into bytes and will panic if there
+// is an error. This is only provided for the hard-coded constants so errors in
+// the source code can be detected. It will only (and must only) be called with
+// hard-coded values.
+func hexToBytes(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic("invalid hex in source file: " + s)
+	}
+	return b
+}
+
 func Benchmark_serializeUTXO(b *testing.B) {
-	entry := &UTXOEntry{
+	entry := &Entry{
 		amount:         5000000000,
 		scriptPubKey:   hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd7587509a3056488ac"), // p2pkh
 		blockBlueScore: 1432432,
@@ -28,7 +42,7 @@ func Benchmark_serializeUTXO(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
-		err := serializeUTXO(buf, entry, outpoint)
+		err := SerializeUTXO(buf, entry, outpoint)
 		if err != nil {
 			b.Fatal(err)
 		}

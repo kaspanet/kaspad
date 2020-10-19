@@ -1,32 +1,34 @@
 package blockdag
 
 import (
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/bigintpool"
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"sort"
+
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/bigintpool"
+	"github.com/pkg/errors"
 )
 
-type blockWindow []*blockNode
+type blockWindow []*blocknode.Node
 
 // blueBlockWindow returns a blockWindow of the given size that contains the
 // blues in the past of startindNode, sorted by GHOSTDAG order.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func blueBlockWindow(startingNode *blockNode, windowSize uint64) blockWindow {
+func blueBlockWindow(startingNode *blocknode.Node, windowSize uint64) blockWindow {
 	window := make(blockWindow, 0, windowSize)
 	currentNode := startingNode
-	for uint64(len(window)) < windowSize && currentNode.selectedParent != nil {
-		if currentNode.selectedParent != nil {
-			for _, blue := range currentNode.blues {
+	for uint64(len(window)) < windowSize && currentNode.SelectedParent != nil {
+		if currentNode.SelectedParent != nil {
+			for _, blue := range currentNode.Blues {
 				window = append(window, blue)
 				if uint64(len(window)) == windowSize {
 					break
 				}
 			}
-			currentNode = currentNode.selectedParent
+			currentNode = currentNode.SelectedParent
 		}
 	}
 
@@ -44,11 +46,11 @@ func (window blockWindow) minMaxTimestamps() (min, max int64) {
 	min = math.MaxInt64
 	max = 0
 	for _, node := range window {
-		if node.timestamp < min {
-			min = node.timestamp
+		if node.Timestamp < min {
+			min = node.Timestamp
 		}
-		if node.timestamp > max {
-			max = node.timestamp
+		if node.Timestamp > max {
+			max = node.Timestamp
 		}
 	}
 	return
@@ -60,7 +62,7 @@ func (window blockWindow) averageTarget(averageTarget *big.Int) {
 	target := bigintpool.Acquire(0)
 	defer bigintpool.Release(target)
 	for _, node := range window {
-		util.CompactToBigWithDestination(node.bits, target)
+		util.CompactToBigWithDestination(node.Bits, target)
 		averageTarget.Add(averageTarget, target)
 	}
 
@@ -75,7 +77,7 @@ func (window blockWindow) medianTimestamp() (int64, error) {
 	}
 	timestamps := make([]int64, len(window))
 	for i, node := range window {
-		timestamps[i] = node.timestamp
+		timestamps[i] = node.Timestamp
 	}
 	sort.Sort(timeSorter(timestamps))
 	return timestamps[len(timestamps)/2], nil

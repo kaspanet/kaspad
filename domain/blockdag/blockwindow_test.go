@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"reflect"
 	"testing"
 	"time"
@@ -26,8 +27,8 @@ func TestBlueBlockWindow(t *testing.T) {
 	windowSize := uint64(10)
 	genesisNode := dag.genesis
 	blockTime := genesisNode.Header().Timestamp
-	blockByIDMap := make(map[string]*blockNode)
-	idByBlockMap := make(map[*blockNode]string)
+	blockByIDMap := make(map[string]*blocknode.Node)
+	idByBlockMap := make(map[*blocknode.Node]string)
 	blockByIDMap["A"] = genesisNode
 	idByBlockMap[genesisNode] = "A"
 
@@ -110,13 +111,13 @@ func TestBlueBlockWindow(t *testing.T) {
 
 	for _, blockData := range blocksData {
 		blockTime = blockTime.Add(time.Second)
-		parents := blockSet{}
+		parents := blocknode.Set{}
 		for _, parentID := range blockData.parents {
 			parent := blockByIDMap[parentID]
-			parents.add(parent)
+			parents.Add(parent)
 		}
 
-		block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+		block, err := PrepareBlockForTest(dag, parents.Hashes(), nil)
 		if err != nil {
 			t.Fatalf("block %v got unexpected error from PrepareBlockForTest: %+v", blockData.id, err)
 		}
@@ -134,7 +135,7 @@ func TestBlueBlockWindow(t *testing.T) {
 			t.Fatalf("block %v was unexpectedly orphan", blockData.id)
 		}
 
-		node, ok := dag.index.LookupNode(utilBlock.Hash())
+		node, ok := dag.Index.LookupNode(utilBlock.Hash())
 		if !ok {
 			t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
 		}
@@ -149,7 +150,7 @@ func TestBlueBlockWindow(t *testing.T) {
 	}
 }
 
-func checkWindowIDs(window []*blockNode, expectedIDs []string, idByBlockMap map[*blockNode]string) error {
+func checkWindowIDs(window []*blocknode.Node, expectedIDs []string, idByBlockMap map[*blocknode.Node]string) error {
 	ids := make([]string, len(window))
 	for i, node := range window {
 		ids[i] = idByBlockMap[node]

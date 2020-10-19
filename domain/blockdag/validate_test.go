@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"math"
 	"path/filepath"
 	"testing"
@@ -471,46 +472,46 @@ func TestPastMedianTime(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		blockTime = blockTime.Add(time.Second)
-		tip = newTestNode(dag, blockSetFromSlice(tip),
+		tip = newTestNode(dag, blocknode.SetFromSlice(tip),
 			blockVersion,
 			0,
 			blockTime)
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	node := newTestNode(dag, blockSetFromSlice(tip),
+	node := newTestNode(dag, blocknode.SetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime())
+		dag.PastMedianTime(tip))
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
+	err := dag.checkBlockHeaderContext(header, node.Parents.Bluest(), false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	node = newTestNode(dag, blockSetFromSlice(tip),
+	node = newTestNode(dag, blocknode.SetFromSlice(tip),
 		blockVersion,
 		dag.powMaxBits,
-		tip.PastMedianTime().Add(time.Second))
+		dag.PastMedianTime(tip).Add(time.Second))
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
+	err = dag.checkBlockHeaderContext(header, node.Parents.Bluest(), false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	node = newTestNode(dag, blockSetFromSlice(tip),
+	node = newTestNode(dag, blocknode.SetFromSlice(tip),
 		blockVersion,
 		0,
-		tip.PastMedianTime().Add(-time.Second))
+		dag.PastMedianTime(tip).Add(-time.Second))
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), false)
+	err = dag.checkBlockHeaderContext(header, node.Parents.Bluest(), false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
@@ -542,19 +543,19 @@ func TestValidateParents(t *testing.T) {
 	}
 
 	// Check direct parents relation
-	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(aNode, bNode))
+	err = dag.validateParents(fakeBlockHeader, blocknode.SetFromSlice(aNode, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
 	}
 
 	// Check indirect parents relation
-	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(dag.genesis, bNode))
+	err = dag.validateParents(fakeBlockHeader, blocknode.SetFromSlice(dag.genesis, bNode))
 	if err == nil {
 		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
 	}
 
 	// Check parents with no relation
-	err = dag.validateParents(fakeBlockHeader, blockSetFromSlice(bNode, cNode))
+	err = dag.validateParents(fakeBlockHeader, blocknode.SetFromSlice(bNode, cNode))
 	if err != nil {
 		t.Errorf("validateParents: unexpected error: %v", err)
 	}

@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -26,7 +27,7 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 		return 0, nil
 	}
 
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		return 0, errors.Errorf("block %s is unknown", hash)
 	}
@@ -42,7 +43,7 @@ func (dag *BlockDAG) UTXOConfirmations(outpoint *appmessage.Outpoint) (uint64, b
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	utxoEntry, ok := dag.virtual.utxoSet.get(*outpoint)
+	utxoEntry, ok := dag.virtual.utxoSet.Get(*outpoint)
 	if !ok {
 		return 0, false
 	}
@@ -56,7 +57,7 @@ func (dag *BlockDAG) UTXOConfirmations(outpoint *appmessage.Outpoint) (uint64, b
 // * If the node is in the selected tip red set	-> 0
 // * If the node is the selected tip			-> 1
 // * Otherwise									-> selectedTip.blueScore - acceptingBlock.blueScore + 2
-func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
+func (dag *BlockDAG) blockConfirmations(node *blocknode.Node) (uint64, error) {
 	acceptingBlock, err := dag.acceptingBlock(node)
 	if err != nil {
 		return 0, err
@@ -67,29 +68,29 @@ func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 		return 0, nil
 	}
 
-	return dag.selectedTip().blueScore - acceptingBlock.blueScore + 1, nil
+	return dag.selectedTip().BlueScore - acceptingBlock.BlueScore + 1, nil
 }
 
 // acceptingBlock finds the node in the selected-parent chain that had accepted
 // the given node
-func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
+func (dag *BlockDAG) acceptingBlock(node *blocknode.Node) (*blocknode.Node, error) {
 	// Return an error if the node is the virtual block
-	if node == dag.virtual.blockNode {
+	if node == dag.virtual.Node {
 		return nil, errors.New("cannot get acceptingBlock for virtual")
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
-	isNodeInSelectedParentChain, err := dag.IsInSelectedParentChain(node.hash)
+	isNodeInSelectedParentChain, err := dag.IsInSelectedParentChain(node.Hash)
 	if err != nil {
 		return nil, err
 	}
 	if isNodeInSelectedParentChain {
-		if len(node.children) == 0 {
+		if len(node.Children) == 0 {
 			// If the node is the selected tip, it doesn't have an accepting block
 			return nil, nil
 		}
-		for child := range node.children {
-			isChildInSelectedParentChain, err := dag.IsInSelectedParentChain(child.hash)
+		for child := range node.Children {
+			isChildInSelectedParentChain, err := dag.IsInSelectedParentChain(child.Hash)
 			if err != nil {
 				return nil, err
 			}
@@ -97,11 +98,11 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 				return child, nil
 			}
 		}
-		return nil, errors.Errorf("chain block %s does not have a chain child", node.hash)
+		return nil, errors.Errorf("chain block %s does not have a chain child", node.Hash)
 	}
 
 	// Find the only chain block that may contain the node in its blues
-	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
+	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.BlueScore)
 
 	// if no candidate is found, it means that the node has same or more
 	// blue score than the selected tip and is found in its anticone, so
@@ -112,7 +113,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 
 	// candidateAcceptingBlock is the accepting block only if it actually contains
 	// the node in its blues
-	for _, blue := range candidateAcceptingBlock.blues {
+	for _, blue := range candidateAcceptingBlock.Blues {
 		if blue == node {
 			return candidateAcceptingBlock, nil
 		}
@@ -125,13 +126,13 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 
 // oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
 // greater than blueScore. If no such block exists, this method returns nil
-func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
-	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.selectedParentChainSlice), func(i int) bool {
-		selectedPathNode := dag.virtual.selectedParentChainSlice[i]
-		return selectedPathNode.blueScore > blueScore
+func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blocknode.Node {
+	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.SelectedParentChainSlice), func(i int) bool {
+		selectedPathNode := dag.virtual.SelectedParentChainSlice[i]
+		return selectedPathNode.BlueScore > blueScore
 	})
 	if !ok {
 		return nil
 	}
-	return dag.virtual.selectedParentChainSlice[chainBlockIndex]
+	return dag.virtual.SelectedParentChainSlice[chainBlockIndex]
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -54,7 +55,7 @@ type Config struct {
 	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
 	DAG *blockdag.BlockDAG
 
-	CalcTxSequenceLockFromReferencedUTXOEntries func(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) (*blockdag.SequenceLock, error)
+	CalcTxSequenceLockFromReferencedUTXOEntries func(tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (*blockdag.SequenceLock, error)
 }
 
 // Policy houses the policy (configuration parameters) which is used to

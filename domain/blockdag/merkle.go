@@ -9,6 +9,7 @@ import (
 	"math"
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -153,8 +154,8 @@ func calculateAcceptedIDMerkleRoot(multiBlockTxsAcceptanceData MultiBlockTxsAcce
 	return acceptedIDMerkleTree.Root()
 }
 
-func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
-	if node.isGenesis() {
+func (dag *BlockDAG) validateAcceptedIDMerkleRoot(node *blocknode.Node, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+	if node.IsGenesis() {
 		return nil
 	}
 

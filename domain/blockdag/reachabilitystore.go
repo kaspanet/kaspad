@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -33,24 +34,24 @@ func newReachabilityStore(dag *BlockDAG) *reachabilityStore {
 func (store *reachabilityStore) setTreeNode(treeNode *reachabilityTreeNode) {
 	// load the reachability data from DB to store.loaded
 	node := treeNode.blockNode
-	_, exists := store.reachabilityDataByHash(node.hash)
+	_, exists := store.reachabilityDataByHash(node.Hash)
 	if !exists {
-		store.loaded[*node.hash] = &reachabilityData{}
+		store.loaded[*node.Hash] = &reachabilityData{}
 	}
 
-	store.loaded[*node.hash].treeNode = treeNode
-	store.setBlockAsDirty(node.hash)
+	store.loaded[*node.Hash].treeNode = treeNode
+	store.setBlockAsDirty(node.Hash)
 }
 
-func (store *reachabilityStore) setFutureCoveringSet(node *blockNode, futureCoveringSet futureCoveringTreeNodeSet) error {
+func (store *reachabilityStore) setFutureCoveringSet(node *blocknode.Node, futureCoveringSet futureCoveringTreeNodeSet) error {
 	// load the reachability data from DB to store.loaded
-	_, exists := store.reachabilityDataByHash(node.hash)
+	_, exists := store.reachabilityDataByHash(node.Hash)
 	if !exists {
-		return reachabilityNotFoundError(node.hash)
+		return reachabilityNotFoundError(node.Hash)
 	}
 
-	store.loaded[*node.hash].futureCoveringSet = futureCoveringSet
-	store.setBlockAsDirty(node.hash)
+	store.loaded[*node.Hash].futureCoveringSet = futureCoveringSet
+	store.setBlockAsDirty(node.Hash)
 	return nil
 }
 
@@ -70,14 +71,14 @@ func (store *reachabilityStore) treeNodeByBlockHash(hash *daghash.Hash) (*reacha
 	return reachabilityData.treeNode, nil
 }
 
-func (store *reachabilityStore) treeNodeByBlockNode(node *blockNode) (*reachabilityTreeNode, error) {
-	return store.treeNodeByBlockHash(node.hash)
+func (store *reachabilityStore) treeNodeByBlockNode(node *blocknode.Node) (*reachabilityTreeNode, error) {
+	return store.treeNodeByBlockHash(node.Hash)
 }
 
-func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blockNode) (futureCoveringTreeNodeSet, error) {
-	reachabilityData, exists := store.reachabilityDataByHash(node.hash)
+func (store *reachabilityStore) futureCoveringSetByBlockNode(node *blocknode.Node) (futureCoveringTreeNodeSet, error) {
+	reachabilityData, exists := store.reachabilityDataByHash(node.Hash)
 	if !exists {
-		return nil, reachabilityNotFoundError(node.hash)
+		return nil, reachabilityNotFoundError(node.Hash)
 	}
 	return reachabilityData.futureCoveringSet, nil
 }
@@ -179,8 +180,8 @@ func (store *reachabilityStore) loadReachabilityDataFromCursor(cursor database.C
 		return err
 	}
 
-	// Connect the treeNode with its blockNode
-	reachabilityData.treeNode.blockNode, ok = store.dag.index.LookupNode(hash)
+	// Connect the treeNode with its Node
+	reachabilityData.treeNode.blockNode, ok = store.dag.Index.LookupNode(hash)
 	if !ok {
 		return errors.Errorf("block %s does not exist in the DAG", hash)
 	}
@@ -223,7 +224,7 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 	// If this is the genesis block, write the zero hash instead
 	parentHash := &daghash.ZeroHash
 	if treeNode.parent != nil {
-		parentHash = treeNode.parent.blockNode.hash
+		parentHash = treeNode.parent.blockNode.Hash
 	}
 	err = appmessage.WriteElement(w, parentHash)
 	if err != nil {
@@ -238,7 +239,7 @@ func (store *reachabilityStore) serializeTreeNode(w io.Writer, treeNode *reachab
 
 	// Serialize the children
 	for _, child := range treeNode.children {
-		err = appmessage.WriteElement(w, child.blockNode.hash)
+		err = appmessage.WriteElement(w, child.blockNode.Hash)
 		if err != nil {
 			return err
 		}
@@ -272,7 +273,7 @@ func (store *reachabilityStore) serializeFutureCoveringSet(w io.Writer, futureCo
 
 	// Serialize each node in the set
 	for _, node := range futureCoveringSet {
-		err = appmessage.WriteElement(w, node.blockNode.hash)
+		err = appmessage.WriteElement(w, node.blockNode.Hash)
 		if err != nil {
 			return err
 		}

@@ -11,8 +11,10 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/pkg/errors"
@@ -353,7 +355,7 @@ func (dag *BlockDAG) checkProofOfWork(header *appmessage.BlockHeader, flags Beha
 // ValidateTxMass makes sure that the given transaction's mass does not exceed
 // the maximum allowed limit. Currently, it is equivalent to the block mass limit.
 // See CalcTxMass for further details.
-func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (txMass uint64, err error) {
+func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*utxo.Entry) (txMass uint64, err error) {
 	txMass = calcTxMassFromReferencedUTXOEntries(tx, referencedUTXOEntries)
 	if txMass > appmessage.MaxMassAcceptedByBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
@@ -364,7 +366,7 @@ func ValidateTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry) (txMass uin
 }
 
 func calcTxMassFromReferencedUTXOEntries(
-	tx *util.Tx, referencedUTXOEntries []*UTXOEntry) uint64 {
+	tx *util.Tx, referencedUTXOEntries []*utxo.Entry) uint64 {
 
 	if tx.IsCoinBase() {
 		return calcCoinbaseTxMass(tx)
@@ -382,7 +384,7 @@ func calcTxMassFromReferencedUTXOEntries(
 // UTXO set in its past.
 //
 // See CalcTxMass for more details.
-func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet utxo.Set) (uint64, error) {
 	if tx.IsCoinBase() {
 		return calcCoinbaseTxMass(tx), nil
 	}
@@ -577,7 +579,7 @@ func (dag *BlockDAG) checkBlockContainsOnlyOneCoinbase(block *util.Block) error 
 	for i, tx := range transactions[util.CoinbaseTransactionIndex+1:] {
 		if tx.IsCoinBase() {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+2)
+				"Index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
 	}
@@ -674,24 +676,24 @@ func (dag *BlockDAG) checkBlockDoubleSpends(block *util.Block) error {
 //  - BFFastAdd: No checks are performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *appmessage.BlockHeader, bluestParent *blockNode, fastAdd bool) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *appmessage.BlockHeader, bluestParent *blocknode.Node, fastAdd bool) error {
 	if !fastAdd {
 		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
 		}
 
-		if err := validateMedianTime(header, bluestParent); err != nil {
+		if err := dag.validateMedianTime(header, bluestParent); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateMedianTime(header *appmessage.BlockHeader, bluestParent *blockNode) error {
+func (dag *BlockDAG) validateMedianTime(header *appmessage.BlockHeader, bluestParent *blocknode.Node) error {
 	if !header.IsGenesis() {
 		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := bluestParent.PastMedianTime()
+		medianTime := dag.PastMedianTime(bluestParent)
 		if header.Timestamp.Before(medianTime) {
 			str := fmt.Sprintf("block timestamp of %s is not after expected %s", header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
@@ -701,7 +703,7 @@ func validateMedianTime(header *appmessage.BlockHeader, bluestParent *blockNode)
 	return nil
 }
 
-func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestParent *blockNode) error {
+func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestParent *blocknode.Node) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
@@ -717,7 +719,7 @@ func (dag *BlockDAG) validateDifficulty(header *appmessage.BlockHeader, bluestPa
 }
 
 // validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
-func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parents blockSet) error {
+func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parents blocknode.Set) error {
 	if len(parents) > appmessage.MaxNumParentBlocks {
 		return ruleError(ErrTooManyParents,
 			fmt.Sprintf("block %s points to %d parents > MaxNumParentBlocks: %d",
@@ -737,9 +739,9 @@ func (dag *BlockDAG) validateParents(blockHeader *appmessage.BlockHeader, parent
 			if isAncestorOf {
 				return ruleError(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
 					" ancestor of another parent %s",
-					parentA.hash,
+					parentA.Hash,
 					blockHeader.BlockHash(),
-					parentB.hash,
+					parentB.Hash,
 				))
 			}
 		}
@@ -764,7 +766,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 		return dag.handleLookupParentNodesError(block, err)
 	}
 
-	bluestParent := parents.bluest()
+	bluestParent := parents.Bluest()
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
 	err = dag.validateParents(&block.MsgBlock().Header, parents)
@@ -781,13 +783,13 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, flags BehaviorFlags) e
 	return nil
 }
 
-func (node *blockNode) checkDAGRelations() error {
-	err := node.checkMergeSizeLimit()
+func (dag *BlockDAG) checkDAGRelations(node *blocknode.Node) error {
+	err := dag.checkMergeSizeLimit(node)
 	if err != nil {
 		return err
 	}
 
-	err = node.checkBoundedMergeDepth()
+	err = dag.checkBoundedMergeDepth(node)
 	if err != nil {
 		return err
 	}
@@ -806,20 +808,20 @@ func (dag *BlockDAG) handleLookupParentNodesError(block *util.Block, err error) 
 	return err
 }
 
-func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blockNode, flags BehaviorFlags) error {
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.BlockNodeStatus(node).KnownValid()
+func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *blocknode.Node, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.Index.BlockNodeStatus(node).KnownValid()
 	if fastAdd {
 		return nil
 	}
 
 	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
-		blockTime = node.selectedParent.PastMedianTime()
+		blockTime = dag.PastMedianTime(node.SelectedParent)
 	}
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions() {
-		if !IsFinalizedTransaction(tx, node.blueScore, blockTime) {
+		if !IsFinalizedTransaction(tx, node.BlueScore, blockTime) {
 			str := fmt.Sprintf("block contains unfinalized "+
 				"transaction %s", tx.ID())
 			return ruleError(ErrUnfinalizedTx, str)
@@ -829,8 +831,8 @@ func (dag *BlockDAG) checkBlockTransactionsFinalized(block *util.Block, node *bl
 	return nil
 }
 
-func (dag *BlockDAG) checkBlockHasNoChainedTransactions(block *util.Block, node *blockNode, flags BehaviorFlags) error {
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.BlockNodeStatus(node).KnownValid()
+func (dag *BlockDAG) checkBlockHasNoChainedTransactions(block *util.Block, node *blocknode.Node, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.Index.BlockNodeStatus(node).KnownValid()
 	if fastAdd {
 		return nil
 	}
@@ -863,7 +865,7 @@ func (dag *BlockDAG) checkBlockHasNoChainedTransactions(block *util.Block, node 
 // For more details, see http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the dag state lock held (for reads).
-func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
+func ensureNoDuplicateTx(utxoSet utxo.Set, transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[appmessage.Outpoint]struct{})
@@ -888,7 +890,7 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 	return nil
 }
 
-func checkTxIsNotDuplicate(tx *util.Tx, utxoSet UTXOSet) error {
+func checkTxIsNotDuplicate(tx *util.Tx, utxoSet utxo.Set) error {
 	fetchSet := make(map[appmessage.Outpoint]struct{})
 
 	// Fetch utxos for all of the ouputs in this transaction.
@@ -923,7 +925,7 @@ func checkTxIsNotDuplicate(tx *util.Tx, utxoSet UTXOSet) error {
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
 func CheckTransactionInputsAndCalulateFee(
-	tx *util.Tx, txBlueScore uint64, referencedUTXOEntries []*UTXOEntry, dagParams *dagconfig.Params, fastAdd bool) (
+	tx *util.Tx, txBlueScore uint64, referencedUTXOEntries []*utxo.Entry, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSompi uint64, err error) {
 
 	// Coinbase transactions have no standard inputs to validate.
@@ -956,7 +958,7 @@ func CheckTransactionInputsAndCalulateFee(
 	return txFeeInSompi, nil
 }
 
-func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func checkEntryAmounts(entry *utxo.Entry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
@@ -973,7 +975,7 @@ func checkEntryAmounts(entry *UTXOEntry, totalSompiInBefore uint64) (totalSompiI
 	return totalSompiInAfter, nil
 }
 
-func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *appmessage.TxIn) error {
+func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *utxo.Entry, txBlueScore uint64, txIn *appmessage.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
 	// yet reached the required coinbase maturity.
 	if entry.IsCoinbase() {
@@ -993,9 +995,9 @@ func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txB
 }
 
 func (dag *BlockDAG) checkConnectBlockToPastUTXO(
-	node *blockNode, pastUTXO UTXOSet, transactions []*util.Tx) (err error) {
+	node *blocknode.Node, pastUTXO utxo.Set, transactions []*util.Tx) (err error) {
 
-	selectedParentMedianTime := node.selectedParentMedianTime()
+	selectedParentMedianTime := dag.selectedParentMedianTime(node)
 
 	totalFee := uint64(0)
 
@@ -1017,7 +1019,7 @@ func (dag *BlockDAG) checkConnectBlockToPastUTXO(
 }
 
 func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
-	node *blockNode, tx *util.Tx, pastUTXO UTXOSet, accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
+	node *blocknode.Node, tx *util.Tx, pastUTXO utxo.Set, accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
 	txFee uint64, accumulatedMassAfter uint64, err error) {
 
 	err = checkTxIsNotDuplicate(tx, pastUTXO)
@@ -1065,8 +1067,8 @@ func (dag *BlockDAG) checkConnectTransactionToPastUTXO(
 	return txFee, accumulatedMassAfter, nil
 }
 
-func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
-	referencedUTXOEntries []*UTXOEntry, medianTime mstime.Time) error {
+func (dag *BlockDAG) checkTxSequenceLock(node *blocknode.Node, tx *util.Tx,
+	referencedUTXOEntries []*utxo.Entry, medianTime mstime.Time) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
@@ -1075,7 +1077,7 @@ func (dag *BlockDAG) checkTxSequenceLock(node *blockNode, tx *util.Tx,
 	if err != nil {
 		return err
 	}
-	if !SequenceLockActive(sequenceLock, node.blueScore, medianTime) {
+	if !SequenceLockActive(sequenceLock, node.BlueScore, medianTime) {
 		str := fmt.Sprintf("block contains " +
 			"transaction whose input sequence " +
 			"locks are not met")
@@ -1105,7 +1107,7 @@ func checkTxOutputAmounts(tx *util.Tx, totalSompiIn uint64) (uint64, error) {
 }
 
 func (dag *BlockDAG) checkTxInputAmounts(
-	inputUTXOEntries []*UTXOEntry) (totalSompiIn uint64, err error) {
+	inputUTXOEntries []*utxo.Entry) (totalSompiIn uint64, err error) {
 
 	totalSompiIn = 0
 
@@ -1127,8 +1129,8 @@ func (dag *BlockDAG) checkTxInputAmounts(
 }
 
 func (dag *BlockDAG) checkTxCoinbaseMaturity(
-	node *blockNode, tx *util.Tx, referencedUTXOEntries []*UTXOEntry) error {
-	txBlueScore := node.blueScore
+	node *blocknode.Node, tx *util.Tx, referencedUTXOEntries []*utxo.Entry) error {
+	txBlueScore := node.BlueScore
 	for i, txIn := range tx.MsgTx().TxIn {
 		utxoEntry := referencedUTXOEntries[i]
 
@@ -1151,7 +1153,7 @@ func (dag *BlockDAG) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (dag *BlockDAG) checkTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry,
+func (dag *BlockDAG) checkTxMass(tx *util.Tx, referencedUTXOEntries []*utxo.Entry,
 	accumulatedMassBefore uint64) (accumulatedMassAfter uint64, err error) {
 
 	txMass := calcTxMassFromReferencedUTXOEntries(tx, referencedUTXOEntries)
@@ -1169,10 +1171,10 @@ func (dag *BlockDAG) checkTxMass(tx *util.Tx, referencedUTXOEntries []*UTXOEntry
 	return accumulatedMassAfter, nil
 }
 
-func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet UTXOSet) ([]*UTXOEntry, error) {
+func (dag *BlockDAG) getReferencedUTXOEntries(tx *util.Tx, utxoSet utxo.Set) ([]*utxo.Entry, error) {
 
 	txIns := tx.MsgTx().TxIn
-	referencedUTXOEntries := make([]*UTXOEntry, 0, len(txIns))
+	referencedUTXOEntries := make([]*utxo.Entry, 0, len(txIns))
 
 	for txInIndex, txIn := range txIns {
 		utxoEntry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -1202,12 +1204,12 @@ func (dag *BlockDAG) checkTotalFee(totalFees uint64, txFee uint64) (uint64, erro
 	return totalFees, nil
 }
 
-func (node *blockNode) validateUTXOCommitment(multiset *secp256k1.MultiSet) error {
+func validateUTXOCommitment(node *blocknode.Node, multiset *secp256k1.MultiSet) error {
 	calculatedMultisetHash := daghash.Hash(*multiset.Finalize())
-	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+	if !calculatedMultisetHash.IsEqual(node.UTXOCommitment) {
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s", node.hash,
-			node.utxoCommitment, calculatedMultisetHash)
+			"header indicates %s, but calculated value is %s", node.Hash,
+			node.UTXOCommitment, calculatedMultisetHash)
 		return ruleError(ErrBadUTXOCommitment, str)
 	}
 
@@ -1249,12 +1251,12 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	templateParents, err := dag.index.LookupNodes(header.ParentHashes)
+	templateParents, err := dag.Index.LookupNodes(header.ParentHashes)
 	if err != nil {
 		return err
 	}
 
-	templateNode, _ := dag.newBlockNode(&header, blockSetFromSlice(templateParents...))
+	templateNode, _ := dag.newBlockNode(&header, blocknode.SetFromSlice(templateParents...))
 
 	return dag.checkConnectBlockToPastUTXO(templateNode, dag.UTXOSet(), block.Transactions())
 }

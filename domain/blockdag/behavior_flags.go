@@ -24,7 +24,7 @@ const (
 	BFAfterDelay
 
 	// BFWasStored is set to indicate that the block was previously stored
-	// in the block index but was never fully processed
+	// in the block Index but was never fully processed
 	BFWasStored
 
 	// BFDisallowDelay is set to indicate that a delayed block should be rejected.

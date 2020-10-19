@@ -2,6 +2,8 @@ package blockdag
 
 import (
 	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -41,7 +43,7 @@ func (data MultiBlockTxsAcceptanceData) FindAcceptanceData(blockHash *daghash.Ha
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
-	_, _, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
+	_, _, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.Node)
 	return txsAcceptanceData, err
 }
 
@@ -49,7 +51,7 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
-	node, ok := dag.index.LookupNode(blockHash)
+	node, ok := dag.Index.LookupNode(blockHash)
 	if !ok {
 		return nil, errors.Errorf("Couldn't find block %s", blockHash)
 	}
@@ -57,12 +59,12 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	return txsAcceptanceData, err
 }
 
-func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
-	return newVirtualUTXODiffSet.meldToBase()
+func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *utxo.DiffUTXOSet) error {
+	return newVirtualUTXODiffSet.MeldToBase()
 }
 
 type utxoVerificationOutput struct {
-	newBlockPastUTXO  UTXOSet
+	newBlockPastUTXO  utxo.Set
 	txsAcceptanceData MultiBlockTxsAcceptanceData
 	newBlockMultiset  *secp256k1.MultiSet
 }
@@ -70,28 +72,28 @@ type utxoVerificationOutput struct {
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data
 // for the new block and its multiset.
-func (node *blockNode) verifyAndBuildUTXO(transactions []*util.Tx) (*utxoVerificationOutput, error) {
-	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := node.dag.pastUTXO(node)
+func (dag *BlockDAG) verifyAndBuildUTXO(node *blocknode.Node, transactions []*util.Tx) (*utxoVerificationOutput, error) {
+	pastUTXO, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
 	if err != nil {
 		return nil, err
 	}
 
-	err = node.validateAcceptedIDMerkleRoot(node.dag, txsAcceptanceData)
+	err = dag.validateAcceptedIDMerkleRoot(node, txsAcceptanceData)
 	if err != nil {
 		return nil, err
 	}
 
-	err = node.dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
+	err = dag.checkConnectBlockToPastUTXO(node, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
 
-	multiset, err := node.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
+	multiset, err := dag.calcMultiset(node, txsAcceptanceData, selectedParentPastUTXO)
 	if err != nil {
 		return nil, err
 	}
 
-	err = node.validateUTXOCommitment(multiset)
+	err = validateUTXOCommitment(node, multiset)
 	if err != nil {
 		return nil, err
 	}
@@ -102,30 +104,30 @@ func (node *blockNode) verifyAndBuildUTXO(transactions []*util.Tx) (*utxoVerific
 		newBlockMultiset:  multiset}, nil
 }
 
-func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
+func genesisPastUTXO(virtual *virtualBlock) utxo.Set {
 	// The genesis has no past UTXO, so we create an empty UTXO
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
-	diff := NewUTXODiff()
-	for outpoint, entry := range virtual.utxoSet.utxoCache {
-		diff.toRemove[outpoint] = entry
+	diff := utxo.NewDiff()
+	for outpoint, entry := range virtual.utxoSet.UTXOCache {
+		diff.ToRemove[outpoint] = entry
 	}
-	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
+	genesisPastUTXO := utxo.Set(utxo.NewDiffUTXOSet(virtual.utxoSet, diff))
 	return genesisPastUTXO
 }
 
 // applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's past UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
-func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlocks []*util.Block) (
-	pastUTXO UTXOSet, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+func (dag *BlockDAG) applyBlueBlocks(node *blocknode.Node, selectedParentPastUTXO utxo.Set, blueBlocks []*util.Block) (
+	pastUTXO utxo.Set, multiBlockTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	pastUTXO = selectedParentPastUTXO.(*DiffUTXOSet).cloneWithoutBase()
+	pastUTXO = selectedParentPastUTXO.(*utxo.DiffUTXOSet).CloneWithoutBase()
 	multiBlockTxsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
 	// We obtain the median time of the selected parent block (unless it's genesis block)
-	// in order to determine if transactions in the current block are final.
-	selectedParentMedianTime := node.selectedParentMedianTime()
+	// in order to determine if transactions in theF current block are final.
+	selectedParentMedianTime := dag.selectedParentMedianTime(node)
 	accumulatedMass := uint64(0)
 
 	// Add blueBlocks to multiBlockTxsAcceptanceData in topological order. This
@@ -145,7 +147,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 			var txFee uint64
 
 			isAccepted, txFee, accumulatedMass, err =
-				node.maybeAcceptTx(tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
+				dag.maybeAcceptTx(node, tx, isSelectedParent, pastUTXO, accumulatedMass, selectedParentMedianTime)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -161,7 +163,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentPastUTXO UTXOSet, blueBlock
 	return pastUTXO, multiBlockTxsAcceptanceData, nil
 }
 
-func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTXO UTXOSet,
+func (dag *BlockDAG) maybeAcceptTx(node *blocknode.Node, tx *util.Tx, isSelectedParent bool, pastUTXO utxo.Set,
 	accumulatedMassBefore uint64, selectedParentMedianTime mstime.Time) (
 	isAccepted bool, txFee uint64, accumulatedMassAfter uint64, err error) {
 
@@ -175,7 +177,7 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 		txMass := CalcTxMass(tx, nil)
 		accumulatedMass += txMass
 
-		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.BlueScore)
 		if err != nil {
 			return false, 0, 0, err
 		}
@@ -183,7 +185,7 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 		return true, 0, accumulatedMass, nil
 	}
 
-	txFee, accumulatedMassAfter, err = node.dag.checkConnectTransactionToPastUTXO(
+	txFee, accumulatedMassAfter, err = dag.checkConnectTransactionToPastUTXO(
 		node, tx, pastUTXO, accumulatedMassBefore, selectedParentMedianTime)
 	if err != nil {
 		if !errors.As(err, &(RuleError{})) {
@@ -195,7 +197,7 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 		isAccepted = true
 		accumulatedMass = accumulatedMassAfter
 
-		_, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
+		_, err = pastUTXO.AddTx(tx.MsgTx(), node.BlueScore)
 		if err != nil {
 			return false, 0, 0, err
 		}
@@ -206,14 +208,14 @@ func (node *blockNode) maybeAcceptTx(tx *util.Tx, isSelectedParent bool, pastUTX
 // pastUTXO returns the UTXO of a given block's past
 // To save traversals over the blue blocks, it also returns the transaction acceptance data for
 // all blue blocks
-func (dag *BlockDAG) pastUTXO(node *blockNode) (
-	pastUTXO, selectedParentPastUTXO UTXOSet, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+func (dag *BlockDAG) pastUTXO(node *blocknode.Node) (
+	pastUTXO, selectedParentPastUTXO utxo.Set, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
-	if node.isGenesis() {
+	if node.IsGenesis() {
 		return genesisPastUTXO(dag.virtual), nil, MultiBlockTxsAcceptanceData{}, nil
 	}
 
-	selectedParentPastUTXO, err = dag.restorePastUTXO(node.selectedParent)
+	selectedParentPastUTXO, err = dag.restorePastUTXO(node.SelectedParent)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -223,7 +225,7 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 		return nil, nil, nil, err
 	}
 
-	pastUTXO, bluesTxsAcceptanceData, err = node.applyBlueBlocks(selectedParentPastUTXO, blueBlocks)
+	pastUTXO, bluesTxsAcceptanceData, err = dag.applyBlueBlocks(node, selectedParentPastUTXO, blueBlocks)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -232,15 +234,15 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 }
 
 // restorePastUTXO restores the UTXO of a given block from its diff
-func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
-	stack := []*blockNode{}
+func (dag *BlockDAG) restorePastUTXO(node *blocknode.Node) (utxo.Set, error) {
+	stack := []*blocknode.Node{}
 
 	// Iterate over the chain of diff-childs from node till virtual and add them
 	// all into a stack
 	for current := node; current != nil; {
 		stack = append(stack, current)
 		var err error
-		current, err = dag.utxoDiffStore.diffChildByNode(current)
+		current, err = dag.UTXODiffStore.DiffChildByNode(current)
 		if err != nil {
 			return nil, err
 		}
@@ -248,40 +250,40 @@ func (dag *BlockDAG) restorePastUTXO(node *blockNode) (UTXOSet, error) {
 
 	// Start with the top item in the stack, going over it top-to-bottom,
 	// applying the UTXO-diff one-by-one.
-	topNode, stack := stack[len(stack)-1], stack[:len(stack)-1] // pop the top item in the stack
-	topNodeDiff, err := dag.utxoDiffStore.diffByNode(topNode)
+	topNode, stack := stack[len(stack)-1], stack[:len(stack)-1] // Pop the top item in the stack
+	topNodeDiff, err := dag.UTXODiffStore.DiffByNode(topNode)
 	if err != nil {
 		return nil, err
 	}
-	accumulatedDiff := topNodeDiff.clone()
+	accumulatedDiff := topNodeDiff.Clone()
 
 	for i := len(stack) - 1; i >= 0; i-- {
-		diff, err := dag.utxoDiffStore.diffByNode(stack[i])
+		diff, err := dag.UTXODiffStore.DiffByNode(stack[i])
 		if err != nil {
 			return nil, err
 		}
 		// Use withDiffInPlace, otherwise copying the diffs again and again create a polynomial overhead
-		err = accumulatedDiff.withDiffInPlace(diff)
+		err = accumulatedDiff.WithDiffInPlace(diff)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return NewDiffUTXOSet(dag.virtual.utxoSet, accumulatedDiff), nil
+	return utxo.NewDiffUTXOSet(dag.virtual.utxoSet, accumulatedDiff), nil
 }
 
 // updateValidTipsUTXO builds and applies new diff UTXOs for all the DAG's valid tips
-func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
+func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO utxo.Set) error {
 	for validTip := range dag.validTips {
 		validTipPastUTXO, err := dag.restorePastUTXO(validTip)
 		if err != nil {
 			return err
 		}
-		diff, err := virtualUTXO.diffFrom(validTipPastUTXO)
+		diff, err := virtualUTXO.DiffFrom(validTipPastUTXO)
 		if err != nil {
 			return err
 		}
-		err = dag.utxoDiffStore.setBlockDiff(validTip, diff)
+		err = dag.UTXODiffStore.SetBlockDiff(validTip, diff)
 		if err != nil {
 			return err
 		}
@@ -291,13 +293,13 @@ func updateValidTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 }
 
 // updateParentsDiffs updates the diff of any parent whose DiffChild is this block
-func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSet) error {
-	for parent := range node.parents {
-		if node.dag.index.BlockNodeStatus(parent) == statusUTXOPendingVerification {
+func (dag *BlockDAG) updateParentsDiffs(node *blocknode.Node, newBlockPastUTXO utxo.Set) error {
+	for parent := range node.Parents {
+		if dag.Index.BlockNodeStatus(parent) == blocknode.StatusUTXOPendingVerification {
 			continue
 		}
 
-		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
+		diffChild, err := dag.UTXODiffStore.DiffChildByNode(parent)
 		if err != nil {
 			return err
 		}
@@ -306,15 +308,15 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSe
 			if err != nil {
 				return err
 			}
-			err = dag.utxoDiffStore.setBlockDiffChild(parent, node)
+			err = dag.UTXODiffStore.SetBlockDiffChild(parent, node)
 			if err != nil {
 				return err
 			}
-			diff, err := newBlockPastUTXO.diffFrom(parentPastUTXO)
+			diff, err := newBlockPastUTXO.DiffFrom(parentPastUTXO)
 			if err != nil {
 				return err
 			}
-			err = dag.utxoDiffStore.setBlockDiff(parent, diff)
+			err = dag.UTXODiffStore.SetBlockDiff(parent, diff)
 			if err != nil {
 				return err
 			}
@@ -324,37 +326,37 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockPastUTXO UTXOSe
 	return nil
 }
 
-func (node *blockNode) updateDiffAndDiffChild(newBlockPastUTXO UTXOSet) error {
-	var diffChild *blockNode
-	for child := range node.children {
-		if node.dag.index.BlockNodeStatus(child) == statusValid {
+func (dag *BlockDAG) updateDiffAndDiffChild(node *blocknode.Node, newBlockPastUTXO utxo.Set) error {
+	var diffChild *blocknode.Node
+	for child := range node.Children {
+		if dag.Index.BlockNodeStatus(child) == blocknode.StatusValid {
 			diffChild = child
 			break
 		}
 	}
 
 	// If there's no diffChild, then virtual is the de-facto diffChild
-	var diffChildUTXOSet UTXOSet = node.dag.virtual.utxoSet
+	var diffChildUTXOSet utxo.Set = dag.virtual.utxoSet
 	if diffChild != nil {
 		var err error
-		diffChildUTXOSet, err = node.dag.restorePastUTXO(diffChild)
+		diffChildUTXOSet, err = dag.restorePastUTXO(diffChild)
 		if err != nil {
 			return err
 		}
 	}
 
-	diffFromDiffChild, err := diffChildUTXOSet.diffFrom(newBlockPastUTXO)
+	diffFromDiffChild, err := diffChildUTXOSet.DiffFrom(newBlockPastUTXO)
 	if err != nil {
 		return err
 	}
 
-	err = node.dag.utxoDiffStore.setBlockDiff(node, diffFromDiffChild)
+	err = dag.UTXODiffStore.SetBlockDiff(node, diffFromDiffChild)
 	if err != nil {
 		return err
 	}
 
 	if diffChild != nil {
-		err = node.dag.utxoDiffStore.setBlockDiffChild(node, diffChild)
+		err = dag.UTXODiffStore.SetBlockDiffChild(node, diffChild)
 		if err != nil {
 			return err
 		}

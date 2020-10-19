@@ -83,7 +83,7 @@ func (dag *BlockDAG) isSynced() bool {
 	if selectedTip == nil {
 		dagTimestamp = dag.Params.GenesisBlock.Header.Timestamp.UnixMilliseconds()
 	} else {
-		dagTimestamp = selectedTip.timestamp
+		dagTimestamp = selectedTip.Timestamp
 	}
 	dagTime := mstime.UnixMilliseconds(dagTimestamp)
 	return dag.Now().Sub(dagTime) <= isDAGCurrentMaxDiff*dag.Params.TargetTimePerBlock

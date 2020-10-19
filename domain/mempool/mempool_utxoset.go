@@ -3,6 +3,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
@@ -11,18 +12,18 @@ import (
 func newMempoolUTXOSet(dag *blockdag.BlockDAG) *mempoolUTXOSet {
 	return &mempoolUTXOSet{
 		transactionByPreviousOutpoint: make(map[appmessage.Outpoint]*util.Tx),
-		poolUnspentOutputs:            make(map[appmessage.Outpoint]*blockdag.UTXOEntry),
+		poolUnspentOutputs:            make(map[appmessage.Outpoint]*utxo.Entry),
 		dag:                           dag,
 	}
 }
 
 type mempoolUTXOSet struct {
 	transactionByPreviousOutpoint map[appmessage.Outpoint]*util.Tx
-	poolUnspentOutputs            map[appmessage.Outpoint]*blockdag.UTXOEntry
+	poolUnspentOutputs            map[appmessage.Outpoint]*utxo.Entry
 	dag                           *blockdag.BlockDAG
 }
 
-func (mpus *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (entry *blockdag.UTXOEntry, isInPool bool, exists bool) {
+func (mpus *mempoolUTXOSet) utxoEntryByOutpoint(outpoint appmessage.Outpoint) (entry *utxo.Entry, isInPool bool, exists bool) {
 	entry, exists = mpus.dag.GetUTXOEntry(outpoint)
 	if !exists {
 		entry, exists := mpus.poolUnspentOutputs[outpoint]
@@ -50,7 +51,7 @@ func (mpus *mempoolUTXOSet) addTx(tx *util.Tx) error {
 		if _, exists := mpus.poolUnspentOutputs[*outpoint]; exists {
 			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
-		mpus.poolUnspentOutputs[*outpoint] = blockdag.NewUTXOEntry(txOut, false, blockdag.UnacceptedBlueScore)
+		mpus.poolUnspentOutputs[*outpoint] = utxo.NewEntry(txOut, false, utxo.UnacceptedBlueScore)
 	}
 	return nil
 }
@@ -82,9 +83,9 @@ func (mpus *mempoolUTXOSet) poolTransactionBySpendingOutpoint(outpoint appmessag
 	return tx, exists
 }
 
-func (mpus *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*blockdag.UTXOEntry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
+func (mpus *mempoolUTXOSet) transactionRelatedUTXOEntries(tx *util.Tx) (spentUTXOEntries []*utxo.Entry, parentsInPool []*appmessage.Outpoint, missingParents []*daghash.TxID) {
 	msgTx := tx.MsgTx()
-	spentUTXOEntries = make([]*blockdag.UTXOEntry, len(msgTx.TxIn))
+	spentUTXOEntries = make([]*utxo.Entry, len(msgTx.TxIn))
 	missingParents = make([]*daghash.TxID, 0)
 	parentsInPool = make([]*appmessage.Outpoint, 0)
 

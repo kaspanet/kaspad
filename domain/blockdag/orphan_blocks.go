@@ -72,7 +72,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(orphanHash *daghash.Hash) []
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
-// previous orphan index.
+// previous orphan Index.
 func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	// Protect concurrent access.
 	dag.orphanLock.Lock()
@@ -82,11 +82,11 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	orphanHash := orphan.block.Hash()
 	delete(dag.orphans, *orphanHash)
 
-	// Remove the reference from the previous orphan index too.
+	// Remove the reference from the previous orphan Index too.
 	for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
 		// An indexing for loop is intentionally used over a range here as range
 		// does not reevaluate the slice on each iteration nor does it adjust the
-		// index for the modified slice.
+		// Index for the modified slice.
 		orphans := dag.prevOrphans[*parentHash]
 		for i := 0; i < len(orphans); i++ {
 			hash := orphans[i].block.Hash()
@@ -157,7 +157,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	}
 	dag.orphans[*block.Hash()] = oBlock
 
-	// Add to parent hash lookup index for faster dependency lookups.
+	// Add to parent hash lookup Index for faster dependency lookups.
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
 		dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
 	}
@@ -188,11 +188,11 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 		// accepted.  An indexing for loop is
 		// intentionally used over a range here as range does not
 		// reevaluate the slice on each iteration nor does it adjust the
-		// index for the modified slice.
+		// Index for the modified slice.
 		for i := 0; i < len(dag.prevOrphans[*processHash]); i++ {
 			orphan := dag.prevOrphans[*processHash][i]
 			if orphan == nil {
-				log.Warnf("Found a nil entry at index %d in the "+
+				log.Warnf("Found a nil entry at Index %d in the "+
 					"orphan dependency list for block %s", i,
 					processHash)
 				continue

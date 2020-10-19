@@ -60,12 +60,12 @@ func (dag *BlockDAG) BlockForMining(transactions []*util.Tx) (*appmessage.MsgBlo
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) NextBlockMultiset() (*secp256k1.MultiSet, error) {
-	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.blockNode)
+	_, selectedParentPastUTXO, txsAcceptanceData, err := dag.pastUTXO(dag.virtual.Node)
 	if err != nil {
 		return nil, err
 	}
 
-	return dag.virtual.blockNode.calcMultiset(txsAcceptanceData, selectedParentPastUTXO)
+	return dag.calcMultiset(dag.virtual.Node, txsAcceptanceData, selectedParentPastUTXO)
 }
 
 // CoinbasePayloadExtraData returns coinbase payload extra data parameter
@@ -128,7 +128,7 @@ func (dag *BlockDAG) NextBlockTime() mstime.Time {
 // CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
 func (dag *BlockDAG) CurrentBits() uint32 {
 	minBits := uint32(math.MaxUint32)
-	for tip := range dag.virtual.parents {
+	for tip := range dag.virtual.Parents {
 		if minBits > tip.Header().Bits {
 			minBits = tip.Header().Bits
 		}

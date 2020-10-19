@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 
 	"github.com/pkg/errors"
@@ -197,7 +198,7 @@ func (ri *reachabilityInterval) String() string {
 // reachabilityTreeNode represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
-// index interval for each node and making sure all nodes in its
+// Index interval for each node and making sure all nodes in its
 // subtree are indexed within the interval, so the query
 // B ∈ subtree(A) simply becomes B.interval ⊂ A.interval.
 //
@@ -210,17 +211,17 @@ func (ri *reachabilityInterval) String() string {
 // case, and so reindexing should always succeed unless more than
 // 2^64 blocks are added to the DAG/tree.
 type reachabilityTreeNode struct {
-	blockNode *blockNode
+	blockNode *blocknode.Node
 
 	children []*reachabilityTreeNode
 	parent   *reachabilityTreeNode
 
-	// interval is the index interval containing all intervals of
+	// interval is the Index interval containing all intervals of
 	// blocks in this node's subtree
 	interval *reachabilityInterval
 }
 
-func newReachabilityTreeNode(blockNode *blockNode) *reachabilityTreeNode {
+func newReachabilityTreeNode(blockNode *blocknode.Node) *reachabilityTreeNode {
 	// Please see the comment above reachabilityTreeNode to understand why
 	// we use these initial values.
 	interval := newReachabilityInterval(1, math.MaxUint64-1)
@@ -292,7 +293,7 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. This block is not a child of the current "+
 			"reindex root %s. Modified %d tree nodes and took %dms.",
-			rtn.blockNode.hash, reindexRoot.blockNode.hash,
+			rtn.blockNode.Hash, reindexRoot.blockNode.Hash,
 			len(modifiedNodes), reindexTimeElapsed.Milliseconds())
 		return nil
 	}
@@ -307,7 +308,7 @@ func (rtn *reachabilityTreeNode) addChild(child *reachabilityTreeNode, reindexRo
 		reindexTimeElapsed := time.Since(reindexStartTime)
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Modified %d tree nodes and took %dms.",
-			rtn.blockNode.hash, len(modifiedNodes), reindexTimeElapsed.Milliseconds())
+			rtn.blockNode.Hash, len(modifiedNodes), reindexTimeElapsed.Milliseconds())
 		return nil
 	}
 
@@ -746,7 +747,7 @@ func (fb *futureCoveringTreeNodeSet) insertNode(node *reachabilityTreeNode) {
 		return
 	}
 
-	// Insert node in the correct index to maintain futureCoveringTreeNodeSet as
+	// Insert node in the correct Index to maintain futureCoveringTreeNodeSet as
 	// a sorted-by-interval list.
 	// Note that ancestorIndex might be equal to len(futureCoveringTreeNodeSet)
 	left := (*fb)[:ancestorIndex+1]
@@ -783,9 +784,9 @@ func (tns orderedTreeNodeSet) findAncestorOfNode(node *reachabilityTreeNode) (*r
 	return tns[ancestorIndex], true
 }
 
-// findAncestorIndexOfNode finds the index of the reachability tree
+// findAncestorIndexOfNode finds the Index of the reachability tree
 // ancestor of `node` among the nodes in `tns`. It does so by finding
-// the index of the block with the maximum start that is below the
+// the Index of the block with the maximum start that is below the
 // given block.
 func (tns orderedTreeNodeSet) findAncestorIndexOfNode(node *reachabilityTreeNode) (int, bool) {
 	blockInterval := node.interval
@@ -818,19 +819,19 @@ func (fb futureCoveringTreeNodeSet) String() string {
 	return intervalsString
 }
 
-func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*blockNode) error {
+func (rt *reachabilityTree) addBlock(node *blocknode.Node, selectedParentAnticone []*blocknode.Node) error {
 	// Allocate a new reachability tree node
 	newTreeNode := newReachabilityTreeNode(node)
 
 	// If this is the genesis node, simply initialize it and return
-	if node.isGenesis() {
+	if node.IsGenesis() {
 		rt.store.setTreeNode(newTreeNode)
 		rt.reindexRoot = newTreeNode
 		return nil
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	selectedParentTreeNode, err := rt.store.treeNodeByBlockNode(node.selectedParent)
+	selectedParentTreeNode, err := rt.store.treeNodeByBlockNode(node.SelectedParent)
 	if err != nil {
 		return err
 	}
@@ -862,7 +863,7 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 	// whether the new node is going to be the virtual's selected
 	// parent. We don't check node == virtual.selectedParent because
 	// at this stage the virtual had not yet been updated.
-	if node.blueScore > rt.dag.SelectedTipBlueScore() {
+	if node.BlueScore > rt.dag.SelectedTipBlueScore() {
 		updateStartTime := time.Now()
 		modifiedNodes := newModifiedTreeNodes()
 		err := rt.updateReindexRoot(newTreeNode, modifiedNodes)
@@ -873,7 +874,7 @@ func (rt *reachabilityTree) addBlock(node *blockNode, selectedParentAnticone []*
 			updateTimeElapsed := time.Since(updateStartTime)
 			log.Debugf("Reachability reindex root updated to %s. "+
 				"Modified %d tree nodes and took %dms.",
-				rt.reindexRoot.blockNode.hash,
+				rt.reindexRoot.blockNode.Hash,
 				len(modifiedNodes), updateTimeElapsed.Milliseconds())
 			for modifiedNode := range modifiedNodes {
 				rt.store.setTreeNode(modifiedNode)
@@ -916,7 +917,7 @@ func (rt *reachabilityTree) init(dbContext *dbaccess.DatabaseContext) error {
 	}
 
 	// Init the reindex root
-	reachabilityReindexRootNode, ok := rt.dag.index.LookupNode(reindexRootHash)
+	reachabilityReindexRootNode, ok := rt.dag.Index.LookupNode(reindexRootHash)
 	if !ok {
 		return errors.Errorf("reachability reindex root block %s "+
 			"does not exist in the DAG", reindexRootHash)
@@ -937,7 +938,7 @@ func (rt *reachabilityTree) storeState(dbTx *dbaccess.TxContext) error {
 	}
 
 	// Store the reindex root
-	err = dbaccess.StoreReachabilityReindexRoot(dbTx, rt.reindexRoot.blockNode.hash)
+	err = dbaccess.StoreReachabilityReindexRoot(dbTx, rt.reindexRoot.blockNode.Hash)
 	if err != nil {
 		return err
 	}
@@ -977,7 +978,7 @@ func (rt *reachabilityTree) maybeMoveReindexRoot(
 	if err != nil {
 		return nil, false, err
 	}
-	if newTreeNode.blockNode.blueScore-reindexRootChosenChild.blockNode.blueScore < reachabilityReindexWindow {
+	if newTreeNode.blockNode.BlueScore-reindexRootChosenChild.blockNode.BlueScore < reachabilityReindexWindow {
 		return nil, false, nil
 	}
 	err = rt.concentrateIntervalAroundReindexRootChosenChild(reindexRoot, reindexRootChosenChild, modifiedNodes)
@@ -1168,7 +1169,7 @@ func (rt *reachabilityTree) propagateChildIntervals(interval *reachabilityInterv
 //
 // Note: this method will return true if this == other
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
-func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, error) {
+func (rt *reachabilityTree) isInPast(this *blocknode.Node, other *blocknode.Node) (bool, error) {
 	// Check if this node is a reachability tree ancestor of the
 	// other node
 	isReachabilityTreeAncestor, err := rt.isReachabilityTreeAncestorOf(this, other)
@@ -1195,7 +1196,7 @@ func (rt *reachabilityTree) isInPast(this *blockNode, other *blockNode) (bool, e
 // isReachabilityTreeAncestorOf returns whether `this` is in the selected parent chain of `other`.
 //
 // Note: this method will return true if this == other
-func (rt *reachabilityTree) isReachabilityTreeAncestorOf(this *blockNode, other *blockNode) (bool, error) {
+func (rt *reachabilityTree) isReachabilityTreeAncestorOf(this *blocknode.Node, other *blocknode.Node) (bool, error) {
 	thisTreeNode, err := rt.store.treeNodeByBlockNode(this)
 	if err != nil {
 		return false, err

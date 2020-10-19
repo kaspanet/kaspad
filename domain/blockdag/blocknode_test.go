@@ -1,7 +1,10 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/blocknode"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -26,17 +29,36 @@ func TestBlueAnticoneSizesSize(t *testing.T) {
 	}
 
 	blockHeader := dagconfig.SimnetParams.GenesisBlock.Header
-	node, _ := dag.newBlockNode(&blockHeader, newBlockSet())
-	fakeBlue := &blockNode{hash: &daghash.Hash{1}}
-	dag.index.AddNode(fakeBlue)
+	node, _ := dag.newBlockNode(&blockHeader, blocknode.NewSet())
+	fakeBlue := &blocknode.Node{Hash: &daghash.Hash{1}}
+	dag.Index.AddNode(fakeBlue)
 	// Setting maxKType to maximum value of KType.
 	// As we verify above that KType is unsigned we can be sure that maxKType is indeed the maximum value of KType.
 	maxKType := ^dagconfig.KType(0)
-	node.bluesAnticoneSizes[fakeBlue] = maxKType
-	serializedNode, _ := serializeBlockNode(node)
+	node.BluesAnticoneSizes[fakeBlue] = maxKType
+	serializedNode, _ := blocknode.SerializeNode(node)
 	deserializedNode, _ := dag.deserializeBlockNode(serializedNode)
-	if deserializedNode.bluesAnticoneSizes[fakeBlue] != maxKType {
+	if deserializedNode.BluesAnticoneSizes[fakeBlue] != maxKType {
 		t.Fatalf("TestBlueAnticoneSizesSize: BlueAnticoneSize should not change when deserializing. Expected: %v but got %v",
-			maxKType, deserializedNode.bluesAnticoneSizes[fakeBlue])
+			maxKType, deserializedNode.BluesAnticoneSizes[fakeBlue])
+	}
+}
+
+func TestAncestorErrors(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimnetParams
+	dag, teardownFunc, err := DAGSetup("TestAncestorErrors", true, Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("TestAncestorErrors: Failed to setup DAG instance: %s", err)
+	}
+	defer teardownFunc()
+
+	node := newTestNode(dag, blocknode.NewSet(), int32(0x10000000), 0, mstime.Now())
+	node.BlueScore = 2
+	ancestor := node.SelectedAncestor(3)
+	if ancestor != nil {
+		t.Errorf("TestAncestorErrors: Ancestor() unexpectedly returned a node. Expected: <nil>")
 	}
 }

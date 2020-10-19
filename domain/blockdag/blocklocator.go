@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
@@ -30,12 +31,12 @@ func (dag *BlockDAG) BlockLocatorFromHashes(highHash, lowHash *daghash.Hash) (Bl
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	highNode, ok := dag.index.LookupNode(highHash)
+	highNode, ok := dag.Index.LookupNode(highHash)
 	if !ok {
 		return nil, errors.Errorf("block %s is unknown", highHash)
 	}
 
-	lowNode, ok := dag.index.LookupNode(lowHash)
+	lowNode, ok := dag.Index.LookupNode(lowHash)
 	if !ok {
 		return nil, errors.Errorf("block %s is unknown", lowHash)
 	}
@@ -47,19 +48,19 @@ func (dag *BlockDAG) BlockLocatorFromHashes(highHash, lowHash *daghash.Hash) (Bl
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, error) {
+func (dag *BlockDAG) blockLocator(highNode, lowNode *blocknode.Node) (BlockLocator, error) {
 	// We use the selected parent of the high node, so the
 	// block locator won't contain the high node.
-	highNode = highNode.selectedParent
+	highNode = highNode.SelectedParent
 
 	node := highNode
 	step := uint64(1)
 	locator := make(BlockLocator, 0)
 	for node != nil {
-		locator = append(locator, node.hash)
+		locator = append(locator, node.Hash)
 
 		// Nothing more to add once the low node has been added.
-		if node.blueScore <= lowNode.blueScore {
+		if node.BlueScore <= lowNode.BlueScore {
 			if node != lowNode {
 				return nil, errors.Errorf("highNode and lowNode are " +
 					"not in the same selected parent chain.")
@@ -69,9 +70,9 @@ func (dag *BlockDAG) blockLocator(highNode, lowNode *blockNode) (BlockLocator, e
 
 		// Calculate blueScore of previous node to include ensuring the
 		// final node is lowNode.
-		nextBlueScore := node.blueScore - step
-		if nextBlueScore < lowNode.blueScore {
-			nextBlueScore = lowNode.blueScore
+		nextBlueScore := node.BlueScore - step
+		if nextBlueScore < lowNode.BlueScore {
+			nextBlueScore = lowNode.BlueScore
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
@@ -96,7 +97,7 @@ func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (highHash, 
 	lowNode := dag.genesis
 	nextBlockLocatorIndex := int64(len(locator) - 1)
 	for i, hash := range locator {
-		node, ok := dag.index.LookupNode(hash)
+		node, ok := dag.Index.LookupNode(hash)
 		if ok {
 			lowNode = node
 			nextBlockLocatorIndex = int64(i) - 1
@@ -104,9 +105,9 @@ func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (highHash, 
 		}
 	}
 	if nextBlockLocatorIndex < 0 {
-		return nil, lowNode.hash
+		return nil, lowNode.Hash
 	}
-	return locator[nextBlockLocatorIndex], lowNode.hash
+	return locator[nextBlockLocatorIndex], lowNode.Hash
 }
 
 // antiPastHashesBetween returns the hashes of the blocks between the
@@ -121,7 +122,7 @@ func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 	}
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
-		hashes[i] = node.hash
+		hashes[i] = node.Hash
 	}
 	return hashes, nil
 }
@@ -130,18 +131,18 @@ func (dag *BlockDAG) antiPastHashesBetween(lowHash, highHash *daghash.Hash, maxH
 // and highHash's antiPast, or up to the provided max number of blocks.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blockNode, error) {
-	lowNode, ok := dag.index.LookupNode(lowHash)
+func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries uint64) ([]*blocknode.Node, error) {
+	lowNode, ok := dag.Index.LookupNode(lowHash)
 	if !ok {
 		return nil, errors.Errorf("couldn't find low hash %s", lowHash)
 	}
-	highNode, ok := dag.index.LookupNode(highHash)
+	highNode, ok := dag.Index.LookupNode(highHash)
 	if !ok {
 		return nil, errors.Errorf("couldn't find high hash %s", highHash)
 	}
-	if lowNode.blueScore >= highNode.blueScore {
+	if lowNode.BlueScore >= highNode.BlueScore {
 		return nil, errors.Errorf("low hash blueScore >= high hash blueScore (%d >= %d)",
-			lowNode.blueScore, highNode.blueScore)
+			lowNode.BlueScore, highNode.BlueScore)
 	}
 
 	// In order to get no more then maxEntries blocks from the
@@ -152,23 +153,23 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	// Using blueScore as an approximation is considered to be
 	// fairly accurate because we presume that most DAG blocks are
 	// blue.
-	for highNode.blueScore-lowNode.blueScore+1 > maxEntries {
-		highNode = highNode.selectedParent
+	for highNode.BlueScore-lowNode.BlueScore+1 > maxEntries {
+		highNode = highNode.SelectedParent
 	}
 
 	// Collect every node in highNode's past (including itself) but
 	// NOT in the lowNode's past (excluding itself) into an up-heap
 	// (a heap sorted by blueScore from lowest to greatest).
-	visited := newBlockSet()
-	candidateNodes := newUpHeap()
-	queue := newDownHeap()
+	visited := blocknode.NewSet()
+	candidateNodes := blocknode.NewUpHeap()
+	queue := blocknode.NewDownHeap()
 	queue.Push(highNode)
 	for queue.Len() > 0 {
-		current := queue.pop()
-		if visited.contains(current) {
+		current := queue.Pop()
+		if visited.Contains(current) {
 			continue
 		}
-		visited.add(current)
+		visited.Add(current)
 		var isCurrentAncestorOfLowNode bool
 		if current == lowNode {
 			isCurrentAncestorOfLowNode = false
@@ -183,7 +184,7 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 			continue
 		}
 		candidateNodes.Push(current)
-		for parent := range current.parents {
+		for parent := range current.Parents {
 			queue.Push(parent)
 		}
 	}
@@ -194,9 +195,9 @@ func (dag *BlockDAG) antiPastBetween(lowHash, highHash *daghash.Hash, maxEntries
 	if candidateNodes.Len() < nodesLen {
 		nodesLen = candidateNodes.Len()
 	}
-	nodes := make([]*blockNode, nodesLen)
+	nodes := make([]*blocknode.Node, nodesLen)
 	for i := 0; i < nodesLen; i++ {
-		nodes[i] = candidateNodes.pop()
+		nodes[i] = candidateNodes.Pop()
 	}
 	return nodes, nil
 }

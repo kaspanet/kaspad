@@ -77,7 +77,7 @@ func TxToSubnetworkID(tx *appmessage.MsgTx) (*subnetworkid.SubnetworkID, error) 
 
 // fetchSubnetwork returns a registered subnetwork.
 func (dag *BlockDAG) fetchSubnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
-	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dag.databaseContext, subnetworkID)
+	serializedSubnetwork, err := dbaccess.FetchSubnetworkData(dag.DatabaseContext, subnetworkID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"math"
 	"path/filepath"
 	"testing"
@@ -70,11 +71,11 @@ func TestProcessOrphans(t *testing.T) {
 	}
 
 	// Make sure that the child block had been rejected
-	node, ok := dag.index.LookupNode(childBlock.Hash())
+	node, ok := dag.Index.LookupNode(childBlock.Hash())
 	if !ok {
-		t.Fatalf("TestProcessOrphans: child block missing from block index")
+		t.Fatalf("TestProcessOrphans: child block missing from block Index")
 	}
-	if !dag.index.BlockNodeStatus(node).KnownInvalid() {
+	if !dag.Index.BlockNodeStatus(node).KnownInvalid() {
 		t.Fatalf("TestProcessOrphans: child block erroneously not marked as invalid")
 	}
 }
@@ -301,11 +302,11 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	if isOrphan {
 		t.Fatalf("TestMaybeAcceptBlockErrors: incorrectly returned block 1 is an orphan")
 	}
-	blockNode1, ok := dag.index.LookupNode(block1.Hash())
+	blockNode1, ok := dag.Index.LookupNode(block1.Hash())
 	if !ok {
 		t.Fatalf("block %s does not exist in the DAG", block1.Hash())
 	}
-	dag.index.SetBlockNodeStatus(blockNode1, statusValidateFailed)
+	dag.Index.SetBlockNodeStatus(blockNode1, blocknode.StatusValidateFailed)
 
 	block2 := blocks[2]
 	err = dag.maybeAcceptBlock(block2, BFNone)
@@ -322,7 +323,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	}
 
 	// Set block1's status back to valid for next tests
-	dag.index.SetBlockNodeStatus(blockNode1, statusValid)
+	dag.Index.SetBlockNodeStatus(blockNode1, blocknode.StatusValid)
 
 	// Test rejecting the block due to bad context
 	originalBits := block2.MsgBlock().Header.Bits

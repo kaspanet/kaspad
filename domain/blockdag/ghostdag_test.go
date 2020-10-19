@@ -3,6 +3,7 @@ package blockdag
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -65,19 +66,19 @@ func TestGHOSTDAG(t *testing.T) {
 			defer teardownFunc()
 
 			genesisNode := dag.genesis
-			blockByIDMap := make(map[string]*blockNode)
-			idByBlockMap := make(map[*blockNode]string)
+			blockByIDMap := make(map[string]*blocknode.Node)
+			idByBlockMap := make(map[*blocknode.Node]string)
 			blockByIDMap[test.GenesisID] = genesisNode
 			idByBlockMap[genesisNode] = test.GenesisID
 
 			for _, blockData := range test.Blocks {
-				parents := blockSet{}
+				parents := blocknode.Set{}
 				for _, parentID := range blockData.Parents {
 					parent := blockByIDMap[parentID]
-					parents.add(parent)
+					parents.Add(parent)
 				}
 
-				block, err := PrepareBlockForTest(dag, parents.hashes(), nil)
+				block, err := PrepareBlockForTest(dag, parents.Hashes(), nil)
 				if err != nil {
 					t.Fatalf("TestGHOSTDAG: block %s got unexpected error from PrepareBlockForTest: %+v", blockData.ID,
 						err)
@@ -96,7 +97,7 @@ func TestGHOSTDAG(t *testing.T) {
 					t.Fatalf("TestGHOSTDAG: block %s was unexpectedly orphan", blockData.ID)
 				}
 
-				node, ok := dag.index.LookupNode(utilBlock.Hash())
+				node, ok := dag.Index.LookupNode(utilBlock.Hash())
 				if !ok {
 					t.Fatalf("block %s does not exist in the DAG", utilBlock.Hash())
 				}
@@ -104,23 +105,23 @@ func TestGHOSTDAG(t *testing.T) {
 				blockByIDMap[blockData.ID] = node
 				idByBlockMap[node] = blockData.ID
 
-				bluesIDs := make([]string, 0, len(node.blues))
-				redsIDs := make([]string, 0, len(node.reds))
+				bluesIDs := make([]string, 0, len(node.Blues))
+				redsIDs := make([]string, 0, len(node.Reds))
 
-				for _, blue := range node.blues {
+				for _, blue := range node.Blues {
 					bluesIDs = append(bluesIDs, idByBlockMap[blue])
 				}
 
-				for _, red := range node.reds {
+				for _, red := range node.Reds {
 					redsIDs = append(redsIDs, idByBlockMap[red])
 				}
 
-				selectedParentID := idByBlockMap[node.selectedParent]
+				selectedParentID := idByBlockMap[node.SelectedParent]
 				fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
-					bluesIDs, selectedParentID, node.blueScore)
-				if blockData.ExpectedScore != node.blueScore {
+					bluesIDs, selectedParentID, node.BlueScore)
+				if blockData.ExpectedScore != node.BlueScore {
 					t.Errorf("Test %s: Block %s expected to have score %v but got %v (fulldata: %v)",
-						info.Name(), blockData.ID, blockData.ExpectedScore, node.blueScore, fullDataStr)
+						info.Name(), blockData.ID, blockData.ExpectedScore, node.BlueScore, fullDataStr)
 				}
 				if blockData.ExpectedSelectedParent != selectedParentID {
 					t.Errorf("Test %s: Block %s expected to have selected parent %v but got %v (fulldata: %v)",
@@ -142,10 +143,10 @@ func TestGHOSTDAG(t *testing.T) {
 				reds[id] = true
 			}
 
-			for tip := dag.virtual.blockNode; tip.selectedParent != nil; tip = tip.selectedParent {
+			for tip := dag.virtual.Node; tip.SelectedParent != nil; tip = tip.SelectedParent {
 				tipID := idByBlockMap[tip]
 				delete(reds, tipID)
-				for _, blue := range tip.blues {
+				for _, blue := range tip.Blues {
 					blueID := idByBlockMap[blue]
 					delete(reds, blueID)
 				}
@@ -206,12 +207,12 @@ func TestBlueAnticoneSizeErrors(t *testing.T) {
 	}
 
 	// Get references to the tips of the two chains
-	blockNodeA, ok := dag.index.LookupNode(currentBlockA.BlockHash())
+	blockNodeA, ok := dag.Index.LookupNode(currentBlockA.BlockHash())
 	if !ok {
 		t.Fatalf("block %s does not exist in the DAG", currentBlockA.BlockHash())
 	}
 
-	blockNodeB, ok := dag.index.LookupNode(currentBlockB.BlockHash())
+	blockNodeB, ok := dag.Index.LookupNode(currentBlockB.BlockHash())
 	if !ok {
 		t.Fatalf("block %s does not exist in the DAG", currentBlockB.BlockHash())
 	}
@@ -249,7 +250,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 	// Clear the reachability store
 	dag.reachabilityTree.store.loaded = map[daghash.Hash]*reachabilityData{}
 
-	dbTx, err := dag.databaseContext.NewTx()
+	dbTx, err := dag.DatabaseContext.NewTx()
 	if err != nil {
 		t.Fatalf("NewTx: %s", err)
 	}
@@ -267,7 +268,7 @@ func TestGHOSTDAGErrors(t *testing.T) {
 
 	// Try to rerun GHOSTDAG on the last block. GHOSTDAG uses
 	// reachability data, so we expect it to fail.
-	blockNode3, ok := dag.index.LookupNode(block3.BlockHash())
+	blockNode3, ok := dag.Index.LookupNode(block3.BlockHash())
 	if !ok {
 		t.Fatalf("block %s does not exist in the DAG", block3.BlockHash())
 	}

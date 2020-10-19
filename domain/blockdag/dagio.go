@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/pkg/errors"
@@ -42,94 +43,6 @@ func (e ErrNotInDAG) Error() string {
 func IsNotInDAGErr(err error) bool {
 	var notInDAGErr ErrNotInDAG
 	return errors.As(err, &notInDAGErr)
-}
-
-// outpointIndexByteOrder is the byte order for serializing the outpoint index.
-// It uses big endian to ensure that when outpoint is used as database key, the
-// keys will be iterated in an ascending order by the outpoint index.
-var outpointIndexByteOrder = binary.BigEndian
-
-func serializeOutpoint(w io.Writer, outpoint *appmessage.Outpoint) error {
-	_, err := w.Write(outpoint.TxID[:])
-	if err != nil {
-		return err
-	}
-
-	var buf [4]byte
-	outpointIndexByteOrder.PutUint32(buf[:], outpoint.Index)
-	_, err = w.Write(buf[:])
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-var outpointSerializeSize = daghash.TxIDSize + 4
-
-// deserializeOutpoint decodes an outpoint from the passed serialized byte
-// slice into a new appmessage.Outpoint using a format that is suitable for long-
-// term storage. This format is described in detail above.
-func deserializeOutpoint(r io.Reader) (*appmessage.Outpoint, error) {
-	outpoint := &appmessage.Outpoint{}
-	_, err := r.Read(outpoint.TxID[:])
-	if err != nil {
-		return nil, err
-	}
-
-	outpoint.Index, err = binaryserializer.Uint32(r, outpointIndexByteOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	return outpoint, nil
-}
-
-// updateUTXOSet updates the UTXO set in the database based on the provided
-// UTXO diff.
-func updateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *UTXODiff) error {
-	outpointBuff := bytes.NewBuffer(make([]byte, outpointSerializeSize))
-	for outpoint := range virtualUTXODiff.toRemove {
-		outpointBuff.Reset()
-		err := serializeOutpoint(outpointBuff, &outpoint)
-		if err != nil {
-			return err
-		}
-
-		key := outpointBuff.Bytes()
-		err = dbaccess.RemoveFromUTXOSet(dbContext, key)
-		if err != nil {
-			return err
-		}
-	}
-
-	// We are preallocating for P2PKH entries because they are the most common ones.
-	// If we have entries with a compressed script bigger than P2PKH's, the buffer will grow.
-	utxoEntryBuff := bytes.NewBuffer(make([]byte, p2pkhUTXOEntrySerializeSize))
-
-	for outpoint, entry := range virtualUTXODiff.toAdd {
-		utxoEntryBuff.Reset()
-		outpointBuff.Reset()
-		// Serialize and store the UTXO entry.
-		err := serializeUTXOEntry(utxoEntryBuff, entry)
-		if err != nil {
-			return err
-		}
-		serializedEntry := utxoEntryBuff.Bytes()
-
-		err = serializeOutpoint(outpointBuff, &outpoint)
-		if err != nil {
-			return err
-		}
-
-		key := outpointBuff.Bytes()
-		err = dbaccess.AddToUTXOSet(dbContext, key, serializedEntry)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 type dagState struct {
@@ -172,7 +85,7 @@ func saveDAGState(dbContext dbaccess.Context, state *dagState) error {
 // createDAGState initializes the DAG state to the
 // genesis block and the node's local subnetwork id.
 func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID) error {
-	return saveDAGState(dag.databaseContext, &dagState{
+	return saveDAGState(dag.DatabaseContext, &dagState{
 		TipHashes:            []*daghash.Hash{dag.Params.GenesisHash},
 		VirtualParentsHashes: []*daghash.Hash{dag.Params.GenesisHash},
 		ValidTipHashes:       []*daghash.Hash{dag.Params.GenesisHash},
@@ -186,7 +99,7 @@ func (dag *BlockDAG) createDAGState(localSubnetworkID *subnetworkid.SubnetworkID
 func (dag *BlockDAG) initDAGState() error {
 	// Fetch the stored DAG state from the database. If it doesn't exist,
 	// it means that kaspad is running for the first time.
-	serializedDAGState, err := dbaccess.FetchDAGState(dag.databaseContext)
+	serializedDAGState, err := dbaccess.FetchDAGState(dag.DatabaseContext)
 	if dbaccess.IsNotFoundError(err) {
 		// Initialize the database and the DAG state to the genesis block.
 		return dag.createDAGState(dag.subnetworkID)
@@ -205,20 +118,20 @@ func (dag *BlockDAG) initDAGState() error {
 		return err
 	}
 
-	log.Debugf("Loading block index...")
+	log.Debugf("Loading block Index...")
 	unprocessedBlockNodes, err := dag.initBlockIndex()
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Loading reachability data...")
-	err = dag.reachabilityTree.init(dag.databaseContext)
+	err = dag.reachabilityTree.init(dag.DatabaseContext)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Loading multiset data...")
-	err = dag.multisetStore.init(dag.databaseContext)
+	err = dag.multisetStore.Init(dag.DatabaseContext)
 	if err != nil {
 		return err
 	}
@@ -250,8 +163,8 @@ func (dag *BlockDAG) validateLocalSubnetworkID(state *dagState) error {
 	return nil
 }
 
-func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err error) {
-	blockIndexCursor, err := dbaccess.BlockIndexCursor(dag.databaseContext)
+func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blocknode.Node, err error) {
+	blockIndexCursor, err := dbaccess.BlockIndexCursor(dag.DatabaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -268,94 +181,59 @@ func (dag *BlockDAG) initBlockIndex() (unprocessedBlockNodes []*blockNode, err e
 
 		// Check to see if this node had been stored in the the block DB
 		// but not yet accepted. If so, add it to a slice to be processed later.
-		if node.status == statusDataStored {
+		if node.Status == blocknode.StatusDataStored {
 			unprocessedBlockNodes = append(unprocessedBlockNodes, node)
 			continue
 		}
 
 		// If the node is known to be invalid add it as-is to the block
-		// index and continue.
-		if node.status.KnownInvalid() {
-			dag.index.addNode(node)
+		// Index and continue.
+		if node.Status.KnownInvalid() {
+			dag.Index.AddNodeNoLock(node)
 			continue
 		}
 
 		if dag.blockCount == 0 {
-			if !node.hash.IsEqual(dag.Params.GenesisHash) {
+			if !node.Hash.IsEqual(dag.Params.GenesisHash) {
 				return nil, errors.Errorf("Expected "+
-					"first entry in block index to be genesis block, "+
-					"found %s", node.hash)
+					"first entry in block Index to be genesis block, "+
+					"found %s", node.Hash)
 			}
 		} else {
-			if len(node.parents) == 0 {
+			if len(node.Parents) == 0 {
 				return nil, errors.Errorf("block %s "+
-					"has no parents but it's not the genesis block", node.hash)
+					"has no parents but it's not the genesis block", node.Hash)
 			}
 		}
 
 		// Add the node to its parents children, connect it,
-		// and add it to the block index.
-		node.updateParentsChildren()
-		dag.index.addNode(node)
+		// and add it to the block Index.
+		node.UpdateParentsChildren()
+		dag.Index.AddNodeNoLock(node)
 
 		dag.blockCount++
 	}
 	return unprocessedBlockNodes, nil
 }
 
-func (dag *BlockDAG) initUTXOSet() (fullUTXOCollection utxoCollection, err error) {
-	fullUTXOCollection = make(utxoCollection)
-	cursor, err := dbaccess.UTXOSetCursor(dag.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close()
-
-	for cursor.Next() {
-		// Deserialize the outpoint
-		key, err := cursor.Key()
-		if err != nil {
-			return nil, err
-		}
-		outpoint, err := deserializeOutpoint(bytes.NewReader(key.Suffix()))
-		if err != nil {
-			return nil, err
-		}
-
-		// Deserialize the utxo entry
-		value, err := cursor.Value()
-		if err != nil {
-			return nil, err
-		}
-		entry, err := deserializeUTXOEntry(bytes.NewReader(value))
-		if err != nil {
-			return nil, err
-		}
-
-		fullUTXOCollection[*outpoint] = entry
-	}
-
-	return fullUTXOCollection, nil
-}
-
 func (dag *BlockDAG) initTipsAndVirtualParents(state *dagState) error {
-	tips, err := dag.index.LookupNodes(state.TipHashes)
+	tips, err := dag.Index.LookupNodes(state.TipHashes)
 	if err != nil {
 		return errors.Wrapf(err, "Error loading tips")
 	}
-	dag.tips = blockSetFromSlice(tips...)
+	dag.tips = blocknode.SetFromSlice(tips...)
 
-	validTips, err := dag.index.LookupNodes(state.ValidTipHashes)
+	validTips, err := dag.Index.LookupNodes(state.ValidTipHashes)
 	if err != nil {
 		return errors.Wrapf(err, "Error loading tips")
 	}
-	dag.validTips = blockSetFromSlice(validTips...)
+	dag.validTips = blocknode.SetFromSlice(validTips...)
 
-	virtualParents, err := dag.index.LookupNodes(state.VirtualParentsHashes)
+	virtualParents, err := dag.Index.LookupNodes(state.VirtualParentsHashes)
 	if err != nil {
 		return errors.Wrapf(err, "Error loading tips")
 	}
-	dag.virtual.blockNode, _ = dag.newBlockNode(nil, blockSetFromSlice(virtualParents...))
+	dag.virtual.Node, _ = dag.newBlockNode(nil, blocknode.SetFromSlice(virtualParents...))
 
 	// call updateSelectedParentSet with genesis as oldSelectedParent, so that the selectedParentSet is fully calculated
 	_ = dag.virtual.updateSelectedParentSet(dag.genesis)
@@ -363,50 +241,50 @@ func (dag *BlockDAG) initTipsAndVirtualParents(state *dagState) error {
 	return nil
 }
 
-func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*blockNode) error {
+func (dag *BlockDAG) processUnprocessedBlockNodes(unprocessedBlockNodes []*blocknode.Node) error {
 	for _, node := range unprocessedBlockNodes {
 		// Check to see if the block exists in the block DB. If it
 		// doesn't, the database has certainly been corrupted.
-		blockExists, err := dbaccess.HasBlock(dag.databaseContext, node.hash)
+		blockExists, err := dbaccess.HasBlock(dag.DatabaseContext, node.Hash)
 		if err != nil {
 			return errors.Wrapf(err, "HasBlock "+
-				"for block %s failed: %s", node.hash, err)
+				"for block %s failed: %s", node.Hash, err)
 		}
 		if !blockExists {
 			return errors.Errorf("block %s "+
-				"exists in block index but not in block db", node.hash)
+				"exists in block Index but not in block db", node.Hash)
 		}
 
 		// Attempt to accept the block.
-		block, err := dag.fetchBlockByHash(node.hash)
+		block, err := dag.fetchBlockByHash(node.Hash)
 		if err != nil {
 			return err
 		}
 		isOrphan, isDelayed, err := dag.ProcessBlock(block, BFWasStored)
 		if err != nil {
 			log.Warnf("Block %s, which was not previously processed, "+
-				"failed to be accepted to the DAG: %s", node.hash, err)
+				"failed to be accepted to the DAG: %s", node.Hash, err)
 			continue
 		}
 
 		// If the block is an orphan or is delayed then it couldn't have
-		// possibly been written to the block index in the first place.
+		// possibly been written to the block Index in the first place.
 		if isOrphan {
 			return errors.Errorf("Block %s, which was not "+
 				"previously processed, turned out to be an orphan, which is "+
-				"impossible.", node.hash)
+				"impossible.", node.Hash)
 		}
 		if isDelayed {
 			return errors.Errorf("Block %s, which was not "+
 				"previously processed, turned out to be delayed, which is "+
-				"impossible.", node.hash)
+				"impossible.", node.Hash)
 		}
 	}
 	return nil
 }
 
-// deserializeBlockNode parses a value in the block index bucket and returns a block node.
-func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
+// deserializeBlockNode parses a value in the block Index bucket and returns a block node.
+func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blocknode.Node, error) {
 	buffer := bytes.NewReader(blockRow)
 
 	var header appmessage.BlockHeader
@@ -415,35 +293,34 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node := &blockNode{
-		dag:                  dag,
-		hash:                 header.BlockHash(),
-		version:              header.Version,
-		bits:                 header.Bits,
-		nonce:                header.Nonce,
-		timestamp:            header.Timestamp.UnixMilliseconds(),
-		hashMerkleRoot:       header.HashMerkleRoot,
-		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
-		utxoCommitment:       header.UTXOCommitment,
+	node := &blocknode.Node{
+		Hash:                 header.BlockHash(),
+		Version:              header.Version,
+		Bits:                 header.Bits,
+		Nonce:                header.Nonce,
+		Timestamp:            header.Timestamp.UnixMilliseconds(),
+		HashMerkleRoot:       header.HashMerkleRoot,
+		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
+		UTXOCommitment:       header.UTXOCommitment,
 	}
 
-	node.children = newBlockSet()
-	node.parents = newBlockSet()
+	node.Children = blocknode.NewSet()
+	node.Parents = blocknode.NewSet()
 
 	for _, hash := range header.ParentHashes {
-		parent, ok := dag.index.LookupNode(hash)
+		parent, ok := dag.Index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("deserializeBlockNode: Could "+
 				"not find parent %s for block %s", hash, header.BlockHash())
 		}
-		node.parents.add(parent)
+		node.Parents.Add(parent)
 	}
 
 	statusByte, err := buffer.ReadByte()
 	if err != nil {
 		return nil, err
 	}
-	node.status = blockStatus(statusByte)
+	node.Status = blocknode.Status(statusByte)
 
 	selectedParentHash := &daghash.Hash{}
 	if _, err := io.ReadFull(buffer, selectedParentHash[:]); err != nil {
@@ -453,13 +330,13 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	// Because genesis doesn't have selected parent, it's serialized as zero hash
 	if !selectedParentHash.IsEqual(&daghash.ZeroHash) {
 		var ok bool
-		node.selectedParent, ok = dag.index.LookupNode(selectedParentHash)
+		node.SelectedParent, ok = dag.Index.LookupNode(selectedParentHash)
 		if !ok {
 			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
 		}
 	}
 
-	node.blueScore, err = binaryserializer.Uint64(buffer, byteOrder)
+	node.BlueScore, err = binaryserializer.Uint64(buffer, byteOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +346,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.blues = make([]*blockNode, bluesCount)
+	node.Blues = make([]*blocknode.Node, bluesCount)
 	for i := uint64(0); i < bluesCount; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
@@ -477,7 +354,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 
 		var ok bool
-		node.blues[i], ok = dag.index.LookupNode(hash)
+		node.Blues[i], ok = dag.Index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
 		}
@@ -488,7 +365,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.reds = make([]*blockNode, redsCount)
+	node.Reds = make([]*blocknode.Node, redsCount)
 	for i := uint64(0); i < redsCount; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
@@ -496,7 +373,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		}
 
 		var ok bool
-		node.reds[i], ok = dag.index.LookupNode(hash)
+		node.Reds[i], ok = dag.Index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("block %s does not exist in the DAG", selectedParentHash)
 		}
@@ -507,7 +384,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.bluesAnticoneSizes = make(map[*blockNode]dagconfig.KType)
+	node.BluesAnticoneSizes = make(map[*blocknode.Node]dagconfig.KType)
 	for i := uint64(0); i < bluesAnticoneSizesLen; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
@@ -517,11 +394,11 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		if err != nil {
 			return nil, err
 		}
-		blue, ok := dag.index.LookupNode(hash)
+		blue, ok := dag.Index.LookupNode(hash)
 		if !ok {
 			return nil, errors.Errorf("couldn't find block with hash %s", hash)
 		}
-		node.bluesAnticoneSizes[blue] = dagconfig.KType(bluesAnticoneSize)
+		node.BluesAnticoneSizes[blue] = dagconfig.KType(bluesAnticoneSize)
 	}
 
 	return node, nil
@@ -530,7 +407,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 // fetchBlockByHash retrieves the raw block for the provided hash,
 // deserializes it, and returns a util.Block of it.
 func (dag *BlockDAG) fetchBlockByHash(hash *daghash.Hash) (*util.Block, error) {
-	blockBytes, err := dbaccess.FetchBlock(dag.databaseContext, hash)
+	blockBytes, err := dbaccess.FetchBlock(dag.DatabaseContext, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -545,103 +422,18 @@ func storeBlock(dbContext *dbaccess.TxContext, block *util.Block) error {
 	return dbaccess.StoreBlock(dbContext, block.Hash(), blockBytes)
 }
 
-func serializeBlockNode(node *blockNode) ([]byte, error) {
-	w := bytes.NewBuffer(make([]byte, 0, appmessage.MaxBlockHeaderPayload+1))
-	header := node.Header()
-	err := header.Serialize(w)
-	if err != nil {
-		return nil, err
-	}
-
-	err = w.WriteByte(byte(node.status))
-	if err != nil {
-		return nil, err
-	}
-
-	// Because genesis doesn't have selected parent, it's serialized as zero hash
-	selectedParentHash := &daghash.ZeroHash
-	if node.selectedParent != nil {
-		selectedParentHash = node.selectedParent.hash
-	}
-	_, err = w.Write(selectedParentHash[:])
-	if err != nil {
-		return nil, err
-	}
-
-	err = binaryserializer.PutUint64(w, byteOrder, node.blueScore)
-	if err != nil {
-		return nil, err
-	}
-
-	err = appmessage.WriteVarInt(w, uint64(len(node.blues)))
-	if err != nil {
-		return nil, err
-	}
-
-	for _, blue := range node.blues {
-		_, err = w.Write(blue.hash[:])
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = appmessage.WriteVarInt(w, uint64(len(node.reds)))
-	if err != nil {
-		return nil, err
-	}
-
-	for _, red := range node.reds {
-		_, err = w.Write(red.hash[:])
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = appmessage.WriteVarInt(w, uint64(len(node.bluesAnticoneSizes)))
-	if err != nil {
-		return nil, err
-	}
-	for blue, blueAnticoneSize := range node.bluesAnticoneSizes {
-		_, err = w.Write(blue.hash[:])
-		if err != nil {
-			return nil, err
-		}
-
-		err = binaryserializer.PutUint8(w, uint8(blueAnticoneSize))
-		if err != nil {
-			return nil, err
-		}
-	}
-	return w.Bytes(), nil
-}
-
-// blockIndexKey generates the binary key for an entry in the block index
-// bucket. The key is composed of the block blue score encoded as a big-endian
-// 64-bit unsigned int followed by the 32 byte block hash.
-// The blue score component is important for iteration order.
-func blockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
-	indexKey := make([]byte, daghash.HashSize+8)
-	binary.BigEndian.PutUint64(indexKey[0:8], blueScore)
-	copy(indexKey[8:daghash.HashSize+8], blockHash[:])
-	return indexKey
-}
-
-func blockHashFromBlockIndexKey(BlockIndexKey []byte) (*daghash.Hash, error) {
-	return daghash.NewHash(BlockIndexKey[8 : daghash.HashSize+8])
-}
-
 // BlockByHash returns the block from the DAG with the given hash.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
-	// Lookup the block hash in block index and ensure it is in the DAG
-	node, ok := dag.index.LookupNode(hash)
+	// Lookup the block hash in block Index and ensure it is in the DAG
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return nil, ErrNotInDAG(str)
 	}
 
-	block, err := dag.fetchBlockByHash(node.hash)
+	block, err := dag.fetchBlockByHash(node.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -655,11 +447,11 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
 	blockHashes := make([]*daghash.Hash, 0, limit)
 	if lowHash == nil {
-		lowHash = dag.genesis.hash
+		lowHash = dag.genesis.Hash
 
 		// If we're starting from the beginning we should include the
 		// genesis hash in the result
-		blockHashes = append(blockHashes, dag.genesis.hash)
+		blockHashes = append(blockHashes, dag.genesis.Hash)
 	}
 	if !dag.IsInDAG(lowHash) {
 		return nil, errors.Errorf("block %s not found", lowHash)
@@ -669,10 +461,10 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		return nil, err
 	}
 
-	key := blockIndexKey(lowHash, blueScore)
-	cursor, err := dbaccess.BlockIndexCursorFrom(dag.databaseContext, key)
+	key := blocknode.BlockIndexKey(lowHash, blueScore)
+	cursor, err := dbaccess.BlockIndexCursorFrom(dag.DatabaseContext, key)
 	if dbaccess.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "block %s not in block index", lowHash)
+		return nil, errors.Wrapf(err, "block %s not in block Index", lowHash)
 	}
 	if err != nil {
 		return nil, err
@@ -684,7 +476,7 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 		if err != nil {
 			return nil, err
 		}
-		blockHash, err := blockHashFromBlockIndexKey(key.Suffix())
+		blockHash, err := blocknode.BlockHashFromBlockIndexKey(key.Suffix())
 		if err != nil {
 			return nil, err
 		}
@@ -694,10 +486,10 @@ func (dag *BlockDAG) BlockHashesFrom(lowHash *daghash.Hash, limit int) ([]*dagha
 	return blockHashes, nil
 }
 
-func (dag *BlockDAG) fetchBlueBlocks(node *blockNode) ([]*util.Block, error) {
-	blueBlocks := make([]*util.Block, len(node.blues))
-	for i, blueBlockNode := range node.blues {
-		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.hash)
+func (dag *BlockDAG) fetchBlueBlocks(node *blocknode.Node) ([]*util.Block, error) {
+	blueBlocks := make([]*util.Block, len(node.Blues))
+	for i, blueBlockNode := range node.Blues {
+		blueBlock, err := dag.fetchBlockByHash(blueBlockNode.Hash)
 		if err != nil {
 			return nil, err
 		}

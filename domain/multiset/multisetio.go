@@ -1,4 +1,4 @@
-package blockdag
+package multiset
 
 import (
 	"encoding/binary"
@@ -7,6 +7,12 @@ import (
 )
 
 const multisetPointSize = 32
+
+var (
+	// byteOrder is the preferred byte order used for serializing numeric
+	// fields for storage in the database.
+	byteOrder = binary.LittleEndian
+)
 
 // serializeMultiset serializes an ECMH multiset.
 func serializeMultiset(w io.Writer, ms *secp256k1.MultiSet) error {

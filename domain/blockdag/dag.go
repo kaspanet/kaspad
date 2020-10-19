@@ -6,7 +6,12 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/multiset"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/blocknode"
+	"github.com/kaspanet/kaspad/domain/utxo"
+	utxodiffstore "github.com/kaspanet/kaspad/domain/utxo"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
@@ -29,11 +34,11 @@ type BlockDAG struct {
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
 	Params          *dagconfig.Params
-	databaseContext *dbaccess.DatabaseContext
+	DatabaseContext *dbaccess.DatabaseContext
 	timeSource      TimeSource
 	sigCache        *txscript.SigCache
 	indexManager    IndexManager
-	genesis         *blockNode
+	genesis         *blocknode.Node
 
 	// The following fields are calculated based upon the provided DAG
 	// parameters. They are also set when the instance is created and
@@ -50,13 +55,13 @@ type BlockDAG struct {
 	// fields in this struct below this point.
 	dagLock sync.RWMutex
 
-	// index and virtual are related to the memory block index. They both
+	// Index and virtual are related to the memory block Index. They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
 
-	// index houses the entire block index in memory. The block index is
+	// Index houses the entire block Index in memory. The block Index is
 	// a tree-shaped structure.
-	index *blockIndex
+	Index *blocknode.Index
 
 	// blockCount holds the number of blocks in the DAG
 	blockCount uint64
@@ -86,8 +91,8 @@ type BlockDAG struct {
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
 
-	utxoDiffStore *utxoDiffStore
-	multisetStore *multisetStore
+	UTXODiffStore *utxodiffstore.DiffStore
+	multisetStore *multiset.MultisetStore
 
 	reachabilityTree *reachabilityTree
 
@@ -95,11 +100,11 @@ type BlockDAG struct {
 	startTime                       mstime.Time
 
 	maxUTXOCacheSize uint64
-	tips             blockSet
+	tips             blocknode.Set
 
 	// validTips is a set of blocks with the status "valid", which have no valid descendants.
 	// Note that some validTips might not be actual tips.
-	validTips blockSet
+	validTips blocknode.Set
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
@@ -108,14 +113,14 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag := &BlockDAG{
 		Params:                         params,
-		databaseContext:                config.DatabaseContext,
+		DatabaseContext:                config.DatabaseContext,
 		timeSource:                     config.TimeSource,
 		sigCache:                       config.SigCache,
 		indexManager:                   config.IndexManager,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
 		powMaxBits:                     util.BigToCompact(params.PowMax),
-		index:                          newBlockIndex(params),
+		Index:                          blocknode.NewIndex(),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
 		delayedBlocks:                  make(map[daghash.Hash]*delayedBlock),
@@ -126,9 +131,9 @@ func New(config *Config) (*BlockDAG, error) {
 		maxUTXOCacheSize:               config.MaxUTXOCacheSize,
 	}
 
-	dag.virtual = newVirtualBlock(dag, nil)
-	dag.utxoDiffStore = newUTXODiffStore(dag)
-	dag.multisetStore = newMultisetStore(dag)
+	dag.virtual = newVirtualBlock(utxo.NewFullUTXOSetFromContext(dag.DatabaseContext, dag.maxUTXOCacheSize), nil, dag.Now().UnixMilliseconds())
+	dag.UTXODiffStore = utxo.NewDiffStore(dag.DatabaseContext)
+	dag.multisetStore = multiset.NewMultisetStore()
 	dag.reachabilityTree = newReachabilityTree(dag)
 
 	// Initialize the DAG state from the passed database. When the db
@@ -142,13 +147,13 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err = config.IndexManager.Init(dag, dag.databaseContext)
+		err = config.IndexManager.Init(dag, dag.DatabaseContext)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	genesis, ok := dag.index.LookupNode(params.GenesisHash)
+	genesis, ok := dag.Index.LookupNode(params.GenesisHash)
 
 	if !ok {
 		genesisBlock := util.NewBlock(dag.Params.GenesisBlock)
@@ -162,7 +167,7 @@ func New(config *Config) (*BlockDAG, error) {
 		if isOrphan {
 			return nil, errors.New("genesis block is unexpectedly orphan")
 		}
-		genesis, ok = dag.index.LookupNode(params.GenesisHash)
+		genesis, ok = dag.Index.LookupNode(params.GenesisHash)
 		if !ok {
 			return nil, errors.New("genesis is not found in the DAG after it was proccessed")
 		}
@@ -173,7 +178,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	selectedTip := dag.selectedTip()
 	log.Infof("DAG state (blue score %d, hash %s)",
-		selectedTip.blueScore, selectedTip.hash)
+		selectedTip.BlueScore, selectedTip.Hash)
 
 	return dag, nil
 }
@@ -207,8 +212,8 @@ func (dag *BlockDAG) Now() mstime.Time {
 
 // selectedTip returns the current selected tip for the DAG.
 // It will return nil if there is no tip.
-func (dag *BlockDAG) selectedTip() *blockNode {
-	return dag.virtual.selectedParent
+func (dag *BlockDAG) selectedTip() *blocknode.Node {
+	return dag.virtual.SelectedParent
 }
 
 // SelectedTipHeader returns the header of the current selected tip for the DAG.
@@ -236,17 +241,17 @@ func (dag *BlockDAG) SelectedTipHash() *daghash.Hash {
 		return nil
 	}
 
-	return selectedTip.hash
+	return selectedTip.Hash
 }
 
 // UTXOSet returns the DAG's UTXO set
-func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
+func (dag *BlockDAG) UTXOSet() *utxo.FullUTXOSet {
 	return dag.virtual.utxoSet
 }
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
-	return dag.virtual.selectedParent.PastMedianTime()
+	return dag.PastMedianTime(dag.virtual.SelectedParent)
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -254,32 +259,32 @@ func (dag *BlockDAG) CalcPastMedianTime() mstime.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outpoint appmessage.Outpoint) (*UTXOEntry, bool) {
+func (dag *BlockDAG) GetUTXOEntry(outpoint appmessage.Outpoint) (*utxo.Entry, bool) {
 	dag.RLock()
 	defer dag.RUnlock()
-	return dag.virtual.utxoSet.get(outpoint)
+	return dag.virtual.utxoSet.Get(outpoint)
 }
 
 // BlueScoreByBlockHash returns the blue score of a block with the given hash.
 func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		return 0, errors.Errorf("block %s is unknown", hash)
 	}
 
-	return node.blueScore, nil
+	return node.BlueScore, nil
 }
 
 // BluesByBlockHash returns the blues of the block for the given hash.
 func (dag *BlockDAG) BluesByBlockHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		return nil, errors.Errorf("block %s is unknown", hash)
 	}
 
-	hashes := make([]*daghash.Hash, len(node.blues))
-	for i, blue := range node.blues {
-		hashes[i] = blue.hash
+	hashes := make([]*daghash.Hash, len(node.Blues))
+	for i, blue := range node.Blues {
+		hashes[i] = blue.Hash
 	}
 
 	return hashes, nil
@@ -287,23 +292,23 @@ func (dag *BlockDAG) BluesByBlockHash(hash *daghash.Hash) ([]*daghash.Hash, erro
 
 // SelectedTipBlueScore returns the blue score of the selected tip.
 func (dag *BlockDAG) SelectedTipBlueScore() uint64 {
-	return dag.selectedTip().blueScore
+	return dag.selectedTip().BlueScore
 }
 
 // VirtualBlueHashes returns the blue of the current virtual block
 func (dag *BlockDAG) VirtualBlueHashes() []*daghash.Hash {
 	dag.RLock()
 	defer dag.RUnlock()
-	hashes := make([]*daghash.Hash, len(dag.virtual.blues))
-	for i, blue := range dag.virtual.blues {
-		hashes[i] = blue.hash
+	hashes := make([]*daghash.Hash, len(dag.virtual.Blues))
+	for i, blue := range dag.virtual.Blues {
+		hashes[i] = blue.Hash
 	}
 	return hashes
 }
 
 // VirtualBlueScore returns the blue score of the current virtual block
 func (dag *BlockDAG) VirtualBlueScore() uint64 {
-	return dag.virtual.blueScore
+	return dag.virtual.BlueScore
 }
 
 // BlockCount returns the number of blocks in the DAG
@@ -313,23 +318,23 @@ func (dag *BlockDAG) BlockCount() uint64 {
 
 // TipHashes returns the hashes of the DAG's tips
 func (dag *BlockDAG) TipHashes() []*daghash.Hash {
-	return dag.tips.hashes()
+	return dag.tips.Hashes()
 }
 
 // ValidTipHashes returns the hashes of the DAG's valid tips
 func (dag *BlockDAG) ValidTipHashes() []*daghash.Hash {
-	return dag.validTips.hashes()
+	return dag.validTips.Hashes()
 }
 
 // VirtualParentHashes returns the hashes of the virtual block's parents
 func (dag *BlockDAG) VirtualParentHashes() []*daghash.Hash {
-	return dag.virtual.parents.hashes()
+	return dag.virtual.Parents.Hashes()
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
 func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*appmessage.BlockHeader, error) {
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		err := errors.Errorf("block %s is not known", hash)
 		return &appmessage.BlockHeader{}, err
@@ -343,14 +348,14 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*appmessage.BlockHeader, 
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return nil, ErrNotInDAG(str)
 
 	}
 
-	return node.children.hashes(), nil
+	return node.Children.Hashes(), nil
 }
 
 // SelectedParentHash returns the selected parent hash of the block with the given hash in the
@@ -358,30 +363,30 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) SelectedParentHash(blockHash *daghash.Hash) (*daghash.Hash, error) {
-	node, ok := dag.index.LookupNode(blockHash)
+	node, ok := dag.Index.LookupNode(blockHash)
 	if !ok {
 		str := fmt.Sprintf("block %s is not in the DAG", blockHash)
 		return nil, ErrNotInDAG(str)
 
 	}
 
-	if node.selectedParent == nil {
+	if node.SelectedParent == nil {
 		return nil, nil
 	}
-	return node.selectedParent.hash, nil
+	return node.SelectedParent.Hash, nil
 }
 
 // isInPast returns true if `node` is in the past of `other`
 //
 // Note: this method will return true if `node == other`
-func (dag *BlockDAG) isInPast(node *blockNode, other *blockNode) (bool, error) {
+func (dag *BlockDAG) isInPast(node *blocknode.Node, other *blocknode.Node) (bool, error) {
 	return dag.reachabilityTree.isInPast(node, other)
 }
 
 // isInPastOfAny returns true if `node` is in the past of any of `others`
 //
 // Note: this method will return true if `node` is in `others`
-func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, error) {
+func (dag *BlockDAG) isInPastOfAny(node *blocknode.Node, others blocknode.Set) (bool, error) {
 	for other := range others {
 		isInPast, err := dag.isInPast(node, other)
 		if err != nil {
@@ -398,7 +403,7 @@ func (dag *BlockDAG) isInPastOfAny(node *blockNode, others blockSet) (bool, erro
 // isInPastOfAny returns true if any one of `nodes` is in the past of any of `others`
 //
 // Note: this method will return true if `other` is in `nodes`
-func (dag *BlockDAG) isAnyInPastOf(nodes blockSet, other *blockNode) (bool, error) {
+func (dag *BlockDAG) isAnyInPastOf(nodes blocknode.Set, other *blocknode.Node) (bool, error) {
 	for node := range nodes {
 		isInPast, err := dag.isInPast(node, other)
 		if err != nil {
@@ -427,25 +432,25 @@ func (dag *BlockDAG) GetHeaders(startHash *daghash.Hash, maxHeaders uint64,
 }
 
 func (dag *BlockDAG) getHeadersDescending(highHash *daghash.Hash, maxHeaders uint64) ([]*appmessage.BlockHeader, error) {
-	highNode := dag.virtual.blockNode
+	highNode := dag.virtual.Node
 	if highHash != nil {
 		var ok bool
-		highNode, ok = dag.index.LookupNode(highHash)
+		highNode, ok = dag.Index.LookupNode(highHash)
 		if !ok {
 			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", highHash)
 		}
 	}
 	headers := make([]*appmessage.BlockHeader, 0, maxHeaders)
-	queue := newDownHeap()
-	queue.pushSet(highNode.parents)
+	queue := blocknode.NewDownHeap()
+	queue.PushSet(highNode.Parents)
 
-	visited := newBlockSet()
+	visited := blocknode.NewSet()
 	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
-		current := queue.pop()
-		if !visited.contains(current) {
-			visited.add(current)
+		current := queue.Pop()
+		if !visited.Contains(current) {
+			visited.Add(current)
 			headers = append(headers, current.Header())
-			queue.pushSet(current.parents)
+			queue.PushSet(current.Parents)
 		}
 	}
 	return headers, nil
@@ -455,22 +460,22 @@ func (dag *BlockDAG) getHeadersAscending(lowHash *daghash.Hash, maxHeaders uint6
 	lowNode := dag.genesis
 	if lowHash != nil {
 		var ok bool
-		lowNode, ok = dag.index.LookupNode(lowHash)
+		lowNode, ok = dag.Index.LookupNode(lowHash)
 		if !ok {
 			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", lowHash)
 		}
 	}
 	headers := make([]*appmessage.BlockHeader, 0, maxHeaders)
-	queue := newUpHeap()
-	queue.pushSet(lowNode.children)
+	queue := blocknode.NewUpHeap()
+	queue.PushSet(lowNode.Children)
 
-	visited := newBlockSet()
+	visited := blocknode.NewSet()
 	for i := uint32(0); queue.Len() > 0 && uint64(len(headers)) < maxHeaders; i++ {
-		current := queue.pop()
-		if !visited.contains(current) {
-			visited.add(current)
+		current := queue.Pop()
+		if !visited.Contains(current) {
+			visited.Add(current)
 			headers = append(headers, current.Header())
-			queue.pushSet(current.children)
+			queue.PushSet(current.Children)
 		}
 	}
 	return headers, nil
@@ -482,7 +487,7 @@ func (dag *BlockDAG) getHeadersAscending(lowHash *daghash.Hash, maxHeaders uint6
 // This function is NOT safe for concurrent access. It is meant to be
 // used either on initialization or when the dag lock is held for reads.
 func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
-	for hash := range dag.index.index {
+	for hash := range dag.Index.Index {
 		err := fn(hash)
 		if err != nil {
 			return err
@@ -496,7 +501,7 @@ func (dag *BlockDAG) ForEachHash(fn func(hash daghash.Hash) error) error {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsInDAG(hash *daghash.Hash) bool {
-	return dag.index.HaveBlock(hash)
+	return dag.Index.HaveBlock(hash)
 }
 
 // IsKnownBlock returns whether or not the DAG instance has the block represented
@@ -529,30 +534,30 @@ func (dag *BlockDAG) AreKnownBlocks(hashes []*daghash.Hash) bool {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsKnownInvalid(hash *daghash.Hash) bool {
-	node, ok := dag.index.LookupNode(hash)
+	node, ok := dag.Index.LookupNode(hash)
 	if !ok {
 		return false
 	}
-	return dag.index.BlockNodeStatus(node).KnownInvalid()
+	return dag.Index.BlockNodeStatus(node).KnownInvalid()
 }
 
-func (dag *BlockDAG) addTip(tip *blockNode) (
+func (dag *BlockDAG) addTip(tip *blocknode.Node) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	newTips := dag.tips.clone()
-	for parent := range tip.parents {
-		newTips.remove(parent)
+	newTips := dag.tips.Clone()
+	for parent := range tip.Parents {
+		newTips.Remove(parent)
 	}
 
-	newTips.add(tip)
+	newTips.Add(tip)
 
 	return dag.setTips(newTips)
 }
 
-func (dag *BlockDAG) setTips(newTips blockSet) (
+func (dag *BlockDAG) setTips(newTips blocknode.Set) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	didVirtualParentsChange, chainUpdates, err = dag.updateVirtualParents(newTips, dag.virtual.finalityPoint())
+	didVirtualParentsChange, chainUpdates, err = dag.updateVirtualParents(newTips, dag.finalityPoint(dag.virtual.Node))
 	if err != nil {
 		return false, nil, err
 	}
@@ -562,17 +567,17 @@ func (dag *BlockDAG) setTips(newTips blockSet) (
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
-func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *blockNode) (
+func (dag *BlockDAG) updateVirtualParents(newTips blocknode.Set, finalityPoint *blocknode.Node) (
 	didVirtualParentsChange bool, chainUpdates *selectedParentChainUpdates, err error) {
 
-	var newVirtualParents blockSet
+	var newVirtualParents blocknode.Set
 	// If only genesis is the newTips - we are still initializing the DAG and not all structures required
 	// for calling dag.selectVirtualParents have been initialized yet.
 	// Specifically - this function would be called with finalityPoint = dag.virtual.finalityPoint(), which has
 	// not been initialized to anything real yet.
 	//
 	// Therefore, in this case - simply pick genesis as virtual's only parent
-	if newTips.isOnlyGenesis() {
+	if newTips.IsOnlyGenesis() {
 		newVirtualParents = newTips
 	} else {
 		newVirtualParents, err = dag.selectVirtualParents(newTips, finalityPoint)
@@ -581,74 +586,74 @@ func (dag *BlockDAG) updateVirtualParents(newTips blockSet, finalityPoint *block
 		}
 	}
 
-	oldVirtualParents := dag.virtual.parents
-	didVirtualParentsChange = !oldVirtualParents.isEqual(newVirtualParents)
+	oldVirtualParents := dag.virtual.Parents
+	didVirtualParentsChange = !oldVirtualParents.IsEqual(newVirtualParents)
 
 	if !didVirtualParentsChange {
 		return false, &selectedParentChainUpdates{}, nil
 	}
 
-	oldSelectedParent := dag.virtual.selectedParent
-	dag.virtual.blockNode, _ = dag.newBlockNode(nil, newVirtualParents)
+	oldSelectedParent := dag.virtual.SelectedParent
+	dag.virtual.Node, _ = dag.newBlockNode(nil, newVirtualParents)
 	chainUpdates = dag.virtual.updateSelectedParentSet(oldSelectedParent)
 
 	return didVirtualParentsChange, chainUpdates, nil
 }
 
-func (dag *BlockDAG) addValidTip(newValidTip *blockNode) error {
-	newValidTips := dag.validTips.clone()
+func (dag *BlockDAG) addValidTip(newValidTip *blocknode.Node) error {
+	newValidTips := dag.validTips.Clone()
 	for validTip := range dag.validTips {
 		// We use isInPastOfAny on newValidTip.parents instead of
 		// isInPast on newValidTip because newValidTip does not
 		// necessarily have reachability data associated with it yet.
-		isInPastOfNewValidTip, err := dag.isInPastOfAny(validTip, newValidTip.parents)
+		isInPastOfNewValidTip, err := dag.isInPastOfAny(validTip, newValidTip.Parents)
 		if err != nil {
 			return err
 		}
 		if isInPastOfNewValidTip {
-			newValidTips.remove(validTip)
+			newValidTips.Remove(validTip)
 		}
 	}
 
-	newValidTips.add(newValidTip)
+	newValidTips.Add(newValidTip)
 
 	dag.validTips = newValidTips
 	return nil
 }
 
-func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNode) (blockSet, error) {
-	selected := newBlockSet()
+func (dag *BlockDAG) selectVirtualParents(tips blocknode.Set, finalityPoint *blocknode.Node) (blocknode.Set, error) {
+	selected := blocknode.NewSet()
 
-	candidatesHeap := newDownHeap()
-	candidatesHeap.pushSet(tips)
+	candidatesHeap := blocknode.NewDownHeap()
+	candidatesHeap.PushSet(tips)
 
 	// If the first candidate has been disqualified from the chain or violates finality -
 	// it cannot be virtual's parent, since it will make it virtual's selectedParent - disqualifying virtual itself.
 	// Therefore, in such a case we remove it from the list of virtual parent candidates, and replace with
 	// its parents that have no disqualified children
-	disqualifiedCandidates := newBlockSet()
+	disqualifiedCandidates := blocknode.NewSet()
 	for {
 		if candidatesHeap.Len() == 0 {
 			return nil, errors.New("virtual has no valid parent candidates")
 		}
-		selectedParentCandidate := candidatesHeap.pop()
+		selectedParentCandidate := candidatesHeap.Pop()
 
-		if dag.index.BlockNodeStatus(selectedParentCandidate) == statusValid {
+		if dag.Index.BlockNodeStatus(selectedParentCandidate) == blocknode.StatusValid {
 			isFinalityPointInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityPoint, selectedParentCandidate)
 			if err != nil {
 				return nil, err
 			}
 
 			if isFinalityPointInSelectedParentChain {
-				selected.add(selectedParentCandidate)
+				selected.Add(selectedParentCandidate)
 				break
 			}
 		}
 
-		disqualifiedCandidates.add(selectedParentCandidate)
+		disqualifiedCandidates.Add(selectedParentCandidate)
 
-		for parent := range selectedParentCandidate.parents {
-			if parent.children.areAllIn(disqualifiedCandidates) {
+		for parent := range selectedParentCandidate.Parents {
+			if parent.Children.AreAllIn(disqualifiedCandidates) {
 				candidatesHeap.Push(parent)
 			}
 		}
@@ -657,7 +662,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	mergeSetSize := 1 // starts counting from 1 because selectedParent is already in the mergeSet
 
 	for len(selected) < appmessage.MaxBlockParents && candidatesHeap.Len() > 0 {
-		candidate := candidatesHeap.pop()
+		candidate := candidatesHeap.Pop()
 
 		// check that the candidate doesn't increase the virtual's merge set over `mergeSetSizeLimit`
 		mergeSetIncrease, err := dag.mergeSetIncrease(candidate, selected)
@@ -669,7 +674,7 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 			continue
 		}
 
-		selected.add(candidate)
+		selected.Add(candidate)
 		mergeSetSize += mergeSetIncrease
 	}
 
@@ -679,19 +684,19 @@ func (dag *BlockDAG) selectVirtualParents(tips blockSet, finalityPoint *blockNod
 	if err != nil {
 		return nil, err
 	}
-	selected = selected.subtract(boundedMergeBreakingParents)
+	selected = selected.Subtract(boundedMergeBreakingParents)
 
 	return selected, nil
 }
 
-func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (int, error) {
-	visited := newBlockSet()
-	queue := newDownHeap()
+func (dag *BlockDAG) mergeSetIncrease(candidate *blocknode.Node, selected blocknode.Set) (int, error) {
+	visited := blocknode.NewSet()
+	queue := blocknode.NewDownHeap()
 	queue.Push(candidate)
 	mergeSetIncrease := 1 // starts with 1 for the candidate itself
 
 	for queue.Len() > 0 {
-		current := queue.pop()
+		current := queue.Pop()
 		isInPastOfSelected, err := dag.isInPastOfAny(current, selected)
 		if err != nil {
 			return 0, err
@@ -701,9 +706,9 @@ func (dag *BlockDAG) mergeSetIncrease(candidate *blockNode, selected blockSet) (
 		}
 		mergeSetIncrease++
 
-		for parent := range current.parents {
-			if !visited.contains(parent) {
-				visited.add(parent)
+		for parent := range current.Parents {
+			if !visited.Contains(parent) {
+				visited.Add(parent)
 				queue.Push(parent)
 			}
 		}

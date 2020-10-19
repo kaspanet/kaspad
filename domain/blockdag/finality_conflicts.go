@@ -3,6 +3,7 @@ package blockdag
 import (
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
 
@@ -12,7 +13,7 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	finalityBlock, ok := dag.index.LookupNode(finalityBlockHash)
+	finalityBlock, ok := dag.Index.LookupNode(finalityBlockHash)
 	if !ok {
 		return errors.Errorf("Couldn't find finality block with hash %s", finalityBlockHash)
 	}
@@ -40,16 +41,16 @@ func (dag *BlockDAG) ResolveFinalityConflict(finalityBlockHash *daghash.Hash) er
 
 // prepareForFinalityConflictResolution makes sure that the designated selectedTip once a finality conflict is resolved
 // is not UTXOPendingVerification.
-func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNode) error {
-	queue := newDownHeap()
-	queue.pushSet(dag.tips)
+func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blocknode.Node) error {
+	queue := blocknode.NewDownHeap()
+	queue.PushSet(dag.tips)
 
-	disqualifiedCandidates := newBlockSet()
+	disqualifiedCandidates := blocknode.NewSet()
 	for {
 		if queue.Len() == 0 {
 			return errors.New("No valid selectedTip candidates")
 		}
-		candidate := queue.pop()
+		candidate := queue.Pop()
 
 		isFinalityBlockInSelectedParentChain, err := dag.isInSelectedParentChainOf(finalityBlock, candidate)
 		if err != nil {
@@ -58,20 +59,20 @@ func (dag *BlockDAG) prepareForFinalityConflictResolution(finalityBlock *blockNo
 		if !isFinalityBlockInSelectedParentChain {
 			continue
 		}
-		if dag.index.BlockNodeStatus(candidate) == statusUTXOPendingVerification {
+		if dag.Index.BlockNodeStatus(candidate) == blocknode.StatusUTXOPendingVerification {
 			err := dag.resolveNodeStatusInNewTransaction(candidate)
 			if err != nil {
 				return err
 			}
 		}
-		if dag.index.BlockNodeStatus(candidate) == statusValid {
+		if dag.Index.BlockNodeStatus(candidate) == blocknode.StatusValid {
 			return nil
 		}
 
-		disqualifiedCandidates.add(candidate)
+		disqualifiedCandidates.Add(candidate)
 
-		for parent := range candidate.parents {
-			if parent.children.areAllIn(disqualifiedCandidates) {
+		for parent := range candidate.Parents {
+			if parent.Children.AreAllIn(disqualifiedCandidates) {
 				queue.Push(parent)
 			}
 		}

@@ -3,6 +3,7 @@ package blockdag
 import (
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/blocknode"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
@@ -26,17 +27,17 @@ import (
 //    bluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
-func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blockNode, err error) {
-	newNode.selectedParent = newNode.parents.bluest()
-	newNode.bluesAnticoneSizes[newNode.selectedParent] = 0
-	newNode.blues = []*blockNode{newNode.selectedParent}
+func (dag *BlockDAG) ghostdag(newNode *blocknode.Node) (selectedParentAnticone []*blocknode.Node, err error) {
+	newNode.SelectedParent = newNode.Parents.Bluest()
+	newNode.BluesAnticoneSizes[newNode.SelectedParent] = 0
+	newNode.Blues = []*blocknode.Node{newNode.SelectedParent}
 	selectedParentAnticone, err = dag.selectedParentAnticone(newNode)
 	if err != nil {
 		return nil, err
 	}
 
 	sort.Slice(selectedParentAnticone, func(i, j int) bool {
-		return selectedParentAnticone[i].less(selectedParentAnticone[j])
+		return selectedParentAnticone[i].Less(selectedParentAnticone[j])
 	})
 
 	for _, blueCandidate := range selectedParentAnticone {
@@ -47,38 +48,38 @@ func (dag *BlockDAG) ghostdag(newNode *blockNode) (selectedParentAnticone []*blo
 
 		if isBlue {
 			// No k-cluster violation found, we can now set the candidate block as blue
-			newNode.blues = append(newNode.blues, blueCandidate)
-			newNode.bluesAnticoneSizes[blueCandidate] = candidateAnticoneSize
+			newNode.Blues = append(newNode.Blues, blueCandidate)
+			newNode.BluesAnticoneSizes[blueCandidate] = candidateAnticoneSize
 			for blue, blueAnticoneSize := range candidateBluesAnticoneSizes {
-				newNode.bluesAnticoneSizes[blue] = blueAnticoneSize + 1
+				newNode.BluesAnticoneSizes[blue] = blueAnticoneSize + 1
 			}
 		} else {
-			newNode.reds = append(newNode.reds, blueCandidate)
+			newNode.Reds = append(newNode.Reds, blueCandidate)
 		}
 	}
 
-	newNode.blueScore = newNode.selectedParent.blueScore + uint64(len(newNode.blues))
+	newNode.BlueScore = newNode.SelectedParent.BlueScore + uint64(len(newNode.Blues))
 
 	return selectedParentAnticone, nil
 }
 
-func (dag *BlockDAG) checkBlueCandidate(newNode *blockNode, blueCandidate *blockNode) (
-	isBlue bool, candidateAnticoneSize dagconfig.KType, candidateBluesAnticoneSizes map[*blockNode]dagconfig.KType,
+func (dag *BlockDAG) checkBlueCandidate(newNode *blocknode.Node, blueCandidate *blocknode.Node) (
+	isBlue bool, candidateAnticoneSize dagconfig.KType, candidateBluesAnticoneSizes map[*blocknode.Node]dagconfig.KType,
 	err error) {
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
-	if dagconfig.KType(len(newNode.blues)) == dag.Params.K+1 {
+	if dagconfig.KType(len(newNode.Blues)) == dag.Params.K+1 {
 		return false, 0, nil, nil
 	}
 
-	candidateBluesAnticoneSizes = make(map[*blockNode]dagconfig.KType)
+	candidateBluesAnticoneSizes = make(map[*blocknode.Node]dagconfig.KType)
 
 	// Iterate over all blocks in the blue set of newNode that are not in the past
 	// of blueCandidate, and check for each one of them if blueCandidate potentially
 	// enlarges their blue anticone to be over K, or that they enlarge the blue anticone
 	// of blueCandidate to be over K.
-	for chainBlock := newNode; ; chainBlock = chainBlock.selectedParent {
+	for chainBlock := newNode; ; chainBlock = chainBlock.SelectedParent {
 		// If blueCandidate is in the future of chainBlock, it means
 		// that all remaining blues are in the past of chainBlock and thus
 		// in the past of blueCandidate. In this case we know for sure that
@@ -95,7 +96,7 @@ func (dag *BlockDAG) checkBlueCandidate(newNode *blockNode, blueCandidate *block
 			}
 		}
 
-		for _, block := range chainBlock.blues {
+		for _, block := range chainBlock.Blues {
 			// Skip blocks that exist in the past of blueCandidate.
 			if isAncestorOfBlueCandidate, err := dag.isInPast(block, blueCandidate); err != nil {
 				return false, 0, nil, err
@@ -137,38 +138,38 @@ func (dag *BlockDAG) checkBlueCandidate(newNode *blockNode, blueCandidate *block
 // For each node in the queue:
 //   we check whether it is in the past of the selected parent.
 //   If not, we add the node to the resulting anticone-set and queue it for processing.
-func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, error) {
-	anticoneSet := newBlockSet()
-	var anticoneSlice []*blockNode
-	selectedParentPast := newBlockSet()
-	var queue []*blockNode
+func (dag *BlockDAG) selectedParentAnticone(node *blocknode.Node) ([]*blocknode.Node, error) {
+	anticoneSet := blocknode.NewSet()
+	var anticoneSlice []*blocknode.Node
+	selectedParentPast := blocknode.NewSet()
+	var queue []*blocknode.Node
 	// Queueing all parents (other than the selected parent itself) for processing.
-	for parent := range node.parents {
-		if parent == node.selectedParent {
+	for parent := range node.Parents {
+		if parent == node.SelectedParent {
 			continue
 		}
-		anticoneSet.add(parent)
+		anticoneSet.Add(parent)
 		anticoneSlice = append(anticoneSlice, parent)
 		queue = append(queue, parent)
 	}
 	for len(queue) > 0 {
-		var current *blockNode
+		var current *blocknode.Node
 		current, queue = queue[0], queue[1:]
 		// For each parent of a the current node we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
-		for parent := range current.parents {
-			if anticoneSet.contains(parent) || selectedParentPast.contains(parent) {
+		for parent := range current.Parents {
+			if anticoneSet.Contains(parent) || selectedParentPast.Contains(parent) {
 				continue
 			}
-			isAncestorOfSelectedParent, err := dag.isInPast(parent, node.selectedParent)
+			isAncestorOfSelectedParent, err := dag.isInPast(parent, node.SelectedParent)
 			if err != nil {
 				return nil, err
 			}
 			if isAncestorOfSelectedParent {
-				selectedParentPast.add(parent)
+				selectedParentPast.Add(parent)
 				continue
 			}
-			anticoneSet.add(parent)
+			anticoneSet.Add(parent)
 			anticoneSlice = append(anticoneSlice, parent)
 			queue = append(queue, parent)
 		}
@@ -178,11 +179,11 @@ func (dag *BlockDAG) selectedParentAnticone(node *blockNode) ([]*blockNode, erro
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (dag *BlockDAG) blueAnticoneSize(block, context *blockNode) (dagconfig.KType, error) {
-	for current := context; current != nil; current = current.selectedParent {
-		if blueAnticoneSize, ok := current.bluesAnticoneSizes[block]; ok {
+func (dag *BlockDAG) blueAnticoneSize(block, context *blocknode.Node) (dagconfig.KType, error) {
+	for current := context; current != nil; current = current.SelectedParent {
+		if blueAnticoneSize, ok := current.BluesAnticoneSizes[block]; ok {
 			return blueAnticoneSize, nil
 		}
 	}
-	return 0, errors.Errorf("block %s is not in blue set of %s", block.hash, context.hash)
+	return 0, errors.Errorf("block %s is not in blue set of %s", block.Hash, context.Hash)
 }

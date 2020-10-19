@@ -28,11 +28,11 @@ type Config struct {
 	// signature cache.
 	SigCache *txscript.SigCache
 
-	// IndexManager defines an index manager to use when initializing the
+	// IndexManager defines an Index manager to use when initializing the
 	// DAG and connecting blocks.
 	//
 	// This field can be nil if the caller does not wish to make use of an
-	// index manager.
+	// Index manager.
 	IndexManager IndexManager
 
 	// SubnetworkID identifies which subnetwork the DAG is associated

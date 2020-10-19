@@ -6,11 +6,13 @@ package mempool
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/utxo"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -80,7 +82,7 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) 
 // context of this function is one whose referenced public key script is of a
 // standard form and, for pay-to-script-hash, does not have more than
 // maxStandardP2SHSigOps signature operations.
-func checkInputsStandard(tx *util.Tx, referencedUTXOEntries []*blockdag.UTXOEntry) error {
+func checkInputsStandard(tx *util.Tx, referencedUTXOEntries []*utxo.Entry) error {
 	// NOTE: The reference implementation also does a coinbase check here,
 	// but coinbases have already been rejected prior to calling this
 	// function so no need to recheck.
