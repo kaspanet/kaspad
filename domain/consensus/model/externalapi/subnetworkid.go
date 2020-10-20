@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 // DomainSubnetworkID is the domain representation of a Subnetwork ID
 type DomainSubnetworkID [20]byte

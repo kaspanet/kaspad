@@ -3,6 +3,7 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
@@ -31,6 +32,6 @@ func New(
 
 // BlockData returns previously calculated GHOSTDAG data for
 // the given blockHash
-func (gm *ghostdagManager) BlockData(blockHash *model.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gm *ghostdagManager) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gm.ghostdagDataStore.Get(gm.databaseContext, blockHash)
 }
