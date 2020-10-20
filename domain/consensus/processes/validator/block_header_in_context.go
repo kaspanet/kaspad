@@ -3,6 +3,7 @@ package validator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
@@ -78,7 +79,34 @@ func (v *validator) validateDifficulty(header *model.DomainBlockHeader) error {
 }
 
 func (v *validator) validateMedianTime(header *model.DomainBlockHeader) error {
-	panic("unimplemented")
+	if len(header.ParentHashes) == 0 {
+		return nil
+	}
+
+	hash := hashserialization.HeaderHash(header)
+	ghostdagData, err := v.ghostdagManager.BlockData(hash)
+	if err != nil {
+		return err
+	}
+
+	selectedParentGHOSTDAGData, err := v.ghostdagManager.BlockData(ghostdagData.SelectedParent)
+	if err != nil {
+		return err
+	}
+
+	// Ensure the timestamp for the block header is not before the
+	// median time of the last several blocks (medianTimeBlocks).
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(selectedParentGHOSTDAGData)
+	if err != nil {
+		return err
+	}
+
+	if header.TimeInMilliseconds < pastMedianTime {
+		return ruleerrors.Errorf(ruleerrors.ErrTimeTooOld, "block timestamp of %s is not after expected %s",
+			header.TimeInMilliseconds, pastMedianTime)
+	}
+
+	return nil
 }
 
 func (v *validator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {

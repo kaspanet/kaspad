@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"sort"
@@ -26,7 +27,10 @@ func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
 		return err
 	}
 
-	checkTransactionInContext
+	err = v.validateCoinbaseTransaction()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -68,12 +72,15 @@ func (v *validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAcc
 
 func (v *validator) validateUTXOCommitment(block *model.DomainBlock, multiset model.Multiset) error {
 	calculatedMultisetHash := multiset.Hash()
-	if calculatedMultisetHash != block.Header.UTXOCommitment {
-		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s", node.hash,
-			node.utxoCommitment, calculatedMultisetHash)
-		return ruleError(ErrBadUTXOCommitment, str)
+	if *calculatedMultisetHash != block.Header.UTXOCommitment {
+		return ruleerrors.Errorf(ruleerrors.ErrBadUTXOCommitment, "UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", block.Header.UTXOCommitment, calculatedMultisetHash)
 	}
 
 	return nil
+}
+
+// The following functions deal with building and validating the coinbase transaction
+func (v *validator) validateCoinbaseTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+	panic("unimplemented")
 }
