@@ -8,11 +8,14 @@ import (
 // UTXODiffManager provides methods to access
 // and store UTXO diffs
 type utxoDiffManager struct {
+	utxoDiffStore model.UTXODiffStore
 }
 
 // New instantiates a new UTXODiffManager
-func New() model.UTXODiffManager {
-	return &utxoDiffManager{}
+func New(utxoDiffStore model.UTXODiffStore) model.UTXODiffManager {
+	return &utxoDiffManager{
+		utxoDiffStore: utxoDiffStore,
+	}
 }
 
 // StoreUTXODiff stores the given utxoDiff for the given blockHash
