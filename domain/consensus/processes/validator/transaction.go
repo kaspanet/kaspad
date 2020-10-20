@@ -10,5 +10,11 @@ func (v *validator) ValidateTransactionAndCalculateFee(transaction *model.Domain
 		return 0, err
 	}
 
+	checkTransactionMass()
+
 	return v.checkTransactionInContext()
+}
+
+func checkTransactionMass() {
+	panic("unimplemented")
 }
