@@ -17,12 +17,14 @@ type validator struct {
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
 	blockCoinbaseMaturity          uint64
+	finalityDepth                  uint64
 
 	dagTopologyManager    model.DAGTopologyManager
 	ghostdagManager       model.GHOSTDAGManager
 	consensusStateManager model.ConsensusStateManager
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
+	dagTraversalManager   model.DAGTraversalManager
 }
 
 // New instantiates a new BlockAndTransactionValidator

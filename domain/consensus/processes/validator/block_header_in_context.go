@@ -44,7 +44,12 @@ func (v *validator) checkParentsIncest(header *model.DomainBlockHeader) error {
 				continue
 			}
 
-			if v.dagTopologyManager.IsAncestorOf(parentA, parentB) {
+			isAAncestorOfB, err := v.dagTopologyManager.IsAncestorOf(parentA, parentB)
+			if err != nil {
+				return err
+			}
+
+			if isAAncestorOfB {
 				return ruleerrors.Errorf(ruleerrors.ErrInvalidParentsRelation, "parent %s is an "+
 					"ancestor of another parent %s",
 					parentA,
@@ -60,7 +65,16 @@ func (v *validator) validateDifficulty(header *model.DomainBlockHeader) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	panic("unimplemented")
+	expectedBits, err := v.difficultyManager.RequiredDifficulty(header.ParentHashes)
+	if err != nil {
+		return err
+	}
+
+	if header.Bits != expectedBits {
+		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
+	}
+
+	return nil
 }
 
 func (v *validator) validateMedianTime(header *model.DomainBlockHeader) error {

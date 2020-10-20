@@ -11,7 +11,11 @@ func (v *validator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData
 		return err
 	}
 
-	finalityPoint := v.finalityPoint(ghostdagData)
+	finalityPoint, err := v.finalityPoint(ghostdagData)
+	if err != nil {
+		return err
+	}
+
 	for _, red := range ghostdagData.MergeSetReds {
 		doesRedHaveFinalityPointInPast, err := v.dagTopologyManager.IsAncestorOf(finalityPoint, red)
 		if err != nil {
@@ -40,7 +44,11 @@ func (v *validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.Block
 	nonBoundedMergeDepthViolatingBlues := make([]*model.DomainHash, 0, len(ghostdagData.MergeSetBlues))
 
 	for _, blue := range ghostdagData.MergeSetBlues {
-		notViolatingFinality := v.hasFinalityPointInOthersSelectedChain(ghostdagData, blue)
+		notViolatingFinality, err := v.hasFinalityPointInOthersSelectedChain(ghostdagData, blue)
+		if err != nil {
+			return nil, err
+		}
+
 		if notViolatingFinality {
 			nonBoundedMergeDepthViolatingBlues = append(nonBoundedMergeDepthViolatingBlues, blue)
 		}
@@ -49,11 +57,15 @@ func (v *validator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.Block
 	return nonBoundedMergeDepthViolatingBlues, nil
 }
 
-func (v *validator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *model.DomainHash) bool {
-	finalityPoint := v.finalityPoint(ghostdagData)
+func (v *validator) hasFinalityPointInOthersSelectedChain(ghostdagData *model.BlockGHOSTDAGData, other *model.DomainHash) (bool, error) {
+	finalityPoint, err := v.finalityPoint(ghostdagData)
+	if err != nil {
+		return false, err
+	}
+
 	return v.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, other)
 }
 
-func (v *validator) finalityPoint(ghostdagData *model.BlockGHOSTDAGData) *model.DomainHash {
-	panic("unimplemented")
+func (v *validator) finalityPoint(ghostdagData *model.BlockGHOSTDAGData) (*model.DomainHash, error) {
+	return v.dagTraversalManager.HighestChainBlockBelowBlueScore(ghostdagData.SelectedParent, ghostdagData.BlueScore-v.finalityDepth)
 }
