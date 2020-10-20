@@ -24,7 +24,6 @@ type blockProcessor struct {
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
-	feeDataStore          model.FeeDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -41,8 +40,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
-	blockStatusStore model.BlockStatusStore,
-	feeDataStore model.FeeDataStore) model.BlockProcessor {
+	blockStatusStore model.BlockStatusStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -59,13 +57,12 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
-		feeDataStore:          feeDataStore,
 	}
 }
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.CoinbaseData,
+func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	return nil, nil

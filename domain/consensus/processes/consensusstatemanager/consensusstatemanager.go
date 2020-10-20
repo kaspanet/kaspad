@@ -17,6 +17,7 @@ type consensusStateManager struct {
 	utxoDiffStore       model.UTXODiffStore
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
+	acceptanceManager   model.AcceptanceManager
 }
 
 // New instantiates a new ConsensusStateManager
@@ -27,7 +28,8 @@ func New(
 	multisetStore model.MultisetStore,
 	utxoDiffStore model.UTXODiffStore,
 	blockStore model.BlockStore,
-	ghostdagManager model.GHOSTDAGManager) model.ConsensusStateManager {
+	ghostdagManager model.GHOSTDAGManager,
+	acceptanceManager model.AcceptanceManager) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams: dagParams,
@@ -38,6 +40,7 @@ func New(
 		utxoDiffStore:       utxoDiffStore,
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
+		acceptanceManager:   acceptanceManager,
 	}
 }
 
@@ -55,19 +58,6 @@ func (csm *consensusStateManager) CalculateConsensusStateChanges(block *external
 	return nil, nil, nil, nil
 }
 
-// CalculateAcceptanceDataAndUTXOMultiset calculates and returns the acceptance data and the
-// multiset associated with the given blockHash
-func (csm *consensusStateManager) CalculateAcceptanceDataAndUTXOMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
-	*model.BlockAcceptanceData, model.Multiset, error) {
-
-	return nil, nil, nil
-}
-
-// Tips returns the current DAG tips
-func (csm *consensusStateManager) Tips() ([]*externalapi.DomainHash, error) {
-	return nil, nil
-}
-
 // VirtualData returns the medianTime and blueScore of the current virtual block
 func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uint64, err error) {
 	return 0, 0, nil
@@ -76,4 +66,10 @@ func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uin
 // RestoreUTXOSet calculates and returns the UTXOSet of the given blockHash
 func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *externalapi.DomainHash) (model.ReadOnlyUTXOSet, error) {
 	return nil, nil
+}
+
+// RestoreDiffFromVirtual restores the diff between the given virtualDiffParentHash
+// and the virtual
+func (csm *consensusStateManager) RestoreDiffFromVirtual(utxoDiff *model.UTXODiff, virtualDiffParentHash *externalapi.DomainHash) (*model.UTXODiff, error) {
+	panic("implement me")
 }

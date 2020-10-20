@@ -7,7 +7,7 @@ import (
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
-	BuildBlock(coinbaseData *externalapi.CoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
+	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
 	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
 }
@@ -20,7 +20,7 @@ type consensus struct {
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (s *consensus) BuildBlock(coinbaseData *externalapi.CoinbaseData,
+func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	return s.blockProcessor.BuildBlock(coinbaseData, transactions)
