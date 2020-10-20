@@ -2,6 +2,7 @@ package blockvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -36,34 +37,34 @@ func New(
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInIsolation(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateHeaderInIsolation(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateHeaderInContext(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInIsolation(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInContext(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (v *blockValidator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateAgainstPastUTXO(block *externalapi.DomainBlock) error {
 	return nil
 }
 
 // ValidateFinality makes sure the block does not violate finality
-func (v *blockValidator) ValidateFinality(block *model.DomainBlock) error {
+func (v *blockValidator) ValidateFinality(block *externalapi.DomainBlock) error {
 	return nil
 }

@@ -70,6 +70,6 @@ func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *externalapi.Doma
 
 // RestoreDiffFromVirtual restores the diff between the given virtualDiffParentHash
 // and the virtual
-func (csm *consensusStateManager) RestoreDiffFromVirtual(utxoDiff *model.UTXODiff, virtualDiffParentHash *model.DomainHash) (*model.UTXODiff, error) {
+func (csm *consensusStateManager) RestoreDiffFromVirtual(utxoDiff *model.UTXODiff, virtualDiffParentHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	panic("implement me")
 }

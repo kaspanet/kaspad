@@ -93,11 +93,11 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 }
 
 // Tips returns the current DAG tips
-func (dtm *dagTopologyManager) Tips() ([]*model.DomainHash, error) {
+func (dtm *dagTopologyManager) Tips() ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
 // AddTip adds the given tip to the current DAG tips
-func (dtm *dagTopologyManager) AddTip(tipHash *model.DomainHash) error {
+func (dtm *dagTopologyManager) AddTip(tipHash *externalapi.DomainHash) error {
 	panic("implement me")
 }

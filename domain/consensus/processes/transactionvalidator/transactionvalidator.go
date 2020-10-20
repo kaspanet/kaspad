@@ -2,6 +2,7 @@ package transactionvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // transactionValidator exposes a set of validation classes, after which
@@ -14,8 +15,8 @@ func New() model.TransactionValidator {
 	return &transactionValidator{}
 }
 
-// ValidateTransactionAndCalculateFee validates the given transaction using
-// the given utxoEntries. It also returns the transaction's fee
-func (v *transactionValidator) ValidateTransactionAndCalculateFee(transaction *model.DomainTransaction, utxoEntries []*model.UTXOEntry) (fee uint64, err error) {
-	return 0, nil
+// ValidateTransactionAndCalculateFee validates the given transaction
+// and populates it with any missing consensus data
+func (v *transactionValidator) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
+	panic("implement me")
 }

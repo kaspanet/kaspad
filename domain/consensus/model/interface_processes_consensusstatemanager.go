@@ -9,5 +9,5 @@ type ConsensusStateManager interface {
 		utxoDiffChanges *UTXODiffChanges, virtualGHOSTDAGData *BlockGHOSTDAGData, err error)
 	VirtualData() (medianTime int64, blueScore uint64, err error)
 	RestorePastUTXOSet(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSet, error)
-	RestoreDiffFromVirtual(utxoDiff *UTXODiff, virtualDiffParentHash *DomainHash) (*UTXODiff, error)
+	RestoreDiffFromVirtual(utxoDiff *UTXODiff, virtualDiffParentHash *externalapi.DomainHash) (*UTXODiff, error)
 }
