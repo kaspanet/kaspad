@@ -24,7 +24,7 @@ func (rds *reachabilityDataStore) StageReachabilityReindexRoot(reachabilityReind
 	panic("implement me")
 }
 
-func (rds *reachabilityDataStore) IsStaged() bool {
+func (rds *reachabilityDataStore) IsAnythingStaged() bool {
 	panic("implement me")
 }
 

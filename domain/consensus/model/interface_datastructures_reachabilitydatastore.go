@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type ReachabilityDataStore interface {
 	StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *ReachabilityData)
 	StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash)
-	IsStaged() bool
+	IsAnythingStaged() bool
 	Discard()
 	Commit(dbTx DBTxProxy) error
 	ReachabilityData(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*ReachabilityData, error)
