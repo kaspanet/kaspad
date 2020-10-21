@@ -14,7 +14,6 @@ type consensusStateManager struct {
 	databaseContext     *database.DomainDBContext
 	consensusStateStore model.ConsensusStateStore
 	multisetStore       model.MultisetStore
-	utxoDiffStore       model.UTXODiffStore
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
 	acceptanceManager   model.AcceptanceManager
@@ -26,7 +25,6 @@ func New(
 	dagParams *dagconfig.Params,
 	consensusStateStore model.ConsensusStateStore,
 	multisetStore model.MultisetStore,
-	utxoDiffStore model.UTXODiffStore,
 	blockStore model.BlockStore,
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceManager model.AcceptanceManager) model.ConsensusStateManager {
@@ -37,7 +35,6 @@ func New(
 		databaseContext:     databaseContext,
 		consensusStateStore: consensusStateStore,
 		multisetStore:       multisetStore,
-		utxoDiffStore:       utxoDiffStore,
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
 		acceptanceManager:   acceptanceManager,
