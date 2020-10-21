@@ -19,7 +19,7 @@ func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.D
 	panic("implement me")
 }
 
-// StageReachabilityData stages the given reachabilityData for the given blockHash
+// StageReachabilityReindexRoot stages the given reachabilityReindexRoot
 func (rds *reachabilityDataStore) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
 	panic("implement me")
 }
