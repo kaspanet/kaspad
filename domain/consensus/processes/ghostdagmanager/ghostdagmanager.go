@@ -29,9 +29,3 @@ func New(
 		k:                  k,
 	}
 }
-
-// BlockData returns previously calculated GHOSTDAG data for
-// the given blockHash
-func (gm *ghostdagManager) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
-	return gm.ghostdagDataStore.Get(gm.databaseContext, blockHash)
-}

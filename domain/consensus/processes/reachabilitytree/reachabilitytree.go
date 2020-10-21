@@ -22,6 +22,13 @@ func New(
 	}
 }
 
+// ReachabilityChangeset returns a set of changes that need to occur
+// in order to add the given blockHash into the reachability tree.
+func (rt *reachabilityTree) AddBlock(blockHash *externalapi.DomainHash) error {
+
+	return nil
+}
+
 // IsReachabilityTreeAncestorOf returns true if blockHashA is an
 // ancestor of blockHashB in the reachability tree. Note that this
 // does not necessarily mean that it isn't its ancestor in the DAG.
@@ -33,12 +40,4 @@ func (rt *reachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *externalapi
 // blockHashB in the DAG.
 func (rt *reachabilityTree) IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return false, nil
-}
-
-// ReachabilityChangeset returns a set of changes that need to occur
-// in order to add the given blockHash into the reachability tree.
-func (rt *reachabilityTree) ReachabilityChangeset(blockHash *externalapi.DomainHash,
-	blockGHOSTDAGData *model.BlockGHOSTDAGData) (*model.ReachabilityChangeset, error) {
-
-	return nil, nil
 }

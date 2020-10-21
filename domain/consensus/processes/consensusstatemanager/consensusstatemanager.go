@@ -44,18 +44,10 @@ func New(
 	}
 }
 
-// UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (csm *consensusStateManager) UTXOByOutpoint(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
-	return nil, nil
-}
-
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *consensusStateManager) CalculateConsensusStateChanges(block *externalapi.DomainBlock, isDisqualified bool) (
-	stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges,
-	virtualGHOSTDAGData *model.BlockGHOSTDAGData, err error) {
-
-	return nil, nil, nil, nil
+func (csm *consensusStateManager) CalculateConsensusStateChanges(blockHash *externalapi.DomainHash, isDisqualified bool) error {
+	return nil
 }
 
 // VirtualData returns the medianTime and blueScore of the current virtual block
