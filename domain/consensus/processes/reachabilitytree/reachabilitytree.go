@@ -22,10 +22,8 @@ func New(
 	}
 }
 
-// ReachabilityChangeset returns a set of changes that need to occur
-// in order to add the given blockHash into the reachability tree.
+// AddBlock adds the block with the given blockHash into the reachability tree.
 func (rt *reachabilityTree) AddBlock(blockHash *externalapi.DomainHash) error {
-
 	return nil
 }
 
