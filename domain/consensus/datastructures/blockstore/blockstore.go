@@ -19,6 +19,10 @@ func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externala
 	panic("implement me")
 }
 
+func (bms *blockStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (bms *blockStore) Discard() {
 	panic("implement me")
 }

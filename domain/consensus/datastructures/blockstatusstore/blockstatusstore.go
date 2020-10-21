@@ -19,6 +19,10 @@ func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatu
 	panic("implement me")
 }
 
+func (bss *blockStatusStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (bss *blockStatusStore) Discard() {
 	panic("implement me")
 }

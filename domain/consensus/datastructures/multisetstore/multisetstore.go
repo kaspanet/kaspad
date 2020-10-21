@@ -19,6 +19,10 @@ func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model
 	panic("implement me")
 }
 
+func (ms *multisetStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (ms *multisetStore) Discard() {
 	panic("implement me")
 }

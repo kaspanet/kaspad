@@ -19,6 +19,10 @@ func (rds *reachabilityDataStore) Stage(blockHash *externalapi.DomainHash, reach
 	panic("implement me")
 }
 
+func (rds *reachabilityDataStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (rds *reachabilityDataStore) Discard() {
 	panic("implement me")
 }

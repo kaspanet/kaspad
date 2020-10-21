@@ -19,6 +19,10 @@ func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOS
 	panic("implement me")
 }
 
+func (gds *ghostdagDataStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (gds *ghostdagDataStore) Discard() {
 	panic("implement me")
 }

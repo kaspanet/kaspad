@@ -19,6 +19,10 @@ func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *mod
 	panic("implement me")
 }
 
+func (uds *utxoDiffStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (uds *utxoDiffStore) Discard() {
 	panic("implement me")
 }

@@ -19,6 +19,10 @@ func (brs *blockRelationStore) Stage(blockHash *externalapi.DomainHash, parentHa
 	panic("implement me")
 }
 
+func (brs *blockRelationStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (brs *blockRelationStore) Discard() {
 	panic("implement me")
 }

@@ -19,6 +19,10 @@ func (pps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pr
 	panic("implement me")
 }
 
+func (pps *pruningStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (pps *pruningStore) Discard() {
 	panic("implement me")
 }

@@ -19,6 +19,10 @@ func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, accepta
 	panic("implement me")
 }
 
+func (ads *acceptanceDataStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (ads *acceptanceDataStore) Discard() {
 	panic("implement me")
 }

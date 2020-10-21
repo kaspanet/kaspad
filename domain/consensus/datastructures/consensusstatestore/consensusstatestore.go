@@ -19,6 +19,10 @@ func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStat
 	panic("implement me")
 }
 
+func (css *consensusStateStore) IsStaged() bool {
+	panic("implement me")
+}
+
 func (css *consensusStateStore) Discard() {
 	panic("implement me")
 }
