@@ -18,11 +18,6 @@ func New(utxoDiffStore model.UTXODiffStore) model.UTXODiffManager {
 	}
 }
 
-// StoreUTXODiff stores the given utxoDiff for the given blockHash
-func (u *utxoDiffManager) StoreUTXODiff(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff) error {
-	panic("implement me")
-}
-
 // RestoreBlockDiffFromVirtualDiffParent restores the UTXO diff of
 // the block for the given blockHash.
 func (u *utxoDiffManager) RestoreBlockDiffFromVirtualDiffParent(blockHash *externalapi.DomainHash) (utxoDiff *model.UTXODiff, virtualDiffParentHash *externalapi.DomainHash, err error) {

@@ -1,7 +1,6 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -23,35 +22,38 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.Domain
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) less(blockA, blockB *externalapi.DomainHash) (bool, error) {
-	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockA)
+func (gm *ghostdagManager) less(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	chosenSelectedParent, err := gm.ChooseSelectedParent(blockHashA, blockHashB)
 	if err != nil {
 		return false, err
 	}
-	blockBGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockB)
-	if err != nil {
-		return false, err
-	}
-	chosenSelectedParent := gm.ChooseSelectedParent(blockA, blockAGHOSTDAGData, blockB, blockBGHOSTDAGData)
-	return chosenSelectedParent == blockB, nil
+	return chosenSelectedParent == blockHashB, nil
 }
 
-func (gm *ghostdagManager) ChooseSelectedParent(
-	blockHashA *externalapi.DomainHash, blockAGHOSTDAGData *model.BlockGHOSTDAGData,
-	blockHashB *externalapi.DomainHash, blockBGHOSTDAGData *model.BlockGHOSTDAGData) *externalapi.DomainHash {
+func (gm *ghostdagManager) ChooseSelectedParent(blockHashA *externalapi.DomainHash,
+	blockHashB *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+
+	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHashA)
+	if err != nil {
+		return nil, err
+	}
+	blockBGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHashB)
+	if err != nil {
+		return nil, err
+	}
 
 	blockABlueScore := blockAGHOSTDAGData.BlueScore
 	blockBBlueScore := blockBGHOSTDAGData.BlueScore
 	if blockABlueScore == blockBBlueScore {
 		if hashesLess(blockHashA, blockHashB) {
-			return blockHashB
+			return blockHashB, nil
 		}
-		return blockHashA
+		return blockHashA, nil
 	}
 	if blockABlueScore < blockBBlueScore {
-		return blockHashB
+		return blockHashB, nil
 	}
-	return blockHashA
+	return blockHashA, nil
 }
 
 func hashesLess(a, b *externalapi.DomainHash) bool {

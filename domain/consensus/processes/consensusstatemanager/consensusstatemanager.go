@@ -17,6 +17,7 @@ type consensusStateManager struct {
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
 	acceptanceManager   model.AcceptanceManager
+	blockStatusStore    model.BlockStatusStore
 }
 
 // New instantiates a new ConsensusStateManager
@@ -27,7 +28,8 @@ func New(
 	multisetStore model.MultisetStore,
 	blockStore model.BlockStore,
 	ghostdagManager model.GHOSTDAGManager,
-	acceptanceManager model.AcceptanceManager) model.ConsensusStateManager {
+	acceptanceManager model.AcceptanceManager,
+	blockStatusStore model.BlockStatusStore) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams: dagParams,
@@ -38,21 +40,14 @@ func New(
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
 		acceptanceManager:   acceptanceManager,
+		blockStatusStore:    blockStatusStore,
 	}
-}
-
-// UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (csm *consensusStateManager) UTXOByOutpoint(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
-	return nil, nil
 }
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *consensusStateManager) CalculateConsensusStateChanges(block *externalapi.DomainBlock, isDisqualified bool) (
-	stateChanges *model.ConsensusStateChanges, utxoDiffChanges *model.UTXODiffChanges,
-	virtualGHOSTDAGData *model.BlockGHOSTDAGData, err error) {
-
-	return nil, nil, nil, nil
+func (csm *consensusStateManager) CalculateConsensusStateChanges(blockHash *externalapi.DomainHash) error {
+	return nil
 }
 
 // VirtualData returns the medianTime and blueScore of the current virtual block

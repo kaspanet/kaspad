@@ -4,7 +4,10 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // AcceptanceDataStore represents a store of AcceptanceData
 type AcceptanceDataStore interface {
-	Insert(dbTx DBTxProxy, blockHash *externalapi.DomainHash, acceptanceData *BlockAcceptanceData) error
+	Stage(blockHash *externalapi.DomainHash, acceptanceData *BlockAcceptanceData)
+	IsStaged() bool
+	Discard()
+	Commit(dbTx DBTxProxy) error
 	Get(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*BlockAcceptanceData, error)
 	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
 }

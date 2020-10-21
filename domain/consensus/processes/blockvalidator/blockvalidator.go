@@ -37,34 +37,34 @@ func New(
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInIsolation(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (v *blockValidator) ValidateAgainstPastUTXO(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateAgainstPastUTXO(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
 // ValidateFinality makes sure the block does not violate finality
-func (v *blockValidator) ValidateFinality(block *externalapi.DomainBlock) error {
+func (v *blockValidator) ValidateFinality(blockHash *externalapi.DomainHash) error {
 	return nil
 }
