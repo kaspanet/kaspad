@@ -46,7 +46,7 @@ func New(
 
 // CalculateConsensusStateChanges returns a set of changes that must occur in order
 // to transition the current consensus state into the one including the given block
-func (csm *consensusStateManager) CalculateConsensusStateChanges(blockHash *externalapi.DomainHash, isDisqualified bool) error {
+func (csm *consensusStateManager) CalculateConsensusStateChanges(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
