@@ -14,8 +14,13 @@ func New() model.ReachabilityDataStore {
 	return &reachabilityDataStore{}
 }
 
-// Stage stages the given reachabilityData for the given blockHash
-func (rds *reachabilityDataStore) Stage(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+// StageReachabilityData stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+	panic("implement me")
+}
+
+// StageReachabilityData stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
 	panic("implement me")
 }
 
@@ -31,7 +36,14 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTxProxy) error {
 	panic("implement me")
 }
 
-// Get gets the reachabilityData associated with the given blockHash
-func (rds *reachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
-	return nil, nil
+// ReachabilityData returns the reachabilityData associated with the given blockHash
+func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBContextProxy,
+	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+
+	panic("implement me")
+}
+
+// ReachabilityReindexRoot returns the current reachability reindex root
+func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
+	panic("implement me")
 }
