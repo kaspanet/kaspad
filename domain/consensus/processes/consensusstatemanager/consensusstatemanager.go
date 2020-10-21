@@ -18,6 +18,7 @@ type consensusStateManager struct {
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
 	acceptanceManager   model.AcceptanceManager
+	blockStatusStore    model.BlockStatusStore
 }
 
 // New instantiates a new ConsensusStateManager
@@ -29,7 +30,8 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	blockStore model.BlockStore,
 	ghostdagManager model.GHOSTDAGManager,
-	acceptanceManager model.AcceptanceManager) model.ConsensusStateManager {
+	acceptanceManager model.AcceptanceManager,
+	blockStatusStore model.BlockStatusStore) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams: dagParams,
@@ -41,6 +43,7 @@ func New(
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
 		acceptanceManager:   acceptanceManager,
+		blockStatusStore:    blockStatusStore,
 	}
 }
 
