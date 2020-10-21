@@ -24,27 +24,31 @@ import (
 //    BluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
-func (gm *ghostdagManager) GHOSTDAG(blockParents []*externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	newBlockData := &model.BlockGHOSTDAGData{
 		MergeSetBlues:      make([]*externalapi.DomainHash, 0),
 		MergeSetReds:       make([]*externalapi.DomainHash, 0),
 		BluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
 	}
 
+	blockParents, err := gm.dagTopologyManager.Parents(blockHash)
+	if err != nil {
+		return err
+	}
 	selectedParent, err := gm.findSelectedParent(blockParents)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	newBlockData.SelectedParent = selectedParent
 	mergeSet, err := gm.mergeSet(newBlockData.SelectedParent, blockParents)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, blueCandidate := range mergeSet {
 		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData, blueCandidate)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if isBlue {
@@ -61,11 +65,11 @@ func (gm *ghostdagManager) GHOSTDAG(blockParents []*externalapi.DomainHash) (*mo
 
 	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.SelectedParent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
 
-	return newBlockData, nil
+	return gm.ghostdagDataStore.Stage(blockHash, newBlockData)
 }
 
 type chainBlockData struct {
