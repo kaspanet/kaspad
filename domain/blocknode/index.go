@@ -57,6 +57,7 @@ func (bi *Index) LookupNode(hash *daghash.Hash) (*Node, bool) {
 	return node, ok
 }
 
+// LookupNodes returns the list of block nodes identified by provided hashes.
 func (bi *Index) LookupNodes(hashes []*daghash.Hash) ([]*Node, error) {
 	blocks := make([]*Node, 0, len(hashes))
 	for _, hash := range hashes {
@@ -130,6 +131,7 @@ func (bi *Index) FlushToDB(dbContext *dbaccess.TxContext) error {
 	return nil
 }
 
+// ClearDirtyEntries clears all existing dirty entries
 func (bi *Index) ClearDirtyEntries() {
 	bi.dirty = make(map[*Node]struct{})
 }
@@ -145,6 +147,7 @@ func BlockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
 	return indexKey
 }
 
-func BlockHashFromBlockIndexKey(BlockIndexKey []byte) (*daghash.Hash, error) {
-	return daghash.NewHash(BlockIndexKey[8 : daghash.HashSize+8])
+// BlockHashFromBlockIndexKey generates the block hash for the given binary block index key.
+func BlockHashFromBlockIndexKey(blockIndexKey []byte) (*daghash.Hash, error) {
+	return daghash.NewHash(blockIndexKey[8 : daghash.HashSize+8])
 }

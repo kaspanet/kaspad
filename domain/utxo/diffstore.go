@@ -15,6 +15,7 @@ type blockUTXODiffData struct {
 	diffChild *blocknode.Node
 }
 
+// DiffStore provides functions to operate with UTXO diffs and to interact with its storage
 type DiffStore struct {
 	databaseContext *dbaccess.DatabaseContext
 	Dirty           map[*blocknode.Node]struct{}
@@ -22,6 +23,7 @@ type DiffStore struct {
 	mtx             *locks.PriorityMutex
 }
 
+// NewDiffStore returns a new DiffStore instance setting the provided database context
 func NewDiffStore(databaseContext *dbaccess.DatabaseContext) *DiffStore {
 	return &DiffStore{
 		databaseContext: databaseContext,
@@ -31,6 +33,7 @@ func NewDiffStore(databaseContext *dbaccess.DatabaseContext) *DiffStore {
 	}
 }
 
+// SetBlockDiff sets a block diff for the provided block node
 func (diffStore *DiffStore) SetBlockDiff(node *blocknode.Node, diff *Diff) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
@@ -47,6 +50,7 @@ func (diffStore *DiffStore) SetBlockDiff(node *blocknode.Node, diff *Diff) error
 	return nil
 }
 
+// SetBlockDiffChild sets a block diff child for the provided block node
 func (diffStore *DiffStore) SetBlockDiffChild(node *blocknode.Node, diffChild *blocknode.Node) error {
 	diffStore.mtx.HighPriorityWriteLock()
 	defer diffStore.mtx.HighPriorityWriteUnlock()
@@ -61,6 +65,7 @@ func (diffStore *DiffStore) SetBlockDiffChild(node *blocknode.Node, diffChild *b
 	return nil
 }
 
+// RemoveBlocksDiffData removes blocks diff data for the specified node using provided database context
 func (diffStore *DiffStore) RemoveBlocksDiffData(dbContext dbaccess.Context, nodes []*blocknode.Node) error {
 	for _, node := range nodes {
 		err := diffStore.removeBlockDiffData(dbContext, node)
@@ -90,7 +95,7 @@ func (diffStore *DiffStore) diffDataByBlockNode(node *blocknode.Node) (*blockUTX
 	if diffData, ok := diffStore.Loaded[node]; ok {
 		return diffData, nil
 	}
-	diffData, err := diffStore.DiffDataFromDB(node.Hash)
+	diffData, err := diffStore.diffDataFromDB(node.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +103,7 @@ func (diffStore *DiffStore) diffDataByBlockNode(node *blocknode.Node) (*blockUTX
 	return diffData, nil
 }
 
+// DiffByNode returns the diff for the provided block node
 func (diffStore *DiffStore) DiffByNode(node *blocknode.Node) (*Diff, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
@@ -108,6 +114,7 @@ func (diffStore *DiffStore) DiffByNode(node *blocknode.Node) (*Diff, error) {
 	return diffData.Diff, nil
 }
 
+// DiffChildByNode returns the diff child for the provided block node
 func (diffStore *DiffStore) DiffChildByNode(node *blocknode.Node) (*blocknode.Node, error) {
 	diffStore.mtx.HighPriorityReadLock()
 	defer diffStore.mtx.HighPriorityReadUnlock()
@@ -118,7 +125,8 @@ func (diffStore *DiffStore) DiffChildByNode(node *blocknode.Node) (*blocknode.No
 	return diffData.diffChild, nil
 }
 
-func (diffStore *DiffStore) DiffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
+// diffDataFromDB returns fetched UTXO diff data from the database for the provided block hash
+func (diffStore *DiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
 	serializedBlockDiffData, err := dbaccess.FetchUTXODiffData(diffStore.databaseContext, hash)
 	if err != nil {
 		return nil, err
@@ -149,6 +157,7 @@ func (diffStore *DiffStore) FlushToDB(dbContext *dbaccess.TxContext) error {
 	return nil
 }
 
+// ClearDirtyEntries clears all existing dirty entries
 func (diffStore *DiffStore) ClearDirtyEntries() {
 	diffStore.Dirty = make(map[*blocknode.Node]struct{})
 }
@@ -158,7 +167,7 @@ func (diffStore *DiffStore) ClearDirtyEntries() {
 // under which to keep Diff data Loaded in memory.
 var MaxBlueScoreDifferenceToKeepLoaded uint64 = 100
 
-// clearOldEntries removes entries whose blue score is lower than
+// ClearOldEntries removes entries whose blue score is lower than
 // virtual.blueScore - MaxBlueScoreDifferenceToKeepLoaded.
 // Note that parents of virtual are not removed even
 // if their blue score is lower than the above.

@@ -72,6 +72,8 @@ func UpdateUTXOSet(dbContext dbaccess.Context, virtualUTXODiff *Diff) error {
 // keys will be iterated in an ascending order by the outpoint index.
 var outpointIndexByteOrder = binary.BigEndian
 
+// SerializeOutpoint serializes an outpoint into the provided writer (usually byte slice)
+// using a format that is suitable for long-term storage. This format is described in detail above.
 func SerializeOutpoint(w io.Writer, outpoint *appmessage.Outpoint) error {
 	_, err := w.Write(outpoint.TxID[:])
 	if err != nil {

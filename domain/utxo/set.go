@@ -510,8 +510,8 @@ func NewFullUTXOSetFromContext(context dbaccess.Context, cacheSize uint64) *Full
 	}
 }
 
-// diffFrom returns the difference between this utxoSet and another
-// diffFrom can only work when other is a diffUTXOSet, and its Base utxoSet is this.
+// DiffFrom returns the difference between this utxoSet and another
+// DiffFrom can only work when other is a diffUTXOSet, and its Base utxoSet is this.
 func (fus *FullUTXOSet) DiffFrom(other Set) (*Diff, error) {
 	otherDiffSet, ok := other.(*DiffUTXOSet)
 	if !ok {
@@ -668,8 +668,8 @@ func NewDiffUTXOSet(base *FullUTXOSet, diff *Diff) *DiffUTXOSet {
 	}
 }
 
-// diffFrom returns the difference between this utxoSet and another.
-// diffFrom can work if other is this's Base fullUTXOSet, or a diffUTXOSet with the same Base as this
+// DiffFrom returns the difference between this utxoSet and another.
+// DiffFrom can work if other is this's Base fullUTXOSet, or a diffUTXOSet with the same Base as this
 func (dus *DiffUTXOSet) DiffFrom(other Set) (*Diff, error) {
 	otherDiffSet, ok := other.(*DiffUTXOSet)
 	if !ok {

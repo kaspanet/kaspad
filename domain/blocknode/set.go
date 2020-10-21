@@ -78,7 +78,7 @@ func (bs Set) union(other Set) Set {
 	return union
 }
 
-// contains returns true iff this set contains node
+// Contains returns true if this set contains the given node
 func (bs Set) Contains(node *Node) bool {
 	_, ok := bs[node]
 	return ok
@@ -102,6 +102,7 @@ func (bs Set) String() string {
 	return strings.Join(nodeStrs, ",")
 }
 
+// Bluest returns the node with the maximum bluescore from the set
 func (bs Set) Bluest() *Node {
 	var bluestNode *Node
 	for node := range bs {
@@ -112,6 +113,7 @@ func (bs Set) Bluest() *Node {
 	return bluestNode
 }
 
+// IsEqual checks if both sets are equal
 func (bs Set) IsEqual(other Set) bool {
 	if len(bs) != len(other) {
 		return false
@@ -126,6 +128,7 @@ func (bs Set) IsEqual(other Set) bool {
 	return true
 }
 
+// AreAllIn checks if other set contains all nodes from the current set
 func (bs Set) AreAllIn(other Set) bool {
 	for node := range bs {
 		if !other.Contains(node) {

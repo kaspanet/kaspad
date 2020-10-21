@@ -92,7 +92,7 @@ type BlockDAG struct {
 	notifications     []NotificationCallback
 
 	UTXODiffStore *utxodiffstore.DiffStore
-	multisetStore *multiset.MultisetStore
+	multisetStore *multiset.Store
 
 	reachabilityTree *reachabilityTree
 
@@ -133,7 +133,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	dag.virtual = newVirtualBlock(utxo.NewFullUTXOSetFromContext(dag.DatabaseContext, dag.maxUTXOCacheSize), nil, dag.Now().UnixMilliseconds())
 	dag.UTXODiffStore = utxo.NewDiffStore(dag.DatabaseContext)
-	dag.multisetStore = multiset.NewMultisetStore()
+	dag.multisetStore = multiset.NewStore()
 	dag.reachabilityTree = newReachabilityTree(dag)
 
 	// Initialize the DAG state from the passed database. When the db

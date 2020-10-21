@@ -14,6 +14,7 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
+// SerializeNode serializes the given node
 func SerializeNode(node *Node) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0, appmessage.MaxBlockHeaderPayload+1))
 	header := node.Header()

@@ -124,7 +124,7 @@ func (dag *BlockDAG) finalityScore(node *blocknode.Node) uint64 {
 	return node.BlueScore / dag.FinalityInterval()
 }
 
-// CalcPastMedianTime returns the median time of the previous few blocks
+// PastMedianTime returns the median time of the previous few blocks
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.

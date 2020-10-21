@@ -40,6 +40,7 @@ const (
 	StatusDisqualifiedFromChain
 )
 
+// BlockStatusToString maps block statuses to the appropriate string representation
 var BlockStatusToString = map[Status]string{
 	StatusDataStored:              "StatusDataStored",
 	StatusValid:                   "StatusValid",
@@ -164,6 +165,7 @@ func (node *Node) UpdateParentsChildren() {
 	}
 }
 
+// Less compares one node to another to specify which one is "less". It's used as a comparator.
 func (node *Node) Less(other *Node) bool {
 	if node.BlueScore == other.BlueScore {
 		return daghash.Less(node.Hash, other.Hash)
@@ -216,6 +218,7 @@ func (node *Node) RelativeAncestor(distance uint64) *Node {
 	return node.SelectedAncestor(node.BlueScore - distance)
 }
 
+// ParentHashes returns parent hashes of the node
 func (node *Node) ParentHashes() []*daghash.Hash {
 	return node.Parents.Hashes()
 }
@@ -230,10 +233,12 @@ func (node Node) String() string {
 	return node.Hash.String()
 }
 
+// Time returns a time that contains node's timestamp in unix milliseconds.
 func (node *Node) Time() mstime.Time {
 	return mstime.UnixMilliseconds(node.Timestamp)
 }
 
+// BlockAtDepth returns the block node at the given depth.
 func (node *Node) BlockAtDepth(depth uint64) *Node {
 	if node.BlueScore <= depth { // to prevent overflow of requiredBlueScore
 		depth = node.BlueScore

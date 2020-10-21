@@ -11,25 +11,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MultisetStore struct {
+// Store provides functions to operate with multiset and to interact with its storage
+type Store struct {
 	new    map[daghash.Hash]struct{}
 	loaded map[daghash.Hash]secp256k1.MultiSet
 	mtx    *locks.PriorityMutex
 }
 
-func NewMultisetStore() *MultisetStore {
-	return &MultisetStore{
+// NewStore returns a new multiset Store
+func NewStore() *Store {
+	return &Store{
 		new:    make(map[daghash.Hash]struct{}),
 		loaded: make(map[daghash.Hash]secp256k1.MultiSet),
 	}
 }
 
-func (store *MultisetStore) SetMultiset(node *blocknode.Node, ms *secp256k1.MultiSet) {
+// SetMultiset sets the multiset Store using provided multiset
+func (store *Store) SetMultiset(node *blocknode.Node, ms *secp256k1.MultiSet) {
 	store.loaded[*node.Hash] = *ms
 	store.addToNewBlocks(node.Hash)
 }
 
-func (store *MultisetStore) addToNewBlocks(blockHash *daghash.Hash) {
+func (store *Store) addToNewBlocks(blockHash *daghash.Hash) {
 	store.new[*blockHash] = struct{}{}
 }
 
@@ -37,7 +40,8 @@ func multisetNotFoundError(blockHash *daghash.Hash) error {
 	return errors.Errorf("Couldn't find multiset data for block %s", blockHash)
 }
 
-func (store *MultisetStore) MultisetByBlockNode(node *blocknode.Node) (*secp256k1.MultiSet, error) {
+// MultisetByBlockNode returns a Multiset for the provided node
+func (store *Store) MultisetByBlockNode(node *blocknode.Node) (*secp256k1.MultiSet, error) {
 	ms, exists := store.multisetByBlockHash(node.Hash)
 	if !exists {
 		return nil, multisetNotFoundError(node.Hash)
@@ -45,13 +49,13 @@ func (store *MultisetStore) MultisetByBlockNode(node *blocknode.Node) (*secp256k
 	return ms, nil
 }
 
-func (store *MultisetStore) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.MultiSet, bool) {
+func (store *Store) multisetByBlockHash(hash *daghash.Hash) (*secp256k1.MultiSet, bool) {
 	ms, ok := store.loaded[*hash]
 	return &ms, ok
 }
 
 // FlushToDB writes all new multiset data to the database.
-func (store *MultisetStore) FlushToDB(dbContext *dbaccess.TxContext) error {
+func (store *Store) FlushToDB(dbContext *dbaccess.TxContext) error {
 	if len(store.new) == 0 {
 		return nil
 	}
@@ -79,11 +83,13 @@ func (store *MultisetStore) FlushToDB(dbContext *dbaccess.TxContext) error {
 	return nil
 }
 
-func (store *MultisetStore) ClearNewEntries() {
+// ClearNewEntries clears all new entries
+func (store *Store) ClearNewEntries() {
 	store.new = make(map[daghash.Hash]struct{})
 }
 
-func (store *MultisetStore) Init(dbContext dbaccess.Context) error {
+// Init initializes a multiset Store using provided database context
+func (store *Store) Init(dbContext dbaccess.Context) error {
 	cursor, err := dbaccess.MultisetCursor(dbContext)
 	if err != nil {
 		return err
@@ -117,7 +123,7 @@ func (store *MultisetStore) Init(dbContext dbaccess.Context) error {
 }
 
 // storeMultiset stores the multiset data to the database.
-func (store *MultisetStore) storeMultiset(dbContext dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
+func (store *Store) storeMultiset(dbContext dbaccess.Context, blockHash *daghash.Hash, serializedMS []byte) error {
 	exists, err := dbaccess.HasMultiset(dbContext, blockHash)
 	if err != nil {
 		return err
