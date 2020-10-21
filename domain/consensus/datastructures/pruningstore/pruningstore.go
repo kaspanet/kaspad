@@ -15,7 +15,7 @@ func New() model.PruningStore {
 }
 
 // Stage stages the pruning state
-func (pps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) error {
+func (pps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) {
 	panic("implement me")
 }
 

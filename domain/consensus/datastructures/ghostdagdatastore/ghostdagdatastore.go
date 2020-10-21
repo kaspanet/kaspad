@@ -15,7 +15,7 @@ func New() model.GHOSTDAGDataStore {
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) error {
+func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	panic("implement me")
 }
 

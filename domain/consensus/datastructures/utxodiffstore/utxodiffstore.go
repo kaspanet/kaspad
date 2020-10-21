@@ -15,7 +15,7 @@ func New() model.UTXODiffStore {
 }
 
 // Stage stages the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
 	panic("implement me")
 }
 

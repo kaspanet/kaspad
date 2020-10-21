@@ -15,7 +15,7 @@ func New() model.BlockStore {
 }
 
 // Stage stages the given block for the given blockHash
-func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
+func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
 	panic("implement me")
 }
 

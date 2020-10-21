@@ -4,7 +4,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // UTXODiffStore represents a store of UTXODiffs
 type UTXODiffStore interface {
-	Stage(blockHash *externalapi.DomainHash, utxoDiff *UTXODiff, utxoDiffChild *externalapi.DomainHash) error
+	Stage(blockHash *externalapi.DomainHash, utxoDiff *UTXODiff, utxoDiffChild *externalapi.DomainHash)
 	Discard()
 	Commit(dbTx DBTxProxy) error
 	UTXODiff(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*UTXODiff, error)

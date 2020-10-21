@@ -15,7 +15,7 @@ func New() model.MultisetStore {
 }
 
 // Stage stages the given multiset for the given blockHash
-func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) error {
+func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
 	panic("implement me")
 }
 

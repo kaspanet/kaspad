@@ -4,7 +4,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // BlockStore represents a store of blocks
 type BlockStore interface {
-	Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error
+	Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock)
 	Discard()
 	Commit(dbTx DBTxProxy) error
 	Block(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)

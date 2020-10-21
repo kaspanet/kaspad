@@ -15,7 +15,7 @@ func New() model.AcceptanceDataStore {
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) error {
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) {
 	panic("implement me")
 }
 

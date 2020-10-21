@@ -69,7 +69,8 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	}
 	newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
 
-	return gm.ghostdagDataStore.Stage(blockHash, newBlockData)
+	gm.ghostdagDataStore.Stage(blockHash, newBlockData)
+	return nil
 }
 
 type chainBlockData struct {

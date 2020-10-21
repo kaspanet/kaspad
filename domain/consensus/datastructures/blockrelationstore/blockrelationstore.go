@@ -15,7 +15,7 @@ func New() model.BlockRelationStore {
 }
 
 // Stage stages the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Stage(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
+func (brs *blockRelationStore) Stage(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
 	panic("implement me")
 }
 

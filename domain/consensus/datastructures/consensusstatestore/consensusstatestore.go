@@ -15,7 +15,7 @@ func New() model.ConsensusStateStore {
 }
 
 // Stage stages the store with the given consensusStateChanges
-func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStateChanges) error {
+func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStateChanges) {
 	panic("implement me")
 }
 
