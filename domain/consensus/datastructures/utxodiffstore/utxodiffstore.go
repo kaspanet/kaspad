@@ -14,9 +14,17 @@ func New() model.UTXODiffStore {
 	return &utxoDiffStore{}
 }
 
-// Insert inserts the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
-	return nil
+// Stage stages the given utxoDiff for the given blockHash
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Discard() {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // UTXODiff gets the utxoDiff associated with the given blockHash

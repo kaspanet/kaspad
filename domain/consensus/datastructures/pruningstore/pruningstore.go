@@ -14,9 +14,17 @@ func New() model.PruningStore {
 	return &pruningStore{}
 }
 
-// Update updates the pruning state
-func (pps *pruningStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) error {
-	return nil
+// Stage stages the pruning state
+func (pps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) error {
+	panic("implement me")
+}
+
+func (pps *pruningStore) Discard() {
+	panic("implement me")
+}
+
+func (pps *pruningStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // PruningPoint gets the current pruning point

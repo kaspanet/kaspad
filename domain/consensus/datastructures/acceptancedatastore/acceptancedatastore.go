@@ -14,9 +14,17 @@ func New() model.AcceptanceDataStore {
 	return &acceptanceDataStore{}
 }
 
-// Insert inserts the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) error {
-	return nil
+// Stage stages the given acceptanceData for the given blockHash
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) error {
+	panic("implement me")
+}
+
+func (ads *acceptanceDataStore) Discard() {
+	panic("implement me")
+}
+
+func (ads *acceptanceDataStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the acceptanceData associated with the given blockHash

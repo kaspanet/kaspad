@@ -14,9 +14,17 @@ func New() model.BlockStore {
 	return &blockStore{}
 }
 
-// Insert inserts the given block for the given blockHash
-func (bms *blockStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, msgBlock *externalapi.DomainBlock) error {
-	return nil
+// Stage stages the given block for the given blockHash
+func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
+	panic("implement me")
+}
+
+func (bms *blockStore) Discard() {
+	panic("implement me")
+}
+
+func (bms *blockStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Block gets the block associated with the given blockHash

@@ -14,9 +14,17 @@ func New() model.ReachabilityDataStore {
 	return &reachabilityDataStore{}
 }
 
-// Insert inserts the given reachabilityData for the given blockHash
-func (rds *reachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) error {
-	return nil
+// Stage stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) Stage(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Discard() {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the reachabilityData associated with the given blockHash
