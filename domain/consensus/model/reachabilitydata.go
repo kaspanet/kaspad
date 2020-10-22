@@ -1,5 +1,7 @@
 package model
 
+import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 // ReachabilityData holds the set of data required to answer
 // reachability queries
 type ReachabilityData struct {
@@ -23,8 +25,8 @@ type ReachabilityData struct {
 // case, and so reindexing should always succeed unless more than
 // 2^64 blocks are added to the DAG/tree.
 type ReachabilityTreeNode struct {
-	Children []*ReachabilityTreeNode
-	Parent   *ReachabilityTreeNode
+	Children []*externalapi.DomainHash
+	Parent   *externalapi.DomainHash
 
 	// interval is the index interval containing all intervals of
 	// blocks in this node's subtree
@@ -58,4 +60,4 @@ type OrderedTreeNodeSet []*ReachabilityTreeNode
 //
 // See insertNode, hasAncestorOf, and reachabilityTree.isInPast for further
 // details.
-type FutureCoveringTreeNodeSet OrderedTreeNodeSet
+type FutureCoveringTreeNodeSet []*externalapi.DomainHash
