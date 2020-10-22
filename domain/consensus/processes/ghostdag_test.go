@@ -39,7 +39,7 @@ func TestGHOSTDA(t *testing.T) {
 		MergeSetReds:       nil,
 		BluesAnticoneSizes: nil,
 	}
-	// test2: Graph form is a chain.
+	// test2: Graph form is a chain. K = 3
 	//dag := []testGhostdagData{
 	//	{
 	//		hash:                   &model.DomainHash{1},
@@ -47,7 +47,7 @@ func TestGHOSTDA(t *testing.T) {
 	//		expectedBlueScore:      2,
 	//		expectedSelectedParent: genesisHash,
 	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
-	//		expectedMergeSetReds:   nil,
+	//		expectedMergeSetReds:   []*model.DomainHash{},
 	//	},
 	//	{
 	//		hash:                   &model.DomainHash{2},
@@ -55,7 +55,7 @@ func TestGHOSTDA(t *testing.T) {
 	//		expectedBlueScore:      3,
 	//		expectedSelectedParent: &model.DomainHash{1},
 	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
-	//		expectedMergeSetReds:   nil,
+	//		expectedMergeSetReds:   []*model.DomainHash{},
 	//	},
 	//	{
 	//		hash:                   &model.DomainHash{3},
@@ -63,13 +63,149 @@ func TestGHOSTDA(t *testing.T) {
 	//		expectedBlueScore:      2,
 	//		expectedSelectedParent: genesisHash,
 	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
-	//		expectedMergeSetReds:   nil,
+	//		expectedMergeSetReds:   []*model.DomainHash{},
 	//	},
 	//}
 
-	//test4 : The graph’s longest chain was created by malicious miners (not the “heaviest”).
-	dag2 := []testGhostdagData{
-		{ /* J */
+	//test4 : The graph’s longest chain was created by malicious miners (not the “heaviest”). K = 3
+	//dag4 := []testGhostdagData{
+	//	{ /* 1*/
+	//		hash:                   &model.DomainHash{1},
+	//		parents:                []*model.DomainHash{genesisHash},
+	//		expectedBlueScore:      2,
+	//		expectedSelectedParent: genesisHash,
+	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 2 */
+	//		hash:                   &model.DomainHash{2},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 3 */
+	//		hash:                   &model.DomainHash{3},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 4 */
+	//		hash:                   &model.DomainHash{4},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 5 */
+	//		hash:                   &model.DomainHash{5},
+	//		parents:                []*model.DomainHash{{2}, {3}, {4}},
+	//		expectedBlueScore:      6,
+	//		expectedSelectedParent: &model.DomainHash{2},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{2}, {3}, {4}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 6 */
+	//		hash:                   &model.DomainHash{6},
+	//		parents:                []*model.DomainHash{genesisHash},
+	//		expectedBlueScore:      2,
+	//		expectedSelectedParent: genesisHash,
+	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 7 */
+	//		hash:                   &model.DomainHash{7},
+	//		parents:                []*model.DomainHash{{6}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{6},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{6}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 8 */
+	//		hash:                   &model.DomainHash{8},
+	//		parents:                []*model.DomainHash{{7}},
+	//		expectedBlueScore:      4,
+	//		expectedSelectedParent: &model.DomainHash{7},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{7}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 9 */
+	//		hash:                   &model.DomainHash{9},
+	//		parents:                []*model.DomainHash{{8}},
+	//		expectedBlueScore:      5,
+	//		expectedSelectedParent: &model.DomainHash{8},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{8}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 10 */
+	//		hash:                   &model.DomainHash{10},
+	//		parents:                []*model.DomainHash{{5}, {9}},
+	//		expectedBlueScore:      7,
+	//		expectedSelectedParent: &model.DomainHash{5},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{5}},
+	//		expectedMergeSetReds:   []*model.DomainHash{{9}, {8}, {7}, {6}},
+	//	},
+	//}
+
+	// test5: Selected Parent choice: same score – decide by hashes. K = 3
+	//dag2 := []testGhostdagData{
+	//	{ /* 1*/
+	//		hash:                   &model.DomainHash{1},
+	//		parents:                []*model.DomainHash{genesisHash},
+	//		expectedBlueScore:      2,
+	//		expectedSelectedParent: genesisHash,
+	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 2 */
+	//		hash:                   &model.DomainHash{2},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 3 */
+	//		hash:                   &model.DomainHash{3},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 4 */
+	//		hash:                   &model.DomainHash{4},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 5 */
+	//		hash:                   &model.DomainHash{5},
+	//		parents:                []*model.DomainHash{{2}, {3}, {4}},
+	//		expectedBlueScore:      6,
+	//		expectedSelectedParent: &model.DomainHash{2},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{2}, {3}, {4}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//	{ /* 6 */
+	//		hash:                   &model.DomainHash{6},
+	//		parents:                []*model.DomainHash{{5}},
+	//		expectedBlueScore:      7,
+	//		expectedSelectedParent: &model.DomainHash{5},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{5}},
+	//		expectedMergeSetReds:   []*model.DomainHash{},
+	//	},
+	//}
+
+	//test 6: mergeSetReds is not empty, one of the block in the mergeSet is not connected to more than k . K = 1
+	dag6 := []testGhostdagData{
+		{
 			hash:                   &model.DomainHash{1},
 			parents:                []*model.DomainHash{genesisHash},
 			expectedBlueScore:      2,
@@ -77,7 +213,7 @@ func TestGHOSTDA(t *testing.T) {
 			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
 			expectedMergeSetReds:   []*model.DomainHash{},
 		},
-		{ /* G */
+		{
 			hash:                   &model.DomainHash{2},
 			parents:                []*model.DomainHash{{1}},
 			expectedBlueScore:      3,
@@ -85,42 +221,26 @@ func TestGHOSTDA(t *testing.T) {
 			expectedMergeSetBlues:  []*model.DomainHash{{1}},
 			expectedMergeSetReds:   []*model.DomainHash{},
 		},
-		{ /* H */
+		{
 			hash:                   &model.DomainHash{3},
-			parents:                []*model.DomainHash{{1}},
-			expectedBlueScore:      3,
-			expectedSelectedParent: &model.DomainHash{1},
-			expectedMergeSetBlues:  []*model.DomainHash{{1}},
+			parents:                []*model.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
 			expectedMergeSetReds:   []*model.DomainHash{},
 		},
-		{ /* I */
+		{
 			hash:                   &model.DomainHash{4},
-			parents:                []*model.DomainHash{{1}},
-			expectedBlueScore:      3,
-			expectedSelectedParent: &model.DomainHash{1},
-			expectedMergeSetBlues:  []*model.DomainHash{{1}},
-			expectedMergeSetReds:   []*model.DomainHash{},
-		},
-		{ /* F */
-			hash:                   &model.DomainHash{5},
-			parents:                []*model.DomainHash{{2}, {3}, {4}},
-			expectedBlueScore:      6,
+			parents:                []*model.DomainHash{{2}, {3}},
+			expectedBlueScore:      4,
 			expectedSelectedParent: &model.DomainHash{2},
-			expectedMergeSetBlues:  []*model.DomainHash{{2}, {3}, {4}},
-			expectedMergeSetReds:   []*model.DomainHash{},
-		},
-		{ /* E */
-			hash:                   &model.DomainHash{6},
-			parents:                []*model.DomainHash{{5}},
-			expectedBlueScore:      7,
-			expectedSelectedParent: &model.DomainHash{5},
-			expectedMergeSetBlues:  []*model.DomainHash{{5}},
-			expectedMergeSetReds:   []*model.DomainHash{},
+			expectedMergeSetBlues:  []*model.DomainHash{{2}},
+			expectedMergeSetReds:   []*model.DomainHash{{3}},
 		},
 	}
 
-	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 3)
-	for i, testBlockData := range dag2 {
+	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 1)
+	for i, testBlockData := range dag6 {
 		dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
 		ghostdagData, err := g.GHOSTDAG(testBlockData.parents)
 		if err != nil {

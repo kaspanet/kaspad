@@ -149,9 +149,9 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *model.DomainHash, desire
 
 		for _, b := range blockData.MergeSetBlues {
 			//if !gh.validateKCluster(b, desiredBlock, &counter, blueSet) { /* ret false*/
-			isValid2, err2 := gh.validateKCluster(b, desiredBlock, &counter, blueSet)
-			if err2 != nil {
-				return err2
+			isValid2, err := gh.validateKCluster(b, desiredBlock, &counter, blueSet)
+			if err != nil {
+				return err
 			}
 			if !isValid2 {
 				stop = true
@@ -163,9 +163,9 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *model.DomainHash, desire
 			break
 		}
 		//chain = gh.dataStore.Get(gh.dbAccess, chain).SelectedParent
-		blockData2, err2 := gh.dataStore.Get(gh.dbAccess, chain)
-		if err2 != nil {
-			return err2
+		blockData2, err := gh.dataStore.Get(gh.dbAccess, chain)
+		if err != nil {
+			return err
 		}
 		chain = blockData2.SelectedParent
 	}
@@ -247,8 +247,8 @@ func (gh *ghostdagHelper) validateKCluster(chain *model.DomainHash, checkedBlock
 		}
 		//if gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain) {
 		if isAnt2 {
-			dataStore, err2 := gh.BlockData(chain)
-			if err2 != nil {
+			dataStore, err := gh.BlockData(chain)
+			if err != nil {
 				return false, err
 			}
 			if g := dataStore.MergeSetReds; contains(checkedBlock, g) {
