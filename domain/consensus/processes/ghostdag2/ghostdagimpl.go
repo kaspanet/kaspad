@@ -47,6 +47,9 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 			selectedParent = w
 			maxNum = score
 		}
+		if score == maxNum && isLessHash(w, selectedParent) {
+			selectedParent = w
+		}
 	}
 	myScore = maxNum + 1
 
@@ -94,6 +97,20 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 	}
 
 	return &e, nil
+}
+
+/* --------isLessHash(w, selectedParent)----------------*/
+func isLessHash(w *model.DomainHash, selectedParent *model.DomainHash) bool {
+	//Check if w is less then selectedParent
+	for i := len(w) - 1; i >= 0; i-- {
+		switch {
+		case w[i] < selectedParent[i]:
+			return true
+		case w[i] > selectedParent[i]:
+			return false
+		}
+	}
+	return false
 }
 
 /*  1. blue = selectedParent.blue + blues
