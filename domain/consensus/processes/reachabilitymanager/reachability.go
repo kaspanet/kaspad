@@ -1,4 +1,4 @@
-package reachabilitytree
+package reachabilitymanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"

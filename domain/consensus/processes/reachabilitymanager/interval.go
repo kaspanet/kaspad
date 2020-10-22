@@ -1,4 +1,4 @@
-package reachabilitytree
+package reachabilitymanager
 
 import (
 	"fmt"
