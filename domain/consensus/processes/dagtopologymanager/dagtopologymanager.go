@@ -3,6 +3,7 @@ package dagtopologymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // dagTopologyManager exposes methods for querying relationships
@@ -27,7 +28,7 @@ func New(
 }
 
 // Parents returns the DAG parents of the given blockHash
-func (dtm *dagTopologyManager) Parents(blockHash *model.DomainHash) ([]*model.DomainHash, error) {
+func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func (dtm *dagTopologyManager) Parents(blockHash *model.DomainHash) ([]*model.Do
 }
 
 // Children returns the DAG children of the given blockHash
-func (dtm *dagTopologyManager) Children(blockHash *model.DomainHash) ([]*model.DomainHash, error) {
+func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
@@ -45,7 +46,7 @@ func (dtm *dagTopologyManager) Children(blockHash *model.DomainHash) ([]*model.D
 }
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
-func (dtm *dagTopologyManager) IsParentOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
@@ -54,7 +55,7 @@ func (dtm *dagTopologyManager) IsParentOf(blockHashA *model.DomainHash, blockHas
 }
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
-func (dtm *dagTopologyManager) IsChildOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
@@ -63,30 +64,40 @@ func (dtm *dagTopologyManager) IsChildOf(blockHashA *model.DomainHash, blockHash
 }
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
-func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashA, blockHashB)
 }
 
 // IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
-func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashB, blockHashA)
 }
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
-func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *model.DomainHash, potentialDescendants []*model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
-func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func isHashInSlice(hash *model.DomainHash, hashes []*model.DomainHash) bool {
+func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
 	for _, h := range hashes {
 		if *h == *hash {
 			return true
 		}
 	}
 	return false
+}
+
+// Tips returns the current DAG tips
+func (dtm *dagTopologyManager) Tips() ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+// AddTip adds the given tip to the current DAG tips
+func (dtm *dagTopologyManager) AddTip(tipHash *externalapi.DomainHash) error {
+	panic("implement me")
 }

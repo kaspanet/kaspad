@@ -1,20 +1,27 @@
-package validator
+package blockvalidator
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *validator) ValidateHeaderInContext(header *model.DomainBlockHeader) error {
-	err := v.checkParentsIncest(header)
+func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
+	block, err := v.blockStore.Block(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.validateDifficulty(header)
+	header := block.Header
+
+	err = v.checkParentsIncest(header)
+	if err != nil {
+		return err
+	}
+
+	err = v.validateDifficulty(blockHash)
 	if err != nil {
 		return err
 	}
@@ -24,12 +31,12 @@ func (v *validator) ValidateHeaderInContext(header *model.DomainBlockHeader) err
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagManager.GHOSTDAG(header.ParentHashes)
+	err = v.ghostdagManager.GHOSTDAG(blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkMergeSizeLimit(ghostdagData)
+	err = v.checkMergeSizeLimit(blockHash)
 	if err != nil {
 		return err
 	}
@@ -38,7 +45,7 @@ func (v *validator) ValidateHeaderInContext(header *model.DomainBlockHeader) err
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *validator) checkParentsIncest(header *model.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeader) error {
 	for _, parentA := range header.ParentHashes {
 		for _, parentB := range header.ParentHashes {
 			if *parentA == *parentB {
@@ -62,15 +69,21 @@ func (v *validator) checkParentsIncest(header *model.DomainBlockHeader) error {
 	return nil
 }
 
-func (v *validator) validateDifficulty(header *model.DomainBlockHeader) error {
+func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.RequiredDifficulty(header.ParentHashes)
+	expectedBits, err := v.difficultyManager.RequiredDifficulty(blockHash)
 	if err != nil {
 		return err
 	}
 
+	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
+	header := block.Header
 	if header.Bits != expectedBits {
 		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
 	}
@@ -78,25 +91,20 @@ func (v *validator) validateDifficulty(header *model.DomainBlockHeader) error {
 	return nil
 }
 
-func (v *validator) validateMedianTime(header *model.DomainBlockHeader) error {
+func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeader) error {
 	if len(header.ParentHashes) == 0 {
 		return nil
 	}
 
 	hash := hashserialization.HeaderHash(header)
-	ghostdagData, err := v.ghostdagManager.BlockData(hash)
-	if err != nil {
-		return err
-	}
-
-	selectedParentGHOSTDAGData, err := v.ghostdagManager.BlockData(ghostdagData.SelectedParent)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
 	if err != nil {
 		return err
 	}
 
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(selectedParentGHOSTDAGData)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
 	if err != nil {
 		return err
 	}
@@ -109,7 +117,12 @@ func (v *validator) validateMedianTime(header *model.DomainBlockHeader) error {
 	return nil
 }
 
-func (v *validator) checkMergeSizeLimit(ghostdagData *model.BlockGHOSTDAGData) error {
+func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error {
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
+	if err != nil {
+		return err
+	}
+
 	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
 
 	const mergeSetSizeLimit = 1000

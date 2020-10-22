@@ -1,12 +1,14 @@
 package model
 
+import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 // BlockGHOSTDAGData represents GHOSTDAG data for some block
 type BlockGHOSTDAGData struct {
 	BlueScore          uint64
-	SelectedParent     *DomainHash
-	MergeSetBlues      []*DomainHash
-	MergeSetReds       []*DomainHash
-	BluesAnticoneSizes map[DomainHash]KType
+	SelectedParent     *externalapi.DomainHash
+	MergeSetBlues      []*externalapi.DomainHash
+	MergeSetReds       []*externalapi.DomainHash
+	BluesAnticoneSizes map[externalapi.DomainHash]KType
 }
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.

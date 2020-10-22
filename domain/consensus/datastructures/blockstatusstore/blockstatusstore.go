@@ -2,6 +2,7 @@ package blockstatusstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // blockStatusStore represents a store of BlockStatuses
@@ -13,17 +14,29 @@ func New() model.BlockStatusStore {
 	return &blockStatusStore{}
 }
 
-// Insert inserts the given blockStatus for the given blockHash
-func (bss *blockStatusStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, blockStatus model.BlockStatus) error {
-	return nil
+// Stage stages the given blockStatus for the given blockHash
+func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus model.BlockStatus) {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) Discard() {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *blockStatusStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (model.BlockStatus, error) {
+func (bss *blockStatusStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
 	return 0, nil
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists
-func (bss *blockStatusStore) Exists(dbContext model.DBContextProxy, blockHash *model.DomainHash) (bool, error) {
+func (bss *blockStatusStore) Exists(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (bool, error) {
 	return false, nil
 }

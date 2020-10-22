@@ -1,12 +1,14 @@
 package model
 
+import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 // BlockValidator exposes a set of validation classes, after which
 // it's possible to determine whether a block is valid
 type BlockValidator interface {
-	ValidateHeaderInIsolation(block *DomainBlockHeader) error
-	ValidateBodyInIsolation(block *DomainBlock) error
-	ValidateHeaderInContext(block *DomainBlockHeader) error
-	ValidateBodyInContext(block *DomainBlock) error
-	ValidateAgainstPastUTXO(block *DomainBlock) error
-	ValidateFinality(block *DomainBlock) error
+	ValidateHeaderInIsolation(blockHash *externalapi.DomainHash) error
+	ValidateBodyInIsolation(blockHash *externalapi.DomainHash) error
+	ValidateHeaderInContext(blockHash *externalapi.DomainHash) error
+	ValidateBodyInContext(blockHash *externalapi.DomainHash) error
+	ValidateAgainstPastUTXO(blockHash *externalapi.DomainHash) error
+	ValidateFinality(blockHash *externalapi.DomainHash) error
 }

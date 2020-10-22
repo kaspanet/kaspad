@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 // DomainBlock represents a Kaspa block
 type DomainBlock struct {

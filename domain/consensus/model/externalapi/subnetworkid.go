@@ -1,4 +1,4 @@
-package model
+package externalapi
 
 const SubnetworkIDSize = 20
 

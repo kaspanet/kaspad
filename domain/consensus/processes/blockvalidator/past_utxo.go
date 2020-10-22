@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -9,7 +10,7 @@ import (
 )
 
 // ValidateAgainstPastUTXO validates the block against the UTXO of its past
-func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
+func (v *validator) ValidateAgainstPastUTXO(block *externalapi.DomainBlock) error {
 	acceptanceData, multiset := v.consensusStateManager.CalculateAcceptanceDataAndMultiset(block)
 
 	err := v.validateAcceptedIDMerkleRoot(block, acceptanceData)
@@ -35,7 +36,7 @@ func (v *validator) ValidateAgainstPastUTXO(block *model.DomainBlock) error {
 	return nil
 }
 
-func (v *validator) validateAcceptedIDMerkleRoot(block *model.DomainBlock, consensusStateChanges model.ConsensusStateChanges) error {
+func (v *validator) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock, consensusStateChanges model.ConsensusStateChanges) error {
 	// Genesis block doesn't have acceptance data to validate
 	if len(block.Header.ParentHashes) == 0 {
 		return nil
@@ -70,7 +71,7 @@ func (v *validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAcc
 	return acceptedIDMerkleTree.Root()
 }
 
-func (v *validator) validateUTXOCommitment(block *model.DomainBlock, multiset model.Multiset) error {
+func (v *validator) validateUTXOCommitment(block *externalapi.DomainBlock, multiset model.Multiset) error {
 	calculatedMultisetHash := multiset.Hash()
 	if *calculatedMultisetHash != block.Header.UTXOCommitment {
 		return ruleerrors.Errorf(ruleerrors.ErrBadUTXOCommitment, "UTXO commitment is invalid - block "+

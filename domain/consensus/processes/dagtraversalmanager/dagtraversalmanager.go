@@ -2,6 +2,7 @@ package dagtraversalmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // dagTraversalManager exposes methods for travering blocks
@@ -23,7 +24,7 @@ func New(
 
 // SelectedParentIterator creates an iterator over the selected
 // parent chain of the given highHash
-func (dtm *dagTraversalManager) SelectedParentIterator(highHash *model.DomainHash) (model.SelectedParentIterator, error) {
+func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) (model.SelectedParentIterator, error) {
 	return nil, nil
 }
 
@@ -31,6 +32,6 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *model.DomainHas
 // highest block with a blue score lower than the given
 // blueScore in the block with the given highHash's selected
 // parent chain
-func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *model.DomainHash, blueScore uint64) (*model.DomainHash, error) {
+func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
 	return nil, nil
 }

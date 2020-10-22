@@ -1,8 +1,8 @@
-package validator
+package blockvalidator
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -12,11 +12,14 @@ import (
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
 // consensus state
-func (v *validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) error {
-	// Ensure the proof of work bits in the block header is in min/max range
-	// and the block hash is less than the target value described by the
-	// bits.
-	err := v.checkProofOfWork(header)
+func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.DomainHash) error {
+	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
+	header := block.Header
+	err = v.checkProofOfWork(header)
 	if err != nil {
 		return err
 	}
@@ -34,7 +37,7 @@ func (v *validator) ValidateHeaderInIsolation(header *model.DomainBlockHeader) e
 	return nil
 }
 
-func (v *validator) checkParentsLimit(header *model.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
 	hash := hashserialization.HeaderHash(header)
 	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
 		return ruleerrors.Errorf(ruleerrors.ErrNoParents, "block has no parents")
@@ -55,7 +58,7 @@ func (v *validator) checkParentsLimit(header *model.DomainBlockHeader) error {
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (v *validator) checkProofOfWork(header *model.DomainBlockHeader) error {
+func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader) error {
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -86,8 +89,8 @@ func (v *validator) checkProofOfWork(header *model.DomainBlockHeader) error {
 }
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
-func checkBlockParentsOrder(header *model.DomainBlockHeader) error {
-	sortedHashes := make([]*model.DomainHash, len(header.ParentHashes))
+func checkBlockParentsOrder(header *externalapi.DomainBlockHeader) error {
+	sortedHashes := make([]*externalapi.DomainHash, len(header.ParentHashes))
 	for i, hash := range header.ParentHashes {
 		sortedHashes[i] = hash
 	}

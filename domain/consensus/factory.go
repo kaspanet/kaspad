@@ -7,14 +7,15 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/feedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/acceptancemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
@@ -23,7 +24,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
-	validatorpkg "github.com/kaspanet/kaspad/domain/consensus/processes/validator"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/utxodiffmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -48,7 +50,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
-	feeDataStore := feedatastore.New()
 
 	domainDBContext := database.NewDomainDBContext(databaseContext)
 
@@ -68,14 +69,17 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
+	utxoDiffManager := utxodiffmanager.New(utxoDiffStore)
+	acceptanceManager := acceptancemanager.New(utxoDiffManager)
 	consensusStateManager := consensusstatemanager.New(
 		domainDBContext,
 		dagParams,
 		consensusStateStore,
 		multisetStore,
-		utxoDiffStore,
 		blockStore,
-		ghostdagManager)
+		ghostdagManager,
+		acceptanceManager,
+		blockStatusStore)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningStore,
@@ -86,16 +90,20 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		ghostdagManager)
-	validator := validatorpkg.New(
+	transactionValidator := transactionvalidator.New()
+	blockValidator := blockvalidator.New(
 		consensusStateManager,
 		difficultyManager,
-		pastMedianTimeManager)
+		pastMedianTimeManager,
+		transactionValidator,
+		utxoDiffManager,
+		acceptanceManager)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		domainDBContext,
 		consensusStateManager,
 		pruningManager,
-		validator,
+		blockValidator,
 		dagTopologyManager,
 		reachabilityTree,
 		difficultyManager,
@@ -103,13 +111,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagManager,
 		acceptanceDataStore,
 		blockStore,
-		blockStatusStore,
-		feeDataStore)
+		blockStatusStore)
 
 	return &consensus{
 		consensusStateManager: consensusStateManager,
 		blockProcessor:        blockProcessor,
-		transactionValidator:  validator,
+		transactionValidator:  transactionValidator,
 	}
 }
 

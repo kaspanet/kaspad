@@ -3,6 +3,7 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -23,7 +24,6 @@ type blockProcessor struct {
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockMessageStore     model.BlockStore
 	blockStatusStore      model.BlockStatusStore
-	feeDataStore          model.FeeDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -40,8 +40,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockMessageStore model.BlockStore,
-	blockStatusStore model.BlockStatusStore,
-	feeDataStore model.FeeDataStore) model.BlockProcessor {
+	blockStatusStore model.BlockStatusStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -58,20 +57,19 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blockMessageStore:     blockMessageStore,
 		blockStatusStore:      blockStatusStore,
-		feeDataStore:          feeDataStore,
 	}
 }
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *blockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) (*model.DomainBlock, error) {
+func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	return nil, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *model.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
 	return nil
 }

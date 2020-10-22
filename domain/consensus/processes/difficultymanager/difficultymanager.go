@@ -2,6 +2,7 @@ package difficultymanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -18,6 +19,6 @@ func New(ghostdagManager model.GHOSTDAGManager) model.DifficultyManager {
 }
 
 // RequiredDifficulty returns the difficulty required for some block
-func (dm *difficultyManager) RequiredDifficulty(parents []*model.DomainHash) (uint32, error) {
+func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
 	return 0, nil
 }

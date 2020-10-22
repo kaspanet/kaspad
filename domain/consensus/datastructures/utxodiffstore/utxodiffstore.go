@@ -2,6 +2,7 @@ package utxodiffstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // utxoDiffStore represents a store of UTXODiffs
@@ -13,22 +14,34 @@ func New() model.UTXODiffStore {
 	return &utxoDiffStore{}
 }
 
-// Insert inserts the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *model.DomainHash) error {
-	return nil
+// Stage stages the given utxoDiff for the given blockHash
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Discard() {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // UTXODiff gets the utxoDiff associated with the given blockHash
-func (uds *utxoDiffStore) UTXODiff(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.UTXODiff, error) {
+func (uds *utxoDiffStore) UTXODiff(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	return nil, nil
 }
 
 // UTXODiffChild gets the utxoDiff child associated with the given blockHash
-func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.DomainHash, error) {
+func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	return nil, nil
 }
 
 // Delete deletes the utxoDiff associated with the given blockHash
-func (uds *utxoDiffStore) Delete(dbTx model.DBTxProxy, blockHash *model.DomainHash) error {
+func (uds *utxoDiffStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
 	return nil
 }

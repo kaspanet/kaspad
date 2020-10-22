@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-func serializeHeader(w io.Writer, header *model.DomainBlockHeader) error {
+func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
 	timestamp := header.TimeInMilliseconds
 
 	numParents := len(header.ParentHashes)
@@ -22,7 +22,7 @@ func serializeHeader(w io.Writer, header *model.DomainBlockHeader) error {
 	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
 }
 
-func HeaderHash(header *model.DomainBlockHeader) *model.DomainHash {
+func HeaderHash(header *externalapi.DomainBlockHeader) *model.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
 	writer := hashes.NewHashWriter()

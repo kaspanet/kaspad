@@ -2,6 +2,7 @@ package consensusstatestore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // consensusStateStore represents a store for the current consensus state
@@ -13,17 +14,29 @@ func New() model.ConsensusStateStore {
 	return &consensusStateStore{}
 }
 
-// Update updates the store with the given consensusStateChanges
-func (css *consensusStateStore) Update(dbTx model.DBTxProxy, consensusStateChanges *model.ConsensusStateChanges) error {
-	return nil
+// Stage stages the store with the given consensusStateChanges
+func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStateChanges) {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) Discard() {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *model.DomainOutpoint) (*model.UTXOEntry, error) {
+func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
 	return nil, nil
 }
 
 // Tips returns the current tips
-func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*model.DomainHash, error) {
+func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*externalapi.DomainHash, error) {
 	return nil, nil
 }

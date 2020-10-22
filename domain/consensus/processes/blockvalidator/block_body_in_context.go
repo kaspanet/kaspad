@@ -1,7 +1,7 @@
-package validator
+package blockvalidator
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/validator/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -10,27 +10,27 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *validator) ValidateBodyInContext(block *model.DomainBlock) error {
-	return v.checkBlockTransactionsFinalized(block)
+func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
+	return v.checkBlockTransactionsFinalized(blockHash)
 }
 
-func (v *validator) checkBlockTransactionsFinalized(block *model.DomainBlock) error {
+func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {
+	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
 	blockTime := block.Header.TimeInMilliseconds
 
-	hash := hashserialization.HeaderHash(block.Header)
-	ghostdagData, err := v.ghostdagManager.BlockData(hash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
 	// If it's not genesis
 	if len(block.Header.ParentHashes) != 0 {
-		selectedParentGHOSTDAGData, err := v.ghostdagManager.BlockData(ghostdagData.SelectedParent)
-		if err != nil {
-			return err
-		}
 
-		blockTime, err = v.pastMedianTimeManager.PastMedianTime(selectedParentGHOSTDAGData)
+		blockTime, err = v.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func (v *validator) checkBlockTransactionsFinalized(block *model.DomainBlock) er
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func (v *validator) isFinalizedTransaction(tx *model.DomainTransaction, blockBlueScore uint64, blockTime int64) bool {
+func (v *blockValidator) isFinalizedTransaction(tx *externalapi.DomainTransaction, blockBlueScore uint64, blockTime int64) bool {
 	// Lock time of zero means the transaction is finalized.
 	lockTime := tx.LockTime
 	if lockTime == 0 {

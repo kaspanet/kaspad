@@ -2,6 +2,7 @@ package reachabilitydatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // reachabilityDataStore represents a store of ReachabilityData
@@ -13,12 +14,36 @@ func New() model.ReachabilityDataStore {
 	return &reachabilityDataStore{}
 }
 
-// Insert inserts the given reachabilityData for the given blockHash
-func (rds *reachabilityDataStore) Insert(dbTx model.DBTxProxy, blockHash *model.DomainHash, reachabilityData *model.ReachabilityData) error {
-	return nil
+// StageReachabilityData stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+	panic("implement me")
 }
 
-// Get gets the reachabilityData associated with the given blockHash
-func (rds *reachabilityDataStore) Get(dbContext model.DBContextProxy, blockHash *model.DomainHash) (*model.ReachabilityData, error) {
-	return nil, nil
+// StageReachabilityReindexRoot stages the given reachabilityReindexRoot
+func (rds *reachabilityDataStore) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) IsAnythingStaged() bool {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Discard() {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
+}
+
+// ReachabilityData returns the reachabilityData associated with the given blockHash
+func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBContextProxy,
+	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+
+	panic("implement me")
+}
+
+// ReachabilityReindexRoot returns the current reachability reindex root
+func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
+	panic("implement me")
 }

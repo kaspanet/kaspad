@@ -2,6 +2,7 @@ package reachabilitytree
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // reachabilityTree maintains a structure that allows to answer
@@ -21,23 +22,20 @@ func New(
 	}
 }
 
+// AddBlock adds the block with the given blockHash into the reachability tree.
+func (rt *reachabilityTree) AddBlock(blockHash *externalapi.DomainHash) error {
+	return nil
+}
+
 // IsReachabilityTreeAncestorOf returns true if blockHashA is an
 // ancestor of blockHashB in the reachability tree. Note that this
 // does not necessarily mean that it isn't its ancestor in the DAG.
-func (rt *reachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (rt *reachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return false, nil
 }
 
 // IsDAGAncestorOf returns true if blockHashA is an ancestor of
 // blockHashB in the DAG.
-func (rt *reachabilityTree) IsDAGAncestorOf(blockHashA *model.DomainHash, blockHashB *model.DomainHash) (bool, error) {
+func (rt *reachabilityTree) IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return false, nil
-}
-
-// ReachabilityChangeset returns a set of changes that need to occur
-// in order to add the given blockHash into the reachability tree.
-func (rt *reachabilityTree) ReachabilityChangeset(blockHash *model.DomainHash,
-	blockGHOSTDAGData *model.BlockGHOSTDAGData) (*model.ReachabilityChangeset, error) {
-
-	return nil, nil
 }

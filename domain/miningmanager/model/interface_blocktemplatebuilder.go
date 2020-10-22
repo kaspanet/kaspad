@@ -1,10 +1,10 @@
 package model
 
 import (
-	consensusmodel "github.com/kaspanet/kaspad/domain/consensus/model"
+	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // BlockTemplateBuilder builds block templates for miners to consume
 type BlockTemplateBuilder interface {
-	GetBlockTemplate(payAddress DomainAddress, extraData []byte) *consensusmodel.DomainBlock
+	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
 }

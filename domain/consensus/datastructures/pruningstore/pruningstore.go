@@ -2,6 +2,7 @@ package pruningstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // pruningStore represents a store for the current pruning state
@@ -13,13 +14,25 @@ func New() model.PruningStore {
 	return &pruningStore{}
 }
 
-// Update updates the pruning state
-func (pps *pruningStore) Update(dbTx model.DBTxProxy, pruningPointBlockHash *model.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) error {
-	return nil
+// Stage stages the pruning state
+func (pps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet model.ReadOnlyUTXOSet) {
+	panic("implement me")
+}
+
+func (pps *pruningStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (pps *pruningStore) Discard() {
+	panic("implement me")
+}
+
+func (pps *pruningStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // PruningPoint gets the current pruning point
-func (pps *pruningStore) PruningPoint(dbContext model.DBContextProxy) (*model.DomainHash, error) {
+func (pps *pruningStore) PruningPoint(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
 	return nil, nil
 }
 

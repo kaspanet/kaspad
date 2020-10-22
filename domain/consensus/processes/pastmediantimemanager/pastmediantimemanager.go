@@ -2,6 +2,7 @@ package pastmediantimemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // pastMedianTimeManager provides a method to resolve the
@@ -18,6 +19,6 @@ func New(ghostdagManager model.GHOSTDAGManager) model.PastMedianTimeManager {
 }
 
 // PastMedianTime returns the past median time for some block
-func (pmtm *pastMedianTimeManager) PastMedianTime(blockGHOSTDAGData *model.BlockGHOSTDAGData) (int64, error) {
+func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
 	return 0, nil
 }
