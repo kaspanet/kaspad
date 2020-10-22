@@ -6,7 +6,7 @@ import (
 )
 
 func (rt *reachabilityTreeManager) data(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
-	return rt.reachabilityDataStore.Get(rt.databaseContext, blockHash)
+	return rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 }
 
 func (rt *reachabilityTreeManager) futureCoveringSet(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -55,5 +55,5 @@ func (rt *reachabilityTreeManager) parent(blockHash *externalapi.DomainHash) (*e
 }
 
 func (rt *reachabilityTreeManager) reindexRoot() (*externalapi.DomainHash, error) {
-	panic("unimplemented")
+	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext)
 }

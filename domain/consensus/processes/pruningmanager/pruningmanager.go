@@ -31,11 +31,9 @@ func New(
 }
 
 // FindNextPruningPoint finds the next pruning point from the
-// given blockHash. If none found, returns false
-func (pm *pruningManager) FindNextPruningPoint(blockGHOSTDAGData *model.BlockGHOSTDAGData) (found bool,
-	newPruningPoint *externalapi.DomainHash, newPruningPointUTXOSet model.ReadOnlyUTXOSet, err error) {
-
-	return false, nil, nil, nil
+// given blockHash
+func (pm *pruningManager) FindNextPruningPoint(blockHash *externalapi.DomainHash) error {
+	return nil
 }
 
 // PruningPoint returns the hash of the current pruning point

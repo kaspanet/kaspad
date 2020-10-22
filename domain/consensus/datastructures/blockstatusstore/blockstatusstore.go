@@ -14,9 +14,21 @@ func New() model.BlockStatusStore {
 	return &blockStatusStore{}
 }
 
-// Insert inserts the given blockStatus for the given blockHash
-func (bss *blockStatusStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, blockStatus model.BlockStatus) error {
-	return nil
+// Stage stages the given blockStatus for the given blockHash
+func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus model.BlockStatus) {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) Discard() {
+	panic("implement me")
+}
+
+func (bss *blockStatusStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the blockStatus associated with the given blockHash

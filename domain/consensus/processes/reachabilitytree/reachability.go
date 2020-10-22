@@ -12,7 +12,7 @@ import (
 func (rt *reachabilityTreeManager) IsDAGAncestorOf(blockHashA, blockHashB *externalapi.DomainHash) (bool, error) {
 	// Check if this node is a reachability tree ancestor of the
 	// other node
-	isReachabilityTreeAncestor, err := rt.isReachabilityTreeAncestorOf(blockHashA, blockHashB)
+	isReachabilityTreeAncestor, err := rt.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
 	if err != nil {
 		return false, err
 	}

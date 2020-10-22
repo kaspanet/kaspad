@@ -55,7 +55,7 @@ func (rt *reachabilityTreeManager) insertToFutureCoveringSet(node, futureNode *e
 	}
 
 	candidate := futureCoveringSet[ancestorIndex]
-	candidateIsAncestorOfFutureNode, err := rt.isReachabilityTreeAncestorOf(candidate, futureNode)
+	candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(candidate, futureNode)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (rt *reachabilityTreeManager) insertToFutureCoveringSet(node, futureNode *e
 		return nil
 	}
 
-	futureNodeIsAncestorOfCandidaqte, err := rt.isReachabilityTreeAncestorOf(futureNode, candidate)
+	futureNodeIsAncestorOfCandidaqte, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (rt *reachabilityTreeManager) futureCoveringSetHasAncestorOf(this, other *e
 	}
 
 	candidate := futureCoveringSet[ancestorIndex]
-	return rt.isReachabilityTreeAncestorOf(candidate, other)
+	return rt.IsReachabilityTreeAncestorOf(candidate, other)
 }
 
 // futureCoveringSetString returns a string representation of the intervals in this futureCoveringSet.

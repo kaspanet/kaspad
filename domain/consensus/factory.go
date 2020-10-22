@@ -55,6 +55,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 
 	// Processes
 	reachabilityTree := reachabilitytree.New(
+		domainDBContext,
+		ghostdagDataStore,
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
@@ -69,17 +71,17 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
-	utxoDiffManager := utxodiffmanager.New()
+	utxoDiffManager := utxodiffmanager.New(utxoDiffStore)
 	acceptanceManager := acceptancemanager.New(utxoDiffManager)
 	consensusStateManager := consensusstatemanager.New(
 		domainDBContext,
 		dagParams,
 		consensusStateStore,
 		multisetStore,
-		utxoDiffStore,
 		blockStore,
 		ghostdagManager,
-		acceptanceManager)
+		acceptanceManager,
+		blockStatusStore)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		pruningStore,

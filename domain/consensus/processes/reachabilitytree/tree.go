@@ -171,7 +171,7 @@ func (rt *reachabilityTreeManager) addChild(node, child, reindexRoot *externalap
 	// Handle node not being a descendant of the reindex root.
 	// Note that we check node here instead of child because
 	// at this point we don't yet know child's interval.
-	isReindexRootAncestorOfNode, err := rt.isReachabilityTreeAncestorOf(reindexRoot, node)
+	isReindexRootAncestorOfNode, err := rt.IsReachabilityTreeAncestorOf(reindexRoot, node)
 	if err != nil {
 		return err
 	}
@@ -672,10 +672,10 @@ func (rt *reachabilityTreeManager) reindexIntervalsAfterNode(rtn, node *external
 	return rt.propagateIntervals(childrenAfterNode, intervals, childrenAfterNodeSubtreeSizeMaps)
 }
 
-// isReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
+// IsReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
 // of the other node. Note that we use the graph theory convention
 // here which defines that node is also an ancestor of itself.
-func (rt *reachabilityTreeManager) isReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityTreeManager) IsReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
 	nodeInterval, err := rt.interval(node)
 	if err != nil {
 		return false, err
@@ -697,7 +697,7 @@ func (rt *reachabilityTreeManager) isReachabilityTreeAncestorOf(node, other *ext
 func (rt *reachabilityTreeManager) findCommonAncestorWithReindexRoot(node, reindexRoot *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	currentThis := node
 	for {
-		isAncestorOf, err := rt.isReachabilityTreeAncestorOf(currentThis, reindexRoot)
+		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(currentThis, reindexRoot)
 		if err != nil {
 			return nil, err
 		}
@@ -775,7 +775,7 @@ func (rt *reachabilityTreeManager) updateReindexRoot(newTreeNode *externalapi.Do
 func (rt *reachabilityTreeManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *externalapi.DomainHash) (
 	newReindexRoot *externalapi.DomainHash, found bool, err error) {
 
-	isAncestorOf, err := rt.isReachabilityTreeAncestorOf(reindexRoot, newTreeNode)
+	isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(reindexRoot, newTreeNode)
 	if err != nil {
 		return nil, false, err
 	}

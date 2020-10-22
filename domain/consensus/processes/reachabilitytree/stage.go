@@ -5,16 +5,34 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityTreeManager) stageFutureCoveringSet(blockHash *externalapi.DomainHash, node model.FutureCoveringTreeNodeSet) error {
-	panic("unimplemented")
+func (rt *reachabilityTreeManager) stageData(blockHash *externalapi.DomainHash, data *model.ReachabilityData) {
+	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+}
+
+func (rt *reachabilityTreeManager) stageFutureCoveringSet(blockHash *externalapi.DomainHash, set model.FutureCoveringTreeNodeSet) error {
+	data, err := rt.data(blockHash)
+	if err != nil {
+		return err
+	}
+
+	data.FutureCoveringSet = set
+	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+	return nil
 }
 
 func (rt *reachabilityTreeManager) stageTreeNode(blockHash *externalapi.DomainHash, node *model.ReachabilityTreeNode) error {
-	panic("unimplemented")
+	data, err := rt.data(blockHash)
+	if err != nil {
+		return err
+	}
+
+	data.TreeNode = node
+	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+	return nil
 }
 
 func (rt *reachabilityTreeManager) stageReindexRoot(blockHash *externalapi.DomainHash) {
-	panic("unimplemented")
+	rt.reachabilityDataStore.StageReachabilityReindexRoot(blockHash)
 }
 
 func (rt *reachabilityTreeManager) addChildAndStage(node, child *externalapi.DomainHash) error {

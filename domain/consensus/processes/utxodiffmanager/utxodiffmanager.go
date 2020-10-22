@@ -8,16 +8,14 @@ import (
 // UTXODiffManager provides methods to access
 // and store UTXO diffs
 type utxoDiffManager struct {
+	utxoDiffStore model.UTXODiffStore
 }
 
 // New instantiates a new UTXODiffManager
-func New() model.UTXODiffManager {
-	return &utxoDiffManager{}
-}
-
-// StoreUTXODiff stores the given utxoDiff for the given blockHash
-func (u *utxoDiffManager) StoreUTXODiff(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff) error {
-	panic("implement me")
+func New(utxoDiffStore model.UTXODiffStore) model.UTXODiffManager {
+	return &utxoDiffManager{
+		utxoDiffStore: utxoDiffStore,
+	}
 }
 
 // RestoreBlockDiffFromVirtualDiffParent restores the UTXO diff of

@@ -14,9 +14,21 @@ func New() model.BlockRelationStore {
 	return &blockRelationStore{}
 }
 
-// Insert inserts the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Update(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-	return nil
+// Stage stages the given blockRelationData for the given blockHash
+func (brs *blockRelationStore) Stage(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
+	panic("implement me")
+}
+
+func (brs *blockRelationStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (brs *blockRelationStore) Discard() {
+	panic("implement me")
+}
+
+func (brs *blockRelationStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the blockRelationData associated with the given blockHash

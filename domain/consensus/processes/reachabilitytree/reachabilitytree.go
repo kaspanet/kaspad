@@ -17,30 +17,21 @@ type reachabilityTreeManager struct {
 
 // New instantiates a new reachabilityTreeManager
 func New(
+	databaseContext *database.DomainDBContext,
+	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockRelationStore model.BlockRelationStore,
-	reachabilityDataStore model.ReachabilityDataStore) model.ReachabilityTree {
+	reachabilityDataStore model.ReachabilityDataStore,
+) model.ReachabilityTree {
 	return &reachabilityTreeManager{
+		databaseContext:       databaseContext,
+		ghostdagDataStore:     ghostdagDataStore,
 		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
 	}
 }
 
-// IsReachabilityTreeAncestorOf returns true if blockHashA is an
-// ancestor of blockHashB in the reachability tree. Note that this
-// does not necessarily mean that it isn't its ancestor in the DAG.
-func (rt *reachabilityTreeManager) IsReachabilityTreeAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return false, nil
-}
-
-// ReachabilityChangeset returns a set of changes that need to occur
-// in order to add the given blockHash into the reachability tree.
-func (rt *reachabilityTreeManager) ReachabilityChangeset(blockHash *externalapi.DomainHash,
-	blockGHOSTDAGData *model.BlockGHOSTDAGData) (*model.ReachabilityChangeset, error) {
-
-	return nil, nil
-}
-
-func (rt *reachabilityTreeManager) addBlock(blockHash *externalapi.DomainHash) error {
+// AddBlock adds the block with the given blockHash into the reachability tree.
+func (rt *reachabilityTreeManager) AddBlock(blockHash *externalapi.DomainHash) error {
 	// Allocate a new reachability tree node
 	newTreeNode := newReachabilityTreeNode()
 	err := rt.stageTreeNode(blockHash, newTreeNode)

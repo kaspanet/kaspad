@@ -2,6 +2,7 @@ package acceptancemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // AcceptanceManager manages transaction acceptance
@@ -17,8 +18,6 @@ func New(utxoDiffManager model.UTXODiffManager) model.AcceptanceManager {
 	}
 }
 
-func (a *acceptanceManager) CalculateAcceptanceDataAndUTXOMultiset(blockGHOSTDAGData *model.BlockGHOSTDAGData) (
-	*model.BlockAcceptanceData, model.Multiset, error) {
-
+func (a *acceptanceManager) CalculateAcceptanceDataAndUTXOMultiset(blockHash *externalapi.DomainHash) error {
 	panic("implement me")
 }

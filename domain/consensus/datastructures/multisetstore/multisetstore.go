@@ -14,9 +14,21 @@ func New() model.MultisetStore {
 	return &multisetStore{}
 }
 
-// Insert inserts the given multiset for the given blockHash
-func (ms *multisetStore) Insert(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash, multiset model.Multiset) error {
-	return nil
+// Stage stages the given multiset for the given blockHash
+func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
+	panic("implement me")
+}
+
+func (ms *multisetStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (ms *multisetStore) Discard() {
+	panic("implement me")
+}
+
+func (ms *multisetStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the multiset associated with the given blockHash
