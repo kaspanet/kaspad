@@ -8,4 +8,5 @@ type ReachabilityTree interface {
 	AddBlock(blockHash *externalapi.DomainHash) error
 	IsReachabilityTreeAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
+	UpdateReindexRoot(selectedTip *externalapi.DomainHash) error
 }
