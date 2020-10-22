@@ -33,7 +33,7 @@ func New(
 //K, GHOSTDAGDataStore
 func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	var maxNum uint64 = 0
-	var myScore uint64
+	var myScore uint64 = 0
 	var selectedParent *model.DomainHash
 	/* find the selectedParent */
 	for _, w := range blockParents {
@@ -51,7 +51,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 			selectedParent = w
 		}
 	}
-	myScore = maxNum + 1
+	myScore = maxNum
 
 	/* Goal: iterate h's past and divide it to : blue, blues, reds.
 	   Notes:
@@ -77,6 +77,12 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 	}
 
 	for _, d := range mergeSetArr {
+		if *d == *selectedParent {
+			if !contains(selectedParent, blues) {
+				blues = append(blues, selectedParent)
+			}
+			continue
+		}
 		err := gh.divideBlueRed(selectedParent, d, &blues, &reds, &blueSet)
 		if err != nil {
 			return nil, err
@@ -90,7 +96,8 @@ func (gh *ghostdagHelper) GHOSTDAG(blockParents []*model.DomainHash) (*model.Blo
 	   4. selectedParent
 
 	*/
-	e := model.BlockGHOSTDAGData{BlueScore: myScore,
+	e := model.BlockGHOSTDAGData{
+		BlueScore:      myScore,
 		SelectedParent: selectedParent,
 		MergeSetBlues:  blues,
 		MergeSetReds:   reds,
@@ -125,7 +132,7 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *model.DomainHash, desire
 	var chain = selectedParent
 	var stop = false
 	for chain != nil { /*nil -> after genesis*/
-		//if !gh.validateKCluster(chain, desiredBlock, &counter, blueSet) { /* ret false*/
+		// iterate on the selected parent chain, for each node in the chain i check also for his mergeSet.
 		isValid, err := gh.validateKCluster(chain, desiredBlock, &counter, blueSet)
 		if err != nil {
 			return err
@@ -151,17 +158,7 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *model.DomainHash, desire
 				break
 			}
 		}
-		for _, e := range *blues {
-			//if !gh.validateKCluster(e, desiredBlock, &counter, blueSet) { /* ret false*/
-			isValid3, err3 := gh.validateKCluster(e, desiredBlock, &counter, blueSet)
-			if err3 != nil {
-				return err3
-			}
-			if !isValid3 {
-				stop = true
-				break
-			}
-		}
+
 		if stop {
 			break
 		}
@@ -173,11 +170,34 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *model.DomainHash, desire
 		chain = blockData2.SelectedParent
 	}
 	if stop {
-		*reds = append(*reds, desiredBlock)
-	}
-	if !stop {
-		*blues = append(*blues, desiredBlock)
-		*blueSet = append(*blueSet, desiredBlock)
+		if !contains(desiredBlock, *reds) {
+			*reds = append(*reds, desiredBlock)
+		}
+	} else {
+		var isBlue bool = true
+
+		for _, e := range *blues {
+			isDestroyed, err := gh.checkIfDestroy(e, blues)
+			if err != nil {
+				return err
+			}
+			if isDestroyed {
+				isBlue = false
+				break
+			}
+		}
+		if !isBlue {
+			if !contains(desiredBlock, *reds) {
+				*reds = append(*reds, desiredBlock)
+			}
+		} else {
+			if !contains(desiredBlock, *blues) {
+				*blues = append(*blues, desiredBlock)
+			}
+			if !contains(desiredBlock, *blueSet) {
+				*blueSet = append(*blueSet, desiredBlock)
+			}
+		}
 	}
 	return nil
 }
@@ -190,7 +210,7 @@ func (gh *ghostdagHelper) isAnticone(h1, h2 *model.DomainHash) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	isBA, err := gh.dagTopologyManager.IsAncestorOf(h1, h2)
+	isBA, err := gh.dagTopologyManager.IsAncestorOf(h2, h1)
 	if err != nil {
 		return false, err
 	}
@@ -199,14 +219,14 @@ func (gh *ghostdagHelper) isAnticone(h1, h2 *model.DomainHash) (bool, error) {
 }
 
 /* ----------------validateKCluster------------------- */
-func (gh *ghostdagHelper) validateKCluster(chain *model.DomainHash, s1 *model.DomainHash, counter *int, blueSet *[]*model.DomainHash) (bool, error) {
+func (gh *ghostdagHelper) validateKCluster(chain *model.DomainHash, checkedBlock *model.DomainHash, counter *int, blueSet *[]*model.DomainHash) (bool, error) {
 	var k int = int(gh.k)
-	isAnt, err := gh.isAnticone(chain, s1)
+	isAnt, err := gh.isAnticone(chain, checkedBlock)
 	if err != nil {
 		return false, err
 	}
 	if isAnt {
-		//if n := gh.isAnticone(chain, s1); n {
+		//if n := gh.isAnticone(chain, checkedBlock); n {
 		if *counter > k {
 			return false, nil
 		}
@@ -221,18 +241,18 @@ func (gh *ghostdagHelper) validateKCluster(chain *model.DomainHash, s1 *model.Do
 		*counter++
 		return true, nil
 	} else {
-		isAnt2, err := gh.dagTopologyManager.IsAncestorOf(s1, chain)
+		isAnt2, err := gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain)
 		if err != nil {
 			return false, err
 		}
-		//if gh.dagTopologyManager.IsAncestorOf(s1, chain) {
+		//if gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain) {
 		if isAnt2 {
 			dataStore, err2 := gh.BlockData(chain)
 			if err2 != nil {
 				return false, err
 			}
-			if g := dataStore.MergeSetReds; contains(s1, g) {
-				//if g := gh.dataStore.Get(gh.dbAccess, chain).MergeSetReds; contains(s1, g) {
+			if g := dataStore.MergeSetReds; contains(checkedBlock, g) {
+				//if g := gh.dataStore.Get(gh.dbAccess, chain).MergeSetReds; contains(checkedBlock, g) {
 				return false, nil
 			}
 		} else {
@@ -245,7 +265,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *model.DomainHash, s1 *model.Do
 /*----------------contains-------------------------- */
 func contains(s *model.DomainHash, g []*model.DomainHash) bool {
 	for _, r := range g {
-		if r == s {
+		if *r == *s {
 			return true
 		}
 	}
@@ -255,22 +275,23 @@ func contains(s *model.DomainHash, g []*model.DomainHash) bool {
 /* ----------------checkIfDestroy------------------- */
 /* find number of not-connected in his blue*/
 func (gh *ghostdagHelper) checkIfDestroy(chain *model.DomainHash, blueSet *[]*model.DomainHash) (bool, error) {
+	// Goal: check that the K-cluster of each block in the blueSet is not destroyed when adding the block to the mergeSet.
 	var k int = int(gh.k)
 	counter := 0
 	for _, s2 := range *blueSet {
 		//if gh.isAnticone(s2, chain) {
 		isAnt, err := gh.isAnticone(s2, chain)
 		if err != nil {
-			return false, err
+			return true, err
 		}
 		if isAnt {
 			counter++
 		}
 		if counter > k {
-			return false, nil
+			return true, nil
 		}
 	}
-	return true, nil
+	return false, nil
 }
 
 /* ----------------findMergeSet------------------- */
@@ -279,12 +300,18 @@ func (gh *ghostdagHelper) findMergeSet(h []*model.DomainHash, selectedParent *mo
 	allMergeSet := make([]*model.DomainHash, 0)
 	var nodeQueue = make([]*model.DomainHash, 0)
 	for _, g := range h {
-		nodeQueue = append(nodeQueue, g)
+		if !contains(g, nodeQueue) {
+			nodeQueue = append(nodeQueue, g)
+		}
+
 	}
 	for len(nodeQueue) > 0 { /*return boolean */
 		ha := nodeQueue[0]
 		nodeQueue = nodeQueue[1:]
-		if selectedParent == ha {
+		if *selectedParent == *ha {
+			if !contains(ha, allMergeSet) {
+				allMergeSet = append(allMergeSet, ha)
+			}
 			continue
 		}
 		//if isInPast(ha, selectedParent){
@@ -296,8 +323,9 @@ func (gh *ghostdagHelper) findMergeSet(h []*model.DomainHash, selectedParent *mo
 		if isanc {
 			continue
 		}
-
-		allMergeSet = append(allMergeSet, ha)
+		if !contains(ha, allMergeSet) {
+			allMergeSet = append(allMergeSet, ha)
+		}
 		err = gh.insertParent(ha, &nodeQueue)
 		if err != nil {
 			return nil, err
@@ -326,7 +354,9 @@ func (gh *ghostdagHelper) insertParent(h *model.DomainHash, q1 *[]*model.DomainH
 /* ----------------findBlueSet------------------- */
 func (gh *ghostdagHelper) findBlueSet(blueSet *[]*model.DomainHash, h *model.DomainHash) error {
 	for h != nil {
-		*blueSet = append(*blueSet, h)
+		if !contains(h, *blueSet) {
+			*blueSet = append(*blueSet, h)
+		}
 		//blueSet = append(gh.dataStore.Get(gh.dbAccess, h).MergeSetBlues, blueSet) //change
 		//for _, v := range gh.dataStore.Get(gh.dbAccess, h).MergeSetBlues {
 		blockData, err := gh.dataStore.Get(gh.dbAccess, h)

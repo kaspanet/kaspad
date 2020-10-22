@@ -39,36 +39,88 @@ func TestGHOSTDA(t *testing.T) {
 		MergeSetReds:       nil,
 		BluesAnticoneSizes: nil,
 	}
+	// test2: Graph form is a chain.
+	//dag := []testGhostdagData{
+	//	{
+	//		hash:                   &model.DomainHash{1},
+	//		parents:                []*model.DomainHash{genesisHash},
+	//		expectedBlueScore:      2,
+	//		expectedSelectedParent: genesisHash,
+	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+	//		expectedMergeSetReds:   nil,
+	//	},
+	//	{
+	//		hash:                   &model.DomainHash{2},
+	//		parents:                []*model.DomainHash{{1}},
+	//		expectedBlueScore:      3,
+	//		expectedSelectedParent: &model.DomainHash{1},
+	//		expectedMergeSetBlues:  []*model.DomainHash{{1}},
+	//		expectedMergeSetReds:   nil,
+	//	},
+	//	{
+	//		hash:                   &model.DomainHash{3},
+	//		parents:                []*model.DomainHash{genesisHash},
+	//		expectedBlueScore:      2,
+	//		expectedSelectedParent: genesisHash,
+	//		expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
+	//		expectedMergeSetReds:   nil,
+	//	},
+	//}
 
-	dag := []testGhostdagData{
-		{
+	//test4 : The graph’s longest chain was created by malicious miners (not the “heaviest”).
+	dag2 := []testGhostdagData{
+		{ /* J */
 			hash:                   &model.DomainHash{1},
 			parents:                []*model.DomainHash{genesisHash},
 			expectedBlueScore:      2,
 			expectedSelectedParent: genesisHash,
 			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
-			expectedMergeSetReds:   nil,
+			expectedMergeSetReds:   []*model.DomainHash{},
 		},
-		{
+		{ /* G */
 			hash:                   &model.DomainHash{2},
 			parents:                []*model.DomainHash{{1}},
 			expectedBlueScore:      3,
 			expectedSelectedParent: &model.DomainHash{1},
 			expectedMergeSetBlues:  []*model.DomainHash{{1}},
-			expectedMergeSetReds:   nil,
+			expectedMergeSetReds:   []*model.DomainHash{},
 		},
-		{
+		{ /* H */
 			hash:                   &model.DomainHash{3},
-			parents:                []*model.DomainHash{genesisHash},
-			expectedBlueScore:      2,
-			expectedSelectedParent: genesisHash,
-			expectedMergeSetBlues:  []*model.DomainHash{genesisHash},
-			expectedMergeSetReds:   nil,
+			parents:                []*model.DomainHash{{1}},
+			expectedBlueScore:      3,
+			expectedSelectedParent: &model.DomainHash{1},
+			expectedMergeSetBlues:  []*model.DomainHash{{1}},
+			expectedMergeSetReds:   []*model.DomainHash{},
+		},
+		{ /* I */
+			hash:                   &model.DomainHash{4},
+			parents:                []*model.DomainHash{{1}},
+			expectedBlueScore:      3,
+			expectedSelectedParent: &model.DomainHash{1},
+			expectedMergeSetBlues:  []*model.DomainHash{{1}},
+			expectedMergeSetReds:   []*model.DomainHash{},
+		},
+		{ /* F */
+			hash:                   &model.DomainHash{5},
+			parents:                []*model.DomainHash{{2}, {3}, {4}},
+			expectedBlueScore:      6,
+			expectedSelectedParent: &model.DomainHash{2},
+			expectedMergeSetBlues:  []*model.DomainHash{{2}, {3}, {4}},
+			expectedMergeSetReds:   []*model.DomainHash{},
+		},
+		{ /* E */
+			hash:                   &model.DomainHash{6},
+			parents:                []*model.DomainHash{{5}},
+			expectedBlueScore:      7,
+			expectedSelectedParent: &model.DomainHash{5},
+			expectedMergeSetBlues:  []*model.DomainHash{{5}},
+			expectedMergeSetReds:   []*model.DomainHash{},
 		},
 	}
 
-	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 10)
-	for i, testBlockData := range dag {
+	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, 3)
+	for i, testBlockData := range dag2 {
 		dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
 		ghostdagData, err := g.GHOSTDAG(testBlockData.parents)
 		if err != nil {
@@ -83,12 +135,12 @@ func TestGHOSTDA(t *testing.T) {
 			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
 		}
 
-		if reflect.DeepEqual(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
-			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+		if !reflect.DeepEqual(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
+			t.Fatalf("test #%d failed: expected merge set blues %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
 		}
 
-		if reflect.DeepEqual(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
-			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+		if !reflect.DeepEqual(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
+			t.Fatalf("test #%d failed: expected merge set reds %v but got %v", i, testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds)
 		}
 
 		err = ghostdagDataStore.Insert(nil, testBlockData.hash, ghostdagData)
@@ -148,8 +200,8 @@ func (dt *DAGTopologyManagerImpl) IsAncestorOf(blockHashA *model.DomainHash, blo
 	if !ok {
 		return false, nil
 	}
-	for _, r := range bParents {
-		if r == blockHashA {
+	for _, parent := range bParents {
+		if *parent == *blockHashA {
 			return true, nil
 		}
 	}
