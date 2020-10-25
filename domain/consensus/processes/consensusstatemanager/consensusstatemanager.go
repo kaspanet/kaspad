@@ -23,6 +23,7 @@ type consensusStateManager struct {
 	multisetStore       model.MultisetStore
 	blockStore          model.BlockStore
 	utxoDiffStore       model.UTXODiffStore
+	blockRelationStore  model.BlockRelationStore
 }
 
 // New instantiates a new ConsensusStateManager
@@ -38,7 +39,8 @@ func New(
 	consensusStateStore model.ConsensusStateStore,
 	multisetStore model.MultisetStore,
 	blockStore model.BlockStore,
-	utxoDiffStore model.UTXODiffStore) model.ConsensusStateManager {
+	utxoDiffStore model.UTXODiffStore,
+	blockRelationStore model.BlockRelationStore) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams:       dagParams,
@@ -55,6 +57,7 @@ func New(
 		ghostdagDataStore:   ghostdagDataStore,
 		consensusStateStore: consensusStateStore,
 		utxoDiffStore:       utxoDiffStore,
+		blockRelationStore:  blockRelationStore,
 	}
 }
 

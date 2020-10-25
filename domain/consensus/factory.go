@@ -92,7 +92,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		consensusStateStore,
 		multisetStore,
 		blockStore,
-		utxoDiffStore)
+		utxoDiffStore,
+		blockRelationStore)
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
