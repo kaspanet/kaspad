@@ -8,13 +8,27 @@ import (
 // AcceptanceManager manages transaction acceptance
 // and related data
 type acceptanceManager struct {
-	utxoDiffManager model.UTXODiffManager
+	ghostdagDataStore   model.GHOSTDAGDataStore
+	consensusStateStore model.ConsensusStateStore
+	blockStore          model.BlockStore
+	acceptanceDataStore model.AcceptanceDataStore
+	multisetStore       model.MultisetStore
 }
 
 // New instantiates a new AcceptanceManager
-func New(utxoDiffManager model.UTXODiffManager) model.AcceptanceManager {
+func New(
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	consensusStateStore model.ConsensusStateStore,
+	blockStore model.BlockStore,
+	acceptanceDataStore model.AcceptanceDataStore,
+	multisetStore model.MultisetStore) model.AcceptanceManager {
+
 	return &acceptanceManager{
-		utxoDiffManager: utxoDiffManager,
+		ghostdagDataStore:   ghostdagDataStore,
+		consensusStateStore: consensusStateStore,
+		blockStore:          blockStore,
+		acceptanceDataStore: acceptanceDataStore,
+		multisetStore:       multisetStore,
 	}
 }
 

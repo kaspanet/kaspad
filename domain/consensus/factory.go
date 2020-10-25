@@ -11,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/acceptancemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -25,7 +24,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/utxodiffmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
@@ -47,7 +45,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	multisetStore := multisetstore.New()
 	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New()
-	utxoDiffStore := utxodiffstore.New()
+	//utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
@@ -69,8 +67,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	dagTraversalManager := dagtraversalmanager.New(
 		dagTopologyManager,
 		ghostdagManager)
-	utxoDiffManager := utxodiffmanager.New(utxoDiffStore)
-	acceptanceManager := acceptancemanager.New(utxoDiffManager)
+	acceptanceManager := acceptancemanager.New(
+		ghostdagDataStore,
+		consensusStateStore,
+		blockStore,
+		acceptanceDataStore,
+		multisetStore)
 	consensusStateManager := consensusstatemanager.New(
 		domainDBContext,
 		dagParams,
@@ -97,7 +99,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
-		utxoDiffManager,
 		acceptanceManager,
 		ghostdagManager,
 		blockStatusStore)
