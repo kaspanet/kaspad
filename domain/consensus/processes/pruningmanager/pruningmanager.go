@@ -7,26 +7,29 @@ import (
 
 // pruningManager resolves and manages the current pruning point
 type pruningManager struct {
-	dagTraversalManager   model.DAGTraversalManager
-	pruningStore          model.PruningStore
-	dagTopologyManager    model.DAGTopologyManager
-	blockStatusStore      model.BlockStatusStore
-	consensusStateManager model.ConsensusStateManager
+	dagTraversalManager model.DAGTraversalManager
+	dagTopologyManager  model.DAGTopologyManager
+
+	pruningStore        model.PruningStore
+	blockStatusStore    model.BlockStatusStore
+	consensusStateStore model.ConsensusStateStore
 }
 
 // New instantiates a new PruningManager
 func New(
 	dagTraversalManager model.DAGTraversalManager,
-	pruningStore model.PruningStore,
 	dagTopologyManager model.DAGTopologyManager,
+	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
-	consensusStateManager model.ConsensusStateManager) model.PruningManager {
+	consensusStateStore model.ConsensusStateStore) model.PruningManager {
+
 	return &pruningManager{
-		dagTraversalManager:   dagTraversalManager,
-		pruningStore:          pruningStore,
-		dagTopologyManager:    dagTopologyManager,
-		blockStatusStore:      blockStatusStore,
-		consensusStateManager: consensusStateManager,
+		dagTraversalManager: dagTraversalManager,
+		dagTopologyManager:  dagTopologyManager,
+
+		pruningStore:        pruningStore,
+		blockStatusStore:    blockStatusStore,
+		consensusStateStore: consensusStateStore,
 	}
 }
 

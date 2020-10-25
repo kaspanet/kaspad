@@ -35,8 +35,3 @@ func (css *consensusStateStore) Commit(dbTx model.DBTxProxy) error {
 func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
 	return nil, nil
 }
-
-// Tips returns the current tips
-func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*externalapi.DomainHash, error) {
-	return nil, nil
-}

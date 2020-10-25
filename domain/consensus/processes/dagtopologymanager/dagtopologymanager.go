@@ -29,7 +29,7 @@ func New(
 
 // Parents returns the DAG parents of the given blockHash
 func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*ex
 
 // Children returns the DAG children of the given blockHash
 func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*e
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
 func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -56,7 +56,7 @@ func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, bl
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
 func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
 	}

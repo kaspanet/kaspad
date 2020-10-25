@@ -9,5 +9,4 @@ type ConsensusStateStore interface {
 	Discard()
 	Commit(dbTx DBTxProxy) error
 	UTXOByOutpoint(dbContext DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error)
-	Tips(dbContext DBContextProxy) ([]*externalapi.DomainHash, error)
 }
