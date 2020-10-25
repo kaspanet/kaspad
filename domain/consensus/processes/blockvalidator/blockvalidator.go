@@ -14,6 +14,7 @@ type blockValidator struct {
 	transactionValidator  model.TransactionValidator
 	utxoDiffManager       model.UTXODiffManager
 	acceptanceManager     model.AcceptanceManager
+	ghostdagManager       model.GHOSTDAGManager
 
 	blockStatusStore model.BlockStatusStore
 }
@@ -26,6 +27,7 @@ func New(
 	transactionValidator model.TransactionValidator,
 	utxoDiffManager model.UTXODiffManager,
 	acceptanceManager model.AcceptanceManager,
+	ghostdagManager model.GHOSTDAGManager,
 	blockStatusStore model.BlockStatusStore) model.BlockValidator {
 
 	return &blockValidator{
@@ -35,6 +37,7 @@ func New(
 		transactionValidator:  transactionValidator,
 		utxoDiffManager:       utxoDiffManager,
 		acceptanceManager:     acceptanceManager,
+		ghostdagManager:       ghostdagManager,
 
 		blockStatusStore: blockStatusStore,
 	}
