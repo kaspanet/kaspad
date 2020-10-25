@@ -7,5 +7,4 @@ type ConsensusStateManager interface {
 	AddBlockToVirtual(blockHash *externalapi.DomainHash) error
 	VirtualData() (medianTime int64, blueScore uint64, err error)
 	RestorePastUTXOSet(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSet, error)
-	RestoreDiffFromVirtual(utxoDiff *UTXODiff, virtualDiffParentHash *externalapi.DomainHash) (*UTXODiff, error)
 }
