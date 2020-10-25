@@ -44,9 +44,10 @@ func New(
 	}
 }
 
-// CalculateConsensusStateChanges returns a set of changes that must occur in order
-// to transition the current consensus state into the one including the given block
-func (csm *consensusStateManager) CalculateConsensusStateChanges(blockHash *externalapi.DomainHash) error {
+// AddBlockToVirtual submits the given block to be added to the
+// current virtual. This process may result in a new virtual block
+// getting created
+func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
