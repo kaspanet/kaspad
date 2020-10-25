@@ -9,14 +9,15 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	dagParams *dagconfig.Params
+	dagParams       *dagconfig.Params
+	databaseContext *database.DomainDBContext
 
-	databaseContext     *database.DomainDBContext
 	consensusStateStore model.ConsensusStateStore
 	multisetStore       model.MultisetStore
 	blockStore          model.BlockStore
 	ghostdagManager     model.GHOSTDAGManager
 	acceptanceManager   model.AcceptanceManager
+	dagTopologyManager  model.DAGTopologyManager
 
 	blockStatusStore  model.BlockStatusStore
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -32,17 +33,19 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceManager model.AcceptanceManager,
 	blockStatusStore model.BlockStatusStore,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.ConsensusStateManager {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	dagTopologyManager model.DAGTopologyManager) model.ConsensusStateManager {
 
 	return &consensusStateManager{
-		dagParams: dagParams,
+		dagParams:       dagParams,
+		databaseContext: databaseContext,
 
-		databaseContext:     databaseContext,
 		consensusStateStore: consensusStateStore,
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
 		ghostdagManager:     ghostdagManager,
 		acceptanceManager:   acceptanceManager,
+		dagTopologyManager:  dagTopologyManager,
 
 		blockStatusStore:  blockStatusStore,
 		ghostdagDataStore: ghostdagDataStore,
