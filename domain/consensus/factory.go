@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/acceptancemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -45,7 +46,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	multisetStore := multisetstore.New()
 	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New()
-	//utxoDiffStore := utxodiffstore.New()
+	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
@@ -90,7 +91,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagDataStore,
 		consensusStateStore,
 		multisetStore,
-		blockStore)
+		blockStore,
+		utxoDiffStore)
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
