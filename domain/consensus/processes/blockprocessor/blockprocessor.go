@@ -22,8 +22,9 @@ type blockProcessor struct {
 	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	acceptanceDataStore   model.AcceptanceDataStore
-	blockMessageStore     model.BlockStore
+	blockStore            model.BlockStore
 	blockStatusStore      model.BlockStatusStore
+	blockRelationStore    model.BlockRelationStore
 }
 
 // New instantiates a new BlockProcessor
@@ -39,8 +40,9 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceDataStore model.AcceptanceDataStore,
-	blockMessageStore model.BlockStore,
-	blockStatusStore model.BlockStatusStore) model.BlockProcessor {
+	blockStore model.BlockStore,
+	blockStatusStore model.BlockStatusStore,
+	blockRelationStore model.BlockRelationStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -55,8 +57,9 @@ func New(
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
-		blockMessageStore:     blockMessageStore,
+		blockStore:            blockStore,
 		blockStatusStore:      blockStatusStore,
+		blockRelationStore:    blockRelationStore,
 	}
 }
 

@@ -4,9 +4,11 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // BlockRelationStore represents a store of BlockRelations
 type BlockRelationStore interface {
-	Stage(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash)
-	IsStaged() bool
+	StageBlockRelation(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash)
+	StageTips(tipHashess []*externalapi.DomainHash)
+	IsAnythingStaged() bool
 	Discard()
 	Commit(dbTx DBTxProxy) error
-	Get(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*BlockRelations, error)
+	BlockRelation(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*BlockRelations, error)
+	Tips(dbContext DBContextProxy) ([]*externalapi.DomainHash, error)
 }
