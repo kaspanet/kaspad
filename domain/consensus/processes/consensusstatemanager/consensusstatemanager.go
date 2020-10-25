@@ -12,43 +12,43 @@ type consensusStateManager struct {
 	dagParams       *dagconfig.Params
 	databaseContext *database.DomainDBContext
 
+	ghostdagManager    model.GHOSTDAGManager
+	acceptanceManager  model.AcceptanceManager
+	dagTopologyManager model.DAGTopologyManager
+
+	blockStatusStore    model.BlockStatusStore
+	ghostdagDataStore   model.GHOSTDAGDataStore
 	consensusStateStore model.ConsensusStateStore
 	multisetStore       model.MultisetStore
 	blockStore          model.BlockStore
-	ghostdagManager     model.GHOSTDAGManager
-	acceptanceManager   model.AcceptanceManager
-	dagTopologyManager  model.DAGTopologyManager
-
-	blockStatusStore  model.BlockStatusStore
-	ghostdagDataStore model.GHOSTDAGDataStore
 }
 
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext *database.DomainDBContext,
 	dagParams *dagconfig.Params,
-	consensusStateStore model.ConsensusStateStore,
-	multisetStore model.MultisetStore,
-	blockStore model.BlockStore,
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceManager model.AcceptanceManager,
+	dagTopologyManager model.DAGTopologyManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	dagTopologyManager model.DAGTopologyManager) model.ConsensusStateManager {
+	consensusStateStore model.ConsensusStateStore,
+	multisetStore model.MultisetStore,
+	blockStore model.BlockStore) model.ConsensusStateManager {
 
 	return &consensusStateManager{
 		dagParams:       dagParams,
 		databaseContext: databaseContext,
 
-		consensusStateStore: consensusStateStore,
+		ghostdagManager:    ghostdagManager,
+		acceptanceManager:  acceptanceManager,
+		dagTopologyManager: dagTopologyManager,
+
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
-		ghostdagManager:     ghostdagManager,
-		acceptanceManager:   acceptanceManager,
-		dagTopologyManager:  dagTopologyManager,
-
-		blockStatusStore:  blockStatusStore,
-		ghostdagDataStore: ghostdagDataStore,
+		blockStatusStore:    blockStatusStore,
+		ghostdagDataStore:   ghostdagDataStore,
+		consensusStateStore: consensusStateStore,
 	}
 }
 
