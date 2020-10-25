@@ -15,6 +15,7 @@ type consensusStateManager struct {
 	ghostdagManager    model.GHOSTDAGManager
 	acceptanceManager  model.AcceptanceManager
 	dagTopologyManager model.DAGTopologyManager
+	pruningManager     model.PruningManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -30,6 +31,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	acceptanceManager model.AcceptanceManager,
 	dagTopologyManager model.DAGTopologyManager,
+	pruningManager model.PruningManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -43,6 +45,7 @@ func New(
 		ghostdagManager:    ghostdagManager,
 		acceptanceManager:  acceptanceManager,
 		dagTopologyManager: dagTopologyManager,
+		pruningManager:     pruningManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,

@@ -73,23 +73,24 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		blockStore,
 		acceptanceDataStore,
 		multisetStore)
+	pruningManager := pruningmanager.New(
+		dagTraversalManager,
+		dagTopologyManager,
+		pruningStore,
+		blockStatusStore,
+		consensusStateStore)
 	consensusStateManager := consensusstatemanager.New(
 		domainDBContext,
 		dagParams,
 		ghostdagManager,
 		acceptanceManager,
 		dagTopologyManager,
+		pruningManager,
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,
 		multisetStore,
 		blockStore)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		pruningStore,
-		dagTopologyManager,
-		blockStatusStore,
-		consensusStateManager)
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
