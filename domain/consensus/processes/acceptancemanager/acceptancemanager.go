@@ -32,6 +32,6 @@ func New(
 	}
 }
 
-func (a *acceptanceManager) CalculateAcceptanceData(blockHash *externalapi.DomainHash) error {
+func (a *acceptanceManager) CalculateAcceptanceDataAndMultiset(blockHash *externalapi.DomainHash) error {
 	panic("implement me")
 }
