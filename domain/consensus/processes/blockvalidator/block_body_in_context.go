@@ -2,9 +2,9 @@ package blockvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/validator/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"math"
 )
 

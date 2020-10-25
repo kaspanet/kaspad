@@ -1,7 +1,7 @@
 package hashserialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
@@ -24,7 +24,7 @@ const (
 	txEncodingExcludeSignatureScript
 )
 
-func TransactionHashForSigning(tx *model.DomainTransaction, hashType uint32) *model.DomainHash {
+func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint32) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
 	writer := hashes.NewHashWriter()
@@ -45,7 +45,7 @@ func TransactionHashForSigning(tx *model.DomainTransaction, hashType uint32) *mo
 	return &res
 }
 
-func TransactionHash(tx *model.DomainTransaction) *model.DomainHash {
+func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
 	writer := hashes.NewHashWriter()
@@ -62,7 +62,7 @@ func TransactionHash(tx *model.DomainTransaction) *model.DomainHash {
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
-func TransactionID(tx *model.DomainTransaction) *model.DomainTransactionID {
+func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransactionID {
 	// Encode the transaction, replace signature script with zeroes, cut off
 	// payload and calculate double sha256 on the result.
 	var encodingFlags txEncoding
@@ -76,11 +76,11 @@ func TransactionID(tx *model.DomainTransaction) *model.DomainTransactionID {
 		// and we assume we never construct malformed transactions.
 		panic(errors.Wrap(err, "TransactionID() failed. this should never fail for structurally-valid transactions"))
 	}
-	txID := model.DomainTransactionID(writer.Finalize())
+	txID := externalapi.DomainTransactionID(writer.Finalize())
 	return &txID
 }
 
-func serializeTransaction(w io.Writer, tx *model.DomainTransaction, encodingFlags txEncoding) error {
+func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
 	err := binaryserializer.PutUint32(w, littleEndian, uint32(tx.Version))
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func serializeTransaction(w io.Writer, tx *model.DomainTransaction, encodingFlag
 
 // writeTransactionInput encodes ti to the kaspa protocol encoding for a transaction
 // input to w.
-func writeTransactionInput(w io.Writer, ti *model.DomainTransactionInput, encodingFlags txEncoding) error {
+func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, encodingFlags txEncoding) error {
 	err := writeOutpoint(w, &ti.PreviousOutpoint)
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func writeTransactionInput(w io.Writer, ti *model.DomainTransactionInput, encodi
 	return binaryserializer.PutUint64(w, littleEndian, ti.Sequence)
 }
 
-func writeOutpoint(w io.Writer, outpoint *model.DomainOutpoint) error {
+func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 	_, err := w.Write(outpoint.ID[:])
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func writeVarBytes(w io.Writer, data []byte) error {
 	return err
 }
 
-func writeTxOut(w io.Writer, to *model.DomainTransactionOutput) error {
+func writeTxOut(w io.Writer, to *externalapi.DomainTransactionOutput) error {
 	err := binaryserializer.PutUint64(w, littleEndian, to.Value)
 	if err != nil {
 		return err

@@ -2,7 +2,7 @@ package hashes
 
 import (
 	"crypto/sha256"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"hash"
 )
@@ -25,12 +25,12 @@ func (h *HashWriter) Write(p []byte) (n int, err error) {
 }
 
 // Finalize returns the resulting double hash
-func (h *HashWriter) Finalize() model.DomainHash {
+func (h *HashWriter) Finalize() externalapi.DomainHash {
 	firstHashInTheSum := h.inner.Sum(nil)
 	return sha256.Sum256(firstHashInTheSum)
 }
 
-func HashData(data []byte) model.DomainHash {
+func HashData(data []byte) externalapi.DomainHash {
 	w := NewHashWriter()
 	_, err := w.Write(data)
 	if err != nil {

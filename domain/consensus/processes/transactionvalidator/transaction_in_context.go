@@ -1,57 +1,67 @@
-package validator
+package transactionvalidator
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/validator/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 )
 
-func (v *validator) checkTransactionInContext(tx *model.DomainTransaction, ghostdagData *model.BlockGHOSTDAGData,
-	utxoEntries []*model.UTXOEntry, selectedParentMedianTime int64) (txFee uint64, err error) {
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
+	povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
-	err = v.checkTxCoinbaseMaturity(ghostdagData, tx, utxoEntries)
+	err := v.checkTxCoinbaseMaturity(povBlockHash, tx)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
 
-	totalSompiIn, err := v.checkTxInputAmounts(utxoEntries)
+	totalSompiIn, err := v.checkTxInputAmounts(tx)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
 
 	totalSompiOut, err := v.checkTxOutputAmounts(tx, totalSompiIn)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
 
-	txFee = totalSompiIn - totalSompiOut
+	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTxSequenceLock(ghostdagData, tx, utxoEntries, selectedParentMedianTime)
+	err = v.checkTxSequenceLock(povBlockHash, tx, selectedParentMedianTime)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
 
-	err = v.validateTransactionScripts(tx, utxoEntries)
+	err = v.validateTransactionScripts(tx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return txFee, nil
+	return nil
 }
 
-func (v *validator) checkTxCoinbaseMaturity(
-	ghostdagData *model.BlockGHOSTDAGData, tx *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
+func (v *transactionValidator) checkTxCoinbaseMaturity(
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
+
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+	if err != nil {
+		return err
+	}
+
 	txBlueScore := ghostdagData.BlueScore
-	for i, txIn := range tx.Inputs {
-		utxoEntry := utxoEntries[i]
+	for _, txIn := range tx.Inputs {
+		utxoEntry := txIn.UTXOEntry
+		if utxoEntry == nil {
+			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+				"either does not exist or "+
+				"has already been spent")
+		}
 
 		if utxoEntry.IsCoinbase {
 			originBlueScore := utxoEntry.BlockBlueScore
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
-
 				return ruleerrors.Errorf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from blue score %d "+
 					"to blue score %d before required maturity "+
@@ -65,11 +75,17 @@ func (v *validator) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (v *validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (totalSompiIn uint64, err error) {
+func (v *transactionValidator) checkTxInputAmounts(tx *externalapi.DomainTransaction) (totalSompiIn uint64, err error) {
 
 	totalSompiIn = 0
 
-	for _, utxoEntry := range inputUTXOEntries {
+	for _, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+		if utxoEntry == nil {
+			return 0, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+				"either does not exist or "+
+				"has already been spent")
+		}
 
 		// Ensure the transaction amounts are in range. Each of the
 		// output values of the input transactions must not be negative
@@ -86,7 +102,7 @@ func (v *validator) checkTxInputAmounts(inputUTXOEntries []*model.UTXOEntry) (to
 	return totalSompiIn, nil
 }
 
-func (v *validator) checkEntryAmounts(entry *model.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
@@ -102,7 +118,7 @@ func (v *validator) checkEntryAmounts(entry *model.UTXOEntry, totalSompiInBefore
 	return totalSompiInAfter, nil
 }
 
-func (v *validator) checkTxOutputAmounts(tx *model.DomainTransaction, totalSompiIn uint64) (uint64, error) {
+func (v *transactionValidator) checkTxOutputAmounts(tx *externalapi.DomainTransaction, totalSompiIn uint64) (uint64, error) {
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
@@ -120,13 +136,18 @@ func (v *validator) checkTxOutputAmounts(tx *model.DomainTransaction, totalSompi
 	return totalSompiOut, nil
 }
 
-func (v *validator) checkTxSequenceLock(ghostdagData *model.BlockGHOSTDAGData, tx *model.DomainTransaction,
-	referencedUTXOEntries []*model.UTXOEntry, medianTime int64) error {
+func (v *transactionValidator) checkTxSequenceLock(povBlockHash *externalapi.DomainHash,
+	tx *externalapi.DomainTransaction, medianTime int64) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
 	// active.
-	sequenceLock, err := v.calcTxSequenceLockFromReferencedUTXOEntries(ghostdagData, tx, referencedUTXOEntries)
+	sequenceLock, err := v.calcTxSequenceLockFromReferencedUTXOEntries(povBlockHash, tx)
+	if err != nil {
+		return err
+	}
+
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
 	if err != nil {
 		return err
 	}
@@ -140,11 +161,18 @@ func (v *validator) checkTxSequenceLock(ghostdagData *model.BlockGHOSTDAGData, t
 	return nil
 }
 
-func (v *validator) validateTransactionScripts(tx *model.DomainTransaction, utxoEntries []*model.UTXOEntry) error {
+func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript
-		scriptPubKey := utxoEntries[i].ScriptPublicKey
+		utxoEntry := input.UTXOEntry
+		if utxoEntry == nil {
+			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+				"either does not exist or "+
+				"has already been spent")
+		}
+
+		scriptPubKey := utxoEntry.ScriptPublicKey
 		vm, err := txscript.NewEngine(scriptPubKey, tx,
 			i, txscript.ScriptNoFlags, nil)
 		if err != nil {
@@ -170,8 +198,8 @@ func (v *validator) validateTransactionScripts(tx *model.DomainTransaction, utxo
 	return nil
 }
 
-func (v *validator) calcTxSequenceLockFromReferencedUTXOEntries(
-	ghostdagData *model.BlockGHOSTDAGData, tx *model.DomainTransaction, referencedUTXOEntries []*model.UTXOEntry) (*sequenceLock, error) {
+func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) (*sequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -185,8 +213,13 @@ func (v *validator) calcTxSequenceLockFromReferencedUTXOEntries(
 		return sequenceLock, nil
 	}
 
-	for i, input := range tx.Inputs {
-		utxoEntry := referencedUTXOEntries[i]
+	for _, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+		if utxoEntry == nil {
+			return nil, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+				"either does not exist or "+
+				"has already been spent")
+		}
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
@@ -211,10 +244,16 @@ func (v *validator) calcTxSequenceLockFromReferencedUTXOEntries(
 			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
 			// the one which accepted this referenced output.
-			baseGHOSTDAGData := ghostdagData
+			baseGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+			if err != nil {
+				return nil, err
+			}
+
+			baseHash := povBlockHash
 
 			for {
-				selectedParentGHOSTDAGData, err := v.ghostdagManager.BlockData(baseGHOSTDAGData.SelectedParent)
+				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
+					baseGHOSTDAGData.SelectedParent)
 				if err != nil {
 					return nil, err
 				}
@@ -223,10 +262,11 @@ func (v *validator) calcTxSequenceLockFromReferencedUTXOEntries(
 					break
 				}
 
+				baseHash = baseGHOSTDAGData.SelectedParent
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 
-			medianTime, err := v.pastMedianTimeManager.PastMedianTime(baseGHOSTDAGData)
+			medianTime, err := v.pastMedianTimeManager.PastMedianTime(baseHash)
 			if err != nil {
 				return nil, err
 			}
@@ -271,7 +311,7 @@ type sequenceLock struct {
 // sequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
 // blue score or time sufficient for their relative lock-time maturity.
-func (v *validator) sequenceLockActive(sequenceLock *sequenceLock, blockBlueScore uint64,
+func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, blockBlueScore uint64,
 	medianTimePast int64) bool {
 
 	// If either the milliseconds, or blue score relative-lock time has not yet

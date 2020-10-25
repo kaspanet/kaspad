@@ -65,3 +65,8 @@ func (csm *consensusStateManager) RestorePastUTXOSet(blockHash *externalapi.Doma
 func (csm *consensusStateManager) RestoreDiffFromVirtual(utxoDiff *model.UTXODiff, virtualDiffParentHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	panic("implement me")
 }
+
+// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
+func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
+	panic("implement me")
+}

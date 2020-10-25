@@ -6,7 +6,7 @@ package txscript
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
@@ -43,7 +43,7 @@ type Engine struct {
 	scriptOff       int
 	dstack          stack // data stack
 	astack          stack // alt stack
-	tx              model.DomainTransaction
+	tx              externalapi.DomainTransaction
 	txIdx           int
 	condStack       []int
 	numOps          int
@@ -434,7 +434,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index. The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *model.DomainTransaction, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey []byte, tx *externalapi.DomainTransaction, txIdx int, flags ScriptFlags,
 	sigCache *SigCache) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.

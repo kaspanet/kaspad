@@ -1,7 +1,7 @@
 package hashserialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/pkg/errors"
 	"io"
@@ -22,7 +22,7 @@ func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
 	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
 }
 
-func HeaderHash(header *externalapi.DomainBlockHeader) *model.DomainHash {
+func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
 	writer := hashes.NewHashWriter()

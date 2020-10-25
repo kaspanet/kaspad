@@ -7,7 +7,7 @@ package txscript
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
@@ -250,29 +250,29 @@ func canonicalPush(pop parsedOpcode) bool {
 // calculating the signature hash. It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and
 // allocates much more space than needed.
-func shallowCopyTx(tx *model.DomainTransaction) model.DomainTransaction {
+func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransaction {
 	// As an additional memory optimization, use contiguous backing arrays
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays. This avoids a lot of small
 	// allocations.
 	// Specifically avoid using appmessage.NewMsgTx() to prevent correcting errors by
 	// auto-generating various fields.
-	txCopy := model.DomainTransaction{
+	txCopy := externalapi.DomainTransaction{
 		Version:      tx.Version,
-		Inputs:       make([]*model.DomainTransactionInput, len(tx.Inputs)),
-		Outputs:      make([]*model.DomainTransactionOutput, len(tx.Outputs)),
+		Inputs:       make([]*externalapi.DomainTransactionInput, len(tx.Inputs)),
+		Outputs:      make([]*externalapi.DomainTransactionOutput, len(tx.Outputs)),
 		LockTime:     tx.LockTime,
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
 		PayloadHash:  tx.PayloadHash,
 		Payload:      tx.Payload,
 	}
-	txIns := make([]model.DomainTransactionInput, len(tx.Inputs))
+	txIns := make([]externalapi.DomainTransactionInput, len(tx.Inputs))
 	for i, oldTxIn := range tx.Inputs {
 		txIns[i] = *oldTxIn
 		txCopy.Inputs[i] = &txIns[i]
 	}
-	txOuts := make([]model.DomainTransactionOutput, len(tx.Outputs))
+	txOuts := make([]externalapi.DomainTransactionOutput, len(tx.Outputs))
 	for i, oldTxOut := range tx.Outputs {
 		txOuts[i] = *oldTxOut
 		txCopy.Outputs[i] = &txOuts[i]
@@ -283,7 +283,7 @@ func shallowCopyTx(tx *model.DomainTransaction) model.DomainTransaction {
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *model.DomainTransaction, idx int) (*model.DomainHash, error) {
+func CalcSignatureHash(script []byte, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
@@ -294,7 +294,7 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *model.DomainTran
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *model.DomainTransaction, idx int) (*model.DomainHash, error) {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//

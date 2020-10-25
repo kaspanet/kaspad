@@ -1,7 +1,7 @@
 package merkle
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
@@ -25,7 +25,7 @@ func nextPowerOfTwo(n int) int {
 // hashMerkleBranches takes two hashes, treated as the left and right tree
 // nodes, and returns the hash of their concatenation. This is a helper
 // function used to aid in the generation of a merkle tree.
-func hashMerkleBranches(left, right *model.DomainHash) *model.DomainHash {
+func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.DomainHash {
 	// Concatenate the left and right nodes.
 	w := hashes.NewHashWriter()
 
@@ -44,8 +44,8 @@ func hashMerkleBranches(left, right *model.DomainHash) *model.DomainHash {
 
 // CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.
 // See `merkleRoot` for more info.
-func CalcHashMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHash {
-	txHashes := make([]*model.DomainHash, len(transactions))
+func CalcHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+	txHashes := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = hashserialization.TransactionHash(tx)
 	}
@@ -54,21 +54,21 @@ func CalcHashMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHa
 
 // CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
 // See `merkleRoot` for more info.
-func CalcIDMerkleRoot(transactions []*model.DomainTransaction) *model.DomainHash {
-	txIDs := make([]*model.DomainHash, len(transactions))
+func CalcIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+	txIDs := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
-		txIDs[i] = (*model.DomainHash)(hashserialization.TransactionID(tx))
+		txIDs[i] = (*externalapi.DomainHash)(hashserialization.TransactionID(tx))
 	}
 	return merkleRoot(txIDs)
 }
 
 // merkleRoot creates a merkle tree from a slice of hashes, and returns its root.
-func merkleRoot(hashes []*model.DomainHash) *model.DomainHash {
+func merkleRoot(hashes []*externalapi.DomainHash) *externalapi.DomainHash {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.
 	nextPoT := nextPowerOfTwo(len(hashes))
 	arraySize := nextPoT*2 - 1
-	merkles := make([]*model.DomainHash, arraySize)
+	merkles := make([]*externalapi.DomainHash, arraySize)
 
 	// Create the base transaction hashes and populate the array with them.
 	for i, hash := range hashes {

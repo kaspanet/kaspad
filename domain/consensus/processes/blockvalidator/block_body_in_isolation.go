@@ -3,6 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -122,7 +123,7 @@ func (v *blockValidator) checkNoNonNativeTransactions(block *externalapi.DomainB
 
 func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
-		err := v.checkTransactionInIsolation(tx)
+		err := v.transactionValidator.ValidateTransactionInIsolation(tx)
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
 				"check", hashserialization.TransactionID(tx))
@@ -205,7 +206,7 @@ func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
 
 	for _, tx := range block.Transactions {
 		sizeBefore := size
-		size += v.transactionEstimatedSerializedSize(tx)
+		size += estimatedsize.TransactionEstimatedSerializedSize(tx)
 		const maxBlockSize = 1_000_000
 		if size > maxBlockSize || size < sizeBefore {
 			return ruleerrors.Errorf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)

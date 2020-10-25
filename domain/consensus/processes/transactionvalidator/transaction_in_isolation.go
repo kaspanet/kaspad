@@ -1,7 +1,7 @@
-package validator
+package transactionvalidator
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -16,7 +16,7 @@ const (
 	maxSompi = 21000000 * sompiPerKaspa
 )
 
-func (v *validator) checkTransactionInIsolation(tx *model.DomainTransaction) error {
+func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.DomainTransaction) error {
 	err := v.checkTransactionInputCount(tx)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (v *validator) checkTransactionInIsolation(tx *model.DomainTransaction) err
 	return nil
 }
 
-func (v *validator) checkTransactionInputCount(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkTransactionInputCount(tx *externalapi.DomainTransaction) error {
 	// A non-coinbase transaction must have at least one input.
 	if !transactionhelper.IsCoinBase(tx) && len(tx.Inputs) == 0 {
 		return ruleerrors.Errorf(ruleerrors.ErrNoTxInputs, "transaction has no inputs")
@@ -66,7 +66,7 @@ func (v *validator) checkTransactionInputCount(tx *model.DomainTransaction) erro
 	return nil
 }
 
-func (v *validator) checkTransactionAmountRanges(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.DomainTransaction) error {
 	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
@@ -102,8 +102,8 @@ func (v *validator) checkTransactionAmountRanges(tx *model.DomainTransaction) er
 	return nil
 }
 
-func (v *validator) checkDuplicateTransactionInputs(tx *model.DomainTransaction) error {
-	existingTxOut := make(map[model.DomainOutpoint]struct{})
+func (v *transactionValidator) checkDuplicateTransactionInputs(tx *externalapi.DomainTransaction) error {
+	existingTxOut := make(map[externalapi.DomainOutpoint]struct{})
 	for _, txIn := range tx.Inputs {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleerrors.Errorf(ruleerrors.ErrDuplicateTxInputs, "transaction "+
@@ -114,7 +114,7 @@ func (v *validator) checkDuplicateTransactionInputs(tx *model.DomainTransaction)
 	return nil
 }
 
-func (v *validator) checkCoinbaseLength(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransaction) error {
 	if !transactionhelper.IsCoinBase(tx) {
 		return nil
 	}
@@ -131,19 +131,19 @@ func (v *validator) checkCoinbaseLength(tx *model.DomainTransaction) error {
 	return nil
 }
 
-func (v *validator) checkTransactionPayloadHash(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
 		payloadHash := hashes.HashData(tx.Payload)
 		if tx.PayloadHash != payloadHash {
 			return ruleerrors.Errorf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
 		}
-	} else if tx.PayloadHash != (model.DomainHash{}) {
+	} else if tx.PayloadHash != (externalapi.DomainHash{}) {
 		return ruleerrors.Errorf(ruleerrors.ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 	return nil
 }
 
-func (v *validator) checkGasInBuiltInOrNativeTransactions(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkGasInBuiltInOrNativeTransactions(tx *externalapi.DomainTransaction) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) && tx.Gas > 0 {
 		return ruleerrors.Errorf(ruleerrors.ErrInvalidGas, "transaction in the native or "+
@@ -152,7 +152,7 @@ func (v *validator) checkGasInBuiltInOrNativeTransactions(tx *model.DomainTransa
 	return nil
 }
 
-func (v *validator) checkSubnetworkRegistryTransaction(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkSubnetworkRegistryTransaction(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID != subnetworks.SubnetworkIDRegistry {
 		return nil
 	}
@@ -164,7 +164,7 @@ func (v *validator) checkSubnetworkRegistryTransaction(tx *model.DomainTransacti
 	return nil
 }
 
-func (v *validator) checkNativeTransactionPayload(tx *model.DomainTransaction) error {
+func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID == subnetworks.SubnetworkIDNative && len(tx.Payload) > 0 {
 		return ruleerrors.Errorf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
 			"includes a payload")
@@ -172,7 +172,7 @@ func (v *validator) checkNativeTransactionPayload(tx *model.DomainTransaction) e
 	return nil
 }
 
-func (v *validator) checkTransactionSubnetwork(tx *model.DomainTransaction, subnetworkID *model.DomainSubnetworkID) error {
+func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction, subnetworkID *externalapi.DomainSubnetworkID) error {
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID == nil

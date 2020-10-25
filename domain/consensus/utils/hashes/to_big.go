@@ -1,13 +1,13 @@
 package hashes
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 )
 
-// ToBig converts a model.DomainHash into a big.Int that can be used to
+// ToBig converts a externalapi.DomainHash into a big.Int that can be used to
 // perform math comparisons.
-func ToBig(hash *model.DomainHash) *big.Int {
+func ToBig(hash *externalapi.DomainHash) *big.Int {
 	// A Hash is in little-endian, but the big package wants the bytes in
 	// big-endian, so reverse them.
 	buf := *hash
