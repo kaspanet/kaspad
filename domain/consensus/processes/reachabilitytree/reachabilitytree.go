@@ -1,45 +1,41 @@
 package reachabilitytree
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ReachabilityTree maintains a structure that allows to answer
+// reachabilityTree maintains a structure that allows to answer
 // reachability queries in sub-linear time
-type ReachabilityTree struct {
-	blockRelationStore    datastructures.BlockRelationStore
-	reachabilityDataStore datastructures.ReachabilityDataStore
+type reachabilityTree struct {
+	blockRelationStore    model.BlockRelationStore
+	reachabilityDataStore model.ReachabilityDataStore
 }
 
 // New instantiates a new ReachabilityTree
 func New(
-	blockRelationStore datastructures.BlockRelationStore,
-	reachabilityDataStore datastructures.ReachabilityDataStore) *ReachabilityTree {
-	return &ReachabilityTree{
+	blockRelationStore model.BlockRelationStore,
+	reachabilityDataStore model.ReachabilityDataStore) model.ReachabilityTree {
+	return &reachabilityTree{
 		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
 	}
 }
 
+// AddBlock adds the block with the given blockHash into the reachability tree.
+func (rt *reachabilityTree) AddBlock(blockHash *externalapi.DomainHash) error {
+	return nil
+}
+
 // IsReachabilityTreeAncestorOf returns true if blockHashA is an
 // ancestor of blockHashB in the reachability tree. Note that this
 // does not necessarily mean that it isn't its ancestor in the DAG.
-func (rt *ReachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
-	return false
+func (rt *reachabilityTree) IsReachabilityTreeAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return false, nil
 }
 
 // IsDAGAncestorOf returns true if blockHashA is an ancestor of
 // blockHashB in the DAG.
-func (rt *ReachabilityTree) IsDAGAncestorOf(blockHashA *daghash.Hash, blockHashB *daghash.Hash) bool {
-	return false
-}
-
-// ReachabilityChangeset returns a set of changes that need to occur
-// in order to add the given blockHash into the reachability tree.
-func (rt *ReachabilityTree) ReachabilityChangeset(blockHash *daghash.Hash,
-	blockGHOSTDAGData *model.BlockGHOSTDAGData) *model.ReachabilityChangeset {
-
-	return nil
+func (rt *reachabilityTree) IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return false, nil
 }

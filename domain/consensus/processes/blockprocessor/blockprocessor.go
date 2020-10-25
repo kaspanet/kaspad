@@ -1,72 +1,72 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 )
 
-// BlockProcessor is responsible for processing incoming blocks
+// blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
-type BlockProcessor struct {
+type blockProcessor struct {
 	dagParams       *dagconfig.Params
-	databaseContext *dbaccess.DatabaseContext
+	databaseContext *database.DomainDBContext
 
-	consensusStateManager processes.ConsensusStateManager
-	pruningManager        processes.PruningManager
-	blockValidator        processes.BlockValidator
-	dagTopologyManager    processes.DAGTopologyManager
-	reachabilityTree      processes.ReachabilityTree
-	acceptanceDataStore   datastructures.AcceptanceDataStore
-	blockIndex            datastructures.BlockIndex
-	blockMessageStore     datastructures.BlockMessageStore
-	blockStatusStore      datastructures.BlockStatusStore
-	consensusStateStore   datastructures.ConsensusStateStore
+	consensusStateManager model.ConsensusStateManager
+	pruningManager        model.PruningManager
+	blockValidator        model.BlockValidator
+	dagTopologyManager    model.DAGTopologyManager
+	reachabilityTree      model.ReachabilityTree
+	difficultyManager     model.DifficultyManager
+	ghostdagManager       model.GHOSTDAGManager
+	pastMedianTimeManager model.PastMedianTimeManager
+	acceptanceDataStore   model.AcceptanceDataStore
+	blockStore            model.BlockStore
+	blockStatusStore      model.BlockStatusStore
+	blockRelationStore    model.BlockRelationStore
 }
 
 // New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
-	databaseContext *dbaccess.DatabaseContext,
-	consensusStateManager processes.ConsensusStateManager,
-	pruningManager processes.PruningManager,
-	blockValidator processes.BlockValidator,
-	dagTopologyManager processes.DAGTopologyManager,
-	reachabilityTree processes.ReachabilityTree,
-	acceptanceDataStore datastructures.AcceptanceDataStore,
-	blockIndex datastructures.BlockIndex,
-	blockMessageStore datastructures.BlockMessageStore,
-	blockStatusStore datastructures.BlockStatusStore,
-	consensusStateStore datastructures.ConsensusStateStore) *BlockProcessor {
+	databaseContext *database.DomainDBContext,
+	consensusStateManager model.ConsensusStateManager,
+	pruningManager model.PruningManager,
+	blockValidator model.BlockValidator,
+	dagTopologyManager model.DAGTopologyManager,
+	reachabilityTree model.ReachabilityTree,
+	difficultyManager model.DifficultyManager,
+	pastMedianTimeManager model.PastMedianTimeManager,
+	ghostdagManager model.GHOSTDAGManager,
+	acceptanceDataStore model.AcceptanceDataStore,
+	blockStore model.BlockStore,
+	blockStatusStore model.BlockStatusStore,
+	blockRelationStore model.BlockRelationStore) model.BlockProcessor {
 
-	return &BlockProcessor{
-		dagParams:          dagParams,
-		databaseContext:    databaseContext,
-		pruningManager:     pruningManager,
-		blockValidator:     blockValidator,
-		dagTopologyManager: dagTopologyManager,
-		reachabilityTree:   reachabilityTree,
+	return &blockProcessor{
+		dagParams:             dagParams,
+		databaseContext:       databaseContext,
+		pruningManager:        pruningManager,
+		blockValidator:        blockValidator,
+		dagTopologyManager:    dagTopologyManager,
+		reachabilityTree:      reachabilityTree,
+		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
+		ghostdagManager:       ghostdagManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
-		blockIndex:            blockIndex,
-		blockMessageStore:     blockMessageStore,
+		blockStore:            blockStore,
 		blockStatusStore:      blockStatusStore,
-		consensusStateStore:   consensusStateStore,
+		blockRelationStore:    blockRelationStore,
 	}
 }
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (bp *BlockProcessor) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	start := mstime.Now()
 	log.Debugf("BuildBlock start")
@@ -90,12 +90,12 @@ func (bp *BlockProcessor) selectParentsForNewBlock() []*daghash.Hash {
 func (bp *BlockProcessor) buildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
 	parentHashes []*daghash.Hash, transactions []*util.Tx) *appmessage.MsgBlock {
 
-	return nil
+	return nil, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *BlockProcessor) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
 	start := mstime.Now()
 	log.Debugf("ValidateAndInsertBlock start")
 

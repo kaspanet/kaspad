@@ -1,46 +1,39 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
-	BuildBlock(scriptPublicKey []byte, extraData []byte, transactionSelector model.TransactionSelector) *appmessage.MsgBlock
-	ValidateAndInsertBlock(block *appmessage.MsgBlock) error
-	UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry
-	ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error
+	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
+	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
+	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
 }
 
 type consensus struct {
-	blockProcessor        processes.BlockProcessor
-	consensusStateManager processes.ConsensusStateManager
+	blockProcessor        model.BlockProcessor
+	consensusStateManager model.ConsensusStateManager
+	transactionValidator  model.TransactionValidator
 }
 
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
-func (s *consensus) BuildBlock(coinbaseScriptPublicKey []byte, coinbaseExtraData []byte,
-	transactionSelector model.TransactionSelector) *appmessage.MsgBlock {
+func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	return s.blockProcessor.BuildBlock(coinbaseScriptPublicKey, coinbaseExtraData, transactionSelector)
+	return s.blockProcessor.BuildBlock(coinbaseData, transactions)
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *appmessage.MsgBlock) error {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
 	return s.blockProcessor.ValidateAndInsertBlock(block)
 }
 
-// UTXOByOutpoint returns a UTXOEntry matching the given outpoint
-func (s *consensus) UTXOByOutpoint(outpoint *appmessage.Outpoint) *model.UTXOEntry {
-	return s.consensusStateManager.UTXOByOutpoint(outpoint)
-}
-
-// ValidateTransaction validates the given transaction using
-// the given utxoEntries
-func (s *consensus) ValidateTransaction(transaction *util.Tx, utxoEntries []*model.UTXOEntry) error {
-	return s.consensusStateManager.ValidateTransaction(transaction, utxoEntries)
+// ValidateTransactionAndPopulateWithConsensusData validates the given transaction
+// and populates it with any missing consensus data
+func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
+	return s.transactionValidator.ValidateTransactionAndPopulateWithConsensusData(transaction)
 }

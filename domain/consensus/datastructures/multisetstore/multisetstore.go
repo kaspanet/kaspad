@@ -1,26 +1,42 @@
 package multisetstore
 
 import (
-	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// MultisetStore represents a store of Multisets
-type MultisetStore struct {
+// multisetStore represents a store of Multisets
+type multisetStore struct {
 }
 
 // New instantiates a new MultisetStore
-func New() *MultisetStore {
-	return &MultisetStore{}
+func New() model.MultisetStore {
+	return &multisetStore{}
 }
 
-// Insert inserts the given multiset for the given blockHash
-func (ms *MultisetStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, multiset *secp256k1.MultiSet) {
+// Stage stages the given multiset for the given blockHash
+func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
+	panic("implement me")
+}
 
+func (ms *multisetStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (ms *multisetStore) Discard() {
+	panic("implement me")
+}
+
+func (ms *multisetStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the multiset associated with the given blockHash
-func (ms *MultisetStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *secp256k1.MultiSet {
+func (ms *multisetStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (model.Multiset, error) {
+	return nil, nil
+}
+
+// Delete deletes the multiset associated with the given blockHash
+func (ms *multisetStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
 	return nil
 }

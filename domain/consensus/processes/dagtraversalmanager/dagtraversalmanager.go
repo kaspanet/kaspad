@@ -2,35 +2,36 @@ package dagtraversalmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// DAGTraversalManager exposes methods for travering blocks
+// dagTraversalManager exposes methods for travering blocks
 // in the DAG
-type DAGTraversalManager struct {
-	dagTopologyManager processes.DAGTopologyManager
-	ghostdagManager    processes.GHOSTDAGManager
+type dagTraversalManager struct {
+	dagTopologyManager model.DAGTopologyManager
+	ghostdagManager    model.GHOSTDAGManager
 }
 
 // New instantiates a new DAGTraversalManager
 func New(
-	dagTopologyManager processes.DAGTopologyManager,
-	ghostdagManager processes.GHOSTDAGManager) *DAGTraversalManager {
-	return &DAGTraversalManager{
+	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
+	return &dagTraversalManager{
 		dagTopologyManager: dagTopologyManager,
 		ghostdagManager:    ghostdagManager,
 	}
 }
 
-// BlockAtDepth returns the hash of the block that's at the
-// given depth from the given highHash
-func (dtm *DAGTraversalManager) BlockAtDepth(highHash *daghash.Hash, depth uint64) *daghash.Hash {
-	return nil
-}
-
 // SelectedParentIterator creates an iterator over the selected
 // parent chain of the given highHash
-func (dtm *DAGTraversalManager) SelectedParentIterator(highHash *daghash.Hash) model.SelectedParentIterator {
-	return nil
+func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) (model.SelectedParentIterator, error) {
+	return nil, nil
+}
+
+// HighestChainBlockBelowBlueScore returns the hash of the
+// highest block with a blue score lower than the given
+// blueScore in the block with the given highHash's selected
+// parent chain
+func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
+	return nil, nil
 }

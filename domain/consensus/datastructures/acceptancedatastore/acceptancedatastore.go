@@ -2,25 +2,41 @@ package acceptancedatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// AcceptanceDataStore represents a store of AcceptanceData
-type AcceptanceDataStore struct {
+// acceptanceDataStore represents a store of AcceptanceData
+type acceptanceDataStore struct {
 }
 
 // New instantiates a new AcceptanceDataStore
-func New() *AcceptanceDataStore {
-	return &AcceptanceDataStore{}
+func New() model.AcceptanceDataStore {
+	return &acceptanceDataStore{}
 }
 
-// Insert inserts the given acceptanceData for the given blockHash
-func (ads *AcceptanceDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, acceptanceData *model.BlockAcceptanceData) {
+// Stage stages the given acceptanceData for the given blockHash
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) {
+	panic("implement me")
+}
 
+func (ads *acceptanceDataStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (ads *acceptanceDataStore) Discard() {
+	panic("implement me")
+}
+
+func (ads *acceptanceDataStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *AcceptanceDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.BlockAcceptanceData {
+func (ads *acceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockAcceptanceData, error) {
+	return nil, nil
+}
+
+// Delete deletes the acceptanceData associated with the given blockHash
+func (ads *acceptanceDataStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
 	return nil
 }

@@ -1,36 +1,30 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
-// GHOSTDAGManager resolves and manages GHOSTDAG block data
-type GHOSTDAGManager struct {
-	dagTopologyManager processes.DAGTopologyManager
-	ghostdagDataStore  datastructures.GHOSTDAGDataStore
+// ghostdagManager resolves and manages GHOSTDAG block data
+type ghostdagManager struct {
+	databaseContext    *database.DomainDBContext
+	dagTopologyManager model.DAGTopologyManager
+	ghostdagDataStore  model.GHOSTDAGDataStore
+	k                  model.KType
 }
 
 // New instantiates a new GHOSTDAGManager
 func New(
-	dagTopologyManager processes.DAGTopologyManager,
-	ghostdagDataStore datastructures.GHOSTDAGDataStore) *GHOSTDAGManager {
-	return &GHOSTDAGManager{
+	databaseContext *dbaccess.DatabaseContext,
+	dagTopologyManager model.DAGTopologyManager,
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	k model.KType) model.GHOSTDAGManager {
+
+	return &ghostdagManager{
+		databaseContext:    database.NewDomainDBContext(databaseContext),
 		dagTopologyManager: dagTopologyManager,
 		ghostdagDataStore:  ghostdagDataStore,
+		k:                  k,
 	}
-}
-
-// GHOSTDAG calculates GHOSTDAG data for the block represented
-// by the given blockParents
-func (gm *GHOSTDAGManager) GHOSTDAG(blockParents []*daghash.Hash) *model.BlockGHOSTDAGData {
-	return nil
-}
-
-// BlockData returns previously calculated GHOSTDAG data for
-// the given blockHash
-func (gm *GHOSTDAGManager) BlockData(blockHash *daghash.Hash) *model.BlockGHOSTDAGData {
-	return nil
 }

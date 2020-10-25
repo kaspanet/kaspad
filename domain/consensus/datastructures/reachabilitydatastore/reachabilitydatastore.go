@@ -2,25 +2,48 @@ package reachabilitydatastore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ReachabilityDataStore represents a store of ReachabilityData
-type ReachabilityDataStore struct {
+// reachabilityDataStore represents a store of ReachabilityData
+type reachabilityDataStore struct {
 }
 
 // New instantiates a new ReachabilityDataStore
-func New() *ReachabilityDataStore {
-	return &ReachabilityDataStore{}
+func New() model.ReachabilityDataStore {
+	return &reachabilityDataStore{}
 }
 
-// Insert inserts the given reachabilityData for the given blockHash
-func (rds *ReachabilityDataStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, reachabilityData *model.ReachabilityData) {
-
+// StageReachabilityData stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+	panic("implement me")
 }
 
-// Get gets the reachabilityData associated with the given blockHash
-func (rds *ReachabilityDataStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.ReachabilityData {
-	return nil
+// StageReachabilityReindexRoot stages the given reachabilityReindexRoot
+func (rds *reachabilityDataStore) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) IsAnythingStaged() bool {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Discard() {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
+}
+
+// ReachabilityData returns the reachabilityData associated with the given blockHash
+func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBContextProxy,
+	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+
+	panic("implement me")
+}
+
+// ReachabilityReindexRoot returns the current reachability reindex root
+func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
+	panic("implement me")
 }

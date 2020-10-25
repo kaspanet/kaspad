@@ -1,26 +1,37 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ConsensusStateStore represents a store for the current consensus state
-type ConsensusStateStore struct {
+// consensusStateStore represents a store for the current consensus state
+type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New() *ConsensusStateStore {
-	return &ConsensusStateStore{}
+func New() model.ConsensusStateStore {
+	return &consensusStateStore{}
 }
 
-// Update updates the store with the given utxoDiff
-func (css *ConsensusStateStore) Update(dbTx *dbaccess.TxContext, utxoDiff *model.UTXODiff) {
+// Stage stages the store with the given consensusStateChanges
+func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStateChanges) {
+	panic("implement me")
+}
 
+func (css *consensusStateStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) Discard() {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *ConsensusStateStore) UTXOByOutpoint(dbContext dbaccess.Context, outpoint *appmessage.Outpoint) *model.UTXOEntry {
-	return nil
+func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
+	return nil, nil
 }

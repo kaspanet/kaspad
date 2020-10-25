@@ -2,25 +2,46 @@ package utxodiffstore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// UTXODiffStore represents a store of UTXODiffs
-type UTXODiffStore struct {
+// utxoDiffStore represents a store of UTXODiffs
+type utxoDiffStore struct {
 }
 
 // New instantiates a new UTXODiffStore
-func New() *UTXODiffStore {
-	return &UTXODiffStore{}
+func New() model.UTXODiffStore {
+	return &utxoDiffStore{}
 }
 
-// Insert inserts the given utxoDiff for the given blockHash
-func (uds *UTXODiffStore) Insert(dbTx *dbaccess.TxContext, blockHash *daghash.Hash, utxoDiff *model.UTXODiff) {
-
+// Stage stages the given utxoDiff for the given blockHash
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+	panic("implement me")
 }
 
-// Get gets the utxoDiff associated with the given blockHash
-func (uds *UTXODiffStore) Get(dbContext dbaccess.Context, blockHash *daghash.Hash) *model.UTXODiff {
+func (uds *utxoDiffStore) IsStaged() bool {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Discard() {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) Commit(dbTx model.DBTxProxy) error {
+	panic("implement me")
+}
+
+// UTXODiff gets the utxoDiff associated with the given blockHash
+func (uds *utxoDiffStore) UTXODiff(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
+	return nil, nil
+}
+
+// UTXODiffChild gets the utxoDiff child associated with the given blockHash
+func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	return nil, nil
+}
+
+// Delete deletes the utxoDiff associated with the given blockHash
+func (uds *utxoDiffStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
 	return nil
 }
