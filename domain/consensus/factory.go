@@ -97,7 +97,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		pastMedianTimeManager,
 		transactionValidator,
 		utxoDiffManager,
-		acceptanceManager)
+		acceptanceManager,
+		blockStatusStore)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		domainDBContext,
