@@ -18,6 +18,6 @@ func New(utxoDiffManager model.UTXODiffManager) model.AcceptanceManager {
 	}
 }
 
-func (a *acceptanceManager) CalculateAcceptanceDataAndUTXOMultiset(blockHash *externalapi.DomainHash) error {
+func (a *acceptanceManager) CalculateAcceptanceData(blockHash *externalapi.DomainHash) error {
 	panic("implement me")
 }
