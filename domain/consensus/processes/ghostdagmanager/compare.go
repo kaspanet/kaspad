@@ -2,6 +2,7 @@ package ghostdagmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
@@ -45,26 +46,13 @@ func (gm *ghostdagManager) ChooseSelectedParent(blockHashA *externalapi.DomainHa
 	blockABlueScore := blockAGHOSTDAGData.BlueScore
 	blockBBlueScore := blockBGHOSTDAGData.BlueScore
 	if blockABlueScore == blockBBlueScore {
-		if hashesLess(blockHashA, blockHashB) {
-			return blockHashB, nil
+		if hashes.Less(blockHashA, blockHashB) {
+			return blockHashA, nil
 		}
-		return blockHashA, nil
+		return blockHashB, nil
 	}
 	if blockABlueScore < blockBBlueScore {
 		return blockHashB, nil
 	}
 	return blockHashA, nil
-}
-
-func hashesLess(a, b *externalapi.DomainHash) bool {
-	// We compare the hashes backwards because Hash is stored as a little endian byte array.
-	for i := len(a) - 1; i >= 0; i-- {
-		switch {
-		case a[i] < b[i]:
-			return true
-		case a[i] > b[i]:
-			return false
-		}
-	}
-	return false
 }

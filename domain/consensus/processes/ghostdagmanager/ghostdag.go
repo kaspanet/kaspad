@@ -39,13 +39,16 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	if err != nil {
 		return err
 	}
+
 	newBlockData.SelectedParent = selectedParent
-	mergeSet, err := gm.mergeSet(newBlockData.SelectedParent, blockParents)
+	newBlockData.MergeSetBlues = append(newBlockData.MergeSetBlues, selectedParent)
+
+	mergeSetWithoutSelectedParent, err := gm.mergeSetWithoutSelectedParent(newBlockData.SelectedParent, blockParents)
 	if err != nil {
 		return err
 	}
 
-	for _, blueCandidate := range mergeSet {
+	for _, blueCandidate := range mergeSetWithoutSelectedParent {
 		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData, blueCandidate)
 		if err != nil {
 			return err
