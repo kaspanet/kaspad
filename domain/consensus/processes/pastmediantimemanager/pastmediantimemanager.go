@@ -8,17 +8,37 @@ import (
 // pastMedianTimeManager provides a method to resolve the
 // past median time of a block
 type pastMedianTimeManager struct {
+	timestampDeviationTolerance uint64
+
+	databaseContext model.DBContextProxy
+
 	ghostdagManager model.GHOSTDAGManager
+
+	ghostdagDataStore model.GHOSTDAGDataStore
+	blockStore        model.BlockStore
 }
 
 // New instantiates a new PastMedianTimeManager
-func New(ghostdagManager model.GHOSTDAGManager) model.PastMedianTimeManager {
+func New(timestampDeviationTolerance uint64,
+	databaseContext model.DBContextProxy,
+	ghostdagManager model.GHOSTDAGManager,
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	blockStore model.BlockStore) model.PastMedianTimeManager {
 	return &pastMedianTimeManager{
-		ghostdagManager: ghostdagManager,
+		timestampDeviationTolerance: timestampDeviationTolerance,
+		databaseContext:             databaseContext,
+		ghostdagManager:             ghostdagManager,
+		ghostdagDataStore:           ghostdagDataStore,
+		blockStore:                  blockStore,
 	}
 }
 
 // PastMedianTime returns the past median time for some block
 func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
-	return 0, nil
+	window, err := pmtm.blueBlockWindow(blockHash, 2*pmtm.timestampDeviationTolerance-1)
+	if err != nil {
+		return 0, err
+	}
+
+	return pmtm.windowMedianTimestamp(window)
 }

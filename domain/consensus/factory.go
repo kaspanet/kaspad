@@ -91,7 +91,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
-		ghostdagManager)
+		dagParams.TimestampDeviationTolerance,
+		domainDBContext,
+		ghostdagManager,
+		ghostdagDataStore,
+		blockStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		domainDBContext,
 		pastMedianTimeManager,
