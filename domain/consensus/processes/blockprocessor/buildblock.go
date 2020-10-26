@@ -5,10 +5,12 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
+const blockVersion = 1
+
 func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	header, err := bp.buildHeader()
+	header, err := bp.buildHeader(transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +22,7 @@ func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 	}, nil
 }
 
-func (bp *blockProcessor) buildHeader() (*externalapi.DomainBlockHeader, error) {
+func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
 	parentHashes := bp.newBlockParentHashes()
 	timeInMilliseconds, err := bp.newBlockTime()
 	if err != nil {
@@ -30,13 +32,25 @@ func (bp *blockProcessor) buildHeader() (*externalapi.DomainBlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
+	hashMerkleRoot, err := bp.newBlockHashMerkleRoot(transactions)
+	if err != nil {
+		return nil, err
+	}
+	acceptedIDMerkleRoot, err := bp.newBlockAcceptedIDMerkleRoot()
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment, err := bp.newBlockUTXOCommitment()
+	if err != nil {
+		return nil, err
+	}
 
 	return &externalapi.DomainBlockHeader{
-		Version:              0,
+		Version:              blockVersion,
 		ParentHashes:         parentHashes,
-		HashMerkleRoot:       nil,
-		AcceptedIDMerkleRoot: nil,
-		UTXOCommitment:       nil,
+		HashMerkleRoot:       hashMerkleRoot,
+		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
+		UTXOCommitment:       utxoCommitment,
 		TimeInMilliseconds:   timeInMilliseconds,
 		Bits:                 bits,
 	}, nil
@@ -66,4 +80,16 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 
 func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
 	return bp.difficultyManager.RequiredDifficulty(bp.consensusStateManager.VirtualSelectedParent())
+}
+
+func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error) {
+	panic("unimplemented!")
+}
+
+func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
+	panic("unimplemented!")
+}
+
+func (bp *blockProcessor) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
+	panic("unimplemented!")
 }

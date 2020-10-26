@@ -6,14 +6,7 @@ import (
 )
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
-	err := bp.blockValidator.ValidateProofOfWork(block)
-	if err != nil {
-		// If the validation failed:
-		//   Write in blockStatusStore that the block is invalid
-		// return err
-	}
-
-	err = bp.validateBlockInIsolationAndInContext(block)
+	err := bp.validateBlockInIsolationAndInContext(block)
 	if err != nil {
 		return err
 	}
