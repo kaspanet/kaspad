@@ -1,7 +1,7 @@
 package externalapi
 
-// HashSize of array used to store hashes.
-const HashSize = 32
+// DomainHashSize of array used to store hashes.
+const DomainHashSize = 32
 
 // DomainHash is the domain representation of a daghash.Hash
-type DomainHash [HashSize]byte
+type DomainHash [DomainHashSize]byte

@@ -22,9 +22,9 @@ func TransactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 	}
 
 	size += 8 // lock time (uint64)
-	size += externalapi.SubnetworkIDSize
-	size += 8                    // gas (uint64)
-	size += externalapi.HashSize // payload hash
+	size += externalapi.DomainSubnetworkIDSize
+	size += 8                          // gas (uint64)
+	size += externalapi.DomainHashSize // payload hash
 
 	size += 8 // length of the payload (uint64)
 	size += uint64(len(tx.Payload))
@@ -45,8 +45,8 @@ func transactionInputEstimatedSerializedSize(input *externalapi.DomainTransactio
 
 func outpointEstimatedSerializedSize() uint64 {
 	size := uint64(0)
-	size += externalapi.HashSize // ID
-	size += 4                    // index (uint32)
+	size += externalapi.DomainHashSize // ID
+	size += 4                          // index (uint32)
 	return size
 }
 

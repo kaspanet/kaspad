@@ -11,15 +11,15 @@ func (v *blockValidator) headerEstimatedSerializedSize(header *externalapi.Domai
 	size := uint64(0)
 	size += 4 // Version (int32)
 
-	size += 8                                                       // number of parents (uint64)
-	size += uint64(externalapi.HashSize * len(header.ParentHashes)) // parents
+	size += 8                                                             // number of parents (uint64)
+	size += uint64(externalapi.DomainHashSize * len(header.ParentHashes)) // parents
 
-	size += externalapi.HashSize // HashMerkleRoot
-	size += externalapi.HashSize // AcceptedIDMerkleRoot
-	size += externalapi.HashSize // UTXOCommitment
-	size += 8                    // TimeInMilliseconds (int64)
-	size += 4                    // Bits (uint32)
-	size += 8                    // Nonce (uint64)
+	size += externalapi.DomainHashSize // HashMerkleRoot
+	size += externalapi.DomainHashSize // AcceptedIDMerkleRoot
+	size += externalapi.DomainHashSize // UTXOCommitment
+	size += 8                          // TimeInMilliseconds (int64)
+	size += 4                          // Bits (uint32)
+	size += 8                          // Nonce (uint64)
 
 	return size
 }

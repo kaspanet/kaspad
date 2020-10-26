@@ -6,7 +6,7 @@ import (
 
 func cmp(a, b externalapi.DomainSubnetworkID) int {
 	// We compare the hashes backwards because Hash is stored as a little endian byte array.
-	for i := externalapi.SubnetworkIDSize - 1; i >= 0; i-- {
+	for i := externalapi.DomainSubnetworkIDSize - 1; i >= 0; i-- {
 		switch {
 		case a[i] < b[i]:
 			return -1
