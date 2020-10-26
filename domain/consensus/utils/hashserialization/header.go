@@ -32,7 +32,7 @@ func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
 		// the only non-writer error path here is unknown types in `WriteElement`
-		panic(errors.Wrap(err, "BlockHash() failed. this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
 
 	res := writer.Finalize()
