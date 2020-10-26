@@ -74,7 +74,7 @@ func (v *validator) calculateAcceptedIDMerkleRoot(acceptanceData *model.BlockAcc
 func (v *validator) validateUTXOCommitment(block *externalapi.DomainBlock, multiset model.Multiset) error {
 	calculatedMultisetHash := multiset.Hash()
 	if *calculatedMultisetHash != block.Header.UTXOCommitment {
-		return ruleerrors.Errorf(ruleerrors.ErrBadUTXOCommitment, "UTXO commitment is invalid - block "+
+		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", block.Header.UTXOCommitment, calculatedMultisetHash)
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 	"sort"
 )
 
@@ -40,12 +41,12 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
 	hash := hashserialization.HeaderHash(header)
 	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
-		return ruleerrors.Errorf(ruleerrors.ErrNoParents, "block has no parents")
+		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
 	const maxParents = 10
 	if len(header.ParentHashes) > maxParents {
-		return ruleerrors.Errorf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
+		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.ParentHashes), maxParents)
 	}
 	return nil
@@ -62,7 +63,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
 			target)
 	}
 
@@ -70,7 +71,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	if target.Cmp(v.powMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
 			"higher than max of %064x", target, v.powMax)
-		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, str)
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, str)
 	}
 
 	// The block hash must be less than the claimed target unless the flag
@@ -80,7 +81,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 		hash := hashserialization.HeaderHash(header)
 		hashNum := hashes.ToBig(hash)
 		if hashNum.Cmp(target) > 0 {
-			return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
+			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
 				"expected max of %064x", hashNum, target)
 		}
 	}
@@ -100,7 +101,7 @@ func checkBlockParentsOrder(header *externalapi.DomainBlockHeader) error {
 	})
 
 	if !isSorted {
-		return ruleerrors.Errorf(ruleerrors.ErrWrongParentsOrder, "block parents are not ordered by hash")
+		return errors.Wrapf(ruleerrors.ErrWrongParentsOrder, "block parents are not ordered by hash")
 	}
 
 	return nil

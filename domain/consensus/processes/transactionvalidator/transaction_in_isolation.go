@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -61,7 +62,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 func (v *transactionValidator) checkTransactionInputCount(tx *externalapi.DomainTransaction) error {
 	// A non-coinbase transaction must have at least one input.
 	if !transactionhelper.IsCoinBase(tx) && len(tx.Inputs) == 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrNoTxInputs, "transaction has no inputs")
+		return errors.Wrapf(ruleerrors.ErrNoTxInputs, "transaction has no inputs")
 	}
 	return nil
 }
@@ -77,7 +78,7 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 	for _, txOut := range tx.Outputs {
 		sompi := txOut.Value
 		if sompi > maxSompi {
-			return ruleerrors.Errorf(ruleerrors.ErrBadTxOutValue, "transaction output value of %d is "+
+			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "transaction output value of %d is "+
 				"higher than max allowed value of %d", sompi, maxSompi)
 		}
 
@@ -86,13 +87,13 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 		// the total money supply.
 		newTotalSompi := totalSompi + sompi
 		if newTotalSompi < totalSompi {
-			return ruleerrors.Errorf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
+			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs exceeds max allowed value of %d",
 				maxSompi)
 		}
 		totalSompi = newTotalSompi
 		if totalSompi > maxSompi {
-			return ruleerrors.Errorf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
+			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs is %d which is higher than max "+
 				"allowed value of %d", totalSompi,
 				maxSompi)
@@ -106,7 +107,7 @@ func (v *transactionValidator) checkDuplicateTransactionInputs(tx *externalapi.D
 	existingTxOut := make(map[externalapi.DomainOutpoint]struct{})
 	for _, txIn := range tx.Inputs {
 		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
-			return ruleerrors.Errorf(ruleerrors.ErrDuplicateTxInputs, "transaction "+
+			return errors.Wrapf(ruleerrors.ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
 		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
@@ -123,7 +124,7 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 	payloadLen := len(tx.Payload)
 	const maxCoinbasePayloadLen = 150
 	if payloadLen > maxCoinbasePayloadLen {
-		return ruleerrors.Errorf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase transaction payload length "+
+		return errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase transaction payload length "+
 			"of %d is out of range (max: %d)",
 			payloadLen, maxCoinbasePayloadLen)
 	}
@@ -135,10 +136,10 @@ func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.Domai
 	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
 		payloadHash := hashes.HashData(tx.Payload)
 		if tx.PayloadHash != payloadHash {
-			return ruleerrors.Errorf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
+			return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
 		}
 	} else if tx.PayloadHash != (externalapi.DomainHash{}) {
-		return ruleerrors.Errorf(ruleerrors.ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
+		return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 	return nil
 }
@@ -146,7 +147,7 @@ func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.Domai
 func (v *transactionValidator) checkGasInBuiltInOrNativeTransactions(tx *externalapi.DomainTransaction) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) && tx.Gas > 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrInvalidGas, "transaction in the native or "+
+		return errors.Wrapf(ruleerrors.ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
 	return nil
@@ -158,7 +159,7 @@ func (v *transactionValidator) checkSubnetworkRegistryTransaction(tx *externalap
 	}
 
 	if len(tx.Payload) != 8 {
-		return ruleerrors.Errorf(ruleerrors.ErrSubnetworkRegistry, "validation failed: subnetwork registry "+
+		return errors.Wrapf(ruleerrors.ErrSubnetworkRegistry, "validation failed: subnetwork registry "+
 			"tx has an invalid payload")
 	}
 	return nil
@@ -166,7 +167,7 @@ func (v *transactionValidator) checkSubnetworkRegistryTransaction(tx *externalap
 
 func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID == subnetworks.SubnetworkIDNative && len(tx.Payload) > 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
+		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "transaction in the native subnetwork "+
 			"includes a payload")
 	}
 	return nil
@@ -178,7 +179,7 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 	isLocalNodeFull := subnetworkID == nil
 	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || tx.SubnetworkID == *subnetworkID
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrInvalidPayload,
+		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+
 				"with length > 0")
 	}

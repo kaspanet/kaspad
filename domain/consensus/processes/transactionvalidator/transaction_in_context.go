@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/stringers"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/pkg/errors"
 )
 
 func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
@@ -54,7 +55,7 @@ func (v *transactionValidator) checkTxCoinbaseMaturity(
 	for _, txIn := range tx.Inputs {
 		utxoEntry := txIn.UTXOEntry
 		if utxoEntry == nil {
-			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "outpoint %s "+
+			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "outpoint %s "+
 				"either does not exist or "+
 				"has already been spent", stringers.Outpoint(&txIn.PreviousOutpoint))
 		}
@@ -63,7 +64,7 @@ func (v *transactionValidator) checkTxCoinbaseMaturity(
 			originBlueScore := utxoEntry.BlockBlueScore
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
-				return ruleerrors.Errorf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
+				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from blue score %d "+
 					"to blue score %d before required maturity "+
 					"of %d", stringers.Outpoint(&txIn.PreviousOutpoint),
@@ -83,7 +84,7 @@ func (v *transactionValidator) checkTxInputAmounts(tx *externalapi.DomainTransac
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return 0, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+			return 0, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
 				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}
@@ -111,7 +112,7 @@ func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, t
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInAfter < totalSompiInBefore ||
 		totalSompiInAfter > maxSompi {
-		return 0, ruleerrors.Errorf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
+		return 0, errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 			"inputs is %d which is higher than max "+
 			"allowed value of %d", totalSompiInBefore,
 			maxSompi)
@@ -130,7 +131,7 @@ func (v *transactionValidator) checkTxOutputAmounts(tx *externalapi.DomainTransa
 
 	// Ensure the transaction does not spend more than its inputs.
 	if totalSompiIn < totalSompiOut {
-		return 0, ruleerrors.Errorf(ruleerrors.ErrSpendTooHigh, "total value of all transaction inputs for "+
+		return 0, errors.Wrapf(ruleerrors.ErrSpendTooHigh, "total value of all transaction inputs for "+
 			"the transaction is %d which is less than the amount "+
 			"spent of %d", totalSompiIn, totalSompiOut)
 	}
@@ -154,7 +155,7 @@ func (v *transactionValidator) checkTxSequenceLock(povBlockHash *externalapi.Dom
 	}
 
 	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore, medianTime) {
-		return ruleerrors.Errorf(ruleerrors.ErrUnfinalizedTx, "block contains "+
+		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
 	}
@@ -168,7 +169,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 		sigScript := input.SignatureScript
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
 				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}
@@ -177,7 +178,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 		vm, err := txscript.NewEngine(scriptPubKey, tx,
 			i, txscript.ScriptNoFlags, nil)
 		if err != nil {
-			return ruleerrors.Errorf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
+			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
 				"%d which references output %s - "+
 				"%s (input script bytes %x, prev "+
 				"output script bytes %x)",
@@ -187,7 +188,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 
 		// Execute the script pair.
 		if err := vm.Execute(); err != nil {
-			return ruleerrors.Errorf(ruleerrors.ErrScriptValidation, "failed to validate input "+
+			return errors.Wrapf(ruleerrors.ErrScriptValidation, "failed to validate input "+
 				"%d which references output %s - "+
 				"%s (input script bytes %x, prev output "+
 				"script bytes %x)",
@@ -217,7 +218,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return nil, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+			return nil, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
 				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}

@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/pkg/errors"
 	"math"
 )
 
@@ -40,7 +41,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 	for _, tx := range block.Transactions {
 		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore, blockTime) {
 			txID := hashserialization.TransactionID(tx)
-			return ruleerrors.Errorf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
+			return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
 				"transaction %s", txID)
 		}
 	}

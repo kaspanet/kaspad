@@ -1,316 +1,238 @@
 package ruleerrors
 
-import (
-	"fmt"
-	"github.com/pkg/errors"
-)
-
-// ErrorCode identifies a kind of error.
-type ErrorCode int
-
 // These constants are used to identify a specific RuleError.
-const (
+var (
 	// ErrDuplicateBlock indicates a block with the same hash already
 	// exists.
-	ErrDuplicateBlock ErrorCode = iota
+	ErrDuplicateBlock = newRuleError("ErrDuplicateBlock")
 
 	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
 	// allowed limits.
-	ErrBlockMassTooHigh
+	ErrBlockMassTooHigh = newRuleError("ErrBlockMassTooHigh")
 
 	// ErrBlockVersionTooOld indicates the block version is too old and is
 	// no longer accepted since the majority of the network has upgraded
 	// to a newer version.
-	ErrBlockVersionTooOld
+	ErrBlockVersionTooOld = newRuleError("ErrBlockVersionTooOld")
 
 	// ErrTimeTooOld indicates the time is either before the median time of
 	// the last several blocks per the DAG consensus rules.
-	ErrTimeTooOld
+	ErrTimeTooOld = newRuleError("ErrTimeTooOld")
 
 	// ErrTimeTooNew indicates the time is too far in the future as compared
 	// the current time.
-	ErrTimeTooNew
+	ErrTimeTooNew = newRuleError("ErrTimeTooNew")
 
 	// ErrNoParents indicates that the block is missing parents
-	ErrNoParents
+	ErrNoParents = newRuleError("ErrNoParents")
 
 	// ErrWrongParentsOrder indicates that the block's parents are not ordered by hash, as expected
-	ErrWrongParentsOrder
+	ErrWrongParentsOrder = newRuleError("ErrWrongParentsOrder")
 
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
 	// than the difficulty required.
-	ErrDifficultyTooLow
+	ErrDifficultyTooLow = newRuleError("ErrDifficultyTooLow")
 
 	// ErrUnexpectedDifficulty indicates specified bits do not align with
 	// the expected value either because it doesn't match the calculated
 	// valued based on difficulty regarted rules or it is out of the valid
 	// range.
-	ErrUnexpectedDifficulty
+	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
 	// ErrHighHash indicates the block does not hash to a value which is
 	// lower than the required target difficultly.
-	ErrHighHash
+	ErrHighHash = newRuleError("ErrHighHash")
 
 	// ErrBadMerkleRoot indicates the calculated merkle root does not match
 	// the expected value.
-	ErrBadMerkleRoot
+	ErrBadMerkleRoot = newRuleError("ErrBadMerkleRoot")
 
 	// ErrBadUTXOCommitment indicates the calculated UTXO commitment does not match
 	// the expected value.
-	ErrBadUTXOCommitment
+	ErrBadUTXOCommitment = newRuleError("ErrBadUTXOCommitment")
 
 	// ErrInvalidSubnetwork indicates the subnetwork is now allowed.
-	ErrInvalidSubnetwork
+	ErrInvalidSubnetwork = newRuleError("ErrInvalidSubnetwork")
 
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
-	ErrFinalityPointTimeTooOld
+	ErrFinalityPointTimeTooOld = newRuleError("ErrFinalityPointTimeTooOld")
 
 	// ErrNoTransactions indicates the block does not have a least one
 	// transaction. A valid block must have at least the coinbase
 	// transaction.
-	ErrNoTransactions
+	ErrNoTransactions = newRuleError("ErrNoTransactions")
 
 	// ErrNoTxInputs indicates a transaction does not have any inputs. A
 	// valid transaction must have at least one input.
-	ErrNoTxInputs
+	ErrNoTxInputs = newRuleError("ErrNoTxInputs")
 
 	// ErrTxMassTooHigh indicates the mass of a transaction exceeds the maximum
 	// allowed limits.
-	ErrTxMassTooHigh
+	ErrTxMassTooHigh = newRuleError("ErrTxMassTooHigh")
 
 	// ErrBadTxOutValue indicates an output value for a transaction is
 	// invalid in some way such as being out of range.
-	ErrBadTxOutValue
+	ErrBadTxOutValue = newRuleError("ErrBadTxOutValue")
 
 	// ErrDuplicateTxInputs indicates a transaction references the same
 	// input more than once.
-	ErrDuplicateTxInputs
+	ErrDuplicateTxInputs = newRuleError("ErrDuplicateTxInputs")
 
 	// ErrBadTxInput indicates a transaction input is invalid in some way
 	// such as referencing a previous transaction outpoint which is out of
 	// range or not referencing one at all.
-	ErrBadTxInput
+	ErrBadTxInput = newRuleError("ErrBadTxInput")
 
 	// ErrMissingTxOut indicates a transaction output referenced by an input
 	// either does not exist or has already been spent.
-	ErrMissingTxOut
+	ErrMissingTxOut = newRuleError("ErrMissingTxOut")
 
 	// ErrDoubleSpendInSameBlock indicates a transaction
 	// that spends an output that was already spent by another
 	// transaction in the same block.
-	ErrDoubleSpendInSameBlock
+	ErrDoubleSpendInSameBlock = newRuleError("ErrDoubleSpendInSameBlock")
 
 	// ErrUnfinalizedTx indicates a transaction has not been finalized.
 	// A valid block may only contain finalized transactions.
-	ErrUnfinalizedTx
+	ErrUnfinalizedTx = newRuleError("ErrUnfinalizedTx")
 
 	// ErrDuplicateTx indicates a block contains an identical transaction
 	// (or at least two transactions which hash to the same value). A
 	// valid block may only contain unique transactions.
-	ErrDuplicateTx
+	ErrDuplicateTx = newRuleError("ErrDuplicateTx")
 
 	// ErrOverwriteTx indicates a block contains a transaction that has
 	// the same hash as a previous transaction which has not been fully
 	// spent.
-	ErrOverwriteTx
+	ErrOverwriteTx = newRuleError("ErrOverwriteTx")
 
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
 	// coinbase that has not yet reached the required maturity.
-	ErrImmatureSpend
+	ErrImmatureSpend = newRuleError("ErrImmatureSpend")
 
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
 	// value than the sum of all of its inputs.
-	ErrSpendTooHigh
+	ErrSpendTooHigh = newRuleError("ErrSpendTooHigh")
 
 	// ErrBadFees indicates the total fees for a block are invalid due to
 	// exceeding the maximum possible value.
-	ErrBadFees
+	ErrBadFees = newRuleError("ErrBadFees")
 
 	// ErrTooManySigOps indicates the total number of signature operations
 	// for a transaction or block exceed the maximum allowed limits.
-	ErrTooManySigOps
+	ErrTooManySigOps = newRuleError("ErrTooManySigOps")
 
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
-	ErrFirstTxNotCoinbase
+	ErrFirstTxNotCoinbase = newRuleError("ErrFirstTxNotCoinbase")
 
 	// ErrMultipleCoinbases indicates a block contains more than one
 	// coinbase transaction.
-	ErrMultipleCoinbases
+	ErrMultipleCoinbases = newRuleError("ErrMultipleCoinbases")
 
 	// ErrBadCoinbasePayloadLen indicates the length of the payload
 	// for a coinbase transaction is too high.
-	ErrBadCoinbasePayloadLen
+	ErrBadCoinbasePayloadLen = newRuleError("ErrBadCoinbasePayloadLen")
 
 	// ErrBadCoinbaseTransaction indicates that the block's coinbase transaction is not build as expected
-	ErrBadCoinbaseTransaction
+	ErrBadCoinbaseTransaction = newRuleError("ErrBadCoinbaseTransaction")
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way. For example, it might be longer than the maximum allowed
 	// length or fail to parse.
-	ErrScriptMalformed
+	ErrScriptMalformed = newRuleError("ErrScriptMalformed")
 
 	// ErrScriptValidation indicates the result of executing transaction
 	// script failed. The error covers any failure when executing scripts
 	// such signature verification failures and execution past the end of
 	// the stack.
-	ErrScriptValidation
+	ErrScriptValidation = newRuleError("ErrScriptValidation")
 
 	// ErrParentBlockUnknown indicates that the parent block is not known.
-	ErrParentBlockUnknown
+	ErrParentBlockUnknown = newRuleError("ErrParentBlockUnknown")
 
 	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
 	// already failed validation.
-	ErrInvalidAncestorBlock
+	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
 
 	// ErrParentBlockNotCurrentTips indicates that the block's parents are not the
 	// current tips. This is not a block validation rule, but is required
 	// for block proposals submitted via getblocktemplate RPC.
-	ErrParentBlockNotCurrentTips
+	ErrParentBlockNotCurrentTips = newRuleError("ErrParentBlockNotCurrentTips")
 
 	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
-	ErrWithDiff
+	ErrWithDiff = newRuleError("ErrWithDiff")
 
 	// ErrFinality indicates that a block doesn't adhere to the finality rules
-	ErrFinality
+	ErrFinality = newRuleError("ErrFinality")
 
 	// ErrTransactionsNotSorted indicates that transactions in block are not
 	// sorted by subnetwork
-	ErrTransactionsNotSorted
+	ErrTransactionsNotSorted = newRuleError("ErrTransactionsNotSorted")
 
 	// ErrInvalidGas transaction wants to use more GAS than allowed
 	// by subnetwork
-	ErrInvalidGas
+	ErrInvalidGas = newRuleError("ErrInvalidGas")
 
 	// ErrInvalidPayload transaction includes a payload in a subnetwork that doesn't allow
 	// a Payload
-	ErrInvalidPayload
+	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
 
 	// ErrInvalidPayloadHash invalid hash of transaction's payload
-	ErrInvalidPayloadHash
+	ErrInvalidPayloadHash = newRuleError("ErrInvalidPayloadHash")
 
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
-	ErrSubnetworkRegistry
+	ErrSubnetworkRegistry = newRuleError("ErrSubnetworkRegistry")
 
 	// ErrInvalidParentsRelation indicates that one of the parents of a block
 	// is also an ancestor of another parent
-	ErrInvalidParentsRelation
+	ErrInvalidParentsRelation = newRuleError("ErrInvalidParentsRelation")
 
 	// ErrTooManyParents indicates that a block points to more then `MaxNumParentBlocks` parents
-	ErrTooManyParents
+	ErrTooManyParents = newRuleError("ErrTooManyParents")
 
 	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
 	// submitted with BFDisallowDelay flag raised.
-	ErrDelayedBlockIsNotAllowed
+	ErrDelayedBlockIsNotAllowed = newRuleError("ErrDelayedBlockIsNotAllowed")
 
 	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
 	// BFDisallowOrphans flag raised.
-	ErrOrphanBlockIsNotAllowed
+	ErrOrphanBlockIsNotAllowed = newRuleError("ErrOrphanBlockIsNotAllowed")
 
 	// ErrViolatingBoundedMergeDepth indicates that a block is violating finality from
 	// its own point of view
-	ErrViolatingBoundedMergeDepth
+	ErrViolatingBoundedMergeDepth = newRuleError("ErrViolatingBoundedMergeDepth")
 
 	// ErrViolatingMergeLimit indicates that a block merges more than mergeLimit blocks
-	ErrViolatingMergeLimit
+	ErrViolatingMergeLimit = newRuleError("ErrViolatingMergeLimit")
 
 	// ErrChainedTransactions indicates that a block contains a transaction that spends an output of a transaction
 	// In the same block
-	ErrChainedTransactions
+	ErrChainedTransactions = newRuleError("ErrChainedTransactions")
 
 	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
-	ErrSelectedParentDisqualifiedFromChain
+	ErrSelectedParentDisqualifiedFromChain = newRuleError("ErrSelectedParentDisqualifiedFromChain")
 
 	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
 	// allowed limits.
-	ErrBlockSizeTooHigh
+	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
 )
-
-// Map of ErrorCode values back to their constant names for pretty printing.
-var errorCodeStrings = map[ErrorCode]string{
-	ErrDuplicateBlock:                      "ErrDuplicateBlock",
-	ErrBlockMassTooHigh:                    "ErrBlockMassTooHigh",
-	ErrBlockVersionTooOld:                  "ErrBlockVersionTooOld",
-	ErrTimeTooOld:                          "ErrTimeTooOld",
-	ErrTimeTooNew:                          "ErrTimeTooNew",
-	ErrNoParents:                           "ErrNoParents",
-	ErrWrongParentsOrder:                   "ErrWrongParentsOrder",
-	ErrDifficultyTooLow:                    "ErrDifficultyTooLow",
-	ErrUnexpectedDifficulty:                "ErrUnexpectedDifficulty",
-	ErrHighHash:                            "ErrHighHash",
-	ErrBadMerkleRoot:                       "ErrBadMerkleRoot",
-	ErrFinalityPointTimeTooOld:             "ErrFinalityPointTimeTooOld",
-	ErrNoTransactions:                      "ErrNoTransactions",
-	ErrNoTxInputs:                          "ErrNoTxInputs",
-	ErrTxMassTooHigh:                       "ErrTxMassTooHigh",
-	ErrBadTxOutValue:                       "ErrBadTxOutValue",
-	ErrDuplicateTxInputs:                   "ErrDuplicateTxInputs",
-	ErrBadTxInput:                          "ErrBadTxInput",
-	ErrMissingTxOut:                        "ErrMissingTxOut",
-	ErrDoubleSpendInSameBlock:              "ErrDoubleSpendInSameBlock",
-	ErrUnfinalizedTx:                       "ErrUnfinalizedTx",
-	ErrDuplicateTx:                         "ErrDuplicateTx",
-	ErrOverwriteTx:                         "ErrOverwriteTx",
-	ErrImmatureSpend:                       "ErrImmatureSpend",
-	ErrSpendTooHigh:                        "ErrSpendTooHigh",
-	ErrBadFees:                             "ErrBadFees",
-	ErrTooManySigOps:                       "ErrTooManySigOps",
-	ErrFirstTxNotCoinbase:                  "ErrFirstTxNotCoinbase",
-	ErrMultipleCoinbases:                   "ErrMultipleCoinbases",
-	ErrBadCoinbasePayloadLen:               "ErrBadCoinbasePayloadLen",
-	ErrBadCoinbaseTransaction:              "ErrBadCoinbaseTransaction",
-	ErrScriptMalformed:                     "ErrScriptMalformed",
-	ErrScriptValidation:                    "ErrScriptValidation",
-	ErrParentBlockUnknown:                  "ErrParentBlockUnknown",
-	ErrInvalidAncestorBlock:                "ErrInvalidAncestorBlock",
-	ErrParentBlockNotCurrentTips:           "ErrParentBlockNotCurrentTips",
-	ErrWithDiff:                            "ErrWithDiff",
-	ErrFinality:                            "ErrFinality",
-	ErrTransactionsNotSorted:               "ErrTransactionsNotSorted",
-	ErrInvalidGas:                          "ErrInvalidGas",
-	ErrInvalidPayload:                      "ErrInvalidPayload",
-	ErrInvalidPayloadHash:                  "ErrInvalidPayloadHash",
-	ErrSubnetworkRegistry:                  "ErrSubnetworkRegistry",
-	ErrInvalidParentsRelation:              "ErrInvalidParentsRelation",
-	ErrTooManyParents:                      "ErrTooManyParents",
-	ErrDelayedBlockIsNotAllowed:            "ErrDelayedBlockIsNotAllowed",
-	ErrOrphanBlockIsNotAllowed:             "ErrOrphanBlockIsNotAllowed",
-	ErrViolatingBoundedMergeDepth:          "ErrViolatingBoundedMergeDepth",
-	ErrSelectedParentDisqualifiedFromChain: "ErrSelectedParentDisqualifiedFromChain",
-	ErrChainedTransactions:                 "ErrChainedTransactions",
-	ErrBlockSizeTooHigh:                    "ErrBlockSizeTooHigh",
-}
-
-// String returns the ErrorCode as a human-readable name.
-func (e ErrorCode) String() string {
-	if s := errorCodeStrings[e]; s != "" {
-		return s
-	}
-	return fmt.Sprintf("Unknown ErrorCode (%d)", int(e))
-}
 
 // RuleError identifies a rule violation. It is used to indicate that
 // processing of a block or transaction failed due to one of the many validation
 // rules. The caller can use type assertions to determine if a failure was
-// specifically due to a rule violation and access the ErrorCode field to
-// ascertain the specific reason for the rule violation.
+// specifically due to a rule violation.
 type RuleError struct {
-	ErrorCode   ErrorCode // Describes the kind of error
-	Description string    // Human readable description of the issue
+	message string
 }
 
 // Error satisfies the error interface and prints human-readable errors.
 func (e RuleError) Error() string {
-	return e.Description
+	return e.message
 }
 
-// Errorf formats according to a format specifier and returns the string
-// as a RuleError.
-func Errorf(code ErrorCode, format string, args ...interface{}) error {
-	return errors.WithStack(RuleError{
-		ErrorCode:   code,
-		Description: fmt.Sprintf(format, args...),
-	})
+func newRuleError(message string) RuleError {
+	return RuleError{message: message}
 }

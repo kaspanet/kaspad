@@ -76,7 +76,7 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 
 func (v *blockValidator) checkBlockContainsAtLeastOneTransaction(block *externalapi.DomainBlock) error {
 	if len(block.Transactions) == 0 {
-		return ruleerrors.Errorf(ruleerrors.ErrNoTransactions, "block does not contain "+
+		return errors.Wrapf(ruleerrors.ErrNoTransactions, "block does not contain "+
 			"any transactions")
 	}
 	return nil
@@ -84,7 +84,7 @@ func (v *blockValidator) checkBlockContainsAtLeastOneTransaction(block *external
 
 func (v *blockValidator) checkFirstBlockTransactionIsCoinbase(block *externalapi.DomainBlock) error {
 	if !transactionhelper.IsCoinBase(block.Transactions[transactionhelper.CoinbaseTransactionIndex]) {
-		return ruleerrors.Errorf(ruleerrors.ErrFirstTxNotCoinbase, "first transaction in "+
+		return errors.Wrapf(ruleerrors.ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
 	return nil
@@ -93,7 +93,7 @@ func (v *blockValidator) checkFirstBlockTransactionIsCoinbase(block *externalapi
 func (v *blockValidator) checkBlockContainsOnlyOneCoinbase(block *externalapi.DomainBlock) error {
 	for i, tx := range block.Transactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 		if transactionhelper.IsCoinBase(tx) {
-			return ruleerrors.Errorf(ruleerrors.ErrMultipleCoinbases, "block contains second coinbase at "+
+			return errors.Wrapf(ruleerrors.ErrMultipleCoinbases, "block contains second coinbase at "+
 				"index %d", i+transactionhelper.CoinbaseTransactionIndex+1)
 		}
 	}
@@ -103,7 +103,7 @@ func (v *blockValidator) checkBlockContainsOnlyOneCoinbase(block *externalapi.Do
 func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlock) error {
 	for i, tx := range block.Transactions[util.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworks.Less(tx.SubnetworkID, block.Transactions[i].SubnetworkID) {
-			return ruleerrors.Errorf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+			return errors.Wrapf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}
 	return nil
@@ -115,7 +115,7 @@ func (v *blockValidator) checkNoNonNativeTransactions(block *externalapi.DomainB
 		for _, tx := range block.Transactions {
 			if !(tx.SubnetworkID == subnetworks.SubnetworkIDNative ||
 				tx.SubnetworkID == subnetworks.SubnetworkIDCoinbase) {
-				return ruleerrors.Errorf(ruleerrors.ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
+				return errors.Wrapf(ruleerrors.ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
 			}
 		}
 	}
@@ -137,7 +137,7 @@ func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainB
 func (v *blockValidator) checkBlockHashMerkleRoot(block *externalapi.DomainBlock) error {
 	calculatedHashMerkleRoot := merkle.CalcHashMerkleRoot(block.Transactions)
 	if block.Header.HashMerkleRoot != *calculatedHashMerkleRoot {
-		return ruleerrors.Errorf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
+		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			block.Header.HashMerkleRoot, calculatedHashMerkleRoot)
 	}
@@ -149,7 +149,7 @@ func (v *blockValidator) checkBlockDuplicateTransactions(block *externalapi.Doma
 	for _, tx := range block.Transactions {
 		id := hashserialization.TransactionID(tx)
 		if _, exists := existingTxIDs[*id]; exists {
-			return ruleerrors.Errorf(ruleerrors.ErrDuplicateTx, "block contains duplicate "+
+			return errors.Wrapf(ruleerrors.ErrDuplicateTx, "block contains duplicate "+
 				"transaction %s", id)
 		}
 		existingTxIDs[*id] = struct{}{}
@@ -163,7 +163,7 @@ func (v *blockValidator) checkBlockDoubleSpends(block *externalapi.DomainBlock) 
 		for _, input := range tx.Inputs {
 			txID := hashserialization.TransactionID(tx)
 			if spendingTxID, exists := usedOutpoints[input.PreviousOutpoint]; exists {
-				return ruleerrors.Errorf(ruleerrors.ErrDoubleSpendInSameBlock, "transaction %s spends "+
+				return errors.Wrapf(ruleerrors.ErrDoubleSpendInSameBlock, "transaction %s spends "+
 					"outpoint %s that was already spent by "+
 					"transaction %s in this block", stringers.TransactionID(txID),
 					stringers.Outpoint(&input.PreviousOutpoint),
@@ -188,7 +188,7 @@ func (v *blockValidator) checkBlockHasNoChainedTransactions(block *externalapi.D
 		for i, transactionInput := range transaction.Inputs {
 			if _, ok := transactionsSet[transactionInput.PreviousOutpoint.ID]; ok {
 				txID := hashserialization.TransactionID(transaction)
-				return ruleerrors.Errorf(ruleerrors.ErrChainedTransactions, "block contains chained "+
+				return errors.Wrapf(ruleerrors.ErrChainedTransactions, "block contains chained "+
 					"transactions: Input %d of transaction %s spend "+
 					"an output of transaction %s", i, txID, transactionInput.PreviousOutpoint.ID)
 			}
@@ -212,7 +212,7 @@ func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
 		size += estimatedsize.TransactionEstimatedSerializedSize(tx)
 		const maxBlockSize = 1_000_000
 		if size > maxBlockSize || size < sizeBefore {
-			return ruleerrors.Errorf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)
+			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)
 		}
 	}
 

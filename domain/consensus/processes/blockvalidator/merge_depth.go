@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
 )
 
 func (v *blockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
@@ -34,7 +35,7 @@ func (v *blockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDA
 		}
 
 		if !isRedInPastOfAnyNonFinalityViolatingBlue {
-			return ruleerrors.Errorf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
+			return errors.Wrapf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
 	}
 

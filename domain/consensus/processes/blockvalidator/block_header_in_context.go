@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/pkg/errors"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
@@ -58,7 +59,7 @@ func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeade
 			}
 
 			if isAAncestorOfB {
-				return ruleerrors.Errorf(ruleerrors.ErrInvalidParentsRelation, "parent %s is an "+
+				return errors.Wrapf(ruleerrors.ErrInvalidParentsRelation, "parent %s is an "+
 					"ancestor of another parent %s",
 					parentA,
 					parentB,
@@ -85,7 +86,7 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 
 	header := block.Header
 	if header.Bits != expectedBits {
-		return ruleerrors.Errorf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
 	}
 
 	return nil
@@ -110,7 +111,7 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 	}
 
 	if header.TimeInMilliseconds < pastMedianTime {
-		return ruleerrors.Errorf(ruleerrors.ErrTimeTooOld, "block timestamp of %d is not after expected %d",
+		return errors.Wrapf(ruleerrors.ErrTimeTooOld, "block timestamp of %d is not after expected %d",
 			header.TimeInMilliseconds, pastMedianTime)
 	}
 
@@ -127,7 +128,7 @@ func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error
 
 	const mergeSetSizeLimit = 1000
 	if mergeSetSize > mergeSetSizeLimit {
-		return ruleerrors.Errorf(ruleerrors.ErrViolatingMergeLimit,
+		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,
 			"The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit)
 	}
 
