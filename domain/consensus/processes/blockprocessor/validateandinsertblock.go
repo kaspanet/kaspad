@@ -51,7 +51,7 @@ func (bp *blockProcessor) validateHeaderAndProofOfWork(block *externalapi.Domain
 	if err != nil {
 		return err
 	}
-	err = bp.blockValidator.ValidateProofOfWork(block.Hash)
+	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(block.Hash)
 	if err != nil {
 		return err
 	}
