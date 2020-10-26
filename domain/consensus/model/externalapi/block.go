@@ -12,9 +12,9 @@ type DomainBlock struct {
 type DomainBlockHeader struct {
 	Version              int32
 	ParentHashes         []*DomainHash
-	HashMerkleRoot       *DomainHash
-	AcceptedIDMerkleRoot *DomainHash
-	UTXOCommitment       *DomainHash
+	HashMerkleRoot       DomainHash
+	AcceptedIDMerkleRoot DomainHash
+	UTXOCommitment       DomainHash
 	TimeInMilliseconds   int64
 	Bits                 uint32
 	Nonce                uint64

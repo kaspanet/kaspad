@@ -33,15 +33,20 @@ func (bms *blockStore) Commit(dbTx model.DBTxProxy) error {
 
 // Block gets the block associated with the given blockHash
 func (bms *blockStore) Block(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	return nil, nil
+	panic("implement me")
+}
+
+// HasBlock returns whether a block with a given hash exists in the store.
+func (bms *blockStore) HasBlock(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (bool, error) {
+	panic("implement me")
 }
 
 // Blocks gets the blocks associated with the given blockHashes
 func (bms *blockStore) Blocks(dbContext model.DBContextProxy, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
-	return nil, nil
+	panic("implement me")
 }
 
 // Delete deletes the block associated with the given blockHash
 func (bms *blockStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
-	return nil
+	panic("implement me")
 }

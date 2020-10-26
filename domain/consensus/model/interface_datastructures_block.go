@@ -9,6 +9,7 @@ type BlockStore interface {
 	Discard()
 	Commit(dbTx DBTxProxy) error
 	Block(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
+	HasBlock(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (bool, error)
 	Blocks(dbContext DBContextProxy, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error)
 	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
 }
