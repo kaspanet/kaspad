@@ -17,7 +17,7 @@ type transactionValidator struct {
 func New(blockCoinbaseMaturity uint64,
 	databaseContext model.DBContextProxy,
 	pastMedianTimeManager model.PastMedianTimeManager,
-	ghostdagDataStore model.GHOSTDAGDataStore) *transactionValidator {
+	ghostdagDataStore model.GHOSTDAGDataStore) model.TransactionValidator {
 	return &transactionValidator{blockCoinbaseMaturity: blockCoinbaseMaturity,
 		databaseContext:       databaseContext,
 		pastMedianTimeManager: pastMedianTimeManager,
