@@ -72,3 +72,8 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uint64, err error) {
 	return 0, 0, nil
 }
+
+// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
+func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
+	panic("implement me")
+}

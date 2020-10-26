@@ -75,12 +75,12 @@ func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
 func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
-	return false, nil
+	panic("unimplemented")
 }
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return false, nil
+	panic("unimplemented")
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {

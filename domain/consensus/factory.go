@@ -13,6 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
@@ -91,14 +92,33 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		ghostdagManager)
-	transactionValidator := transactionvalidator.New()
+	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
+		domainDBContext,
+		pastMedianTimeManager,
+		ghostdagDataStore)
+
+	genesisHash := externalapi.DomainHash([32]byte(*dagParams.GenesisHash))
 	blockValidator := blockvalidator.New(
+		dagParams.PowMax,
+		false,
+		&genesisHash,
+		dagParams.EnableNonNativeSubnetworks,
+		dagParams.DisableDifficultyAdjustment,
+		dagParams.DifficultyAdjustmentWindowSize,
+		uint64(dagParams.FinalityDuration/dagParams.TargetTimePerBlock),
+
+		domainDBContext,
 		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
 		ghostdagManager,
-		blockStatusStore)
+		dagTopologyManager,
+		dagTraversalManager,
+
+		blockStore,
+		ghostdagDataStore,
+	)
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		domainDBContext,
