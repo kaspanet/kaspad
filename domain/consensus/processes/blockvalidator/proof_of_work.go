@@ -90,6 +90,8 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 
 func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
 	for _, parent := range header.ParentHashes {
+
+		// TODO: Use block store
 		exists, err := v.blockStore.HasBlock(v.databaseContext, parent)
 		if err != nil {
 			return err

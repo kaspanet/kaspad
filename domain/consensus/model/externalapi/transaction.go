@@ -1,5 +1,10 @@
 package externalapi
 
+import (
+	"encoding/hex"
+	"fmt"
+)
+
 // DomainTransaction represents a Kaspa transaction
 type DomainTransaction struct {
 	Version      int32
@@ -30,6 +35,11 @@ type DomainOutpoint struct {
 	Index uint32
 }
 
+// String stringifies an outpoint.
+func (op DomainOutpoint) String() string {
+	return fmt.Sprintf("%s:%d", op.ID, op.Index)
+}
+
 // DomainTransactionOutput represents a Kaspad transaction output
 type DomainTransactionOutput struct {
 	Value           uint64
@@ -38,3 +48,8 @@ type DomainTransactionOutput struct {
 
 // DomainTransactionID represents the ID of a Kaspa transaction
 type DomainTransactionID DomainHash
+
+// String stringifies a transaction ID.
+func (id *DomainTransactionID) String() string {
+	return hex.EncodeToString(id[:])
+}

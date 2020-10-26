@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/stringers"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
 )
@@ -42,7 +41,7 @@ func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction
 		if utxoEntry == nil {
 			return 0, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
-				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
+				"has already been spent", input.PreviousOutpoint)
 		}
 		// Count the precise number of signature operations in the
 		// referenced public key script.

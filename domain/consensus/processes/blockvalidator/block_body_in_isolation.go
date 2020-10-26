@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/stringers"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/util"
@@ -165,9 +164,8 @@ func (v *blockValidator) checkBlockDoubleSpends(block *externalapi.DomainBlock) 
 			if spendingTxID, exists := usedOutpoints[input.PreviousOutpoint]; exists {
 				return errors.Wrapf(ruleerrors.ErrDoubleSpendInSameBlock, "transaction %s spends "+
 					"outpoint %s that was already spent by "+
-					"transaction %s in this block", stringers.TransactionID(txID),
-					stringers.Outpoint(&input.PreviousOutpoint),
-					stringers.TransactionID(spendingTxID))
+					"transaction %s in this block", txID,
+					input.PreviousOutpoint, spendingTxID)
 			}
 			usedOutpoints[input.PreviousOutpoint] = txID
 		}
