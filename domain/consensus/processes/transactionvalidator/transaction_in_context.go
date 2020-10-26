@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidateTransactionInContextAndPopulateMassAndFee validates the transaction against its referenced UTXO, and
+// populates its mass and fee fields.
+//
+// Note: if the function fails, there's no guarantee that the transaction mass and fee fields will remain unaffected.
 func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
 	povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
@@ -36,6 +40,11 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 	}
 
 	err = v.validateTransactionScripts(tx)
+	if err != nil {
+		return err
+	}
+
+	tx.Mass, err = v.transactionMass(tx)
 	if err != nil {
 		return err
 	}

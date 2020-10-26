@@ -2,8 +2,11 @@ package transactionvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/stringers"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -31,16 +34,22 @@ func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.Dom
 	return size*MassPerTxByte + totalScriptPubKeySize*MassPerScriptPubKeyByte
 }
 
-func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) uint64 {
+func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) (uint64, error) {
 	standaloneMass := v.transactionMassStandalonePart(tx)
 	sigOpsCount := uint64(0)
 	for _, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+		if utxoEntry == nil {
+			return 0, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
+				"either does not exist or "+
+				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
+		}
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := input.SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(input.UTXOEntry.ScriptPublicKey)
-		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, input.UTXOEntry.ScriptPublicKey, isP2SH))
+		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey)
+		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey, isP2SH))
 	}
 
-	return standaloneMass + sigOpsCount*MassPerSigOp
+	return standaloneMass + sigOpsCount*MassPerSigOp, nil
 }
