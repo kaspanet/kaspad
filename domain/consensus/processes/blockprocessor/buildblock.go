@@ -83,8 +83,8 @@ func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
 	return bp.difficultyManager.RequiredDifficulty(bp.consensusStateManager.VirtualSelectedParent())
 }
 
-func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error) {
-	panic("unimplemented!")
+func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+	return buildMerkleTree(transactions)
 }
 
 func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
