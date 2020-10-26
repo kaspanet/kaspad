@@ -17,24 +17,24 @@ import (
 func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
 	povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
-	err := v.checkTxCoinbaseMaturity(povBlockHash, tx)
+	err := v.checkTransactionCoinbaseMaturity(povBlockHash, tx)
 	if err != nil {
 		return nil
 	}
 
-	totalSompiIn, err := v.checkTxInputAmounts(tx)
+	totalSompiIn, err := v.checkTransactionInputAmounts(tx)
 	if err != nil {
 		return nil
 	}
 
-	totalSompiOut, err := v.checkTxOutputAmounts(tx, totalSompiIn)
+	totalSompiOut, err := v.checkTransactionOutputAmounts(tx, totalSompiIn)
 	if err != nil {
 		return nil
 	}
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTxSequenceLock(povBlockHash, tx, selectedParentMedianTime)
+	err = v.checkTransactionSequenceLock(povBlockHash, tx, selectedParentMedianTime)
 	if err != nil {
 		return nil
 	}
@@ -52,7 +52,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 	return nil
 }
 
-func (v *transactionValidator) checkTxCoinbaseMaturity(
+func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
@@ -86,7 +86,7 @@ func (v *transactionValidator) checkTxCoinbaseMaturity(
 	return nil
 }
 
-func (v *transactionValidator) checkTxInputAmounts(tx *externalapi.DomainTransaction) (totalSompiIn uint64, err error) {
+func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.DomainTransaction) (totalSompiIn uint64, err error) {
 
 	totalSompiIn = 0
 
@@ -129,7 +129,7 @@ func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, t
 	return totalSompiInAfter, nil
 }
 
-func (v *transactionValidator) checkTxOutputAmounts(tx *externalapi.DomainTransaction, totalSompiIn uint64) (uint64, error) {
+func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.DomainTransaction, totalSompiIn uint64) (uint64, error) {
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
@@ -147,7 +147,7 @@ func (v *transactionValidator) checkTxOutputAmounts(tx *externalapi.DomainTransa
 	return totalSompiOut, nil
 }
 
-func (v *transactionValidator) checkTxSequenceLock(povBlockHash *externalapi.DomainHash,
+func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *externalapi.DomainHash,
 	tx *externalapi.DomainTransaction, medianTime int64) error {
 
 	// A transaction can only be included within a block
