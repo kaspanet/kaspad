@@ -3,6 +3,7 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
@@ -81,7 +82,7 @@ func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
 }
 
 func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
-	return buildMerkleTree(transactions)
+	return merkle.CalculateHashMerkleRoot(transactions)
 }
 
 func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {

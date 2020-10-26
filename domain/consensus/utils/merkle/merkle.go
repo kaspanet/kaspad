@@ -42,9 +42,9 @@ func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.Domain
 	return &hash
 }
 
-// CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.
+// CalculateHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.
 // See `merkleRoot` for more info.
-func CalcHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	txHashes := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = hashserialization.TransactionHash(tx)
@@ -52,9 +52,9 @@ func CalcHashMerkleRoot(transactions []*externalapi.DomainTransaction) *external
 	return merkleRoot(txHashes)
 }
 
-// CalcIDMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
+// CalculateIDMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
 // See `merkleRoot` for more info.
-func CalcIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+func CalculateIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	txIDs := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
 		txIDs[i] = (*externalapi.DomainHash)(hashserialization.TransactionID(tx))
