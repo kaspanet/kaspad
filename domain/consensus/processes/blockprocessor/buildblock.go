@@ -26,6 +26,10 @@ func (bp *blockProcessor) buildHeader() (*externalapi.DomainBlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
+	bits, err := bp.newBlockDifficulty()
+	if err != nil {
+		return nil, err
+	}
 
 	return &externalapi.DomainBlockHeader{
 		Version:              0,
@@ -34,8 +38,7 @@ func (bp *blockProcessor) buildHeader() (*externalapi.DomainBlockHeader, error) 
 		AcceptedIDMerkleRoot: nil,
 		UTXOCommitment:       nil,
 		TimeInMilliseconds:   timeInMilliseconds,
-		Bits:                 0,
-		Nonce:                0,
+		Bits:                 bits,
 	}, nil
 }
 
@@ -59,4 +62,8 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 		newTimestamp = minTimestamp
 	}
 	return newTimestamp, nil
+}
+
+func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
+	return bp.difficultyManager.RequiredDifficulty(bp.consensusStateManager.VirtualSelectedParent())
 }
