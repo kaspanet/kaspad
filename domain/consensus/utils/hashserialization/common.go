@@ -73,22 +73,6 @@ func WriteElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
-	// Message header checksum.
-	case [4]byte:
-		_, err := w.Write(e[:])
-		if err != nil {
-			return err
-		}
-		return nil
-
-	// IP address.
-	case [16]byte:
-		_, err := w.Write(e[:])
-		if err != nil {
-			return err
-		}
-		return nil
-
 	case *externalapi.DomainHash:
 		_, err := w.Write(e[:])
 		if err != nil {
