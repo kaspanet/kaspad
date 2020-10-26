@@ -33,10 +33,7 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	if err != nil {
 		return nil, err
 	}
-	hashMerkleRoot, err := bp.newBlockHashMerkleRoot(transactions)
-	if err != nil {
-		return nil, err
-	}
+	hashMerkleRoot := bp.newBlockHashMerkleRoot(transactions)
 	acceptedIDMerkleRoot, err := bp.newBlockAcceptedIDMerkleRoot()
 	if err != nil {
 		return nil, err
