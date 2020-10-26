@@ -19,7 +19,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	return nil
+	// Attempt to add the block to the virtual
+	err = bp.consensusStateManager.AddBlockToVirtual(block.Hash)
+	if err != nil {
+		return err
+	}
+
+	return bp.commitAllChanges()
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
@@ -67,10 +73,6 @@ func (bp *blockProcessor) validateBody(blockHash *externalapi.DomainHash) error 
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (bp *blockProcessor) insertBlock(block *externalapi.DomainBlock) error {
 	return nil
 }
 
