@@ -97,14 +97,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		pastMedianTimeManager,
 		ghostdagDataStore)
 
-	skipPow := func() bool {
-		panic("unimplemented")
-	}
-
 	genesisHash := externalapi.DomainHash([32]byte(*dagParams.GenesisHash))
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
-		skipPow(),
+		false,
 		&genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
