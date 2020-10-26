@@ -11,9 +11,10 @@ type consensusStateManager struct {
 	dagParams       *dagconfig.Params
 	databaseContext model.DBReader
 
-	ghostdagManager    model.GHOSTDAGManager
-	dagTopologyManager model.DAGTopologyManager
-	pruningManager     model.PruningManager
+	ghostdagManager       model.GHOSTDAGManager
+	dagTopologyManager    model.DAGTopologyManager
+	pruningManager        model.PruningManager
+	pastMedianTimeManager model.PastMedianTimeManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -33,6 +34,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	pruningManager model.PruningManager,
+	pastMedianTimeManager model.PastMedianTimeManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -47,9 +49,10 @@ func New(
 		dagParams:       dagParams,
 		databaseContext: databaseContext,
 
-		ghostdagManager:    ghostdagManager,
-		dagTopologyManager: dagTopologyManager,
-		pruningManager:     pruningManager,
+		ghostdagManager:       ghostdagManager,
+		dagTopologyManager:    dagTopologyManager,
+		pruningManager:        pruningManager,
+		pastMedianTimeManager: pastMedianTimeManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
@@ -70,20 +73,53 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	return nil
 }
 
-// CalculateAcceptanceDataAndMultiset calculates and returns the acceptance data and the
-// multiset associated with the given blockHash
-func (csm *consensusStateManager) CalculateAcceptanceDataAndMultiset(blockHash *model.BlockGHOSTDAGData) (*model.BlockAcceptanceData, model.Multiset) {
+func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *externalapi.DomainHash) (
+	*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
+
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return csm.applyBlueBlocks(selectedParentPastUTXO, blockGHOSTDAGData)
+}
+
+func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
+	// TODO
 	return nil, nil
 }
 
-// Tips returns the current DAG tips
-func (csm *consensusStateManager) Tips() []*externalapi.DomainHash {
-	return nil
+func (csm *consensusStateManager) applyBlueBlocks(
+	selectedParentPastUTXO *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
+
+	// TODO
+	return nil, nil, nil, nil
 }
 
 // VirtualData returns data on the current virtual block
 func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData, err error) {
-	return nil, nil
+	pastMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.VirtualData{
+		PastMedianTime: pastMedianTime,
+		BlueScore:      ghostdagData.BlueScore,
+		ParentHashes:   nil, // TODO
+		SelectedParent: ghostdagData.SelectedParent,
+	}, nil
 }
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
