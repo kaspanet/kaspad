@@ -27,6 +27,7 @@ type blockProcessor struct {
 	blockStore            model.BlockStore
 	blockStatusStore      model.BlockStatusStore
 	blockRelationStore    model.BlockRelationStore
+	multisetStore         model.MultisetStore
 }
 
 // New instantiates a new BlockProcessor
@@ -44,7 +45,8 @@ func New(
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
-	blockRelationStore model.BlockRelationStore) model.BlockProcessor {
+	blockRelationStore model.BlockRelationStore,
+	multisetStore model.MultisetStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -62,6 +64,7 @@ func New(
 		blockStore:            blockStore,
 		blockStatusStore:      blockStatusStore,
 		blockRelationStore:    blockRelationStore,
+		multisetStore:         multisetStore,
 	}
 }
 

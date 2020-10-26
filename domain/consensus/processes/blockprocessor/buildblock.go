@@ -1,6 +1,7 @@
 package blockprocessor
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
@@ -91,5 +92,10 @@ func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHas
 }
 
 func (bp *blockProcessor) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
-	panic("unimplemented!")
+	newBlockMultiset, err := bp.multisetStore.Get(model.VirtualHash)
+	if err != nil {
+		return nil, err
+	}
+	newBlockUTXOCommitment := newBlockMultiset.Hash()
+	return newBlockUTXOCommitment, nil
 }
