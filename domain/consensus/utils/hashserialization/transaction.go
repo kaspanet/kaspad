@@ -24,6 +24,8 @@ const (
 	txEncodingExcludeSignatureScript
 )
 
+// TransactionHashForSigning hashes the transaction and the given hash type in a way that is intended for
+// signatures.
 func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint32) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
@@ -45,6 +47,7 @@ func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint3
 	return &res
 }
 
+// TransactionHash returns the transaction hash.
 func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
@@ -61,7 +64,7 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 	return &res
 }
 
-// TxID generates the Hash for the transaction without the signature script, gas and payload fields.
+// TransactionID generates the Hash for the transaction without the signature script and payload field.
 func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransactionID {
 	// Encode the transaction, replace signature script with zeroes, cut off
 	// payload and calculate double sha256 on the result.

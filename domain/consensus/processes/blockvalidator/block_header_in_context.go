@@ -110,7 +110,7 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 	}
 
 	if header.TimeInMilliseconds < pastMedianTime {
-		return ruleerrors.Errorf(ruleerrors.ErrTimeTooOld, "block timestamp of %s is not after expected %s",
+		return ruleerrors.Errorf(ruleerrors.ErrTimeTooOld, "block timestamp of %d is not after expected %d",
 			header.TimeInMilliseconds, pastMedianTime)
 	}
 

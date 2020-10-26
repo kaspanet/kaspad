@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/stringers"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 )
@@ -53,9 +54,9 @@ func (v *transactionValidator) checkTxCoinbaseMaturity(
 	for _, txIn := range tx.Inputs {
 		utxoEntry := txIn.UTXOEntry
 		if utxoEntry == nil {
-			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
+			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "outpoint %s "+
 				"either does not exist or "+
-				"has already been spent")
+				"has already been spent", stringers.Outpoint(&txIn.PreviousOutpoint))
 		}
 
 		if utxoEntry.IsCoinbase {
@@ -65,7 +66,7 @@ func (v *transactionValidator) checkTxCoinbaseMaturity(
 				return ruleerrors.Errorf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from blue score %d "+
 					"to blue score %d before required maturity "+
-					"of %d", txIn.PreviousOutpoint,
+					"of %d", stringers.Outpoint(&txIn.PreviousOutpoint),
 					originBlueScore, txBlueScore,
 					v.blockCoinbaseMaturity)
 			}
@@ -84,7 +85,7 @@ func (v *transactionValidator) checkTxInputAmounts(tx *externalapi.DomainTransac
 		if utxoEntry == nil {
 			return 0, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
-				"has already been spent")
+				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}
 
 		// Ensure the transaction amounts are in range. Each of the
@@ -169,7 +170,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 		if utxoEntry == nil {
 			return ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
-				"has already been spent")
+				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}
 
 		scriptPubKey := utxoEntry.ScriptPublicKey
@@ -181,7 +182,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 				"%s (input script bytes %x, prev "+
 				"output script bytes %x)",
 				i,
-				input.PreviousOutpoint, err, sigScript, scriptPubKey)
+				stringers.Outpoint(&input.PreviousOutpoint), err, sigScript, scriptPubKey)
 		}
 
 		// Execute the script pair.
@@ -191,7 +192,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 				"%s (input script bytes %x, prev output "+
 				"script bytes %x)",
 				i,
-				input.PreviousOutpoint, err, sigScript, scriptPubKey)
+				stringers.Outpoint(&input.PreviousOutpoint), err, sigScript, scriptPubKey)
 		}
 	}
 
@@ -218,7 +219,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		if utxoEntry == nil {
 			return nil, ruleerrors.Errorf(ruleerrors.ErrMissingTxOut, "output %s "+
 				"either does not exist or "+
-				"has already been spent")
+				"has already been spent", stringers.Outpoint(&input.PreviousOutpoint))
 		}
 
 		// If the input blue score is set to the mempool blue score, then we

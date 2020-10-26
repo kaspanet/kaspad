@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
 
+// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 const CoinbaseTransactionIndex = 0
 
 // IsCoinBase determines whether or not a transaction is a coinbase transaction. A coinbase

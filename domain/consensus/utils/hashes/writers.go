@@ -30,6 +30,7 @@ func (h *HashWriter) Finalize() externalapi.DomainHash {
 	return sha256.Sum256(firstHashInTheSum)
 }
 
+// HashData hashes the given byte slice
 func HashData(data []byte) externalapi.DomainHash {
 	w := NewHashWriter()
 	_, err := w.Write(data)

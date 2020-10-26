@@ -1,17 +1,7 @@
 package externalapi
 
+// SubnetworkIDSize is the size of the array used to store subnetwork IDs.
 const SubnetworkIDSize = 20
 
 // DomainSubnetworkID is the domain representation of a Subnetwork ID
 type DomainSubnetworkID [SubnetworkIDSize]byte
-
-var (
-	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
-	SubnetworkIDNative = &DomainSubnetworkID{}
-
-	// SubnetworkIDCoinbase is the subnetwork ID which is used for the coinbase transaction
-	SubnetworkIDCoinbase = &DomainSubnetworkID{1}
-
-	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
-	SubnetworkIDRegistry = &DomainSubnetworkID{2}
-)

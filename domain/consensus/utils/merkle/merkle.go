@@ -52,7 +52,7 @@ func CalcHashMerkleRoot(transactions []*externalapi.DomainTransaction) *external
 	return merkleRoot(txHashes)
 }
 
-// CalcHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
+// CalcIDMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
 // See `merkleRoot` for more info.
 func CalcIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	txIDs := make([]*externalapi.DomainHash, len(transactions))

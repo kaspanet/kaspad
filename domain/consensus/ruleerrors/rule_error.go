@@ -306,6 +306,8 @@ func (e RuleError) Error() string {
 	return e.Description
 }
 
+// Errorf formats according to a format specifier and returns the string
+// as a RuleError.
 func Errorf(code ErrorCode, format string, args ...interface{}) error {
 	return errors.WithStack(RuleError{
 		ErrorCode:   code,

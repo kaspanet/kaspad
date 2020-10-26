@@ -22,6 +22,7 @@ func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
 	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
 }
 
+// HeaderHash returns the given header hash
 func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
