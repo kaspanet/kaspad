@@ -221,6 +221,9 @@ var (
 
 	// ErrBuiltInTransactionHasGas indicates that a transaction with built in subnetwork ID has a non zero gas.
 	ErrBuiltInTransactionHasGas = newRuleError("ErrBuiltInTransactionHasGas")
+
+	// ErrMissingParent indicates one of the block parents is not found.
+	ErrMissingParent = newRuleError("ErrMissingParent")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

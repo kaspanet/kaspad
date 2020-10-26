@@ -22,11 +22,6 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.validateDifficulty(blockHash)
-	if err != nil {
-		return err
-	}
-
 	err = v.validateMedianTime(header)
 	if err != nil {
 		return err
@@ -67,28 +62,6 @@ func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeade
 			}
 		}
 	}
-	return nil
-}
-
-func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
-	// Ensure the difficulty specified in the block header matches
-	// the calculated difficulty based on the previous block and
-	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.RequiredDifficulty(blockHash)
-	if err != nil {
-		return err
-	}
-
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
-	if err != nil {
-		return err
-	}
-
-	header := block.Header
-	if header.Bits != expectedBits {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
-	}
-
 	return nil
 }
 

@@ -1,12 +1,10 @@
 package blockvalidator
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"sort"
 )
@@ -20,10 +18,6 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	}
 
 	header := block.Header
-	err = v.checkProofOfWork(header)
-	if err != nil {
-		return err
-	}
 
 	err = v.checkParentsLimit(header)
 	if err != nil {
@@ -49,43 +43,6 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.ParentHashes), maxParents)
 	}
-	return nil
-}
-
-// checkProofOfWork ensures the block header bits which indicate the target
-// difficulty is in min/max range and that the block hash is less than the
-// target difficulty as claimed.
-//
-// The flags modify the behavior of this function as follows:
-//  - BFNoPoWCheck: The check to ensure the block hash is less than the target
-//    difficulty is not performed.
-func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader) error {
-	// The target difficulty must be larger than zero.
-	target := util.CompactToBig(header.Bits)
-	if target.Sign() <= 0 {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
-			target)
-	}
-
-	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(v.powMax) > 0 {
-		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, v.powMax)
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, str)
-	}
-
-	// The block hash must be less than the claimed target unless the flag
-	// to avoid proof of work checks is set.
-	if !v.skipPoW {
-		// The block hash must be less than the claimed target.
-		hash := hashserialization.HeaderHash(header)
-		hashNum := hashes.ToBig(hash)
-		if hashNum.Cmp(target) > 0 {
-			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
-				"expected max of %064x", hashNum, target)
-		}
-	}
-
 	return nil
 }
 
