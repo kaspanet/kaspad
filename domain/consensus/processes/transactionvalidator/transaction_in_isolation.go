@@ -185,3 +185,11 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 	}
 	return nil
 }
+
+func (v *transactionValidator) checkTransactionPayload(tx *externalapi.DomainTransaction) error {
+	if tx.Payload != nil {
+		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "nil payload is not allowed")
+	}
+
+	return nil
+}

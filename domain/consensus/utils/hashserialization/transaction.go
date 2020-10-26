@@ -125,12 +125,6 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	// TODO: Move to transaction validation
-	//if subnetworks.IsBuiltIn(tx.SubnetworkID) && tx.Gas != 0 {
-	//	str := "Transactions from built-in should have 0 gas"
-	//	return messageError("MsgTx.KaspaEncode", str)
-	//}
-
 	err = binaryserializer.PutUint64(w, littleEndian, tx.Gas)
 	if err != nil {
 		return err
@@ -152,18 +146,6 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 			return err
 		}
 	}
-
-	// TODO: Move to transaction validation
-	//else if tx.Payload != nil {
-	//	str := "Transactions from native subnetwork should have <nil> payload"
-	//	return messageError("MsgTx.KaspaEncode", str)
-	//} else if tx.PayloadHash != nil {
-	//	str := "Transactions from native subnetwork should have <nil> payload hash"
-	//	return messageError("MsgTx.KaspaEncode", str)
-	//} else if tx.Gas != 0 {
-	//	str := "Transactions from native subnetwork should have 0 gas"
-	//	return messageError("MsgTx.KaspaEncode", str)
-	//}
 
 	return nil
 }
