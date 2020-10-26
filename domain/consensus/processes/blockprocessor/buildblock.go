@@ -88,11 +88,16 @@ func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.Dom
 }
 
 func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
-	panic("unimplemented!")
+	newBlockAcceptanceData, err := bp.acceptanceDataStore.Get(bp.databaseContext, model.VirtualHash)
+	if err != nil {
+		return nil, err
+	}
+	newBlockAcceptedIDMerkleRoot := calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
+	return newBlockAcceptedIDMerkleRoot.Hash(), nil
 }
 
 func (bp *blockProcessor) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
-	newBlockMultiset, err := bp.multisetStore.Get(model.VirtualHash)
+	newBlockMultiset, err := bp.multisetStore.Get(bp.databaseContext, model.VirtualHash)
 	if err != nil {
 		return nil, err
 	}
