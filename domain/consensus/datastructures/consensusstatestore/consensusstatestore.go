@@ -33,5 +33,13 @@ func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
 func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
-	return nil, nil
+	panic("implement me")
+}
+
+func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (css *consensusStateStore) SetTips(tipHashes []*externalapi.DomainHash) error {
+	panic("implement me")
 }

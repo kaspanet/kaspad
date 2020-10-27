@@ -8,4 +8,7 @@ type ConsensusStateStore interface {
 	Stage(consensusStateChanges *ConsensusStateChanges)
 	IsStaged() bool
 	UTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error)
+
+	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
+	SetTips(tipHashes []*externalapi.DomainHash) error
 }

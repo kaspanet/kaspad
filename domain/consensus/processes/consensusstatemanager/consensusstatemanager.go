@@ -225,13 +225,38 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	return 0, nil
 }
 
-func (csm *consensusStateManager) addTip(hash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
-	err = csm.dagTopologyManager.AddTip(hash)
+func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
+	currentTips, err := csm.consensusStateStore.Tips()
 	if err != nil {
 		return nil, err
 	}
 
-	return csm.dagTopologyManager.Tips()
+	newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
+	if err != nil {
+		return nil, err
+	}
+
+	newTips = []*externalapi.DomainHash{newTipHash}
+
+	for _, currentTip := range currentTips {
+		isCurrentTipInNewTipParents := false
+		for _, newTipParent := range newTipParents {
+			if *currentTip == *newTipParent {
+				isCurrentTipInNewTipParents = true
+				break
+			}
+		}
+		if !isCurrentTipInNewTipParents {
+			newTips = append(newTips, currentTip)
+		}
+	}
+
+	err = csm.consensusStateStore.SetTips(newTips)
+	if err != nil {
+		return nil, err
+	}
+
+	return newTips, nil
 }
 
 func (csm *consensusStateManager) updateVirtual(tips []*externalapi.DomainHash) error {
