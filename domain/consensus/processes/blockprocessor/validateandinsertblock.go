@@ -29,10 +29,10 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
-	// If either header or proof-of-work validation fails, simply
+	// If either in-isolation or proof-of-work validations fail, simply
 	// return an error without writing anything in the database.
 	// This is to prevent spamming attacks.
-	err := bp.validateHeaderAndProofOfWork(block)
+	err := bp.validateBlockInIsolationAndProofOfWork(block)
 	if err != nil {
 		return err
 	}
@@ -45,15 +45,15 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 
-	return bp.validateBody(block.Hash)
+	return bp.validateInContext(block.Hash)
 }
 
-func (bp *blockProcessor) validateHeaderAndProofOfWork(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlockInIsolationAndProofOfWork(block *externalapi.DomainBlock) error {
 	err := bp.blockValidator.ValidateHeaderInIsolation(block.Hash)
 	if err != nil {
 		return err
 	}
-	err = bp.blockValidator.ValidateHeaderInContext(block.Hash)
+	err = bp.blockValidator.ValidateBodyInIsolation(block.Hash)
 	if err != nil {
 		return err
 	}
@@ -64,8 +64,8 @@ func (bp *blockProcessor) validateHeaderAndProofOfWork(block *externalapi.Domain
 	return nil
 }
 
-func (bp *blockProcessor) validateBody(blockHash *externalapi.DomainHash) error {
-	err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
+func (bp *blockProcessor) validateInContext(blockHash *externalapi.DomainHash) error {
+	err := bp.blockValidator.ValidateHeaderInContext(blockHash)
 	if err != nil {
 		return err
 	}
