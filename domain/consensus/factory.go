@@ -97,8 +97,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		domainDBContext,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	coinbaseManager := coinbasemanager.New(ghostdagDataStore, acceptanceDataStore)
-	genesisHash := externalapi.DomainHash([32]byte(*dagParams.GenesisHash))
+	coinbaseManager := coinbasemanager.New(
+		ghostdagDataStore,
+		acceptanceDataStore)
+	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		false,
