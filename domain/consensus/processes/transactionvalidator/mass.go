@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
 )
@@ -34,6 +35,10 @@ func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.Dom
 }
 
 func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) (uint64, error) {
+	if transactionhelper.IsCoinBase(tx) {
+		return 0, nil
+	}
+
 	standaloneMass := v.transactionMassStandalonePart(tx)
 	sigOpsCount := uint64(0)
 	for _, input := range tx.Inputs {

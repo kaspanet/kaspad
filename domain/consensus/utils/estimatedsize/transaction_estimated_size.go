@@ -2,6 +2,7 @@ package estimatedsize
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
 // TransactionEstimatedSerializedSize is the estimated size of a transaction in some
@@ -9,6 +10,9 @@ import (
 // it's only used as the size component in the transaction mass and block size limit
 // calculation.
 func TransactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint64 {
+	if transactionhelper.IsCoinBase(tx) {
+		return 0
+	}
 	size := uint64(0)
 
 	size += 8 // number of inputs (uint64)
