@@ -43,7 +43,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 	// block with StatusInvalid.
 	err = bp.validateInContext(block)
 	if err != nil {
-		if errors.Is(err, &ruleerrors.RuleError{}) {
+		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
 			bp.blockStatusStore.Stage(block.Hash, model.StatusInvalid)
 			commitErr := bp.commitAllChanges()
