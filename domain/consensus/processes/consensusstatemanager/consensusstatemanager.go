@@ -66,11 +66,58 @@ func New(
 	}
 }
 
+// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
+func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
+	panic("implement me")
+}
+
 // AddBlockToVirtual submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
 func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
+	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if isNextVirtualSelectedParent {
+		blockStatus, err := csm.resolveBlockStatus(blockHash)
+		if err != nil {
+			return err
+		}
+		if blockStatus == model.StatusValid {
+			err = csm.checkFinalityViolation(blockHash)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	newTips, err := csm.addTip(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = csm.updateVirtual(newTips)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
+
+	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return false, err
+	}
+
+	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(virtualGhostdagData.SelectedParent, blockHash)
+	if err != nil {
+		return false, err
+	}
+	return *blockHash == *nextVirtualSelectedParent, nil
 }
 
 func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *externalapi.DomainHash) (
@@ -122,7 +169,23 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 	}, nil
 }
 
-// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
-func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
-	panic("implement me")
+func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+	// TODO
+	return 0, nil
+}
+
+func (csm *consensusStateManager) checkFinalityViolation(blockHash *externalapi.DomainHash) error {
+	// TODO
+	return nil
+}
+
+func (csm *consensusStateManager) addTip(hash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
+	// TODO
+	return nil, nil
+}
+
+func (csm *consensusStateManager) updateVirtual(tips []*externalapi.DomainHash) error {
+	// TODO
+
+	return nil
 }
