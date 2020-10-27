@@ -5,10 +5,11 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/network"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/util/network"
 
 	"github.com/pkg/errors"
 
@@ -149,6 +150,10 @@ type Params struct {
 // port appended if there is not already a port specified.
 func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 	return network.NormalizeAddress(addr, p.RPCPort)
+}
+
+func (p *Params) FinalityDepth() uint64 {
+	return uint64(p.FinalityDuration / p.TargetTimePerBlock)
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.

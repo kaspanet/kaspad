@@ -15,8 +15,10 @@ type consensusStateManager struct {
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
+	dagTraversalManager   model.DAGTraversalManager
 	pruningManager        model.PruningManager
 	pastMedianTimeManager model.PastMedianTimeManager
+	reachabilityTree      model.ReachabilityTree
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -35,8 +37,10 @@ func New(
 	dagParams *dagconfig.Params,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
+	dagTraversalManager model.DAGTraversalManager,
 	pruningManager model.PruningManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
+	reachabilityTree model.ReachabilityTree,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -53,8 +57,10 @@ func New(
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,
+		dagTraversalManager:   dagTraversalManager,
 		pruningManager:        pruningManager,
 		pastMedianTimeManager: pastMedianTimeManager,
+		reachabilityTree:      reachabilityTree,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
@@ -181,8 +187,17 @@ func (csm *consensusStateManager) applyBlueBlocks(
 	selectedParentPastUTXO *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
 	*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
 
-	// TODO
 	return nil, nil, nil, nil
+	// TODO
+	//blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+
+	//pastUTXO := selectedParentPastUTXO
+	//for _, blueBlock := range blueBlocks {
+	//
+	//}
 }
 
 // VirtualData returns data on the current virtual block
@@ -210,14 +225,13 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	return 0, nil
 }
 
-func (csm *consensusStateManager) checkFinalityViolation(blockHash *externalapi.DomainHash) error {
-	// TODO
-	return nil
-}
-
 func (csm *consensusStateManager) addTip(hash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
-	// TODO
-	return nil, nil
+	err = csm.dagTopologyManager.AddTip(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return csm.dagTopologyManager.Tips()
 }
 
 func (csm *consensusStateManager) updateVirtual(tips []*externalapi.DomainHash) error {
