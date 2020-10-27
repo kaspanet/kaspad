@@ -3,8 +3,11 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"sort"
 )
 
 const blockVersion = 1
@@ -47,9 +50,9 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	return &externalapi.DomainBlockHeader{
 		Version:              blockVersion,
 		ParentHashes:         parentHashes,
-		HashMerkleRoot:       hashMerkleRoot,
-		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       utxoCommitment,
+		HashMerkleRoot:       *hashMerkleRoot,
+		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
+		UTXOCommitment:       *utxoCommitment,
 		TimeInMilliseconds:   timeInMilliseconds,
 		Bits:                 bits,
 	}, nil
@@ -90,8 +93,23 @@ func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHas
 	if err != nil {
 		return nil, err
 	}
-	newBlockAcceptedIDMerkleRoot := calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
-	return newBlockAcceptedIDMerkleRoot.Hash(), nil
+
+	var acceptedTransactions []*externalapi.DomainTransaction
+	for _, blockAcceptanceData := range newBlockAcceptanceData {
+		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptance.IsAccepted {
+				continue
+			}
+			acceptedTransactions = append(acceptedTransactions, transactionAcceptance.Transaction)
+		}
+	}
+	sort.Slice(acceptedTransactions, func(i, j int) bool {
+		acceptedTransactionIID := hashserialization.TransactionID(acceptedTransactions[i])
+		acceptedTransactionJID := hashserialization.TransactionID(acceptedTransactions[j])
+		return transactionid.Less(acceptedTransactionIID, acceptedTransactionJID)
+	})
+
+	return merkle.CalculateIDMerkleRoot(acceptedTransactions), nil
 }
 
 func (bp *blockProcessor) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
