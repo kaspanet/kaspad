@@ -22,6 +22,7 @@ func NewDomainTxContext(dbTx *dbaccess.TxContext) *DomainTxContext {
 	return &DomainTxContext{dbTx: dbTx}
 }
 
+// Commit commits this database transaction
 func (dtc *DomainTxContext) Commit() error {
 	return dtc.dbTx.Commit()
 }
