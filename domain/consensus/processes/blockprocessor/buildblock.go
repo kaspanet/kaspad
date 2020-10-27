@@ -37,7 +37,7 @@ func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 func (bp *blockProcessor) newBlockCoinbaseTransaction(
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	return bp.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualHash, coinbaseData)
+	return bp.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
 }
 
 func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
@@ -102,7 +102,7 @@ func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.Dom
 }
 
 func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
-	newBlockAcceptanceData, err := bp.acceptanceDataStore.Get(bp.databaseContext, model.VirtualHash)
+	newBlockAcceptanceData, err := bp.acceptanceDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHas
 }
 
 func (bp *blockProcessor) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
-	newBlockMultiset, err := bp.multisetStore.Get(bp.databaseContext, model.VirtualHash)
+	newBlockMultiset, err := bp.multisetStore.Get(bp.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
