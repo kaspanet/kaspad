@@ -2,6 +2,7 @@ package model
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
+// VirtualBlockHash is a marker hash for the virtual block
 var VirtualBlockHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -9,6 +10,7 @@ var VirtualBlockHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 }
 
+// VirtualData is data about the current virtual block
 type VirtualData struct {
 	PastMedianTime int64
 	BlueScore      uint64
