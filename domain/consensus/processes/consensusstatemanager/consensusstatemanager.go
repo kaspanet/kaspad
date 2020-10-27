@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -68,7 +69,18 @@ func New(
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
 func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
-	panic("implement me")
+	for _, transactionInput := range transaction.Inputs {
+		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
+		if err != nil {
+			return err
+		}
+		if utxoEntry == nil {
+			return ruleerrors.ErrMissingTxOut
+		}
+		transactionInput.UTXOEntry = utxoEntry
+	}
+
+	return nil
 }
 
 // AddBlockToVirtual submits the given block to be added to the
