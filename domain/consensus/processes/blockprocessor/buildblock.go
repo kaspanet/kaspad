@@ -15,16 +15,29 @@ const blockVersion = 1
 func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
+	coinbase, err := bp.newBlockCoinbaseTransaction(coinbaseData)
+	if err != nil {
+		return nil, err
+	}
+	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
+
 	header, err := bp.buildHeader(transactions)
 	if err != nil {
 		return nil, err
 	}
+	headerHash := hashserialization.HeaderHash(header)
 
 	return &externalapi.DomainBlock{
 		Header:       header,
-		Transactions: transactions,
-		Hash:         nil,
+		Transactions: transactionsWithCoinbase,
+		Hash:         headerHash,
 	}, nil
+}
+
+func (bp *blockProcessor) newBlockCoinbaseTransaction(
+	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
+
+	return bp.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualHash, coinbaseData)
 }
 
 func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {

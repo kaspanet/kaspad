@@ -16,6 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
@@ -96,7 +97,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		domainDBContext,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-
+	coinbaseManager := coinbasemanager.New(ghostdagDataStore, acceptanceDataStore)
 	genesisHash := externalapi.DomainHash([32]byte(*dagParams.GenesisHash))
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
@@ -130,11 +131,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		difficultyManager,
 		pastMedianTimeManager,
 		ghostdagManager,
+		coinbaseManager,
 		acceptanceDataStore,
 		blockStore,
 		blockStatusStore,
 		blockRelationStore,
-		multisetStore)
+		multisetStore,
+		ghostdagDataStore)
 
 	return &consensus{
 		consensusStateManager: consensusStateManager,

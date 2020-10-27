@@ -22,11 +22,14 @@ type blockProcessor struct {
 	difficultyManager     model.DifficultyManager
 	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
-	acceptanceDataStore   model.AcceptanceDataStore
-	blockStore            model.BlockStore
-	blockStatusStore      model.BlockStatusStore
-	blockRelationStore    model.BlockRelationStore
-	multisetStore         model.MultisetStore
+	coinbaseManager       model.CoinbaseManager
+
+	acceptanceDataStore model.AcceptanceDataStore
+	blockStore          model.BlockStore
+	blockStatusStore    model.BlockStatusStore
+	blockRelationStore  model.BlockRelationStore
+	multisetStore       model.MultisetStore
+	ghostdagDataStore   model.GHOSTDAGDataStore
 }
 
 // New instantiates a new BlockProcessor
@@ -41,11 +44,13 @@ func New(
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagManager model.GHOSTDAGManager,
+	coinbaseManager model.CoinbaseManager,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
 	blockRelationStore model.BlockRelationStore,
-	multisetStore model.MultisetStore) model.BlockProcessor {
+	multisetStore model.MultisetStore,
+	ghostdagDataStore model.GHOSTDAGDataStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -57,6 +62,7 @@ func New(
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		ghostdagManager:       ghostdagManager,
+		coinbaseManager:       coinbaseManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
@@ -64,6 +70,7 @@ func New(
 		blockStatusStore:      blockStatusStore,
 		blockRelationStore:    blockRelationStore,
 		multisetStore:         multisetStore,
+		ghostdagDataStore:     ghostdagDataStore,
 	}
 }
 
