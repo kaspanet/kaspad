@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 )
 
@@ -68,8 +67,8 @@ func New(
 	}
 }
 
-// BuildBlock builds a block over the current state, with the transactions
-// selected by the given transactionSelector
+// BuildBlock builds a block over the current state, with the given
+// coinbaseData and the given transactions
 func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
@@ -83,9 +82,9 @@ func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
 func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
-	start := mstime.Now()
+	start := time.Now()
 	log.Debugf("ValidateAndInsertBlock start")
 	err := bp.validateAndInsertBlock(block)
-	log.Debugf("ValidateAndInsertBlock end. Took: %s", mstime.Since(start))
+	log.Debugf("ValidateAndInsertBlock end. Took: %s", time.Since(start))
 	return err
 }
