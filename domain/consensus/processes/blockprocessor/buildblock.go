@@ -41,7 +41,10 @@ func (bp *blockProcessor) newBlockCoinbaseTransaction(
 }
 
 func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
-	parentHashes := bp.newBlockParentHashes()
+	parentHashes, err := bp.newBlockParentHashes()
+	if err != nil {
+		return nil, err
+	}
 	timeInMilliseconds, err := bp.newBlockTime()
 	if err != nil {
 		return nil, err
@@ -71,8 +74,12 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	}, nil
 }
 
-func (bp *blockProcessor) newBlockParentHashes() []*externalapi.DomainHash {
-	return bp.consensusStateManager.VirtualParentHashes()
+func (bp *blockProcessor) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
+	virtualData, err := bp.consensusStateManager.VirtualData()
+	if err != nil {
+		return nil, err
+	}
+	return virtualData.ParentHashes, nil
 }
 
 func (bp *blockProcessor) newBlockTime() (int64, error) {
@@ -83,7 +90,11 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
 	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bp.pastMedianTimeManager.PastMedianTime(bp.consensusStateManager.VirtualSelectedParent())
+	virtualData, err := bp.consensusStateManager.VirtualData()
+	if err != nil {
+		return 0, nil
+	}
+	minTimestamp, err := bp.pastMedianTimeManager.PastMedianTime(virtualData.SelectedParent)
 	if err != nil {
 		return 0, err
 	}
@@ -94,7 +105,11 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 }
 
 func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
-	return bp.difficultyManager.RequiredDifficulty(bp.consensusStateManager.VirtualSelectedParent())
+	virtualData, err := bp.consensusStateManager.VirtualData()
+	if err != nil {
+		return 0, err
+	}
+	return bp.difficultyManager.RequiredDifficulty(virtualData.SelectedParent)
 }
 
 func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {

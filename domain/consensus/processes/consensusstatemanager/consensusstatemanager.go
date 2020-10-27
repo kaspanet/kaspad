@@ -68,9 +68,9 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	return nil
 }
 
-// VirtualData returns the medianTime and blueScore of the current virtual block
-func (csm *consensusStateManager) VirtualData() (medianTime int64, blueScore uint64, err error) {
-	return 0, 0, nil
+// VirtualData returns data on the current virtual block
+func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData, err error) {
+	panic("implement me")
 }
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
