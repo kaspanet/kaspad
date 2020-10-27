@@ -7,4 +7,5 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type DAGTraversalManager interface {
 	HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error)
 	SelectedParentIterator(highHash *externalapi.DomainHash) (SelectedParentIterator, error)
+	BlueWindow(highHash *externalapi.DomainHash, windowSize uint64) ([]*externalapi.DomainHash, error)
 }
