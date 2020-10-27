@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -119,7 +120,6 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 }
 
 func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
-
 	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return false, err
@@ -129,6 +129,7 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 	if err != nil {
 		return false, err
 	}
+
 	return *blockHash == *nextVirtualSelectedParent, nil
 }
 
@@ -149,8 +150,31 @@ func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *
 }
 
 func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
-	// TODO
-	return nil, nil
+	var err error
+
+	// collect the UTXO diffs
+	var utxoDiffs []*model.UTXODiff
+	nextBlockHash := blockHash
+	for nextBlockHash != nil {
+		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nextBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		utxoDiffs = append(utxoDiffs, utxoDiff)
+
+		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
+	}
+
+	// apply the diffs in reverse order
+	accumulatedDiff := model.NewUTXODiff()
+	for i := len(utxoDiffs) - 1; i >= 0; i-- {
+		accumulatedDiff, err = utxoalgebra.WithDiff(accumulatedDiff, utxoDiffs[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return accumulatedDiff, nil
 }
 
 func (csm *consensusStateManager) applyBlueBlocks(
