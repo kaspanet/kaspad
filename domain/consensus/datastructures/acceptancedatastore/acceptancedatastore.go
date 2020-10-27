@@ -15,7 +15,7 @@ func New() model.AcceptanceDataStore {
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.BlockAcceptanceData) {
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData []*model.BlockAcceptanceData) {
 	panic("implement me")
 }
 
@@ -32,7 +32,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTxProxy) error {
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockAcceptanceData, error) {
+func (ads *acceptanceDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) ([]*model.BlockAcceptanceData, error) {
 	return nil, nil
 }
 

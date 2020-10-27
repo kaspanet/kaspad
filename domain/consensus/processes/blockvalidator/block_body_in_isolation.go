@@ -134,7 +134,7 @@ func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainB
 }
 
 func (v *blockValidator) checkBlockHashMerkleRoot(block *externalapi.DomainBlock) error {
-	calculatedHashMerkleRoot := merkle.CalcHashMerkleRoot(block.Transactions)
+	calculatedHashMerkleRoot := merkle.CalculateHashMerkleRoot(block.Transactions)
 	if block.Header.HashMerkleRoot != *calculatedHashMerkleRoot {
 		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",

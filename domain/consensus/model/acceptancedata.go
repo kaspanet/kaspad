@@ -11,7 +11,7 @@ type BlockAcceptanceData struct {
 // TransactionAcceptanceData stores a transaction together with an indication
 // if it was accepted or not by some block
 type TransactionAcceptanceData struct {
-	Tx         *externalapi.DomainTransaction
-	Fee        uint64
-	IsAccepted bool
+	Transaction *externalapi.DomainTransaction
+	Fee         uint64
+	IsAccepted  bool
 }
