@@ -7,5 +7,5 @@ type ConsensusStateStore interface {
 	Store
 	Stage(consensusStateChanges *ConsensusStateChanges)
 	IsStaged() bool
-	UTXOByOutpoint(dbContext DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error)
+	UTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error)
 }

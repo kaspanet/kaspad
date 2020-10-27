@@ -27,11 +27,11 @@ func (gds *ghostdagDataStore) Discard() {
 	panic("implement me")
 }
 
-func (gds *ghostdagDataStore) Commit(dbTx model.DBTxProxy) error {
+func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return nil, nil
 }

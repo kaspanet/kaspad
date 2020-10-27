@@ -30,14 +30,14 @@ func (brs *blockRelationStore) Discard() {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) Commit(dbTx model.DBTxProxy) error {
+func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) BlockRelation(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
+func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) Tips(dbContext model.DBContextProxy) ([]*externalapi.DomainHash, error) {
+func (brs *blockRelationStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }

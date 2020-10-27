@@ -7,6 +7,6 @@ type BlockStatusStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, blockStatus BlockStatus)
 	IsStaged() bool
-	Get(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (BlockStatus, error)
-	Exists(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (bool, error)
+	Get(dbContext DBReader, blockHash *externalapi.DomainHash) (BlockStatus, error)
+	Exists(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
 }

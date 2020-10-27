@@ -7,6 +7,6 @@ type AcceptanceDataStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, acceptanceData []*BlockAcceptanceData)
 	IsStaged() bool
-	Get(dbContext DBContextProxy, blockHash *externalapi.DomainHash) ([]*BlockAcceptanceData, error)
-	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
+	Get(dbContext DBReader, blockHash *externalapi.DomainHash) ([]*BlockAcceptanceData, error)
+	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
 }

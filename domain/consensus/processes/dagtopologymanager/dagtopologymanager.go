@@ -1,7 +1,6 @@
 package dagtopologymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
@@ -11,12 +10,12 @@ import (
 type dagTopologyManager struct {
 	reachabilityTree   model.ReachabilityTree
 	blockRelationStore model.BlockRelationStore
-	databaseContext    *database.DomainDBContext
+	databaseContext    model.DBReader
 }
 
 // New instantiates a new DAGTopologyManager
 func New(
-	databaseContext *database.DomainDBContext,
+	databaseContext model.DBReader,
 	reachabilityTree model.ReachabilityTree,
 	blockRelationStore model.BlockRelationStore) model.DAGTopologyManager {
 

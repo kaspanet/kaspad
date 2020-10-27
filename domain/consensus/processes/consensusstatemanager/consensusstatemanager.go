@@ -1,7 +1,6 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -10,7 +9,7 @@ import (
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
 	dagParams       *dagconfig.Params
-	databaseContext *database.DomainDBContext
+	databaseContext model.DBReader
 
 	ghostdagManager    model.GHOSTDAGManager
 	dagTopologyManager model.DAGTopologyManager
@@ -28,7 +27,7 @@ type consensusStateManager struct {
 
 // New instantiates a new ConsensusStateManager
 func New(
-	databaseContext *database.DomainDBContext,
+	databaseContext model.DBReader,
 	dagParams *dagconfig.Params,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,

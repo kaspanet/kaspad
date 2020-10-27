@@ -1,7 +1,6 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -12,7 +11,7 @@ import (
 // and creating blocks from the current state
 type blockProcessor struct {
 	dagParams       *dagconfig.Params
-	databaseContext *database.DomainDBContext
+	databaseContext model.DBManager
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -41,7 +40,7 @@ type blockProcessor struct {
 // New instantiates a new BlockProcessor
 func New(
 	dagParams *dagconfig.Params,
-	databaseContext *database.DomainDBContext,
+	databaseContext model.DBManager,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,

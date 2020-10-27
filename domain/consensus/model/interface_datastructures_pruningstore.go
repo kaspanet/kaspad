@@ -7,6 +7,6 @@ type PruningStore interface {
 	Store
 	Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSet ReadOnlyUTXOSet)
 	IsStaged() bool
-	PruningPoint(dbContext DBContextProxy) (*externalapi.DomainHash, error)
-	PruningPointSerializedUTXOSet(dbContext DBContextProxy) ([]byte, error)
+	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
+	PruningPointSerializedUTXOSet(dbContext DBReader) ([]byte, error)
 }

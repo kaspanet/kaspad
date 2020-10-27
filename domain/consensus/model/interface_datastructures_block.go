@@ -7,8 +7,8 @@ type BlockStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock)
 	IsStaged() bool
-	Block(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
-	HasBlock(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (bool, error)
-	Blocks(dbContext DBContextProxy, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error)
-	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
+	Block(dbContext DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
+	HasBlock(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
+	Blocks(dbContext DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error)
+	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
 }

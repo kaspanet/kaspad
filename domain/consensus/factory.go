@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
@@ -12,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
+	"github.com/kaspanet/kaspad/domain/consensus/dbwrapper"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -27,18 +27,18 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus
+	NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus
 }
 
 type factory struct{}
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -51,23 +51,23 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
-	domainDBContext := database.NewDomainDBContext(databaseContext)
+	dbManager := dbwrapper.New(db)
 
 	// Processes
 	reachabilityTree := reachabilitytree.New(
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
-		domainDBContext,
+		dbManager,
 		reachabilityTree,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
-		databaseContext,
+		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
 		model.KType(dagParams.K))
 	dagTraversalManager := dagtraversalmanager.New(
-		domainDBContext,
+		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore)
 	pruningManager := pruningmanager.New(
@@ -77,7 +77,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		blockStatusStore,
 		consensusStateStore)
 	consensusStateManager := consensusstatemanager.New(
-		domainDBContext,
+		dbManager,
 		dagParams,
 		ghostdagManager,
 		dagTopologyManager,
@@ -94,11 +94,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,
-		domainDBContext,
+		dbManager,
 		dagTraversalManager,
 		blockStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
-		domainDBContext,
+		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
 	coinbaseManager := coinbasemanager.New(
@@ -114,7 +114,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		dagParams.DifficultyAdjustmentWindowSize,
 		uint64(dagParams.FinalityDuration/dagParams.TargetTimePerBlock),
 
-		domainDBContext,
+		dbManager,
 		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
@@ -128,7 +128,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	)
 	blockProcessor := blockprocessor.New(
 		dagParams,
-		domainDBContext,
+		dbManager,
 		consensusStateManager,
 		pruningManager,
 		blockValidator,
