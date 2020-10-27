@@ -41,15 +41,19 @@ func (bp *blockProcessor) newBlockCoinbaseTransaction(
 }
 
 func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
-	parentHashes, err := bp.newBlockParentHashes()
+	virtualData, err := bp.consensusStateManager.VirtualData()
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bp.newBlockTime()
+	parentHashes, err := bp.newBlockParentHashes(virtualData)
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bp.newBlockDifficulty()
+	timeInMilliseconds, err := bp.newBlockTime(virtualData)
+	if err != nil {
+		return nil, err
+	}
+	bits, err := bp.newBlockDifficulty(virtualData)
 	if err != nil {
 		return nil, err
 	}
@@ -74,15 +78,11 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	}, nil
 }
 
-func (bp *blockProcessor) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
-	virtualData, err := bp.consensusStateManager.VirtualData()
-	if err != nil {
-		return nil, err
-	}
+func (bp *blockProcessor) newBlockParentHashes(virtualData *model.VirtualData) ([]*externalapi.DomainHash, error) {
 	return virtualData.ParentHashes, nil
 }
 
-func (bp *blockProcessor) newBlockTime() (int64, error) {
+func (bp *blockProcessor) newBlockTime(virtualData *model.VirtualData) (int64, error) {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
@@ -90,10 +90,6 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
 	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	virtualData, err := bp.consensusStateManager.VirtualData()
-	if err != nil {
-		return 0, nil
-	}
 	minTimestamp, err := bp.pastMedianTimeManager.PastMedianTime(virtualData.SelectedParent)
 	if err != nil {
 		return 0, err
@@ -104,11 +100,7 @@ func (bp *blockProcessor) newBlockTime() (int64, error) {
 	return newTimestamp, nil
 }
 
-func (bp *blockProcessor) newBlockDifficulty() (uint32, error) {
-	virtualData, err := bp.consensusStateManager.VirtualData()
-	if err != nil {
-		return 0, err
-	}
+func (bp *blockProcessor) newBlockDifficulty(virtualData *model.VirtualData) (uint32, error) {
 	return bp.difficultyManager.RequiredDifficulty(virtualData.SelectedParent)
 }
 
