@@ -42,6 +42,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 
 	newBlockData.SelectedParent = selectedParent
 	newBlockData.MergeSetBlues = append(newBlockData.MergeSetBlues, selectedParent)
+	newBlockData.BluesAnticoneSizes[*selectedParent] = 0
 
 	mergeSetWithoutSelectedParent, err := gm.mergeSetWithoutSelectedParent(newBlockData.SelectedParent, blockParents)
 	if err != nil {
@@ -104,7 +105,7 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 		isBlue, isRed, err := gm.checkBlueCandidateWithChainBlock(newBlockData, chainBlock, blueCandidate, candidateBluesAnticoneSizes,
 			&candidateAnticoneSize)
 		if err != nil {
-			return false, 0, nil, nil
+			return false, 0, nil, err
 		}
 
 		if isBlue {
@@ -157,7 +158,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 		// Skip blocks that exist in the past of blueCandidate.
 		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(block, blueCandidate)
 		if err != nil {
-			return false, false, nil
+			return false, false, err
 		}
 
 		if isAncestorOfBlueCandidate {
