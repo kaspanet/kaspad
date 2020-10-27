@@ -91,7 +91,7 @@ func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.IsInSelectedParentChainOf(blockHashA, blockHashB)
+	return dtm.reachabilityTree.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
