@@ -24,12 +24,16 @@ type blockProcessor struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
 
-	acceptanceDataStore model.AcceptanceDataStore
-	blockStore          model.BlockStore
-	blockStatusStore    model.BlockStatusStore
-	blockRelationStore  model.BlockRelationStore
-	multisetStore       model.MultisetStore
-	ghostdagDataStore   model.GHOSTDAGDataStore
+	acceptanceDataStore   model.AcceptanceDataStore
+	blockStore            model.BlockStore
+	blockStatusStore      model.BlockStatusStore
+	blockRelationStore    model.BlockRelationStore
+	multisetStore         model.MultisetStore
+	ghostdagDataStore     model.GHOSTDAGDataStore
+	consensusStateStore   model.ConsensusStateStore
+	pruningStore          model.PruningStore
+	reachabilityDataStore model.ReachabilityDataStore
+	utxoDiffStore         model.UTXODiffStore
 }
 
 // New instantiates a new BlockProcessor
@@ -50,7 +54,11 @@ func New(
 	blockStatusStore model.BlockStatusStore,
 	blockRelationStore model.BlockRelationStore,
 	multisetStore model.MultisetStore,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.BlockProcessor {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	consensusStateStore model.ConsensusStateStore,
+	pruningStore model.PruningStore,
+	reachabilityDataStore model.ReachabilityDataStore,
+	utxoDiffStore model.UTXODiffStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -71,6 +79,10 @@ func New(
 		blockRelationStore:    blockRelationStore,
 		multisetStore:         multisetStore,
 		ghostdagDataStore:     ghostdagDataStore,
+		consensusStateStore:   consensusStateStore,
+		pruningStore:          pruningStore,
+		reachabilityDataStore: reachabilityDataStore,
+		utxoDiffStore:         utxoDiffStore,
 	}
 }
 

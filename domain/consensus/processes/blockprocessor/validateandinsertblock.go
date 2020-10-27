@@ -77,7 +77,16 @@ func (bp *blockProcessor) validateBody(blockHash *externalapi.DomainHash) error 
 }
 
 func (bp *blockProcessor) discardAllChanges() {
-
+	bp.acceptanceDataStore.Discard()
+	bp.blockStore.Discard()
+	bp.blockRelationStore.Discard()
+	bp.blockStatusStore.Discard()
+	bp.consensusStateStore.Discard()
+	bp.ghostdagDataStore.Discard()
+	bp.multisetStore.Discard()
+	bp.pruningStore.Discard()
+	bp.reachabilityDataStore.Discard()
+	bp.utxoDiffStore.Discard()
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
