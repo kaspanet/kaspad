@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"time"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 // blockProcessor is responsible for processing incoming blocks
@@ -91,19 +91,17 @@ func New(
 func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	start := time.Now()
-	log.Debugf("BuildBlock start")
-	block, err := bp.buildBlock(coinbaseData, transactions)
-	log.Debugf("BuildBlock end. Took: %s", time.Since(start))
-	return block, err
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlock")
+	defer onEnd()
+
+	return bp.buildBlock(coinbaseData, transactions)
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
 func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
-	start := time.Now()
-	log.Debugf("ValidateAndInsertBlock start")
-	err := bp.validateAndInsertBlock(block)
-	log.Debugf("ValidateAndInsertBlock end. Took: %s", time.Since(start))
-	return err
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
+	defer onEnd()
+
+	return bp.validateAndInsertBlock(block)
 }
