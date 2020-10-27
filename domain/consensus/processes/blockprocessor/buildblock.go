@@ -21,7 +21,7 @@ func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
-	header, err := bp.buildHeader(transactions)
+	header, err := bp.buildHeader(transactionsWithCoinbase)
 	if err != nil {
 		return nil, err
 	}
