@@ -34,6 +34,8 @@ type blockProcessor struct {
 	pruningStore          model.PruningStore
 	reachabilityDataStore model.ReachabilityDataStore
 	utxoDiffStore         model.UTXODiffStore
+
+	stores []model.Store
 }
 
 // New instantiates a new BlockProcessor
@@ -83,6 +85,20 @@ func New(
 		pruningStore:          pruningStore,
 		reachabilityDataStore: reachabilityDataStore,
 		utxoDiffStore:         utxoDiffStore,
+
+		stores: []model.Store{
+			consensusStateStore,
+			acceptanceDataStore,
+			blockStore,
+			blockStatusStore,
+			blockRelationStore,
+			multisetStore,
+			ghostdagDataStore,
+			consensusStateStore,
+			pruningStore,
+			reachabilityDataStore,
+			utxoDiffStore,
+		},
 	}
 }
 

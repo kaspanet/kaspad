@@ -77,16 +77,9 @@ func (bp *blockProcessor) validateInContext(blockHash *externalapi.DomainHash) e
 }
 
 func (bp *blockProcessor) discardAllChanges() {
-	bp.acceptanceDataStore.Discard()
-	bp.blockStore.Discard()
-	bp.blockRelationStore.Discard()
-	bp.blockStatusStore.Discard()
-	bp.consensusStateStore.Discard()
-	bp.ghostdagDataStore.Discard()
-	bp.multisetStore.Discard()
-	bp.pruningStore.Discard()
-	bp.reachabilityDataStore.Discard()
-	bp.utxoDiffStore.Discard()
+	for _, store := range bp.stores {
+		store.Discard()
+	}
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
@@ -95,45 +88,11 @@ func (bp *blockProcessor) commitAllChanges() error {
 		return err
 	}
 
-	err = bp.acceptanceDataStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.blockStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.blockRelationStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.blockStatusStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.consensusStateStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.ghostdagDataStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.multisetStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.pruningStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.reachabilityDataStore.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-	err = bp.utxoDiffStore.Commit(dbTx)
-	if err != nil {
-		return err
+	for _, store := range bp.stores {
+		err = store.Commit(dbTx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return dbTx.Commit()
