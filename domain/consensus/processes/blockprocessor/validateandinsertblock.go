@@ -3,6 +3,8 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
 )
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
@@ -37,15 +39,21 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 
-	// It's now safe to store the block in the database
-	bp.blockStatusStore.Stage(block.Hash, model.StatusInvalid)
-	bp.blockStore.Stage(block.Hash, block)
-	err = bp.commitAllChanges()
+	// If in-context validations fail, discard all changes and store the
+	// block with StatusInvalid.
+	err = bp.validateInContext(block)
 	if err != nil {
+		if errors.Is(err, &ruleerrors.RuleError{}) {
+			bp.discardAllChanges()
+			bp.blockStatusStore.Stage(block.Hash, model.StatusInvalid)
+			commitErr := bp.commitAllChanges()
+			if commitErr != nil {
+				return commitErr
+			}
+		}
 		return err
 	}
-
-	return bp.validateInContext(block.Hash)
+	return nil
 }
 
 func (bp *blockProcessor) validateBlockInIsolationAndProofOfWork(block *externalapi.DomainBlock) error {
@@ -64,12 +72,13 @@ func (bp *blockProcessor) validateBlockInIsolationAndProofOfWork(block *external
 	return nil
 }
 
-func (bp *blockProcessor) validateInContext(blockHash *externalapi.DomainHash) error {
-	err := bp.blockValidator.ValidateHeaderInContext(blockHash)
+func (bp *blockProcessor) validateInContext(block *externalapi.DomainBlock) error {
+	bp.blockStore.Stage(block.Hash, block)
+	err := bp.blockValidator.ValidateHeaderInContext(block.Hash)
 	if err != nil {
 		return err
 	}
-	err = bp.blockValidator.ValidateBodyInContext(blockHash)
+	err = bp.blockValidator.ValidateBodyInContext(block.Hash)
 	if err != nil {
 		return err
 	}
