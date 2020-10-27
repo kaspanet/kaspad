@@ -67,8 +67,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		ghostdagDataStore,
 		model.KType(dagParams.K))
 	dagTraversalManager := dagtraversalmanager.New(
+		domainDBContext,
 		dagTopologyManager,
-		ghostdagManager)
+		ghostdagDataStore)
 	pruningManager := pruningmanager.New(
 		dagTraversalManager,
 		dagTopologyManager,
@@ -92,7 +93,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
-		ghostdagManager)
+		dagParams.TimestampDeviationTolerance,
+		domainDBContext,
+		dagTraversalManager,
+		blockStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		domainDBContext,
 		pastMedianTimeManager,
