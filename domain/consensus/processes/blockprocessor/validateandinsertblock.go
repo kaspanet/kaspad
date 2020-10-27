@@ -90,5 +90,51 @@ func (bp *blockProcessor) discardAllChanges() {
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
-	return nil
+	dbTx, err := bp.databaseContext.NewTx()
+	if err != nil {
+		return err
+	}
+
+	err = bp.acceptanceDataStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.blockStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.blockRelationStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.blockStatusStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.consensusStateStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.ghostdagDataStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.multisetStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.pruningStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.reachabilityDataStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+	err = bp.utxoDiffStore.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
 }

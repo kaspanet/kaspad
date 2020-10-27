@@ -21,3 +21,7 @@ func (dtc *DomainTxContext) StoreBlockRelation(blockHash *externalapi.DomainHash
 func NewDomainTxContext(dbTx *dbaccess.TxContext) *DomainTxContext {
 	return &DomainTxContext{dbTx: dbTx}
 }
+
+func (dtc *DomainTxContext) Commit() error {
+	return dtc.dbTx.Commit()
+}
