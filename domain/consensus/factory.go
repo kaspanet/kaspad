@@ -137,7 +137,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		blockStatusStore,
 		blockRelationStore,
 		multisetStore,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		consensusStateStore,
+		pruningStore,
+		reachabilityDataStore,
+		utxoDiffStore)
 
 	return &consensus{
 		consensusStateManager: consensusStateManager,
