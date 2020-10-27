@@ -29,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
-	// If either header of proof-of-work validation fails, simply
+	// If either header or proof-of-work validation fails, simply
 	// return an error without writing anything in the database.
 	// This is to prevent spamming attacks.
 	err := bp.validateHeaderAndProofOfWork(block)
