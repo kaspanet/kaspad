@@ -30,7 +30,7 @@ func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *mod
 }
 
 func (uds *utxoDiffStore) IsStaged() bool {
-	return len(uds.utxoDiffStaging) != 0
+	return len(uds.utxoDiffStaging) != 0 || len(uds.utxoDiffChildStaging) != 0
 }
 
 func (uds *utxoDiffStore) Discard() {
