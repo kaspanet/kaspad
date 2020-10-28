@@ -8,6 +8,6 @@ type BlockRelationStore interface {
 	StageBlockRelation(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash)
 	StageTips(tipHashess []*externalapi.DomainHash)
 	IsAnythingStaged() bool
-	BlockRelation(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*BlockRelations, error)
-	Tips(dbContext DBContextProxy) ([]*externalapi.DomainHash, error)
+	BlockRelation(dbContext DBReader, blockHash *externalapi.DomainHash) (*BlockRelations, error)
+	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
 }

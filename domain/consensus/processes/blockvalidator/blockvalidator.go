@@ -19,7 +19,7 @@ type blockValidator struct {
 	difficultyAdjustmentWindowSize uint64
 	finalityDepth                  uint64
 
-	databaseContext       model.DBContextProxy
+	databaseContext       model.DBReader
 	consensusStateManager model.ConsensusStateManager
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -41,7 +41,7 @@ func New(powMax *big.Int,
 	disableDifficultyAdjustment bool,
 	difficultyAdjustmentWindowSize uint64,
 	finalityDepth uint64,
-	databaseContext model.DBContextProxy,
+	databaseContext model.DBReader,
 
 	consensusStateManager model.ConsensusStateManager,
 	difficultyManager model.DifficultyManager,

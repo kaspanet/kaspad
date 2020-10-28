@@ -7,8 +7,8 @@ type BlockHeaderStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader)
 	IsStaged() bool
-	BlockHeader(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
-	HasBlockHeader(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (bool, error)
-	BlockHeaders(dbContext DBContextProxy, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlockHeader, error)
-	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
+	BlockHeader(dbContext DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
+	HasBlockHeader(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
+	BlockHeaders(dbContext DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlockHeader, error)
+	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
 }

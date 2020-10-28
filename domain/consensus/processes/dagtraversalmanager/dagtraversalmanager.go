@@ -8,7 +8,7 @@ import (
 // dagTraversalManager exposes methods for travering blocks
 // in the DAG
 type dagTraversalManager struct {
-	databaseContext model.DBContextProxy
+	databaseContext model.DBReader
 
 	dagTopologyManager model.DAGTopologyManager
 	ghostdagDataStore  model.GHOSTDAGDataStore
@@ -16,7 +16,7 @@ type dagTraversalManager struct {
 
 // New instantiates a new DAGTraversalManager
 func New(
-	databaseContext model.DBContextProxy,
+	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore) model.DAGTraversalManager {
 	return &dagTraversalManager{

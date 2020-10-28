@@ -7,5 +7,5 @@ type GHOSTDAGDataStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *BlockGHOSTDAGData)
 	IsStaged() bool
-	Get(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*BlockGHOSTDAGData, error)
+	Get(dbContext DBReader, blockHash *externalapi.DomainHash) (*BlockGHOSTDAGData, error)
 }

@@ -7,7 +7,7 @@ type UTXODiffStore interface {
 	Store
 	Stage(blockHash *externalapi.DomainHash, utxoDiff *UTXODiff, utxoDiffChild *externalapi.DomainHash)
 	IsStaged() bool
-	UTXODiff(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*UTXODiff, error)
-	UTXODiffChild(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
-	Delete(dbTx DBTxProxy, blockHash *externalapi.DomainHash) error
+	UTXODiff(dbContext DBReader, blockHash *externalapi.DomainHash) (*UTXODiff, error)
+	UTXODiffChild(dbContext DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
+	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
 }

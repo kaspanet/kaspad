@@ -27,26 +27,26 @@ func (bms *blockStore) Discard() {
 	panic("implement me")
 }
 
-func (bms *blockStore) Commit(dbTx model.DBTxProxy) error {
+func (bms *blockStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // Block gets the block associated with the given blockHash
-func (bms *blockStore) Block(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (bms *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	panic("implement me")
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.
-func (bms *blockStore) HasBlock(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (bool, error) {
+func (bms *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	panic("implement me")
 }
 
 // Blocks gets the blocks associated with the given blockHashes
-func (bms *blockStore) Blocks(dbContext model.DBContextProxy, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+func (bms *blockStore) Blocks(dbContext model.DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
 	panic("implement me")
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bms *blockStore) Delete(dbTx model.DBTxProxy, blockHash *externalapi.DomainHash) error {
+func (bms *blockStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
 	panic("implement me")
 }

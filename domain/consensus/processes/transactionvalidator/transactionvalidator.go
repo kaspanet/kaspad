@@ -8,14 +8,14 @@ import (
 // it's possible to determine whether either a transaction is valid
 type transactionValidator struct {
 	blockCoinbaseMaturity uint64
-	databaseContext       model.DBContextProxy
+	databaseContext       model.DBReader
 	pastMedianTimeManager model.PastMedianTimeManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 }
 
 // New instantiates a new TransactionValidator
 func New(blockCoinbaseMaturity uint64,
-	databaseContext model.DBContextProxy,
+	databaseContext model.DBReader,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagDataStore model.GHOSTDAGDataStore) model.TransactionValidator {
 	return &transactionValidator{blockCoinbaseMaturity: blockCoinbaseMaturity,

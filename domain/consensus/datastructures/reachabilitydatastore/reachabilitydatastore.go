@@ -32,18 +32,18 @@ func (rds *reachabilityDataStore) Discard() {
 	panic("implement me")
 }
 
-func (rds *reachabilityDataStore) Commit(dbTx model.DBTxProxy) error {
+func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // ReachabilityData returns the reachabilityData associated with the given blockHash
-func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBContextProxy,
+func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 
 	panic("implement me")
 }
 
 // ReachabilityReindexRoot returns the current reachability reindex root
-func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
+func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBReader) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }

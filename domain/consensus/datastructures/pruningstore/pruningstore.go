@@ -27,16 +27,16 @@ func (pps *pruningStore) Discard() {
 	panic("implement me")
 }
 
-func (pps *pruningStore) Commit(dbTx model.DBTxProxy) error {
+func (pps *pruningStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // PruningPoint gets the current pruning point
-func (pps *pruningStore) PruningPoint(dbContext model.DBContextProxy) (*externalapi.DomainHash, error) {
+func (pps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.DomainHash, error) {
 	return nil, nil
 }
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
-func (pps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBContextProxy) ([]byte, error) {
+func (pps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) ([]byte, error) {
 	return nil, nil
 }

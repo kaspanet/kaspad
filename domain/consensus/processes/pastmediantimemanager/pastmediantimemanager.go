@@ -12,7 +12,7 @@ import (
 type pastMedianTimeManager struct {
 	timestampDeviationTolerance uint64
 
-	databaseContext model.DBContextProxy
+	databaseContext model.DBReader
 
 	dagTraversalManager model.DAGTraversalManager
 
@@ -21,7 +21,7 @@ type pastMedianTimeManager struct {
 
 // New instantiates a new PastMedianTimeManager
 func New(timestampDeviationTolerance uint64,
-	databaseContext model.DBContextProxy,
+	databaseContext model.DBReader,
 	dagTraversalManager model.DAGTraversalManager,
 	blockHeaderStore model.BlockHeaderStore) model.PastMedianTimeManager {
 	return &pastMedianTimeManager{

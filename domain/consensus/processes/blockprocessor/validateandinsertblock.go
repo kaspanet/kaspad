@@ -93,7 +93,7 @@ func (bp *blockProcessor) discardAllChanges() {
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
-	dbTx, err := bp.databaseContext.NewTx()
+	dbTx, err := bp.databaseContext.Begin()
 	if err != nil {
 		return err
 	}

@@ -27,16 +27,16 @@ func (bss *blockStatusStore) Discard() {
 	panic("implement me")
 }
 
-func (bss *blockStatusStore) Commit(dbTx model.DBTxProxy) error {
+func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *blockStatusStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
 	return 0, nil
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists
-func (bss *blockStatusStore) Exists(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (bool, error) {
+func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	return false, nil
 }
