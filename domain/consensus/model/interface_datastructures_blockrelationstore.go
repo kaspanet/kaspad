@@ -6,6 +6,6 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type BlockRelationStore interface {
 	Store
 	StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *BlockRelations)
-	IsAnythingStaged() bool
+	IsStaged() bool
 	BlockRelation(dbContext DBReader, blockHash *externalapi.DomainHash) (*BlockRelations, error)
 }

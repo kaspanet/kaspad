@@ -24,7 +24,7 @@ func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainH
 	brs.staging[*blockHash] = blockRelations
 }
 
-func (brs *blockRelationStore) IsAnythingStaged() bool {
+func (brs *blockRelationStore) IsStaged() bool {
 	return len(brs.staging) != 0
 }
 
