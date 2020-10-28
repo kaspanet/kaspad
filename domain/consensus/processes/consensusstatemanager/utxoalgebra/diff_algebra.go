@@ -9,7 +9,7 @@ import (
 // checkIntersection checks if there is an intersection between two model.UTXOCollections
 func checkIntersection(collection1 model.UTXOCollection, collection2 model.UTXOCollection) bool {
 	for outpoint := range collection1 {
-		if collectionContains(collection2, &outpoint) {
+		if CollectionContains(collection2, &outpoint) {
 			return true
 		}
 	}
@@ -22,7 +22,7 @@ func checkIntersectionWithRule(collection1 model.UTXOCollection, collection2 mod
 	extraRule func(*externalapi.DomainOutpoint, *externalapi.UTXOEntry, *externalapi.UTXOEntry) bool) bool {
 
 	for outpoint, utxoEntry := range collection1 {
-		if diffEntry, ok := collectionGet(collection2, &outpoint); ok {
+		if diffEntry, ok := CollectionGet(collection2, &outpoint); ok {
 			if extraRule(&outpoint, utxoEntry, diffEntry) {
 				return true
 			}
@@ -238,7 +238,7 @@ func WithDiffInPlace(this *model.UTXODiff, diff *model.UTXODiff) error {
 // WithDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
 // first d, and than diff were applied to some base
 func WithDiff(this *model.UTXODiff, diff *model.UTXODiff) (*model.UTXODiff, error) {
-	clone := diffClone(this)
+	clone := DiffClone(this)
 
 	err := WithDiffInPlace(clone, diff)
 	if err != nil {

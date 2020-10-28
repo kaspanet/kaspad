@@ -85,6 +85,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTraversalManager,
 		blockHeaderStore)
+	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
+		dbManager,
+		pastMedianTimeManager,
+		ghostdagDataStore)
 	consensusStateManager := consensusstatemanager.New(
 		dbManager,
 		dagParams,
@@ -93,7 +97,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		pruningManager,
 		pastMedianTimeManager,
-		reachabilityTree,
+		reachabilityManager,
+		transactionValidator,
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,
@@ -105,10 +110,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore)
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
-	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
-		dbManager,
-		pastMedianTimeManager,
-		ghostdagDataStore)
 	coinbaseManager := coinbasemanager.New(
 		ghostdagDataStore,
 		acceptanceDataStore)

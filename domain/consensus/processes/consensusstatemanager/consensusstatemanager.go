@@ -1,12 +1,20 @@
 package consensusstatemanager
 
 import (
+	"errors"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
+
+// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
+const maxMassAcceptedByBlock = 10000000
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
@@ -19,6 +27,7 @@ type consensusStateManager struct {
 	pruningManager        model.PruningManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	reachabilityTree      model.ReachabilityTree
+	transactionValidator  model.TransactionValidator
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -41,6 +50,7 @@ func New(
 	pruningManager model.PruningManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	reachabilityTree model.ReachabilityTree,
+	transactionValidator model.TransactionValidator,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -61,6 +71,7 @@ func New(
 		pruningManager:        pruningManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		reachabilityTree:      reachabilityTree,
+		transactionValidator:  transactionValidator,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
@@ -72,22 +83,6 @@ func New(
 		acceptanceDataStore: acceptanceDataStore,
 		blockHeaderStore:    blockHeaderStore,
 	}
-}
-
-// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
-func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
-	for _, transactionInput := range transaction.Inputs {
-		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
-		if err != nil {
-			return err
-		}
-		if utxoEntry == nil {
-			return ruleerrors.ErrMissingTxOut
-		}
-		transactionInput.UTXOEntry = utxoEntry
-	}
-
-	return nil
 }
 
 // AddBlockToVirtual submits the given block to be added to the
@@ -140,7 +135,7 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 }
 
 func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *externalapi.DomainHash) (
-	*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
+	[]*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
 	if err != nil {
@@ -152,7 +147,16 @@ func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *
 		return nil, nil, nil, err
 	}
 
-	return csm.applyBlueBlocks(selectedParentPastUTXO, blockGHOSTDAGData)
+	acceptanceData, utxoDiff, err := csm.applyBlueBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return acceptanceData, multiset, utxoDiff, nil
 }
 
 func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
@@ -183,21 +187,90 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	return accumulatedDiff, nil
 }
 
-func (csm *consensusStateManager) applyBlueBlocks(
-	selectedParentPastUTXO *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
-	*model.BlockAcceptanceData, model.Multiset, *model.UTXODiff, error) {
+func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
+	selectedParentPastUTXODiff *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	[]*model.BlockAcceptanceData, *model.UTXODiff, error) {
 
-	return nil, nil, nil, nil
-	// TODO
-	//blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
-	//if err != nil {
-	//	return nil, nil, nil, err
-	//}
+	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	//pastUTXO := selectedParentPastUTXO
-	//for _, blueBlock := range blueBlocks {
-	//
-	//}
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	multiblockAcceptanceData := make([]*model.BlockAcceptanceData, len(blueBlocks))
+	accumulatedUTXODiff := utxoalgebra.DiffClone(selectedParentPastUTXODiff)
+	accumulatedMass := uint64(0)
+
+	for i, blueBlock := range blueBlocks {
+		blockAccepanceData := &model.BlockAcceptanceData{
+			TransactionAcceptanceData: []*model.TransactionAcceptanceData{},
+		}
+		isSelectedParent := i == 0
+
+		for j, transaction := range blueBlock.Transactions {
+			var isAccepted bool
+			var fee uint64
+
+			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
+				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			blockAccepanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+				Transaction: transaction,
+				Fee:         fee,
+				IsAccepted:  isAccepted,
+			}
+		}
+		multiblockAcceptanceData[i] = blockAccepanceData
+	}
+
+	return multiblockAcceptanceData, accumulatedUTXODiff, nil
+}
+
+func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalapi.DomainTransaction,
+	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff *model.UTXODiff,
+	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
+	isAccepted bool, accumulatedMassAfter uint64, err error) {
+
+	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff)
+	if err != nil {
+		return false, accumulatedMassBefore, err
+	}
+
+	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
+	if transactionhelper.IsCoinBase(transaction) {
+		if !isSelectedParent {
+			return false, accumulatedMassBefore, nil
+		}
+
+		err := utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
+		if err != nil {
+			return false, accumulatedMassBefore, err
+		}
+
+		return true, accumulatedMassBefore, nil
+	}
+
+	err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+		transaction, blockHash, selectedParentPastMedianTime)
+	if err != nil {
+		if !errors.As(err, &(ruleerrors.RuleError{})) {
+			return false, accumulatedMassBefore, err
+		}
+
+		return false, accumulatedMassBefore, nil
+	}
+
+	isAccepted = true
+	isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
+
+	return isAccepted, accumulatedMassAfter, nil
 }
 
 // VirtualData returns data on the current virtual block
@@ -263,4 +336,102 @@ func (csm *consensusStateManager) updateVirtual(tips []*externalapi.DomainHash) 
 	// TODO
 
 	return nil
+}
+
+func (csm *consensusStateManager) calculateMultiset(
+	acceptanceData []*model.BlockAcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
+
+	selectedParentMultiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
+	if err != nil {
+		return nil, err
+	}
+
+	multiset := selectedParentMultiset.Clone()
+
+	for _, blockAcceptanceData := range acceptanceData {
+		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptanceData.IsAccepted {
+				continue
+			}
+
+			transaction := transactionAcceptanceData.Transaction
+
+			var err error
+			err = addTransactionToMultiset(multiset, transaction, blockGHOSTDAGData.BlueScore)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return multiset, nil
+}
+
+func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
+	blockBlueScore uint64) error {
+
+	for _, input := range transaction.Inputs {
+		err := removeUTXOFromMultiset(multiset, input.UTXOEntry, &input.PreviousOutpoint)
+		if err != nil {
+			return err
+		}
+	}
+
+	for i, output := range transaction.Outputs {
+		outpoint := &externalapi.DomainOutpoint{
+			ID:    *hashserialization.TransactionID(transaction),
+			Index: uint32(i),
+		}
+		utxoEntry := &externalapi.UTXOEntry{
+			Amount:          output.Value,
+			ScriptPublicKey: output.ScriptPublicKey,
+			BlockBlueScore:  blockBlueScore,
+			IsCoinbase:      false,
+		}
+		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+	outpoint *externalapi.DomainOutpoint) error {
+
+	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	if err != nil {
+		return err
+	}
+	multiset.Add(serializedUTXO)
+
+	return nil
+}
+
+func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+	outpoint *externalapi.DomainOutpoint) error {
+
+	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	if err != nil {
+		return err
+	}
+	multiset.Remove(serializedUTXO)
+
+	return nil
+}
+
+func (csm *consensusStateManager) checkTransactionMass(
+	transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
+	isAccepted bool, accumulatedMassAfter uint64) {
+
+	accumulatedMassAfter = accumulatedMassBefore + transaction.Mass
+
+	// We could potentially overflow the accumulator so check for
+	// overflow as well.
+	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > maxMassAcceptedByBlock {
+		return false, 0
+	}
+
+	return true, accumulatedMassAfter
 }

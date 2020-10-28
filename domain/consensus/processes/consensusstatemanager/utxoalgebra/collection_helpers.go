@@ -31,13 +31,13 @@ func collectionRemoveMultiple(collection model.UTXOCollection, collectionToRemov
 
 // get returns the model.UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said model.UTXOEntry is in the set or not
-func collectionGet(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
+func CollectionGet(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
 	entry, ok := collection[*outpoint]
 	return entry, ok
 }
 
 // contains returns a boolean value indicating whether a UTXO entry is in the set
-func collectionContains(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) bool {
+func CollectionContains(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) bool {
 	_, ok := collection[*outpoint]
 	return ok
 }
@@ -45,7 +45,7 @@ func collectionContains(collection model.UTXOCollection, outpoint *externalapi.D
 // containsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
 func collectionContainsWithBlueScore(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
-	entry, ok := collectionGet(collection, outpoint)
+	entry, ok := CollectionGet(collection, outpoint)
 	return ok && entry.BlockBlueScore == blueScore
 }
 

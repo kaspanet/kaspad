@@ -95,7 +95,7 @@ func TestUTXODiff(t *testing.T) {
 	}
 
 	// Test utxoDiff cloning
-	clonedDiff := diffClone(diff)
+	clonedDiff := DiffClone(diff)
 	if clonedDiff == diff {
 		t.Errorf("cloned diff is reference-equal to the original")
 	}
@@ -576,7 +576,7 @@ func TestUTXODiffRules(t *testing.T) {
 		}
 
 		// Repeat WithDiff check test.this time using withDiffInPlace
-		thisClone := diffClone(test.this)
+		thisClone := DiffClone(test.this)
 		err = WithDiffInPlace(thisClone, test.other)
 
 		// Test whether withDiffInPlace returned an error

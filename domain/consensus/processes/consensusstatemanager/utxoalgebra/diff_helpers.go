@@ -3,17 +3,52 @@ package utxoalgebra
 import (
 	"reflect"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
-func diffClone(diff *model.UTXODiff) *model.UTXODiff {
+func DiffClone(diff *model.UTXODiff) *model.UTXODiff {
 	clone := &model.UTXODiff{
 		ToAdd:    collectionClone(diff.ToAdd),
 		ToRemove: collectionClone(diff.ToRemove),
 	}
 	return clone
+}
+
+// DiffAddTransaction modifies the provided utxoDiff with provided transaction.
+func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
+	for _, input := range transaction.Inputs {
+		err := diffRemoveEntry(utxoDiff, &input.PreviousOutpoint, input.UTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
+
+	isCoinbase := transactionhelper.IsCoinBase(transaction)
+	for i, output := range transaction.Outputs {
+		outpoint := &externalapi.DomainOutpoint{
+			ID:    *hashserialization.TransactionID(transaction),
+			Index: uint32(i),
+		}
+		entry := &externalapi.UTXOEntry{
+			Amount:          output.Value,
+			ScriptPublicKey: output.ScriptPublicKey,
+			BlockBlueScore:  blockBlueScore,
+			IsCoinbase:      isCoinbase,
+		}
+
+		err := diffAddEntry(utxoDiff, outpoint, entry)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func diffAddEntry(diff *model.UTXODiff, outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
