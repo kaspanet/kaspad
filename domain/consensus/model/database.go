@@ -92,6 +92,6 @@ type DBKey interface {
 // DBBucket is an interface for a database bucket
 type DBBucket interface {
 	Bucket(bucketBytes []byte) DBBucket
-	Key() DBKey
+	Key(suffix []byte) DBKey
 	Path() []byte
 }

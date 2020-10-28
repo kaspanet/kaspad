@@ -10,19 +10,20 @@ type dbManager struct {
 }
 
 func (dbw *dbManager) Get(key model.DBKey) ([]byte, error) {
-	panic("unimplemented")
+	return dbw.db.Get(dbKeyToDatabaseKey(key))
 }
 
 func (dbw *dbManager) Has(key model.DBKey) (bool, error) {
-	panic("unimplemented")
-}
-
-func (dbw *dbManager) Delete(key model.DBKey) error {
-	panic("unimplemented")
+	return dbw.db.Has(dbKeyToDatabaseKey(key))
 }
 
 func (dbw *dbManager) Cursor(bucket model.DBBucket) (model.DBCursor, error) {
-	panic("unimplemented")
+	cursor, err := dbw.db.Cursor(dbBucketToDatabaseBucket(bucket))
+	if err != nil {
+		return nil, err
+	}
+
+	return newDBCursor(cursor), nil
 }
 
 func (dbw *dbManager) Begin() (model.DBTransaction, error) {
