@@ -3,41 +3,68 @@ package blockrelationstore
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
+
+var bucket = dbkeys.MakeBucket([]byte("block-relations"))
 
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
+	staging map[externalapi.DomainHash]*model.BlockRelations
 }
 
 // New instantiates a new BlockRelationStore
 func New() model.BlockRelationStore {
-	return &blockRelationStore{}
+	return &blockRelationStore{
+		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
+	}
 }
 
-func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
-	panic("implement me")
+func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) {
+	brs.staging[*blockHash] = blockRelations
 }
 
-func (brs *blockRelationStore) StageTips(tipHashess []*externalapi.DomainHash) {
-	panic("implement me")
-}
-
-func (brs *blockRelationStore) IsAnythingStaged() bool {
-	panic("implement me")
+func (brs *blockRelationStore) IsStaged() bool {
+	return len(brs.staging) != 0
 }
 
 func (brs *blockRelationStore) Discard() {
-	panic("implement me")
+	brs.staging = make(map[externalapi.DomainHash]*model.BlockRelations)
 }
 
 func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
-	panic("implement me")
+	for hash, blockRelations := range brs.staging {
+		err := dbTx.Put(brs.hashAsKey(&hash), brs.serializeBlockRelations(blockRelations))
+		if err != nil {
+			return err
+		}
+	}
+
+	brs.Discard()
+	return nil
 }
 
 func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
+	if blockRelations, ok := brs.staging[*blockHash]; ok {
+		return blockRelations, nil
+	}
+
+	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
+	if err != nil {
+		return nil, err
+	}
+
+	return brs.deserializeBlockRelations(blockRelationsBytes)
+}
+
+func (brs *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) []byte {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+func (brs *blockRelationStore) deserializeBlockRelations(blockRelationsBytes []byte) (*model.BlockRelations, error) {
 	panic("implement me")
+}
+
+func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
+	return bucket.Key(hash[:])
 }
