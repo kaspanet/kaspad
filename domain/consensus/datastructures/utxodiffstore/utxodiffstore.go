@@ -33,6 +33,14 @@ func (uds *utxoDiffStore) IsStaged() bool {
 	return len(uds.utxoDiffStaging) != 0 || len(uds.utxoDiffChildStaging) != 0
 }
 
+func (uds *utxoDiffStore) IsBlockHashStaged(blockHash *externalapi.DomainHash) bool {
+	if _, ok := uds.utxoDiffStaging[*blockHash]; ok {
+		return true
+	}
+	_, ok := uds.utxoDiffChildStaging[*blockHash]
+	return ok
+}
+
 func (uds *utxoDiffStore) Discard() {
 	uds.utxoDiffStaging = make(map[externalapi.DomainHash]*model.UTXODiff)
 	uds.utxoDiffChildStaging = make(map[externalapi.DomainHash]*externalapi.DomainHash)
@@ -90,12 +98,12 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 
 // Delete deletes the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
-	if uds.IsStaged() {
-		if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
-			delete(uds.utxoDiffChildStaging, *blockHash)
-		}
+	if uds.IsBlockHashStaged(blockHash) {
 		if _, ok := uds.utxoDiffStaging[*blockHash]; ok {
 			delete(uds.utxoDiffStaging, *blockHash)
+		}
+		if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
+			delete(uds.utxoDiffChildStaging, *blockHash)
 		}
 		return nil
 	}
