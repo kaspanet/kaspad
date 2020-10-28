@@ -46,7 +46,7 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
-		err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChild[:])
+		err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), uds.serializeUTXODiffChild(utxoDiffChild))
 		if err != nil {
 			return err
 		}
@@ -80,10 +80,12 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 	if err != nil {
 		return nil, err
 	}
-	var utxoDiffChild externalapi.DomainHash
-	copy(utxoDiffChild[:], utxoDiffChildBytes[:])
 
-	return &utxoDiffChild, nil
+	utxoDiffChild, err := uds.deserializeUTXODiffChild(utxoDiffChildBytes)
+	if err != nil {
+		return nil, err
+	}
+	return utxoDiffChild, nil
 }
 
 // Delete deletes the utxoDiff associated with the given blockHash
@@ -117,5 +119,13 @@ func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff *model.UTXODiff) []byte {
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (*model.UTXODiff, error) {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) serializeUTXODiffChild(utxoDiffChild *externalapi.DomainHash) []byte {
+	panic("implement me")
+}
+
+func (uds *utxoDiffStore) deserializeUTXODiffChild(utxoDiffChildBytes []byte) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
