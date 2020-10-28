@@ -57,14 +57,14 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 	return brs.deserializeBlockRelations(blockRelationsBytes)
 }
 
-func (bms *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) []byte {
+func (brs *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) []byte {
 	panic("implement me")
 }
 
-func (bms *blockRelationStore) deserializeBlockRelations(blockRelationsBytes []byte) (*model.BlockRelations, error) {
+func (brs *blockRelationStore) deserializeBlockRelations(blockRelationsBytes []byte) (*model.BlockRelations, error) {
 	panic("implement me")
 }
 
-func (bms *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
+func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }

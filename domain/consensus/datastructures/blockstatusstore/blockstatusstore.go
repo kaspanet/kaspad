@@ -73,14 +73,14 @@ func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externa
 	return exists, nil
 }
 
-func (bms *blockStatusStore) serializeBlockStatus(status model.BlockStatus) []byte {
+func (bss *blockStatusStore) serializeBlockStatus(status model.BlockStatus) []byte {
 	panic("implement me")
 }
 
-func (bms *blockStatusStore) deserializeHeader(statusBytes []byte) (model.BlockStatus, error) {
+func (bss *blockStatusStore) deserializeHeader(statusBytes []byte) (model.BlockStatus, error) {
 	panic("implement me")
 }
 
-func (bms *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
+func (bss *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }
