@@ -61,7 +61,11 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 
 // Delete deletes the acceptanceData associated with the given blockHash
 func (ads *acceptanceDataStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
-	return nil
+	if _, ok := ads.staging[*blockHash]; ok {
+		delete(ads.staging, *blockHash)
+		return nil
+	}
+	return dbTx.Delete(ads.hashAsKey(blockHash))
 }
 
 func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) []byte {
