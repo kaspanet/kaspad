@@ -47,9 +47,9 @@ func (gm *ghostdagManager) ChooseSelectedParent(blockHashA *externalapi.DomainHa
 	blockBBlueScore := blockBGHOSTDAGData.BlueScore
 	if blockABlueScore == blockBBlueScore {
 		if hashes.Less(blockHashA, blockHashB) {
-			return blockHashA, nil
+			return blockHashB, nil
 		}
-		return blockHashB, nil
+		return blockHashA, nil
 	}
 	if blockABlueScore < blockBBlueScore {
 		return blockHashB, nil
