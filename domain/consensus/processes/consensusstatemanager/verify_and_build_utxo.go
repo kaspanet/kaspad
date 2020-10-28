@@ -84,6 +84,7 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", blockHash, &block.Header.UTXOCommitment, multisetHash)
 	}
+
 	return nil
 }
 

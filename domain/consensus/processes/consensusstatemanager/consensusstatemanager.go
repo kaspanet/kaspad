@@ -382,12 +382,6 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 	return newTips, nil
 }
 
-func (csm *consensusStateManager) updateVirtual(tips []*externalapi.DomainHash) error {
-	// TODO
-
-	return nil
-}
-
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData []*model.BlockAcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
@@ -506,5 +500,42 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		}
 	}
 
+	csm.multisetStore.Stage(blockHash, multiset)
+	csm.acceptanceDataStore.Stage(blockHash, acceptanceData)
+	csm.utxoDiffStore.Stage(blockHash, pastUTXODiff, nil)
+
+	err = csm.updateParentDiffs(blockHash, pastUTXODiff)
+	if err != nil {
+		return 0, err
+	}
+
 	return model.StatusValid, nil
+}
+
+func (csm *consensusStateManager) updateParentDiffs(
+	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	parentHashes, err := csm.dagTopologyManager.Parents(blockHash)
+	if err != nil {
+		return err
+	}
+	for _, parentHash := range parentHashes {
+		parentDiffChildHash, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, parentHash)
+		if err != nil {
+			return err
+		}
+		if parentDiffChildHash == nil {
+			parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
+			if err != nil {
+				return err
+			}
+			parentNewDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, parentCurrentDiff)
+			if err != nil {
+				return err
+			}
+
+			csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		}
+	}
+
+	return nil
 }
