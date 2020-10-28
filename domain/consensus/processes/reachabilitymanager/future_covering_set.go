@@ -65,12 +65,12 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 		return nil
 	}
 
-	futureNodeIsAncestorOfCandidaqte, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
+	futureNodeIsAncestorOfCandidate, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
 	if err != nil {
 		return err
 	}
 
-	if futureNodeIsAncestorOfCandidaqte {
+	if futureNodeIsAncestorOfCandidate {
 		// futureNode is an ancestor of candidate, and can thus replace it
 		newSet := make([]*externalapi.DomainHash, len(futureCoveringSet))
 		copy(newSet, futureCoveringSet)
