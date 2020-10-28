@@ -11,7 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
-	"github.com/kaspanet/kaspad/domain/consensus/dbwrapper"
+	"github.com/kaspanet/kaspad/domain/consensus/dbmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -51,7 +51,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
-	dbManager := dbwrapper.New(db)
+	dbManager := dbmanager.New(db)
 
 	// Processes
 	reachabilityTree := reachabilitytree.New(
