@@ -39,17 +39,12 @@ type DBReader interface {
 	// given key.
 	Has(key DBKey) (bool, error)
 
-	// Delete deletes the value for the given key. Will not
-	// return an error if the key doesn't exist.
-	Delete(key DBKey) error
-
 	// Cursor begins a new cursor over the given bucket.
 	Cursor(bucket DBBucket) (DBCursor, error)
 }
 
-// DBTransaction is a proxy over domain data
-// access that requires an open database transaction
-type DBTransaction interface {
+// DBWriter is an interface to write to the database
+type DBWriter interface {
 	// Put sets the value for the given key. It overwrites
 	// any previous value for that key.
 	Put(key []byte, value []byte) error
@@ -57,6 +52,12 @@ type DBTransaction interface {
 	// Delete deletes the value for the given key. Will not
 	// return an error if the key doesn't exist.
 	Delete(key []byte) error
+}
+
+// DBTransaction is a proxy over domain data
+// access that requires an open database transaction
+type DBTransaction interface {
+	DBWriter
 
 	// Rollback rolls back whatever changes were made to the
 	// database within this transaction.
