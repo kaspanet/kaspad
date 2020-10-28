@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-status"))
+var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
