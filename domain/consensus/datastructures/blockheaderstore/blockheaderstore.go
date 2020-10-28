@@ -40,10 +40,6 @@ func (bms *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 	}
-	err := dbTx.Commit()
-	if err != nil {
-		return err
-	}
 
 	bms.Discard()
 	return nil
@@ -92,6 +88,10 @@ func (bms *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes 
 
 // Delete deletes the block associated with the given blockHash
 func (bms *blockHeaderStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+	if _, ok := bms.staging[*blockHash]; ok {
+		delete(bms.staging, *blockHash)
+		return nil
+	}
 	return dbTx.Delete(bms.hashAsKey(blockHash))
 }
 
