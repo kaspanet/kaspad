@@ -30,6 +30,7 @@ type blockValidator struct {
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
+	blockHeaderStore  model.BlockHeaderStore
 }
 
 // New instantiates a new BlockValidator
@@ -51,7 +52,8 @@ func New(powMax *big.Int,
 	dagTraversalManager model.DAGTraversalManager,
 
 	blockStore model.BlockStore,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.BlockValidator {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	blockHeaderStore model.BlockHeaderStore) model.BlockValidator {
 
 	return &blockValidator{
 		powMax:                         powMax,
@@ -72,5 +74,6 @@ func New(powMax *big.Int,
 		dagTraversalManager:            dagTraversalManager,
 		blockStore:                     blockStore,
 		ghostdagDataStore:              ghostdagDataStore,
+		blockHeaderStore:               blockHeaderStore,
 	}
 }

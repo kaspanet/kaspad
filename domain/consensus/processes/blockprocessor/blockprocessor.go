@@ -33,6 +33,7 @@ type blockProcessor struct {
 	pruningStore          model.PruningStore
 	reachabilityDataStore model.ReachabilityDataStore
 	utxoDiffStore         model.UTXODiffStore
+	blockHeaderStore      model.BlockHeaderStore
 
 	stores []model.Store
 }
@@ -59,7 +60,8 @@ func New(
 	consensusStateStore model.ConsensusStateStore,
 	pruningStore model.PruningStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	utxoDiffStore model.UTXODiffStore) model.BlockProcessor {
+	utxoDiffStore model.UTXODiffStore,
+	blockHeaderStore model.BlockHeaderStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -84,6 +86,7 @@ func New(
 		pruningStore:          pruningStore,
 		reachabilityDataStore: reachabilityDataStore,
 		utxoDiffStore:         utxoDiffStore,
+		blockHeaderStore:      blockHeaderStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -97,6 +100,7 @@ func New(
 			pruningStore,
 			reachabilityDataStore,
 			utxoDiffStore,
+			blockHeaderStore,
 		},
 	}
 }
