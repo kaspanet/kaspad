@@ -53,7 +53,7 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 
 // PruningPoint gets the current pruning point
 func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.DomainHash, error) {
-	if ps.IsStaged() {
+	if ps.blockHashStaging != nil {
 		return ps.blockHashStaging, nil
 	}
 
@@ -69,7 +69,7 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.Dom
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
 func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) ([]byte, error) {
-	if ps.IsStaged() {
+	if ps.serializedUTXOSetStaging != nil {
 		return ps.serializedUTXOSetStaging, nil
 	}
 	return dbContext.Get(pruningSerializedUTXOSetkey)
