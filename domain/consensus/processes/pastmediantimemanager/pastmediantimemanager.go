@@ -16,19 +16,19 @@ type pastMedianTimeManager struct {
 
 	dagTraversalManager model.DAGTraversalManager
 
-	blockStore model.BlockStore
+	blockHeaderStore model.BlockHeaderStore
 }
 
 // New instantiates a new PastMedianTimeManager
 func New(timestampDeviationTolerance uint64,
 	databaseContext model.DBContextProxy,
 	dagTraversalManager model.DAGTraversalManager,
-	blockStore model.BlockStore) model.PastMedianTimeManager {
+	blockHeaderStore model.BlockHeaderStore) model.PastMedianTimeManager {
 	return &pastMedianTimeManager{
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		databaseContext:             databaseContext,
 		dagTraversalManager:         dagTraversalManager,
-		blockStore:                  blockStore,
+		blockHeaderStore:            blockHeaderStore,
 	}
 }
 
@@ -49,13 +49,11 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.D
 
 	timestamps := make([]int64, len(window))
 	for i, blockHash := range window {
-		block, err := pmtm.blockStore.Block(pmtm.databaseContext, blockHash)
+		blockHeader, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, blockHash)
 		if err != nil {
 			return 0, err
 		}
-
-		// TODO: Use headers store
-		timestamps[i] = block.Header.TimeInMilliseconds
+		timestamps[i] = blockHeader.TimeInMilliseconds
 	}
 
 	sort.Slice(timestamps, func(i, j int) bool {

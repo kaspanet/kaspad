@@ -10,12 +10,10 @@ import (
 )
 
 func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
-
-	header := block.Header
 
 	err = v.checkProofOfWork(header)
 	if err != nil {
@@ -39,12 +37,10 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 		return err
 	}
 
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
-
-	header := block.Header
 	if header.Bits != expectedBits {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
 	}
@@ -90,8 +86,6 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 
 func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
 	for _, parent := range header.ParentHashes {
-
-		// TODO: Use block store
 		exists, err := v.blockStore.HasBlock(v.databaseContext, parent)
 		if err != nil {
 			return err

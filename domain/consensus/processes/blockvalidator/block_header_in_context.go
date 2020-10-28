@@ -10,12 +10,10 @@ import (
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
 func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
-
-	header := block.Header
 
 	err = v.checkParentsIncest(header)
 	if err != nil {
