@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-multiset"))
+var bucket = dbkeys.MakeBucket([]byte("multiset"))
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
