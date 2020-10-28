@@ -44,7 +44,7 @@ func (rds *reachabilityDataStore) Discard() {
 
 func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 	if rds.reachabilityReindexRootStaging != nil {
-		err := dbTx.Put(reachabilityReindexRootKey, rds.reachabilityReindexRootStaging[:])
+		err := dbTx.Put(reachabilityReindexRootKey, rds.serializeReachabilityReindexRoot(rds.reachabilityReindexRootStaging))
 		if err != nil {
 			return err
 		}
@@ -85,10 +85,12 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	if err != nil {
 		return nil, err
 	}
-	var reachabilityReindexRoot externalapi.DomainHash
-	copy(reachabilityReindexRoot[:], reachabilityReindexRootBytes[:])
 
-	return &reachabilityReindexRoot, nil
+	reachabilityReindexRoot, err := rds.deserializeReachabilityReindexRoot(reachabilityReindexRootBytes)
+	if err != nil {
+		return nil, err
+	}
+	return reachabilityReindexRoot, nil
 }
 
 func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externalapi.DomainHash) model.DBKey {
@@ -100,5 +102,13 @@ func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData *mo
 }
 
 func (rds *reachabilityDataStore) deserializeReachabilityData(reachabilityDataBytes []byte) (*model.ReachabilityData, error) {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) serializeReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) []byte {
+	panic("implement me")
+}
+
+func (rds *reachabilityDataStore) deserializeReachabilityReindexRoot(reachabilityReindexRootBytes []byte) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
