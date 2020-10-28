@@ -30,7 +30,7 @@ func (ps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pru
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.blockHashStaging != nil
+	return ps.blockHashStaging != nil || ps.serializedUTXOSetStaging != nil
 }
 
 func (ps *pruningStore) Discard() {
