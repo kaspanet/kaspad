@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/pkg/errors"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.
@@ -42,7 +44,8 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			return err
 		}
 		if utxoEntry == nil {
-			return ruleerrors.ErrMissingTxOut
+			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "The transaction %s spends an unknown outpoint %s",
+				hashserialization.TransactionID(transaction), &transactionInput.PreviousOutpoint)
 		}
 		transactionInput.UTXOEntry = utxoEntry
 	}

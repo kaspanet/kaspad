@@ -151,6 +151,7 @@ func (csm *consensusStateManager) calculateAcceptanceDataAndMultiset(blockHash *
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
 	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
@@ -294,18 +295,57 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 }
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+	// get list of all blocks in the selected parent chain that have not yet resolved their status
+	unverifiedBlocks, selectedParentStatus, err := csm.getUnverifiedChainBlocksAndSelectedParentStatus(blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	// resolve the unverified blocks' statuses in opposite order
+	for i := len(unverifiedBlocks); i >= 0; i++ {
+		unverifiedBlockHash := unverifiedBlocks[i]
+
+		var blockStatus model.BlockStatus
+		if selectedParentStatus == model.StatusDisqualifiedFromChain {
+			blockStatus = model.StatusDisqualifiedFromChain
+		} else {
+			blockStatus, err = csm.resolveSingleBlockStatus(unverifiedBlockHash)
+			if err != nil {
+				return 0, err
+			}
+		}
+
+		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
+		selectedParentStatus = blockStatus
+	}
+
+	return 0, nil
+}
+
+func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatus(blockHash *externalapi.DomainHash) (
+	[]*externalapi.DomainHash, model.BlockStatus, error) {
+
 	unverifiedBlocks := []*externalapi.DomainHash{blockHash}
 	currentHash := blockHash
 	for {
 		ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
 		if err != nil {
-			return 0, err
+			return nil, 0, err
 		}
 
-		selectedParentStatus := csm.ghostdagDataStore.Get()
-	}
+		selectedParentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, ghostdagData.SelectedParent)
+		if err != nil {
+			return nil, 0, err
+		}
 
-	return 0, nil
+		if selectedParentStatus != model.StatusUTXOPendingVerification {
+			return unverifiedBlocks, selectedParentStatus, nil
+		}
+
+		unverifiedBlocks = append(unverifiedBlocks, ghostdagData.SelectedParent)
+
+		currentHash = ghostdagData.SelectedParent
+	}
 }
 
 func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
@@ -444,4 +484,27 @@ func (csm *consensusStateManager) checkTransactionMass(
 	}
 
 	return true, accumulatedMassAfter
+}
+
+func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+	acceptanceData, multiset, pastUTXODiff, err := csm.calculateAcceptanceDataAndMultiset(blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	block, err := csm.blockStore.Block(csm.databaseContext, blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	err = csm.verifyAndBuildUTXO(block, blockHash, pastUTXODiff, acceptanceData, multiset)
+	if err != nil {
+		if errors.As(err, (&ruleerrors.RuleError{})) {
+			return model.StatusDisqualifiedFromChain, nil
+		} else {
+			return 0, err
+		}
+	}
+
+	return model.StatusValid, nil
 }
