@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-func (gm *ghostdagManager) mergeSet(selecteParent *externalapi.DomainHash,
+func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selecteParent *externalapi.DomainHash,
 	blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
 	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k)
