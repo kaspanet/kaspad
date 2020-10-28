@@ -294,7 +294,17 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 }
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
-	// TODO
+	unverifiedBlocks := []*externalapi.DomainHash{blockHash}
+	currentHash := blockHash
+	for {
+		ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
+		if err != nil {
+			return 0, err
+		}
+
+		selectedParentStatus := csm.ghostdagDataStore.Get()
+	}
+
 	return 0, nil
 }
 
