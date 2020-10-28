@@ -39,7 +39,7 @@ func (ps *pruningStore) Discard() {
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
-	err := dbTx.Put(pruningBlockHashKey, ps.blockHashStaging[:])
+	err := dbTx.Put(pruningBlockHashKey, ps.serializePruningPoint(ps.blockHashStaging))
 	if err != nil {
 		return err
 	}
@@ -61,10 +61,12 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.Dom
 	if err != nil {
 		return nil, err
 	}
-	var blockHash externalapi.DomainHash
-	copy(blockHash[:], blockHashBytes[:])
 
-	return &blockHash, nil
+	blockHash, err := ps.deserializePruningPoint(blockHashBytes)
+	if err != nil {
+		return nil, err
+	}
+	return blockHash, nil
 }
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
@@ -73,6 +75,14 @@ func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) 
 		return ps.serializedUTXOSetStaging, nil
 	}
 	return dbContext.Get(pruningSerializedUTXOSetkey)
+}
+
+func (ps *pruningStore) serializePruningPoint(pruningPoint *externalapi.DomainHash) []byte {
+	panic("implement me")
+}
+
+func (ps *pruningStore) deserializePruningPoint(pruningPointBytes []byte) (*externalapi.DomainHash, error) {
+	panic("implement me")
 }
 
 func (ps *pruningStore) serializeUTXOSet(utxoSet model.ReadOnlyUTXOSet) []byte {
