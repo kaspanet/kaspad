@@ -7,7 +7,7 @@ import (
 // IsDAGAncestorOf returns true if blockHashA is an ancestor of
 // blockHashB in the DAG.
 //
-// Note: this method will return true if blockHashA == blockHashA
+// Note: this method will return true if blockHashA == blockHashB
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
 func (rt *reachabilityManager) IsDAGAncestorOf(blockHashA, blockHashB *externalapi.DomainHash) (bool, error) {
 	// Check if this node is a reachability tree ancestor of the
