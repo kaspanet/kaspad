@@ -1,7 +1,6 @@
 package dagtopologymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
@@ -11,12 +10,12 @@ import (
 type dagTopologyManager struct {
 	reachabilityTree   model.ReachabilityTree
 	blockRelationStore model.BlockRelationStore
-	databaseContext    *database.DomainDBContext
+	databaseContext    model.DBReader
 }
 
 // New instantiates a new DAGTopologyManager
 func New(
-	databaseContext *database.DomainDBContext,
+	databaseContext model.DBReader,
 	reachabilityTree model.ReachabilityTree,
 	blockRelationStore model.BlockRelationStore) model.DAGTopologyManager {
 
@@ -29,7 +28,7 @@ func New(
 
 // Parents returns the DAG parents of the given blockHash
 func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +37,7 @@ func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*ex
 
 // Children returns the DAG children of the given blockHash
 func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +46,7 @@ func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*e
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
 func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -56,7 +55,7 @@ func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, bl
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
 func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.Get(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -75,12 +74,23 @@ func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
 func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
+	for _, potentialDescendant := range potentialDescendants {
+		isAncestorOf, err := dtm.IsAncestorOf(blockHash, potentialDescendant)
+		if err != nil {
+			return false, err
+		}
+
+		if isAncestorOf {
+			return true, nil
+		}
+	}
+
 	return false, nil
 }
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return false, nil
+	return dtm.reachabilityTree.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
@@ -90,14 +100,4 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 		}
 	}
 	return false
-}
-
-// Tips returns the current DAG tips
-func (dtm *dagTopologyManager) Tips() ([]*externalapi.DomainHash, error) {
-	panic("implement me")
-}
-
-// AddTip adds the given tip to the current DAG tips
-func (dtm *dagTopologyManager) AddTip(tipHash *externalapi.DomainHash) error {
-	panic("implement me")
 }

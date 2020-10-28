@@ -27,16 +27,11 @@ func (css *consensusStateStore) Discard() {
 	panic("implement me")
 }
 
-func (css *consensusStateStore) Commit(dbTx model.DBTxProxy) error {
+func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
 // UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBContextProxy, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
-	return nil, nil
-}
-
-// Tips returns the current tips
-func (css *consensusStateStore) Tips(dbContext model.DBContextProxy) ([]*externalapi.DomainHash, error) {
+func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
 	return nil, nil
 }

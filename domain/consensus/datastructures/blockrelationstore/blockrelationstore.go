@@ -14,12 +14,15 @@ func New() model.BlockRelationStore {
 	return &blockRelationStore{}
 }
 
-// Stage stages the given blockRelationData for the given blockHash
-func (brs *blockRelationStore) Stage(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
+func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) IsStaged() bool {
+func (brs *blockRelationStore) StageTips(tipHashess []*externalapi.DomainHash) {
+	panic("implement me")
+}
+
+func (brs *blockRelationStore) IsAnythingStaged() bool {
 	panic("implement me")
 }
 
@@ -27,11 +30,14 @@ func (brs *blockRelationStore) Discard() {
 	panic("implement me")
 }
 
-func (brs *blockRelationStore) Commit(dbTx model.DBTxProxy) error {
+func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-// Get gets the blockRelationData associated with the given blockHash
-func (brs *blockRelationStore) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
-	return nil, nil
+func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
+	panic("implement me")
+}
+
+func (brs *blockRelationStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
 }

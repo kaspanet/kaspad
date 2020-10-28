@@ -1,8 +1,8 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
@@ -12,10 +12,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
+	"github.com/kaspanet/kaspad/domain/consensus/dbmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/acceptancemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
@@ -25,23 +27,23 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/utxodiffmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus
+	NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus
 }
 
 type factory struct{}
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dbaccess.DatabaseContext) Consensus {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
+	blockHeaderStore := blockheaderstore.New()
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
 	multisetStore := multisetstore.New()
@@ -51,58 +53,88 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
-	domainDBContext := database.NewDomainDBContext(databaseContext)
+	dbManager := dbmanager.New(db)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
-		domainDBContext,
+		dbManager,
 		ghostdagDataStore,
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
-		domainDBContext,
+		dbManager,
 		reachabilityManager,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
-		databaseContext,
+		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
 		model.KType(dagParams.K))
 	dagTraversalManager := dagtraversalmanager.New(
+		dbManager,
 		dagTopologyManager,
-		ghostdagManager)
-	utxoDiffManager := utxodiffmanager.New(utxoDiffStore)
-	acceptanceManager := acceptancemanager.New(utxoDiffManager)
+		ghostdagDataStore)
+	pruningManager := pruningmanager.New(
+		dagTraversalManager,
+		dagTopologyManager,
+		pruningStore,
+		blockStatusStore,
+		consensusStateStore)
 	consensusStateManager := consensusstatemanager.New(
-		domainDBContext,
+		dbManager,
 		dagParams,
+		ghostdagManager,
+		dagTopologyManager,
+		pruningManager,
+		blockStatusStore,
+		ghostdagDataStore,
 		consensusStateStore,
 		multisetStore,
 		blockStore,
-		ghostdagManager,
-		acceptanceManager,
-		blockStatusStore)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		pruningStore,
-		dagTopologyManager,
-		blockStatusStore,
-		consensusStateManager)
+		utxoDiffStore,
+		blockRelationStore,
+		acceptanceDataStore,
+		blockHeaderStore)
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
-		ghostdagManager)
-	transactionValidator := transactionvalidator.New()
+		dagParams.TimestampDeviationTolerance,
+		dbManager,
+		dagTraversalManager,
+		blockHeaderStore)
+	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
+		dbManager,
+		pastMedianTimeManager,
+		ghostdagDataStore)
+	coinbaseManager := coinbasemanager.New(
+		ghostdagDataStore,
+		acceptanceDataStore)
+	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
 	blockValidator := blockvalidator.New(
+		dagParams.PowMax,
+		false,
+		&genesisHash,
+		dagParams.EnableNonNativeSubnetworks,
+		dagParams.DisableDifficultyAdjustment,
+		dagParams.DifficultyAdjustmentWindowSize,
+		uint64(dagParams.FinalityDuration/dagParams.TargetTimePerBlock),
+
+		dbManager,
 		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
-		utxoDiffManager,
-		acceptanceManager)
+		ghostdagManager,
+		dagTopologyManager,
+		dagTraversalManager,
+
+		blockStore,
+		ghostdagDataStore,
+		blockHeaderStore,
+	)
 	blockProcessor := blockprocessor.New(
 		dagParams,
-		domainDBContext,
+		dbManager,
 		consensusStateManager,
 		pruningManager,
 		blockValidator,
@@ -111,9 +143,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		difficultyManager,
 		pastMedianTimeManager,
 		ghostdagManager,
+		coinbaseManager,
 		acceptanceDataStore,
 		blockStore,
-		blockStatusStore)
+		blockStatusStore,
+		blockRelationStore,
+		multisetStore,
+		ghostdagDataStore,
+		consensusStateStore,
+		pruningStore,
+		reachabilityDataStore,
+		utxoDiffStore,
+		blockHeaderStore)
 
 	return &consensus{
 		consensusStateManager: consensusStateManager,

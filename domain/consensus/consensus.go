@@ -35,5 +35,25 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
 // and populates it with any missing consensus data
 func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
-	return s.transactionValidator.ValidateTransactionAndPopulateWithConsensusData(transaction)
+	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
+	if err != nil {
+		return err
+	}
+
+	err = s.consensusStateManager.PopulateTransactionWithUTXOEntries(transaction)
+	if err != nil {
+		return err
+	}
+
+	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
+		validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash(),
+		validateTransactionInContextAndPopulateMassAndFeeSelectedParentMedianTime())
+}
+
+func validateTransactionInContextAndPopulateMassAndFeeSelectedParentMedianTime() int64 {
+	panic("unimplemented")
+}
+
+func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *externalapi.DomainHash {
+	panic("unimplemented")
 }

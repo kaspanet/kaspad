@@ -4,8 +4,8 @@ package model
 type BlockStatus byte
 
 const (
-	// StatusDataStored indicates that the block's payload is stored on disk.
-	StatusDataStored BlockStatus = iota
+	// StatusInvalid indicates that the block is invalid.
+	StatusInvalid BlockStatus = iota
 
 	// StatusValid indicates that the block has been fully validated.
 	StatusValid

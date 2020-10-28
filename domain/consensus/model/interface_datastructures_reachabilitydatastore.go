@@ -4,11 +4,10 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // ReachabilityDataStore represents a store of ReachabilityData
 type ReachabilityDataStore interface {
+	Store
 	StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *ReachabilityData)
 	StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash)
 	IsAnythingStaged() bool
-	Discard()
-	Commit(dbTx DBTxProxy) error
-	ReachabilityData(dbContext DBContextProxy, blockHash *externalapi.DomainHash) (*ReachabilityData, error)
-	ReachabilityReindexRoot(dbContext DBContextProxy) (*externalapi.DomainHash, error)
+	ReachabilityData(dbContext DBReader, blockHash *externalapi.DomainHash) (*ReachabilityData, error)
+	ReachabilityReindexRoot(dbContext DBReader) (*externalapi.DomainHash, error)
 }

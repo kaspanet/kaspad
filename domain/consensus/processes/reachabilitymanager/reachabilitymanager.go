@@ -1,7 +1,6 @@
 package reachabilitymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
@@ -9,7 +8,7 @@ import (
 // reachabilityManager maintains a structure that allows to answer
 // reachability queries in sub-linear time
 type reachabilityManager struct {
-	databaseContext       *database.DomainDBContext
+	databaseContext       model.DBReader
 	blockRelationStore    model.BlockRelationStore
 	reachabilityDataStore model.ReachabilityDataStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
@@ -17,7 +16,7 @@ type reachabilityManager struct {
 
 // New instantiates a new reachabilityManager
 func New(
-	databaseContext *database.DomainDBContext,
+	databaseContext model.DBReader,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore,
