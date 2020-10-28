@@ -47,11 +47,11 @@ type DBReader interface {
 type DBWriter interface {
 	// Put sets the value for the given key. It overwrites
 	// any previous value for that key.
-	Put(key []byte, value []byte) error
+	Put(key DBKey, value []byte) error
 
 	// Delete deletes the value for the given key. Will not
 	// return an error if the key doesn't exist.
-	Delete(key []byte) error
+	Delete(key DBKey) error
 }
 
 // DBTransaction is a proxy over domain data
