@@ -6,23 +6,23 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// reachabilityTreeManager maintains a structure that allows to answer
+// reachabilityManager maintains a structure that allows to answer
 // reachability queries in sub-linear time
-type reachabilityTreeManager struct {
+type reachabilityManager struct {
 	databaseContext       *database.DomainDBContext
 	blockRelationStore    model.BlockRelationStore
 	reachabilityDataStore model.ReachabilityDataStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
 }
 
-// New instantiates a new reachabilityTreeManager
+// New instantiates a new reachabilityManager
 func New(
 	databaseContext *database.DomainDBContext,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 ) model.ReachabilityTree {
-	return &reachabilityTreeManager{
+	return &reachabilityManager{
 		databaseContext:       databaseContext,
 		ghostdagDataStore:     ghostdagDataStore,
 		blockRelationStore:    blockRelationStore,
@@ -31,7 +31,7 @@ func New(
 }
 
 // AddBlock adds the block with the given blockHash into the reachability tree.
-func (rt *reachabilityTreeManager) AddBlock(blockHash *externalapi.DomainHash) error {
+func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
 	// Allocate a new reachability tree node
 	newTreeNode := newReachabilityTreeNode()
 	err := rt.stageTreeNode(blockHash, newTreeNode)

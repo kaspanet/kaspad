@@ -13,7 +13,7 @@ type orderedTreeNodeSet []*externalapi.DomainHash
 
 // findAncestorOfNode finds the reachability tree ancestor of `node`
 // among the nodes in `tns`.
-func (rt *reachabilityTreeManager) findAncestorOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (*externalapi.DomainHash, bool) {
+func (rt *reachabilityManager) findAncestorOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (*externalapi.DomainHash, bool) {
 	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(tns, node)
 	if err != nil {
 		return nil, false
@@ -30,7 +30,7 @@ func (rt *reachabilityTreeManager) findAncestorOfNode(tns orderedTreeNodeSet, no
 // ancestor of `node` among the nodes in `tns`. It does so by finding
 // the index of the block with the maximum start that is below the
 // given block.
-func (rt *reachabilityTreeManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (int, bool, error) {
+func (rt *reachabilityManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (int, bool, error) {
 	treeNode, err := rt.treeNode(node)
 	if err != nil {
 		return 0, false, err
@@ -61,7 +61,7 @@ func (rt *reachabilityTreeManager) findAncestorIndexOfNode(tns orderedTreeNodeSe
 	return low - 1, true, nil
 }
 
-func (rt *reachabilityTreeManager) propagateIntervals(tns orderedTreeNodeSet, intervals []*model.ReachabilityInterval,
+func (rt *reachabilityManager) propagateIntervals(tns orderedTreeNodeSet, intervals []*model.ReachabilityInterval,
 	subtreeSizeMaps []map[externalapi.DomainHash]uint64) error {
 
 	for i, node := range tns {

@@ -54,14 +54,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 	domainDBContext := database.NewDomainDBContext(databaseContext)
 
 	// Processes
-	reachabilityTree := reachabilitymanager.New(
+	reachabilityManager := reachabilitymanager.New(
 		domainDBContext,
 		ghostdagDataStore,
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
 		domainDBContext,
-		reachabilityTree,
+		reachabilityManager,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
 		databaseContext,
@@ -107,7 +107,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, databaseContext *dba
 		pruningManager,
 		blockValidator,
 		dagTopologyManager,
-		reachabilityTree,
+		reachabilityManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		ghostdagManager,

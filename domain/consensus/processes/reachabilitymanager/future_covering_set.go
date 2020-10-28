@@ -33,7 +33,7 @@ type futureCoveringTreeNodeSet orderedTreeNodeSet
 // * Although reindexing may change a block's interval, the
 //   is-superset relation will by definition
 //   be always preserved.
-func (rt *reachabilityTreeManager) insertToFutureCoveringSet(node, futureNode *externalapi.DomainHash) error {
+func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *externalapi.DomainHash) error {
 	futureCoveringSet, err := rt.futureCoveringSet(node)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (rt *reachabilityTreeManager) insertToFutureCoveringSet(node, futureNode *e
 // this.FutureCoveringSet is kept ordered by interval to efficiently perform a
 // binary search over this.FutureCoveringSet and answer the query in
 // O(log(|futureCoveringTreeNodeSet|)).
-func (rt *reachabilityTreeManager) futureCoveringSetHasAncestorOf(this, other *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *externalapi.DomainHash) (bool, error) {
 	futureCoveringSet, err := rt.futureCoveringSet(this)
 	if err != nil {
 		return false, err
@@ -118,7 +118,7 @@ func (rt *reachabilityTreeManager) futureCoveringSetHasAncestorOf(this, other *e
 }
 
 // futureCoveringSetString returns a string representation of the intervals in this futureCoveringSet.
-func (rt *reachabilityTreeManager) futureCoveringSetString(futureCoveringSet []*externalapi.DomainHash) (string, error) {
+func (rt *reachabilityManager) futureCoveringSetString(futureCoveringSet []*externalapi.DomainHash) (string, error) {
 	intervalsString := ""
 	for _, node := range futureCoveringSet {
 		nodeInterval, err := rt.interval(node)

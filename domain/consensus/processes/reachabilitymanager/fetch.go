@@ -5,11 +5,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityTreeManager) data(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+func (rt *reachabilityManager) data(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 	return rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 }
 
-func (rt *reachabilityTreeManager) futureCoveringSet(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	data, err := rt.data(blockHash)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (rt *reachabilityTreeManager) futureCoveringSet(blockHash *externalapi.Doma
 	return data.FutureCoveringSet, nil
 }
 
-func (rt *reachabilityTreeManager) treeNode(blockHash *externalapi.DomainHash) (*model.ReachabilityTreeNode, error) {
+func (rt *reachabilityManager) treeNode(blockHash *externalapi.DomainHash) (*model.ReachabilityTreeNode, error) {
 	data, err := rt.data(blockHash)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (rt *reachabilityTreeManager) treeNode(blockHash *externalapi.DomainHash) (
 	return data.TreeNode, nil
 }
 
-func (rt *reachabilityTreeManager) interval(blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	treeNode, err := rt.treeNode(blockHash)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (rt *reachabilityTreeManager) interval(blockHash *externalapi.DomainHash) (
 	return treeNode.Interval, nil
 }
 
-func (rt *reachabilityTreeManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	data, err := rt.data(blockHash)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (rt *reachabilityTreeManager) children(blockHash *externalapi.DomainHash) (
 	return data.TreeNode.Children, nil
 }
 
-func (rt *reachabilityTreeManager) parent(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	data, err := rt.data(blockHash)
 	if err != nil {
 		return nil, err
@@ -54,6 +54,6 @@ func (rt *reachabilityTreeManager) parent(blockHash *externalapi.DomainHash) (*e
 	return data.TreeNode.Parent, nil
 }
 
-func (rt *reachabilityTreeManager) reindexRoot() (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) reindexRoot() (*externalapi.DomainHash, error) {
 	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext)
 }

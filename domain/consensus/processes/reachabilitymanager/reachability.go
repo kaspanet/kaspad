@@ -9,7 +9,7 @@ import (
 //
 // Note: this method will return true if blockHashA == blockHashA
 // The complexity of this method is O(log(|this.futureCoveringTreeNodeSet|))
-func (rt *reachabilityTreeManager) IsDAGAncestorOf(blockHashA, blockHashB *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) IsDAGAncestorOf(blockHashA, blockHashB *externalapi.DomainHash) (bool, error) {
 	// Check if this node is a reachability tree ancestor of the
 	// other node
 	isReachabilityTreeAncestor, err := rt.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
@@ -25,6 +25,6 @@ func (rt *reachabilityTreeManager) IsDAGAncestorOf(blockHashA, blockHashB *exter
 	return rt.futureCoveringSetHasAncestorOf(blockHashA, blockHashB)
 }
 
-func (rt *reachabilityTreeManager) UpdateReindexRoot(selectedTip *externalapi.DomainHash) error {
+func (rt *reachabilityManager) UpdateReindexRoot(selectedTip *externalapi.DomainHash) error {
 	return rt.updateReindexRoot(selectedTip)
 }

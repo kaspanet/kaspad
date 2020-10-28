@@ -63,7 +63,7 @@ func newReachabilityTreeNode() *model.ReachabilityTreeNode {
 	return &model.ReachabilityTreeNode{Interval: interval}
 }
 
-func (rt *reachabilityTreeManager) intervalRangeForChildAllocation(hash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+func (rt *reachabilityManager) intervalRangeForChildAllocation(hash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	interval, err := rt.interval(hash)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (rt *reachabilityTreeManager) intervalRangeForChildAllocation(hash *externa
 	return newReachabilityInterval(interval.Start, interval.End-1), nil
 }
 
-func (rt *reachabilityTreeManager) remainingIntervalBefore(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+func (rt *reachabilityManager) remainingIntervalBefore(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	childRange, err := rt.intervalRangeForChildAllocation(node)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (rt *reachabilityTreeManager) remainingIntervalBefore(node *externalapi.Dom
 	return newReachabilityInterval(childRange.Start, firstChildInterval.Start-1), nil
 }
 
-func (rt *reachabilityTreeManager) remainingIntervalAfter(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+func (rt *reachabilityManager) remainingIntervalAfter(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	childRange, err := rt.intervalRangeForChildAllocation(node)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (rt *reachabilityTreeManager) remainingIntervalAfter(node *externalapi.Doma
 	return newReachabilityInterval(lastChildInterval.End+1, childRange.End), nil
 }
 
-func (rt *reachabilityTreeManager) hasSlackIntervalBefore(node *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) hasSlackIntervalBefore(node *externalapi.DomainHash) (bool, error) {
 	interval, err := rt.remainingIntervalBefore(node)
 	if err != nil {
 		return false, err
@@ -129,7 +129,7 @@ func (rt *reachabilityTreeManager) hasSlackIntervalBefore(node *externalapi.Doma
 	return intervalSize(interval) > 0, nil
 }
 
-func (rt *reachabilityTreeManager) hasSlackIntervalAfter(node *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) hasSlackIntervalAfter(node *externalapi.DomainHash) (bool, error) {
 	interval, err := rt.remainingIntervalAfter(node)
 	if err != nil {
 		return false, err
@@ -142,7 +142,7 @@ func (rt *reachabilityTreeManager) hasSlackIntervalAfter(node *externalapi.Domai
 // remaining interval to allocate, a reindexing is triggered.
 // This method returns a list of model.ReachabilityTreeNodes modified
 // by it.
-func (rt *reachabilityTreeManager) addChild(node, child, reindexRoot *externalapi.DomainHash) error {
+func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.DomainHash) error {
 	remaining, err := rt.remainingIntervalAfter(node)
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func (rt *reachabilityTreeManager) addChild(node, child, reindexRoot *externalap
 // tree until it finds a node with a subreeSize that's greater than
 // its interval size. See propagateInterval for further details.
 // This method returns a list of model.ReachabilityTreeNodes modified by it.
-func (rt *reachabilityTreeManager) reindexIntervals(node *externalapi.DomainHash) error {
+func (rt *reachabilityManager) reindexIntervals(node *externalapi.DomainHash) error {
 	current := node
 
 	// Initial interval and subtree sizes
@@ -276,7 +276,7 @@ func (rt *reachabilityTreeManager) reindexIntervals(node *externalapi.DomainHash
 // and populates the provided subTreeSizeMap with the results.
 // It is equivalent to the following recursive implementation:
 //
-// func (rt *reachabilityTreeManager) countSubtrees(node *model.ReachabilityTreeNode) uint64 {
+// func (rt *reachabilityManager) countSubtrees(node *model.ReachabilityTreeNode) uint64 {
 //     subtreeSize := uint64(0)
 //     for _, child := range node.children {
 //         subtreeSize += child.countSubtrees()
@@ -292,7 +292,7 @@ func (rt *reachabilityTreeManager) reindexIntervals(node *externalapi.DomainHash
 // intermediate updates from leaves via parent chains until all
 // size information is gathered at the root of the operation
 // (i.e. at node).
-func (rt *reachabilityTreeManager) countSubtrees(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
+func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
 	queue := []*externalapi.DomainHash{node}
 	calculatedChildrenCount := make(map[externalapi.DomainHash]uint64)
 	for len(queue) > 0 {
@@ -351,7 +351,7 @@ func (rt *reachabilityTreeManager) countSubtrees(node *externalapi.DomainHash, s
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of model.ReachabilityTreeNodes modified by it.
-func (rt *reachabilityTreeManager) propagateInterval(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
+func (rt *reachabilityManager) propagateInterval(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
 
 	queue := []*externalapi.DomainHash{node}
 	for len(queue) > 0 {
@@ -391,7 +391,7 @@ func (rt *reachabilityTreeManager) propagateInterval(node *externalapi.DomainHas
 	return nil
 }
 
-func (rt *reachabilityTreeManager) reindexIntervalsEarlierThanReindexRoot(node,
+func (rt *reachabilityManager) reindexIntervalsEarlierThanReindexRoot(node,
 	reindexRoot *externalapi.DomainHash) error {
 
 	// Find the common ancestor for both node and the reindex root
@@ -433,7 +433,7 @@ func (rt *reachabilityTreeManager) reindexIntervalsEarlierThanReindexRoot(node,
 		commonAncestorChosenChild, reindexRoot)
 }
 
-func (rt *reachabilityTreeManager) reclaimIntervalBeforeChosenChild(rtn, commonAncestor, commonAncestorChosenChild,
+func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAncestor, commonAncestorChosenChild,
 	reindexRoot *externalapi.DomainHash) error {
 
 	current := commonAncestorChosenChild
@@ -531,7 +531,7 @@ func (rt *reachabilityTreeManager) reclaimIntervalBeforeChosenChild(rtn, commonA
 
 // reindexIntervalsBeforeNode applies a tight interval to the reachability
 // subtree before `node`. Note that `node` itself is unaffected.
-func (rt *reachabilityTreeManager) reindexIntervalsBeforeNode(rtn, node *externalapi.DomainHash) error {
+func (rt *reachabilityManager) reindexIntervalsBeforeNode(rtn, node *externalapi.DomainHash) error {
 
 	childrenBeforeNode, _, err := rt.splitChildrenAroundChild(rtn, node)
 	if err != nil {
@@ -556,7 +556,7 @@ func (rt *reachabilityTreeManager) reindexIntervalsBeforeNode(rtn, node *externa
 	return rt.propagateIntervals(childrenBeforeNode, intervals, childrenBeforeNodeSubtreeSizeMaps)
 }
 
-func (rt *reachabilityTreeManager) reclaimIntervalAfterChosenChild(node, commonAncestor, commonAncestorChosenChild,
+func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAncestor, commonAncestorChosenChild,
 	reindexRoot *externalapi.DomainHash) error {
 
 	current := commonAncestorChosenChild
@@ -647,7 +647,7 @@ func (rt *reachabilityTreeManager) reclaimIntervalAfterChosenChild(node, commonA
 
 // reindexIntervalsAfterNode applies a tight interval to the reachability
 // subtree after `node`. Note that `node` itself is unaffected.
-func (rt *reachabilityTreeManager) reindexIntervalsAfterNode(rtn, node *externalapi.DomainHash) error {
+func (rt *reachabilityManager) reindexIntervalsAfterNode(rtn, node *externalapi.DomainHash) error {
 
 	_, childrenAfterNode, err := rt.splitChildrenAroundChild(rtn, node)
 	if err != nil {
@@ -675,7 +675,7 @@ func (rt *reachabilityTreeManager) reindexIntervalsAfterNode(rtn, node *external
 // IsReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
 // of the other node. Note that we use the graph theory convention
 // here which defines that node is also an ancestor of itself.
-func (rt *reachabilityTreeManager) IsReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
 	nodeInterval, err := rt.interval(node)
 	if err != nil {
 		return false, err
@@ -694,7 +694,7 @@ func (rt *reachabilityTreeManager) IsReachabilityTreeAncestorOf(node, other *ext
 // that we assume that almost always the chain between the reindex root
 // and the common ancestor is longer than the chain between node and the
 // common ancestor.
-func (rt *reachabilityTreeManager) findCommonAncestorWithReindexRoot(node, reindexRoot *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) findCommonAncestorWithReindexRoot(node, reindexRoot *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	currentThis := node
 	for {
 		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(currentThis, reindexRoot)
@@ -715,7 +715,7 @@ func (rt *reachabilityTreeManager) findCommonAncestorWithReindexRoot(node, reind
 
 // String returns a string representation of a reachability tree node
 // and its children.
-func (rt *reachabilityTreeManager) String(node *externalapi.DomainHash) (string, error) {
+func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, error) {
 	queue := []*externalapi.DomainHash{node}
 	nodeInterval, err := rt.interval(node)
 	if err != nil {
@@ -750,7 +750,7 @@ func (rt *reachabilityTreeManager) String(node *externalapi.DomainHash) (string,
 	return strings.Join(lines, "\n"), nil
 }
 
-func (rt *reachabilityTreeManager) updateReindexRoot(newTreeNode *externalapi.DomainHash) error {
+func (rt *reachabilityManager) updateReindexRoot(newTreeNode *externalapi.DomainHash) error {
 
 	nextReindexRoot, err := rt.reindexRoot()
 	if err != nil {
@@ -772,7 +772,7 @@ func (rt *reachabilityTreeManager) updateReindexRoot(newTreeNode *externalapi.Do
 	return nil
 }
 
-func (rt *reachabilityTreeManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *externalapi.DomainHash) (
+func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *externalapi.DomainHash) (
 	newReindexRoot *externalapi.DomainHash, found bool, err error) {
 
 	isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(reindexRoot, newTreeNode)
@@ -817,7 +817,7 @@ func (rt *reachabilityTreeManager) maybeMoveReindexRoot(reindexRoot, newTreeNode
 
 // findAncestorOfThisAmongChildrenOfOther finds the reachability tree child
 // of node that is the ancestor of node.
-func (rt *reachabilityTreeManager) findAncestorOfThisAmongChildrenOfOther(this, other *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) findAncestorOfThisAmongChildrenOfOther(this, other *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	otherChildren, err := rt.children(other)
 	if err != nil {
 		return nil, err
@@ -831,7 +831,7 @@ func (rt *reachabilityTreeManager) findAncestorOfThisAmongChildrenOfOther(this, 
 	return ancestor, nil
 }
 
-func (rt *reachabilityTreeManager) concentrateIntervalAroundReindexRootChosenChild(reindexRoot,
+func (rt *reachabilityManager) concentrateIntervalAroundReindexRootChosenChild(reindexRoot,
 	reindexRootChosenChild *externalapi.DomainHash) error {
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
@@ -863,7 +863,7 @@ func (rt *reachabilityTreeManager) concentrateIntervalAroundReindexRootChosenChi
 
 // splitChildrenAroundChild splits `node` into two slices: the nodes that are before
 // `child` and the nodes that are after.
-func (rt *reachabilityTreeManager) splitChildrenAroundChild(node, child *externalapi.DomainHash) (
+func (rt *reachabilityManager) splitChildrenAroundChild(node, child *externalapi.DomainHash) (
 	nodesBeforeChild, nodesAfterChild []*externalapi.DomainHash, err error) {
 
 	nodeChildren, err := rt.children(node)
@@ -879,7 +879,7 @@ func (rt *reachabilityTreeManager) splitChildrenAroundChild(node, child *externa
 	return nil, nil, errors.Errorf("child not a child of node")
 }
 
-func (rt *reachabilityTreeManager) tightenIntervalsBeforeReindexRootChosenChild(
+func (rt *reachabilityManager) tightenIntervalsBeforeReindexRootChosenChild(
 	reindexRoot *externalapi.DomainHash,
 	reindexRootChildNodesBeforeChosen []*externalapi.DomainHash) (reindexRootChildNodesBeforeChosenSizesSum uint64,
 	err error) {
@@ -905,7 +905,7 @@ func (rt *reachabilityTreeManager) tightenIntervalsBeforeReindexRootChosenChild(
 	return reindexRootChildNodesBeforeChosenSizesSum, nil
 }
 
-func (rt *reachabilityTreeManager) tightenIntervalsAfterReindexRootChosenChild(
+func (rt *reachabilityManager) tightenIntervalsAfterReindexRootChosenChild(
 	reindexRoot *externalapi.DomainHash,
 	reindexRootChildNodesAfterChosen []*externalapi.DomainHash) (reindexRootChildNodesAfterChosenSizesSum uint64,
 	err error) {
@@ -932,7 +932,7 @@ func (rt *reachabilityTreeManager) tightenIntervalsAfterReindexRootChosenChild(
 	return reindexRootChildNodesAfterChosenSizesSum, nil
 }
 
-func (rt *reachabilityTreeManager) expandIntervalInReindexRootChosenChild(reindexRoot,
+func (rt *reachabilityManager) expandIntervalInReindexRootChosenChild(reindexRoot,
 	reindexRootChosenChild *externalapi.DomainHash, reindexRootChildNodesBeforeChosenSizesSum uint64,
 	reindexRootChildNodesAfterChosenSizesSum uint64) error {
 
@@ -982,7 +982,7 @@ func (rt *reachabilityTreeManager) expandIntervalInReindexRootChosenChild(reinde
 	return nil
 }
 
-func (rt *reachabilityTreeManager) countSubtreesAndPropagateInterval(node *externalapi.DomainHash) error {
+func (rt *reachabilityManager) countSubtreesAndPropagateInterval(node *externalapi.DomainHash) error {
 	subtreeSizeMap := make(map[externalapi.DomainHash]uint64)
 	err := rt.countSubtrees(node, subtreeSizeMap)
 	if err != nil {
@@ -992,7 +992,7 @@ func (rt *reachabilityTreeManager) countSubtreesAndPropagateInterval(node *exter
 	return rt.propagateInterval(node, subtreeSizeMap)
 }
 
-func (rt *reachabilityTreeManager) calcReachabilityTreeNodeSizes(treeNodes []*externalapi.DomainHash) (
+func (rt *reachabilityManager) calcReachabilityTreeNodeSizes(treeNodes []*externalapi.DomainHash) (
 	sizes []uint64, subtreeSizeMaps []map[externalapi.DomainHash]uint64, sum uint64) {
 
 	sizes = make([]uint64, len(treeNodes))
@@ -1013,7 +1013,7 @@ func (rt *reachabilityTreeManager) calcReachabilityTreeNodeSizes(treeNodes []*ex
 	return sizes, subtreeSizeMaps, sum
 }
 
-func (rt *reachabilityTreeManager) propagateChildIntervals(interval *model.ReachabilityInterval,
+func (rt *reachabilityManager) propagateChildIntervals(interval *model.ReachabilityInterval,
 	childNodes []*externalapi.DomainHash, sizes []uint64, subtreeSizeMaps []map[externalapi.DomainHash]uint64) error {
 
 	childIntervalSizes, err := intervalSplitExact(interval, sizes)
