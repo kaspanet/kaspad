@@ -25,7 +25,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitytree"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -56,12 +56,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database
 	dbManager := dbmanager.New(db)
 
 	// Processes
-	reachabilityTree := reachabilitytree.New(
+	reachabilityManager := reachabilitymanager.New(
+		dbManager,
+		ghostdagDataStore,
 		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
 		dbManager,
-		reachabilityTree,
+		reachabilityManager,
 		blockRelationStore)
 	ghostdagManager := ghostdagmanager.New(
 		dbManager,
@@ -137,7 +139,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database
 		pruningManager,
 		blockValidator,
 		dagTopologyManager,
-		reachabilityTree,
+		reachabilityManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		ghostdagManager,
