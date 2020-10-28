@@ -10,18 +10,18 @@ var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
 
 // acceptanceDataStore represents a store of AcceptanceData
 type acceptanceDataStore struct {
-	staging map[externalapi.DomainHash]*model.AcceptanceData
+	staging map[externalapi.DomainHash]model.AcceptanceData
 }
 
 // New instantiates a new AcceptanceDataStore
 func New() model.AcceptanceDataStore {
 	return &acceptanceDataStore{
-		staging: make(map[externalapi.DomainHash]*model.AcceptanceData),
+		staging: make(map[externalapi.DomainHash]model.AcceptanceData),
 	}
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData *model.AcceptanceData) {
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) {
 	ads.staging[*blockHash] = acceptanceData
 }
 
@@ -30,7 +30,7 @@ func (ads *acceptanceDataStore) IsStaged() bool {
 }
 
 func (ads *acceptanceDataStore) Discard() {
-	ads.staging = make(map[externalapi.DomainHash]*model.AcceptanceData)
+	ads.staging = make(map[externalapi.DomainHash]model.AcceptanceData)
 }
 
 func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
@@ -46,17 +46,17 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.AcceptanceData, error) {
-	if header, ok := ads.staging[*blockHash]; ok {
-		return header, nil
+func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.AcceptanceData, error) {
+	if acceptanceData, ok := ads.staging[*blockHash]; ok {
+		return acceptanceData, nil
 	}
 
-	headerBytes, err := dbContext.Get(ads.hashAsKey(blockHash))
+	acceptanceDataBytes, err := dbContext.Get(ads.hashAsKey(blockHash))
 	if err != nil {
 		return nil, err
 	}
 
-	return ads.deserializeAcceptanceData(headerBytes)
+	return ads.deserializeAcceptanceData(acceptanceDataBytes)
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
@@ -64,14 +64,14 @@ func (ads *acceptanceDataStore) Delete(dbTx model.DBTransaction, blockHash *exte
 	return nil
 }
 
-func (bms *acceptanceDataStore) serializeAcceptanceData(acceptanceData *model.AcceptanceData) []byte {
+func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) []byte {
 	panic("implement me")
 }
 
-func (bms *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []byte) (*model.AcceptanceData, error) {
+func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []byte) (model.AcceptanceData, error) {
 	panic("implement me")
 }
 
-func (bms *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
+func (ads *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }
