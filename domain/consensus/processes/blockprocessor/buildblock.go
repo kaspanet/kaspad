@@ -1,16 +1,17 @@
 package blockprocessor
 
 import (
+	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"sort"
 )
-
-const blockVersion = 1
 
 func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
@@ -68,7 +69,7 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	}
 
 	return &externalapi.DomainBlockHeader{
-		Version:              blockVersion,
+		Version:              constants.BlockVersion,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       *hashMerkleRoot,
 		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,

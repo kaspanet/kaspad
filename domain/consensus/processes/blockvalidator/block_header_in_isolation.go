@@ -1,12 +1,14 @@
 package blockvalidator
 
 import (
+	"sort"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
-	"sort"
 )
 
 // ValidateHeaderInIsolation validates block headers in isolation from the current
@@ -36,10 +38,9 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	const maxParents = 10
-	if len(header.ParentHashes) > maxParents {
+	if len(header.ParentHashes) > constants.MaxBlockParents {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(header.ParentHashes), maxParents)
+			"is %d", len(header.ParentHashes), constants.MaxBlockParents)
 	}
 	return nil
 }

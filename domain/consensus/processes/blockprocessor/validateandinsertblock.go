@@ -73,8 +73,10 @@ func (bp *blockProcessor) validateBlockInIsolationAndProofOfWork(block *external
 }
 
 func (bp *blockProcessor) validateInContext(block *externalapi.DomainBlock) error {
+	bp.dagTopologyManager.SetParents(block.Hash, block.Header.ParentHashes)
 	bp.blockStore.Stage(block.Hash, block)
 	bp.blockHeaderStore.Stage(block.Hash, block.Header)
+
 	err := bp.blockValidator.ValidateHeaderInContext(block.Hash)
 	if err != nil {
 		return err

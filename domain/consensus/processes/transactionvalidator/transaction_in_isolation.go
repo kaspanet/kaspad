@@ -3,18 +3,11 @@ package transactionvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
-)
-
-const (
-	// sompiPerKaspa is the number of sompi in one kaspa (1 KAS).
-	sompiPerKaspa = 100000000
-
-	// maxSompi is the maximum transaction amount allowed in sompi.
-	maxSompi = 21000000 * sompiPerKaspa
 )
 
 func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.DomainTransaction) error {
@@ -77,9 +70,9 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 	var totalSompi uint64
 	for _, txOut := range tx.Outputs {
 		sompi := txOut.Value
-		if sompi > maxSompi {
+		if sompi > constants.MaxSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "transaction output value of %d is "+
-				"higher than max allowed value of %d", sompi, maxSompi)
+				"higher than max allowed value of %d", sompi, constants.MaxSompi)
 		}
 
 		// Binary arithmetic guarantees that any overflow is detected and reported.
@@ -89,14 +82,14 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 		if newTotalSompi < totalSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs exceeds max allowed value of %d",
-				maxSompi)
+				constants.MaxSompi)
 		}
 		totalSompi = newTotalSompi
-		if totalSompi > maxSompi {
+		if totalSompi > constants.MaxSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs is %d which is higher than max "+
 				"allowed value of %d", totalSompi,
-				maxSompi)
+				constants.MaxSompi)
 		}
 	}
 
@@ -122,11 +115,10 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 
 	// Coinbase payload length must not exceed the max length.
 	payloadLen := len(tx.Payload)
-	const maxCoinbasePayloadLen = 150
-	if payloadLen > maxCoinbasePayloadLen {
+	if payloadLen > constants.MaxCoinbasePayloadLength {
 		return errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase transaction payload length "+
 			"of %d is out of range (max: %d)",
-			payloadLen, maxCoinbasePayloadLen)
+			payloadLen, constants.MaxCoinbasePayloadLength)
 	}
 
 	return nil

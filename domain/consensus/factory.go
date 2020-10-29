@@ -90,28 +90,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	consensusStateManager, err := consensusstatemanager.New(
-		dbManager,
-		dagParams,
-		ghostdagManager,
-		dagTopologyManager,
-		dagTraversalManager,
-		pruningManager,
-		pastMedianTimeManager,
-		reachabilityManager,
-		transactionValidator,
-		blockStatusStore,
-		ghostdagDataStore,
-		consensusStateStore,
-		multisetStore,
-		blockStore,
-		utxoDiffStore,
-		blockRelationStore,
-		acceptanceDataStore,
-		blockHeaderStore)
-	if err != nil {
-		return nil, err
-	}
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	coinbaseManager := coinbasemanager.New(
@@ -128,7 +106,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.FinalityDepth(),
 
 		dbManager,
-		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
@@ -140,6 +117,29 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		blockHeaderStore,
 	)
+	consensusStateManager, err := consensusstatemanager.New(
+		dbManager,
+		dagParams,
+		ghostdagManager,
+		dagTopologyManager,
+		dagTraversalManager,
+		pruningManager,
+		pastMedianTimeManager,
+		reachabilityManager,
+		transactionValidator,
+		blockValidator,
+		blockStatusStore,
+		ghostdagDataStore,
+		consensusStateStore,
+		multisetStore,
+		blockStore,
+		utxoDiffStore,
+		blockRelationStore,
+		acceptanceDataStore,
+		blockHeaderStore)
+	if err != nil {
+		return nil, err
+	}
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		dbManager,

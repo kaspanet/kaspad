@@ -1,10 +1,11 @@
 package blockvalidator
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"math/big"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -20,7 +21,6 @@ type blockValidator struct {
 	finalityDepth                  uint64
 
 	databaseContext       model.DBReader
-	consensusStateManager model.ConsensusStateManager
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
@@ -43,7 +43,6 @@ func New(powMax *big.Int,
 	finalityDepth uint64,
 	databaseContext model.DBReader,
 
-	consensusStateManager model.ConsensusStateManager,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
@@ -65,7 +64,6 @@ func New(powMax *big.Int,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 		finalityDepth:                  finalityDepth,
 		databaseContext:                databaseContext,
-		consensusStateManager:          consensusStateManager,
 		difficultyManager:              difficultyManager,
 		pastMedianTimeManager:          pastMedianTimeManager,
 		transactionValidator:           transactionValidator,

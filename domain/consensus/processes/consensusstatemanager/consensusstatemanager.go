@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"errors"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -12,9 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
-
-// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
-const maxMassAcceptedByBlock = 10000000
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
@@ -28,6 +26,7 @@ type consensusStateManager struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	reachabilityTree      model.ReachabilityTree
 	transactionValidator  model.TransactionValidator
+	blockValidator        model.BlockValidator
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -53,6 +52,7 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	reachabilityTree model.ReachabilityTree,
 	transactionValidator model.TransactionValidator,
+	blockValidator model.BlockValidator,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -74,6 +74,7 @@ func New(
 		pastMedianTimeManager: pastMedianTimeManager,
 		reachabilityTree:      reachabilityTree,
 		transactionValidator:  transactionValidator,
+		blockValidator:        blockValidator,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
@@ -90,7 +91,10 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	csm.virtualParents = csm.selectVirtualParents(tips)
+	csm.virtualParents, err = csm.pickVirtualParents(tips)
+	if err != nil {
+		return nil, err
+	}
 
 	return csm, nil
 }
@@ -299,7 +303,7 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 	return &model.VirtualData{
 		PastMedianTime: pastMedianTime,
 		BlueScore:      ghostdagData.BlueScore,
-		ParentHashes:   nil, // TODO
+		ParentHashes:   csm.virtualParents,
 		SelectedParent: ghostdagData.SelectedParent,
 	}, nil
 }
@@ -483,7 +487,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
-	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > maxMassAcceptedByBlock {
+	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > constants.MaxMassAcceptedByBlock {
 		return false, 0
 	}
 

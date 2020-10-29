@@ -10,4 +10,5 @@ type BlockValidator interface {
 	ValidateHeaderInContext(blockHash *externalapi.DomainHash) error
 	ValidateBodyInContext(blockHash *externalapi.DomainHash) error
 	ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error
+	NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 }

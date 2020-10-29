@@ -7,8 +7,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDAGData) error {
-	nonBoundedMergeDepthViolatingBlues, err := v.nonBoundedMergeDepthViolatingBlues(ghostdagData)
+func (v *blockValidator) checkBoundedMergeDepth(blockHash *externalapi.DomainHash) error {
+	nonBoundedMergeDepthViolatingBlues, err := v.NonBoundedMergeDepthViolatingBlues(blockHash)
+	if err != nil {
+		return err
+	}
+
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -42,7 +47,12 @@ func (v *blockValidator) checkBoundedMergeDepth(ghostdagData *model.BlockGHOSTDA
 	return nil
 }
 
-func (v *blockValidator) nonBoundedMergeDepthViolatingBlues(ghostdagData *model.BlockGHOSTDAGData) ([]*externalapi.DomainHash, error) {
+func (v *blockValidator) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues))
 
 	for _, blue := range ghostdagData.MergeSetBlues {
