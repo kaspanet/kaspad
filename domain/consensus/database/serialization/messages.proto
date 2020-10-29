@@ -20,30 +20,30 @@ message DbBlockHeader {
 }
 
 message DbTransaction {
-  int32 Version = 1;
-  repeated DbTransactionInput Inputs = 2;
-  repeated DbTransactionOutput Outputs = 3;
-  uint64 LockTime = 4;
-  bytes SubnetworkID = 5;
-  uint64 Gas = 6;
-  bytes PayloadHash = 7;
-  bytes Payload = 8;
+  int32 version = 1;
+  repeated DbTransactionInput inputs = 2;
+  repeated DbTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  bytes subnetworkID = 5;
+  uint64 gas = 6;
+  bytes payloadHash = 7;
+  bytes payload = 8;
 }
 
 message DbTransactionInput {
-  DbOutpoint PreviousOutpoint = 1;
-  bytes SignatureScript = 2;
-  uint64 Sequence = 3;
+  DbOutpoint previousOutpoint = 1;
+  bytes signatureScript = 2;
+  uint64 sequence = 3;
 }
 
 message DbOutpoint {
-  bytes TransactionID = 1;
-  uint32 Index = 2;
+  bytes transactionID = 1;
+  uint32 index = 2;
 }
 
 message DbTransactionOutput {
-  uint64 Value = 1;
-  bytes ScriptPublicKey = 2;
+  uint64 value = 1;
+  bytes scriptPublicKey = 2;
 }
 
 message DbAcceptanceData {
@@ -55,7 +55,12 @@ message DbBlockAcceptanceData {
 }
 
 message DbTransactionAcceptanceData {
-  DbTransaction Transaction = 1;
-  uint64 Fee = 2;
-  bool IsAccepted = 3;
+  DbTransaction transaction = 1;
+  uint64 fee = 2;
+  bool isAccepted = 3;
+}
+
+message DbBlockRelations {
+  repeated bytes parents = 1;
+  repeated bytes children = 2;
 }
