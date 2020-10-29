@@ -68,3 +68,16 @@ message DbBlockRelations {
 message DbBlockStatus {
   uint32 status = 1;
 }
+
+message DbBlockGhostdagData {
+  uint64 BlueScore = 1;
+  bytes SelectedParent = 2;
+  repeated bytes MergeSetBlues = 3;
+  repeated bytes MergeSetReds = 4;
+  repeated DbBluesAnticoneSizes BluesAnticoneSizes = 5;
+}
+
+message DbBluesAnticoneSizes {
+  bytes blueHash = 1;
+  uint32 anticoneSize = 2;
+}
