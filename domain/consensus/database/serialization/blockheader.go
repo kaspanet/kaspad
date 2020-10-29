@@ -6,14 +6,9 @@ import (
 
 // DomainBlockHeaderToDbBlockHeader converts DomainBlockHeader to DbBlockHeader
 func DomainBlockHeaderToDbBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *DbBlockHeader {
-	dbParentHashes := make([]*DbHash, len(domainBlockHeader.ParentHashes))
-	for i, parentHash := range domainBlockHeader.ParentHashes {
-		dbParentHashes[i] = DomainHashToDbHash(parentHash)
-	}
-
 	return &DbBlockHeader{
 		Version:              domainBlockHeader.Version,
-		ParentHashes:         dbParentHashes,
+		ParentHashes:         DomainHashesToDbHashes(domainBlockHeader.ParentHashes),
 		HashMerkleRoot:       DomainHashToDbHash(&domainBlockHeader.HashMerkleRoot),
 		AcceptedIDMerkleRoot: DomainHashToDbHash(&domainBlockHeader.AcceptedIDMerkleRoot),
 		UtxoCommitment:       DomainHashToDbHash(&domainBlockHeader.UTXOCommitment),
@@ -25,13 +20,9 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader *externalapi.DomainBlock
 
 // DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to DomainBlockHeader
 func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (*externalapi.DomainBlockHeader, error) {
-	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
-	for i, dbParentHash := range dbBlockHeader.ParentHashes {
-		var err error
-		parentHashes[i], err = DbHashToDomainHash(dbParentHash)
-		if err != nil {
-			return nil, err
-		}
+	parentHashes, err := DbHashesToDomainHashes(dbBlockHeader.ParentHashes)
+	if err != nil {
+		return nil, err
 	}
 	hashMerkleRoot, err := DbHashToDomainHash(dbBlockHeader.HashMerkleRoot)
 	if err != nil {
