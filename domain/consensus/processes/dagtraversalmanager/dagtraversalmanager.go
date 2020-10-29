@@ -13,6 +13,7 @@ type dagTraversalManager struct {
 
 	dagTopologyManager model.DAGTopologyManager
 	ghostdagDataStore  model.GHOSTDAGDataStore
+	ghostdagManager    model.GHOSTDAGManager
 }
 
 // selectedParentIterator implements the `model.SelectedParentIterator` API
@@ -42,11 +43,13 @@ func (spi *selectedParentIterator) Get() *externalapi.DomainHash {
 func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.DAGTraversalManager {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:    databaseContext,
 		dagTopologyManager: dagTopologyManager,
 		ghostdagDataStore:  ghostdagDataStore,
+		ghostdagManager:    ghostdagManager,
 	}
 }
 
