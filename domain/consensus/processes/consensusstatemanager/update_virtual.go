@@ -20,7 +20,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return err
 	}
 
-	_, _, virtualUTXODiff, err := csm.calculateAcceptanceDataAndMultiset(model.VirtualBlockHash)
+	virtualUTXODiff, _, _, err := csm.calculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
