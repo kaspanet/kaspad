@@ -1,9 +1,11 @@
 package acceptancedatastore
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"google.golang.org/protobuf/proto"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
@@ -35,7 +37,11 @@ func (ads *acceptanceDataStore) Discard() {
 
 func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 	for hash, acceptanceData := range ads.staging {
-		err := dbTx.Put(ads.hashAsKey(&hash), ads.serializeAcceptanceData(acceptanceData))
+		acceptanceDataBytes, err := ads.serializeAcceptanceData(acceptanceData)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(ads.hashAsKey(&hash), acceptanceDataBytes)
 		if err != nil {
 			return err
 		}
@@ -68,8 +74,29 @@ func (ads *acceptanceDataStore) Delete(dbTx model.DBTransaction, blockHash *exte
 	return dbTx.Delete(ads.hashAsKey(blockHash))
 }
 
-func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) []byte {
-	panic("implement me")
+func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) ([]byte, error) {
+	dbBlockAcceptanceData := make([]*serialization.DbBlockAcceptanceData, len(acceptanceData))
+	for i, blockAcceptanceData := range acceptanceData {
+		dbTransactionAcceptanceData := make([]*serialization.DbTransactionAcceptanceData,
+			len(blockAcceptanceData.TransactionAcceptanceData))
+		for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			dbTransactionAcceptanceData[j] = &serialization.DbTransactionAcceptanceData{
+				Transaction: nil,
+				Fee:         transactionAcceptanceData.Fee,
+				IsAccepted:  transactionAcceptanceData.IsAccepted,
+			}
+		}
+
+		dbBlockAcceptanceData[i] = &serialization.DbBlockAcceptanceData{
+			TransactionAcceptanceData: dbTransactionAcceptanceData,
+		}
+	}
+
+	dbAcceptanceData := &serialization.DbAcceptanceData{
+		BlockAcceptanceData: dbBlockAcceptanceData,
+	}
+
+	return proto.Marshal(dbAcceptanceData)
 }
 
 func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []byte) (model.AcceptanceData, error) {
