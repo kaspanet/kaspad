@@ -64,3 +64,7 @@ message DbBlockRelations {
   repeated bytes parents = 1;
   repeated bytes children = 2;
 }
+
+message DbBlockStatus {
+  uint32 status = 1;
+}
