@@ -85,3 +85,7 @@ message DbBluesAnticoneSizes {
 message DbMultiset {
   bytes multiset = 1;
 }
+
+message DbPruningPoint {
+  bytes hash = 1;
+}
