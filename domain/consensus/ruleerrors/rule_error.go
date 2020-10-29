@@ -3,6 +3,7 @@ package ruleerrors
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
 
@@ -277,12 +278,19 @@ func NewErrMissingTxOut(missingOutpoints []externalapi.DomainOutpoint) error {
 	})
 }
 
+// InvalidTransaction is a struct containing an invalid transaction, and the error explaining why it's invalid.
+type InvalidTransaction struct {
+	Transaction *externalapi.DomainTransaction
+	err         error
+}
+
+func (invalid InvalidTransaction) String() string {
+	return fmt.Sprintf("(%v: %s)", hashserialization.TransactionID(invalid.Transaction), invalid.err)
+}
+
 // ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid
 type ErrInvalidTransactionsInNewBlock struct {
-	InvalidTransactions []struct {
-		*externalapi.DomainTransaction
-		error
-	}
+	InvalidTransactions []InvalidTransaction
 }
 
 func (e ErrInvalidTransactionsInNewBlock) Error() string {
@@ -290,10 +298,7 @@ func (e ErrInvalidTransactionsInNewBlock) Error() string {
 }
 
 // NewErrInvalidTransactionsInNewBlock Creates a new ErrInvalidTransactionsInNewBlock error wrapped in a RuleError
-func NewErrInvalidTransactionsInNewBlock(invalidTransactions []struct {
-	*externalapi.DomainTransaction
-	error
-}) error {
+func NewErrInvalidTransactionsInNewBlock(invalidTransactions []InvalidTransaction) error {
 	return errors.WithStack(RuleError{
 		message: "ErrInvalidTransactionsInNewBlock",
 		inner:   ErrInvalidTransactionsInNewBlock{invalidTransactions},

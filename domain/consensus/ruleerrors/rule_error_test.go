@@ -38,12 +38,9 @@ func TestNewErrMissingTxOut(t *testing.T) {
 }
 
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
-	outer := NewErrInvalidTransactionsInNewBlock([]struct {
-		*externalapi.DomainTransaction
-		error
-	}{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
+	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [ErrNoTxInputs]"
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(d328800c7f3ccafe648d3eb43b47eb416f48103f1cd81ddd7a0c41431e4e463a: ErrNoTxInputs)]"
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")
@@ -52,11 +49,11 @@ func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	if len(inner.InvalidTransactions) != 1 {
 		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected len(inner.MissingOutpoints) 1, found: %d", len(inner.InvalidTransactions))
 	}
-	if inner.InvalidTransactions[0].error != ErrNoTxInputs {
-		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].error)
+	if inner.InvalidTransactions[0].err != ErrNoTxInputs {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].err)
 	}
-	if inner.InvalidTransactions[0].Fee != 1337 {
-		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected 1337. found: %v", inner.InvalidTransactions[0].Fee)
+	if inner.InvalidTransactions[0].Transaction.Fee != 1337 {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected 1337. found: %v", inner.InvalidTransactions[0].Transaction.Fee)
 	}
 
 	rule := &RuleError{}
