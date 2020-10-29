@@ -31,7 +31,7 @@ message DbTransaction {
   DbSubnetworkId subnetworkID = 5;
   uint64 gas = 6;
   DbHash payloadHash = 7;
-  DbHash payload = 8;
+  bytes payload = 8;
 }
 
 message DbTransactionInput {
