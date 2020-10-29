@@ -45,3 +45,17 @@ message DbTransactionOutput {
   uint64 Value = 1;
   bytes ScriptPublicKey = 2;
 }
+
+message DbAcceptanceData {
+  repeated DbBlockAcceptanceData blockAcceptanceData = 1;
+}
+
+message DbBlockAcceptanceData {
+  repeated DbTransactionAcceptanceData transactionAcceptanceData = 1;
+}
+
+message DbTransactionAcceptanceData {
+  DbTransaction Transaction = 1;
+  uint64 Fee = 2;
+  bool IsAccepted = 3;
+}
