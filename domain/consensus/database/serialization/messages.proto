@@ -70,11 +70,11 @@ message DbBlockStatus {
 }
 
 message DbBlockGhostdagData {
-  uint64 BlueScore = 1;
-  bytes SelectedParent = 2;
-  repeated bytes MergeSetBlues = 3;
-  repeated bytes MergeSetReds = 4;
-  repeated DbBluesAnticoneSizes BluesAnticoneSizes = 5;
+  uint64 blueScore = 1;
+  bytes selectedParent = 2;
+  repeated bytes mergeSetBlues = 3;
+  repeated bytes mergeSetReds = 4;
+  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 5;
 }
 
 message DbBluesAnticoneSizes {
