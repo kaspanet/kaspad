@@ -1,6 +1,8 @@
 package multisetstore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -35,7 +37,12 @@ func (ms *multisetStore) Discard() {
 
 func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 	for hash, multiset := range ms.staging {
-		err := dbTx.Put(ms.hashAsKey(&hash), ms.serializeMultiset(multiset))
+		multisetBytes, err := ms.serializeMultiset(multiset)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(ms.hashAsKey(&hash), multisetBytes)
 		if err != nil {
 			return err
 		}
@@ -72,10 +79,16 @@ func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }
 
-func (ms *multisetStore) serializeMultiset(multiset model.Multiset) []byte {
-	panic("implement me")
+func (ms *multisetStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {
+	return proto.Marshal(serialization.MultisetToDBMultiset(multiset))
 }
 
 func (ms *multisetStore) deserializeMultiset(multisetBytes []byte) (model.Multiset, error) {
-	panic("implement me")
+	dbMultiset := &serialization.DbMultiset{}
+	err := proto.Unmarshal(multisetBytes, dbMultiset)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBMultisetToMultiset(dbMultiset)
 }

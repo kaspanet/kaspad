@@ -134,3 +134,7 @@ message DbUtxoDiff {
   repeated DbUtxoCollectionItem toAdd = 1;
   repeated DbUtxoCollectionItem toRemove = 2;
 }
+
+message PruningPointUTXOSetBytes {
+  bytes bytes = 1;
+}

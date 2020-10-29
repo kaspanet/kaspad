@@ -1,6 +1,8 @@
 package reachabilitydatastore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -44,13 +46,23 @@ func (rds *reachabilityDataStore) Discard() {
 
 func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 	if rds.reachabilityReindexRootStaging != nil {
-		err := dbTx.Put(reachabilityReindexRootKey, rds.serializeReachabilityReindexRoot(rds.reachabilityReindexRootStaging))
+		reachabilityReindexRootBytes, err := rds.serializeReachabilityReindexRoot(rds.reachabilityReindexRootStaging)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(reachabilityReindexRootKey, reachabilityReindexRootBytes)
 		if err != nil {
 			return err
 		}
 	}
 	for hash, reachabilityData := range rds.reachabilityDataStaging {
-		err := dbTx.Put(rds.reachabilityDataBlockHashAsKey(&hash), rds.serializeReachabilityData(reachabilityData))
+		reachabilityDataBytes, err := rds.serializeReachabilityData(reachabilityData)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(rds.reachabilityDataBlockHashAsKey(&hash), reachabilityDataBytes)
 		if err != nil {
 			return err
 		}
@@ -97,18 +109,30 @@ func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externala
 	return reachabilityDataBucket.Key(hash[:])
 }
 
-func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData *model.ReachabilityData) []byte {
-	panic("implement me")
+func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData *model.ReachabilityData) ([]byte, error) {
+	return proto.Marshal(serialization.ReachablityDataToDBReachablityData(reachabilityData))
 }
 
 func (rds *reachabilityDataStore) deserializeReachabilityData(reachabilityDataBytes []byte) (*model.ReachabilityData, error) {
-	panic("implement me")
+	dbReachabilityData := &serialization.DbReachabilityData{}
+	err := proto.Unmarshal(reachabilityDataBytes, dbReachabilityData)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBReachablityDataToReachablityData(dbReachabilityData), nil
 }
 
-func (rds *reachabilityDataStore) serializeReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) []byte {
-	panic("implement me")
+func (rds *reachabilityDataStore) serializeReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) ([]byte, error) {
+	return proto.Marshal(serialization.DomainHashToDbHash(reachabilityReindexRoot))
 }
 
 func (rds *reachabilityDataStore) deserializeReachabilityReindexRoot(reachabilityReindexRootBytes []byte) (*externalapi.DomainHash, error) {
-	panic("implement me")
+	dbHash := &serialization.DbHash{}
+	err := proto.Unmarshal(reachabilityReindexRootBytes, dbHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DbHashToDomainHash(dbHash)
 }
