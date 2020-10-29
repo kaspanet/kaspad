@@ -8,5 +8,5 @@ type AcceptanceDataStore interface {
 	Stage(blockHash *externalapi.DomainHash, acceptanceData AcceptanceData)
 	IsStaged() bool
 	Get(dbContext DBReader, blockHash *externalapi.DomainHash) (AcceptanceData, error)
-	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
+	Delete(blockHash *externalapi.DomainHash)
 }

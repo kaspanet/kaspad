@@ -10,5 +10,5 @@ type BlockHeaderStore interface {
 	BlockHeader(dbContext DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
 	HasBlockHeader(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
 	BlockHeaders(dbContext DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlockHeader, error)
-	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
+	Delete(blockHash *externalapi.DomainHash)
 }

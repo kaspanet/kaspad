@@ -12,13 +12,15 @@ var bucket = dbkeys.MakeBucket([]byte("block-headers"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
-	staging map[externalapi.DomainHash]*externalapi.DomainBlockHeader
+	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
+	toDelete map[externalapi.DomainHash]struct{}
 }
 
 // New instantiates a new BlockHeaderStore
 func New() model.BlockHeaderStore {
 	return &blockHeaderStore{
-		staging: make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
+		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
+		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 }
 
@@ -28,11 +30,12 @@ func (bms *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeade
 }
 
 func (bms *blockHeaderStore) IsStaged() bool {
-	return len(bms.staging) != 0
+	return len(bms.staging) != 0 || len(bms.toDelete) != 0
 }
 
 func (bms *blockHeaderStore) Discard() {
 	bms.staging = make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader)
+	bms.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (bms *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
@@ -42,6 +45,13 @@ func (bms *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		err = dbTx.Put(bms.hashAsKey(&hash), headerBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for hash, _ := range bms.toDelete {
+		err := dbTx.Delete(bms.hashAsKey(&hash))
 		if err != nil {
 			return err
 		}
@@ -93,12 +103,12 @@ func (bms *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes 
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bms *blockHeaderStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+func (bms *blockHeaderStore) Delete(blockHash *externalapi.DomainHash) {
 	if _, ok := bms.staging[*blockHash]; ok {
 		delete(bms.staging, *blockHash)
-		return nil
+		return
 	}
-	return dbTx.Delete(bms.hashAsKey(blockHash))
+	bms.toDelete[*blockHash] = struct{}{}
 }
 
 func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

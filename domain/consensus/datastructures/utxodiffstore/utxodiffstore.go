@@ -15,6 +15,7 @@ var utxoDiffChildBucket = dbkeys.MakeBucket([]byte("utxo-diff-children"))
 type utxoDiffStore struct {
 	utxoDiffStaging      map[externalapi.DomainHash]*model.UTXODiff
 	utxoDiffChildStaging map[externalapi.DomainHash]*externalapi.DomainHash
+	toDelete             map[externalapi.DomainHash]struct{}
 }
 
 // New instantiates a new UTXODiffStore
@@ -22,6 +23,7 @@ func New() model.UTXODiffStore {
 	return &utxoDiffStore{
 		utxoDiffStaging:      make(map[externalapi.DomainHash]*model.UTXODiff),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
+		toDelete:             make(map[externalapi.DomainHash]struct{}),
 	}
 }
 
@@ -32,7 +34,7 @@ func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *mod
 }
 
 func (uds *utxoDiffStore) IsStaged() bool {
-	return len(uds.utxoDiffStaging) != 0 || len(uds.utxoDiffChildStaging) != 0
+	return len(uds.utxoDiffStaging) != 0 || len(uds.utxoDiffChildStaging) != 0 || len(uds.toDelete) != 0
 }
 
 func (uds *utxoDiffStore) IsBlockHashStaged(blockHash *externalapi.DomainHash) bool {
@@ -46,6 +48,7 @@ func (uds *utxoDiffStore) IsBlockHashStaged(blockHash *externalapi.DomainHash) b
 func (uds *utxoDiffStore) Discard() {
 	uds.utxoDiffStaging = make(map[externalapi.DomainHash]*model.UTXODiff)
 	uds.utxoDiffChildStaging = make(map[externalapi.DomainHash]*externalapi.DomainHash)
+	uds.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
@@ -67,6 +70,18 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 
 		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for hash, _ := range uds.toDelete {
+		err := dbTx.Delete(uds.utxoDiffHashAsKey(&hash))
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Delete(uds.utxoDiffChildHashAsKey(&hash))
 		if err != nil {
 			return err
 		}
@@ -109,7 +124,7 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 }
 
 // Delete deletes the utxoDiff associated with the given blockHash
-func (uds *utxoDiffStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+func (uds *utxoDiffStore) Delete(blockHash *externalapi.DomainHash) {
 	if uds.IsBlockHashStaged(blockHash) {
 		if _, ok := uds.utxoDiffStaging[*blockHash]; ok {
 			delete(uds.utxoDiffStaging, *blockHash)
@@ -117,13 +132,9 @@ func (uds *utxoDiffStore) Delete(dbTx model.DBTransaction, blockHash *externalap
 		if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
 			delete(uds.utxoDiffChildStaging, *blockHash)
 		}
-		return nil
+		return
 	}
-	err := dbTx.Delete(uds.utxoDiffHashAsKey(blockHash))
-	if err != nil {
-		return err
-	}
-	return dbTx.Delete(uds.utxoDiffChildHashAsKey(blockHash))
+	uds.toDelete[*blockHash] = struct{}{}
 }
 
 func (uds *utxoDiffStore) utxoDiffHashAsKey(hash *externalapi.DomainHash) model.DBKey {

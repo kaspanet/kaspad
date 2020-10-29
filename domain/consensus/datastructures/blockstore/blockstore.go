@@ -12,13 +12,15 @@ var bucket = dbkeys.MakeBucket([]byte("blocks"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
-	staging map[externalapi.DomainHash]*externalapi.DomainBlock
+	staging  map[externalapi.DomainHash]*externalapi.DomainBlock
+	toDelete map[externalapi.DomainHash]struct{}
 }
 
 // New instantiates a new BlockStore
 func New() model.BlockStore {
 	return &blockStore{
-		staging: make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 }
 
@@ -28,11 +30,12 @@ func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externala
 }
 
 func (bms *blockStore) IsStaged() bool {
-	return len(bms.staging) != 0
+	return len(bms.staging) != 0 || len(bms.toDelete) != 0
 }
 
 func (bms *blockStore) Discard() {
 	bms.staging = make(map[externalapi.DomainHash]*externalapi.DomainBlock)
+	bms.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (bms *blockStore) Commit(dbTx model.DBTransaction) error {
@@ -42,6 +45,13 @@ func (bms *blockStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		err = dbTx.Put(bms.hashAsKey(&hash), blockBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for hash, _ := range bms.toDelete {
+		err := dbTx.Delete(bms.hashAsKey(&hash))
 		if err != nil {
 			return err
 		}
@@ -93,12 +103,12 @@ func (bms *blockStore) Blocks(dbContext model.DBReader, blockHashes []*externala
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bms *blockStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+func (bms *blockStore) Delete(blockHash *externalapi.DomainHash) {
 	if _, ok := bms.staging[*blockHash]; ok {
 		delete(bms.staging, *blockHash)
-		return nil
+		return
 	}
-	return dbTx.Delete(bms.hashAsKey(blockHash))
+	bms.toDelete[*blockHash] = struct{}{}
 }
 
 func (bms *blockStore) serializeBlock(block *externalapi.DomainBlock) ([]byte, error) {
