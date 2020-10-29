@@ -37,8 +37,6 @@ type consensusStateManager struct {
 	blockRelationStore  model.BlockRelationStore
 	acceptanceDataStore model.AcceptanceDataStore
 	blockHeaderStore    model.BlockHeaderStore
-
-	virtualParents []*externalapi.DomainHash
 }
 
 // New instantiates a new ConsensusStateManager
@@ -87,15 +85,6 @@ func New(
 		blockHeaderStore:    blockHeaderStore,
 	}
 
-	tips, err := csm.consensusStateStore.Tips(csm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	csm.virtualParents, err = csm.pickVirtualParents(tips)
-	if err != nil {
-		return nil, err
-	}
-
 	return csm, nil
 }
 
@@ -126,7 +115,7 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 		return err
 	}
 
-	err = csm.updateVirtual(newTips)
+	err = csm.updateVirtual(blockHash, newTips)
 	if err != nil {
 		return err
 	}
@@ -300,10 +289,15 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 		return nil, err
 	}
 
+	virtualParents, err := csm.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.VirtualData{
 		PastMedianTime: pastMedianTime,
 		BlueScore:      ghostdagData.BlueScore,
-		ParentHashes:   csm.virtualParents,
+		ParentHashes:   virtualParents,
 		SelectedParent: ghostdagData.SelectedParent,
 	}, nil
 }
@@ -388,7 +382,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 		}
 	}
 
-	err = csm.consensusStateStore.SetTips(newTips)
+	err = csm.consensusStateStore.StageTips(newTips)
 	if err != nil {
 		return nil, err
 	}
