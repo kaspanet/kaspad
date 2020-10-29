@@ -80,7 +80,7 @@ func (dtm dagTraversalManager) NewUpHeap() model.BlockHeap {
 	return h
 }
 
-// pop removes the block with lowest height from this heap and returns it
+// Pop removes the block with lowest height from this heap and returns it
 func (bh BlockHeap) Pop() *externalapi.DomainHash {
 	return heap.Pop(bh.impl).(*blockHeapNode).hash
 }

@@ -15,6 +15,7 @@ import (
 // keys will be iterated in an ascending order by the outpoint index.
 var outpointIndexByteOrder = binary.BigEndian
 
+// SerializeUTXO returns the byte-slice representation for given UTXOEntry
 func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
 

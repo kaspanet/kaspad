@@ -29,14 +29,14 @@ func collectionRemoveMultiple(collection model.UTXOCollection, collectionToRemov
 	}
 }
 
-// get returns the model.UTXOEntry represented by provided outpoint,
+// CollectionGet returns the model.UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said model.UTXOEntry is in the set or not
 func CollectionGet(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
 	entry, ok := collection[*outpoint]
 	return entry, ok
 }
 
-// contains returns a boolean value indicating whether a UTXO entry is in the set
+// CollectionContains returns a boolean value indicating whether a UTXO entry is in the set
 func CollectionContains(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint) bool {
 	_, ok := collection[*outpoint]
 	return ok

@@ -1,6 +1,8 @@
 package constants
 
 const (
+	// BlockVersion represents the current version of blocks mined and the maximum block version
+	// this node is able to validate
 	BlockVersion = 1
 
 	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).

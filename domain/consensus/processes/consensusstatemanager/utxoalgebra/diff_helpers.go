@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DiffClone returns a new UTXODiff which is identical to the given diff
 func DiffClone(diff *model.UTXODiff) *model.UTXODiff {
 	clone := &model.UTXODiff{
 		ToAdd:    collectionClone(diff.ToAdd),

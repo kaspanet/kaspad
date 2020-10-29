@@ -39,6 +39,7 @@ func (op DomainOutpoint) String() string {
 	return fmt.Sprintf("(%s: %d)", op.TransactionID, op.Index)
 }
 
+// NewDomainOutpoint instantiates a new DomainOutpoint with the given id and index
 func NewDomainOutpoint(id *DomainTransactionID, index uint32) *DomainOutpoint {
 	return &DomainOutpoint{
 		TransactionID: *id,

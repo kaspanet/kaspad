@@ -503,9 +503,8 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	if err != nil {
 		if errors.As(err, (&ruleerrors.RuleError{})) {
 			return model.StatusDisqualifiedFromChain, nil
-		} else {
-			return 0, err
 		}
+		return 0, err
 	}
 
 	csm.multisetStore.Stage(blockHash, multiset)

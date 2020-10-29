@@ -17,6 +17,7 @@ type UTXODiff struct {
 	ToRemove UTXOCollection
 }
 
+// NewUTXODiff instantiates an empty UTXODiff
 func NewUTXODiff() *UTXODiff {
 	return &UTXODiff{
 		ToAdd:    UTXOCollection{},
