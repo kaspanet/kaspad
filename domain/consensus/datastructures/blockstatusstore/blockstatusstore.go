@@ -1,6 +1,8 @@
 package blockstatusstore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -35,7 +37,11 @@ func (bss *blockStatusStore) Discard() {
 
 func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
 	for hash, status := range bss.staging {
-		err := dbTx.Put(bss.hashAsKey(&hash), bss.serializeBlockStatus(status))
+		blockStatusBytes, err := bss.serializeBlockStatus(status)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(bss.hashAsKey(&hash), blockStatusBytes)
 		if err != nil {
 			return err
 		}
@@ -73,12 +79,18 @@ func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externa
 	return exists, nil
 }
 
-func (bss *blockStatusStore) serializeBlockStatus(status model.BlockStatus) []byte {
-	panic("implement me")
+func (bss *blockStatusStore) serializeBlockStatus(status model.BlockStatus) ([]byte, error) {
+	dbBlockStatus := serialization.DomainBlockStatusToDbBlockStatus(status)
+	return proto.Marshal(dbBlockStatus)
 }
 
 func (bss *blockStatusStore) deserializeHeader(statusBytes []byte) (model.BlockStatus, error) {
-	panic("implement me")
+	dbBlockStatus := &serialization.DbBlockStatus{}
+	err := proto.Unmarshal(statusBytes, dbBlockStatus)
+	if err != nil {
+		return 0, err
+	}
+	return serialization.DbBlockStatusToDomainBlockStatus(dbBlockStatus), nil
 }
 
 func (bss *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

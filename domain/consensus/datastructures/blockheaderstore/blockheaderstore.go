@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-headers"))
@@ -107,22 +106,7 @@ func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey
 }
 
 func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
-	dbParentHashes := make([]*serialization.DbHash, len(header.ParentHashes))
-	for i, parentHash := range header.ParentHashes {
-		dbParentHashes[i] = &serialization.DbHash{Hash: parentHash[:]}
-	}
-
-	dbBlockHeader := &serialization.DbBlockHeader{
-		Version:              header.Version,
-		ParentHashes:         dbParentHashes,
-		HashMerkleRoot:       &serialization.DbHash{Hash: header.HashMerkleRoot[:]},
-		AcceptedIDMerkleRoot: &serialization.DbHash{Hash: header.AcceptedIDMerkleRoot[:]},
-		UtxoCommitment:       &serialization.DbHash{Hash: header.UTXOCommitment[:]},
-		TimeInMilliseconds:   header.TimeInMilliseconds,
-		Bits:                 header.Bits,
-		Nonce:                header.Nonce,
-	}
-
+	dbBlockHeader := serialization.DomainBlockHeaderToDbBlockHeader(header)
 	return proto.Marshal(dbBlockHeader)
 }
 
@@ -132,35 +116,5 @@ func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 	if err != nil {
 		return nil, err
 	}
-
-	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
-	for i, dbParentHash := range dbBlockHeader.ParentHashes {
-		parentHashes[i], err = hashes.FromBytes(dbParentHash.Hash)
-		if err != nil {
-			return nil, err
-		}
-	}
-	hashMerkleRoot, err := hashes.FromBytes(dbBlockHeader.HashMerkleRoot.Hash)
-	if err != nil {
-		return nil, err
-	}
-	acceptedIDMerkleRoot, err := hashes.FromBytes(dbBlockHeader.AcceptedIDMerkleRoot.Hash)
-	if err != nil {
-		return nil, err
-	}
-	utxoCommitment, err := hashes.FromBytes(dbBlockHeader.UtxoCommitment.Hash)
-	if err != nil {
-		return nil, err
-	}
-
-	return &externalapi.DomainBlockHeader{
-		Version:              dbBlockHeader.Version,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   dbBlockHeader.TimeInMilliseconds,
-		Bits:                 dbBlockHeader.Bits,
-		Nonce:                dbBlockHeader.Nonce,
-	}, nil
+	return serialization.DbBlockHeaderToDomainBlockHeader(dbBlockHeader)
 }
