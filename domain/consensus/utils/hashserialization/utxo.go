@@ -33,7 +33,7 @@ func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOut
 }
 
 func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
-	_, err := w.Write(outpoint.ID[:])
+	_, err := w.Write(outpoint.TransactionID[:])
 	if err != nil {
 		return err
 	}

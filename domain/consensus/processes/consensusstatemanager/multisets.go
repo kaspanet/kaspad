@@ -9,12 +9,10 @@ import (
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData []*model.BlockAcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
-	selectedParentMultiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
+	multiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return nil, err
 	}
-
-	multiset := selectedParentMultiset.Clone()
 
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -47,8 +45,8 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			ID:    *hashserialization.TransactionID(transaction),
-			Index: uint32(i),
+			TransactionID: *hashserialization.TransactionID(transaction),
+			Index:         uint32(i),
 		}
 		utxoEntry := &externalapi.UTXOEntry{
 			Amount:          output.Value,
