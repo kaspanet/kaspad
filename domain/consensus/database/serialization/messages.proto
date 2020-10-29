@@ -100,8 +100,28 @@ message DbUtxoSetEntry {
 }
 
 message DbUtxoEntry {
-  uint64 Amount = 1;
-  bytes ScriptPublicKey = 2;
-  uint64 BlockBlueScore = 3;
-  bool IsCoinbase = 4;
+  uint64 amount = 1;
+  bytes scriptPublicKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message DbReachabilityData {
+  DbReachabilityTreeNode treeNode = 1;
+  DbFutureCoveringTreeNodeSet futureCoveringSet = 2;
+}
+
+message DbReachabilityTreeNode {
+  repeated bytes children = 1;
+  bytes parent = 2;
+  DbReachabilityInterval interval = 3;
+}
+
+message DbReachabilityInterval {
+  uint64 start = 1;
+  uint64 end = 2;
+}
+
+message DbFutureCoveringTreeNodeSet {
+  repeated bytes blockHash = 1;
 }
