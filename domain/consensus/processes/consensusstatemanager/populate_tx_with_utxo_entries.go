@@ -5,8 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
-	"github.com/pkg/errors"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.
@@ -19,6 +17,8 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 // If utxoDiff == nil UTXO entries are taken from the virtual's UTXO set only
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
 	transaction *externalapi.DomainTransaction, utxoDiff *model.UTXODiff) error {
+
+	missingOutpoints := []externalapi.DomainOutpoint{}
 
 	for _, transactionInput := range transaction.Inputs {
 		// skip all inputs that have a pre-filled utxo entry
@@ -34,7 +34,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			}
 
 			if utxoalgebra.CollectionContains(utxoDiff.ToRemove, &transactionInput.PreviousOutpoint) {
-				return ruleerrors.ErrMissingTxOut
+				missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
 			}
 		}
 
@@ -44,10 +44,13 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			return err
 		}
 		if utxoEntry == nil {
-			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "The transaction %s spends an unknown outpoint %s",
-				hashserialization.TransactionID(transaction), &transactionInput.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
 		}
 		transactionInput.UTXOEntry = utxoEntry
+	}
+
+	if len(missingOutpoints) > 0 {
+		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 
 	return nil
