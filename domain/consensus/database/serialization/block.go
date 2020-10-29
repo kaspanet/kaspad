@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// DomainBlockToDbBlock converts DomainBlocks to DbBlock
 func DomainBlockToDbBlock(domainBlock *externalapi.DomainBlock) *DbBlock {
 	dbTransactions := make([]*DbTransaction, len(domainBlock.Transactions))
 	for i, domainTransaction := range domainBlock.Transactions {
@@ -16,6 +17,7 @@ func DomainBlockToDbBlock(domainBlock *externalapi.DomainBlock) *DbBlock {
 	}
 }
 
+// DbBlockToDomainBlock converts DbBlock to DomainBlock
 func DbBlockToDomainBlock(dbBlock *DbBlock) (*externalapi.DomainBlock, error) {
 	domainBlockHeader, err := DbBlockHeaderToDomainBlockHeader(dbBlock.Header)
 	if err != nil {

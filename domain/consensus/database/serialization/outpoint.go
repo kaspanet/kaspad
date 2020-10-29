@@ -4,15 +4,17 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// DomainOutpointToDbOutpoint converts DomainOutpoint to DbOutpoint
 func DomainOutpointToDbOutpoint(domainOutpoint *externalapi.DomainOutpoint) *DbOutpoint {
 	return &DbOutpoint{
-		TransactionID: DomainTransactionIDToDbTransactionId(&domainOutpoint.TransactionID),
+		TransactionID: DomainTransactionIDToDbTransactionID(&domainOutpoint.TransactionID),
 		Index:         domainOutpoint.Index,
 	}
 }
 
+// DbOutpointToDomainOutpoint converts DbOutpoint to DomainOutpoint
 func DbOutpointToDomainOutpoint(dbOutpoint *DbOutpoint) (*externalapi.DomainOutpoint, error) {
-	domainTransactionID, err := DbTransactionIdToDomainTransactionID(dbOutpoint.TransactionID)
+	domainTransactionID, err := DbTransactionIDToDomainTransactionID(dbOutpoint.TransactionID)
 	if err != nil {
 		return nil, err
 	}

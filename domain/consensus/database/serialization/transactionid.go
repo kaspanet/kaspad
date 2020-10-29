@@ -5,10 +5,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 )
 
-func DbTransactionIdToDomainTransactionID(dbTransactionId *DbTransactionId) (*externalapi.DomainTransactionID, error) {
-	return transactionid.FromBytes(dbTransactionId.TransactionId)
+// DbTransactionIDToDomainTransactionID converts DbTransactionId to DomainTransactionID
+func DbTransactionIDToDomainTransactionID(dbTransactionID *DbTransactionId) (*externalapi.DomainTransactionID, error) {
+	return transactionid.FromBytes(dbTransactionID.TransactionId)
 }
 
-func DomainTransactionIDToDbTransactionId(domainTransactionID *externalapi.DomainTransactionID) *DbTransactionId {
+// DomainTransactionIDToDbTransactionID converts DomainTransactionID to DbTransactionId
+func DomainTransactionIDToDbTransactionID(domainTransactionID *externalapi.DomainTransactionID) *DbTransactionId {
 	return &DbTransactionId{TransactionId: domainTransactionID[:]}
 }

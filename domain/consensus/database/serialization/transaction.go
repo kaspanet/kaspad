@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// DomainTransactionToDbTransaction converts DomainTransaction to DbTransaction
 func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTransaction) *DbTransaction {
 	dbInputs := make([]*DbTransactionInput, len(domainTransaction.Inputs))
 	for i, domainTransactionInput := range domainTransaction.Inputs {
@@ -27,15 +28,16 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 		Inputs:       dbInputs,
 		Outputs:      dbOutputs,
 		LockTime:     domainTransaction.LockTime,
-		SubnetworkID: DomainSubnetworkIDToDbSubnetworkId(&domainTransaction.SubnetworkID),
+		SubnetworkID: DomainSubnetworkIDToDbSubnetworkID(&domainTransaction.SubnetworkID),
 		Gas:          domainTransaction.Gas,
 		PayloadHash:  DomainHashToDbHash(&domainTransaction.PayloadHash),
 		Payload:      domainTransaction.Payload,
 	}
 }
 
+// DbTransactionToDomainTransaction converts DbTransaction to DomainTransaction
 func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalapi.DomainTransaction, error) {
-	domainSubnetworkID, err := DbSubnetworkIdToDomainSubnetworkID(dbTransaction.SubnetworkID)
+	domainSubnetworkID, err := DbSubnetworkIDToDomainSubnetworkID(dbTransaction.SubnetworkID)
 	if err != nil {
 		return nil, err
 	}

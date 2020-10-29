@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
+// DomainBlockRelationsToDbBlockRelations converts model.BlockRelations to DbBlockRelations
 func DomainBlockRelationsToDbBlockRelations(domainBlockRelations *model.BlockRelations) *DbBlockRelations {
 	return &DbBlockRelations{
 		Parents:  DomainHashesToDbHashes(domainBlockRelations.Parents),
@@ -11,6 +12,7 @@ func DomainBlockRelationsToDbBlockRelations(domainBlockRelations *model.BlockRel
 	}
 }
 
+// DbBlockRelationsToDomainBlockRelations converts DbBlockRelations to model.BlockRelations
 func DbBlockRelationsToDomainBlockRelations(dbBlockRelations *DbBlockRelations) (*model.BlockRelations, error) {
 	domainParentHashes, err := DbHashesToDomainHashes(dbBlockRelations.Parents)
 	if err != nil {

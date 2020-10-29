@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// DomainBlockHeaderToDbBlockHeader converts DomainBlockHeader to DbBlockHeader
 func DomainBlockHeaderToDbBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *DbBlockHeader {
 	dbParentHashes := make([]*DbHash, len(domainBlockHeader.ParentHashes))
 	for i, parentHash := range domainBlockHeader.ParentHashes {
@@ -22,6 +23,7 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader *externalapi.DomainBlock
 	}
 }
 
+// DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to DomainBlockHeader
 func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (*externalapi.DomainBlockHeader, error) {
 	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
 	for i, dbParentHash := range dbBlockHeader.ParentHashes {

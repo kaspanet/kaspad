@@ -2,6 +2,7 @@ package serialization
 
 import "github.com/kaspanet/kaspad/domain/consensus/model"
 
+// DomainAcceptanceDataToDbAcceptanceData converts model.AcceptanceData to DbAcceptanceData
 func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.AcceptanceData) *DbAcceptanceData {
 	dbBlockAcceptanceData := make([]*DbBlockAcceptanceData, len(domainAcceptanceData))
 	for i, blockAcceptanceData := range domainAcceptanceData {
@@ -27,6 +28,7 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.Acceptanc
 	}
 }
 
+// DbAcceptanceDataToDomainAcceptanceData converts DbAcceptanceData to model.AcceptanceData
 func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) (model.AcceptanceData, error) {
 	domainAcceptanceData := make(model.AcceptanceData, len(dbAcceptanceData.BlockAcceptanceData))
 	for i, dbBlockAcceptanceData := range dbAcceptanceData.BlockAcceptanceData {

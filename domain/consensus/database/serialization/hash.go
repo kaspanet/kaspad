@@ -15,7 +15,7 @@ func DomainHashToDbHash(domainHash *externalapi.DomainHash) *DbHash {
 	return &DbHash{Hash: domainHash[:]}
 }
 
-// DomainHashToDbHashes converts a slice of DomainHash to a slice of DbHash
+// DomainHashesToDbHashes converts a slice of DomainHash to a slice of DbHash
 func DomainHashesToDbHashes(domainHashes []*externalapi.DomainHash) []*DbHash {
 	dbHashes := make([]*DbHash, len(domainHashes))
 	for i, domainHash := range domainHashes {
