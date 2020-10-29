@@ -75,32 +75,17 @@ func (ads *acceptanceDataStore) Delete(dbTx model.DBTransaction, blockHash *exte
 }
 
 func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) ([]byte, error) {
-	dbBlockAcceptanceData := make([]*serialization.DbBlockAcceptanceData, len(acceptanceData))
-	for i, blockAcceptanceData := range acceptanceData {
-		dbTransactionAcceptanceData := make([]*serialization.DbTransactionAcceptanceData,
-			len(blockAcceptanceData.TransactionAcceptanceData))
-		for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-			dbTransactionAcceptanceData[j] = &serialization.DbTransactionAcceptanceData{
-				Transaction: nil,
-				Fee:         transactionAcceptanceData.Fee,
-				IsAccepted:  transactionAcceptanceData.IsAccepted,
-			}
-		}
-
-		dbBlockAcceptanceData[i] = &serialization.DbBlockAcceptanceData{
-			TransactionAcceptanceData: dbTransactionAcceptanceData,
-		}
-	}
-
-	dbAcceptanceData := &serialization.DbAcceptanceData{
-		BlockAcceptanceData: dbBlockAcceptanceData,
-	}
-
+	dbAcceptanceData := serialization.DomainAcceptanceDataToDbAcceptanceData(acceptanceData)
 	return proto.Marshal(dbAcceptanceData)
 }
 
 func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []byte) (model.AcceptanceData, error) {
-	panic("implement me")
+	dbAcceptanceData := &serialization.DbAcceptanceData{}
+	err := proto.Unmarshal(acceptanceDataBytes, dbAcceptanceData)
+	if err != nil {
+		return nil, err
+	}
+	return serialization.DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData)
 }
 
 func (ads *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
