@@ -106,22 +106,7 @@ func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey
 }
 
 func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
-	dbParentHashes := make([]*serialization.DbHash, len(header.ParentHashes))
-	for i, parentHash := range header.ParentHashes {
-		dbParentHashes[i] = serialization.DomainHashToDbHash(parentHash)
-	}
-
-	dbBlockHeader := &serialization.DbBlockHeader{
-		Version:              header.Version,
-		ParentHashes:         dbParentHashes,
-		HashMerkleRoot:       serialization.DomainHashToDbHash(&header.HashMerkleRoot),
-		AcceptedIDMerkleRoot: serialization.DomainHashToDbHash(&header.AcceptedIDMerkleRoot),
-		UtxoCommitment:       serialization.DomainHashToDbHash(&header.UTXOCommitment),
-		TimeInMilliseconds:   header.TimeInMilliseconds,
-		Bits:                 header.Bits,
-		Nonce:                header.Nonce,
-	}
-
+	dbBlockHeader := serialization.DomainBlockHeaderToDbBlockHeader(header)
 	return proto.Marshal(dbBlockHeader)
 }
 
@@ -131,35 +116,5 @@ func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 	if err != nil {
 		return nil, err
 	}
-
-	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
-	for i, dbParentHash := range dbBlockHeader.ParentHashes {
-		parentHashes[i], err = serialization.DbHashToDomainHash(dbParentHash)
-		if err != nil {
-			return nil, err
-		}
-	}
-	hashMerkleRoot, err := serialization.DbHashToDomainHash(dbBlockHeader.HashMerkleRoot)
-	if err != nil {
-		return nil, err
-	}
-	acceptedIDMerkleRoot, err := serialization.DbHashToDomainHash(dbBlockHeader.AcceptedIDMerkleRoot)
-	if err != nil {
-		return nil, err
-	}
-	utxoCommitment, err := serialization.DbHashToDomainHash(dbBlockHeader.UtxoCommitment)
-	if err != nil {
-		return nil, err
-	}
-
-	return &externalapi.DomainBlockHeader{
-		Version:              dbBlockHeader.Version,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   dbBlockHeader.TimeInMilliseconds,
-		Bits:                 dbBlockHeader.Bits,
-		Nonce:                dbBlockHeader.Nonce,
-	}, nil
+	return serialization.DbBlockHeaderToDomainBlockHeader(dbBlockHeader)
 }
