@@ -276,3 +276,26 @@ func NewErrMissingTxOut(missingOutpoints []externalapi.DomainOutpoint) error {
 		inner:   ErrMissingTxOut{missingOutpoints},
 	})
 }
+
+// ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid
+type ErrInvalidTransactionsInNewBlock struct {
+	InvalidTransactions []struct {
+		*externalapi.DomainTransaction
+		error
+	}
+}
+
+func (e ErrInvalidTransactionsInNewBlock) Error() string {
+	return fmt.Sprint(e.InvalidTransactions)
+}
+
+// NewErrInvalidTransactionsInNewBlock Creates a new ErrInvalidTransactionsInNewBlock error wrapped in a RuleError
+func NewErrInvalidTransactionsInNewBlock(invalidTransactions []struct {
+	*externalapi.DomainTransaction
+	error
+}) error {
+	return errors.WithStack(RuleError{
+		message: "ErrInvalidTransactionsInNewBlock",
+		inner:   ErrInvalidTransactionsInNewBlock{invalidTransactions},
+	})
+}
