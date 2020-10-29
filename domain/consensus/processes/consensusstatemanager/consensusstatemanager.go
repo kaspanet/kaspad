@@ -38,6 +38,8 @@ type consensusStateManager struct {
 	blockRelationStore  model.BlockRelationStore
 	acceptanceDataStore model.AcceptanceDataStore
 	blockHeaderStore    model.BlockHeaderStore
+
+	virtualParents []*externalapi.DomainHash
 }
 
 // New instantiates a new ConsensusStateManager
@@ -59,9 +61,9 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
-	blockHeaderStore model.BlockHeaderStore) model.ConsensusStateManager {
+	blockHeaderStore model.BlockHeaderStore) (model.ConsensusStateManager, error) {
 
-	return &consensusStateManager{
+	csm := &consensusStateManager{
 		dagParams:       dagParams,
 		databaseContext: databaseContext,
 
@@ -83,6 +85,14 @@ func New(
 		acceptanceDataStore: acceptanceDataStore,
 		blockHeaderStore:    blockHeaderStore,
 	}
+
+	tips, err := csm.consensusStateStore.Tips(csm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+	csm.virtualParents = csm.selectVirtualParents(tips)
+
+	return csm, nil
 }
 
 // AddBlockToVirtual submits the given block to be added to the
@@ -349,7 +359,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatu
 }
 
 func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
-	currentTips, err := csm.consensusStateStore.Tips()
+	currentTips, err := csm.consensusStateStore.Tips(csm.databaseContext)
 	if err != nil {
 		return nil, err
 	}

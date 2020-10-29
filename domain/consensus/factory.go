@@ -33,13 +33,13 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) Consensus
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error)
 }
 
 type factory struct{}
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) Consensus {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error) {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -89,7 +89,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	consensusStateManager := consensusstatemanager.New(
+	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
 		dagParams,
 		ghostdagManager,
@@ -108,6 +108,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockRelationStore,
 		acceptanceDataStore,
 		blockHeaderStore)
+	if err != nil {
+		return nil, err
+	}
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	coinbaseManager := coinbasemanager.New(
@@ -164,7 +167,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		consensusStateManager: consensusStateManager,
 		blockProcessor:        blockProcessor,
 		transactionValidator:  transactionValidator,
-	}
+	}, nil
 }
 
 // NewFactory creates a new Consensus factory
