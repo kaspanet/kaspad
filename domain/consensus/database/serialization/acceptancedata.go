@@ -9,8 +9,9 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.Acceptanc
 			len(blockAcceptanceData.TransactionAcceptanceData))
 
 		for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			dbTransaction := DomainTransactionToDbTransaction(transactionAcceptanceData.Transaction)
 			dbTransactionAcceptanceData[j] = &DbTransactionAcceptanceData{
-				Transaction: nil,
+				Transaction: dbTransaction,
 				Fee:         transactionAcceptanceData.Fee,
 				IsAccepted:  transactionAcceptanceData.IsAccepted,
 			}
@@ -27,5 +28,27 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.Acceptanc
 }
 
 func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) (model.AcceptanceData, error) {
-	panic("implement me")
+	domainAcceptanceData := make(model.AcceptanceData, len(dbAcceptanceData.BlockAcceptanceData))
+	for i, dbBlockAcceptanceData := range dbAcceptanceData.BlockAcceptanceData {
+		domainTransactionAcceptanceData := make([]*model.TransactionAcceptanceData,
+			len(dbBlockAcceptanceData.TransactionAcceptanceData))
+
+		for j, dbTransactionAcceptanceData := range dbBlockAcceptanceData.TransactionAcceptanceData {
+			domainTransaction, err := DbTransactionToDomainTransaction(dbTransactionAcceptanceData.Transaction)
+			if err != nil {
+				return nil, err
+			}
+			domainTransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+				Transaction: domainTransaction,
+				Fee:         dbTransactionAcceptanceData.Fee,
+				IsAccepted:  dbTransactionAcceptanceData.IsAccepted,
+			}
+		}
+
+		domainAcceptanceData[i] = &model.BlockAcceptanceData{
+			TransactionAcceptanceData: domainTransactionAcceptanceData,
+		}
+	}
+
+	return domainAcceptanceData, nil
 }
