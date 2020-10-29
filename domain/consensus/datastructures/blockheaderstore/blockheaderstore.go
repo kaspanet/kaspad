@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-headers"))
@@ -109,15 +108,15 @@ func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey
 func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
 	dbParentHashes := make([]*serialization.DbHash, len(header.ParentHashes))
 	for i, parentHash := range header.ParentHashes {
-		dbParentHashes[i] = &serialization.DbHash{Hash: parentHash[:]}
+		dbParentHashes[i] = serialization.DomainHashToDbHash(parentHash)
 	}
 
 	dbBlockHeader := &serialization.DbBlockHeader{
 		Version:              header.Version,
 		ParentHashes:         dbParentHashes,
-		HashMerkleRoot:       &serialization.DbHash{Hash: header.HashMerkleRoot[:]},
-		AcceptedIDMerkleRoot: &serialization.DbHash{Hash: header.AcceptedIDMerkleRoot[:]},
-		UtxoCommitment:       &serialization.DbHash{Hash: header.UTXOCommitment[:]},
+		HashMerkleRoot:       serialization.DomainHashToDbHash(&header.HashMerkleRoot),
+		AcceptedIDMerkleRoot: serialization.DomainHashToDbHash(&header.AcceptedIDMerkleRoot),
+		UtxoCommitment:       serialization.DomainHashToDbHash(&header.UTXOCommitment),
 		TimeInMilliseconds:   header.TimeInMilliseconds,
 		Bits:                 header.Bits,
 		Nonce:                header.Nonce,
@@ -135,20 +134,20 @@ func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 
 	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
 	for i, dbParentHash := range dbBlockHeader.ParentHashes {
-		parentHashes[i], err = hashes.FromBytes(dbParentHash.Hash)
+		parentHashes[i], err = serialization.DbHashToDomainHash(dbParentHash)
 		if err != nil {
 			return nil, err
 		}
 	}
-	hashMerkleRoot, err := hashes.FromBytes(dbBlockHeader.HashMerkleRoot.Hash)
+	hashMerkleRoot, err := serialization.DbHashToDomainHash(dbBlockHeader.HashMerkleRoot)
 	if err != nil {
 		return nil, err
 	}
-	acceptedIDMerkleRoot, err := hashes.FromBytes(dbBlockHeader.AcceptedIDMerkleRoot.Hash)
+	acceptedIDMerkleRoot, err := serialization.DbHashToDomainHash(dbBlockHeader.AcceptedIDMerkleRoot)
 	if err != nil {
 		return nil, err
 	}
-	utxoCommitment, err := hashes.FromBytes(dbBlockHeader.UtxoCommitment.Hash)
+	utxoCommitment, err := serialization.DbHashToDomainHash(dbBlockHeader.UtxoCommitment)
 	if err != nil {
 		return nil, err
 	}
