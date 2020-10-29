@@ -1,6 +1,8 @@
 package blockstore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -35,7 +37,11 @@ func (bms *blockStore) Discard() {
 
 func (bms *blockStore) Commit(dbTx model.DBTransaction) error {
 	for hash, block := range bms.staging {
-		err := dbTx.Put(bms.hashAsKey(&hash), bms.serializeBlock(block))
+		blockBytes, err := bms.serializeBlock(block)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(bms.hashAsKey(&hash), blockBytes)
 		if err != nil {
 			return err
 		}
@@ -95,12 +101,18 @@ func (bms *blockStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.D
 	return dbTx.Delete(bms.hashAsKey(blockHash))
 }
 
-func (bms *blockStore) serializeBlock(block *externalapi.DomainBlock) []byte {
-	panic("implement me")
+func (bms *blockStore) serializeBlock(block *externalapi.DomainBlock) ([]byte, error) {
+	dbBlock := serialization.DomainBlockToDbBlock(block)
+	return proto.Marshal(dbBlock)
 }
 
 func (bms *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBlock, error) {
-	panic("implement me")
+	dbBlock := &serialization.DbBlock{}
+	err := proto.Unmarshal(blockBytes, dbBlock)
+	if err != nil {
+		return nil, err
+	}
+	return serialization.DbBlockToDomainBlock(dbBlock)
 }
 
 func (bms *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
