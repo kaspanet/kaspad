@@ -107,17 +107,17 @@ func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey
 }
 
 func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
-	dbParentHashes := make([][]byte, len(header.ParentHashes))
+	dbParentHashes := make([]*serialization.DbHash, len(header.ParentHashes))
 	for i, parentHash := range header.ParentHashes {
-		dbParentHashes[i] = parentHash[:]
+		dbParentHashes[i] = &serialization.DbHash{Hash: parentHash[:]}
 	}
 
 	dbBlockHeader := &serialization.DbBlockHeader{
 		Version:              header.Version,
 		ParentHashes:         dbParentHashes,
-		HashMerkleRoot:       header.HashMerkleRoot[:],
-		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot[:],
-		UtxoCommitment:       header.UTXOCommitment[:],
+		HashMerkleRoot:       &serialization.DbHash{Hash: header.HashMerkleRoot[:]},
+		AcceptedIDMerkleRoot: &serialization.DbHash{Hash: header.AcceptedIDMerkleRoot[:]},
+		UtxoCommitment:       &serialization.DbHash{Hash: header.UTXOCommitment[:]},
 		TimeInMilliseconds:   header.TimeInMilliseconds,
 		Bits:                 header.Bits,
 		Nonce:                header.Nonce,
@@ -135,20 +135,20 @@ func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 
 	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
 	for i, dbParentHash := range dbBlockHeader.ParentHashes {
-		parentHashes[i], err = hashes.FromBytes(dbParentHash)
+		parentHashes[i], err = hashes.FromBytes(dbParentHash.Hash)
 		if err != nil {
 			return nil, err
 		}
 	}
-	hashMerkleRoot, err := hashes.FromBytes(dbBlockHeader.HashMerkleRoot)
+	hashMerkleRoot, err := hashes.FromBytes(dbBlockHeader.HashMerkleRoot.Hash)
 	if err != nil {
 		return nil, err
 	}
-	acceptedIDMerkleRoot, err := hashes.FromBytes(dbBlockHeader.AcceptedIDMerkleRoot)
+	acceptedIDMerkleRoot, err := hashes.FromBytes(dbBlockHeader.AcceptedIDMerkleRoot.Hash)
 	if err != nil {
 		return nil, err
 	}
-	utxoCommitment, err := hashes.FromBytes(dbBlockHeader.UtxoCommitment)
+	utxoCommitment, err := hashes.FromBytes(dbBlockHeader.UtxoCommitment.Hash)
 	if err != nil {
 		return nil, err
 	}
