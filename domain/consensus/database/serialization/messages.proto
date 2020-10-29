@@ -10,13 +10,17 @@ message DbBlock {
 
 message DbBlockHeader {
   int32 version = 1;
-  repeated bytes parentHashes = 2;
-  bytes hashMerkleRoot = 3;
-  bytes acceptedIDMerkleRoot = 4;
-  bytes utxoCommitment = 5;
+  repeated DbHash parentHashes = 2;
+  DbHash hashMerkleRoot = 3;
+  DbHash acceptedIDMerkleRoot = 4;
+  DbHash utxoCommitment = 5;
   int64 timeInMilliseconds = 6;
   uint32 bits = 7;
   uint64 nonce = 8;
+}
+
+message DbHash {
+  bytes hash = 1;
 }
 
 message DbTransaction {
@@ -24,10 +28,10 @@ message DbTransaction {
   repeated DbTransactionInput inputs = 2;
   repeated DbTransactionOutput outputs = 3;
   uint64 lockTime = 4;
-  bytes subnetworkID = 5;
+  DbSubnetworkId subnetworkID = 5;
   uint64 gas = 6;
-  bytes payloadHash = 7;
-  bytes payload = 8;
+  DbHash payloadHash = 7;
+  DbHash payload = 8;
 }
 
 message DbTransactionInput {
@@ -37,13 +41,21 @@ message DbTransactionInput {
 }
 
 message DbOutpoint {
-  bytes transactionID = 1;
+  DbTransactionId transactionID = 1;
   uint32 index = 2;
+}
+
+message DbTransactionId {
+  bytes transactionId = 1;
 }
 
 message DbTransactionOutput {
   uint64 value = 1;
   bytes scriptPublicKey = 2;
+}
+
+message DbSubnetworkId {
+  bytes subnetworkId = 1;
 }
 
 message DbAcceptanceData {
@@ -61,8 +73,8 @@ message DbTransactionAcceptanceData {
 }
 
 message DbBlockRelations {
-  repeated bytes parents = 1;
-  repeated bytes children = 2;
+  repeated DbHash parents = 1;
+  repeated DbHash children = 2;
 }
 
 message DbBlockStatus {
@@ -71,23 +83,19 @@ message DbBlockStatus {
 
 message DbBlockGhostdagData {
   uint64 blueScore = 1;
-  bytes selectedParent = 2;
-  repeated bytes mergeSetBlues = 3;
-  repeated bytes mergeSetReds = 4;
+  DbHash selectedParent = 2;
+  repeated DbHash mergeSetBlues = 3;
+  repeated DbHash mergeSetReds = 4;
   repeated DbBluesAnticoneSizes bluesAnticoneSizes = 5;
 }
 
 message DbBluesAnticoneSizes {
-  bytes blueHash = 1;
+  DbHash blueHash = 1;
   uint32 anticoneSize = 2;
 }
 
 message DbMultiset {
   bytes multiset = 1;
-}
-
-message DbPruningPoint {
-  bytes hash = 1;
 }
 
 message DbUtxoSet {
@@ -108,12 +116,12 @@ message DbUtxoEntry {
 
 message DbReachabilityData {
   DbReachabilityTreeNode treeNode = 1;
-  DbFutureCoveringTreeNodeSet futureCoveringSet = 2;
+  repeated DbHash futureCoveringSet = 2;
 }
 
 message DbReachabilityTreeNode {
-  repeated bytes children = 1;
-  bytes parent = 2;
+  repeated DbHash children = 1;
+  DbHash parent = 2;
   DbReachabilityInterval interval = 3;
 }
 
@@ -122,19 +130,7 @@ message DbReachabilityInterval {
   uint64 end = 2;
 }
 
-message DbFutureCoveringTreeNodeSet {
-  repeated bytes blockHash = 1;
-}
-
-message DbReachabilityReindexRoot {
-  bytes blockHash = 1;
-}
-
 message DbUtxoDiff {
   repeated DbUtxoCollectionItem toAdd = 1;
   repeated DbUtxoCollectionItem toRemove = 2;
-}
-
-message DbUtxoDiffChild {
-  bytes blockHash = 1;
 }
