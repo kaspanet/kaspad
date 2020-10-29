@@ -4,22 +4,12 @@ import "github.com/kaspanet/kaspad/domain/consensus/model"
 
 // BlockGHOSTDAGDataToDBBlockGHOSTDAGData converts BlockGHOSTDAGData to DbBlockGhostdagData
 func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) *DbBlockGhostdagData {
-	bluesAnticoneSizes := make([]*DbBluesAnticoneSizes, len(blockGHOSTDAGData.BluesAnticoneSizes))
-	i := 0
-	for hash, anticoneSize := range blockGHOSTDAGData.BluesAnticoneSizes {
-		bluesAnticoneSizes[i] = &DbBluesAnticoneSizes{
-			BlueHash:     DomainHashToDbHash(&hash),
-			AnticoneSize: uint32(anticoneSize),
-		}
-		i++
-	}
-
 	return &DbBlockGhostdagData{
 		BlueScore:          blockGHOSTDAGData.BlueScore,
 		SelectedParent:     DomainHashToDbHash(blockGHOSTDAGData.SelectedParent),
 		MergeSetBlues:      DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetBlues),
 		MergeSetReds:       DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetReds),
-		BluesAnticoneSizes: bluesAnticoneSizes,
+		BluesAnticoneSizes: bluesAnticoneSizesToDBBluesAnticoneSizes(blockGHOSTDAGData.BluesAnticoneSizes),
 	}
 }
 
