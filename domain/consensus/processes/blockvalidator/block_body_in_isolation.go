@@ -184,11 +184,11 @@ func (v *blockValidator) checkBlockHasNoChainedTransactions(block *externalapi.D
 
 	for _, transaction := range transactions {
 		for i, transactionInput := range transaction.Inputs {
-			if _, ok := transactionsSet[transactionInput.PreviousOutpoint.ID]; ok {
+			if _, ok := transactionsSet[transactionInput.PreviousOutpoint.TransactionID]; ok {
 				txID := hashserialization.TransactionID(transaction)
 				return errors.Wrapf(ruleerrors.ErrChainedTransactions, "block contains chained "+
 					"transactions: Input %d of transaction %s spend "+
-					"an output of transaction %s", i, txID, transactionInput.PreviousOutpoint.ID)
+					"an output of transaction %s", i, txID, transactionInput.PreviousOutpoint.TransactionID)
 			}
 		}
 	}

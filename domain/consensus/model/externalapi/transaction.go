@@ -31,13 +31,13 @@ type DomainTransactionInput struct {
 
 // DomainOutpoint represents a Kaspa transaction outpoint
 type DomainOutpoint struct {
-	ID    DomainTransactionID
-	Index uint32
+	TransactionID DomainTransactionID
+	Index         uint32
 }
 
 // String stringifies an outpoint.
 func (op DomainOutpoint) String() string {
-	return fmt.Sprintf("%s:%d", op.ID, op.Index)
+	return fmt.Sprintf("%s:%d", op.TransactionID, op.Index)
 }
 
 // DomainTransactionOutput represents a Kaspad transaction output
