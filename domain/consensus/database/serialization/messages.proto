@@ -89,3 +89,19 @@ message DbMultiset {
 message DbPruningPoint {
   bytes hash = 1;
 }
+
+message DbUtxoSet {
+  repeated DbUtxoSetEntry entries = 1;
+}
+
+message DbUtxoSetEntry {
+  DbOutpoint outpoint = 1;
+  DbUtxoEntry utxoEntry = 2;
+}
+
+message DbUtxoEntry {
+  uint64 Amount = 1;
+  bytes ScriptPublicKey = 2;
+  uint64 BlockBlueScore = 3;
+  bool IsCoinbase = 4;
+}
