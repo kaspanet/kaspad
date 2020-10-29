@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -41,18 +40,21 @@ func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction
 
 	standaloneMass := v.transactionMassStandalonePart(tx)
 	sigOpsCount := uint64(0)
+	var missingOutpoints []externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return 0, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
-				"either does not exist or "+
-				"has already been spent", input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			continue
 		}
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := input.SignatureScript
 		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey)
 		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey, isP2SH))
+	}
+	if len(missingOutpoints) > 0 {
+		return 0, ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 
 	return standaloneMass + sigOpsCount*MassPerSigOp, nil

@@ -130,7 +130,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	err = WriteElement(w, tx.PayloadHash)
+	err = WriteElement(w, &tx.PayloadHash)
 	if err != nil {
 		return err
 	}

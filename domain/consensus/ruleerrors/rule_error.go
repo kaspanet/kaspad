@@ -1,5 +1,12 @@
 package ruleerrors
 
+import (
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/pkg/errors"
+)
+
 // These constants are used to identify a specific RuleError.
 var (
 	// ErrDuplicateBlock indicates a block with the same hash already
@@ -83,10 +90,6 @@ var (
 	// such as referencing a previous transaction outpoint which is out of
 	// range or not referencing one at all.
 	ErrBadTxInput = newRuleError("ErrBadTxInput")
-
-	// ErrMissingTxOut indicates a transaction output referenced by an input
-	// either does not exist or has already been spent.
-	ErrMissingTxOut = newRuleError("ErrMissingTxOut")
 
 	// ErrDoubleSpendInSameBlock indicates a transaction
 	// that spends an output that was already spent by another
@@ -232,13 +235,72 @@ var (
 // specifically due to a rule violation.
 type RuleError struct {
 	message string
+	inner   error
 }
 
 // Error satisfies the error interface and prints human-readable errors.
 func (e RuleError) Error() string {
+	if e.inner != nil {
+		return e.message + ": " + e.inner.Error()
+	}
 	return e.message
 }
 
+// Unwrap satisfies the errors.Unwrap interface
+func (e RuleError) Unwrap() error {
+	return e.inner
+}
+
+// Cause satisfies the github.com/pkg/errors.Cause interface
+func (e RuleError) Cause() error {
+	return e.inner
+}
+
 func newRuleError(message string) RuleError {
-	return RuleError{message: message}
+	return RuleError{message: message, inner: nil}
+}
+
+// ErrMissingTxOut indicates a transaction output referenced by an input
+// either does not exist or has already been spent.
+type ErrMissingTxOut struct {
+	MissingOutpoints []externalapi.DomainOutpoint
+}
+
+func (e ErrMissingTxOut) Error() string {
+	return fmt.Sprint(e.MissingOutpoints)
+}
+
+// NewErrMissingTxOut Creates a new ErrMissingTxOut error wrapped in a RuleError
+func NewErrMissingTxOut(missingOutpoints []externalapi.DomainOutpoint) error {
+	return errors.WithStack(RuleError{
+		message: "ErrMissingTxOut",
+		inner:   ErrMissingTxOut{missingOutpoints},
+	})
+}
+
+// InvalidTransaction is a struct containing an invalid transaction, and the error explaining why it's invalid.
+type InvalidTransaction struct {
+	Transaction *externalapi.DomainTransaction
+	err         error
+}
+
+func (invalid InvalidTransaction) String() string {
+	return fmt.Sprintf("(%v: %s)", hashserialization.TransactionID(invalid.Transaction), invalid.err)
+}
+
+// ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid
+type ErrInvalidTransactionsInNewBlock struct {
+	InvalidTransactions []InvalidTransaction
+}
+
+func (e ErrInvalidTransactionsInNewBlock) Error() string {
+	return fmt.Sprint(e.InvalidTransactions)
+}
+
+// NewErrInvalidTransactionsInNewBlock Creates a new ErrInvalidTransactionsInNewBlock error wrapped in a RuleError
+func NewErrInvalidTransactionsInNewBlock(invalidTransactions []InvalidTransaction) error {
+	return errors.WithStack(RuleError{
+		message: "ErrInvalidTransactionsInNewBlock",
+		inner:   ErrInvalidTransactionsInNewBlock{invalidTransactions},
+	})
 }

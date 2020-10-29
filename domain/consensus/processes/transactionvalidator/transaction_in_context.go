@@ -60,15 +60,12 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	}
 
 	txBlueScore := ghostdagData.BlueScore
+	var missingOutpoints []externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "outpoint %s "+
-				"either does not exist or "+
-				"has already been spent", input.PreviousOutpoint)
-		}
-
-		if utxoEntry.IsCoinbase {
+			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+		} else if utxoEntry.IsCoinbase {
 			originBlueScore := utxoEntry.BlockBlueScore
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
@@ -81,6 +78,9 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 			}
 		}
 	}
+	if len(missingOutpoints) > 0 {
+		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
+	}
 
 	return nil
 }
@@ -89,12 +89,12 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 
 	totalSompiIn = 0
 
+	var missingOutpoints []externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return 0, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
-				"either does not exist or "+
-				"has already been spent", input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			continue
 		}
 
 		// Ensure the transaction amounts are in range. Each of the
@@ -107,6 +107,10 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 		if err != nil {
 			return 0, err
 		}
+	}
+
+	if len(missingOutpoints) > 0 {
+		return 0, ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 
 	return totalSompiIn, nil
@@ -172,14 +176,15 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 }
 
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
+
+	var missingOutpoints []externalapi.DomainOutpoint
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
-				"either does not exist or "+
-				"has already been spent", input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			continue
 		}
 
 		scriptPubKey := utxoEntry.ScriptPublicKey
@@ -204,7 +209,9 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 				input.PreviousOutpoint, err, sigScript, scriptPubKey)
 		}
 	}
-
+	if len(missingOutpoints) > 0 {
+		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
+	}
 	return nil
 }
 
@@ -223,12 +230,12 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		return sequenceLock, nil
 	}
 
+	var missingOutpoints []externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			return nil, errors.Wrapf(ruleerrors.ErrMissingTxOut, "output %s "+
-				"either does not exist or "+
-				"has already been spent", input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			continue
 		}
 
 		// If the input blue score is set to the mempool blue score, then we
@@ -302,6 +309,9 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 				sequenceLock.BlockBlueScore = blockBlueScore
 			}
 		}
+	}
+	if len(missingOutpoints) > 0 {
+		return nil, ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 
 	return sequenceLock, nil
