@@ -81,3 +81,7 @@ message DbBluesAnticoneSizes {
   bytes blueHash = 1;
   uint32 anticoneSize = 2;
 }
+
+message DbMultiset {
+  bytes multiset = 1;
+}
