@@ -1,9 +1,12 @@
 package blockheaderstore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-headers"))
@@ -35,7 +38,11 @@ func (bms *blockHeaderStore) Discard() {
 
 func (bms *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 	for hash, header := range bms.staging {
-		err := dbTx.Put(bms.hashAsKey(&hash), bms.serializeHeader(header))
+		headerBytes, err := bms.serializeHeader(header)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(bms.hashAsKey(&hash), headerBytes)
 		if err != nil {
 			return err
 		}
@@ -95,14 +102,65 @@ func (bms *blockHeaderStore) Delete(dbTx model.DBTransaction, blockHash *externa
 	return dbTx.Delete(bms.hashAsKey(blockHash))
 }
 
-func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) []byte {
-	panic("implement me")
+func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
+	return bucket.Key(hash[:])
+}
+
+func (bms *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
+	dbParentHashes := make([][]byte, len(header.ParentHashes))
+	for i, parentHash := range header.ParentHashes {
+		dbParentHashes[i] = parentHash[:]
+	}
+
+	dbBlockHeader := &serialization.DbBlockHeader{
+		Version:              header.Version,
+		ParentHashes:         dbParentHashes,
+		HashMerkleRoot:       header.HashMerkleRoot[:],
+		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot[:],
+		UtxoCommitment:       header.UTXOCommitment[:],
+		TimeInMilliseconds:   header.TimeInMilliseconds,
+		Bits:                 header.Bits,
+		Nonce:                header.Nonce,
+	}
+
+	return proto.Marshal(dbBlockHeader)
 }
 
 func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi.DomainBlockHeader, error) {
-	panic("implement me")
-}
+	dbBlockHeader := &serialization.DbBlockHeader{}
+	err := proto.Unmarshal(headerBytes, dbBlockHeader)
+	if err != nil {
+		return nil, err
+	}
 
-func (bms *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	parentHashes := make([]*externalapi.DomainHash, len(dbBlockHeader.ParentHashes))
+	for i, dbParentHash := range dbBlockHeader.ParentHashes {
+		parentHashes[i], err = hashes.FromBytes(dbParentHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+	hashMerkleRoot, err := hashes.FromBytes(dbBlockHeader.HashMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	acceptedIDMerkleRoot, err := hashes.FromBytes(dbBlockHeader.AcceptedIDMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment, err := hashes.FromBytes(dbBlockHeader.UtxoCommitment)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainBlockHeader{
+		Version:              dbBlockHeader.Version,
+		ParentHashes:         parentHashes,
+		HashMerkleRoot:       *hashMerkleRoot,
+		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
+		UTXOCommitment:       *utxoCommitment,
+		TimeInMilliseconds:   dbBlockHeader.TimeInMilliseconds,
+		Bits:                 dbBlockHeader.Bits,
+		Nonce:                dbBlockHeader.Nonce,
+	}, nil
 }

@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
@@ -12,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
-	"github.com/kaspanet/kaspad/domain/consensus/dbmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
@@ -28,18 +28,18 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) Consensus
 }
 
 type factory struct{}
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database) Consensus {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) Consensus {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -53,7 +53,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db database.Database
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
-	dbManager := dbmanager.New(db)
+	dbManager := consensusdatabase.New(db)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(

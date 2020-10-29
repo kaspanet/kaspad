@@ -1,0 +1,47 @@
+syntax = "proto3";
+package serialization;
+
+option go_package = "github.com/kaspanet/kaspad/serialization";
+
+message DbBlock {
+  DbBlockHeader header = 1;
+  repeated DbTransaction transactions = 2;
+}
+
+message DbBlockHeader {
+  int32 version = 1;
+  repeated bytes parentHashes = 2;
+  bytes hashMerkleRoot = 3;
+  bytes acceptedIDMerkleRoot = 4;
+  bytes utxoCommitment = 5;
+  int64 timeInMilliseconds = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+}
+
+message DbTransaction {
+  int32 Version = 1;
+  repeated DbTransactionInput Inputs = 2;
+  repeated DbTransactionOutput Outputs = 3;
+  uint64 LockTime = 4;
+  bytes SubnetworkID = 5;
+  uint64 Gas = 6;
+  bytes PayloadHash = 7;
+  bytes Payload = 8;
+}
+
+message DbTransactionInput {
+  DbOutpoint PreviousOutpoint = 1;
+  bytes SignatureScript = 2;
+  uint64 Sequence = 3;
+}
+
+message DbOutpoint {
+  bytes TransactionID = 1;
+  uint32 Index = 2;
+}
+
+message DbTransactionOutput {
+  uint64 Value = 1;
+  bytes ScriptPublicKey = 2;
+}
