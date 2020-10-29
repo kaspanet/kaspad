@@ -125,3 +125,7 @@ message DbReachabilityInterval {
 message DbFutureCoveringTreeNodeSet {
   repeated bytes blockHash = 1;
 }
+
+message DbReachabilityReindexRoot {
+  bytes blockHash = 1;
+}
