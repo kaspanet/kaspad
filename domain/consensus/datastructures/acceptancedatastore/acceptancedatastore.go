@@ -12,13 +12,15 @@ var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
 
 // acceptanceDataStore represents a store of AcceptanceData
 type acceptanceDataStore struct {
-	staging map[externalapi.DomainHash]model.AcceptanceData
+	staging  map[externalapi.DomainHash]model.AcceptanceData
+	toDelete map[externalapi.DomainHash]struct{}
 }
 
 // New instantiates a new AcceptanceDataStore
 func New() model.AcceptanceDataStore {
 	return &acceptanceDataStore{
-		staging: make(map[externalapi.DomainHash]model.AcceptanceData),
+		staging:  make(map[externalapi.DomainHash]model.AcceptanceData),
+		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 }
 
@@ -28,11 +30,12 @@ func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, accepta
 }
 
 func (ads *acceptanceDataStore) IsStaged() bool {
-	return len(ads.staging) != 0
+	return len(ads.staging) != 0 || len(ads.toDelete) != 0
 }
 
 func (ads *acceptanceDataStore) Discard() {
 	ads.staging = make(map[externalapi.DomainHash]model.AcceptanceData)
+	ads.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
@@ -42,6 +45,13 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		err = dbTx.Put(ads.hashAsKey(&hash), acceptanceDataBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for hash := range ads.toDelete {
+		err := dbTx.Delete(ads.hashAsKey(&hash))
 		if err != nil {
 			return err
 		}
@@ -66,12 +76,12 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+func (ads *acceptanceDataStore) Delete(blockHash *externalapi.DomainHash) {
 	if _, ok := ads.staging[*blockHash]; ok {
 		delete(ads.staging, *blockHash)
-		return nil
+		return
 	}
-	return dbTx.Delete(ads.hashAsKey(blockHash))
+	ads.toDelete[*blockHash] = struct{}{}
 }
 
 func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData model.AcceptanceData) ([]byte, error) {

@@ -8,5 +8,5 @@ type MultisetStore interface {
 	Stage(blockHash *externalapi.DomainHash, multiset Multiset)
 	IsStaged() bool
 	Get(dbContext DBReader, blockHash *externalapi.DomainHash) (Multiset, error)
-	Delete(dbTx DBTransaction, blockHash *externalapi.DomainHash) error
+	Delete(blockHash *externalapi.DomainHash)
 }

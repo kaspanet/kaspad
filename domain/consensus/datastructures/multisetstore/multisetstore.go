@@ -12,13 +12,15 @@ var bucket = dbkeys.MakeBucket([]byte("multisets"))
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
-	staging map[externalapi.DomainHash]model.Multiset
+	staging  map[externalapi.DomainHash]model.Multiset
+	toDelete map[externalapi.DomainHash]struct{}
 }
 
 // New instantiates a new MultisetStore
 func New() model.MultisetStore {
 	return &multisetStore{
-		staging: make(map[externalapi.DomainHash]model.Multiset),
+		staging:  make(map[externalapi.DomainHash]model.Multiset),
+		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 }
 
@@ -28,11 +30,12 @@ func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model
 }
 
 func (ms *multisetStore) IsStaged() bool {
-	return len(ms.staging) != 0
+	return len(ms.staging) != 0 || len(ms.toDelete) != 0
 }
 
 func (ms *multisetStore) Discard() {
 	ms.staging = make(map[externalapi.DomainHash]model.Multiset)
+	ms.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
@@ -43,6 +46,13 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		}
 
 		err = dbTx.Put(ms.hashAsKey(&hash), multisetBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	for hash := range ms.toDelete {
+		err := dbTx.Delete(ms.hashAsKey(&hash))
 		if err != nil {
 			return err
 		}
@@ -67,12 +77,12 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 }
 
 // Delete deletes the multiset associated with the given blockHash
-func (ms *multisetStore) Delete(dbTx model.DBTransaction, blockHash *externalapi.DomainHash) error {
+func (ms *multisetStore) Delete(blockHash *externalapi.DomainHash) {
 	if _, ok := ms.staging[*blockHash]; ok {
 		delete(ms.staging, *blockHash)
-		return nil
+		return
 	}
-	return dbTx.Delete(ms.hashAsKey(blockHash))
+	ms.toDelete[*blockHash] = struct{}{}
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
