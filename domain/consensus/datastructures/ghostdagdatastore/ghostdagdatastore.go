@@ -1,6 +1,8 @@
 package ghostdagdatastore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -35,7 +37,12 @@ func (gds *ghostdagDataStore) Discard() {
 
 func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 	for hash, blockGHOSTDAGData := range gds.staging {
-		err := dbTx.Put(gds.hashAsKey(&hash), gds.serializeBlockGHOSTDAGData(blockGHOSTDAGData))
+		blockGhostdagDataBytes, err := gds.serializeBlockGHOSTDAGData(blockGHOSTDAGData)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(gds.hashAsKey(&hash), blockGhostdagDataBytes)
 		if err != nil {
 			return err
 		}
@@ -63,10 +70,16 @@ func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKe
 	return bucket.Key(hash[:])
 }
 
-func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) []byte {
-	panic("implement me")
+func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) ([]byte, error) {
+	return proto.Marshal(serialization.BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData))
 }
 
 func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes []byte) (*model.BlockGHOSTDAGData, error) {
-	panic("implement me")
+	dbBlockGHOSTDAGData := &serialization.DbBlockGhostdagData{}
+	err := proto.Unmarshal(blockGHOSTDAGDataBytes, dbBlockGHOSTDAGData)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData)
 }

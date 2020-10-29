@@ -1,6 +1,8 @@
 package utxodiffstore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
@@ -48,13 +50,23 @@ func (uds *utxoDiffStore) Discard() {
 
 func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 	for hash, utxoDiff := range uds.utxoDiffStaging {
-		err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), uds.serializeUTXODiff(utxoDiff))
+		utxoDiffBytes, err := uds.serializeUTXODiff(utxoDiff)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffBytes)
 		if err != nil {
 			return err
 		}
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
-		err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), uds.serializeUTXODiffChild(utxoDiffChild))
+		utxoDiffChildBytes, err := uds.serializeUTXODiffChild(utxoDiffChild)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
 		if err != nil {
 			return err
 		}
@@ -122,18 +134,30 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 	return utxoDiffChildBucket.Key(hash[:])
 }
 
-func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff *model.UTXODiff) []byte {
-	panic("implement me")
+func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff *model.UTXODiff) ([]byte, error) {
+	return proto.Marshal(serialization.UTXODiffToDBUTXODiff(utxoDiff))
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (*model.UTXODiff, error) {
-	panic("implement me")
+	dbUTXODiff := &serialization.DbUtxoDiff{}
+	err := proto.Unmarshal(utxoDiffBytes, dbUTXODiff)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBUTXODiffToUTXODiff(dbUTXODiff)
 }
 
-func (uds *utxoDiffStore) serializeUTXODiffChild(utxoDiffChild *externalapi.DomainHash) []byte {
-	panic("implement me")
+func (uds *utxoDiffStore) serializeUTXODiffChild(utxoDiffChild *externalapi.DomainHash) ([]byte, error) {
+	return proto.Marshal(serialization.DomainHashToDbHash(utxoDiffChild))
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiffChild(utxoDiffChildBytes []byte) (*externalapi.DomainHash, error) {
-	panic("implement me")
+	dbHash := &serialization.DbHash{}
+	err := proto.Unmarshal(utxoDiffChildBytes, dbHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DbHashToDomainHash(dbHash)
 }
