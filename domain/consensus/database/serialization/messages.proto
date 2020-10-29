@@ -91,10 +91,10 @@ message DbPruningPoint {
 }
 
 message DbUtxoSet {
-  repeated DbUtxoSetEntry entries = 1;
+  repeated DbUtxoCollectionItem items = 1;
 }
 
-message DbUtxoSetEntry {
+message DbUtxoCollectionItem {
   DbOutpoint outpoint = 1;
   DbUtxoEntry utxoEntry = 2;
 }
@@ -128,4 +128,9 @@ message DbFutureCoveringTreeNodeSet {
 
 message DbReachabilityReindexRoot {
   bytes blockHash = 1;
+}
+
+message DbUtxoDiff {
+  repeated DbUtxoCollectionItem toAdd = 1;
+  repeated DbUtxoCollectionItem toRemove = 2;
 }
