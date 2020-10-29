@@ -51,7 +51,7 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 
-	for hash, _ := range ms.toDelete {
+	for hash := range ms.toDelete {
 		err := dbTx.Delete(ms.hashAsKey(&hash))
 		if err != nil {
 			return err

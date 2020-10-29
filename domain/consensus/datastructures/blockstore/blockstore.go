@@ -50,7 +50,7 @@ func (bms *blockStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 
-	for hash, _ := range bms.toDelete {
+	for hash := range bms.toDelete {
 		err := dbTx.Delete(bms.hashAsKey(&hash))
 		if err != nil {
 			return err

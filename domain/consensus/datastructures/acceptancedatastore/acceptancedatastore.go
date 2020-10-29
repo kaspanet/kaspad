@@ -50,7 +50,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 
-	for hash, _ := range ads.toDelete {
+	for hash := range ads.toDelete {
 		err := dbTx.Delete(ads.hashAsKey(&hash))
 		if err != nil {
 			return err

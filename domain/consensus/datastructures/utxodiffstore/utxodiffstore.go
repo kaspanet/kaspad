@@ -75,7 +75,7 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 
-	for hash, _ := range uds.toDelete {
+	for hash := range uds.toDelete {
 		err := dbTx.Delete(uds.utxoDiffHashAsKey(&hash))
 		if err != nil {
 			return err
