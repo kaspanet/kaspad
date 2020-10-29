@@ -75,7 +75,7 @@ func TestGHOSTDA(t *testing.T) {
 			{
 				hash:                   &externalapi.DomainHash{1},
 				parents:                []*externalapi.DomainHash{genesisHash},
-				expectedBlueScore:      1,
+				expectedBlueScore:      2,
 				expectedSelectedParent: genesisHash,
 				expectedMergeSetBlues:  []*externalapi.DomainHash{genesisHash},
 				expectedMergeSetReds:   []*externalapi.DomainHash{},
@@ -83,7 +83,7 @@ func TestGHOSTDA(t *testing.T) {
 			{
 				hash:                   &externalapi.DomainHash{2},
 				parents:                []*externalapi.DomainHash{{1}},
-				expectedBlueScore:      1,
+				expectedBlueScore:      3,
 				expectedSelectedParent: &externalapi.DomainHash{1},
 				expectedMergeSetBlues:  []*externalapi.DomainHash{{1}},
 				expectedMergeSetReds:   []*externalapi.DomainHash{},
@@ -91,7 +91,7 @@ func TestGHOSTDA(t *testing.T) {
 			{
 				hash:                   &externalapi.DomainHash{3},
 				parents:                []*externalapi.DomainHash{{2}},
-				expectedBlueScore:      1,
+				expectedBlueScore:      4,
 				expectedSelectedParent: &externalapi.DomainHash{2},
 				expectedMergeSetBlues:  []*externalapi.DomainHash{{2}},
 				expectedMergeSetReds:   []*externalapi.DomainHash{},
