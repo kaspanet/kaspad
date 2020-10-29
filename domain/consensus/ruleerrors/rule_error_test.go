@@ -36,3 +36,41 @@ func TestNewErrMissingTxOut(t *testing.T) {
 		t.Fatalf("TestWrapInRuleError: Expected %s. found: %s", expectedOuterErr, outer.Error())
 	}
 }
+
+func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
+	outer := NewErrInvalidTransactionsInNewBlock([]struct {
+		*externalapi.DomainTransaction
+		error
+	}{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
+	//TODO: Implement Stringer for `DomainTransaction`
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [ErrNoTxInputs]"
+	inner := &ErrInvalidTransactionsInNewBlock{}
+	if !errors.As(outer, inner) {
+		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")
+	}
+
+	if len(inner.InvalidTransactions) != 1 {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected len(inner.MissingOutpoints) 1, found: %d", len(inner.InvalidTransactions))
+	}
+	if inner.InvalidTransactions[0].error != ErrNoTxInputs {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].error)
+	}
+	if inner.InvalidTransactions[0].Fee != 1337 {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected 1337. found: %v", inner.InvalidTransactions[0].Fee)
+	}
+
+	rule := &RuleError{}
+	if !errors.As(outer, rule) {
+		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain RuleError in it")
+	}
+	if rule.message != "ErrInvalidTransactionsInNewBlock" {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected message = 'ErrInvalidTransactionsInNewBlock', found: '%s'", rule.message)
+	}
+	if errors.Is(rule.inner, inner) {
+		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: rule.inner should contain the ErrInvalidTransactionsInNewBlock in it")
+	}
+
+	if outer.Error() != expectedOuterErr {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected %s. found: %s", expectedOuterErr, outer.Error())
+	}
+}
