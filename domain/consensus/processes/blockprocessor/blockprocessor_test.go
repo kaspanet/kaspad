@@ -433,6 +433,7 @@ func TestBlockProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up BlockProcessor: %+v", err)
 		}
+		blockProcessor = SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 
 		coinbaseData := externalapi.DomainCoinbaseData{}
 		blocks := make([]*externalapi.DomainBlock, numOfBlocks)
@@ -466,6 +467,7 @@ func TestBlockProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up BlockProcessor: %+v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 		
 		// create block
@@ -498,6 +500,7 @@ func TestBlockProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up BlockProcessor: %+v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 
 		// create 11 blocks
@@ -536,6 +539,7 @@ func TestBlockProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up BlockProcessor: %+v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 
 		coinbaseData := &externalapi.DomainCoinbaseData{}
