@@ -33,15 +33,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
-func SetupBlockProcessorWithDB(dbName string, dagParams *dagconfig.Params) (model.BlockProcessor, func(), error) {
+func SetupDBManager(dbName string) (model.DBManager, func(), error) {
 	var err error
-	tmpDir, err := ioutil.TempDir("", "SetupBlockProcessorWithDB")
+	tmpDir, err := ioutil.TempDir("", "SetupDBManager")
 	if err != nil {
 		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 	}
@@ -64,12 +63,11 @@ func SetupBlockProcessorWithDB(dbName string, dagParams *dagconfig.Params) (mode
 		os.RemoveAll(dbPath)
 	}
 
-	blockProcessor := SetupBlockProcessor(db, dagParams)
-
-	return blockProcessor, teardown, err
+	dbManager := consensusdatabase.New(db)
+	return dbManager, teardown, err
 }
 
-func SetupBlockProcessor(db database.Database, dagParams *dagconfig.Params) model.BlockProcessor {
+func SetupBlockProcessor(dbManager model.DBManager, dagParams *dagconfig.Params) model.BlockProcessor {
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
 	blockHeaderStore := blockheaderstore.New()
@@ -81,8 +79,6 @@ func SetupBlockProcessor(db database.Database, dagParams *dagconfig.Params) mode
 	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
-
-	dbManager := consensusdatabase.New(db)
 
 	reachabilityManager := reachabilitymanager.New(
 		dbManager,
@@ -188,13 +184,14 @@ func SetupBlockProcessor(db database.Database, dagParams *dagconfig.Params) mode
 }
 
 func TestBlockProcessor(t *testing.T) {
-	createChain := func(t *testing.T, numOfBlocks int) (blockProcessor model.BlockProcessor, идщслы []*externalapi.DomainBlock, teardownFunc func()) {
-		blockProcessor, teardownFunc, err := SetupBlockProcessorWithDB(t.Name(), &dagconfig.SimnetParams)
+	createChain := func(t *testing.T, numOfBlocks int) (blockProcessor model.BlockProcessor, blocks []*externalapi.DomainBlock, teardownFunc func()) {
+		dbManager, teardownFunc, err := SetupDBManager(t.Name())
 		if err != nil {
-			t.Fatalf("Failed to setup blockProcessor instance: %v", err)
+			t.Fatalf("Failed to setup DBManager instance: %v", err)
 		}
+		blockProcessor = SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 
-		blocks := make([]*externalapi.DomainBlock, numOfBlocks)
+		blocks = make([]*externalapi.DomainBlock, numOfBlocks)
 		for i := range blocks {
 			block, err := blockProcessor.BuildBlock(nil, nil)
 			if err != nil {
@@ -213,10 +210,11 @@ func TestBlockProcessor(t *testing.T) {
 	}
 
 	t.Run("Test create and process block", func(t *testing.T) {
-		blockProcessor, teardownFunc, err := SetupBlockProcessorWithDB(t.Name(), &dagconfig.SimnetParams)
+		dbManager, teardownFunc, err := SetupDBManager(t.Name())
 		if err != nil {
-			t.Fatalf("Failed to setup blockProcessor instance: %v", err)
+			t.Fatalf("Failed to setup DBManager instance: %v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 
 		// create block
@@ -233,10 +231,11 @@ func TestBlockProcessor(t *testing.T) {
 	})
 
 	t.Run("Test create and process 11 blocks", func(t *testing.T) {
-		blockProcessor, teardownFunc, err := SetupBlockProcessorWithDB(t.Name(), &dagconfig.SimnetParams)
+		dbManager, teardownFunc, err := SetupDBManager(t.Name())
 		if err != nil {
-			t.Fatalf("Failed to setup blockProcessor instance: %v", err)
+			t.Fatalf("Failed to setup DBManager instance: %v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 
 		// create 11 blocks
@@ -259,10 +258,11 @@ func TestBlockProcessor(t *testing.T) {
 	})
 
 	t.Run("Test create and double process same block", func(t *testing.T) {
-		blockProcessor, teardownFunc, err := SetupBlockProcessorWithDB(t.Name(), &dagconfig.SimnetParams)
+		dbManager, teardownFunc, err := SetupDBManager(t.Name())
 		if err != nil {
-			t.Fatalf("Failed to setup blockProcessor instance: %v", err)
+			t.Fatalf("Failed to setup DBManager instance: %v", err)
 		}
+		blockProcessor := SetupBlockProcessor(dbManager, &dagconfig.SimnetParams)
 		defer teardownFunc()
 
 		// create and double process same block
