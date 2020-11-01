@@ -33,7 +33,6 @@ func New(
 	powMax *big.Int,
 	difficultyAdjustmentWindowSize uint64,
 	targetTimePerBlock time.Duration,
-	powMaxBits uint32,
 ) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
@@ -44,7 +43,7 @@ func New(
 		powMax:                         powMax,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 		targetTimePerBlock:             targetTimePerBlock,
-		powMaxBits:                     powMaxBits,
+		powMaxBits:                     util.BigToCompact(powMax),
 	}
 }
 

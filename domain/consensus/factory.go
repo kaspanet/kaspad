@@ -95,11 +95,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		blockHeaderStore,
 		dagTopologyManager,
-		nil, // FIXME
-		0,   // FIXME
-		0,   // FIXME
-		0)   // FIXME
-
+		dagParams.PowMax,
+		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.TargetTimePerBlock)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		ghostdagDataStore,
