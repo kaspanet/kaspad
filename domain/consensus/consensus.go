@@ -15,9 +15,9 @@ type Consensus interface {
 	GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
 	GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error)
 
-	HashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	HashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	PruningPointUTXOSet() ([]byte, error)
+	GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetPruningPointUTXOSet() ([]byte, error)
 	GetSelectedParent() (*externalapi.DomainBlock, error)
 	CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error)
@@ -81,15 +81,15 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	panic("implement me")
 }
 
-func (s *consensus) HashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (s *consensus) HashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (s *consensus) PruningPointUTXOSet() ([]byte, error) {
+func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
 	panic("implement me")
 }
 
