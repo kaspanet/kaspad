@@ -22,10 +22,11 @@ func FromString(hash string) (*externalapi.DomainHash, error) {
 // decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
 // destination.
 func decode(dst *externalapi.DomainHash, src string) error {
+	expectedSrcLength := externalapi.DomainHashSize * 2
 	// Return error if hash string is too long.
-	if len(src) != externalapi.DomainHashSize {
-		return errors.Errorf("hash string length is %d, while it should be be %d bytes",
-			len(src), externalapi.DomainHashSize)
+	if len(src) != expectedSrcLength {
+		return errors.Errorf("hash string length is %d, while it should be be %d",
+			len(src), expectedSrcLength)
 	}
 
 	// Hex decoder expects the hash to be a multiple of two. When not, pad
