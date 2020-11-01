@@ -15,15 +15,16 @@ func (csm *consensusStateManager) calculateMultiset(
 	}
 
 	for _, blockAcceptanceData := range acceptanceData {
-		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 			if !transactionAcceptanceData.IsAccepted {
 				continue
 			}
 
 			transaction := transactionAcceptanceData.Transaction
 
+			isCoinbase := i == 0
 			var err error
-			err = addTransactionToMultiset(multiset, transaction, blockGHOSTDAGData.BlueScore)
+			err = addTransactionToMultiset(multiset, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
 			if err != nil {
 				return nil, err
 			}
@@ -34,7 +35,7 @@ func (csm *consensusStateManager) calculateMultiset(
 }
 
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
-	blockBlueScore uint64) error {
+	blockBlueScore uint64, isCoinbase bool) error {
 
 	for _, input := range transaction.Inputs {
 		err := removeUTXOFromMultiset(multiset, input.UTXOEntry, &input.PreviousOutpoint)
@@ -52,7 +53,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 			Amount:          output.Value,
 			ScriptPublicKey: output.ScriptPublicKey,
 			BlockBlueScore:  blockBlueScore,
-			IsCoinbase:      false,
+			IsCoinbase:      isCoinbase,
 		}
 		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)
 		if err != nil {
