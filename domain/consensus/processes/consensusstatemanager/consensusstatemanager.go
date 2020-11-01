@@ -18,6 +18,7 @@ type consensusStateManager struct {
 	transactionValidator  model.TransactionValidator
 	blockValidator        model.BlockValidator
 	reachabilityManager   model.ReachabilityManager
+	coinbaseManager       model.CoinbaseManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -41,6 +42,8 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
 	blockValidator model.BlockValidator,
+	reachabilityManager model.ReachabilityManager,
+	coinbaseManager model.CoinbaseManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -62,6 +65,8 @@ func New(
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
 		blockValidator:        blockValidator,
+		reachabilityManager:   reachabilityManager,
+		coinbaseManager:       coinbaseManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
