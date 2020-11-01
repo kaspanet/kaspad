@@ -57,6 +57,6 @@ type DomainTransactionOutput struct {
 type DomainTransactionID DomainHash
 
 // String stringifies a transaction ID.
-func (id *DomainTransactionID) String() string {
-	return DomainHash(*id).String()
+func (id DomainTransactionID) String() string {
+	return DomainHash(id).String()
 }
