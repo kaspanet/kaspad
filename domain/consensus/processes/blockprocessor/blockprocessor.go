@@ -22,6 +22,7 @@ type blockProcessor struct {
 	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
+	headerTipsManager     model.HeaderTipsManager
 
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockStore            model.BlockStore
@@ -34,6 +35,7 @@ type blockProcessor struct {
 	reachabilityDataStore model.ReachabilityDataStore
 	utxoDiffStore         model.UTXODiffStore
 	blockHeaderStore      model.BlockHeaderStore
+	headerTipsStore       model.HeaderTipsStore
 
 	stores []model.Store
 }
@@ -51,6 +53,8 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagManager model.GHOSTDAGManager,
 	coinbaseManager model.CoinbaseManager,
+	headerTipsManager model.HeaderTipsManager,
+
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockStore model.BlockStore,
 	blockStatusStore model.BlockStatusStore,
@@ -61,7 +65,8 @@ func New(
 	pruningStore model.PruningStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 	utxoDiffStore model.UTXODiffStore,
-	blockHeaderStore model.BlockHeaderStore) model.BlockProcessor {
+	blockHeaderStore model.BlockHeaderStore,
+	headerTipsStore model.HeaderTipsStore) model.BlockProcessor {
 
 	return &blockProcessor{
 		dagParams:             dagParams,
@@ -74,6 +79,7 @@ func New(
 		pastMedianTimeManager: pastMedianTimeManager,
 		ghostdagManager:       ghostdagManager,
 		coinbaseManager:       coinbaseManager,
+		headerTipsManager:     headerTipsManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
@@ -87,6 +93,7 @@ func New(
 		reachabilityDataStore: reachabilityDataStore,
 		utxoDiffStore:         utxoDiffStore,
 		blockHeaderStore:      blockHeaderStore,
+		headerTipsStore:       headerTipsStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -101,6 +108,7 @@ func New(
 			reachabilityDataStore,
 			utxoDiffStore,
 			blockHeaderStore,
+			headerTipsStore,
 		},
 	}
 }
@@ -118,9 +126,9 @@ func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
-	return bp.validateAndInsertBlock(block)
+	return bp.validateAndInsertBlock(block, headerOnly)
 }

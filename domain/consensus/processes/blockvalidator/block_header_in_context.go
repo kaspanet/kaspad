@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -25,9 +26,16 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.ghostdagManager.GHOSTDAG(blockHash)
+	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
+	}
+
+	if status != model.StatusHeaderOnly {
+		err = v.ghostdagManager.GHOSTDAG(blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = v.checkMergeSizeLimit(blockHash)

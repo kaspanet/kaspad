@@ -25,12 +25,10 @@ func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 	if err != nil {
 		return nil, err
 	}
-	headerHash := hashserialization.HeaderHash(header)
 
 	return &externalapi.DomainBlock{
 		Header:       header,
 		Transactions: transactionsWithCoinbase,
-		Hash:         headerHash,
 	}, nil
 }
 

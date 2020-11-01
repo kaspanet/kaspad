@@ -4,8 +4,6 @@ package externalapi
 type DomainBlock struct {
 	Header       *DomainBlockHeader
 	Transactions []*DomainTransaction
-
-	Hash *DomainHash
 }
 
 // DomainBlockHeader represents the header part of a Kaspa block

@@ -8,7 +8,7 @@ import (
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
-	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
+	ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
 }
 
@@ -28,8 +28,8 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
-	return s.blockProcessor.ValidateAndInsertBlock(block)
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error {
+	return s.blockProcessor.ValidateAndInsertBlock(block, headerOnly)
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
