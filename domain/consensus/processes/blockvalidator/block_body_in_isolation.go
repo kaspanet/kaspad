@@ -40,6 +40,16 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	err = v.checkBlockTransactionOrder(block)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkNoNonNativeTransactions(block)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkTransactionsInIsolation(block)
 	if err != nil {
 		return err

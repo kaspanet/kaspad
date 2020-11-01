@@ -227,6 +227,8 @@ var (
 
 	// ErrMissingParent indicates one of the block parents is not found.
 	ErrMissingParent = newRuleError("ErrMissingParent")
+
+	ErrSubnetworksDisabled = newRuleError("ErrSubnetworksDisabled")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

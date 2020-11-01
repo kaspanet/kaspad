@@ -108,13 +108,3 @@ func (ps *pruningStore) deserializePruningPoint(pruningPointBytes []byte) (*exte
 func (ps *pruningStore) serializeUTXOSetBytes(pruningPointUTXOSetBytes []byte) ([]byte, error) {
 	return proto.Marshal(&serialization.PruningPointUTXOSetBytes{Bytes: pruningPointUTXOSetBytes})
 }
-
-func (ps *pruningStore) deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes []byte) ([]byte, error) {
-	dbPruningPointUTXOSet := &serialization.PruningPointUTXOSetBytes{}
-	err := proto.Unmarshal(dbPruningPointUTXOSetBytes, dbPruningPointUTXOSet)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbPruningPointUTXOSet.Bytes, nil
-}

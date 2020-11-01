@@ -46,6 +46,12 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if err != nil {
 		return err
 	}
+
+	err = v.checkTransactionPayload(tx)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkNativeTransactionPayload(tx)
 	if err != nil {
 		return err
@@ -173,7 +179,14 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 	return nil
 }
 
-func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction, subnetworkID *externalapi.DomainSubnetworkID) error {
+func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction,
+	subnetworkID *externalapi.DomainSubnetworkID) error {
+	if !v.enableNonNativeSubnetworks && tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
+		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase {
+		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
+			"subnetwork ID")
+	}
+
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID == nil
