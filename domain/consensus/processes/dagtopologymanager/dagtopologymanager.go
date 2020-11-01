@@ -8,21 +8,21 @@ import (
 // dagTopologyManager exposes methods for querying relationships
 // between blocks in the DAG
 type dagTopologyManager struct {
-	reachabilityTree   model.ReachabilityTree
-	blockRelationStore model.BlockRelationStore
-	databaseContext    model.DBReader
+	reachabilityManager model.ReachabilityManager
+	blockRelationStore  model.BlockRelationStore
+	databaseContext     model.DBReader
 }
 
 // New instantiates a new DAGTopologyManager
 func New(
 	databaseContext model.DBReader,
-	reachabilityTree model.ReachabilityTree,
+	reachabilityManager model.ReachabilityManager,
 	blockRelationStore model.BlockRelationStore) model.DAGTopologyManager {
 
 	return &dagTopologyManager{
-		databaseContext:    databaseContext,
-		reachabilityTree:   reachabilityTree,
-		blockRelationStore: blockRelationStore,
+		databaseContext:     databaseContext,
+		reachabilityManager: reachabilityManager,
+		blockRelationStore:  blockRelationStore,
 	}
 }
 
@@ -64,12 +64,12 @@ func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blo
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
 func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashA, blockHashB)
+	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashA, blockHashB)
 }
 
 // IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
 func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityTree.IsDAGAncestorOf(blockHashB, blockHashA)
+	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashB, blockHashA)
 }
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
@@ -90,7 +90,7 @@ func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityTree.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
+	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {

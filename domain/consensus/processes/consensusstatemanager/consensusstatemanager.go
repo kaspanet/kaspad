@@ -17,6 +17,7 @@ type consensusStateManager struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
 	blockValidator        model.BlockValidator
+	reachabilityManager   model.ReachabilityManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore

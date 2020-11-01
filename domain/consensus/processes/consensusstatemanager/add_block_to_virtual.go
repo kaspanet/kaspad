@@ -24,6 +24,11 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 			if err != nil {
 				return err
 			}
+
+			err = csm.reachabilityManager.UpdateReindexRoot(blockHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
