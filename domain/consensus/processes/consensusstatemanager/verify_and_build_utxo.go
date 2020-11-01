@@ -3,11 +3,11 @@ package consensusstatemanager
 import (
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -100,7 +100,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData []*model.BlockAccept
 		}
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		return hashes.LessTransactionID(
+		return transactionid.Less(
 			hashserialization.TransactionID(acceptedTransactions[i]),
 			hashserialization.TransactionID(acceptedTransactions[j]))
 	})

@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// HashSet is a
+// HashSet is an unsorted unique collection of DomainHashes
 type HashSet map[externalapi.DomainHash]struct{}
 
 // New creates and returns an empty HashSet

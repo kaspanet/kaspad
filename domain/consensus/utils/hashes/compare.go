@@ -27,8 +27,3 @@ func cmp(a, b *externalapi.DomainHash) int {
 func Less(a, b *externalapi.DomainHash) bool {
 	return cmp(a, b) < 0
 }
-
-// LessTransactionID returns true iff transactionID a is less then transactionID b
-func LessTransactionID(a, b *externalapi.DomainTransactionID) bool {
-	return Less((*externalapi.DomainHash)(a), (*externalapi.DomainHash)(b))
-}
