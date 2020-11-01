@@ -35,16 +35,23 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 			if utxoalgebra.CollectionContains(utxoDiff.ToRemove, &transactionInput.PreviousOutpoint) {
 				missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
+				continue
 			}
 		}
 
 		// Check for the input's outpoint in virtual's UTXO set.
-		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
+		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}
-		if utxoEntry == nil {
+		if !hasUTXOEntry {
 			missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
+			continue
+		}
+
+		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
+		if err != nil {
+			return err
 		}
 		transactionInput.UTXOEntry = utxoEntry
 	}

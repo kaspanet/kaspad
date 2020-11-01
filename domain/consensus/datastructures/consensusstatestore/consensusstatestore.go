@@ -34,6 +34,10 @@ func (c consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *
 	panic("implement me")
 }
 
+func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (bool, error) {
+	panic("implement me")
+}
+
 func (c consensusStateStore) StageVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash) error {
 	panic("implement me")
 }

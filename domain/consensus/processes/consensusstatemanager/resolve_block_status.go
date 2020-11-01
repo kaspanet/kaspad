@@ -99,22 +99,27 @@ func (csm *consensusStateManager) updateParentDiffs(
 		return err
 	}
 	for _, parentHash := range parentHashes {
-		parentDiffChildHash, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, parentHash)
+		// skip all parents that already have a utxo-diff child
+		parentHasUTXODiffChild, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, parentHash)
 		if err != nil {
 			return err
 		}
-		if parentDiffChildHash == nil {
-			parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
-			if err != nil {
-				return err
-			}
-			parentNewDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, parentCurrentDiff)
-			if err != nil {
-				return err
-			}
-
-			csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		if parentHasUTXODiffChild {
+			continue
 		}
+
+		// parents that till now didn't have a utxo-diff child - were actually virtual's diffParents.
+		// Update them to have the new block as their utxo-diff child
+		parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
+		if err != nil {
+			return err
+		}
+		parentNewDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, parentCurrentDiff)
+		if err != nil {
+			return err
+		}
+
+		csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NewHashFromStr creates a Hash from a hash string. The string should be
+// FromString creates a DomainHash from a hash string. The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the Hash.
 func FromString(hash string) (*externalapi.DomainHash, error) {
