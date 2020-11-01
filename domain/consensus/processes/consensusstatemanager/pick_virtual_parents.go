@@ -160,7 +160,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(parents []*externa
 
 	badReds := []*externalapi.DomainHash{}
 	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds {
-		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(redBlock, virtualFinalityPoint)
+		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, redBlock)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +170,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(parents []*externa
 
 		isKosherized := false
 		for _, potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
-			isKosherized, err = csm.dagTopologyManager.IsAncestorOf(potentiallyKosherizingBlock, redBlock)
+			isKosherized, err = csm.dagTopologyManager.IsAncestorOf(redBlock, potentiallyKosherizingBlock)
 			if err != nil {
 				return nil, err
 			}
