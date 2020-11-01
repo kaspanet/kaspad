@@ -7,7 +7,8 @@ import (
 // Mempool maintains a set of known transactions that
 // are intended to be mined into new blocks
 type Mempool interface {
-	HandleNewBlock(block *consensusexternalapi.DomainBlock)
+	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction)
 	Transactions() []*consensusexternalapi.DomainTransaction
-	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction) error
+	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
+	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction)
 }
