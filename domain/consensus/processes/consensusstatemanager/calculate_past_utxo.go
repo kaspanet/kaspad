@@ -119,7 +119,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 
 	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff)
 	if err != nil {
-		return false, accumulatedMassBefore, err
+		return false, 0, err
 	}
 
 	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
@@ -130,7 +130,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 
 		err := utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
 		if err != nil {
-			return false, accumulatedMassBefore, err
+			return false, 0, err
 		}
 
 		return true, accumulatedMassBefore, nil
@@ -140,13 +140,12 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 		transaction, blockHash, selectedParentPastMedianTime)
 	if err != nil {
 		if !errors.As(err, &(ruleerrors.RuleError{})) {
-			return false, accumulatedMassBefore, err
+			return false, 0, err
 		}
 
 		return false, accumulatedMassBefore, nil
 	}
 
-	isAccepted = true
 	isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
 
 	return isAccepted, accumulatedMassAfter, nil
