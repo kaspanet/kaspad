@@ -17,10 +17,10 @@ type difficultyManager struct {
 	ghostdagStore                  model.GHOSTDAGDataStore
 	headerStore                    model.BlockHeaderStore
 	dagTopologyManager             model.DAGTopologyManager
+	dagTraversalManager            model.DAGTraversalManager
 	powMax                         *big.Int
 	difficultyAdjustmentWindowSize uint64
 	targetTimePerBlock             time.Duration
-	powMaxBits                     uint32
 }
 
 // New instantiates a new DifficultyManager
@@ -30,6 +30,7 @@ func New(
 	ghostdagStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
 	dagTopologyManager model.DAGTopologyManager,
+	dagTraversalManager model.DAGTraversalManager,
 	powMax *big.Int,
 	difficultyAdjustmentWindowSize uint64,
 	targetTimePerBlock time.Duration,
@@ -40,10 +41,10 @@ func New(
 		ghostdagStore:                  ghostdagStore,
 		headerStore:                    headerStore,
 		dagTopologyManager:             dagTopologyManager,
+		dagTraversalManager:            dagTraversalManager,
 		powMax:                         powMax,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 		targetTimePerBlock:             targetTimePerBlock,
-		powMaxBits:                     util.BigToCompact(powMax),
 	}
 }
 
@@ -56,7 +57,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 	// Genesis block
 	if len(parents) == 0 {
-		return dm.powMaxBits, nil
+		return util.BigToCompact(dm.powMax), nil
 	}
 
 	// find bluestParent
@@ -82,7 +83,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 
 	// Not enough blocks for building a difficulty window.
 	if bluestGhostDAG.BlueScore < dm.difficultyAdjustmentWindowSize+1 {
-		return dm.powMaxBits, nil
+		return util.BigToCompact(dm.powMax), nil
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
@@ -114,7 +115,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 		Div(newTarget, targetTimePerBlock).
 		Div(newTarget, difficultyAdjustmentWindowSize)
 	if newTarget.Cmp(dm.powMax) > 0 {
-		return dm.powMaxBits, nil
+		return util.BigToCompact(dm.powMax), nil
 	}
 	newTargetBits := util.BigToCompact(newTarget)
 	return newTargetBits, nil

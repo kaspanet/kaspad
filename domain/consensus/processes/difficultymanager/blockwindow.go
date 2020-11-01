@@ -11,26 +11,18 @@ import (
 )
 
 type difficultyBlock struct {
-	selectedParent     *externalapi.DomainHash
-	mergeSetBlues      []*externalapi.DomainHash
 	timeInMilliseconds int64
 	Bits               uint32
 }
+
 type blockWindow []difficultyBlock
 
 func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHash) (difficultyBlock, error) {
-	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, blockHash)
-	if err != nil {
-		return difficultyBlock{}, err
-	}
-
 	header, err := dm.headerStore.BlockHeader(dm.databaseContext, blockHash)
 	if err != nil {
 		return difficultyBlock{}, err
 	}
 	return difficultyBlock{
-		selectedParent:     ghostdagData.SelectedParent,
-		mergeSetBlues:      ghostdagData.MergeSetBlues,
 		timeInMilliseconds: header.TimeInMilliseconds,
 		Bits:               header.Bits,
 	}, nil
@@ -42,37 +34,19 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 // the window will be padded by genesis blocks to achieve a size of windowSize.
 func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHash, windowSize uint64) (blockWindow, error) {
 	window := make(blockWindow, 0, windowSize)
-	currentNode, err := dm.getDifficultyBlock(startingNode)
+	windowHashes, err := dm.dagTraversalManager.BlueWindow(startingNode, windowSize)
 	if err != nil {
 		return nil, err
 	}
-	for uint64(len(window)) < windowSize && currentNode.selectedParent != nil {
-		if currentNode.selectedParent != nil {
-			for _, blue := range currentNode.mergeSetBlues {
-				diffBlock, err := dm.getDifficultyBlock(blue)
-				if err != nil {
-					return nil, err
-				}
-				window = append(window, diffBlock)
-				if uint64(len(window)) == windowSize {
-					break
-				}
-			}
-			spDiffBlock, err := dm.getDifficultyBlock(currentNode.selectedParent)
-			if err != nil {
-				return nil, err
-			}
-			currentNode = spDiffBlock
-		}
-	}
 
-	if uint64(len(window)) < windowSize {
-		genesis := currentNode
-		for uint64(len(window)) < windowSize {
-			window = append(window, genesis)
+	for _, hash := range windowHashes {
+		block, err := dm.getDifficultyBlock(hash)
+		if err != nil {
+			return nil, err
 		}
+		window = append(window, block)
 	}
-	return window, err
+	return window, nil
 }
 
 func (window blockWindow) minMaxTimestamps() (min, max int64) {

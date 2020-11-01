@@ -95,6 +95,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		blockHeaderStore,
 		dagTopologyManager,
+		dagTraversalManager,
 		dagParams.PowMax,
 		dagParams.DifficultyAdjustmentWindowSize,
 		dagParams.TargetTimePerBlock)
