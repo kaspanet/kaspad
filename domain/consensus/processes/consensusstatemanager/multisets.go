@@ -7,7 +7,7 @@ import (
 )
 
 func (csm *consensusStateManager) calculateMultiset(
-	acceptanceData []*model.BlockAcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
+	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
 	multiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
 	if err != nil {

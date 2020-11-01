@@ -13,7 +13,7 @@ import (
 )
 
 func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
-	*model.UTXODiff, []*model.BlockAcceptanceData, model.Multiset, error) {
+	*model.UTXODiff, model.AcceptanceData, model.Multiset, error) {
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
 	if err != nil {
@@ -68,7 +68,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 
 func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
 	selectedParentPastUTXODiff *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
-	[]*model.BlockAcceptanceData, *model.UTXODiff, error) {
+	model.AcceptanceData, *model.UTXODiff, error) {
 
 	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
 	if err != nil {
@@ -80,7 +80,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		return nil, nil, err
 	}
 
-	multiblockAcceptanceData := make([]*model.BlockAcceptanceData, len(blueBlocks))
+	multiblockAcceptanceData := make(model.AcceptanceData, len(blueBlocks))
 	accumulatedUTXODiff := utxoalgebra.DiffClone(selectedParentPastUTXODiff)
 	accumulatedMass := uint64(0)
 

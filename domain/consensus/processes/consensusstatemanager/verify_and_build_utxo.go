@@ -16,7 +16,7 @@ import (
 )
 
 func (csm *consensusStateManager) verifyAndBuildUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff *model.UTXODiff, acceptanceData []*model.BlockAcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff *model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
 
 	err := csm.validateUTXOCommitment(block, blockHash, multiset)
 	if err != nil {
@@ -64,7 +64,7 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 }
 
 func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, acceptanceData []*model.BlockAcceptanceData) error {
+	blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
 
 	calculatedAcceptedIDMerkleRoot := calculateAcceptedIDMerkleRoot(acceptanceData)
 	if block.Header.AcceptedIDMerkleRoot != *calculatedAcceptedIDMerkleRoot {
@@ -88,7 +88,7 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	return nil
 }
 
-func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData []*model.BlockAcceptanceData) *externalapi.DomainHash {
+func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData) *externalapi.DomainHash {
 	var acceptedTransactions []*externalapi.DomainTransaction
 
 	for _, blockAcceptanceData := range multiblockAcceptanceData {
