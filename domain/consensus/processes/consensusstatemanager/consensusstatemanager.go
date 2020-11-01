@@ -75,28 +75,3 @@ func New(
 
 	return csm, nil
 }
-
-// VirtualData returns data on the current virtual block
-func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData, err error) {
-	pastMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	virtualParents, err := csm.dagTopologyManager.Parents(model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.VirtualData{
-		PastMedianTime: pastMedianTime,
-		BlueScore:      ghostdagData.BlueScore,
-		ParentHashes:   virtualParents,
-		SelectedParent: ghostdagData.SelectedParent,
-	}, nil
-}
