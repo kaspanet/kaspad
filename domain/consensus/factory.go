@@ -125,7 +125,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		pruningManager,
 		pastMedianTimeManager,
-		reachabilityManager,
 		transactionValidator,
 		blockValidator,
 		blockStatusStore,

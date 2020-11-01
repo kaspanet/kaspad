@@ -106,7 +106,8 @@ func (csm *consensusStateManager) mergeSetIncrease(
 
 	for queue.Len() > 0 {
 		current := queue.Pop()
-		isInPastOfSelectedVirtualParents, err := csm.isInPastOfAny(current, selectedVirtualParents)
+		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(
+			current, selectedVirtualParents.ToSlice())
 		if err != nil {
 			return 0, err
 		}
@@ -132,20 +133,6 @@ func (csm *consensusStateManager) mergeSetIncrease(
 	}
 
 	return mergeSetIncrease, nil
-}
-
-func (csm *consensusStateManager) isInPastOfAny(blockHash *externalapi.DomainHash, otherHashes hashset.HashSet) (bool, error) {
-	for hash := range otherHashes {
-		isInPast, err := csm.reachabilityTree.IsDAGAncestorOf(blockHash, &hash)
-		if err != nil {
-			return false, err
-		}
-		if isInPast {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (csm *consensusStateManager) boundedMergeBreakingParents(parents []*externalapi.DomainHash) (hashset.HashSet, error) {

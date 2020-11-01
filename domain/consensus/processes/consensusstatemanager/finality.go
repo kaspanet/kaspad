@@ -41,5 +41,5 @@ func (csm *consensusStateManager) isViolatingFinality(
 		return false, err
 	}
 
-	return csm.reachabilityTree.IsReachabilityTreeAncestorOf(virtualFinalityPoint, blockHash)
+	return csm.dagTopologyManager.IsInSelectedParentChainOf(virtualFinalityPoint, blockHash)
 }

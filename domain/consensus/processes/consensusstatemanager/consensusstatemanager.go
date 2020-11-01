@@ -15,7 +15,6 @@ type consensusStateManager struct {
 	dagTraversalManager   model.DAGTraversalManager
 	pruningManager        model.PruningManager
 	pastMedianTimeManager model.PastMedianTimeManager
-	reachabilityTree      model.ReachabilityTree
 	transactionValidator  model.TransactionValidator
 	blockValidator        model.BlockValidator
 
@@ -39,7 +38,6 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	pruningManager model.PruningManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
-	reachabilityTree model.ReachabilityTree,
 	transactionValidator model.TransactionValidator,
 	blockValidator model.BlockValidator,
 	blockStatusStore model.BlockStatusStore,
@@ -61,7 +59,6 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		pruningManager:        pruningManager,
 		pastMedianTimeManager: pastMedianTimeManager,
-		reachabilityTree:      reachabilityTree,
 		transactionValidator:  transactionValidator,
 		blockValidator:        blockValidator,
 
