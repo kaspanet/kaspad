@@ -8,6 +8,7 @@ import (
 	miningmanagerapi "github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"math"
 	"sort"
 )
 
@@ -133,11 +134,11 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
 		log.Criticalf("consensus.BuildBlock returned invalid txs in GetBlockTemplate: %s", err)
-		invalidtxs := make([]*consensusexternalapi.DomainTransaction, 0, len(invalidTxsErr.InvalidTransactions))
+		invalidTxs := make([]*consensusexternalapi.DomainTransaction, 0, len(invalidTxsErr.InvalidTransactions))
 		for _, tx := range invalidTxsErr.InvalidTransactions {
-			invalidtxs = append(invalidtxs, tx.Transaction)
+			invalidTxs = append(invalidTxs, tx.Transaction)
 		}
-		btb.mempool.RemoveTransactions(invalidtxs)
+		btb.mempool.RemoveTransactions(invalidTxs)
 		// We can call this recursively without worry because this should almost never happen
 		return btb.GetBlockTemplate(coinbaseData)
 	} else if err != nil {
@@ -162,12 +163,7 @@ func (btb *blockTemplateBuilder) calcTxValue(tx *consensusexternalapi.DomainTran
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
 		return float64(fee) / (float64(mass) / float64(massLimit))
 	}
-
-	panic("We currently don't support non native subnetworks")
-	//gas := tx.Gas
-	//gasLimit, err := g.dag.GasLimit(&tx.SubnetworkID)
-	//if err != nil {
-	//	return 0, err
-	//}
-	//return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
+	// TODO: Replace with real gas once implemented
+	gasLimit := uint64(math.MaxUint64)
+	return float64(fee) / (float64(mass)/float64(massLimit) + float64(tx.Gas)/float64(gasLimit))
 }

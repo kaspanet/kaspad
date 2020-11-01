@@ -148,28 +148,3 @@ func extractRejectCode(err error) (RejectCode, bool) {
 
 	return RejectInvalid, false
 }
-
-// ErrToRejectErr examines the underlying type of the error and returns a reject
-// code and string appropriate to be sent in a appmessage.MsgReject message.
-func ErrToRejectErr(err error) (RejectCode, string) {
-	// Return the reject code along with the error text if it can be
-	// extracted from the error.
-	rejectCode, found := extractRejectCode(err)
-	if found {
-		return rejectCode, err.Error()
-	}
-
-	// Return a generic rejected string if there is no error. This really
-	// should not happen unless the code elsewhere is not setting an error
-	// as it should be, but it's best to be safe and simply return a generic
-	// string rather than allowing the following code that dereferences the
-	// err to panic.
-	if err == nil {
-		return RejectInvalid, "rejected"
-	}
-
-	// When the underlying error is not one of the above cases, just return
-	// RejectInvalid with a generic rejected string plus the error
-	// text.
-	return RejectInvalid, "rejected: " + err.Error()
-}

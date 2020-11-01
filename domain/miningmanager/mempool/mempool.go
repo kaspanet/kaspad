@@ -63,10 +63,10 @@ type policy struct {
 // and relayed to other peers. It is safe for concurrent access from multiple
 // peers.
 type mempool struct {
-	pool map[consensusexternalapi.DomainTransactionID]*txDesc
+	pool map[consensusexternalapi.DomainTransactionID]*txDescriptor
 
-	chainedTransactions                  map[consensusexternalapi.DomainTransactionID]*txDesc
-	chainedTransactionByPreviousOutpoint map[consensusexternalapi.DomainOutpoint]*txDesc
+	chainedTransactions                  map[consensusexternalapi.DomainTransactionID]*txDescriptor
+	chainedTransactionByPreviousOutpoint map[consensusexternalapi.DomainOutpoint]*txDescriptor
 
 	orphans       map[consensusexternalapi.DomainTransactionID]*orphanTx
 	orphansByPrev map[consensusexternalapi.DomainOutpoint]map[consensusexternalapi.DomainTransactionID]*consensusexternalapi.DomainTransaction
@@ -97,9 +97,9 @@ func New(consensus consensus.Consensus) miningmanagermodel.Mempool {
 	return &mempool{
 		mtx:                                  sync.RWMutex{},
 		policy:                               policy,
-		pool:                                 make(map[consensusexternalapi.DomainTransactionID]*txDesc),
-		chainedTransactions:                  make(map[consensusexternalapi.DomainTransactionID]*txDesc),
-		chainedTransactionByPreviousOutpoint: make(map[consensusexternalapi.DomainOutpoint]*txDesc),
+		pool:                                 make(map[consensusexternalapi.DomainTransactionID]*txDescriptor),
+		chainedTransactions:                  make(map[consensusexternalapi.DomainTransactionID]*txDescriptor),
+		chainedTransactionByPreviousOutpoint: make(map[consensusexternalapi.DomainOutpoint]*txDescriptor),
 		orphans:                              make(map[consensusexternalapi.DomainTransactionID]*orphanTx),
 		orphansByPrev:                        make(map[consensusexternalapi.DomainOutpoint]map[consensusexternalapi.DomainTransactionID]*consensusexternalapi.DomainTransaction),
 		mempoolUTXOSet:                       newMempoolUTXOSet(),
@@ -108,9 +108,9 @@ func New(consensus consensus.Consensus) miningmanagermodel.Mempool {
 	}
 }
 
-// txDesc is a descriptor containing a transaction in the mempool along with
+// txDescriptor is a descriptor containing a transaction in the mempool along with
 // additional metadata.
-type txDesc struct {
+type txDescriptor struct {
 	*consensusexternalapi.DomainTransaction
 
 	// depCount is not 0 for a chained transaction. A chained transaction is
@@ -127,11 +127,8 @@ type orphanTx struct {
 	expiration mstime.Time
 }
 
-// Ensure the mempool type implements the mining.TxSource interface.
-//var _ mining.TxSource = (*mempool)(nil)
-
-// removeOrphan is the internal function which implements the public
-// RemoveOrphan. See the comment for RemoveOrphan for more details.
+// removeOrphan removes the passed orphan transaction from the orphan pool and
+// previous orphan index.
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeOrphan(tx *consensusexternalapi.DomainTransaction, removeRedeemers bool) {
@@ -474,21 +471,21 @@ func (mp *mempool) removeDoubleSpends(tx *consensusexternalapi.DomainTransaction
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) addTransaction(tx *consensusexternalapi.DomainTransaction, mass uint64, fee uint64, parentsInPool []consensusexternalapi.DomainOutpoint) (*txDesc, error) {
+func (mp *mempool) addTransaction(tx *consensusexternalapi.DomainTransaction, mass uint64, fee uint64, parentsInPool []consensusexternalapi.DomainOutpoint) (*txDescriptor, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
-	txD := &txDesc{
+	txDescriptor := &txDescriptor{
 		DomainTransaction: tx,
 		depCount:          len(parentsInPool),
 	}
 	txID := *hashserialization.TransactionID(tx)
 
 	if len(parentsInPool) == 0 {
-		mp.pool[txID] = txD
+		mp.pool[txID] = txDescriptor
 	} else {
-		mp.chainedTransactions[txID] = txD
+		mp.chainedTransactions[txID] = txDescriptor
 		for _, previousOutpoint := range parentsInPool {
-			mp.chainedTransactionByPreviousOutpoint[previousOutpoint] = txD
+			mp.chainedTransactionByPreviousOutpoint[previousOutpoint] = txDescriptor
 		}
 	}
 
@@ -497,7 +494,7 @@ func (mp *mempool) addTransaction(tx *consensusexternalapi.DomainTransaction, ma
 		return nil, err
 	}
 
-	return txD, nil
+	return txDescriptor, nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
@@ -523,7 +520,7 @@ func (mp *mempool) checkPoolDoubleSpend(tx *consensusexternalapi.DomainTransacti
 // This only fetches from the main transaction pool and does not include
 // orphans.
 // returns false in the second return parameter if transaction was not found
-func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (*txDesc, bool) {
+func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (*txDescriptor, bool) {
 	txDesc, exists := mp.pool[*txID]
 	if !exists {
 		txDesc, exists = mp.chainedTransactions[*txID]
@@ -542,7 +539,7 @@ func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (
 // be added to the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) ([]consensusexternalapi.DomainOutpoint, *txDesc, error) {
+func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) ([]consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
 	txID := hashserialization.TransactionID(tx)
 
 	// Don't accept the transaction if it already exists in the pool. This
@@ -556,17 +553,9 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 		return nil, nil, txRuleError(RejectDuplicate, str)
 	}
 
-	// We take the blue score of the current virtual block to validate
-	// the transaction as though it was mined on top of the current tips
-	//nextBlockBlueScore := mp.cfg.DAG.VirtualBlueScore()
-	//
-	//medianTimePast := mp.cfg.DAG.CalcPastMedianTime()
-
 	// Don't allow non-standard transactions if the network parameters
 	// forbid their acceptance.
 	if !mp.policy.AcceptNonStd {
-		//err = checkTransactionStandard(tx, nextBlockBlueScore,
-		//	medianTimePast, &mp.policy)
 		err := checkTransactionStandard(tx, &mp.policy)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
@@ -632,16 +621,10 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 		}
 	}
 
-	// TODO: How to get fee/mass?
 	//// NOTE: if you modify this code to accept non-standard transactions,
 	//// you should add code here to check that the transaction does a
 	//// reasonable number of ECDSA signature verifications.
 	//
-	//// Don't allow transactions with 0 fees.
-	//if txFee == 0 {
-	//	str := fmt.Sprintf("transaction %s has 0 fees", txID)
-	//	return nil, nil, txRuleError(RejectInsufficientFee, str)
-	//}
 
 	// Don't allow transactions with fees too low to get into a mined block.
 	//
@@ -685,8 +668,8 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 // no transactions were moved from the orphan pool to the mempool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) []*txDesc {
-	var acceptedTxns []*txDesc
+func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) []*txDescriptor {
+	var acceptedTxns []*txDescriptor
 
 	// Start with processing at least the passed transaction.
 	processList := list.New()
@@ -757,8 +740,8 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 	// by the accepted transactions since those are now definitive double
 	// spends.
 	mp.removeOrphanDoubleSpends(acceptedTx)
-	for _, txD := range acceptedTxns {
-		mp.removeOrphanDoubleSpends(txD.DomainTransaction)
+	for _, txDescriptor := range acceptedTxns {
+		mp.removeOrphanDoubleSpends(txDescriptor.DomainTransaction)
 	}
 
 	return acceptedTxns
@@ -794,7 +777,7 @@ func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainT
 		// are now available) and repeat for those accepted
 		// transactions until there are no more.
 		newTxs := mp.processOrphans(tx)
-		acceptedTxs := make([]*txDesc, len(newTxs)+1)
+		acceptedTxs := make([]*txDescriptor, len(newTxs)+1)
 
 		// Add the parent transaction first so remote nodes
 		// do not add orphans.
@@ -848,11 +831,8 @@ func (mp *mempool) ChainedCount() int {
 	return len(mp.chainedTransactions)
 }
 
-// MiningDescs returns a slice of mining descriptors for all the transactions
-// in the pool.
-//
-// This is part of the mining.TxSource interface implementation and is safe for
-// concurrent access as required by the interface contract.
+// Transactions returns a slice of all the transactions in the block
+// This is safe for concurrent use
 func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
@@ -866,7 +846,7 @@ func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
 	return descs
 }
 
-// HandleNewBlock removes all the transactions in the new block
+// HandleNewBlockTransactions removes all the transactions in the new block
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
