@@ -102,19 +102,19 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 	return false
 }
 
-func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) {
+func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
 	// Go over the block's current relations (if they exist), and remove the block from all it's current parents
 	// Note: In theory we should also remove the block from all it's children, however, in practice no block
 	// ever has it's relations updated after getting any children, therefore we skip this step
 	currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
 	if err != nil {
-		return
+		return err
 	}
 	if currentRelations != nil {
 		for _, currentParent := range currentRelations.Parents {
 			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, currentParent)
 			if err != nil {
-				return
+				return err
 			}
 			for i, parentChild := range parentRelations.Children {
 				if *parentChild == *blockHash {
@@ -130,7 +130,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 	for _, parent := range parentHashes {
 		parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, parent)
 		if err != nil {
-			return
+			return err
 		}
 		isBlockAlreadyInChildren := false
 		for _, parentChild := range parentRelations.Children {
@@ -150,4 +150,6 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		Parents:  parentHashes,
 		Children: []*externalapi.DomainHash{},
 	})
+
+	return nil
 }
