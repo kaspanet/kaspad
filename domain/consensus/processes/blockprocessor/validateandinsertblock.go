@@ -36,7 +36,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 			return err
 		}
 
-		err = bp.headerTipsManager.AddBlock(hash)
+		err = bp.headerTipsManager.AddHeaderTip(hash)
 		if err != nil {
 			return err
 		}
@@ -55,12 +55,14 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return err
 	}
 
-	if !headerOnly {
-		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlockToVirtual(hash)
-		if err != nil {
-			return err
-		}
+	if headerOnly {
+		return nil
+	}
+
+	// Attempt to add the block to the virtual
+	err = bp.consensusStateManager.AddBlockToVirtual(hash)
+	if err != nil {
+		return err
 	}
 
 	return bp.commitAllChanges()
@@ -93,10 +95,16 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, headerO
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, headerOnly bool) error {
-	// If either in-isolation or proof-of-work validations fail, simply
+	// If any validation until (included) proof-of-work fails, simply
 	// return an error without writing anything in the database.
 	// This is to prevent spamming attacks.
 	err := bp.validatePreProofOfWork(block)
+	if err != nil {
+		return err
+	}
+
+	blockHash := hashserialization.HeaderHash(block.Header)
+	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
 	}
@@ -132,10 +140,6 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	}
 
 	err = bp.blockValidator.ValidateHeaderInIsolation(blockHash)
-	if err != nil {
-		return err
-	}
-	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
 	}

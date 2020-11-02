@@ -22,7 +22,7 @@ func New(databaseContext model.DBReader,
 	}
 }
 
-func (h headerTipsManager) AddBlock(hash *externalapi.DomainHash) error {
+func (h headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 	tips, err := h.headerTipsStore.Tips(h.databaseContext)
 	if err != nil {
 		return err
