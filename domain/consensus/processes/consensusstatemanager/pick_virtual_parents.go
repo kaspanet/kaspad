@@ -137,8 +137,12 @@ func (csm *consensusStateManager) mergeSetIncrease(
 
 func (csm *consensusStateManager) boundedMergeBreakingParents(parents []*externalapi.DomainHash) (hashset.HashSet, error) {
 	// Temporarily set virtual to all parents, so that we can run ghostdag on it
-	csm.dagTopologyManager.SetParents(model.VirtualBlockHash, parents)
-	err := csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
+	err := csm.dagTopologyManager.SetParents(model.VirtualBlockHash, parents)
+	if err != nil {
+		return nil, err
+	}
+
+	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

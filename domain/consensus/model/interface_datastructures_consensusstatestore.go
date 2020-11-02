@@ -10,6 +10,7 @@ type ConsensusStateStore interface {
 	StageVirtualUTXODiff(virtualUTXODiff *UTXODiff)
 	UTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error)
 	HasUTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (bool, error)
+	VirtualUTXOSetIterator(dbContext DBReader) (ReadOnlyUTXOSetIterator, error)
 
 	StageVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash) error
 	VirtualDiffParents(dbContext DBReader) ([]*externalapi.DomainHash, error)

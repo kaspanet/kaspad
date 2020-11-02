@@ -165,3 +165,65 @@ func (csm *consensusStateManager) checkTransactionMass(
 
 	return true, accumulatedMassAfter
 }
+
+func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (model.ReadOnlyUTXOSetIterator, error) {
+	diff, _, _, err := csm.calculatePastUTXOAndAcceptanceData(blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	virtualUTXOSetIterator, err := csm.consensusStateStore.VirtualUTXOSetIterator(csm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	pastUTXO := model.NewUTXODiff()
+	for virtualUTXOSetIterator.Next() {
+		outpoint, utxoEntry := virtualUTXOSetIterator.Get()
+		pastUTXO.ToAdd[*outpoint] = utxoEntry
+	}
+
+	diff, err = utxoalgebra.WithDiff(pastUTXO, diff)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(diff.ToRemove) > 0 {
+		return nil, errors.New("diff.ToRemove is expected to be empty")
+	}
+
+	return newUTXOSetIterator(diff.ToAdd), nil
+}
+
+type utxoOutpointEntryPair struct {
+	outpoint externalapi.DomainOutpoint
+	entry    *externalapi.UTXOEntry
+}
+
+type utxoSetIterator struct {
+	index int
+	pairs []utxoOutpointEntryPair
+}
+
+func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
+	pairs := make([]utxoOutpointEntryPair, len(collection))
+	i := 0
+	for outpoint, entry := range collection {
+		pairs[i] = utxoOutpointEntryPair{
+			outpoint: outpoint,
+			entry:    entry,
+		}
+		i++
+	}
+	return &utxoSetIterator{index: 0, pairs: pairs}
+}
+
+func (u utxoSetIterator) Next() bool {
+	u.index++
+	return u.index != len(u.pairs)
+}
+
+func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) {
+	pair := u.pairs[u.index]
+	return &pair.outpoint, pair.entry
+}
