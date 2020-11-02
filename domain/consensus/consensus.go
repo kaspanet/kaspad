@@ -30,6 +30,7 @@ type consensus struct {
 	blockProcessor        model.BlockProcessor
 	consensusStateManager model.ConsensusStateManager
 	transactionValidator  model.TransactionValidator
+	syncManager           model.SyncManager
 
 	blockStore        model.BlockStore
 	blockHeaderStore  model.BlockHeaderStore
@@ -114,11 +115,11 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 }
 
 func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	panic("implement me")
+	return s.syncManager.GetHashesBetween(lowHigh, highHash)
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	panic("implement me")
+	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
 func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
@@ -130,10 +131,6 @@ func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash,
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
-	panic("implement me")
-}
-
-func (s *consensus) GetSelectedParent() (*externalapi.DomainBlock, error) {
 	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -142,9 +139,9 @@ func (s *consensus) GetSelectedParent() (*externalapi.DomainBlock, error) {
 }
 
 func (s *consensus) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
-	panic("implement me")
+	return s.syncManager.CreateBlockLocator(lowHigh, highHash)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error) {
-	panic("implement me")
+	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
 }
