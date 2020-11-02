@@ -20,6 +20,7 @@ type consensusStateManager struct {
 	blockValidator        model.BlockValidator
 	reachabilityManager   model.ReachabilityManager
 	coinbaseManager       model.CoinbaseManager
+	mergeDepthManager     model.MergeDepthManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -45,6 +46,7 @@ func New(
 	blockValidator model.BlockValidator,
 	reachabilityManager model.ReachabilityManager,
 	coinbaseManager model.CoinbaseManager,
+	mergeDepthManager model.MergeDepthManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -68,6 +70,7 @@ func New(
 		blockValidator:        blockValidator,
 		reachabilityManager:   reachabilityManager,
 		coinbaseManager:       coinbaseManager,
+		mergeDepthManager:     mergeDepthManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,

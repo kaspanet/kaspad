@@ -23,6 +23,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
@@ -97,6 +98,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		acceptanceDataStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
+	mergeDepthManager := mergedepthmanager.New(
+		dagParams.FinalityDepth(),
+		dbManager,
+		dagTopologyManager,
+		dagTraversalManager,
+		ghostdagDataStore)
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		false,
@@ -104,7 +111,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
-		dagParams.FinalityDepth(),
 
 		dbManager,
 		difficultyManager,
@@ -113,6 +119,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		mergeDepthManager,
 
 		blockStore,
 		ghostdagDataStore,
@@ -130,6 +137,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockValidator,
 		reachabilityManager,
 		coinbaseManager,
+		mergeDepthManager,
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,

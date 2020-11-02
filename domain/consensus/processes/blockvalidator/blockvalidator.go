@@ -18,7 +18,6 @@ type blockValidator struct {
 	disableDifficultyAdjustment    bool
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
-	finalityDepth                  uint64
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -27,6 +26,7 @@ type blockValidator struct {
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
+	mergeDepthManager     model.MergeDepthManager
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -40,7 +40,6 @@ func New(powMax *big.Int,
 	enableNonNativeSubnetworks bool,
 	disableDifficultyAdjustment bool,
 	difficultyAdjustmentWindowSize uint64,
-	finalityDepth uint64,
 	databaseContext model.DBReader,
 
 	difficultyManager model.DifficultyManager,
@@ -49,6 +48,7 @@ func New(powMax *big.Int,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
+	mergeDepthManager model.MergeDepthManager,
 
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -62,7 +62,6 @@ func New(powMax *big.Int,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		powMaxBits:                     util.BigToCompact(powMax),
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-		finalityDepth:                  finalityDepth,
 		databaseContext:                databaseContext,
 		difficultyManager:              difficultyManager,
 		pastMedianTimeManager:          pastMedianTimeManager,
@@ -70,6 +69,7 @@ func New(powMax *big.Int,
 		ghostdagManager:                ghostdagManager,
 		dagTopologyManager:             dagTopologyManager,
 		dagTraversalManager:            dagTraversalManager,
+		mergeDepthManager:              mergeDepthManager,
 		blockStore:                     blockStore,
 		ghostdagDataStore:              ghostdagDataStore,
 		blockHeaderStore:               blockHeaderStore,

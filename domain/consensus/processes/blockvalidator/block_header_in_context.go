@@ -36,7 +36,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.checkBoundedMergeDepth(blockHash)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(blockHash)
 	if err != nil {
 		return err
 	}
