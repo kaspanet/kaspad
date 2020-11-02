@@ -117,12 +117,20 @@ func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) 
 	panic("implement me")
 }
 
-func (s *consensus) GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
 func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
 	return s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+}
+
+func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	panic("implement me")
+}
+
+func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
+	panic("implement me")
 }
 
 func (s *consensus) GetSelectedParent() (*externalapi.DomainBlock, error) {
