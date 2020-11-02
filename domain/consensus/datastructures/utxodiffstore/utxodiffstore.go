@@ -1,14 +1,11 @@
 package utxodiffstore
 
 import (
-	"errors"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 var utxoDiffBucket = dbkeys.MakeBucket([]byte("utxo-diffs"))
@@ -128,16 +125,11 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 
 // HasUTXODiffChild returns true if the given blockHash has a UTXODiffChild
 func (uds *utxoDiffStore) HasUTXODiffChild(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
-	_, err := uds.UTXODiffChild(dbContext, blockHash)
-
-	if err != nil {
-		if errors.Is(err, database.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
+	if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
+		return true, nil
 	}
 
-	return true, nil
+	return dbContext.Has(uds.utxoDiffChildHashAsKey(blockHash))
 }
 
 // Delete deletes the utxoDiff associated with the given blockHash
