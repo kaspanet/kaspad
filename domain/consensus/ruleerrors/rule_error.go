@@ -227,6 +227,8 @@ var (
 
 	// ErrMissingParent indicates one of the block parents is not found.
 	ErrMissingParent = newRuleError("ErrMissingParent")
+
+	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
