@@ -127,7 +127,7 @@ func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
 }
 
 func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	panic("implement me")
+	return s.consensusStateManager.SetPruningPointUTXOSet(pruningPoint, serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {

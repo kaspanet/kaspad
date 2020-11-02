@@ -79,3 +79,7 @@ func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData,
 func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
 	panic("implement me")
 }
+
+func (csm *consensusStateManager) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	panic("implement me")
+}
