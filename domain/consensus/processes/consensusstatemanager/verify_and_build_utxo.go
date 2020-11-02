@@ -29,7 +29,7 @@ func (csm *consensusStateManager) verifyAndBuildUTXO(block *externalapi.DomainBl
 	}
 
 	coinbaseTransaction := block.Transactions[0]
-	err = csm.coinbaseManager.ValidateCoinbaseTransaction(coinbaseTransaction)
+	err = csm.validateCoinbaseTransaction(blockHash, coinbaseTransaction)
 
 	err = csm.validateBlockTransactionsAgainstPastUTXO(block, blockHash, pastUTXODiff, err)
 	if err != nil {
@@ -109,4 +109,24 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData
 	})
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
+}
+func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externalapi.DomainHash,
+	coinbaseTransaction *externalapi.DomainTransaction) error {
+	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+	if err != nil {
+		return err
+	}
+
+	expectedCoinbaseTransaction, err := csm.coinbaseManager.ExpectedCoinbaseTransaction(blockHash, coinbaseData)
+	if err != nil {
+		return err
+	}
+
+	coinbaseTransactionHash := hashserialization.TransactionHash(coinbaseTransaction)
+	expectedCoinbaseTransactionHash := hashserialization.TransactionHash(expectedCoinbaseTransaction)
+	if *coinbaseTransactionHash != *expectedCoinbaseTransactionHash {
+		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
+	}
+
+	return nil
 }

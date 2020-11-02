@@ -21,12 +21,12 @@ func New(
 	}
 }
 
-func (c *coinbaseManager) ValidateCoinbaseTransaction(coinbaseTransaction *externalapi.DomainTransaction) error {
-	panic("implement me")
-}
-
 func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
+	panic("implement me")
+}
+
+func (c coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData, err error) {
 	panic("implement me")
 }
