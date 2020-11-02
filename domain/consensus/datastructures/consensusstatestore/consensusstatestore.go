@@ -18,13 +18,30 @@ func New() model.ConsensusStateStore {
 }
 
 func (c consensusStateStore) Discard() {
-	panic("implement me")
+	c.stagedTips = nil
+	c.stagedVirtualUTXODiff = nil
+	c.stagedVirtualDiffParents = nil
 }
 
 func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
-	panic("implement me")
+	err := c.commitTips(dbTx)
+	if err != nil {
+		return err
+	}
+	err = c.commitVirtualDiffParents(dbTx)
+	if err != nil {
+		return err
+	}
+	err = c.commitVirtualUTXODiff(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c consensusStateStore) IsStaged() bool {
-	panic("implement me")
+	return c.stagedTips != nil ||
+		c.stagedVirtualDiffParents != nil ||
+		c.stagedVirtualUTXODiff != nil
 }
