@@ -7,7 +7,8 @@ import (
 
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
-	stagedTips []*externalapi.DomainHash
+	stagedTips               []*externalapi.DomainHash
+	stagedVirtualDiffParents []*externalapi.DomainHash
 }
 
 // New instantiates a new ConsensusStateStore
