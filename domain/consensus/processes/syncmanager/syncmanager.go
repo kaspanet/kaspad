@@ -31,3 +31,7 @@ func (s syncManager) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHas
 func (s syncManager) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error) {
 	panic("implement me")
 }
+
+func (s syncManager) IsBlockHeaderInPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {
+	panic("implement me")
+}

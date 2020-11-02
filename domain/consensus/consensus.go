@@ -79,10 +79,6 @@ func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *extern
 	panic("unimplemented")
 }
 
-func isHeaderInPruningPointFutureAndVirtualPast() bool {
-	panic("unimplemented")
-}
-
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	return s.blockStore.Block(s.databaseContext, blockHash)
 }
@@ -109,7 +105,11 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 	blockInfo.BlockStatus = &blockStatus
 
-	blockInfo.IsHeaderInPruningPointFutureAndVirtualPast = isHeaderInPruningPointFutureAndVirtualPast()
+	isBlockHeaderInPruningPointFutureAndVirtualPast, err := s.syncManager.IsBlockHeaderInPruningPointFutureAndVirtualPast(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	blockInfo.IsBlockHeaderInPruningPointFutureAndVirtualPast = isBlockHeaderInPruningPointFutureAndVirtualPast
 
 	return blockInfo, nil
 }
