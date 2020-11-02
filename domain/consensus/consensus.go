@@ -16,7 +16,7 @@ type Consensus interface {
 	GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error)
 
 	GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetPruningPointUTXOSet() ([]byte, error)
 	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
