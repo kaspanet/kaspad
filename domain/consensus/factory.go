@@ -107,6 +107,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pastMedianTimeManager,
 		ghostdagDataStore)
 	coinbaseManager := coinbasemanager.New(
+		dbManager,
 		ghostdagDataStore,
 		acceptanceDataStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
@@ -127,6 +128,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		coinbaseManager,
 
 		blockStore,
 		ghostdagDataStore,
