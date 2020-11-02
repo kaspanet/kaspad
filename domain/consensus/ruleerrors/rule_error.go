@@ -228,6 +228,8 @@ var (
 	// ErrMissingParent indicates one of the block parents is not found.
 	ErrMissingParent = newRuleError("ErrMissingParent")
 
+	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
+
 	ErrSubnetworksDisabled = newRuleError("ErrSubnetworksDisabled")
 )
 

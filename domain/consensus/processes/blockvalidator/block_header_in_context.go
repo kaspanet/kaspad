@@ -3,6 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
@@ -25,12 +26,24 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.ghostdagManager.GHOSTDAG(blockHash)
+	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
+	if status != externalapi.StatusHeaderOnly {
+		err = v.ghostdagManager.GHOSTDAG(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = v.checkMergeSizeLimit(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(blockHash)
 	if err != nil {
 		return err
 	}
@@ -97,10 +110,9 @@ func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error
 
 	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
 
-	const mergeSetSizeLimit = 1000
-	if mergeSetSize > mergeSetSizeLimit {
+	if mergeSetSize > constants.MergeSetSizeLimit {
 		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,
-			"The block merges %d blocks > %d merge set size limit", mergeSetSize, mergeSetSizeLimit)
+			"The block merges %d blocks > %d merge set size limit", mergeSetSize, constants.MergeSetSizeLimit)
 	}
 
 	return nil

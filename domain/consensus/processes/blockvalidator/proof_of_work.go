@@ -20,6 +20,11 @@ func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi
 		return err
 	}
 
+	err = v.checkParentsExist(header)
+	if err != nil {
+		return err
+	}
+
 	err = v.validateDifficulty(blockHash)
 	if err != nil {
 		return err
@@ -86,7 +91,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 
 func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
 	for _, parent := range header.ParentHashes {
-		exists, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		exists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
 			return err
 		}

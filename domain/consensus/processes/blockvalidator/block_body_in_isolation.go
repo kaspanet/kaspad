@@ -3,6 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
@@ -36,6 +37,11 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 	}
 
 	err = v.checkBlockContainsOnlyOneCoinbase(block)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkCoinbase(block)
 	if err != nil {
 		return err
 	}
@@ -75,6 +81,15 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkCoinbase(block *externalapi.DomainBlock) error {
+	_, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.
+		Transactions[transactionhelper.CoinbaseTransactionIndex])
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -200,9 +215,9 @@ func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
 		sizeBefore := size
 		size += estimatedsize.TransactionEstimatedSerializedSize(tx)
-		const maxBlockSize = 1_000_000
-		if size > maxBlockSize || size < sizeBefore {
-			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)
+		if size > constants.MaxBlockSize || size < sizeBefore {
+			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d",
+				constants.MaxBlockSize)
 		}
 	}
 

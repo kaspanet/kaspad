@@ -9,8 +9,8 @@ import (
 // known transactions that have no yet been added to any block
 type MiningManager interface {
 	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
-	HandleNewBlock(block *consensusexternalapi.DomainBlock)
-	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction) error
+	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction)
+	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 }
 
 type miningManager struct {
@@ -23,14 +23,14 @@ func (mm *miningManager) GetBlockTemplate(coinbaseData *consensusexternalapi.Dom
 	return mm.blockTemplateBuilder.GetBlockTemplate(coinbaseData)
 }
 
-// HandleNewBlock handles a new block that was just added to the DAG
-func (mm *miningManager) HandleNewBlock(block *consensusexternalapi.DomainBlock) {
-	mm.mempool.HandleNewBlock(block)
+// HandleNewBlock handles the transactions for a new block that was just added to the DAG
+func (mm *miningManager) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) {
+	mm.mempool.HandleNewBlockTransactions(txs)
 }
 
 // ValidateAndInsertTransaction validates the given transaction, and
 // adds it to the set of known transactions that have not yet been
 // added to any block
-func (mm *miningManager) ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction) error {
-	return mm.mempool.ValidateAndInsertTransaction(transaction)
+func (mm *miningManager) ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error {
+	return mm.mempool.ValidateAndInsertTransaction(transaction, allowOrphan)
 }

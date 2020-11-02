@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
@@ -123,11 +124,11 @@ func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, t
 	originTxSompi := entry.Amount
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInAfter < totalSompiInBefore ||
-		totalSompiInAfter > maxSompi {
+		totalSompiInAfter > constants.MaxSompi {
 		return 0, errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 			"inputs is %d which is higher than max "+
 			"allowed value of %d", totalSompiInBefore,
-			maxSompi)
+			constants.MaxSompi)
 	}
 	return totalSompiInAfter, nil
 }
