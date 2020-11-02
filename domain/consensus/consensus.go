@@ -32,6 +32,7 @@ type consensus struct {
 
 	blockStore       model.BlockStore
 	blockHeaderStore model.BlockHeaderStore
+	pruningStore     model.PruningStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -95,7 +96,7 @@ func (s *consensus) GetHashesAbovePruningPoint(highHash *externalapi.DomainHash)
 }
 
 func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
-	panic("implement me")
+	return s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
 }
 
 func (s *consensus) GetSelectedParent() (*externalapi.DomainBlock, error) {
