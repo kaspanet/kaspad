@@ -10,6 +10,18 @@ type Consensus interface {
 	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
 	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
+
+	GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
+	GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
+	GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error)
+
+	GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetPruningPointUTXOSet() ([]byte, error)
+	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
+	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
+	CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
+	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error)
 }
 
 type consensus struct {
@@ -56,4 +68,44 @@ func validateTransactionInContextAndPopulateMassAndFeeSelectedParentMedianTime()
 
 func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *externalapi.DomainHash {
 	panic("unimplemented")
+}
+
+func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	panic("implement me")
+}
+
+func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
+	panic("implement me")
+}
+
+func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
+	panic("implement me")
+}
+
+func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
+	panic("implement me")
+}
+
+func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	panic("implement me")
+}
+
+func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
+	panic("implement me")
+}
+
+func (s *consensus) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
+	panic("implement me")
+}
+
+func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error) {
+	panic("implement me")
 }
