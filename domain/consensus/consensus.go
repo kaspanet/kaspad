@@ -86,7 +86,7 @@ func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) 
 	panic("implement me")
 }
 
-func (s *consensus) GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
