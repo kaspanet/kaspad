@@ -9,6 +9,7 @@ import (
 type consensusStateStore struct {
 	stagedTips               []*externalapi.DomainHash
 	stagedVirtualDiffParents []*externalapi.DomainHash
+	stagedVirtualUTXODiff    *model.UTXODiff
 }
 
 // New instantiates a new ConsensusStateStore
