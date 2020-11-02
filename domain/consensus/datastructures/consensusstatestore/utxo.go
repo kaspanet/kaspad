@@ -4,14 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 var utxoSetBucket = dbkeys.MakeBucket([]byte("virtual-utxo-set"))
 
 func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
-	serializedOutpoint, err := hashserialization.SerializeOutpoint(outpoint)
+	serializedOutpoint, err := serializeOutpoint(outpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +39,7 @@ func (c consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) err
 		if err != nil {
 			return err
 		}
-		serializedEntry, err := hashserialization.SerializeUTXOEntry(toAddEntry)
+		serializedEntry, err := serializeUTXOEntry(toAddEntry)
 		if err != nil {
 			return err
 		}
@@ -75,7 +74,7 @@ func (c consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *
 		return nil, err
 	}
 
-	return hashserialization.DeserializeUTXOEntry(serializedUTXOEntry)
+	return deserializeUTXOEntry(serializedUTXOEntry)
 }
 
 func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (bool, error) {

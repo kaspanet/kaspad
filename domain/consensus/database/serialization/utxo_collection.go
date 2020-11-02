@@ -10,7 +10,7 @@ func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) []*Db
 	for outpoint, entry := range utxoCollection {
 		items[i] = &DbUtxoCollectionItem{
 			Outpoint:  DomainOutpointToDbOutpoint(&outpoint),
-			UtxoEntry: utxoEntryToDBUTXOEntry(entry),
+			UtxoEntry: UTXOEntryToDBUTXOEntry(entry),
 		}
 		i++
 	}
@@ -26,7 +26,7 @@ func dbUTXOCollectionToUTXOCollection(items []*DbUtxoCollectionItem) (model.UTXO
 			return nil, err
 		}
 
-		collection[*outpoint] = dbUTXOEntryToUTXOEntry(item.UtxoEntry)
+		collection[*outpoint] = DBUTXOEntryToUTXOEntry(item.UtxoEntry)
 	}
 	return collection, nil
 }

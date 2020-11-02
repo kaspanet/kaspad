@@ -32,18 +32,6 @@ func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOut
 	return w.Bytes(), nil
 }
 
-// SerializeOutpoint encodes an outpoint into a byte-slice
-func SerializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
-	w := &bytes.Buffer{}
-
-	err := serializeOutpoint(w, outpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	return w.Bytes(), nil
-}
-
 func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 	_, err := w.Write(outpoint.TransactionID[:])
 	if err != nil {
@@ -58,18 +46,6 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 	}
 
 	return nil
-}
-
-// SerializeUTXOEntry encodes e UTXOEntry into a byte-slice
-func SerializeUTXOEntry(entry *externalapi.UTXOEntry) ([]byte, error) {
-	w := &bytes.Buffer{}
-
-	err := serializeUTXOEntry(w, entry)
-	if err != nil {
-		return nil, err
-	}
-
-	return w.Bytes(), nil
 }
 
 func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
@@ -110,44 +86,4 @@ func serializeUTXOEntryFlags(entry *externalapi.UTXOEntry) uint8 {
 	}
 
 	return serializedFlags
-}
-
-// DeserializeUTXOEntry decode a UTXOEntry from a byte-slice representation
-func DeserializeUTXOEntry(utxoEntryBytes []byte) (*externalapi.UTXOEntry, error) {
-	entry := &externalapi.UTXOEntry{}
-
-	r := bytes.NewReader(utxoEntryBytes)
-
-	blueScoreBytes := make([]byte, 8)
-	_, err := io.ReadFull(r, blueScoreBytes)
-	if err != nil {
-		return nil, err
-	}
-	entry.BlockBlueScore = binary.LittleEndian.Uint64(blueScoreBytes)
-
-	flagsByte, err := r.ReadByte()
-	entry.IsCoinbase = flagsByte&utxoFlagIsCoinbase != 0
-
-	amountBytes := make([]byte, 8)
-	_, err = io.ReadFull(r, amountBytes)
-	if err != nil {
-		return nil, err
-	}
-	entry.Amount = binary.LittleEndian.Uint64(amountBytes)
-
-	scriptPubKeyLenBytes := make([]byte, 8)
-	_, err = io.ReadFull(r, scriptPubKeyLenBytes)
-	if err != nil {
-		return nil, err
-	}
-	scriptPubKeyLen := binary.LittleEndian.Uint64(scriptPubKeyLenBytes)
-
-	scriptPubKeyBytes := make([]byte, scriptPubKeyLen)
-	_, err = io.ReadFull(r, scriptPubKeyBytes)
-	if err != nil {
-		return nil, err
-	}
-	entry.ScriptPublicKey = scriptPubKeyBytes
-
-	return entry, nil
 }
