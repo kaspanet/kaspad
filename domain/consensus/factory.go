@@ -26,6 +26,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/syncmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -156,10 +157,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockHeaderStore)
 
+	syncManager := syncmanager.New(dagTraversalManager)
+
 	return &consensus{
-		consensusStateManager: consensusStateManager,
+		databaseContext: dbManager,
+
 		blockProcessor:        blockProcessor,
+		consensusStateManager: consensusStateManager,
 		transactionValidator:  transactionValidator,
+		syncManager:           syncManager,
+
+		blockStore:        blockStore,
+		blockHeaderStore:  blockHeaderStore,
+		pruningStore:      pruningStore,
+		ghostdagDataStore: ghostdagDataStore,
+		blockStatusStore:  blockStatusStore,
 	}
 }
 
