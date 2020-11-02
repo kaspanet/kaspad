@@ -192,7 +192,7 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, errors.New("diff.ToRemove is expected to be empty")
 	}
 
-	return newUtxoSetIterator(diff.ToAdd), nil
+	return newUTXOSetIterator(diff.ToAdd), nil
 }
 
 type utxoOutpointEntryPair struct {
@@ -205,7 +205,7 @@ type utxoSetIterator struct {
 	pairs []utxoOutpointEntryPair
 }
 
-func newUtxoSetIterator(collection model.UTXOCollection) *utxoSetIterator {
+func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
 	pairs := make([]utxoOutpointEntryPair, len(collection))
 	i := 0
 	for outpoint, entry := range collection {
