@@ -1441,7 +1441,7 @@ func (x *DbUtxoDiff) GetToRemove() []*DbUtxoCollectionItem {
 	return nil
 }
 
-type PruningPointUTXOSetBytes struct {
+type DbPruningPointUTXOSetBytes struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1449,8 +1449,8 @@ type PruningPointUTXOSetBytes struct {
 	Bytes []byte `protobuf:"bytes,1,opt,name=bytes,proto3" json:"bytes,omitempty"`
 }
 
-func (x *PruningPointUTXOSetBytes) Reset() {
-	*x = PruningPointUTXOSetBytes{}
+func (x *DbPruningPointUTXOSetBytes) Reset() {
+	*x = DbPruningPointUTXOSetBytes{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1458,13 +1458,13 @@ func (x *PruningPointUTXOSetBytes) Reset() {
 	}
 }
 
-func (x *PruningPointUTXOSetBytes) String() string {
+func (x *DbPruningPointUTXOSetBytes) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PruningPointUTXOSetBytes) ProtoMessage() {}
+func (*DbPruningPointUTXOSetBytes) ProtoMessage() {}
 
-func (x *PruningPointUTXOSetBytes) ProtoReflect() protoreflect.Message {
+func (x *DbPruningPointUTXOSetBytes) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1476,14 +1476,61 @@ func (x *PruningPointUTXOSetBytes) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PruningPointUTXOSetBytes.ProtoReflect.Descriptor instead.
-func (*PruningPointUTXOSetBytes) Descriptor() ([]byte, []int) {
+// Deprecated: Use DbPruningPointUTXOSetBytes.ProtoReflect.Descriptor instead.
+func (*DbPruningPointUTXOSetBytes) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *PruningPointUTXOSetBytes) GetBytes() []byte {
+func (x *DbPruningPointUTXOSetBytes) GetBytes() []byte {
 	if x != nil {
 		return x.Bytes
+	}
+	return nil
+}
+
+type DbHeaderTips struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Tips []*DbHash `protobuf:"bytes,1,rep,name=tips,proto3" json:"tips,omitempty"`
+}
+
+func (x *DbHeaderTips) Reset() {
+	*x = DbHeaderTips{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_messages_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DbHeaderTips) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DbHeaderTips) ProtoMessage() {}
+
+func (x *DbHeaderTips) ProtoReflect() protoreflect.Message {
+	mi := &file_messages_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DbHeaderTips.ProtoReflect.Descriptor instead.
+func (*DbHeaderTips) Descriptor() ([]byte, []int) {
+	return file_messages_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *DbHeaderTips) GetTips() []*DbHash {
+	if x != nil {
+		return x.Tips
 	}
 	return nil
 }
@@ -1700,14 +1747,18 @@ var file_messages_proto_rawDesc = []byte{
 	0x08, 0x74, 0x6f, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x23, 0x2e, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
 	0x44, 0x62, 0x55, 0x74, 0x78, 0x6f, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x49, 0x74, 0x65, 0x6d, 0x52, 0x08, 0x74, 0x6f, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x22, 0x30,
-	0x0a, 0x18, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x55, 0x54,
-	0x58, 0x4f, 0x53, 0x65, 0x74, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x62, 0x79,
-	0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x62, 0x79, 0x74, 0x65, 0x73,
-	0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b,
-	0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x73,
-	0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x49, 0x74, 0x65, 0x6d, 0x52, 0x08, 0x74, 0x6f, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x22, 0x32,
+	0x0a, 0x1a, 0x44, 0x62, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74,
+	0x55, 0x54, 0x58, 0x4f, 0x53, 0x65, 0x74, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x14, 0x0a, 0x05,
+	0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x62, 0x79, 0x74,
+	0x65, 0x73, 0x22, 0x39, 0x0a, 0x0c, 0x44, 0x62, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x54, 0x69,
+	0x70, 0x73, 0x12, 0x29, 0x0a, 0x04, 0x74, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x15, 0x2e, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x44, 0x62, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x74, 0x69, 0x70, 0x73, 0x42, 0x2a, 0x5a,
+	0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70,
+	0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x69,
+	0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -1722,7 +1773,7 @@ func file_messages_proto_rawDescGZIP() []byte {
 	return file_messages_proto_rawDescData
 }
 
-var file_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_messages_proto_goTypes = []interface{}{
 	(*DbBlock)(nil),                     // 0: serialization.DbBlock
 	(*DbBlockHeader)(nil),               // 1: serialization.DbBlockHeader
@@ -1748,7 +1799,8 @@ var file_messages_proto_goTypes = []interface{}{
 	(*DbReachabilityTreeNode)(nil),      // 21: serialization.DbReachabilityTreeNode
 	(*DbReachabilityInterval)(nil),      // 22: serialization.DbReachabilityInterval
 	(*DbUtxoDiff)(nil),                  // 23: serialization.DbUtxoDiff
-	(*PruningPointUTXOSetBytes)(nil),    // 24: serialization.PruningPointUTXOSetBytes
+	(*DbPruningPointUTXOSetBytes)(nil),  // 24: serialization.DbPruningPointUTXOSetBytes
+	(*DbHeaderTips)(nil),                // 25: serialization.DbHeaderTips
 }
 var file_messages_proto_depIdxs = []int32{
 	1,  // 0: serialization.DbBlock.header:type_name -> serialization.DbBlockHeader
@@ -1783,11 +1835,12 @@ var file_messages_proto_depIdxs = []int32{
 	22, // 29: serialization.DbReachabilityTreeNode.interval:type_name -> serialization.DbReachabilityInterval
 	18, // 30: serialization.DbUtxoDiff.toAdd:type_name -> serialization.DbUtxoCollectionItem
 	18, // 31: serialization.DbUtxoDiff.toRemove:type_name -> serialization.DbUtxoCollectionItem
-	32, // [32:32] is the sub-list for method output_type
-	32, // [32:32] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	2,  // 32: serialization.DbHeaderTips.tips:type_name -> serialization.DbHash
+	33, // [33:33] is the sub-list for method output_type
+	33, // [33:33] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_messages_proto_init() }
@@ -2085,7 +2138,19 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PruningPointUTXOSetBytes); i {
+			switch v := v.(*DbPruningPointUTXOSetBytes); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_messages_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DbHeaderTips); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2103,7 +2168,7 @@ func file_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_messages_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -26,9 +26,16 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.ghostdagManager.GHOSTDAG(blockHash)
+	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
+	}
+
+	if status != externalapi.StatusHeaderOnly {
+		err = v.ghostdagManager.GHOSTDAG(blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = v.checkMergeSizeLimit(blockHash)

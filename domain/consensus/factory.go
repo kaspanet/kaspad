@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headertipsstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
@@ -23,6 +24,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/headertipsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
@@ -54,6 +56,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	utxoDiffStore := utxodiffstore.New()
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
+	headerTipsStore := headertipsstore.New()
 
 	dbManager := consensusdatabase.New(db)
 
@@ -97,6 +100,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	coinbaseManager := coinbasemanager.New(
 		ghostdagDataStore,
 		acceptanceDataStore)
+	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
@@ -124,6 +128,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStore,
 		ghostdagDataStore,
 		blockHeaderStore,
+		blockStatusStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
@@ -162,6 +167,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pastMedianTimeManager,
 		ghostdagManager,
 		coinbaseManager,
+		headerTipsManager,
+
 		acceptanceDataStore,
 		blockStore,
 		blockStatusStore,
@@ -172,7 +179,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pruningStore,
 		reachabilityDataStore,
 		utxoDiffStore,
-		blockHeaderStore)
+		blockHeaderStore,
+		headerTipsStore)
 
 	syncManager := syncmanager.New(dagTraversalManager)
 
