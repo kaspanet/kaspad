@@ -20,7 +20,7 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-) model.ReachabilityTree {
+) model.ReachabilityManager {
 	return &reachabilityManager{
 		databaseContext:       databaseContext,
 		ghostdagDataStore:     ghostdagDataStore,

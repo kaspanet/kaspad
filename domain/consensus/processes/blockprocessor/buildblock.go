@@ -1,16 +1,17 @@
 package blockprocessor
 
 import (
+	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"sort"
 )
-
-const blockVersion = 1
 
 func (bp *blockProcessor) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
@@ -41,19 +42,19 @@ func (bp *blockProcessor) newBlockCoinbaseTransaction(
 }
 
 func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
-	virtualData, err := bp.consensusStateManager.VirtualData()
+	parentHashes, err := bp.newBlockParentHashes()
 	if err != nil {
 		return nil, err
 	}
-	parentHashes, err := bp.newBlockParentHashes(virtualData)
+	virtualGHOSTDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bp.newBlockTime(virtualData)
+	timeInMilliseconds, err := bp.newBlockTime(virtualGHOSTDAGData)
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bp.newBlockDifficulty(virtualData)
+	bits, err := bp.newBlockDifficulty(virtualGHOSTDAGData)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +69,7 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	}
 
 	return &externalapi.DomainBlockHeader{
-		Version:              blockVersion,
+		Version:              constants.BlockVersion,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       *hashMerkleRoot,
 		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
@@ -78,11 +79,16 @@ func (bp *blockProcessor) buildHeader(transactions []*externalapi.DomainTransact
 	}, nil
 }
 
-func (bp *blockProcessor) newBlockParentHashes(virtualData *model.VirtualData) ([]*externalapi.DomainHash, error) {
-	return virtualData.ParentHashes, nil
+func (bp *blockProcessor) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
+	virtualBlockRelations, err := bp.blockRelationStore.BlockRelation(bp.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return virtualBlockRelations.Parents, nil
 }
 
-func (bp *blockProcessor) newBlockTime(virtualData *model.VirtualData) (int64, error) {
+func (bp *blockProcessor) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (int64, error) {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
@@ -90,7 +96,7 @@ func (bp *blockProcessor) newBlockTime(virtualData *model.VirtualData) (int64, e
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
 	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bp.pastMedianTimeManager.PastMedianTime(virtualData.SelectedParent)
+	minTimestamp, err := bp.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return 0, err
 	}
@@ -100,8 +106,12 @@ func (bp *blockProcessor) newBlockTime(virtualData *model.VirtualData) (int64, e
 	return newTimestamp, nil
 }
 
-func (bp *blockProcessor) newBlockDifficulty(virtualData *model.VirtualData) (uint32, error) {
-	return bp.difficultyManager.RequiredDifficulty(virtualData.SelectedParent)
+func (bp *blockProcessor) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (uint32, error) {
+	virtualGHOSTDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return 0, err
+	}
+	return bp.difficultyManager.RequiredDifficulty(virtualGHOSTDAGData.SelectedParent)
 }
 
 func (bp *blockProcessor) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {

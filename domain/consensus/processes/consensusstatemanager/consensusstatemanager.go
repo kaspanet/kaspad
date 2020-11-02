@@ -11,9 +11,16 @@ type consensusStateManager struct {
 	dagParams       *dagconfig.Params
 	databaseContext model.DBReader
 
-	ghostdagManager    model.GHOSTDAGManager
-	dagTopologyManager model.DAGTopologyManager
-	pruningManager     model.PruningManager
+	ghostdagManager       model.GHOSTDAGManager
+	dagTopologyManager    model.DAGTopologyManager
+	dagTraversalManager   model.DAGTraversalManager
+	pruningManager        model.PruningManager
+	pastMedianTimeManager model.PastMedianTimeManager
+	transactionValidator  model.TransactionValidator
+	blockValidator        model.BlockValidator
+	reachabilityManager   model.ReachabilityManager
+	coinbaseManager       model.CoinbaseManager
+	mergeDepthManager     model.MergeDepthManager
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -32,7 +39,14 @@ func New(
 	dagParams *dagconfig.Params,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
+	dagTraversalManager model.DAGTraversalManager,
 	pruningManager model.PruningManager,
+	pastMedianTimeManager model.PastMedianTimeManager,
+	transactionValidator model.TransactionValidator,
+	blockValidator model.BlockValidator,
+	reachabilityManager model.ReachabilityManager,
+	coinbaseManager model.CoinbaseManager,
+	mergeDepthManager model.MergeDepthManager,
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -41,15 +55,22 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
-	blockHeaderStore model.BlockHeaderStore) model.ConsensusStateManager {
+	blockHeaderStore model.BlockHeaderStore) (model.ConsensusStateManager, error) {
 
-	return &consensusStateManager{
+	csm := &consensusStateManager{
 		dagParams:       dagParams,
 		databaseContext: databaseContext,
 
-		ghostdagManager:    ghostdagManager,
-		dagTopologyManager: dagTopologyManager,
-		pruningManager:     pruningManager,
+		ghostdagManager:       ghostdagManager,
+		dagTopologyManager:    dagTopologyManager,
+		dagTraversalManager:   dagTraversalManager,
+		pruningManager:        pruningManager,
+		pastMedianTimeManager: pastMedianTimeManager,
+		transactionValidator:  transactionValidator,
+		blockValidator:        blockValidator,
+		reachabilityManager:   reachabilityManager,
+		coinbaseManager:       coinbaseManager,
+		mergeDepthManager:     mergeDepthManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,
@@ -61,23 +82,8 @@ func New(
 		acceptanceDataStore: acceptanceDataStore,
 		blockHeaderStore:    blockHeaderStore,
 	}
-}
 
-// AddBlockToVirtual submits the given block to be added to the
-// current virtual. This process may result in a new virtual block
-// getting created
-func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
-	return nil
-}
-
-// VirtualData returns data on the current virtual block
-func (csm *consensusStateManager) VirtualData() (virtualData *model.VirtualData, err error) {
-	panic("implement me")
-}
-
-// PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual.
-func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
-	panic("implement me")
+	return csm, nil
 }
 
 func (csm *consensusStateManager) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {

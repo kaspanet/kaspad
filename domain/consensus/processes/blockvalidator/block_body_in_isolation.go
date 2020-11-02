@@ -3,6 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
@@ -208,9 +209,9 @@ func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
 		sizeBefore := size
 		size += estimatedsize.TransactionEstimatedSerializedSize(tx)
-		const maxBlockSize = 1_000_000
-		if size > maxBlockSize || size < sizeBefore {
-			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d", maxBlockSize)
+		if size > constants.MaxBlockSize || size < sizeBefore {
+			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d",
+				constants.MaxBlockSize)
 		}
 	}
 

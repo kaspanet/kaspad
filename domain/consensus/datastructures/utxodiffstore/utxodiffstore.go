@@ -123,6 +123,15 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 	return utxoDiffChild, nil
 }
 
+// HasUTXODiffChild returns true if the given blockHash has a UTXODiffChild
+func (uds *utxoDiffStore) HasUTXODiffChild(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+	if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
+		return true, nil
+	}
+
+	return dbContext.Has(uds.utxoDiffChildHashAsKey(blockHash))
+}
+
 // Delete deletes the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) Delete(blockHash *externalapi.DomainHash) {
 	if uds.IsBlockHashStaged(blockHash) {

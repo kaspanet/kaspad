@@ -31,6 +31,7 @@ type consensus struct {
 	consensusStateManager model.ConsensusStateManager
 	transactionValidator  model.TransactionValidator
 	syncManager           model.SyncManager
+	pastMedianTimeManager model.PastMedianTimeManager
 
 	blockStore        model.BlockStore
 	blockHeaderStore  model.BlockHeaderStore
@@ -66,17 +67,17 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
+	if err != nil {
+		return err
+	}
+
 	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
-		validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash(),
-		validateTransactionInContextAndPopulateMassAndFeeSelectedParentMedianTime())
-}
-
-func validateTransactionInContextAndPopulateMassAndFeeSelectedParentMedianTime() int64 {
-	panic("unimplemented")
-}
-
-func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *externalapi.DomainHash {
-	panic("unimplemented")
+		model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
