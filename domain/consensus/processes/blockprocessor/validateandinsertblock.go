@@ -42,6 +42,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		}
 	}
 
+	if headerOnly {
+		bp.blockStatusStore.Stage(hash, model.StatusHeaderOnly)
+	} else {
+		bp.blockStatusStore.Stage(hash, model.StatusUTXOPendingVerification)
+	}
+
 	// Block validations passed, save whatever DAG data was
 	// collected so far
 	err = bp.commitAllChanges()
