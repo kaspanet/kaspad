@@ -32,6 +32,7 @@ func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOut
 	return w.Bytes(), nil
 }
 
+// SerializeOutpoint encodes an outpoint into a byte-slice
 func SerializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
 
@@ -59,6 +60,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 	return nil
 }
 
+// SerializeUTXOEntry encodes e UTXOEntry into a byte-slice
 func SerializeUTXOEntry(entry *externalapi.UTXOEntry) ([]byte, error) {
 	w := &bytes.Buffer{}
 
@@ -110,6 +112,7 @@ func serializeUTXOEntryFlags(entry *externalapi.UTXOEntry) uint8 {
 	return serializedFlags
 }
 
+// DeserializeUTXOEntry decode a UTXOEntry from a byte-slice representation
 func DeserializeUTXOEntry(utxoEntryBytes []byte) (*externalapi.UTXOEntry, error) {
 	entry := &externalapi.UTXOEntry{}
 

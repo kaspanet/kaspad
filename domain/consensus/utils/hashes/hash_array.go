@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DeserializeHashSlice decodes an array of DomainHashes from byte-slice representation
 func DeserializeHashSlice(hashesBytes []byte) ([]*externalapi.DomainHash, error) {
 	if len(hashesBytes)%externalapi.DomainHashSize != 0 {
 		return nil, errors.Errorf("serialized hashes length is %d bytes, while it should be a multiple of %d",
@@ -28,6 +29,7 @@ func DeserializeHashSlice(hashesBytes []byte) ([]*externalapi.DomainHash, error)
 	return hashes, nil
 }
 
+// SerializeHashSlice encodes a slice of DomainHashes into a byte slice
 func SerializeHashSlice(hashes []*externalapi.DomainHash) []byte {
 	hashesBytes := make([][]byte, 0, len(hashes))
 
