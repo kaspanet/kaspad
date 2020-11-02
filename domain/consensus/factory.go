@@ -167,6 +167,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore:  blockHeaderStore,
 		pruningStore:      pruningStore,
 		ghostdagDataStore: ghostdagDataStore,
+		blockStatusStore:  blockStatusStore,
 	}
 }
 

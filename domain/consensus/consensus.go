@@ -34,6 +34,7 @@ type consensus struct {
 	blockHeaderStore  model.BlockHeaderStore
 	pruningStore      model.PruningStore
 	ghostdagDataStore model.GHOSTDAGDataStore
+	blockStatusStore  model.BlockStatusStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -76,6 +77,10 @@ func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *extern
 	panic("unimplemented")
 }
 
+func isHeaderInPruningPointFutureAndVirtualPast() bool {
+	panic("unimplemented")
+}
+
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	return s.blockStore.Block(s.databaseContext, blockHash)
 }
@@ -85,7 +90,26 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*external
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
-	panic("implement me")
+	blockInfo := &externalapi.BlockInfo{}
+
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	blockInfo.Exists = exists
+	if !exists {
+		return blockInfo, nil
+	}
+
+	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	blockInfo.BlockStatus = &blockStatus
+
+	blockInfo.IsHeaderInPruningPointFutureAndVirtualPast = isHeaderInPruningPointFutureAndVirtualPast()
+
+	return blockInfo, nil
 }
 
 func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
