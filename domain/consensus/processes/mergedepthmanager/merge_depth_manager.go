@@ -17,6 +17,7 @@ type mergeDepthManager struct {
 	ghostdagDataStore model.GHOSTDAGDataStore
 }
 
+// New instantiates a new MergeDepthManager
 func New(finalityDepth uint64,
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
