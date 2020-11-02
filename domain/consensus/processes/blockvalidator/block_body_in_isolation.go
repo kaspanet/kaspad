@@ -79,7 +79,12 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 }
 
 func (v *blockValidator) checkCoinbase(block *externalapi.DomainBlock) error {
-	return v.coinbaseManager.ValidateCoinbaseTransactionInIsolation(block.Transactions[0])
+	_, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.
+		Transactions[transactionhelper.CoinbaseTransactionIndex])
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (v *blockValidator) checkBlockContainsAtLeastOneTransaction(block *externalapi.DomainBlock) error {

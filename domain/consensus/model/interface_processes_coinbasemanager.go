@@ -7,6 +7,6 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type CoinbaseManager interface {
 	ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
 		coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error)
-	ValidateCoinbaseTransactionInContext(blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction) error
-	ValidateCoinbaseTransactionInIsolation(coinbaseTransaction *externalapi.DomainTransaction) error
+	ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
+		coinbaseData *externalapi.DomainCoinbaseData, err error)
 }

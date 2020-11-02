@@ -16,6 +16,11 @@ const scriptPubKeyLengthLength = 1
 // serializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
 	scriptPubKeyLength := len(coinbaseData.ScriptPublicKey)
+	if scriptPubKeyLength > scriptPublicKeyMaxLength {
+		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
+			"longer than the max allowed length of %d", scriptPublicKeyMaxLength)
+	}
+
 	payload := make([]byte, uint64Len+scriptPubKeyLengthLength+scriptPubKeyLength+len(coinbaseData.ExtraData))
 	byteOrder.PutUint64(payload[:uint64Len], blueScore)
 	if len(coinbaseData.ScriptPublicKey) > math.MaxUint8 {
@@ -27,8 +32,8 @@ func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData
 	return payload, nil
 }
 
-// deserializeCoinbasePayload deserializes the coinbase payload to its component (scriptPubKey and extra data).
-func (c coinbaseManager) deserializeCoinbasePayload(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
+// ExtractCoinbaseDataAndBlueScore deserializes the coinbase payload to its component (scriptPubKey and extra data).
+func (c coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
 	coinbaseData *externalapi.DomainCoinbaseData, err error) {
 
 	minLength := uint64Len + scriptPubKeyLengthLength
@@ -39,6 +44,12 @@ func (c coinbaseManager) deserializeCoinbasePayload(coinbaseTx *externalapi.Doma
 
 	blueScore = byteOrder.Uint64(coinbaseTx.Payload[:uint64Len])
 	scriptPubKeyLength := coinbaseTx.Payload[uint64Len]
+
+	if scriptPubKeyLength > scriptPublicKeyMaxLength {
+		return 0, nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
+			"longer than the max allowed length of %d", scriptPublicKeyMaxLength)
+	}
+
 	if len(coinbaseTx.Payload) < minLength+int(scriptPubKeyLength) {
 		return 0, nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen,
 			"coinbase payload doesn't have enough bytes to contain a script public key of %d bytes", scriptPubKeyLength)

@@ -22,7 +22,7 @@ type coinbaseManager struct {
 
 func (c coinbaseManager) ValidateCoinbaseTransactionInContext(blockHash *externalapi.DomainHash,
 	coinbaseTransaction *externalapi.DomainTransaction) error {
-	_, coinbaseData, err := c.deserializeCoinbasePayload(coinbaseTransaction)
+	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
 	if err != nil {
 		return err
 	}
@@ -41,36 +41,8 @@ func (c coinbaseManager) ValidateCoinbaseTransactionInContext(blockHash *externa
 	return nil
 }
 
-func (c coinbaseManager) ValidateCoinbaseTransactionInIsolation(coinbaseTransaction *externalapi.DomainTransaction) error {
-	_, coinbaseData, err := c.deserializeCoinbasePayload(coinbaseTransaction)
-	if err != nil {
-		return err
-	}
-
-	err = c.checkScriptPublicKey(coinbaseData.ScriptPublicKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c coinbaseManager) checkScriptPublicKey(scriptPublicKey []byte) error {
-	if len(scriptPublicKey) > scriptPublicKeyMaxLength {
-		return errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
-			"longer than the max allowed length of %d", scriptPublicKeyMaxLength)
-	}
-
-	return nil
-}
-
 func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
-
-	err := c.checkScriptPublicKey(coinbaseData.ScriptPublicKey)
-	if err != nil {
-		return nil, err
-	}
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
 	if err != nil {
@@ -140,7 +112,7 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 	}
 
 	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
-	_, coinbaseData, err := c.deserializeCoinbasePayload(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
+	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err
 	}
