@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 	"math"
 )
@@ -16,9 +17,9 @@ const scriptPubKeyLengthLength = 1
 // serializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
 	scriptPubKeyLength := len(coinbaseData.ScriptPublicKey)
-	if scriptPubKeyLength > scriptPublicKeyMaxLength {
+	if scriptPubKeyLength > constants.CoinbasePayloadScriptPublicKeyMaxLength {
 		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
-			"longer than the max allowed length of %d", scriptPublicKeyMaxLength)
+			"longer than the max allowed length of %d", constants.CoinbasePayloadScriptPublicKeyMaxLength)
 	}
 
 	payload := make([]byte, uint64Len+scriptPubKeyLengthLength+scriptPubKeyLength+len(coinbaseData.ExtraData))
@@ -45,9 +46,9 @@ func (c coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi
 	blueScore = byteOrder.Uint64(coinbaseTx.Payload[:uint64Len])
 	scriptPubKeyLength := coinbaseTx.Payload[uint64Len]
 
-	if scriptPubKeyLength > scriptPublicKeyMaxLength {
+	if scriptPubKeyLength > constants.CoinbasePayloadScriptPublicKeyMaxLength {
 		return 0, nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
-			"longer than the max allowed length of %d", scriptPublicKeyMaxLength)
+			"longer than the max allowed length of %d", constants.CoinbasePayloadScriptPublicKeyMaxLength)
 	}
 
 	if len(coinbaseTx.Payload) < minLength+int(scriptPubKeyLength) {

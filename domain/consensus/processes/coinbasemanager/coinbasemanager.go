@@ -8,8 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
 
-const scriptPublicKeyMaxLength = 150
-
 type coinbaseManager struct {
 	subsidyReductionInterval uint64
 

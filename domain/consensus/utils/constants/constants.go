@@ -43,4 +43,7 @@ const (
 
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy = 50 * SompiPerKaspa
+
+	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
+	CoinbasePayloadScriptPublicKeyMaxLength = 150
 )
