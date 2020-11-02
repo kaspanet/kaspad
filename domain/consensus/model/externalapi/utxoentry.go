@@ -10,3 +10,13 @@ type UTXOEntry struct {
 	BlockBlueScore  uint64 // Blue score of the block accepting the tx.
 	IsCoinbase      bool
 }
+
+// NewUTXOEntry creates a new utxoEntry representing the given txOut
+func NewUTXOEntry(amount uint64, scriptPubKey []byte, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
+	return &UTXOEntry{
+		Amount:          amount,
+		ScriptPublicKey: scriptPubKey,
+		BlockBlueScore:  blockBlueScore,
+		IsCoinbase:      isCoinbase,
+	}
+}

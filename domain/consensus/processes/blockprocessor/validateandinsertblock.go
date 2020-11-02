@@ -1,7 +1,6 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -31,7 +30,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	if !hasHeader {
-		err = bp.reachabilityTree.AddBlock(hash)
+		err = bp.reachabilityManager.AddBlock(hash)
 		if err != nil {
 			return err
 		}
@@ -43,9 +42,9 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	if headerOnly {
-		bp.blockStatusStore.Stage(hash, model.StatusHeaderOnly)
+		bp.blockStatusStore.Stage(hash, externalapi.StatusHeaderOnly)
 	} else {
-		bp.blockStatusStore.Stage(hash, model.StatusUTXOPendingVerification)
+		bp.blockStatusStore.Stage(hash, externalapi.StatusUTXOPendingVerification)
 	}
 
 	// Block validations passed, save whatever DAG data was
@@ -83,11 +82,11 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, headerO
 		return err
 	}
 
-	if status == model.StatusInvalid {
+	if status == externalapi.StatusInvalid {
 		return errors.Wrapf(ruleerrors.ErrKnownInvalid, "block %s is a known invalid block", hash)
 	}
 
-	if headerOnly || status != model.StatusHeaderOnly {
+	if headerOnly || status != externalapi.StatusHeaderOnly {
 		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 	}
 
@@ -116,7 +115,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, headerOn
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
 			hash := hashserialization.HeaderHash(block.Header)
-			bp.blockStatusStore.Stage(hash, model.StatusInvalid)
+			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
 			commitErr := bp.commitAllChanges()
 			if commitErr != nil {
 				return commitErr
@@ -164,6 +163,11 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 
 	if !hasHeader {
 		bp.blockHeaderStore.Stage(blockHash, block.Header)
+
+		err := bp.dagTopologyManager.SetParents(blockHash, block.Header.ParentHashes)
+		if err != nil {
+			return err
+		}
 		err = bp.blockValidator.ValidateHeaderInContext(blockHash)
 		if err != nil {
 			return err
@@ -188,7 +192,7 @@ func (bp *blockProcessor) hasHeader(blockHash *externalapi.DomainHash) (bool, er
 		return false, err
 	}
 
-	return status == model.StatusHeaderOnly, nil
+	return status == externalapi.StatusHeaderOnly, nil
 }
 
 func (bp *blockProcessor) discardAllChanges() {

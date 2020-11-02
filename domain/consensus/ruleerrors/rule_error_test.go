@@ -2,13 +2,14 @@ package ruleerrors
 
 import (
 	"errors"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 func TestNewErrMissingTxOut(t *testing.T) {
 	outer := NewErrMissingTxOut([]externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
-	expectedOuterErr := "ErrMissingTxOut: [ffffff0000000000000000000000000000000000000000000000000000000000:5]"
+	expectedOuterErr := "ErrMissingTxOut: [(0000000000000000000000000000000000000000000000000000000000ffffff: 5)]"
 	inner := &ErrMissingTxOut{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestWrapInRuleError: Outer should contain ErrMissingTxOut in it")
@@ -40,7 +41,7 @@ func TestNewErrMissingTxOut(t *testing.T) {
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(d328800c7f3ccafe648d3eb43b47eb416f48103f1cd81ddd7a0c41431e4e463a: ErrNoTxInputs)]"
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(3a464e1e43410c7add1dd81c3f10486f41eb473bb43e8d64feca3c7f0c8028d3: ErrNoTxInputs)]"
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")

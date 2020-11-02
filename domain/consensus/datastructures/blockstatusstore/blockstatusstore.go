@@ -12,18 +12,18 @@ var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
-	staging map[externalapi.DomainHash]model.BlockStatus
+	staging map[externalapi.DomainHash]externalapi.BlockStatus
 }
 
 // New instantiates a new BlockStatusStore
 func New() model.BlockStatusStore {
 	return &blockStatusStore{
-		staging: make(map[externalapi.DomainHash]model.BlockStatus),
+		staging: make(map[externalapi.DomainHash]externalapi.BlockStatus),
 	}
 }
 
 // Stage stages the given blockStatus for the given blockHash
-func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus model.BlockStatus) {
+func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus externalapi.BlockStatus) {
 	bss.staging[*blockHash] = blockStatus
 }
 
@@ -32,7 +32,7 @@ func (bss *blockStatusStore) IsStaged() bool {
 }
 
 func (bss *blockStatusStore) Discard() {
-	bss.staging = make(map[externalapi.DomainHash]model.BlockStatus)
+	bss.staging = make(map[externalapi.DomainHash]externalapi.BlockStatus)
 }
 
 func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
@@ -52,7 +52,7 @@ func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	if status, ok := bss.staging[*blockHash]; ok {
 		return status, nil
 	}
@@ -79,12 +79,12 @@ func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externa
 	return exists, nil
 }
 
-func (bss *blockStatusStore) serializeBlockStatus(status model.BlockStatus) ([]byte, error) {
+func (bss *blockStatusStore) serializeBlockStatus(status externalapi.BlockStatus) ([]byte, error) {
 	dbBlockStatus := serialization.DomainBlockStatusToDbBlockStatus(status)
 	return proto.Marshal(dbBlockStatus)
 }
 
-func (bss *blockStatusStore) deserializeHeader(statusBytes []byte) (model.BlockStatus, error) {
+func (bss *blockStatusStore) deserializeHeader(statusBytes []byte) (externalapi.BlockStatus, error) {
 	dbBlockStatus := &serialization.DbBlockStatus{}
 	err := proto.Unmarshal(statusBytes, dbBlockStatus)
 	if err != nil {

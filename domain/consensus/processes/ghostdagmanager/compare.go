@@ -1,6 +1,7 @@
 package ghostdagmanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
@@ -43,16 +44,21 @@ func (gm *ghostdagManager) ChooseSelectedParent(blockHashA *externalapi.DomainHa
 		return nil, err
 	}
 
-	blockABlueScore := blockAGHOSTDAGData.BlueScore
-	blockBBlueScore := blockBGHOSTDAGData.BlueScore
-	if blockABlueScore == blockBBlueScore {
-		if hashes.Less(blockHashA, blockHashB) {
-			return blockHashB, nil
-		}
-		return blockHashA, nil
-	}
-	if blockABlueScore < blockBBlueScore {
+	if gm.Less(blockHashA, blockAGHOSTDAGData, blockHashB, blockBGHOSTDAGData) {
 		return blockHashB, nil
 	}
+
 	return blockHashA, nil
+}
+
+func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData,
+	blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+
+	blockBlueScoreA := ghostdagDataA.BlueScore
+	blockBlueScoreB := ghostdagDataB.BlueScore
+	if blockBlueScoreA == blockBlueScoreB {
+		return hashes.Less(blockHashA, blockHashB)
+	}
+
+	return blockBlueScoreA < blockBlueScoreB
 }

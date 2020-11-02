@@ -17,7 +17,7 @@ type blockProcessor struct {
 	pruningManager        model.PruningManager
 	blockValidator        model.BlockValidator
 	dagTopologyManager    model.DAGTopologyManager
-	reachabilityTree      model.ReachabilityTree
+	reachabilityManager   model.ReachabilityManager
 	difficultyManager     model.DifficultyManager
 	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -48,7 +48,7 @@ func New(
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,
 	dagTopologyManager model.DAGTopologyManager,
-	reachabilityTree model.ReachabilityTree,
+	reachabilityManager model.ReachabilityManager,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagManager model.GHOSTDAGManager,
@@ -74,7 +74,7 @@ func New(
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,
 		dagTopologyManager:    dagTopologyManager,
-		reachabilityTree:      reachabilityTree,
+		reachabilityManager:   reachabilityManager,
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		ghostdagManager:       ghostdagManager,
