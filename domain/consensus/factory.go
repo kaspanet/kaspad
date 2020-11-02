@@ -98,6 +98,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	coinbaseManager := coinbasemanager.New(
+		dbManager,
 		ghostdagDataStore,
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
@@ -123,6 +124,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		coinbaseManager,
 		mergeDepthManager,
 
 		blockStore,
