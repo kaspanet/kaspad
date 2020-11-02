@@ -18,6 +18,7 @@ type Consensus interface {
 	GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetHashesAbovePruningPoint(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetPruningPointUTXOSet() ([]byte, error)
+	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error)
@@ -90,6 +91,10 @@ func (s *consensus) GetHashesAbovePruningPoint(highHash *externalapi.DomainHash)
 }
 
 func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
+	panic("implement me")
+}
+
+func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
 	panic("implement me")
 }
 
