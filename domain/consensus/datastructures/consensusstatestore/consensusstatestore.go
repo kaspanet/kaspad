@@ -53,3 +53,7 @@ func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.Doma
 func (c consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) error {
 	panic("implement me")
 }
+
+func (c consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
+	panic("implement me")
+}
