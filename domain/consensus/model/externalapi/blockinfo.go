@@ -1,10 +1,9 @@
 package externalapi
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
-
+// BlockInfo contains various information about a specific block
 type BlockInfo struct {
 	Exists      bool
-	BlockStatus *model.BlockStatus
+	BlockStatus *BlockStatus
 
 	IsHeaderInPruningPointFutureAndVirtualPast bool
 }
