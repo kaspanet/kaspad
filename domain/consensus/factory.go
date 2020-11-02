@@ -157,9 +157,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore)
 
 	return &consensus{
-		consensusStateManager: consensusStateManager,
+		databaseContext: dbManager,
+
 		blockProcessor:        blockProcessor,
+		consensusStateManager: consensusStateManager,
 		transactionValidator:  transactionValidator,
+
+		blockStore:       blockStore,
+		blockHeaderStore: blockHeaderStore,
 	}
 }
 

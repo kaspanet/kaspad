@@ -24,9 +24,14 @@ type Consensus interface {
 }
 
 type consensus struct {
+	databaseContext model.DBReader
+
 	blockProcessor        model.BlockProcessor
 	consensusStateManager model.ConsensusStateManager
 	transactionValidator  model.TransactionValidator
+
+	blockStore       model.BlockStore
+	blockHeaderStore model.BlockHeaderStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -70,11 +75,11 @@ func validateTransactionInContextAndPopulateMassAndFeeVirtualBlockHash() *extern
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	panic("implement me")
+	return s.blockStore.Block(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
-	panic("implement me")
+	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
