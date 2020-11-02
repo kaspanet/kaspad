@@ -30,9 +30,10 @@ type consensus struct {
 	consensusStateManager model.ConsensusStateManager
 	transactionValidator  model.TransactionValidator
 
-	blockStore       model.BlockStore
-	blockHeaderStore model.BlockHeaderStore
-	pruningStore     model.PruningStore
+	blockStore        model.BlockStore
+	blockHeaderStore  model.BlockHeaderStore
+	pruningStore      model.PruningStore
+	ghostdagDataStore model.GHOSTDAGDataStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -100,7 +101,11 @@ func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
 }
 
 func (s *consensus) GetSelectedParent() (*externalapi.DomainBlock, error) {
-	panic("implement me")
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetBlock(virtualGHOSTDAGData.SelectedParent)
 }
 
 func (s *consensus) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
