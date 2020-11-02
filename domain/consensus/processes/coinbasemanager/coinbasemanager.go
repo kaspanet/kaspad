@@ -3,11 +3,8 @@ package coinbasemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-	"github.com/pkg/errors"
 )
 
 const scriptPublicKeyMaxLength = 150
@@ -18,27 +15,6 @@ type coinbaseManager struct {
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
-}
-
-func (c coinbaseManager) ValidateCoinbaseTransactionInContext(blockHash *externalapi.DomainHash,
-	coinbaseTransaction *externalapi.DomainTransaction) error {
-	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
-	if err != nil {
-		return err
-	}
-
-	expectedCoinbaseTransaction, err := c.ExpectedCoinbaseTransaction(blockHash, coinbaseData)
-	if err != nil {
-		return err
-	}
-
-	coinbaseTransactionHash := hashserialization.TransactionHash(coinbaseTransaction)
-	expectedCoinbaseTransactionHash := hashserialization.TransactionHash(expectedCoinbaseTransaction)
-	if *coinbaseTransactionHash != *expectedCoinbaseTransactionHash {
-		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
-	}
-
-	return nil
 }
 
 func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
