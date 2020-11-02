@@ -27,6 +27,7 @@ type blockValidator struct {
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
+	coinbaseManager       model.CoinbaseManager
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -50,6 +51,7 @@ func New(powMax *big.Int,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
+	coinbaseManager model.CoinbaseManager,
 
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -72,8 +74,10 @@ func New(powMax *big.Int,
 		ghostdagManager:                ghostdagManager,
 		dagTopologyManager:             dagTopologyManager,
 		dagTraversalManager:            dagTraversalManager,
-		blockStore:                     blockStore,
-		ghostdagDataStore:              ghostdagDataStore,
-		blockHeaderStore:               blockHeaderStore,
+		coinbaseManager:                coinbaseManager,
+
+		blockStore:        blockStore,
+		ghostdagDataStore: ghostdagDataStore,
+		blockHeaderStore:  blockHeaderStore,
 	}
 }
