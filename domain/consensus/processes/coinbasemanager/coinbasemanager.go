@@ -3,6 +3,7 @@ package coinbasemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
@@ -48,12 +49,9 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 	}
 
 	payloadHash := hashes.HashData(payload)
-	getTxVersion := func() int32 {
-		panic("unimplemented")
-	}
 
 	return &externalapi.DomainTransaction{
-		Version:      getTxVersion(),
+		Version:      constants.TransactionVersion,
 		Inputs:       []*externalapi.DomainTransactionInput{},
 		Outputs:      txOuts,
 		LockTime:     0,
@@ -112,9 +110,8 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
 func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
-	const baseSubsidy = 5_000_000_000
 	if c.subsidyReductionInterval == 0 {
-		return baseSubsidy, nil
+		return constants.BaseSubsidy, nil
 	}
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
@@ -123,7 +120,7 @@ func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (ui
 	}
 
 	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
-	return baseSubsidy >> uint(ghostdagData.BlueScore/c.subsidyReductionInterval), nil
+	return constants.BaseSubsidy >> uint(ghostdagData.BlueScore/c.subsidyReductionInterval), nil
 }
 
 // New instantiates a new CoinbaseManager

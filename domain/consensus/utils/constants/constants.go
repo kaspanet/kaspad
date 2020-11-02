@@ -5,6 +5,9 @@ const (
 	// this node is able to validate
 	BlockVersion = 1
 
+	// TransactionVersion is the current latest supported transaction version.
+	TransactionVersion = 1
+
 	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).
 	SompiPerKaspa = 100_000_000
 
@@ -37,4 +40,7 @@ const (
 
 	// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
 	MaxMassAcceptedByBlock = 10000000
+
+	// BaseSubsidy is the starting subsidy amount for mined blocks.
+	BaseSubsidy = 50 * SompiPerKaspa
 )
