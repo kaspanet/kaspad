@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	// get list of all blocks in the selected parent chain that have not yet resolved their status
 	unverifiedBlocks, selectedParentStatus, err := csm.getUnverifiedChainBlocksAndSelectedParentStatus(blockHash)
 	if err != nil {
@@ -19,9 +19,9 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	for i := len(unverifiedBlocks); i >= 0; i++ {
 		unverifiedBlockHash := unverifiedBlocks[i]
 
-		var blockStatus model.BlockStatus
-		if selectedParentStatus == model.StatusDisqualifiedFromChain {
-			blockStatus = model.StatusDisqualifiedFromChain
+		var blockStatus externalapi.BlockStatus
+		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
+			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
 			blockStatus, err = csm.resolveSingleBlockStatus(unverifiedBlockHash)
 			if err != nil {
@@ -37,7 +37,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatus(blockHash *externalapi.DomainHash) (
-	[]*externalapi.DomainHash, model.BlockStatus, error) {
+	[]*externalapi.DomainHash, externalapi.BlockStatus, error) {
 
 	unverifiedBlocks := []*externalapi.DomainHash{blockHash}
 	currentHash := blockHash
@@ -52,7 +52,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatu
 			return nil, 0, err
 		}
 
-		if selectedParentStatus != model.StatusUTXOPendingVerification {
+		if selectedParentStatus != externalapi.StatusUTXOPendingVerification {
 			return unverifiedBlocks, selectedParentStatus, nil
 		}
 
@@ -62,7 +62,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatu
 	}
 }
 
-func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (model.BlockStatus, error) {
+func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	pastUTXODiff, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceData(blockHash)
 	if err != nil {
 		return 0, err
@@ -78,7 +78,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	err = csm.verifyAndBuildUTXO(block, blockHash, pastUTXODiff, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			return model.StatusDisqualifiedFromChain, nil
+			return externalapi.StatusDisqualifiedFromChain, nil
 		}
 		return 0, err
 	}
@@ -91,7 +91,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	return model.StatusValid, nil
+	return externalapi.StatusValid, nil
 }
 func (csm *consensusStateManager) updateParentDiffs(
 	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {

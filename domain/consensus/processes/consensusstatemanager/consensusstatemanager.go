@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -80,4 +81,8 @@ func New(
 	}
 
 	return csm, nil
+}
+
+func (csm *consensusStateManager) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	panic("implement me")
 }

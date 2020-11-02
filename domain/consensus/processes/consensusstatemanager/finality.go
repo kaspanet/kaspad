@@ -14,7 +14,7 @@ func (csm *consensusStateManager) checkFinalityViolation(
 	}
 
 	if isViolatingFinality {
-		csm.blockStatusStore.Stage(blockHash, model.StatusUTXOPendingVerification)
+		csm.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
 		log.Warnf("Finality Violation Detected! Block %s violates finality!", blockHash)
 	}
 

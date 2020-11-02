@@ -67,7 +67,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(candidatesHeap mod
 		if err != nil {
 			return nil, err
 		}
-		if selectedParentCandidateStatus == model.StatusValid {
+		if selectedParentCandidateStatus == externalapi.StatusValid {
 			return selectedParentCandidate, nil
 		}
 

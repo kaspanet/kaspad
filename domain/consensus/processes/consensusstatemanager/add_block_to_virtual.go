@@ -19,7 +19,7 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 		if err != nil {
 			return err
 		}
-		if blockStatus == model.StatusValid {
+		if blockStatus == externalapi.StatusValid {
 			err = csm.checkFinalityViolation(blockHash)
 			if err != nil {
 				return err
