@@ -15,13 +15,13 @@ type Consensus interface {
 	GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
 	GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error)
 
-	GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetPruningPointUTXOSet() ([]byte, error)
 	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
-	CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
-	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error)
+	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
+	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
 }
 
 type consensus struct {
@@ -114,8 +114,8 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	return blockInfo, nil
 }
 
-func (s *consensus) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	return s.syncManager.GetHashesBetween(lowHigh, highHash)
+func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	return s.syncManager.GetHashesBetween(lowHash, highHash)
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -138,10 +138,10 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	return s.GetBlock(virtualGHOSTDAGData.SelectedParent)
 }
 
-func (s *consensus) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
-	return s.syncManager.CreateBlockLocator(lowHigh, highHash)
+func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
+	return s.syncManager.CreateBlockLocator(lowHash, highHash)
 }
 
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error) {
+func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
 }

@@ -16,7 +16,7 @@ func New(dagTraversalManager model.DAGTraversalManager) model.SyncManager {
 	}
 }
 
-func (s syncManager) GetHashesBetween(lowHigh, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
@@ -24,11 +24,11 @@ func (s syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash)
 	panic("implement me")
 }
 
-func (s syncManager) CreateBlockLocator(lowHigh, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
+func (s syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
 	panic("implement me")
 }
 
-func (s syncManager) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHigh, highHash *externalapi.DomainHash, err error) {
+func (s syncManager) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	panic("implement me")
 }
 
