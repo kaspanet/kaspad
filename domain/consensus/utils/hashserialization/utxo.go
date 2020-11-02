@@ -116,7 +116,7 @@ func DeserializeUTXOEntry(utxoEntryBytes []byte) (*externalapi.UTXOEntry, error)
 	r := bytes.NewReader(utxoEntryBytes)
 
 	blueScoreBytes := make([]byte, 8)
-	_, err := r.Read(blueScoreBytes)
+	_, err := io.ReadFull(r, blueScoreBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -126,21 +126,21 @@ func DeserializeUTXOEntry(utxoEntryBytes []byte) (*externalapi.UTXOEntry, error)
 	entry.IsCoinbase = flagsByte&utxoFlagIsCoinbase != 0
 
 	amountBytes := make([]byte, 8)
-	_, err = r.Read(amountBytes)
+	_, err = io.ReadFull(r, amountBytes)
 	if err != nil {
 		return nil, err
 	}
 	entry.Amount = binary.LittleEndian.Uint64(amountBytes)
 
 	scriptPubKeyLenBytes := make([]byte, 8)
-	_, err = r.Read(scriptPubKeyLenBytes)
+	_, err = io.ReadFull(r, scriptPubKeyLenBytes)
 	if err != nil {
 		return nil, err
 	}
 	scriptPubKeyLen := binary.LittleEndian.Uint64(scriptPubKeyLenBytes)
 
 	scriptPubKeyBytes := make([]byte, scriptPubKeyLen)
-	_, err = r.Read(scriptPubKeyBytes)
+	_, err = io.ReadFull(r, scriptPubKeyBytes)
 	if err != nil {
 		return nil, err
 	}
