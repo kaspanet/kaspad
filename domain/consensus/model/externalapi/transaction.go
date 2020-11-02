@@ -1,7 +1,6 @@
 package externalapi
 
 import (
-	"encoding/hex"
 	"fmt"
 )
 
@@ -37,7 +36,15 @@ type DomainOutpoint struct {
 
 // String stringifies an outpoint.
 func (op DomainOutpoint) String() string {
-	return fmt.Sprintf("%s:%d", op.TransactionID, op.Index)
+	return fmt.Sprintf("(%s: %d)", op.TransactionID, op.Index)
+}
+
+// NewDomainOutpoint instantiates a new DomainOutpoint with the given id and index
+func NewDomainOutpoint(id *DomainTransactionID, index uint32) *DomainOutpoint {
+	return &DomainOutpoint{
+		TransactionID: *id,
+		Index:         index,
+	}
 }
 
 // DomainTransactionOutput represents a Kaspad transaction output
@@ -51,5 +58,5 @@ type DomainTransactionID DomainHash
 
 // String stringifies a transaction ID.
 func (id DomainTransactionID) String() string {
-	return hex.EncodeToString(id[:])
+	return DomainHash(id).String()
 }

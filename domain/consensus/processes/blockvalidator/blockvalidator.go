@@ -1,10 +1,11 @@
 package blockvalidator
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"math/big"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -17,10 +18,8 @@ type blockValidator struct {
 	disableDifficultyAdjustment    bool
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
-	finalityDepth                  uint64
 
 	databaseContext       model.DBReader
-	consensusStateManager model.ConsensusStateManager
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
@@ -28,6 +27,7 @@ type blockValidator struct {
 	dagTopologyManager    model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
 	coinbaseManager       model.CoinbaseManager
+	mergeDepthManager     model.MergeDepthManager
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -41,10 +41,8 @@ func New(powMax *big.Int,
 	enableNonNativeSubnetworks bool,
 	disableDifficultyAdjustment bool,
 	difficultyAdjustmentWindowSize uint64,
-	finalityDepth uint64,
 	databaseContext model.DBReader,
 
-	consensusStateManager model.ConsensusStateManager,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
@@ -52,6 +50,7 @@ func New(powMax *big.Int,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	coinbaseManager model.CoinbaseManager,
+	mergeDepthManager model.MergeDepthManager,
 
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -65,9 +64,7 @@ func New(powMax *big.Int,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		powMaxBits:                     util.BigToCompact(powMax),
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-		finalityDepth:                  finalityDepth,
 		databaseContext:                databaseContext,
-		consensusStateManager:          consensusStateManager,
 		difficultyManager:              difficultyManager,
 		pastMedianTimeManager:          pastMedianTimeManager,
 		transactionValidator:           transactionValidator,
@@ -75,6 +72,7 @@ func New(powMax *big.Int,
 		dagTopologyManager:             dagTopologyManager,
 		dagTraversalManager:            dagTraversalManager,
 		coinbaseManager:                coinbaseManager,
+		mergeDepthManager:              mergeDepthManager,
 
 		blockStore:        blockStore,
 		ghostdagDataStore: ghostdagDataStore,

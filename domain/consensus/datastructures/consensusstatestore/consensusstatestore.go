@@ -14,24 +14,42 @@ func New() model.ConsensusStateStore {
 	return &consensusStateStore{}
 }
 
-// Stage stages the store with the given consensusStateChanges
-func (css *consensusStateStore) Stage(consensusStateChanges *model.ConsensusStateChanges) {
+func (c consensusStateStore) Discard() {
 	panic("implement me")
 }
 
-func (css *consensusStateStore) IsStaged() bool {
+func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (css *consensusStateStore) Discard() {
+func (c consensusStateStore) IsStaged() bool {
 	panic("implement me")
 }
 
-func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
+func (c consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODiff) {
 	panic("implement me")
 }
 
-// UTXOByOutpoint gets the utxoEntry associated with the given outpoint
-func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
-	return nil, nil
+func (c consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, error) {
+	panic("implement me")
+}
+
+func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (bool, error) {
+	panic("implement me")
+}
+
+func (c consensusStateStore) StageVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash) error {
+	panic("implement me")
+}
+
+func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (c consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) error {
+	panic("implement me")
 }

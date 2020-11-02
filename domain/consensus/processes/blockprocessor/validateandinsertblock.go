@@ -1,7 +1,6 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
@@ -45,7 +44,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			bp.blockStatusStore.Stage(block.Hash, model.StatusInvalid)
+			bp.blockStatusStore.Stage(block.Hash, externalapi.StatusInvalid)
 			commitErr := bp.commitAllChanges()
 			if commitErr != nil {
 				return commitErr
@@ -73,9 +72,15 @@ func (bp *blockProcessor) validateBlockInIsolationAndProofOfWork(block *external
 }
 
 func (bp *blockProcessor) validateInContext(block *externalapi.DomainBlock) error {
+	err := bp.dagTopologyManager.SetParents(block.Hash, block.Header.ParentHashes)
+	if err != nil {
+		return err
+	}
+
 	bp.blockStore.Stage(block.Hash, block)
 	bp.blockHeaderStore.Stage(block.Hash, block.Header)
-	err := bp.blockValidator.ValidateHeaderInContext(block.Hash)
+
+	err = bp.blockValidator.ValidateHeaderInContext(block.Hash)
 	if err != nil {
 		return err
 	}

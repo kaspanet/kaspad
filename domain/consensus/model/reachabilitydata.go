@@ -52,6 +52,5 @@ type ReachabilityInterval struct {
 // a reachability tree descendant of the block in question, as reachability
 // tree queries are always O(1).
 //
-// See insertNode, hasAncestorOf, and reachabilityTree.isInPast for further
-// details.
+// See insertNode, hasAncestorOf, and isInPast for further details.
 type FutureCoveringTreeNodeSet []*externalapi.DomainHash

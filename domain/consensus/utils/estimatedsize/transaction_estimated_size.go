@@ -22,7 +22,7 @@ func TransactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 
 	size += 8 // number of outputs (uint64)
 	for _, output := range tx.Outputs {
-		size += transactionOutputEstimatedSerializedSize(output)
+		size += TransactionOutputEstimatedSerializedSize(output)
 	}
 
 	size += 8 // lock time (uint64)
@@ -54,7 +54,8 @@ func outpointEstimatedSerializedSize() uint64 {
 	return size
 }
 
-func transactionOutputEstimatedSerializedSize(output *externalapi.DomainTransactionOutput) uint64 {
+// TransactionOutputEstimatedSerializedSize is the same as TransactionEstimatedSerializedSize but for outputs only
+func TransactionOutputEstimatedSerializedSize(output *externalapi.DomainTransactionOutput) uint64 {
 	size := uint64(0)
 	size += 8 // value (uint64)
 	size += 8 // length of script public key (uint64)

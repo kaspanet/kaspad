@@ -9,11 +9,3 @@ var VirtualBlockHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 }
-
-// VirtualData is data about the current virtual block
-type VirtualData struct {
-	PastMedianTime int64
-	BlueScore      uint64
-	ParentHashes   []*externalapi.DomainHash
-	SelectedParent *externalapi.DomainHash
-}
