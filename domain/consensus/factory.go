@@ -96,7 +96,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
-	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
+	genesisHash := (*externalapi.DomainHash)(dagParams.GenesisHash)
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
 		dbManager,
@@ -106,7 +106,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		false,
-		&genesisHash,
+		genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
@@ -166,12 +166,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore,
 		blockStore,
 		utxoDiffStore,
+		genesisHash,
 		dagParams.FinalityDepth(),
-		model.KType(dagParams.K))
+		dagParams.PruningDepth())
 
 	syncManager := syncmanager.New(
 		dbManager,
-		&genesisHash,
+		genesisHash,
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagDataStore,

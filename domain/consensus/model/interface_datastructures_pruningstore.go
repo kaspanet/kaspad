@@ -8,6 +8,6 @@ type PruningStore interface {
 	Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte)
 	IsStaged() bool
 	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
-	HasPruningPoint(dbContext DBReader) bool
+	HasPruningPoint(dbContext DBReader) (bool, error)
 	PruningPointSerializedUTXOSet(dbContext DBReader) ([]byte, error)
 }

@@ -6,5 +6,4 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type PruningManager interface {
 	FindNextPruningPoint() error
 	PruningPoint() (*externalapi.DomainHash, error)
-	SerializedUTXOSet() ([]byte, error)
 }

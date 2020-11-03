@@ -4,7 +4,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 )
 
@@ -25,8 +24,9 @@ type pruningManager struct {
 	blocksStore         model.BlockStore
 	utxoDiffStore       model.UTXODiffStore
 
-	pruningDepth     uint64
+	genesisHash      *externalapi.DomainHash
 	finalityInterval uint64
+	pruningDepth     uint64
 }
 
 // New instantiates a new PruningManager
@@ -46,8 +46,9 @@ func New(
 	blocksStore model.BlockStore,
 	utxoDiffStore model.UTXODiffStore,
 
+	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
-	k model.KType,
+	pruningDepth uint64,
 ) model.PruningManager {
 
 	return &pruningManager{
@@ -63,7 +64,8 @@ func New(
 		acceptanceDataStore:   acceptanceDataStore,
 		blocksStore:           blocksStore,
 		utxoDiffStore:         utxoDiffStore,
-		pruningDepth:          pruningDepth(uint64(k), finalityInterval, constants.MergeSetSizeLimit),
+		genesisHash:           genesisHash,
+		pruningDepth:          pruningDepth,
 		finalityInterval:      finalityInterval,
 	}
 }
@@ -107,51 +109,33 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 
 	// Actually check if the pruning point changed
 	if (currentPBlueScore / pm.finalityInterval) < (candidatePGhost.BlueScore / pm.finalityInterval) {
-		utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(candidatePHash)
+		err = pm.savePruningPoint(candidatePHash)
 		if err != nil {
 			return err
 		}
-		serializedUtxo, err := serializeUTXOSetIterator(utxoIter)
-		if err != nil {
-			return err
-		}
-		pm.pruningStore.Stage(candidatePHash, serializedUtxo)
-		currentP = candidatePHash
+		return pm.deletePastBlocks(candidatePHash)
 	}
 	return pm.deletePastBlocks(currentP)
 }
 
 // PruningPoint returns the hash of the current pruning point
 func (pm *pruningManager) PruningPoint() (*externalapi.DomainHash, error) {
-	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
 	if err != nil {
-		if !pm.pruningStore.HasPruningPoint(pm.databaseContext) {
-			genesis, err := pm.dagTraversalManager.HighestChainBlockBelowBlueScore(model.VirtualBlockHash, pm.pruningDepth+pm.finalityInterval)
-			if err != nil {
-				return nil, err
-			}
-			utxoGenesisIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(genesis)
-			if err != nil {
-				return nil, err
-			}
-			serializedUtxo, err := serializeUTXOSetIterator(utxoGenesisIter)
-			if err != nil {
-				return nil, err
-			}
-			pm.pruningStore.Stage(genesis, serializedUtxo)
-			pruningPoint = genesis
-		} else {
-			return nil, err
-		}
-
+		return nil, err
 	}
-	return pruningPoint, nil
-}
+	if hasPruningPoint {
+		return pm.pruningStore.PruningPoint(pm.databaseContext)
+	}
 
-// SerializedUTXOSet returns the serialized UTXO set of the
-// current pruning point
-func (pm *pruningManager) SerializedUTXOSet() ([]byte, error) {
-	return pm.pruningStore.PruningPointSerializedUTXOSet(pm.databaseContext)
+	// If there's no pruning point yet, set genesis as the pruning point.
+	// This is the genesis because it means `FindNextPruningPoint()` has never been called before,
+	// if this is part of the first `FindNextPruningPoint()` call, then it might move the pruning point forward.
+	err = pm.savePruningPoint(pm.genesisHash)
+	if err != nil {
+		return nil, err
+	}
+	return pm.genesisHash, nil
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
@@ -224,6 +208,20 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	return nil
 }
 
+func (pm *pruningManager) savePruningPoint(blockHash *externalapi.DomainHash) error {
+	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(blockHash)
+	if err != nil {
+		return err
+	}
+	serializedUtxo, err := serializeUTXOSetIterator(utxoIter)
+	if err != nil {
+		return err
+	}
+	pm.pruningStore.Stage(blockHash, serializedUtxo)
+
+	return nil
+}
+
 func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alreadyPruned bool, err error) {
 	status, err := pm.blockStatusStore.Get(pm.databaseContext, blockHash)
 	if err != nil {
@@ -240,10 +238,6 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 
 	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
-}
-
-func pruningDepth(k, finalityInterval, mergeSetSizeLimit uint64) uint64 {
-	return 2*finalityInterval + 4*mergeSetSizeLimit*k + 2*k + 2
 }
 
 func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error) {
