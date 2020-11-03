@@ -7,16 +7,21 @@ package appmessage
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"math"
 	"reflect"
 	"testing"
 	"unsafe"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
+
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // TestTx tests the MsgTx API.
@@ -24,7 +29,7 @@ func TestTx(t *testing.T) {
 	pver := ProtocolVersion
 
 	txIDStr := "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	txID, err := daghash.NewTxIDFromStr(txIDStr)
+	txID, err := transactionid.FromString(txIDStr)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 	}
@@ -51,7 +56,7 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutpoint(txID, prevOutIndex)
-	if !prevOut.TxID.IsEqual(txID) {
+	if prevOut.TxID != *txID {
 		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
@@ -130,8 +135,8 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "edca872f27279674c7a52192b32fd68b8b8be714bfea52d98b2c3c86c30e85c6"
-	wantTxID1, err := daghash.NewTxIDFromStr(txID1Str)
+	txID1Str := "a3d29c39bfb578235e4813cc8138a9ba10def63acad193a7a880159624840d7f"
+	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
@@ -140,7 +145,7 @@ func TestTxHashAndID(t *testing.T) {
 	// A coinbase transaction
 	txIn := &TxIn{
 		PreviousOutpoint: Outpoint{
-			TxID:  daghash.TxID{},
+			TxID:  externalapi.DomainTransactionID{},
 			Index: math.MaxUint32,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
@@ -162,31 +167,31 @@ func TestTxHashAndID(t *testing.T) {
 			0xac, // OP_CHECKSIG
 		},
 	}
-	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
+	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
-	if !tx1Hash.IsEqual((*daghash.Hash)(wantTxID1)) {
+	if *tx1Hash != (externalapi.DomainHash)(*wantTxID1) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if !tx1ID.IsEqual(wantTxID1) {
+	if *tx1ID != *wantTxID1 {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "b11924b7eeffea821522222576c53dc5b8ddd97602f81e5e124d2626646d74ca"
-	wantHash2, err := daghash.NewHashFromStr(hash2Str)
+	hash2Str := "c84f3009b337aaa3adeb2ffd41010d5f62dd773ca25b39c908a77da91f87b729"
+	wantHash2, err := hashes.FromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "750499ae9e6d44961ef8bad8af27a44dd4bcbea166b71baf181e8d3997e1ff72"
-	wantID2, err := daghash.NewTxIDFromStr(id2Str)
+	id2Str := "7c919f676109743a1271a88beeb43849a6f9cc653f6082e59a7266f3df4802b9"
+	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
@@ -195,7 +200,7 @@ func TestTxHashAndID(t *testing.T) {
 	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
-			TxID:  daghash.TxID{1, 2, 3},
+			TxID:  externalapi.DomainTransactionID{1, 2, 3},
 		},
 		SignatureScript: []byte{
 			0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,
@@ -226,29 +231,29 @@ func TestTxHashAndID(t *testing.T) {
 			},
 		},
 	}
-	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &subnetworkid.SubnetworkID{1, 2, 3}, 0, payload)
+	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
-	if !tx2Hash.IsEqual(wantHash2) {
+	if *tx2Hash != *wantHash2 {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx2ID := tx2.TxID()
-	if !tx2ID.IsEqual(wantID2) {
+	if *tx2ID != *wantID2 {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if tx2ID.IsEqual((*daghash.TxID)(tx2Hash)) {
+	if *tx2ID == (externalapi.DomainTransactionID)(*tx2Hash) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if !tx2ID.IsEqual((*daghash.TxID)(newTx2Hash)) {
+	if *tx2ID != (externalapi.DomainTransactionID)(*newTx2Hash) {
 		t.Errorf("tx2ID and newTx2Hash should be the same for transaction with an empty signature")
 	}
 }
@@ -415,7 +420,7 @@ func TestTxSerialize(t *testing.T) {
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
 	}
 
-	subnetworkTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{0xff}, 5, []byte{0, 1, 2})
+	subnetworkTx := NewSubnetworkMsgTx(1, nil, nil, &externalapi.DomainSubnetworkID{0xff}, 5, []byte{0, 1, 2})
 
 	subnetworkTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
@@ -586,7 +591,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		}
 	}
 
-	registryTx := NewSubnetworkMsgTx(1, nil, nil, subnetworkid.SubnetworkIDRegistry, 1, nil)
+	registryTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworks.SubnetworkIDRegistry, 1, nil)
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
@@ -596,7 +601,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	nativeTx := NewSubnetworkMsgTx(1, nil, nil, subnetworkid.SubnetworkIDNative, 1, nil)
+	nativeTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworks.SubnetworkIDNative, 1, nil)
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = nativeTx.Serialize(w)
 
@@ -608,7 +613,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 	nativeTx.Gas = 0
 	nativeTx.Payload = []byte{1, 2, 3}
-	nativeTx.PayloadHash = daghash.DoubleHashP(nativeTx.Payload)
+	nativeTx.PayloadHash = hashes.HashData(nativeTx.Payload)
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = nativeTx.Serialize(w)
 
@@ -741,25 +746,25 @@ func TestTxSerializeSize(t *testing.T) {
 }
 
 func TestIsSubnetworkCompatible(t *testing.T) {
-	testTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{123}, 0, []byte{})
+	testTx := NewSubnetworkMsgTx(1, nil, nil, &externalapi.DomainSubnetworkID{123}, 0, []byte{})
 	tests := []struct {
 		name           string
-		subnetworkID   *subnetworkid.SubnetworkID
+		subnetworkID   *externalapi.DomainSubnetworkID
 		expectedResult bool
 	}{
 		{
 			name:           "Native subnetwork",
-			subnetworkID:   subnetworkid.SubnetworkIDNative,
+			subnetworkID:   &subnetworks.SubnetworkIDNative,
 			expectedResult: true,
 		},
 		{
 			name:           "same subnetwork as test tx",
-			subnetworkID:   &subnetworkid.SubnetworkID{123},
+			subnetworkID:   &externalapi.DomainSubnetworkID{123},
 			expectedResult: true,
 		},
 		{
 			name:           "other subnetwork",
-			subnetworkID:   &subnetworkid.SubnetworkID{234},
+			subnetworkID:   &externalapi.DomainSubnetworkID{234},
 			expectedResult: false,
 		},
 	}
@@ -846,7 +851,7 @@ func underlyingArrayAddress(buf []byte) uint64 {
 var multiTxIns = []*TxIn{
 	{
 		PreviousOutpoint: Outpoint{
-			TxID:  daghash.TxID{},
+			TxID:  externalapi.DomainTransactionID{},
 			Index: 0xffffffff,
 		},
 		SignatureScript: []byte{

@@ -11,6 +11,8 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -18,7 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/util/binaryserializer"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 const (
@@ -64,7 +65,7 @@ const (
 	// minTxInPayload is the minimum payload size for a transaction input.
 	// PreviousOutpoint.TxID + PreviousOutpoint.Index 4 bytes + Varint for
 	// SignatureScript length 1 byte + Sequence 4 bytes.
-	minTxInPayload = 9 + daghash.HashSize
+	minTxInPayload = 9 + externalapi.DomainHashSize
 
 	// maxTxInPerMessage is the maximum number of transactions inputs that
 	// a transaction which fits into a message could possibly have.
@@ -196,9 +197,9 @@ func (o Outpoint) String() string {
 	// maximum message payload may increase in the future and this
 	// optimization may go unnoticed, so allocate space for 10 decimal
 	// digits, which will fit any uint32.
-	buf := make([]byte, 2*daghash.HashSize+1, 2*daghash.HashSize+1+10)
+	buf := make([]byte, 2*externalapi.DomainHashSize+1, 2*externalapi.DomainHashSize+1+10)
 	copy(buf, o.TxID.String())
-	buf[2*daghash.HashSize] = ':'
+	buf[2*externalapi.DomainHashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
 }
@@ -304,37 +305,13 @@ func (msg *MsgTx) IsCoinBase() bool {
 }
 
 // TxHash generates the Hash for the transaction.
-func (msg *MsgTx) TxHash() *daghash.Hash {
-	// Encode the transaction and calculate double sha256 on the result.
-	writer := daghash.NewDoubleHashWriter()
-	err := msg.serialize(writer, txEncodingExcludePayload)
-	if err != nil {
-		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
-		// and we assume we never construct malformed transactions.
-		panic(fmt.Sprintf("TxHash() failed. this should never fail for structurally-valid transactions. err: %+v", err))
-	}
-
-	hash := writer.Finalize()
-	return &hash
+func (msg *MsgTx) TxHash() *externalapi.DomainHash {
+	return hashserialization.TransactionHash(MsgTxToDomainTransaction(msg))
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
-func (msg *MsgTx) TxID() *daghash.TxID {
-	// Encode the transaction, replace signature script with zeroes, cut off
-	// payload and calculate double sha256 on the result.
-	var encodingFlags txEncoding
-	if !msg.IsCoinBase() {
-		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
-	}
-	writer := daghash.NewDoubleHashWriter()
-	err := msg.serialize(writer, encodingFlags)
-	if err != nil {
-		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
-		// and we assume we never construct malformed transactions.
-		panic(fmt.Sprintf("TxID() failed. this should never fail for structurally-valid transactions. err: %+v", err))
-	}
-	txID := daghash.TxID(writer.Finalize())
-	return &txID
+func (msg *MsgTx) TxID() *externalapi.DomainTransactionID {
+	return hashserialization.TransactionID(MsgTxToDomainTransaction(msg))
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get
@@ -748,7 +725,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 		n += 8
 
 		// PayloadHash
-		n += daghash.HashSize
+		n += externalapi.DomainHashSize
 
 		// Serialized varint size for the length of the payload
 		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
@@ -850,7 +827,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
 	}
 
-	var payloadHash externalapi.DomainHash
+	var payloadHash *externalapi.DomainHash
 	if *subnetworkID != subnetworks.SubnetworkIDNative {
 		payloadHash = hashes.HashData(payload)
 	}
@@ -861,7 +838,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 		TxOut:        txOut,
 		SubnetworkID: *subnetworkID,
 		Gas:          gas,
-		PayloadHash:  &payloadHash,
+		PayloadHash:  payloadHash,
 		Payload:      payload,
 		LockTime:     lockTime,
 	}

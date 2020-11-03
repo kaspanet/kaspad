@@ -5,12 +5,12 @@
 package appmessage
 
 import (
-	"fmt"
 	"io"
 	"math"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
@@ -20,9 +20,9 @@ import (
 // Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
 // + NumParentBlocks 1 byte + HashMerkleRoot hash +
 // + AcceptedIDMerkleRoot hash + UTXOCommitment hash.
-// To get total size of block header len(ParentHashes) * daghash.HashSize should be
+// To get total size of block header len(ParentHashes) * externalapi.DomainHashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 25 + 3*(daghash.HashSize)
+const BaseBlockHeaderPayload = 25 + 3*(externalapi.DomainHashSize)
 
 // MaxNumParentBlocks is the maximum number of parent blocks a block can reference.
 // Currently set to 255 as the maximum number NumParentBlocks can be due to it being a byte
@@ -30,7 +30,7 @@ const MaxNumParentBlocks = 255
 
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
 // BaseBlockHeaderPayload + up to MaxNumParentBlocks hashes of parent blocks
-const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * daghash.HashSize)
+const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * externalapi.DomainHashSize)
 
 // BlockHeader defines information about a block and is used in the kaspa
 // block (MsgBlock) and headers (MsgHeader) messages.
@@ -71,20 +71,8 @@ func (h *BlockHeader) NumParentBlocks() byte {
 }
 
 // BlockHash computes the block identifier hash for the given block header.
-func (h *BlockHeader) BlockHash() *daghash.Hash {
-	// Encode the header and double sha256 everything prior to the number of
-	// transactions.
-	writer := daghash.NewDoubleHashWriter()
-	err := writeBlockHeader(writer, 0, h)
-	if err != nil {
-		// It seems like this could only happen if the writer returned an error.
-		// and this writer should never return an error (no allocations or possible failures)
-		// the only non-writer error path here is unknown types in `WriteElement`
-		panic(fmt.Sprintf("BlockHash() failed. this should never fail unless BlockHeader was changed. err: %+v", err))
-	}
-
-	res := writer.Finalize()
-	return &res
+func (h *BlockHeader) BlockHash() *externalapi.DomainHash {
+	return hashserialization.HeaderHash(BlockHeaderToDomainBlockHeader(h))
 }
 
 // IsGenesis returns true iff this block is a genesis block
@@ -131,7 +119,7 @@ func (h *BlockHeader) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // block header.
 func (h *BlockHeader) SerializeSize() int {
-	return BaseBlockHeaderPayload + int(h.NumParentBlocks())*daghash.HashSize
+	return BaseBlockHeaderPayload + int(h.NumParentBlocks())*externalapi.DomainHashSize
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous

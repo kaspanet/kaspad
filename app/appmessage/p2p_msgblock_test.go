@@ -6,16 +6,20 @@ package appmessage
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/pkg/errors"
 	"io"
 	"math"
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
+
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestBlock tests the MsgBlock API.
@@ -74,43 +78,45 @@ func TestBlock(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "55d71bd49a8233bc9f0edbcbd0ad5d3eaebffe1fc6a6443a1c1f310fd02c11a5"
-	wantHash, err := daghash.NewHashFromStr(hashStr)
+	hashStr := "5150f62f89507cc64dd7c9efbd536996a96efc77f759b513e978af82665448a6"
+	wantHash, err := hashes.FromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure the hash produced is expected.
 	blockHash := blockOne.BlockHash()
-	if !blockHash.IsEqual(wantHash) {
+	if *blockHash != *wantHash {
 		t.Errorf("BlockHash: wrong hash - got %v, want %v",
 			spew.Sprint(blockHash), spew.Sprint(wantHash))
 	}
 }
 
 func TestConvertToPartial(t *testing.T) {
+	localSubnetworkID := &externalapi.DomainSubnetworkID{0x12}
+
 	transactions := []struct {
-		subnetworkID          *subnetworkid.SubnetworkID
+		subnetworkID          *externalapi.DomainSubnetworkID
 		payload               []byte
 		expectedPayloadLength int
 	}{
 		{
-			subnetworkID:          subnetworkid.SubnetworkIDNative,
+			subnetworkID:          &subnetworks.SubnetworkIDNative,
 			payload:               []byte{},
 			expectedPayloadLength: 0,
 		},
 		{
-			subnetworkID:          subnetworkid.SubnetworkIDRegistry,
+			subnetworkID:          &subnetworks.SubnetworkIDRegistry,
 			payload:               []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 			expectedPayloadLength: 0,
 		},
 		{
-			subnetworkID:          &subnetworkid.SubnetworkID{123},
+			subnetworkID:          localSubnetworkID,
 			payload:               []byte{0x01},
 			expectedPayloadLength: 1,
 		},
 		{
-			subnetworkID:          &subnetworkid.SubnetworkID{234},
+			subnetworkID:          &externalapi.DomainSubnetworkID{0x34},
 			payload:               []byte{0x02},
 			expectedPayloadLength: 0,
 		},
@@ -122,24 +128,24 @@ func TestConvertToPartial(t *testing.T) {
 		block.Transactions = append(block.Transactions, NewSubnetworkMsgTx(1, nil, nil, transaction.subnetworkID, 0, payload))
 	}
 
-	block.ConvertToPartial(&subnetworkid.SubnetworkID{123})
+	block.ConvertToPartial(localSubnetworkID)
 
-	for _, transaction := range transactions {
+	for _, testTransaction := range transactions {
 		var subnetworkTx *MsgTx
-		for _, tx := range block.Transactions {
-			if tx.SubnetworkID.IsEqual(transaction.subnetworkID) {
-				subnetworkTx = tx
+		for _, blockTransaction := range block.Transactions {
+			if blockTransaction.SubnetworkID == *testTransaction.subnetworkID {
+				subnetworkTx = blockTransaction
 			}
 		}
 		if subnetworkTx == nil {
-			t.Errorf("ConvertToPartial: subnetworkID '%s' not found in block!", transaction.subnetworkID)
+			t.Errorf("ConvertToPartial: subnetworkID '%s' not found in block!", testTransaction.subnetworkID)
 			continue
 		}
 
 		payloadLength := len(subnetworkTx.Payload)
-		if payloadLength != transaction.expectedPayloadLength {
+		if payloadLength != testTransaction.expectedPayloadLength {
 			t.Errorf("ConvertToPartial: unexpected payload length for subnetwork '%s': expected: %d, got: %d",
-				transaction.subnetworkID, transaction.expectedPayloadLength, payloadLength)
+				testTransaction.subnetworkID, testTransaction.expectedPayloadLength, payloadLength)
 		}
 	}
 }
@@ -503,7 +509,7 @@ func TestBlockSerializeSize(t *testing.T) {
 var blockOne = MsgBlock{
 	Header: BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
@@ -516,7 +522,7 @@ var blockOne = MsgBlock{
 			[]*TxIn{
 				{
 					PreviousOutpoint: Outpoint{
-						TxID:  daghash.TxID{},
+						TxID:  externalapi.DomainTransactionID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

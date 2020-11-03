@@ -1,10 +1,11 @@
 package hashserialization
 
 import (
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/pkg/errors"
-	"io"
 )
 
 func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
@@ -35,6 +36,5 @@ func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
 
-	res := writer.Finalize()
-	return &res
+	return writer.Finalize()
 }

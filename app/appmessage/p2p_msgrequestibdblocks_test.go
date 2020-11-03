@@ -7,26 +7,26 @@ package appmessage
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 // TestRequstIBDBlocks tests the MsgRequestIBDBlocks API.
 func TestRequstIBDBlocks(t *testing.T) {
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	lowHash, err := daghash.NewHashFromStr(hashStr)
+	lowHash, err := hashes.FromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	highHash, err := daghash.NewHashFromStr(hashStr)
+	highHash, err := hashes.FromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure we get the same data back out.
 	msg := NewMsgRequstIBDBlocks(lowHash, highHash)
-	if !msg.HighHash.IsEqual(highHash) {
+	if *msg.HighHash != *highHash {
 		t.Errorf("NewMsgRequstIBDBlocks: wrong high hash - got %v, want %v",
 			msg.HighHash, highHash)
 	}

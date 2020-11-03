@@ -6,12 +6,13 @@ package appmessage
 
 import (
 	"bytes"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/random"
 	"reflect"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestBlockHeader tests the BlockHeader API.
@@ -21,7 +22,7 @@ func TestBlockHeader(t *testing.T) {
 		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 
-	hashes := []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash}
+	hashes := []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}
 
 	merkleHash := mainnetGenesisMerkleRoot
 	acceptedIDMerkleRoot := exampleAcceptedIDMerkleRoot
@@ -33,7 +34,7 @@ func TestBlockHeader(t *testing.T) {
 		t.Errorf("NewBlockHeader: wrong prev hashes - got %v, want %v",
 			spew.Sprint(bh.ParentHashes), spew.Sprint(hashes))
 	}
-	if !bh.HashMerkleRoot.IsEqual(merkleHash) {
+	if bh.HashMerkleRoot != merkleHash {
 		t.Errorf("NewBlockHeader: wrong merkle root - got %v, want %v",
 			spew.Sprint(bh.HashMerkleRoot), spew.Sprint(merkleHash))
 	}
@@ -57,7 +58,7 @@ func TestBlockHeaderEncoding(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
@@ -173,7 +174,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
@@ -262,10 +263,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 	baseBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &daghash.ZeroHash,
-		UTXOCommitment:       &daghash.ZeroHash,
+		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
+		UTXOCommitment:       &externalapi.DomainHash{},
 		Timestamp:            timestamp,
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -273,10 +274,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 
 	genesisBlockHdr := &BlockHeader{
 		Version:              1,
-		ParentHashes:         []*daghash.Hash{},
+		ParentHashes:         []*externalapi.DomainHash{},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &daghash.ZeroHash,
-		UTXOCommitment:       &daghash.ZeroHash,
+		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
+		UTXOCommitment:       &externalapi.DomainHash{},
 		Timestamp:            timestamp,
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -311,7 +312,7 @@ func TestIsGenesis(t *testing.T) {
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []*daghash.Hash{mainnetGenesisHash, simnetGenesisHash},
+		ParentHashes:   []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,
@@ -319,7 +320,7 @@ func TestIsGenesis(t *testing.T) {
 	}
 	genesisBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []*daghash.Hash{},
+		ParentHashes:   []*externalapi.DomainHash{},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,

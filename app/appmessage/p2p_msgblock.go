@@ -10,8 +10,6 @@ import (
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // defaultTransactionAlloc is the default size used for the backing array
@@ -228,7 +226,7 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 }
 
 // BlockHash computes the block identifier hash for this block.
-func (msg *MsgBlock) BlockHash() *daghash.Hash {
+func (msg *MsgBlock) BlockHash() *externalapi.DomainHash {
 	return msg.Header.BlockHash()
 }
 
