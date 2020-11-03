@@ -9,4 +9,5 @@ type SyncManager interface {
 	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
 	IsBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error)
+	GetSyncInfo() (*externalapi.SyncInfo, error)
 }

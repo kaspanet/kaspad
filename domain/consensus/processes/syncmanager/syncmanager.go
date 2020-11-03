@@ -72,3 +72,10 @@ func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.B
 
 	return sm.findNextBlockLocatorBoundaries(blockLocator)
 }
+
+func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GetSyncInfo")
+	defer onEnd()
+
+	panic("implement me")
+}

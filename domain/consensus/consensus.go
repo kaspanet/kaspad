@@ -22,6 +22,7 @@ type Consensus interface {
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
+	GetSyncInfo() (*externalapi.SyncInfo, error)
 }
 
 type consensus struct {
@@ -145,4 +146,8 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
+}
+
+func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
+	return s.syncManager.GetSyncInfo()
 }
