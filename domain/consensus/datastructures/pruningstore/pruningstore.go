@@ -118,3 +118,7 @@ func (ps *pruningStore) deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes []byt
 
 	return dbPruningPointUTXOSet.Bytes, nil
 }
+
+func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) bool {
+	panic("implement me")
+}
