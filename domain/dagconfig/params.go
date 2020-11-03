@@ -8,13 +8,14 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/network"
 
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // These variables are the DAG proof-of-work limit parameters for each default
@@ -81,7 +82,7 @@ type Params struct {
 	GenesisBlock *appmessage.MsgBlock
 
 	// GenesisHash is the starting block hash.
-	GenesisHash *daghash.Hash
+	GenesisHash *externalapi.DomainHash
 
 	// PowMax defines the highest allowed proof of work value for a block
 	// as a uint256.
