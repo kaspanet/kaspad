@@ -99,21 +99,21 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	if err != nil {
 		return nil, err
 	}
+	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	currentBlueScore := highBlockGHOSTDAGData.BlueScore
 
 	currentHash := highHash
-	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	for iterator.Next() {
-		if currentBlueScore < blueScore {
-			break
-		}
-
-		currentHash = currentBlockGHOSTDAGData.SelectedParent
 		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent)
 		if err != nil {
 			return nil, err
 		}
 		currentBlueScore = currentBlockGHOSTDAGData.BlueScore
+
+		if currentBlueScore < blueScore {
+			break
+		}
+		currentHash = currentBlockGHOSTDAGData.SelectedParent
 	}
 
 	return currentHash, nil
