@@ -232,7 +232,7 @@ var (
 
 	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
 
-	ErrHeaderlessBlockInIBD = newRuleError("ErrHeaderlessBlockInIBD")
+	ErrMissingBlockHeaderInIBD = newRuleError("ErrMissingBlockHeaderInIBD")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

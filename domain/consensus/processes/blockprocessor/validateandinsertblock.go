@@ -40,7 +40,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	if !hasHeader {
 		if mode.State == externalapi.SyncStateMissingBlockBodies {
-			return errors.Wrapf(ruleerrors.ErrHeaderlessBlockInIBD, "no block header is stored for block %s. "+
+			return errors.Wrapf(ruleerrors.ErrMissingBlockHeaderInIBD, "no block header is stored for block %s. "+
 				"Every block we get during %s mode should have a pre-stored header", mode.State, hash)
 		}
 		err = bp.reachabilityManager.AddBlock(hash)
