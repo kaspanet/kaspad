@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
@@ -19,21 +20,30 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
+
+type mocDifficultyManager struct {
+}
+
+func (mdf *mocDifficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
+	return uint32(0x207f83df), nil
+}
 
 func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params) *blockValidator {
 	// Data Structures
@@ -74,8 +84,7 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	difficultyManager := difficultymanager.New(
-		ghostdagManager)
+	difficultyManager := &mocDifficultyManager{}
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		ghostdagDataStore,
@@ -89,7 +98,7 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 		ghostdagDataStore)
 	vlidator := New(
 		dagParams.PowMax,
-		false,
+		true,
 		&genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
@@ -366,5 +375,108 @@ func TestValidateInvalidBlock(t *testing.T) {
 	err = validator.validateDifficulty(blockHash)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
+	}
+}
+
+func TestValidateValidBlock(t *testing.T) {
+	dbManager, teardownFunc, err := SetupDBManager(t.Name())
+	if err != nil {
+		t.Fatalf("Failed to setup DBManager instance: %v", err)
+	}
+	defer teardownFunc()
+
+	validator := setupBlockValidator(dbManager, &dagconfig.SimnetParams)
+	var time int64 = 0
+	genesisHash := externalapi.DomainHash(*dagconfig.SimnetParams.GenesisHash)
+
+	parentHashes := prepareParentHashes(10, []*externalapi.DomainHash{&genesisHash}, &time)
+	for _, parentHash := range parentHashes {
+		validator.blockHeaderStore.Stage(parentHash, nil)
+	}
+	sort.Slice(parentHashes, func(i, j int) bool {
+		return hashes.Less(parentHashes[i], parentHashes[j])
+	})
+
+	transactions := make([]*externalapi.DomainTransaction, 1)
+	inputs := make([]*externalapi.DomainTransactionInput, 1)
+	for i := range inputs {
+		inputs[i] = &externalapi.DomainTransactionInput{}
+	}
+	for i := range transactions {
+		payload := make([]byte, 8)
+		payloadHash := (externalapi.DomainHash)(*daghash.DoubleHashP(payload))
+
+		transactions[i] = &externalapi.DomainTransaction{
+			Version:      1,
+			Inputs:       inputs,
+			Outputs:      nil,
+			LockTime:     0,
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			PayloadHash:  payloadHash,
+			Payload:      payload,
+			Fee:          0,
+			Mass:         0,
+		}
+	}
+
+	coinbaseTransactions := make([]*externalapi.DomainTransaction, 1)
+	for i := range coinbaseTransactions {
+		payload := make([]byte, 30)
+		payloadHash := (externalapi.DomainHash)(*daghash.DoubleHashP(payload))
+		coinbaseTransactions[i] = &externalapi.DomainTransaction{
+			Version:      1,
+			Inputs:       nil,
+			Outputs:      nil,
+			LockTime:     0,
+			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
+			Gas:          0,
+			PayloadHash:  payloadHash,
+			Payload:      payload,
+			Fee:          0,
+			Mass:         0,
+		}
+	}
+	transactions = append(coinbaseTransactions, transactions...)
+
+	blockHeader := &externalapi.DomainBlockHeader{
+		Version:              1,
+		ParentHashes:         parentHashes,
+		HashMerkleRoot:       *merkle.CalculateHashMerkleRoot(transactions),
+		AcceptedIDMerkleRoot: externalapi.DomainHash{},
+		UTXOCommitment:       externalapi.DomainHash{},
+		TimeInMilliseconds:   mstime.Now().UnixMilliseconds() + int64(len(parentHashes)),
+		Bits:                 uint32(0x207f83df),
+	}
+
+	blockWithThreeTx := createBlock(blockHeader, transactions)
+	blockHash := hashserialization.HeaderHash(blockWithThreeTx.Header)
+	validator.blockStore.Stage(blockHash, blockWithThreeTx)
+	validator.blockHeaderStore.Stage(blockHash, blockHeader)
+	validator.ghostdagDataStore.Stage(blockHash, &model.BlockGHOSTDAGData{
+		SelectedParent: &genesisHash,
+		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
+		MergeSetReds:   make([]*externalapi.DomainHash, 1),
+	})
+
+	blockWithCoinbaseTx := createBlock(blockHeader, coinbaseTransactions)
+	testedBlocks := []*externalapi.DomainBlock{blockWithCoinbaseTx, blockWithThreeTx}
+
+	for _, block := range testedBlocks {
+		blockHash := hashserialization.HeaderHash(block.Header)
+		err = validator.ValidateHeaderInIsolation(blockHash)
+		if err != nil {
+			t.Fatalf("ValidateHeaderInIsolation: %v", err)
+		}
+
+		err = validator.ValidateBodyInIsolation(blockHash)
+		if err != nil {
+			t.Fatalf("ValidateBodyInIsolation: %v", err)
+		}
+
+		err = validator.ValidateProofOfWorkAndDifficulty(blockHash)
+		if err != nil {
+			t.Fatalf("ValidateProofOfWorkAndDifficulty: %v", err)
+		}
 	}
 }
