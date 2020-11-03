@@ -45,7 +45,3 @@ func (c consensusStateStore) IsStaged() bool {
 		c.stagedVirtualDiffParents != nil ||
 		c.stagedVirtualUTXODiff != nil
 }
-
-func (c consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
-	panic("implement me")
-}
