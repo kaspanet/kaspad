@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/domain"
 
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
@@ -21,7 +23,7 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *util.Block) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool

@@ -4,16 +4,12 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
-	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Manager is an RPC manager
@@ -24,27 +20,21 @@ type Manager struct {
 // NewManager creates a new RPC Manager
 func NewManager(
 	cfg *config.Config,
+	domain domain.Domain,
 	netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
-	blockTemplateGenerator *mining.BlkTmplGenerator,
-	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
 		context: rpccontext.NewContext(
 			cfg,
+			domain,
 			netAdapter,
-			dag,
 			protocolManager,
 			connectionManager,
-			blockTemplateGenerator,
-			mempool,
 			addressManager,
-			acceptanceIndex,
 			shutDownChan,
 		),
 	}
@@ -54,15 +44,16 @@ func NewManager(
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) error {
+func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	m.context.BlockTemplateState.NotifyBlockAdded(block)
 
-	notification := appmessage.NewBlockAddedNotificationMessage(block.MsgBlock())
+	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
 	return m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
 // NotifyChainChanged notifies the manager that the DAG's selected parent chain has changed
-func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) error {
+func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*externalapi.DomainHash,
+	addedChainBlockHashes []*externalapi.DomainHash) error {
 	addedChainBlocks, err := m.context.CollectChainBlocks(addedChainBlockHashes)
 	if err != nil {
 		return err

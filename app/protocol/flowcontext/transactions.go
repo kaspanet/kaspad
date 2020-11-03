@@ -3,6 +3,7 @@ package flowcontext
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
@@ -11,7 +12,7 @@ import (
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (f *FlowContext) AddTransaction(tx *util.Tx) error {
+func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 

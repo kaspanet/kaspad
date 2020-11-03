@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -43,13 +44,13 @@ func (m *Manager) IBDPeer() *peerpkg.Peer {
 }
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (m *Manager) AddTransaction(tx *util.Tx) error {
+func (m *Manager) AddTransaction(tx *externalapi.DomainTransaction) error {
 	return m.context.AddTransaction(tx)
 }
 
 // AddBlock adds the given block to the DAG and propagates it.
-func (m *Manager) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
-	return m.context.AddBlock(block, flags)
+func (m *Manager) AddBlock(block *externalapi.DomainBlock) error {
+	return m.context.AddBlock(block)
 }
 
 func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {

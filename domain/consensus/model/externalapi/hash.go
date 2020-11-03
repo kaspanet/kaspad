@@ -16,3 +16,13 @@ func (hash DomainHash) String() string {
 	}
 	return hex.EncodeToString(hash[:])
 }
+
+// DomainHashesToStrings returns a slice of strings representing the hashes in the given slice of hashes
+func DomainHashesToStrings(hashes []*DomainHash) []string {
+	strings := make([]string, len(hashes))
+	for i, hash := range hashes {
+		strings[i] = hash.String()
+	}
+
+	return strings
+}

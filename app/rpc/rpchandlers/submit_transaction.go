@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +21,8 @@ func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, requ
 		errorMessage.Error = appmessage.RPCErrorf("Transaction hex could not be parsed: %s", err)
 		return errorMessage, nil
 	}
-	var msgTx appmessage.MsgTx
+
+	msgTx := &appmessage.MsgTx{}
 	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
 	if err != nil {
 		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
@@ -29,19 +30,20 @@ func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, requ
 		return errorMessage, nil
 	}
 
-	tx := util.NewTx(&msgTx)
-	err = context.ProtocolManager.AddTransaction(tx)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	transactionID := hashserialization.TransactionID(domainTransaction)
+	err = context.ProtocolManager.AddTransaction(domainTransaction)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {
 			return nil, err
 		}
 
-		log.Debugf("Rejected transaction %s: %s", tx.ID(), err)
+		log.Debugf("Rejected transaction %s: %s", transactionID, err)
 		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Rejected transaction %s: %s", tx.ID(), err)
+		errorMessage.Error = appmessage.RPCErrorf("Rejected transaction %s: %s", transactionID, err)
 		return errorMessage, nil
 	}
 
-	response := appmessage.NewSubmitTransactionResponseMessage(tx.ID().String())
+	response := appmessage.NewSubmitTransactionResponseMessage(transactionID.String())
 	return response, nil
 }

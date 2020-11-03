@@ -7,12 +7,12 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/coinbasepayload"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"io"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // OutOfRangeError describes an error due to accessing an element that is out
@@ -41,7 +41,7 @@ type Block struct {
 	serializedBlock []byte
 
 	// Cached block hash. This is used only internally, and .Hash() should be used anywhere.
-	blockHash *daghash.Hash
+	blockHash *externalapi.DomainHash
 
 	// Transactions. This is used only internally, and .Transactions() should be used anywhere.
 	transactions []*Tx
@@ -84,7 +84,7 @@ func (b *Block) Bytes() ([]byte, error) {
 // Hash returns the block identifier hash for the Block. This is equivalent to
 // calling BlockHash on the underlying appmessage.MsgBlock, however it caches the
 // result so subsequent calls are more efficient.
-func (b *Block) Hash() *daghash.Hash {
+func (b *Block) Hash() *externalapi.DomainHash {
 	// Return the cached block hash if it has already been generated.
 	if b.blockHash != nil {
 		return b.blockHash
@@ -164,7 +164,7 @@ func (b *Block) Transactions() []*Tx {
 // block is txNum 0. This is equivalent to calling TxHash on the underlying
 // appmessage.MsgTx, however it caches the result so subsequent calls are more
 // efficient.
-func (b *Block) TxHash(txNum int) (*daghash.Hash, error) {
+func (b *Block) TxHash(txNum int) (*externalapi.DomainHash, error) {
 	// Attempt to get a wrapped transaction for the specified index. It
 	// will be created lazily if needed or simply return the cached version
 	// if it has already been generated.

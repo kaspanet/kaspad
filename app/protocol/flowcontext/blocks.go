@@ -1,11 +1,11 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -67,8 +67,8 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 }
 
 // AddBlock adds the given block to the DAG and propagates it.
-func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
-	_, _, err := f.DAG().ProcessBlock(block, flags)
+func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
+	_, _, err := f.Domain().ValidateAndInsertBlock(block, false)
 	if err != nil {
 		return err
 	}

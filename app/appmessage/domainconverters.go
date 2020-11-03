@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-func DomainBlockToMsgBlock(domainBlock externalapi.DomainBlock) *MsgBlock {
+func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	msgTxs := make([]*MsgTx, 0, len(domainBlock.Transactions))
 	for _, domainTransaction := range domainBlock.Transactions {
 		msgTxs = append(msgTxs, DomainTransactionToMsgTx(domainTransaction))

@@ -8,12 +8,6 @@ import (
 
 // HandleNotifyChainChanged handles the respectively named RPC command
 func HandleNotifyChainChanged(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	if context.AcceptanceIndex == nil {
-		errorMessage := appmessage.NewNotifyChainChangedResponseMessage()
-		errorMessage.Error = appmessage.RPCErrorf("Acceptance index is not available")
-		return errorMessage, nil
-	}
-
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err

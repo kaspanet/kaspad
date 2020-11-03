@@ -2,12 +2,12 @@ package rpccontext
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
 // CollectChainBlocks creates a slice of chain blocks from the given hashes
-func (ctx *Context) CollectChainBlocks(hashes []*daghash.Hash) ([]*appmessage.ChainBlock, error) {
+func (ctx *Context) CollectChainBlocks(hashes []*externalapi.DomainHash) ([]*appmessage.ChainBlock, error) {
 	chainBlocks := make([]*appmessage.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
 		acceptanceData, err := ctx.AcceptanceIndex.TxsAcceptanceData(hash)

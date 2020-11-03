@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/mining"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/random"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -49,7 +51,7 @@ type BlockTemplateState struct {
 
 	lastTxUpdate        mstime.Time
 	lastGenerated       mstime.Time
-	virtualParentHashes []*daghash.Hash
+	virtualParentHashes []*externalapi.DomainHash
 	minTimestamp        mstime.Time
 	template            *mining.BlockTemplate
 	notifyMap           map[string]map[int64]chan struct{}
@@ -79,7 +81,7 @@ func (bt *BlockTemplateState) Update(payAddress util.Address) error {
 	// generated.
 	var msgBlock *appmessage.MsgBlock
 	var targetDifficulty string
-	virtualParentHashes := bt.context.DAG.VirtualParentHashes()
+	virtualParentHashes := bt.context.Domain.GetVirtualSelectedParent()
 	template := bt.template
 	if template == nil || bt.virtualParentHashes == nil ||
 		!daghash.AreEqual(bt.virtualParentHashes, virtualParentHashes) ||
@@ -273,7 +275,7 @@ func (bt *BlockTemplateState) Response() (*appmessage.GetBlockTemplateResponseMe
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (bt *BlockTemplateState) notifyLongPollers(parentHashes []*daghash.Hash, lastGenerated mstime.Time) {
+func (bt *BlockTemplateState) notifyLongPollers(parentHashes []*externalapi.DomainHash, lastGenerated mstime.Time) {
 	// Notify anything that is waiting for a block template update from
 	// hashes which are not the current parent hashes.
 	parentHashesStr := daghash.JoinHashesStrings(parentHashes, "")
@@ -320,12 +322,12 @@ func (bt *BlockTemplateState) notifyLongPollers(parentHashes []*daghash.Hash, la
 // NotifyBlockAdded uses the newly-added block to notify any long poll
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
-func (bt *BlockTemplateState) NotifyBlockAdded(block *util.Block) {
+func (bt *BlockTemplateState) NotifyBlockAdded(block *externalapi.DomainBlock) {
 	spawn("BlockTemplateState.NotifyBlockAdded", func() {
 		bt.Lock()
 		defer bt.Unlock()
 
-		bt.notifyLongPollers(block.MsgBlock().Header.ParentHashes, bt.lastTxUpdate)
+		bt.notifyLongPollers(block.Header.ParentHashes, bt.lastTxUpdate)
 	})
 }
 
@@ -412,7 +414,7 @@ func (bt *BlockTemplateState) BlockTemplateOrLongPollChan(longPollID string,
 // without requiring a different channel for each client.
 //
 // This function MUST be called with the state locked.
-func (bt *BlockTemplateState) templateUpdateChan(parentHashes []*daghash.Hash, lastGenerated int64) chan struct{} {
+func (bt *BlockTemplateState) templateUpdateChan(parentHashes []*externalapi.DomainHash, lastGenerated int64) chan struct{} {
 	parentHashesStr := daghash.JoinHashesStrings(parentHashes, "")
 	// Either get the current list of channels waiting for updates about
 	// changes to block template for the parent hashes or create a new one.
@@ -436,7 +438,7 @@ func (bt *BlockTemplateState) templateUpdateChan(parentHashes []*daghash.Hash, l
 
 // encodeLongPollID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func (bt *BlockTemplateState) encodeLongPollID(parentHashes []*daghash.Hash, miningAddress util.Address, lastGenerated mstime.Time) string {
+func (bt *BlockTemplateState) encodeLongPollID(parentHashes []*externalapi.DomainHash, miningAddress util.Address, lastGenerated mstime.Time) string {
 	return fmt.Sprintf("%s-%s-%d", daghash.JoinHashesStrings(parentHashes, ""), miningAddress, lastGenerated.UnixSeconds())
 }
 
@@ -445,22 +447,22 @@ func (bt *BlockTemplateState) encodeLongPollID(parentHashes []*daghash.Hash, min
 // that are using long polling for block templates. The ID consists of the
 // parent blocks hashes for the associated template and the time the associated
 // template was generated.
-func (bt *BlockTemplateState) decodeLongPollID(longPollID string) ([]*daghash.Hash, int64, error) {
+func (bt *BlockTemplateState) decodeLongPollID(longPollID string) ([]*externalapi.DomainHash, int64, error) {
 	fields := strings.Split(longPollID, "-")
 	if len(fields) != 2 {
 		return nil, 0, errors.New("decodeLongPollID: invalid number of fields")
 	}
 
 	parentHashesStr := fields[0]
-	if len(parentHashesStr)%daghash.HashSize != 0 {
+	if len(parentHashesStr)%externalapi.DomainHashSize != 0 {
 		return nil, 0, errors.New("decodeLongPollID: invalid parent hashes format")
 	}
-	numberOfHashes := len(parentHashesStr) / daghash.HashSize
+	numberOfHashes := len(parentHashesStr) / externalapi.DomainHashSize
 
-	parentHashes := make([]*daghash.Hash, 0, numberOfHashes)
+	parentHashes := make([]*externalapi.DomainHash, 0, numberOfHashes)
 
-	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
-		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
+	for i := 0; i < len(parentHashesStr); i += externalapi.DomainHashSize {
+		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+externalapi.DomainHashSize])
 		if err != nil {
 			return nil, 0, errors.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
 		}
