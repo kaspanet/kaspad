@@ -51,7 +51,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 		}
 
 		// Walk down currentHash's selected parent chain to the appropriate ancestor
-		currentHash, err = sm.dagTraversalManager.HighestChainBlockBelowBlueScore(currentHash, nextBlueScore)
+		currentHash, err = sm.dagTraversalManager.LowestChainBlockAboveOrEqualToBlueScore(currentHash, nextBlueScore)
 		if err != nil {
 			return nil, err
 		}
