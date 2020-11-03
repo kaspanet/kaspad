@@ -46,4 +46,7 @@ const (
 
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
 	CoinbasePayloadScriptPublicKeyMaxLength = 150
+
+	// MaxHashesInGetHashesBetween is the maximum amount of hashes to return in GetHashesBetween
+	MaxHashesInGetHashesBetween = 1 << 17
 )

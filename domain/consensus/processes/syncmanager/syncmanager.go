@@ -7,13 +7,28 @@ import (
 )
 
 type syncManager struct {
+	databaseContext model.DBReader
+
 	dagTraversalManager model.DAGTraversalManager
+	dagTopologyManager  model.DAGTopologyManager
+
+	ghostdagDataStore model.GHOSTDAGDataStore
 }
 
 // New instantiates a new SyncManager
-func New(dagTraversalManager model.DAGTraversalManager) model.SyncManager {
+func New(
+	databaseContext model.DBReader,
+	dagTraversalManager model.DAGTraversalManager,
+	dagTopologyManager model.DAGTopologyManager,
+	ghostdagDataStore model.GHOSTDAGDataStore) model.SyncManager {
+
 	return &syncManager{
+		databaseContext: databaseContext,
+
 		dagTraversalManager: dagTraversalManager,
+		dagTopologyManager:  dagTopologyManager,
+
+		ghostdagDataStore: ghostdagDataStore,
 	}
 }
 
