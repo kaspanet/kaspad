@@ -80,12 +80,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTopologyManager,
 		ghostdagDataStore,
 		ghostdagManager)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		dagTopologyManager,
-		pruningStore,
-		blockStatusStore,
-		consensusStateStore)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
@@ -138,7 +132,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
-		pruningManager,
 		pastMedianTimeManager,
 		transactionValidator,
 		blockValidator,
@@ -159,6 +152,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
+
+	pruningManager := pruningmanager.New(
+		dbManager,
+		dagTraversalManager,
+		dagTopologyManager,
+		consensusStateManager,
+		ghostdagDataStore,
+		pruningStore,
+		blockStatusStore,
+		multisetStore,
+		acceptanceDataStore,
+		blockStore,
+		utxoDiffStore,
+		dagParams.FinalityDepth(),
+		model.KType(dagParams.K))
 
 	syncManager := syncmanager.New(
 		dbManager,

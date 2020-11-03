@@ -3,33 +3,63 @@ package pruningmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
 
 // pruningManager resolves and manages the current pruning point
 type pruningManager struct {
-	dagTraversalManager model.DAGTraversalManager
-	dagTopologyManager  model.DAGTopologyManager
+	databaseContext model.DBReader
 
-	pruningStore        model.PruningStore
-	blockStatusStore    model.BlockStatusStore
-	consensusStateStore model.ConsensusStateStore
+	dagTraversalManager   model.DAGTraversalManager
+	dagTopologyManager    model.DAGTopologyManager
+	consensusStateManager model.ConsensusStateManager
+	ghostdagDataStore     model.GHOSTDAGDataStore
+	pruningStore          model.PruningStore
+	blockStatusStore      model.BlockStatusStore
+
+	multiSetStore       model.MultisetStore
+	acceptanceDataStore model.AcceptanceDataStore
+	blocksStore         model.BlockStore
+	utxoDiffStore       model.UTXODiffStore
+
+	pruningDepth     uint64
+	finalityInterval uint64
 }
 
 // New instantiates a new PruningManager
 func New(
+	databaseContext model.DBReader,
+
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
+	consensusStateManager model.ConsensusStateManager,
+	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
-	consensusStateStore model.ConsensusStateStore) model.PruningManager {
+
+	multiSetStore model.MultisetStore,
+	acceptanceDataStore model.AcceptanceDataStore,
+	blocksStore model.BlockStore,
+	utxoDiffStore model.UTXODiffStore,
+
+	finalityInterval uint64,
+	k model.KType,
+) model.PruningManager {
 
 	return &pruningManager{
-		dagTraversalManager: dagTraversalManager,
-		dagTopologyManager:  dagTopologyManager,
-
-		pruningStore:        pruningStore,
-		blockStatusStore:    blockStatusStore,
-		consensusStateStore: consensusStateStore,
+		databaseContext:       databaseContext,
+		dagTraversalManager:   dagTraversalManager,
+		dagTopologyManager:    dagTopologyManager,
+		consensusStateManager: consensusStateManager,
+		ghostdagDataStore:     ghostdagDataStore,
+		pruningStore:          pruningStore,
+		blockStatusStore:      blockStatusStore,
+		multiSetStore:         multiSetStore,
+		acceptanceDataStore:   acceptanceDataStore,
+		blocksStore:           blocksStore,
+		utxoDiffStore:         utxoDiffStore,
+		pruningDepth:          pruningDepth(uint64(k), finalityInterval, constants.MergeSetSizeLimit),
+		finalityInterval:      finalityInterval,
 	}
 }
 
