@@ -56,17 +56,17 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 			continue
 		}
 		visited.Add(current)
-		var isCurrentAncestorOfLowNode bool
+		var isCurrentAncestorOfLowHash bool
 		if current == lowHash {
-			isCurrentAncestorOfLowNode = false
+			isCurrentAncestorOfLowHash = false
 		} else {
 			var err error
-			isCurrentAncestorOfLowNode, err = sm.dagTopologyManager.IsAncestorOf(current, lowHash)
+			isCurrentAncestorOfLowHash, err = sm.dagTopologyManager.IsAncestorOf(current, lowHash)
 			if err != nil {
 				return nil, err
 			}
 		}
-		if isCurrentAncestorOfLowNode {
+		if isCurrentAncestorOfLowHash {
 			continue
 		}
 		err = candidateHashes.Push(current)
