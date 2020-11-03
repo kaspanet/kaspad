@@ -188,7 +188,7 @@ func SetupDBManager(dbName string) (model.DBManager, func(), error) {
 	return dbManager, teardown, err
 }
 
-func TestValidateHeaderInIsolation(t *testing.T) {
+func TestValidateInvalidBlock(t *testing.T) {
 	dbManager, teardownFunc, err := SetupDBManager(t.Name())
 	if err != nil {
 		t.Fatalf("Failed to setup DBManager instance: %v", err)
@@ -207,7 +207,7 @@ func TestValidateHeaderInIsolation(t *testing.T) {
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
 		UTXOCommitment:       externalapi.DomainHash{},
 		TimeInMilliseconds:   mstime.Now().UnixMilliseconds() + int64(len(parentHashes)),
-		Bits:                 0,
+		Bits:                 9999999,
 	}
 
 	transactions := make([]*externalapi.DomainTransaction, 1000)
@@ -271,9 +271,14 @@ func TestValidateHeaderInIsolation(t *testing.T) {
 		}
 	}
 	transactions = append(transactions, coinbaseTransactions...)
-
-	//subnetworks.SubnetworkIDCoinbase
 	block := createBlock(blockHeader, transactions)
+	validator.blockStore.Stage(block.Hash, block)
+	validator.blockHeaderStore.Stage(block.Hash, blockHeader)
+	validator.ghostdagDataStore.Stage(block.Hash, &model.BlockGHOSTDAGData{
+		SelectedParent: &genesisHash,
+		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
+		MergeSetReds:   make([]*externalapi.DomainHash, 1),
+	})
 
 	// checkParentsLimit
 	err = validator.checkParentsLimit(blockHeader)
@@ -287,7 +292,7 @@ func TestValidateHeaderInIsolation(t *testing.T) {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
 
-	// checkBlockTransactionsFinalized
+	// checkParentsIncest
 	err = validator.checkParentsIncest(blockHeader)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
@@ -301,12 +306,6 @@ func TestValidateHeaderInIsolation(t *testing.T) {
 
 	// checkMergeSizeLimit
 	err = validator.checkMergeSizeLimit(block.Hash)
-	if err == nil {
-		t.Fatalf("Waiting for error, but got: %s", err)
-	}
-
-	// validateMedianTime
-	err = validator.validateMedianTime(blockHeader)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
@@ -368,6 +367,18 @@ func TestValidateHeaderInIsolation(t *testing.T) {
 
 	// checkBlockHasNoChainedTransactions
 	err = validator.checkBlockHasNoChainedTransactions(block)
+	if err == nil {
+		t.Fatalf("Waiting for error, but got: %s", err)
+	}
+
+	// checkProofOfWork
+	err = validator.checkProofOfWork(blockHeader)
+	if err == nil {
+		t.Fatalf("Waiting for error, but got: %s", err)
+	}
+
+	// validateDifficulty
+	err = validator.validateDifficulty(block.Hash)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
