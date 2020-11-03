@@ -7,8 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
-var virtualDiffParentsBucket = dbkeys.MakeBucket([]byte("virtual-diff-parents"))
-var virtualDiffParentsKey = virtualDiffParentsBucket.Key([]byte("virtual-diff-parents"))
+var virtualDiffParentsKey = dbkeys.MakeBucket([]byte("virtual-diff-parents")).Key([]byte("virtual-diff-parents"))
 
 func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if c.stagedVirtualDiffParents != nil {
@@ -23,10 +22,8 @@ func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*ex
 	return hashes.DeserializeHashSlice(virtualDiffParentsBytes)
 }
 
-func (c consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) error {
+func (c consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
 	c.stagedVirtualDiffParents = tipHashes
-
-	return nil
 }
 
 func (c consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {

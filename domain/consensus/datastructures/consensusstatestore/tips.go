@@ -7,8 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
-var tipsBucket = dbkeys.MakeBucket([]byte("tips"))
-var tipsKey = tipsBucket.Key([]byte("tips"))
+var tipsKey = dbkeys.MakeBucket([]byte("tips")).Key([]byte("tips"))
 
 func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if c.stagedTips != nil {
@@ -23,10 +22,8 @@ func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.Doma
 	return hashes.DeserializeHashSlice(tipsBytes)
 }
 
-func (c consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) error {
+func (c consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
 	c.stagedTips = tipHashes
-
-	return nil
 }
 
 func (c consensusStateStore) commitTips(dbTx model.DBTransaction) error {
