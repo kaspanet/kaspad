@@ -92,3 +92,48 @@ func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoin
 
 	return dbContext.Has(key)
 }
+
+func (c consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
+	cursor, err := dbContext.Cursor(utxoSetBucket)
+	if err != nil {
+		return nil, err
+	}
+
+	return newUTXOSetIterator(cursor), nil
+}
+
+type utxoSetIterator struct {
+	cursor model.DBCursor
+}
+
+func newUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
+	return &utxoSetIterator{cursor: cursor}
+}
+
+func (u utxoSetIterator) Next() bool {
+	return u.cursor.Next()
+}
+
+func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) {
+	key, err := u.cursor.Key()
+	if err != nil {
+		panic(err)
+	}
+
+	utxoEntryBytes, err := u.cursor.Value()
+	if err != nil {
+		panic(err)
+	}
+
+	outpoint, err = deserializeOutpoint(key.Suffix())
+	if err != nil {
+		panic(err)
+	}
+
+	utxoEntry, err = deserializeUTXOEntry(utxoEntryBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return outpoint, utxoEntry
+}
