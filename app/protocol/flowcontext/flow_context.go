@@ -4,10 +4,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain"
+
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -32,7 +33,7 @@ type FlowContext struct {
 	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
 	txPool            *mempool.TxPool
-	dag               *blockdag.BlockDAG
+	domain            *domain.Domain
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
@@ -55,14 +56,14 @@ type FlowContext struct {
 }
 
 // New returns a new instance of FlowContext.
-func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmanager.AddressManager,
+func New(cfg *config.Config, domain *domain.Domain, addressManager *addressmanager.AddressManager,
 	txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
 	connectionManager *connmanager.ConnectionManager) *FlowContext {
 
 	return &FlowContext{
 		cfg:                         cfg,
 		netAdapter:                  netAdapter,
-		dag:                         dag,
+		domain:                      domain,
 		addressManager:              addressManager,
 		connectionManager:           connectionManager,
 		txPool:                      txPool,
