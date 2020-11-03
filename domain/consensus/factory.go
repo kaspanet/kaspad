@@ -185,9 +185,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		headerTipsStore)
 	syncManager := syncmanager.New(
 		dbManager,
+		&genesisHash,
 		dagTraversalManager,
 		dagTopologyManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		blockStatusStore)
 
 	return &consensus{
 		databaseContext: dbManager,

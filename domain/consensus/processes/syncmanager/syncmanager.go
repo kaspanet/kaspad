@@ -7,28 +7,34 @@ import (
 )
 
 type syncManager struct {
-	databaseContext model.DBReader
+	databaseContext  model.DBReader
+	genesisBlockHash *externalapi.DomainHash
 
 	dagTraversalManager model.DAGTraversalManager
 	dagTopologyManager  model.DAGTopologyManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
+	blockStatusStore  model.BlockStatusStore
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
+	genesisBlockHash *externalapi.DomainHash,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.SyncManager {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	blockStatusStore model.BlockStatusStore) model.SyncManager {
 
 	return &syncManager{
-		databaseContext: databaseContext,
+		databaseContext:  databaseContext,
+		genesisBlockHash: genesisBlockHash,
 
 		dagTraversalManager: dagTraversalManager,
 		dagTopologyManager:  dagTopologyManager,
 
 		ghostdagDataStore: ghostdagDataStore,
+		blockStatusStore:  blockStatusStore,
 	}
 }
 
