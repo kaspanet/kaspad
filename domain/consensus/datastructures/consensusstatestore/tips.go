@@ -34,6 +34,5 @@ func (c consensusStateStore) commitTips(dbTx model.DBTransaction) error {
 		return err
 	}
 
-	c.stagedTips = nil
 	return nil
 }
