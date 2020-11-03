@@ -15,6 +15,7 @@ type pruningManager struct {
 	dagTraversalManager   model.DAGTraversalManager
 	dagTopologyManager    model.DAGTopologyManager
 	consensusStateManager model.ConsensusStateManager
+	consensusStateStore   model.ConsensusStateStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	pruningStore          model.PruningStore
 	blockStatusStore      model.BlockStatusStore
@@ -35,6 +36,7 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	consensusStateManager model.ConsensusStateManager,
+	consensusStateStore model.ConsensusStateStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
@@ -53,6 +55,7 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
+		consensusStateStore:   consensusStateStore,
 		ghostdagDataStore:     ghostdagDataStore,
 		pruningStore:          pruningStore,
 		blockStatusStore:      blockStatusStore,
@@ -152,11 +155,35 @@ func (pm *pruningManager) SerializedUTXOSet() ([]byte, error) {
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
-	// Collect every node in highNode's past (including itself) but
-	// NOT in the lowNode's past (excluding itself) into an up-heap
-	// (a heap sorted by blueScore from lowest to greatest).
-	visited := map[externalapi.DomainHash]struct{}{}
+	// Go over all P.Past and P.AC that's not in V.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
+
+	// Find P.AC that's not in V.Past
+	dagTips, err := pm.consensusStateStore.Tips(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	for _, tip := range dagTips {
+		hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(pruningPoint, tip)
+		if err != nil {
+			return err
+		}
+		if !hasPruningPointInPast {
+			isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOf(model.VirtualBlockHash, tip)
+			if err != nil {
+				return err
+			}
+			if !isInVirtualPast {
+				// Add them to the queue so they and their past will be pruned
+				err := queue.Push(tip)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	// Add P.Parents
 	parents, err := pm.dagTopologyManager.Parents(pruningPoint)
 	if err != nil {
 		return err
@@ -168,6 +195,8 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 		}
 	}
 
+	visited := map[externalapi.DomainHash]struct{}{}
+	// Prune everything in the queue including its past
 	for queue.Len() > 0 {
 		current := queue.Pop()
 		if _, ok := visited[*current]; ok {
