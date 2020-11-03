@@ -53,14 +53,14 @@ func (sm *syncManager) IsBlockHeaderInPruningPointFutureAndVirtualPast(blockHash
 	return sm.isBlockHeaderInPruningPointFutureAndVirtualPast(blockHash)
 }
 
-func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
+func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
 	defer onEnd()
 
 	return sm.createBlockLocator(lowHash, highHash)
 }
 
-func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
+func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "FindNextBlockLocatorBoundaries")
 	defer onEnd()
 

@@ -6,6 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// antiPastHashesBetween returns the hashes of the blocks between the
+// lowHash's antiPast and highHash's antiPast, or up to
+// MaxHashesInGetHashesBetween.
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {

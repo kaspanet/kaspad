@@ -20,8 +20,8 @@ type Consensus interface {
 	GetPruningPointUTXOSet() ([]byte, error)
 	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
-	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error)
-	FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
+	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
+	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
 }
 
 type consensus struct {
@@ -139,10 +139,10 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	return s.GetBlock(virtualGHOSTDAGData.SelectedParent)
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (*externalapi.BlockLocator, error) {
+func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	return s.syncManager.CreateBlockLocator(lowHash, highHash)
 }
 
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator *externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
+func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
 }
