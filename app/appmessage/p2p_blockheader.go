@@ -6,11 +6,13 @@ package appmessage
 
 import (
 	"fmt"
+	"io"
+	"math"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"io"
-	"math"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -37,17 +39,17 @@ type BlockHeader struct {
 	Version int32
 
 	// Hashes of the parent block headers in the blockDAG.
-	ParentHashes []*daghash.Hash
+	ParentHashes []*externalapi.DomainHash
 
 	// HashMerkleRoot is the merkle tree reference to hash of all transactions for the block.
-	HashMerkleRoot *daghash.Hash
+	HashMerkleRoot *externalapi.DomainHash
 
 	// AcceptedIDMerkleRoot is merkle tree reference to hash all transactions
 	// accepted form the block.Blues
-	AcceptedIDMerkleRoot *daghash.Hash
+	AcceptedIDMerkleRoot *externalapi.DomainHash
 
 	// UTXOCommitment is an ECMH UTXO commitment to the block UTXO.
-	UTXOCommitment *daghash.Hash
+	UTXOCommitment *externalapi.DomainHash
 
 	// Time the block was created.
 	Timestamp mstime.Time
@@ -135,8 +137,8 @@ func (h *BlockHeader) SerializeSize() int {
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot *daghash.Hash,
-	acceptedIDMerkleRoot *daghash.Hash, utxoCommitment *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
+func NewBlockHeader(version int32, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
+	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
@@ -162,18 +164,18 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 		return err
 	}
 
-	bh.ParentHashes = make([]*daghash.Hash, numParentBlocks)
+	bh.ParentHashes = make([]*externalapi.DomainHash, numParentBlocks)
 	for i := byte(0); i < numParentBlocks; i++ {
-		hash := &daghash.Hash{}
+		hash := &externalapi.DomainHash{}
 		err := ReadElement(r, hash)
 		if err != nil {
 			return err
 		}
 		bh.ParentHashes[i] = hash
 	}
-	bh.HashMerkleRoot = &daghash.Hash{}
-	bh.AcceptedIDMerkleRoot = &daghash.Hash{}
-	bh.UTXOCommitment = &daghash.Hash{}
+	bh.HashMerkleRoot = &externalapi.DomainHash{}
+	bh.AcceptedIDMerkleRoot = &externalapi.DomainHash{}
+	bh.UTXOCommitment = &externalapi.DomainHash{}
 	return readElements(r, bh.HashMerkleRoot, bh.AcceptedIDMerkleRoot, bh.UTXOCommitment,
 		(*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/util/daghash"
 )
@@ -235,9 +235,9 @@ func (msg *MsgBlock) BlockHash() *daghash.Hash {
 // ConvertToPartial clears out all the payloads of the subnetworks that are
 // incompatible with the given subnetwork ID.
 // Note: this operation modifies the block in place.
-func (msg *MsgBlock) ConvertToPartial(subnetworkID *subnetworkid.SubnetworkID) {
+func (msg *MsgBlock) ConvertToPartial(subnetworkID *externalapi.DomainSubnetworkID) {
 	for _, tx := range msg.Transactions {
-		if !tx.SubnetworkID.IsEqual(subnetworkID) {
+		if tx.SubnetworkID != *subnetworkID {
 			tx.Payload = []byte{}
 		}
 	}

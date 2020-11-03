@@ -11,9 +11,14 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 const (
@@ -170,13 +175,13 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // Outpoint defines a kaspa data type that is used to track previous
 // transaction outputs.
 type Outpoint struct {
-	TxID  daghash.TxID
+	TxID  externalapi.DomainTransactionID
 	Index uint32
 }
 
 // NewOutpoint returns a new kaspa transaction outpoint point with the
 // provided hash and index.
-func NewOutpoint(txID *daghash.TxID, index uint32) *Outpoint {
+func NewOutpoint(txID *externalapi.DomainTransactionID, index uint32) *Outpoint {
 	return &Outpoint{
 		TxID:  *txID,
 		Index: index,
@@ -272,9 +277,9 @@ type MsgTx struct {
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
-	SubnetworkID subnetworkid.SubnetworkID
+	SubnetworkID externalapi.DomainSubnetworkID
 	Gas          uint64
-	PayloadHash  *daghash.Hash
+	PayloadHash  *externalapi.DomainHash
 	Payload      []byte
 }
 
@@ -295,7 +300,7 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 // value and reference the relevant block id, instead of previous transaction id.
 func (msg *MsgTx) IsCoinBase() bool {
 	// A coinbase transaction must have subnetwork id SubnetworkIDCoinbase
-	return msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)
+	return msg.SubnetworkID == subnetworks.SubnetworkIDCoinbase
 }
 
 // TxHash generates the Hash for the transaction.
@@ -357,7 +362,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		// Deep copy the old previous outpoint.
 		oldOutpoint := oldTxIn.PreviousOutpoint
 		newOutpoint := Outpoint{}
-		newOutpoint.TxID.SetBytes(oldOutpoint.TxID[:])
+		newOutpoint.TxID = oldOutpoint.TxID
 		newOutpoint.Index = oldOutpoint.Index
 
 		// Deep copy the old signature script.
@@ -512,14 +517,14 @@ func (msg *MsgTx) KaspaDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+	if msg.SubnetworkID != subnetworks.SubnetworkIDNative {
 		msg.Gas, err = binaryserializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
 			return err
 		}
 
-		var payloadHash daghash.Hash
+		var payloadHash externalapi.DomainHash
 		err = ReadElement(r, &payloadHash)
 		if err != nil {
 			returnScriptBuffers()
@@ -660,8 +665,8 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		return err
 	}
 
-	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		if msg.SubnetworkID.IsBuiltIn() && msg.Gas != 0 {
+	if msg.SubnetworkID != subnetworks.SubnetworkIDNative {
+		if subnetworks.IsBuiltIn(msg.SubnetworkID) && msg.Gas != 0 {
 			str := "Transactions from built-in should have 0 gas"
 			return messageError("MsgTx.KaspaEncode", str)
 		}
@@ -738,7 +743,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+	if msg.SubnetworkID != subnetworks.SubnetworkIDNative {
 		// Gas 8 bytes
 		n += 8
 
@@ -819,10 +824,10 @@ func (msg *MsgTx) ScriptPubKeyLocs() []int {
 // 1. The SupportsAll subnetwork (full node)
 // 2. The native subnetwork
 // 3. The transaction's subnetwork
-func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
+func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *externalapi.DomainSubnetworkID) bool {
 	return subnetworkID == nil ||
-		subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		subnetworkID.IsEqual(&msg.SubnetworkID)
+		*subnetworkID == subnetworks.SubnetworkIDNative ||
+		*subnetworkID == msg.SubnetworkID
 }
 
 // newMsgTx returns a new tx message that conforms to the Message interface.
@@ -834,7 +839,7 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 // The payload hash is calculated automatically according to provided payload.
 // Also, the lock time is set to zero to indicate the transaction is valid
 // immediately as opposed to some time in future.
-func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte, lockTime uint64) *MsgTx {
 
 	if txIn == nil {
@@ -845,9 +850,9 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
 	}
 
-	var payloadHash *daghash.Hash
-	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		payloadHash = daghash.DoubleHashP(payload)
+	var payloadHash externalapi.DomainHash
+	if *subnetworkID != subnetworks.SubnetworkIDNative {
+		payloadHash = hashes.HashData(payload)
 	}
 
 	return &MsgTx{
@@ -856,7 +861,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 		TxOut:        txOut,
 		SubnetworkID: *subnetworkID,
 		Gas:          gas,
-		PayloadHash:  payloadHash,
+		PayloadHash:  &payloadHash,
 		Payload:      payload,
 		LockTime:     lockTime,
 	}
@@ -864,11 +869,11 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 
 // NewNativeMsgTx returns a new tx message in the native subnetwork
 func NewNativeMsgTx(version int32, txIn []*TxIn, txOut []*TxOut) *MsgTx {
-	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, 0)
+	return newMsgTx(version, txIn, txOut, &subnetworks.SubnetworkIDNative, 0, nil, 0)
 }
 
 // NewSubnetworkMsgTx returns a new tx message in the specified subnetwork with specified gas and payload
-func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte) *MsgTx {
 
 	return newMsgTx(version, txIn, txOut, subnetworkID, gas, payload, 0)
@@ -878,7 +883,7 @@ func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkI
 //
 // See newMsgTx for further documntation of the parameters
 func NewNativeMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
-	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, locktime)
+	return newMsgTx(version, txIn, txOut, &subnetworks.SubnetworkIDNative, 0, nil, locktime)
 }
 
 // NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
@@ -886,7 +891,7 @@ func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint
 	payload := make([]byte, 8)
 	binary.LittleEndian.PutUint64(payload, gasLimit)
 
-	return NewSubnetworkMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
+	return NewSubnetworkMsgTx(version, txIn, txOut, &subnetworks.SubnetworkIDRegistry, 0, payload)
 }
 
 // readOutpoint reads the next sequence of bytes from r as an Outpoint.
