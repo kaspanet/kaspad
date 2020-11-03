@@ -2,13 +2,16 @@ package syncmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/pkg/errors"
 )
 
+// maxHashesInGetHashesBetween is the maximum amount of hashes to return in GetHashesBetween
+const maxHashesInGetHashesBetween = 1 << 17
+
 // antiPastHashesBetween returns the hashes of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
-// MaxHashesInGetHashesBetween.
+// maxHashesInGetHashesBetween.
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
@@ -25,23 +28,23 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 			lowBlockBlueScore, highBlockBlueScore)
 	}
 
-	// In order to get no more then MaxHashesInGetHashesBetween
+	// In order to get no more then maxHashesInGetHashesBetween
 	// blocks from th future of the lowHash (including itself),
 	// we iterate the selected parent chain of the highNode and
 	// stop once we reach
-	// highBlockBlueScore-lowBlockBlueScore+1 <= MaxHashesInGetHashesBetween.
+	// highBlockBlueScore-lowBlockBlueScore+1 <= maxHashesInGetHashesBetween.
 	// That stop point becomes the new highHash.
 	// Using blueScore as an approximation is considered to be
 	// fairly accurate because we presume that most DAG blocks are
 	// blue.
-	for highBlockBlueScore-lowBlockBlueScore+1 > constants.MaxHashesInGetHashesBetween {
+	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInGetHashesBetween {
 		highHash = highBlockGHOSTDAGData.SelectedParent
 	}
 
 	// Collect every node in highHash's past (including itself) but
 	// NOT in the lowHash's past (excluding itself) into an up-heap
 	// (a heap sorted by blueScore from lowest to greatest).
-	visited := map[*externalapi.DomainHash]struct{}{}
+	visited := hashset.New()
 	candidateHashes := sm.dagTraversalManager.NewUpHeap()
 	queue := sm.dagTraversalManager.NewDownHeap()
 	err = queue.Push(highHash)
@@ -50,10 +53,10 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	}
 	for queue.Len() > 0 {
 		current := queue.Pop()
-		if _, ok := visited[current]; ok {
+		if visited.Contains(current) {
 			continue
 		}
-		visited[current] = struct{}{}
+		visited.Add(current)
 		var isCurrentAncestorOfLowNode bool
 		if current == lowHash {
 			isCurrentAncestorOfLowNode = false
@@ -85,7 +88,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 
 	// Pop candidateHashes into a slice. Since candidateHashes is
 	// an up-heap, it's guaranteed to be ordered from low to high
-	hashesLength := constants.MaxHashesInGetHashesBetween
+	hashesLength := maxHashesInGetHashesBetween
 	if candidateHashes.Len() < hashesLength {
 		hashesLength = candidateHashes.Len()
 	}
