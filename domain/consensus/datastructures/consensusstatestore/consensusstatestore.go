@@ -49,3 +49,7 @@ func (c consensusStateStore) IsStaged() bool {
 func (c consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
 	panic("implement me")
 }
+
+func (c consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
+	panic("implement me")
+}

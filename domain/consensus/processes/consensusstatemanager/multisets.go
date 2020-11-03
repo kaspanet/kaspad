@@ -4,12 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 )
 
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
-	multiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
+	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return nil, err
 	}
@@ -24,14 +25,14 @@ func (csm *consensusStateManager) calculateMultiset(
 
 			isCoinbase := i == 0
 			var err error
-			err = addTransactionToMultiset(multiset, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
+			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	return multiset, nil
+	return ms, nil
 }
 
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
@@ -86,4 +87,16 @@ func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntr
 	multiset.Remove(serializedUTXO)
 
 	return nil
+}
+
+func calcMultisetFromUTXOSetIterator(iterator model.ReadOnlyUTXOSetIterator) (model.Multiset, error) {
+	ms := multiset.New()
+	for iterator.Next() {
+		entry, outpoint := iterator.Get()
+		err := addUTXOToMultiset(ms, outpoint, entry)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ms, nil
 }

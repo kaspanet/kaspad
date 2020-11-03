@@ -145,6 +145,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager,
 		coinbaseManager,
 		mergeDepthManager,
+
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,
@@ -153,10 +154,20 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockRelationStore,
 		acceptanceDataStore,
-		blockHeaderStore)
+		blockHeaderStore,
+		headerTipsStore)
 	if err != nil {
 		return nil, err
 	}
+
+	syncManager := syncmanager.New(
+		dbManager,
+		&genesisHash,
+		dagTraversalManager,
+		dagTopologyManager,
+		ghostdagDataStore,
+		blockStatusStore)
+
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		dbManager,
@@ -170,6 +181,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		coinbaseManager,
 		headerTipsManager,
+		syncManager,
 
 		acceptanceDataStore,
 		blockStore,
@@ -183,13 +195,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockHeaderStore,
 		headerTipsStore)
-	syncManager := syncmanager.New(
-		dbManager,
-		&genesisHash,
-		dagTraversalManager,
-		dagTopologyManager,
-		ghostdagDataStore,
-		blockStatusStore)
 
 	return &consensus{
 		databaseContext: dbManager,

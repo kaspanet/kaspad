@@ -229,6 +229,10 @@ var (
 	ErrMissingParent = newRuleError("ErrMissingParent")
 
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
+
+	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
+
+	ErrHeaderlessBlockInIBD = newRuleError("ErrHeaderlessBlockInIBD")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
