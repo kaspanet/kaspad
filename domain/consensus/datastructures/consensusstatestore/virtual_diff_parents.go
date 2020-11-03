@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
-var virtualDiffParentsKey = dbkeys.MakeBucket([]byte("virtual-diff-parents")).Key([]byte("virtual-diff-parents"))
+var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents"))
 
 func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if c.stagedVirtualDiffParents != nil {
