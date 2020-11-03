@@ -3,10 +3,10 @@ package externalapi
 // Each of the following represent one of the possible sync
 // states of the consensus
 const (
-	SyncStateRegular SyncState = iota
+	SyncStateNormal SyncState = iota
+	SyncStateMissingUTXOSet
 	SyncStateHeadersFirst
-	SyncStateHeadersFirstAfterUTXOSet
-	SyncStateIBD
+	SyncStateMissingBlockBodies
 )
 
 // SyncState represents the current sync state of the consensus
