@@ -12,21 +12,17 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -40,18 +36,16 @@ import (
 )
 
 func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params) *blockValidator {
+	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
 	blockHeaderStore := blockheaderstore.New()
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
-	multisetStore := multisetstore.New()
-	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New()
-	utxoDiffStore := utxodiffstore.New()
-	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
+	// Processes
 	reachabilityManager := reachabilitymanager.New(
 		dbManager,
 		ghostdagDataStore,
@@ -69,29 +63,7 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
-		ghostdagDataStore)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		dagTopologyManager,
-		pruningStore,
-		blockStatusStore,
-		consensusStateStore)
-	consensusStateManager := consensusstatemanager.New(
-		dbManager,
-		dagParams,
-		ghostdagManager,
-		dagTopologyManager,
-		pruningManager,
-		blockStatusStore,
 		ghostdagDataStore,
-		consensusStateStore,
-		multisetStore,
-		blockStore,
-		utxoDiffStore,
-		blockRelationStore,
-		acceptanceDataStore,
-		blockHeaderStore)
-	difficultyManager := difficultymanager.New(
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,
@@ -102,40 +74,51 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
+	difficultyManager := difficultymanager.New(
+		ghostdagManager)
+	coinbaseManager := coinbasemanager.New(
+		dbManager,
+		ghostdagDataStore,
+		acceptanceDataStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
-	validator := New(
+	mergeDepthManager := mergedepthmanager.New(
+		dagParams.FinalityDepth(),
+		dbManager,
+		dagTopologyManager,
+		dagTraversalManager,
+		ghostdagDataStore)
+	vlidator := New(
 		dagParams.PowMax,
 		false,
 		&genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
-		uint64(dagParams.FinalityDuration/dagParams.TargetTimePerBlock),
 
 		dbManager,
-		consensusStateManager,
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		coinbaseManager,
+		mergeDepthManager,
 
 		blockStore,
 		ghostdagDataStore,
 		blockHeaderStore,
+		blockStatusStore,
 	)
 
-	return validator.(*blockValidator)
+	return vlidator.(*blockValidator)
 }
 
 func createBlock(header *externalapi.DomainBlockHeader,
 	transactions []*externalapi.DomainTransaction) *externalapi.DomainBlock {
-	headerHash := hashserialization.HeaderHash(header)
 	return &externalapi.DomainBlock{
 		Header:       header,
 		Transactions: transactions,
-		Hash:         headerHash,
 	}
 }
 
@@ -153,7 +136,8 @@ func prepareParentHashes(numOfBlocks int, parents []*externalapi.DomainHash, tim
 			Bits:                 0,
 		}
 
-		result[i] = createBlock(header, nil).Hash
+		headerHash := hashserialization.HeaderHash(header)
+		result[i] = headerHash
 	}
 
 	return result
@@ -272,9 +256,10 @@ func TestValidateInvalidBlock(t *testing.T) {
 	}
 	transactions = append(transactions, coinbaseTransactions...)
 	block := createBlock(blockHeader, transactions)
-	validator.blockStore.Stage(block.Hash, block)
-	validator.blockHeaderStore.Stage(block.Hash, blockHeader)
-	validator.ghostdagDataStore.Stage(block.Hash, &model.BlockGHOSTDAGData{
+	blockHash := hashserialization.HeaderHash(block.Header)
+	validator.blockStore.Stage(blockHash, block)
+	validator.blockHeaderStore.Stage(blockHash, blockHeader)
+	validator.ghostdagDataStore.Stage(blockHash, &model.BlockGHOSTDAGData{
 		SelectedParent: &genesisHash,
 		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
 		MergeSetReds:   make([]*externalapi.DomainHash, 1),
@@ -305,13 +290,13 @@ func TestValidateInvalidBlock(t *testing.T) {
 	}
 
 	// checkMergeSizeLimit
-	err = validator.checkMergeSizeLimit(block.Hash)
+	err = validator.checkMergeSizeLimit(blockHash)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
 
 	// checkBlockTransactionsFinalized
-	err = validator.checkBlockTransactionsFinalized(block.Hash)
+	err = validator.checkBlockTransactionsFinalized(blockHash)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
@@ -378,7 +363,7 @@ func TestValidateInvalidBlock(t *testing.T) {
 	}
 
 	// validateDifficulty
-	err = validator.validateDifficulty(block.Hash)
+	err = validator.validateDifficulty(blockHash)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
 	}
