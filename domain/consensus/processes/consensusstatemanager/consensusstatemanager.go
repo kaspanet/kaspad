@@ -2,14 +2,13 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
 	dagParams       *dagconfig.Params
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
@@ -21,6 +20,7 @@ type consensusStateManager struct {
 	reachabilityManager   model.ReachabilityManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
+	headerTipsStore       model.HeaderTipsStore
 
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -31,11 +31,13 @@ type consensusStateManager struct {
 	blockRelationStore  model.BlockRelationStore
 	acceptanceDataStore model.AcceptanceDataStore
 	blockHeaderStore    model.BlockHeaderStore
+
+	stores []model.Store
 }
 
 // New instantiates a new ConsensusStateManager
 func New(
-	databaseContext model.DBReader,
+	databaseContext model.DBManager,
 	dagParams *dagconfig.Params,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
@@ -47,6 +49,7 @@ func New(
 	reachabilityManager model.ReachabilityManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
+
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	consensusStateStore model.ConsensusStateStore,
@@ -55,7 +58,8 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
-	blockHeaderStore model.BlockHeaderStore) (model.ConsensusStateManager, error) {
+	blockHeaderStore model.BlockHeaderStore,
+	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
 		dagParams:       dagParams,
@@ -81,11 +85,22 @@ func New(
 		blockRelationStore:  blockRelationStore,
 		acceptanceDataStore: acceptanceDataStore,
 		blockHeaderStore:    blockHeaderStore,
+		headerTipsStore:     headerTipsStore,
+
+		stores: []model.Store{
+			consensusStateStore,
+			acceptanceDataStore,
+			blockStore,
+			blockStatusStore,
+			blockRelationStore,
+			multisetStore,
+			ghostdagDataStore,
+			consensusStateStore,
+			utxoDiffStore,
+			blockHeaderStore,
+			headerTipsStore,
+		},
 	}
 
 	return csm, nil
-}
-
-func (csm *consensusStateManager) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	panic("implement me")
 }

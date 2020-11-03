@@ -49,3 +49,8 @@ func FromBytes(multisetBytes []byte) (model.Multiset, error) {
 
 	return &multiset{ms: ms}, nil
 }
+
+// New returns a new model.Multiset
+func New() model.Multiset {
+	return &multiset{ms: secp256k1.NewMultiset()}
+}
