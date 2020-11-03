@@ -27,7 +27,11 @@ func (dbw *dbManager) Cursor(bucket model.DBBucket) (model.DBCursor, error) {
 }
 
 func (dbw *dbManager) Begin() (model.DBTransaction, error) {
-	panic("unimplemented")
+	transaction, err := dbw.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return newDBTransaction(transaction), nil
 }
 
 // New returns wraps the given database as an instance of model.DBManager
