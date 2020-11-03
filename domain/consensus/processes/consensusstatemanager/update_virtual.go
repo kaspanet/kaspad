@@ -69,5 +69,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		}
 	}
 
-	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+
+	return nil
 }

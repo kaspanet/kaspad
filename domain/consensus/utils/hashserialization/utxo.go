@@ -49,17 +49,9 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 }
 
 func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
-	buf := [8 + 1 + 8]byte{}
-	// Encode the blueScore.
-	binary.LittleEndian.PutUint64(buf[:8], entry.BlockBlueScore)
-
-	buf[8] = serializeUTXOEntryFlags(entry)
-
-	binary.LittleEndian.PutUint64(buf[9:], entry.Amount)
-
-	_, err := w.Write(buf[:])
+	err := writeElements(w, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	count := uint64(len(entry.ScriptPublicKey))
@@ -74,14 +66,4 @@ func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 	}
 
 	return nil
-}
-
-func serializeUTXOEntryFlags(entry *externalapi.UTXOEntry) uint8 {
-	var serializedFlags uint8 = 0
-
-	if entry.IsCoinbase {
-		serializedFlags |= 1
-	}
-
-	return serializedFlags
 }

@@ -85,10 +85,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 		}
 	}
 
-	err = csm.consensusStateStore.StageTips(newTips)
-	if err != nil {
-		return nil, err
-	}
+	csm.consensusStateStore.StageTips(newTips)
 
 	return newTips, nil
 }
