@@ -6,12 +6,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// maxHashesInGetHashesBetween is the maximum amount of hashes to return in GetHashesBetween
-const maxHashesInGetHashesBetween = 1 << 17
+const maxHashesInAntiPastHashesBetween = 1 << 17
 
 // antiPastHashesBetween returns the hashes of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
-// maxHashesInGetHashesBetween.
+// maxHashesInAntiPastHashesBetween.
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
@@ -28,16 +27,16 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 			lowBlockBlueScore, highBlockBlueScore)
 	}
 
-	// In order to get no more then maxHashesInGetHashesBetween
+	// In order to get no more then maxHashesInAntiPastHashesBetween
 	// blocks from th future of the lowHash (including itself),
 	// we iterate the selected parent chain of the highNode and
 	// stop once we reach
-	// highBlockBlueScore-lowBlockBlueScore+1 <= maxHashesInGetHashesBetween.
+	// highBlockBlueScore-lowBlockBlueScore+1 <= maxHashesInAntiPastHashesBetween.
 	// That stop point becomes the new highHash.
 	// Using blueScore as an approximation is considered to be
 	// fairly accurate because we presume that most DAG blocks are
 	// blue.
-	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInGetHashesBetween {
+	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInAntiPastHashesBetween {
 		highHash = highBlockGHOSTDAGData.SelectedParent
 	}
 
@@ -88,7 +87,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 
 	// Pop candidateHashes into a slice. Since candidateHashes is
 	// an up-heap, it's guaranteed to be ordered from low to high
-	hashesLength := maxHashesInGetHashesBetween
+	hashesLength := maxHashesInAntiPastHashesBetween
 	if candidateHashes.Len() < hashesLength {
 		hashesLength = candidateHashes.Len()
 	}
