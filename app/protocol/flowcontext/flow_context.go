@@ -32,8 +32,7 @@ type OnTransactionAddedToMempoolHandler func()
 type FlowContext struct {
 	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
-	txPool            *mempool.TxPool
-	domain            *domain.Domain
+	domain            domain.Domain
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
