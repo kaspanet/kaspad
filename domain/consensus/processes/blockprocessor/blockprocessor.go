@@ -23,6 +23,7 @@ type blockProcessor struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
 	headerTipsManager     model.HeaderTipsManager
+	syncManager           model.SyncManager
 
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockStore            model.BlockStore
@@ -54,6 +55,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	coinbaseManager model.CoinbaseManager,
 	headerTipsManager model.HeaderTipsManager,
+	syncManager model.SyncManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockStore model.BlockStore,
@@ -80,6 +82,7 @@ func New(
 		ghostdagManager:       ghostdagManager,
 		coinbaseManager:       coinbaseManager,
 		headerTipsManager:     headerTipsManager,
+		syncManager:           syncManager,
 
 		consensusStateManager: consensusStateManager,
 		acceptanceDataStore:   acceptanceDataStore,
@@ -126,9 +129,9 @@ func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseDat
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
-	return bp.validateAndInsertBlock(block, headerOnly)
+	return bp.validateAndInsertBlock(block)
 }

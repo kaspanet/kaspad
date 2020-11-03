@@ -8,7 +8,7 @@ import (
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
-	ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error
+	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
 
 	GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
@@ -18,7 +18,7 @@ type Consensus interface {
 	GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetPruningPointUTXOSet() ([]byte, error)
-	SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
+	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
@@ -51,8 +51,8 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, headerOnly bool) error {
-	return s.blockProcessor.ValidateAndInsertBlock(block, headerOnly)
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
+	return s.blockProcessor.ValidateAndInsertBlock(block)
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -128,8 +128,8 @@ func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
 	return s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
 }
 
-func (s *consensus) SetPruningPointUTXOSet(pruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	return s.consensusStateManager.SetPruningPointUTXOSet(pruningPoint, serializedUTXOSet)
+func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {
+	return s.consensusStateManager.SetPruningPointUTXOSet(serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
