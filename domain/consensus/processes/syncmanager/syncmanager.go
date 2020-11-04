@@ -77,5 +77,5 @@ func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetSyncInfo")
 	defer onEnd()
 
-	panic("implement me")
+	return sm.syncInfo()
 }
