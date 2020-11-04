@@ -165,6 +165,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		&genesisHash,
 		dagTraversalManager,
 		dagTopologyManager,
+		consensusStateManager,
+
 		ghostdagDataStore,
 		blockStatusStore)
 

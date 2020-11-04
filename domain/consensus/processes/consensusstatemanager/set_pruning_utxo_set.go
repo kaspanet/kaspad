@@ -29,7 +29,7 @@ func (csm *consensusStateManager) SetPruningPointUTXOSet(serializedUTXOSet []byt
 }
 
 func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byte) error {
-	headerTipsPruningPoint, err := csm.headerTipsPruningPoint()
+	headerTipsPruningPoint, err := csm.HeaderTipsPruningPoint()
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func deserializeUTXOSet(serializedUTXOSet []byte) model.ReadOnlyUTXOSetIterator 
 	panic("implement me")
 }
 
-func (csm *consensusStateManager) headerTipsPruningPoint() (*externalapi.DomainHash, error) {
+func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainHash, error) {
 	headerTips, err := csm.headerTipsStore.Tips(csm.databaseContext)
 	if err != nil {
 		return nil, err
