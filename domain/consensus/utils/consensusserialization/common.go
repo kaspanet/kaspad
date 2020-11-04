@@ -105,9 +105,9 @@ func writeElements(w io.Writer, elements ...interface{}) error {
 	return nil
 }
 
-// ReadElement reads the next sequence of bytes from r using little endian
+// readElement reads the next sequence of bytes from r using little endian
 // depending on the concrete type of element pointed to.
-func ReadElement(r io.Reader, element interface{}) error {
+func readElement(r io.Reader, element interface{}) error {
 	// Attempt to read the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
@@ -174,7 +174,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 // calls to readElement.
 func readElements(r io.Reader, elements ...interface{}) error {
 	for _, element := range elements {
-		err := ReadElement(r, element)
+		err := readElement(r, element)
 		if err != nil {
 			return err
 		}

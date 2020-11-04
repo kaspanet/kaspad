@@ -78,7 +78,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	}
 
 	var index uint32
-	err = ReadElement(r, &index)
+	err = readElement(r, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func deserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
 	}
 
 	count := uint64(len(entry.ScriptPublicKey))
-	err = ReadElement(r, count)
+	err = readElement(r, count)
 	if err != nil {
 		return nil, err
 	}
