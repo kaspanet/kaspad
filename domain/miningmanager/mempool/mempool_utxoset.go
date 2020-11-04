@@ -1,11 +1,14 @@
 package mempool
 
 import (
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"math"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
+
+const unacceptedBlueScore = math.MaxUint64
 
 func newMempoolUTXOSet() *mempoolUTXOSet {
 	return &mempoolUTXOSet{
@@ -67,7 +70,7 @@ func (mpus *mempoolUTXOSet) addTx(tx *consensusexternalapi.DomainTransaction) er
 		mpus.poolUnspentOutputs[outpoint] = &consensusexternalapi.UTXOEntry{
 			Amount:          txOut.Value,
 			ScriptPublicKey: txOut.ScriptPublicKey,
-			BlockBlueScore:  blockdag.UnacceptedBlueScore,
+			BlockBlueScore:  unacceptedBlueScore,
 			IsCoinbase:      false,
 		}
 	}

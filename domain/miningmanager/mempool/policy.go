@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"fmt"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/txscript"
@@ -197,15 +198,6 @@ func checkTransactionStandard(tx *consensusexternalapi.DomainTransaction, policy
 			policy.MaxTxVersion)
 		return txRuleError(RejectNonstandard, str)
 	}
-
-	// IsFinalizedTransaction is a consensus check, no need to also check it in policy.
-
-	// The transaction must be finalized to be standard and therefore
-	// considered for inclusion in a block.
-	//if !blockdag.IsFinalizedTransaction(tx, blueScore, medianTimePast) {
-	//	return txRuleError(RejectNonstandard,
-	//		"transaction is not finalized")
-	//}
 
 	// Since extremely large transactions with a lot of inputs can cost
 	// almost as much to process as the sender fees, limit the maximum

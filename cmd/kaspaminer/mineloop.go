@@ -2,16 +2,21 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/mining"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +36,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 	spawn("mineLoop-internalLoop", func() {
 		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
-			foundBlock := make(chan *util.Block)
+			foundBlock := make(chan *externalapi.DomainBlock)
 			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
@@ -77,7 +82,7 @@ func logHashRate() {
 	})
 }
 
-func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *util.Block, mineWhenNotSynced bool,
+func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *externalapi.DomainBlock, mineWhenNotSynced bool,
 	templateStopChan chan struct{}, errChan chan error) {
 
 	newTemplateChan := make(chan *appmessage.GetBlockTemplateResponseMessage)
@@ -89,29 +94,29 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 	})
 }
 
-func handleFoundBlock(client *minerClient, block *util.Block) error {
-	log.Infof("Found block %s with parents %s. Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Address())
+func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
+	blockHash := hashserialization.BlockHash(block)
+	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes, client.Address())
 
 	err := client.SubmitBlock(block)
 	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", block.Hash(), client.Address(), err)
+		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
 	}
 	return nil
 }
 
-func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util.Block) {
-	msgBlock := block.MsgBlock()
-	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
+func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
+	targetDifficulty := util.CompactToBig(block.Header.Bits)
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
 			return
 		default:
-			msgBlock.Header.Nonce = i
-			hash := msgBlock.BlockHash()
+			block.Header.Nonce = i
+			hash := hashserialization.BlockHash(block)
 			atomic.AddUint64(&hashesTried, 1)
-			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
+			if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
 				foundBlock <- block
 				return
 			}
@@ -161,7 +166,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	}
 }
 
-func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *util.Block,
+func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *externalapi.DomainBlock,
 	mineWhenNotSynced bool, errChan chan error) {
 
 	var stopOldTemplateSolving chan struct{}

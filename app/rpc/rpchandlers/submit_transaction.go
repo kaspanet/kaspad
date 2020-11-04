@@ -3,10 +3,11 @@ package rpchandlers
 import (
 	"bytes"
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
-	"github.com/kaspanet/kaspad/domain/mempool"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )

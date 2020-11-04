@@ -55,7 +55,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		LockTime:     0,
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 		Gas:          0,
-		PayloadHash:  payloadHash,
+		PayloadHash:  *payloadHash,
 		Payload:      payload,
 	}, nil
 }

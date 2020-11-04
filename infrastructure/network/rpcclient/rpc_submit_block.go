@@ -2,12 +2,13 @@ package rpcclient
 
 import (
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) SubmitBlock(block *util.Block) error {
+func (c *RPCClient) SubmitBlock(block *externalapi.DomainBlock) error {
 	blockBytes, err := block.Bytes()
 	if err != nil {
 		return err
