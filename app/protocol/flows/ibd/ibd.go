@@ -6,12 +6,12 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/blockdag"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ import (
 type HandleIBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
-	OnNewBlock(block *util.Block) error
+	OnNewBlock(block *externalapi.DomainBlock) error
 	StartIBDIfRequired()
 	FinishIBD() error
 }
@@ -97,7 +97,10 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *exter
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash = flow.Domain().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash, err = flow.Domain().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		if err != nil {
+			return nil, err
+		}
 	}
 }
 
@@ -180,27 +183,24 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 }
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
-	block := util.NewBlock(msgIBDBlock.MsgBlock)
-	if flow.DAG().IsInDAG(block.Hash()) {
-		log.Debugf("IBD block %s is already in the DAG. Skipping...", block.Hash())
+	block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+	blockHash := hashserialization.BlockHash(block)
+	blockInfo, err := flow.Domain().GetBlockInfo(blockHash)
+	if err != nil {
+		return err
+	}
+	if blockInfo.Exists {
+		log.Debugf("IBD block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
+	err := flow.Domain().ValidateAndInsertBlock(block)
 	if err != nil {
-		if !errors.As(err, &blockdag.RuleError{}) {
-			return errors.Wrapf(err, "failed to process block %s during IBD", block.Hash())
+		if !errors.As(err, &ruleerrors.RuleError{}) {
+			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
 		}
-		log.Infof("Rejected block %s from %s during IBD: %s", block.Hash(), flow.peer, err)
+		log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", block.Hash())
-	}
-	if isOrphan {
-		return protocolerrors.Errorf(true, "received orphan block %s "+
-			"during IBD", block.Hash())
-	}
-	if isDelayed {
-		return protocolerrors.Errorf(false, "received delayed block %s "+
-			"during IBD", block.Hash())
 	}
 	err = flow.OnNewBlock(block)
 	if err != nil {

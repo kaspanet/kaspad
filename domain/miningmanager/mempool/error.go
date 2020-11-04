@@ -6,7 +6,9 @@ package mempool
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+
 	"github.com/pkg/errors"
 )
 
@@ -92,14 +94,6 @@ func txRuleError(c RejectCode, desc string) RuleError {
 	}
 }
 
-// dagRuleError returns a RuleError that encapsulates the given
-// blockdag.RuleError.
-func dagRuleError(dagErr blockdag.RuleError) RuleError {
-	return RuleError{
-		Err: dagErr,
-	}
-}
-
 // extractRejectCode attempts to return a relevant reject code for a given error
 // by examining the error for known types. It will return true if a code
 // was successfully extracted.
@@ -110,23 +104,23 @@ func extractRejectCode(err error) (RejectCode, bool) {
 		err = ruleErr.Err
 	}
 
-	var dagRuleErr blockdag.RuleError
+	var dagRuleErr ruleerrors.RuleError
 	if errors.As(err, &dagRuleErr) {
 		// Convert the DAG error to a reject code.
 		var code RejectCode
-		switch dagRuleErr.ErrorCode {
+		switch dagRuleErr {
 		// Rejected due to duplicate.
-		case blockdag.ErrDuplicateBlock:
+		case ruleerrors.ErrDuplicateBlock:
 			code = RejectDuplicate
 
 		// Rejected due to obsolete version.
-		case blockdag.ErrBlockVersionTooOld:
+		case ruleerrors.ErrBlockVersionTooOld:
 			code = RejectObsolete
 
 		// Rejected due to being earlier than the last finality point.
-		case blockdag.ErrFinalityPointTimeTooOld:
+		case ruleerrors.ErrFinalityPointTimeTooOld:
 			code = RejectFinality
-		case blockdag.ErrDifficultyTooLow:
+		case ruleerrors.ErrDifficultyTooLow:
 			code = RejectDifficulty
 
 		// Everything else is due to the block or transaction being invalid.

@@ -7,6 +7,9 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -17,8 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"sync"
-	"time"
 )
 
 const (
@@ -106,6 +107,17 @@ func New(consensus consensus.Consensus) miningmanagermodel.Mempool {
 		consensus:                            consensus,
 		nextExpireScan:                       mstime.Now().Add(orphanExpireScanInterval),
 	}
+}
+
+func (mp *mempool) GetTransaction(
+	transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool) {
+
+	txDesc, exists := mp.fetchTxDesc(transactionID)
+	if !exists {
+		return nil, false
+	}
+
+	return txDesc.DomainTransaction, true
 }
 
 // txDescriptor is a descriptor containing a transaction in the mempool along with
