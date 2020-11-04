@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 )
@@ -28,6 +29,7 @@ var (
 
 type sendVersionFlow struct {
 	HandleHandshakeContext
+
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
 }
@@ -46,7 +48,11 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *sendVersionFlow) start() error {
-	selectedTipHash := flow.DAG().SelectedTipHash()
+	virtualSelectedParent, err := flow.Domain().GetVirtualSelectedParent()
+	if err != nil {
+		return err
+	}
+	selectedTipHash := hashserialization.BlockHash(virtualSelectedParent)
 	subnetworkID := flow.Config().SubnetworkID
 
 	// Version message.
@@ -64,7 +70,7 @@ func (flow *sendVersionFlow) start() error {
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly
 
-	err := flow.outgoingRoute.Enqueue(msg)
+	err = flow.outgoingRoute.Enqueue(msg)
 	if err != nil {
 		return err
 	}

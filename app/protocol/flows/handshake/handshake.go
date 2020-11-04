@@ -4,6 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/domain"
+
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -22,6 +24,7 @@ import (
 type HandleHandshakeContext interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
+	Domain() domain.Domain
 	AddressManager() *addressmanager.AddressManager
 	StartIBDIfRequired()
 	AddToPeers(peer *peerpkg.Peer) error
