@@ -149,7 +149,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		missingBlocks = append(missingBlocks, blockHash)
 	}
 
-	if blockToRemoveFromHashesBetween.Length() == 0 {
+	if blockToRemoveFromHashesBetween.Length() != 0 {
 		return nil, errors.Errorf("blockToRemoveFromHashesBetween.Length() is expected to be 0")
 	}
 
