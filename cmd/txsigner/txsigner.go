@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -59,14 +61,14 @@ func parsePrivateKey(privateKeyHex string) (*secp256k1.PrivateKey, error) {
 	return secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
 }
 
-func parseTransaction(transactionHex string) (*appmessage.MsgTx, error) {
+func parseTransaction(transactionHex string) (*externalapi.DomainTransaction, error) {
 	serializedTx, err := hex.DecodeString(transactionHex)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't decode transaction hex")
 	}
 	var transaction appmessage.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
-	return &transaction, err
+	return appmessage.MsgTxToDomainTransaction(&transaction), err
 }
 
 func createScriptPubKey(publicKey *secp256k1.SchnorrPublicKey) ([]byte, error) {
@@ -82,8 +84,8 @@ func createScriptPubKey(publicKey *secp256k1.SchnorrPublicKey) ([]byte, error) {
 	return scriptPubKey, err
 }
 
-func signTransaction(transaction *appmessage.MsgTx, privateKey *secp256k1.PrivateKey, scriptPubKey []byte) error {
-	for i, transactionInput := range transaction.TxIn {
+func signTransaction(transaction *externalapi.DomainTransaction, privateKey *secp256k1.PrivateKey, scriptPubKey []byte) error {
+	for i, transactionInput := range transaction.Inputs {
 		signatureScript, err := txscript.SignatureScript(transaction, i, scriptPubKey, txscript.SigHashAll, privateKey, true)
 		if err != nil {
 			return err
@@ -93,9 +95,10 @@ func signTransaction(transaction *appmessage.MsgTx, privateKey *secp256k1.Privat
 	return nil
 }
 
-func serializeTransaction(transaction *appmessage.MsgTx) (string, error) {
-	buf := bytes.NewBuffer(make([]byte, 0, transaction.SerializeSize()))
-	err := transaction.Serialize(buf)
+func serializeTransaction(transaction *externalapi.DomainTransaction) (string, error) {
+	msgTx := appmessage.DomainTransactionToMsgTx(transaction)
+	buf := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
+	err := msgTx.Serialize(buf)
 	serializedTransaction := hex.EncodeToString(buf.Bytes())
 	return serializedTransaction, err
 }
