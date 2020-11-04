@@ -138,14 +138,18 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween)-len(lowHashAnticone))
 	for i, blockHash := range hashesBetween {
+		// If blockToRemoveFromHashesBetween is empty, no more blocks should be
+		// filtered, so we can copy the rest of hashesBetween into missingBlocks
+		if blockToRemoveFromHashesBetween.Length() == 0 {
+			missingBlocks = append(missingBlocks, hashesBetween[i:]...)
+			break
+		}
+
 		if blockToRemoveFromHashesBetween.Contains(blockHash) {
 			blockToRemoveFromHashesBetween.Remove(blockHash)
-			if blockToRemoveFromHashesBetween.Length() == 0 && i != len(hashesBetween)-1 {
-				missingBlocks = append(missingBlocks, hashesBetween[i+1:]...)
-				break
-			}
 			continue
 		}
+
 		missingBlocks = append(missingBlocks, blockHash)
 	}
 
