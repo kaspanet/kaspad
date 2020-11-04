@@ -6,15 +6,17 @@ package addressmanager
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -118,7 +120,7 @@ func newAddrManagerForTest(t *testing.T, testName string,
 		t.Fatalf("Error creating temporary directory: %s", err)
 	}
 
-	databaseContext, err := dbaccess.New(dbPath)
+	databaseContext, err := ldb.NewLevelDB(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}

@@ -2,7 +2,7 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +45,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	var payloadHash *daghash.Hash
+	var payloadHash *externalapi.DomainHash
 	if x.PayloadHash != nil {
 		payloadHash, err = x.PayloadHash.toDomain()
 		if err != nil {

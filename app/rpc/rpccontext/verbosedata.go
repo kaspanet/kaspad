@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
@@ -15,9 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/pointers"
 )
 
@@ -85,7 +84,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader *externalapi.DomainBlockHeader, blockHash string, acceptingBlock *daghash.Hash, isInMempool bool) (
+	blockHeader *externalapi.DomainBlockHeader, blockHash string, acceptingBlock *externalapi.DomainHash, isInMempool bool) (
 	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string

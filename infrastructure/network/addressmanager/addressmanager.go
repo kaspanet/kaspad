@@ -19,16 +19,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
-
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // AddressKey represents a "string" key in the form of ip:port for IPv4 addresses
@@ -190,6 +189,8 @@ const (
 	// serializationVersion is the current version of the on-disk format.
 	serializationVersion = 1
 )
+
+var peersDBKey = database.MakeBucket().Key([]byte("peers"))
 
 // ErrAddressNotFound is an error returned from some functions when a
 // given address is not found in the address manager
@@ -385,8 +386,8 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *appmessa
 	data1 = append(data1, am.key[:]...)
 	data1 = append(data1, []byte(am.GroupKey(netAddress))...)
 	data1 = append(data1, []byte(am.GroupKey(srcAddress))...)
-	hash1 := daghash.DoubleHashB(data1)
-	hash64 := binary.LittleEndian.Uint64(hash1)
+	hash1 := hashes.HashData(data1)
+	hash64 := binary.LittleEndian.Uint64(hash1[:])
 	hash64 %= newBucketsPerGroup
 	var hashbuf [8]byte
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
@@ -395,8 +396,8 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *appmessa
 	data2 = append(data2, am.GroupKey(srcAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
-	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
+	hash2 := hashes.HashData(data2)
+	return int(binary.LittleEndian.Uint64(hash2[:]) % NewBucketCount)
 }
 
 func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddress) int {
@@ -404,8 +405,8 @@ func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddr
 	data1 := []byte{}
 	data1 = append(data1, am.key[:]...)
 	data1 = append(data1, []byte(NetAddressKey(netAddress))...)
-	hash1 := daghash.DoubleHashB(data1)
-	hash64 := binary.LittleEndian.Uint64(hash1)
+	hash1 := hashes.HashData(data1)
+	hash64 := binary.LittleEndian.Uint64(hash1[:])
 	hash64 %= triedBucketsPerGroup
 	var hashbuf [8]byte
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
@@ -414,8 +415,8 @@ func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddr
 	data2 = append(data2, am.GroupKey(netAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
-	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % TriedBucketCount)
+	hash2 := hashes.HashData(data2)
+	return int(binary.LittleEndian.Uint64(hash2[:]) % TriedBucketCount)
 }
 
 // addressHandler is the main handler for the address manager. It must be run
@@ -453,7 +454,7 @@ func (am *AddressManager) savePeers() error {
 		return err
 	}
 
-	return dbaccess.StorePeersState(am.database, serializedPeersState)
+	return am.database.Put(peersDBKey, serializedPeersState)
 }
 
 func (am *AddressManager) serializePeersState() ([]byte, error) {
@@ -563,8 +564,8 @@ func (am *AddressManager) loadPeers() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	serializedPeerState, err := dbaccess.FetchPeersState(am.database)
-	if dbaccess.IsNotFoundError(err) {
+	serializedPeerState, err := am.database.Get(peersDBKey)
+	if database.IsNotFoundError(err) {
 		am.reset()
 		log.Info("No peers state was found in the database. Created a new one", am.totalNumAddresses())
 		return nil

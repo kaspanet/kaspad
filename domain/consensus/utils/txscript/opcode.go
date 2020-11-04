@@ -10,13 +10,14 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/go-secp256k1"
 	"hash"
+
+	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -1971,7 +1972,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	vm.dstack.PushByteArray(daghash.DoubleHashB(buf))
+	vm.dstack.PushByteArray(hashes.HashData(buf)[:])
 	return nil
 }
 

@@ -5,7 +5,7 @@ import "encoding/hex"
 // DomainHashSize of array used to store hashes.
 const DomainHashSize = 32
 
-// DomainHash is the domain representation of a daghash.Hash
+// DomainHash is the domain representation of a Hash
 type DomainHash [DomainHashSize]byte
 
 // String returns the Hash as the hexadecimal string of the byte-reversed

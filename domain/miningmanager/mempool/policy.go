@@ -9,7 +9,7 @@ import (
 
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
 

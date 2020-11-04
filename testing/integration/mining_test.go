@@ -1,31 +1,31 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/mining"
 	"math/rand"
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
-func solveBlock(block *util.Block) *appmessage.MsgBlock {
-	msgBlock := block.MsgBlock()
-	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
+func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
+	targetDifficulty := util.CompactToBig(block.Header.Bits)
 	initialNonce := rand.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
-		msgBlock.Header.Nonce = i
-		hash := msgBlock.BlockHash()
-		if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
-			return msgBlock
+		block.Header.Nonce = i
+		hash := hashserialization.BlockHash(block)
+		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
+			return block
 		}
 	}
 
 	panic("Failed to solve block! This should never happen")
 }
 
-func mineNextBlock(t *testing.T, harness *appHarness) *util.Block {
+func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
 	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)

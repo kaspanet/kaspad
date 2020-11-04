@@ -11,8 +11,9 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // InPlaceSort modifies the passed transaction inputs and outputs to be sorted
@@ -77,7 +78,7 @@ func (s sortableInputSlice) Less(i, j int) bool {
 
 	// At this point, the hashes are not equal, so reverse them to
 	// big-endian and return the result of the comparison.
-	const txIDSize = daghash.TxIDSize
+	const txIDSize = externalapi.DomainHashSize
 	for b := 0; b < txIDSize/2; b++ {
 		iTxID[b], iTxID[txIDSize-1-b] = iTxID[txIDSize-1-b], iTxID[b]
 		jTxID[b], jTxID[txIDSize-1-b] = jTxID[txIDSize-1-b], jTxID[b]

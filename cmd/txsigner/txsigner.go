@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"os"
 )
 
 func main() {

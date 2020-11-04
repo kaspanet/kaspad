@@ -4,9 +4,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+
 	"github.com/kaspanet/kaspad/app"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 )
 
 type appHarness struct {
@@ -17,7 +20,7 @@ type appHarness struct {
 	miningAddress           string
 	miningAddressPrivateKey string
 	config                  *config.Config
-	databaseContext         *dbaccess.DatabaseContext
+	database                database.Database
 }
 
 type harnessParams struct {
@@ -100,7 +103,7 @@ func teardownHarness(t *testing.T, harness *appHarness) {
 	harness.rpcClient.Close()
 	harness.app.Stop()
 
-	err := harness.databaseContext.Close()
+	err := harness.database.Close()
 	if err != nil {
 		t.Errorf("Error closing database context: %+v", err)
 	}
@@ -108,7 +111,7 @@ func teardownHarness(t *testing.T, harness *appHarness) {
 
 func setApp(t *testing.T, harness *appHarness) {
 	var err error
-	harness.app, err = app.NewComponentManager(harness.config, harness.databaseContext, make(chan struct{}))
+	harness.app, err = app.NewComponentManager(harness.config, harness.database, make(chan struct{}))
 	if err != nil {
 		t.Fatalf("Error creating app: %+v", err)
 	}
@@ -116,13 +119,13 @@ func setApp(t *testing.T, harness *appHarness) {
 
 func setDatabaseContext(t *testing.T, harness *appHarness) {
 	var err error
-	harness.databaseContext, err = openDB(harness.config)
+	harness.database, err = openDB(harness.config)
 	if err != nil {
 		t.Fatalf("Error openning database: %+v", err)
 	}
 }
 
-func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
+func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := filepath.Join(cfg.DataDir, "db")
-	return dbaccess.New(dbPath)
+	return ldb.NewLevelDB(dbPath)
 }
