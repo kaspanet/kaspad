@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -115,7 +114,7 @@ func (v *blockValidator) checkBlockContainsOnlyOneCoinbase(block *externalapi.Do
 }
 
 func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlock) error {
-	for i, tx := range block.Transactions[util.CoinbaseTransactionIndex+1:] {
+	for i, tx := range block.Transactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworks.Less(tx.SubnetworkID, block.Transactions[i].SubnetworkID) {
 			return errors.Wrapf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}

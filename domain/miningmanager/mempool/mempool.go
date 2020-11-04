@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -354,7 +356,7 @@ func (mp *mempool) haveTransaction(txID *consensusexternalapi.DomainTransactionI
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
-	for _, tx := range txs[util.CoinbaseTransactionIndex+1:] {
+	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		txID := hashserialization.TransactionID(tx)
 
 		if _, exists := mp.fetchTxDesc(txID); !exists {
@@ -879,7 +881,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 		log.Errorf("Failed removing txs from pool: '%s'", err)
 	}
 	acceptedTxs := make([]*consensusexternalapi.DomainTransaction, 0)
-	for _, tx := range txs[util.CoinbaseTransactionIndex+1:] {
+	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
 			log.Infof("Failed removing tx from mempool: %s, '%s'", hashserialization.TransactionID(tx), err)
