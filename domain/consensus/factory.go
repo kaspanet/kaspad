@@ -101,7 +101,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
+	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
