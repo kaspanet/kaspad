@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +20,7 @@ func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 
 func (c consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODiff) error {
 	if c.stagedVirtualUTXOSet != nil {
-		return errors.New("cannot commit virtual UTXO diff while virtual UTXO set is staged")
+		return errors.New("cannot stage virtual UTXO diff while virtual UTXO set is staged")
 	}
 
 	c.stagedVirtualUTXODiff = virtualUTXODiff
@@ -101,7 +100,7 @@ func (c consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContext m
 
 	if c.stagedVirtualUTXODiff != nil {
 		if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
-			return nil, database.ErrNotFound
+			return nil, errors.Errorf("outpoint was not found")
 		}
 		if utxoEntry, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
 			return utxoEntry, nil
@@ -127,12 +126,21 @@ func (c consensusStateStore) utxoByOutpointFromStagedVirtualUTXOSet(outpoint *ex
 		return utxoEntry, nil
 	}
 
-	return nil, database.ErrNotFound
+	return nil, errors.Errorf("outpoint was not found")
 }
 
 func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (bool, error) {
+	if c.stagedVirtualUTXOSet != nil {
+		return c.hasUTXOByOutpointFromStagedVirtualUTXOSet(outpoint), nil
+	}
+
+	return c.hasUTXOByOutpointFromStagedVirtualUTXODiff(dbContext, outpoint)
+}
+
+func (c consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbContext model.DBReader,
+	outpoint *externalapi.DomainOutpoint) (bool, error) {
 	if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
-		return false, database.ErrNotFound
+		return false, nil
 	}
 	if _, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
 		return true, nil
@@ -144,6 +152,11 @@ func (c consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoin
 	}
 
 	return dbContext.Has(key)
+}
+
+func (c consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXOSet(outpoint *externalapi.DomainOutpoint) bool {
+	_, ok := c.stagedVirtualUTXOSet[*outpoint]
+	return ok
 }
 
 func (c consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
