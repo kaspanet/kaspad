@@ -34,6 +34,5 @@ func (c consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) 
 		return err
 	}
 
-	c.stagedVirtualDiffParents = nil
 	return nil
 }

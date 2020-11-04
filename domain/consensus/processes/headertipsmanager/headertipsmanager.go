@@ -8,16 +8,19 @@ import (
 type headerTipsManager struct {
 	databaseContext    model.DBReader
 	dagTopologyManager model.DAGTopologyManager
+	ghostdagManager    model.GHOSTDAGManager
 	headerTipsStore    model.HeaderTipsStore
 }
 
 // New instantiates a new HeaderTipsManager
 func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager,
 	headerTipsStore model.HeaderTipsStore) model.HeaderTipsManager {
 	return &headerTipsManager{
 		databaseContext:    databaseContext,
 		dagTopologyManager: dagTopologyManager,
+		ghostdagManager:    ghostdagManager,
 		headerTipsStore:    headerTipsStore,
 	}
 }
