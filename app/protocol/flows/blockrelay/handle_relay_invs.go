@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -203,34 +204,39 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
+
+		missingParentsError := &ruleerrors.ErrMissingParents{}
+		if errors.As(err, missingParentsError) {
+			blueScore, err := blocks.ExtractBlueScore(block)
+			if err != nil {
+				return protocolerrors.Errorf(true, "received an orphan "+
+					"block %s with malformed blue score", blockHash)
+			}
+
+			const maxOrphanBlueScoreDiff = 10000
+			virtualSelectedParent, err := flow.Domain().GetVirtualSelectedParent()
+			if err != nil {
+				return err
+			}
+			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
+			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
+				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
+					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
+					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
+				return nil
+			}
+
+			// Request the parents for the orphan block from the peer that sent it.
+			for _, missingAncestor := range missingParentsError.MissingParentHashes {
+				requestQueue.enqueueIfNotExists(missingAncestor)
+			}
+			return nil
+		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 
-	if isOrphan {
-		blueScore, err := block.BlueScore()
-		if err != nil {
-			return protocolerrors.Errorf(true, "received an orphan "+
-				"block %s with malformed blue score", blockHash)
-		}
-
-		const maxOrphanBlueScoreDiff = 10000
-		selectedTipBlueScore := flow.DAG().SelectedTipBlueScore()
-		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
-			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
-				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
-				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-			return nil
-		}
-
-		// Request the parents for the orphan block from the peer that sent it.
-		missingAncestors := flow.DAG().GetOrphanMissingAncestorHashes(blockHash)
-		for _, missingAncestor := range missingAncestors {
-			requestQueue.enqueueIfNotExists(missingAncestor)
-		}
-		return nil
-	}
 	err = blocklogger.LogBlock(block)
 	if err != nil {
 		return err

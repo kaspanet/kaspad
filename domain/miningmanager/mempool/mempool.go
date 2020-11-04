@@ -553,7 +553,9 @@ func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (
 // be added to the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) ([]consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
+func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) (
+	[]*consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
+
 	txID := hashserialization.TransactionID(tx)
 
 	// Don't accept the transaction if it already exists in the pool. This

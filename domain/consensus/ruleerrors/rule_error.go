@@ -2,6 +2,7 @@ package ruleerrors
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
@@ -225,9 +226,6 @@ var (
 	// ErrBuiltInTransactionHasGas indicates that a transaction with built in subnetwork ID has a non zero gas.
 	ErrBuiltInTransactionHasGas = newRuleError("ErrBuiltInTransactionHasGas")
 
-	// ErrMissingParent indicates one of the block parents is not found.
-	ErrMissingParent = newRuleError("ErrMissingParent")
-
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
 	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
@@ -269,18 +267,35 @@ func newRuleError(message string) RuleError {
 // ErrMissingTxOut indicates a transaction output referenced by an input
 // either does not exist or has already been spent.
 type ErrMissingTxOut struct {
-	MissingOutpoints []externalapi.DomainOutpoint
+	MissingOutpoints []*externalapi.DomainOutpoint
 }
 
 func (e ErrMissingTxOut) Error() string {
-	return fmt.Sprint(e.MissingOutpoints)
+	return fmt.Sprintf("missing the following outpoint: %v", e.MissingOutpoints)
 }
 
 // NewErrMissingTxOut Creates a new ErrMissingTxOut error wrapped in a RuleError
-func NewErrMissingTxOut(missingOutpoints []externalapi.DomainOutpoint) error {
+func NewErrMissingTxOut(missingOutpoints []*externalapi.DomainOutpoint) error {
 	return errors.WithStack(RuleError{
 		message: "ErrMissingTxOut",
 		inner:   ErrMissingTxOut{missingOutpoints},
+	})
+}
+
+// ErrMissingParents indicates a block points to unknown parent(s).
+type ErrMissingParents struct {
+	MissingParentHashes []*externalapi.DomainHash
+}
+
+func (e ErrMissingParents) Error() string {
+	return fmt.Sprintf("missing the following parent hashes: %v", e.MissingParentHashes)
+}
+
+// NewErrMissingParents creates a new ErrMissingParents error wrapped in a RuleError
+func NewErrMissingParents(missingParentHashes []*externalapi.DomainHash) error {
+	return errors.WithStack(RuleError{
+		message: "ErrMissingParents",
+		inner:   ErrMissingParents{missingParentHashes},
 	})
 }
 

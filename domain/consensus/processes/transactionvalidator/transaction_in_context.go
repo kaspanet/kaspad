@@ -61,11 +61,11 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	}
 
 	txBlueScore := ghostdagData.BlueScore
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase {
 			originBlueScore := utxoEntry.BlockBlueScore
 			blueScoreSincePrev := txBlueScore - originBlueScore
@@ -90,11 +90,11 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 
 	totalSompiIn = 0
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 
@@ -178,13 +178,13 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 
@@ -231,11 +231,11 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		return sequenceLock, nil
 	}
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 

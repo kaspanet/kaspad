@@ -3,6 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -79,8 +80,7 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 }
 
 func (v *blockValidator) checkCoinbase(block *externalapi.DomainBlock) error {
-	_, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.
-		Transactions[transactionhelper.CoinbaseTransactionIndex])
+	_, _, err := coinbase.ExtractCoinbaseDataAndBlueScore(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
 	}

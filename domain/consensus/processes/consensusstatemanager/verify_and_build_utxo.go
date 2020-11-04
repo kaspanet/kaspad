@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -112,7 +113,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData
 }
 func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externalapi.DomainHash,
 	coinbaseTransaction *externalapi.DomainTransaction) error {
-	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
 	if err != nil {
 		return err
 	}

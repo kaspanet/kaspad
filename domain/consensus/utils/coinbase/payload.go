@@ -1,12 +1,13 @@
-package coinbasemanager
+package coinbase
 
 import (
 	"encoding/binary"
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
-	"math"
 )
 
 var byteOrder = binary.LittleEndian
@@ -14,8 +15,8 @@ var byteOrder = binary.LittleEndian
 const uint64Len = 8
 const scriptPubKeyLengthLength = 1
 
-// serializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
-func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
+// SerializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
+func SerializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
 	scriptPubKeyLength := len(coinbaseData.ScriptPublicKey)
 	if scriptPubKeyLength > constants.CoinbasePayloadScriptPublicKeyMaxLength {
 		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
@@ -34,7 +35,7 @@ func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData
 }
 
 // ExtractCoinbaseDataAndBlueScore deserializes the coinbase payload to its component (scriptPubKey and extra data).
-func (c coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
+func ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
 	coinbaseData *externalapi.DomainCoinbaseData, err error) {
 
 	minLength := uint64Len + scriptPubKeyLengthLength
