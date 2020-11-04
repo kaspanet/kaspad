@@ -12,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // Peer holds data about a peer.
@@ -27,7 +26,7 @@ type Peer struct {
 	advertisedProtocolVerion uint32 // protocol version advertised by remote
 	protocolVersion          uint32 // negotiated protocol version
 	disableRelayTx           bool
-	subnetworkID             *subnetworkid.SubnetworkID
+	subnetworkID             *externalapi.DomainSubnetworkID
 
 	timeOffset        time.Duration
 	connectionStarted time.Time
@@ -75,7 +74,7 @@ func (p *Peer) SetSelectedTipHash(hash *externalapi.DomainHash) {
 
 // SubnetworkID returns the subnetwork the peer is associated with.
 // It is nil in full nodes.
-func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
+func (p *Peer) SubnetworkID() *externalapi.DomainSubnetworkID {
 	return p.subnetworkID
 }
 

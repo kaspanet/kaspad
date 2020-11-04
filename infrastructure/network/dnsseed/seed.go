@@ -12,13 +12,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	pb2 "github.com/kaspanet/kaspad/infrastructure/network/dnsseed/pb"
 	"google.golang.org/grpc"
 
 	"github.com/kaspanet/kaspad/util/mstime"
-
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -45,7 +45,7 @@ type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
 func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
-	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
+	subnetworkID *externalapi.DomainSubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
 	if customSeed != "" {
@@ -104,7 +104,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 
 // SeedFromGRPC send gRPC request to get list of peers for a given host
 func SeedFromGRPC(dagParams *dagconfig.Params, host string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
-	subnetworkID *subnetworkid.SubnetworkID, seedFn OnSeed) {
+	subnetworkID *externalapi.DomainSubnetworkID, seedFn OnSeed) {
 
 	spawn("SeedFromGRPC", func() {
 

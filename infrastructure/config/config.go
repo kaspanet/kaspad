@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/pkg/errors"
@@ -25,7 +27,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/version"
 )
 
@@ -136,7 +137,7 @@ type Config struct {
 	MiningAddrs   []util.Address
 	MinRelayTxFee util.Amount
 	Whitelists    []*net.IPNet
-	SubnetworkID  *subnetworkid.SubnetworkID // nil in full nodes
+	SubnetworkID  *externalapi.DomainSubnetworkID // nil in full nodes
 }
 
 // ServiceOptions defines the configuration options for the daemon as a service on
