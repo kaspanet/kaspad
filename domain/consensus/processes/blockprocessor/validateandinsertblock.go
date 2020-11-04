@@ -3,7 +3,7 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return errors.Errorf("cannot insert blocks while in %s mode", mode.State)
 	}
 
-	hash := hashserialization.HeaderHash(block.Header)
+	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
 		return errors.Errorf("block %s contains transactions while validating in header only mode", hash)
 	}
@@ -125,7 +125,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 		return err
 	}
 
-	blockHash := hashserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.HeaderHash(block.Header)
 	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			hash := hashserialization.HeaderHash(block.Header)
+			hash := consensusserialization.HeaderHash(block.Header)
 			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
 			commitErr := bp.commitAllChanges()
 			if commitErr != nil {
@@ -150,7 +150,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 }
 
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
-	blockHash := hashserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.HeaderHash(block.Header)
 
 	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
@@ -169,7 +169,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	blockHash := hashserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.HeaderHash(block.Header)
 
 	if mode.State != externalapi.SyncStateHeadersFirst {
 		bp.blockStore.Stage(blockHash, block)

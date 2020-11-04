@@ -114,7 +114,7 @@ func (u utxoSetIterator) Next() bool {
 	return u.cursor.Next()
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) {
+func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
 	key, err := u.cursor.Key()
 	if err != nil {
 		panic(err)
@@ -122,18 +122,18 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 
 	utxoEntryBytes, err := u.cursor.Value()
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	outpoint, err = deserializeOutpoint(key.Suffix())
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	utxoEntry, err = deserializeUTXOEntry(utxoEntryBytes)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
-	return outpoint, utxoEntry
+	return outpoint, utxoEntry, nil
 }

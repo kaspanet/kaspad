@@ -12,5 +12,5 @@ type ReadOnlyUTXOSet interface {
 // ReadOnlyUTXOSet
 type ReadOnlyUTXOSetIterator interface {
 	Next() bool
-	Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry)
+	Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error)
 }
