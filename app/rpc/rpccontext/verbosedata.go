@@ -50,7 +50,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
 		for i, tx := range block.Transactions {
 			txID := hashserialization.TransactionID(tx).String()
-			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String(), nil, false)
+			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +84,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader *externalapi.DomainBlockHeader, blockHash string, acceptingBlock *externalapi.DomainHash, isInMempool bool) (
+	blockHeader *externalapi.DomainBlockHeader, blockHash string) (
 	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string

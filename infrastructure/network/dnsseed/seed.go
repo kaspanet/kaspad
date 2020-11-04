@@ -118,7 +118,7 @@ func SeedFromGRPC(dagParams *dagconfig.Params, host string, reqServices appmessa
 
 		var subnetID []byte
 		if subnetworkID != nil {
-			subnetID = subnetworkID.CloneBytes()
+			subnetID = subnetworkID[:]
 		} else {
 			subnetID = nil
 		}

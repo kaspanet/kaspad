@@ -8,8 +8,6 @@ func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, erro
 	return &appmessage.GetBlockRequestMessage{
 		Hash:                          x.GetBlockRequest.Hash,
 		SubnetworkID:                  x.GetBlockRequest.SubnetworkId,
-		IncludeBlockHex:               x.GetBlockRequest.IncludeBlockHex,
-		IncludeBlockVerboseData:       x.GetBlockRequest.IncludeBlockVerboseData,
 		IncludeTransactionVerboseData: x.GetBlockRequest.IncludeTransactionVerboseData,
 	}, nil
 }
@@ -18,8 +16,6 @@ func (x *KaspadMessage_GetBlockRequest) fromAppMessage(message *appmessage.GetBl
 	x.GetBlockRequest = &GetBlockRequestMessage{
 		Hash:                          message.Hash,
 		SubnetworkId:                  message.SubnetworkID,
-		IncludeBlockHex:               message.IncludeBlockHex,
-		IncludeBlockVerboseData:       message.IncludeBlockVerboseData,
 		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil
@@ -39,7 +35,6 @@ func (x *KaspadMessage_GetBlockResponse) toAppMessage() (appmessage.Message, err
 		blockVerboseData = appBlockVerboseData
 	}
 	return &appmessage.GetBlockResponseMessage{
-		BlockHex:         x.GetBlockResponse.BlockHex,
 		BlockVerboseData: blockVerboseData,
 		Error:            err,
 	}, nil
@@ -60,7 +55,6 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 		blockVerboseData = protoBlockVerboseData
 	}
 	x.GetBlockResponse = &GetBlockResponseMessage{
-		BlockHex:         message.BlockHex,
 		BlockVerboseData: blockVerboseData,
 		Error:            err,
 	}
@@ -78,16 +72,12 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 	}
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
-		Confirmations:          x.Confirmations,
-		Size:                   x.Size,
-		BlueScore:              x.BlueScore,
-		IsChainBlock:           x.IsChainBlock,
 		Version:                x.Version,
 		VersionHex:             x.VersionHex,
 		HashMerkleRoot:         x.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   x.AcceptedIDMerkleRoot,
 		UTXOCommitment:         x.UtxoCommitment,
-		TxIDs:                  x.TransactionHex,
+		TxIDs:                  x.TransactionIDs,
 		TransactionVerboseData: transactionVerboseData,
 		Time:                   x.Time,
 		Nonce:                  x.Nonce,
@@ -95,8 +85,6 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		Difficulty:             x.Difficulty,
 		ParentHashes:           x.ParentHashes,
 		SelectedParentHash:     x.SelectedParentHash,
-		ChildHashes:            x.ChildHashes,
-		AcceptedBlockHashes:    x.AcceptedBlockHashes,
 	}, nil
 }
 
@@ -112,16 +100,12 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	}
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
-		Confirmations:          message.Confirmations,
-		Size:                   message.Size,
-		BlueScore:              message.BlueScore,
-		IsChainBlock:           message.IsChainBlock,
 		Version:                message.Version,
 		VersionHex:             message.VersionHex,
 		HashMerkleRoot:         message.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   message.AcceptedIDMerkleRoot,
 		UtxoCommitment:         message.UTXOCommitment,
-		TransactionHex:         message.TxIDs,
+		TransactionIDs:         message.TxIDs,
 		TransactionVerboseData: transactionVerboseData,
 		Time:                   message.Time,
 		Nonce:                  message.Nonce,
@@ -129,8 +113,6 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 		Difficulty:             message.Difficulty,
 		ParentHashes:           message.ParentHashes,
 		SelectedParentHash:     message.SelectedParentHash,
-		ChildHashes:            message.ChildHashes,
-		AcceptedBlockHashes:    message.AcceptedBlockHashes,
 	}
 	return nil
 }
@@ -164,7 +146,6 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 		}
 	}
 	return &appmessage.TransactionVerboseData{
-		Hex:                       x.Hex,
 		TxID:                      x.TxId,
 		Hash:                      x.Hash,
 		Size:                      x.Size,
@@ -177,7 +158,6 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 x.BlockHash,
-		AcceptedBy:                x.AcceptedBy,
 		IsInMempool:               x.IsInMempool,
 		Time:                      x.Time,
 		BlockTime:                 x.BlockTime,
@@ -213,7 +193,6 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		}
 	}
 	*x = TransactionVerboseData{
-		Hex:                       message.Hex,
 		TxId:                      message.TxID,
 		Hash:                      message.Hash,
 		Size:                      message.Size,
@@ -226,7 +205,6 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 message.BlockHash,
-		AcceptedBy:                message.AcceptedBy,
 		IsInMempool:               message.IsInMempool,
 		Time:                      message.Time,
 		BlockTime:                 message.BlockTime,

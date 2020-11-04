@@ -457,59 +457,48 @@ message AcceptedBlock{
 message GetBlockRequestMessage{
   string hash = 1;
   string subnetworkId = 2;
-  bool includeBlockHex = 3;
-  bool includeBlockVerboseData = 4;
-  bool includeTransactionVerboseData = 5;
+  bool includeTransactionVerboseData = 3;
 }
 
 message GetBlockResponseMessage{
   string blockHash = 1;
-  string blockHex = 2;
-  BlockVerboseData blockVerboseData = 3;
+  BlockVerboseData blockVerboseData = 2;
   RPCError error = 1000;
 }
 
 message BlockVerboseData{
   string hash = 1;
-  uint64 confirmations = 2;
-  int32 size = 3;
-  uint64 blueScore = 4;
-  bool isChainBlock = 5;
-  int32 version = 6;
-  string versionHex = 7;
-  string hashMerkleRoot = 8;
-  string acceptedIDMerkleRoot = 9;
-  string utxoCommitment = 10;
-  repeated string transactionHex = 11;
-  repeated TransactionVerboseData transactionVerboseData = 12;
-  int64 time = 13;
-  uint64 nonce = 14;
-  string bits = 15;
-  double difficulty = 16;
-  repeated string parentHashes = 17;
-  string selectedParentHash = 18;
-  repeated string childHashes = 19;
-  repeated string acceptedBlockHashes = 20;
+  int32 version = 2;
+  string versionHex = 3;
+  string hashMerkleRoot = 4;
+  string acceptedIDMerkleRoot = 5;
+  string utxoCommitment = 6;
+  repeated TransactionVerboseData transactionVerboseData = 7;
+  int64 time = 8;
+  uint64 nonce = 9;
+  string bits = 10;
+  double difficulty = 11;
+  repeated string parentHashes = 12;
+  string selectedParentHash = 13;
+  repeated string transactionIDs=14;
 }
 
 message TransactionVerboseData{
-  string hex = 1;
-  string txId = 2;
-  string hash = 3;
-  int32 size = 4;
-  int32 version = 5;
-  uint64 lockTime = 6;
-  string subnetworkId = 7;
-  uint64 gas = 8;
-  string payloadHash = 9;
-  string payload = 10;
-  repeated TransactionVerboseInput transactionVerboseInputs = 11;
-  repeated TransactionVerboseOutput transactionVerboseOutputs = 12;
-  string blockHash = 13;
-  string acceptedBy = 14;
-  bool isInMempool = 15;
-  uint64 time = 16;
-  uint64 blockTime = 17;
+  string txId = 1;
+  string hash = 2;
+  uint64 size = 3;
+  int32 version = 4;
+  uint64 lockTime = 5;
+  string subnetworkId = 6;
+  uint64 gas = 7;
+  string payloadHash = 8;
+  string payload = 9;
+  repeated TransactionVerboseInput transactionVerboseInputs = 10;
+  repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
+  string blockHash = 12;
+  bool isInMempool = 13;
+  uint64 time = 14;
+  uint64 blockTime = 15;
 }
 
 message TransactionVerboseInput{

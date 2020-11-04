@@ -15,7 +15,7 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockRequestMessage returns a instance of the message
-func NewGetBlockRequestMessage(hash string, subnetworkID string,includeTransactionVerboseData bool) *GetBlockRequestMessage {
+func NewGetBlockRequestMessage(hash string, subnetworkID string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
 		Hash:                          hash,
 		SubnetworkID:                  subnetworkID,
@@ -45,10 +45,6 @@ func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 // BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
-	Confirmations          uint64
-	Size                   int32
-	BlueScore              uint64
-	IsChainBlock           bool
 	Version                int32
 	VersionHex             string
 	HashMerkleRoot         string
@@ -62,8 +58,6 @@ type BlockVerboseData struct {
 	Difficulty             float64
 	ParentHashes           []string
 	SelectedParentHash     string
-	ChildHashes            []string
-	AcceptedBlockHashes    []string
 }
 
 // TransactionVerboseData holds verbose data about a transaction
