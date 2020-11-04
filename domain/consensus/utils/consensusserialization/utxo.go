@@ -51,9 +51,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 		return err
 	}
 
-	var buf [uint32Size]byte
-	littleEndian.PutUint32(buf[:], outpoint.Index)
-	_, err = w.Write(buf[:])
+	err = WriteElement(w, outpoint.Index)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -78,7 +76,13 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	index := littleEndian.Uint32(indexBytes)
+
+	var index uint32
+	err = ReadElement(r, &index)
+	if err != nil {
+		return nil, err
+	}
+
 	return &externalapi.DomainOutpoint{
 		TransactionID: *transactionID,
 		Index:         index,
