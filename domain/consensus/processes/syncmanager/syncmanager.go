@@ -52,11 +52,11 @@ func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHas
 	return sm.missingBlockBodyHashes(highHash)
 }
 
-func (sm *syncManager) IsBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFutureAndVirtualPast")
+func (sm *syncManager) IsBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFuture")
 	defer onEnd()
 
-	return sm.isBlockInHeaderPruningPointFutureAndVirtualPast(blockHash)
+	return sm.isBlockInHeaderPruningPointFuture(blockHash)
 }
 
 func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {

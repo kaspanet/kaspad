@@ -102,7 +102,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	panic("implement me")
 }
 
-func (sm *syncManager) isBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {
+func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
 	if err != nil {
 		return false, err
