@@ -62,6 +62,11 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
+	oldHeadersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	if err != nil {
+		return err
+	}
+
 	if mode.State == externalapi.SyncStateHeadersFirst {
 		err = bp.headerTipsManager.AddHeaderTip(hash)
 		if err != nil {
@@ -81,6 +86,11 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		bp.headerTipsStore.Stage(tips)
 	}
 
+	err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
+	if err != nil {
+		return err
+	}
+
 	// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 	err = bp.pruningManager.FindNextPruningPoint()
 	if err != nil {
@@ -88,6 +98,19 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	return bp.commitAllChanges()
+}
+
+func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
+	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	if err != nil {
+		return err
+	}
+
+	if *headersSelectedTip == *oldHeadersSelectedTip {
+		return nil
+	}
+
+	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
 }
 
 func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *externalapi.SyncInfo) error {
