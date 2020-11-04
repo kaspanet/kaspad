@@ -193,14 +193,14 @@ func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) 
 		log.Debugf("IBD block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	err := flow.Domain().ValidateAndInsertBlock(block)
+	err = flow.Domain().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
 		}
 		log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", block.Hash())
+		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
 	err = flow.OnNewBlock(block)
 	if err != nil {

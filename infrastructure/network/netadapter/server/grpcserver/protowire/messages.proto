@@ -294,7 +294,7 @@ message GetCurrentNetworkResponseMessage{
 }
 
 message SubmitBlockRequestMessage{
-  string blockHex = 1;
+  BlockMessage block = 1;
 }
 
 message SubmitBlockResponseMessage{
