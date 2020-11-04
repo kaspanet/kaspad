@@ -1,13 +1,13 @@
 package flowcontext
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
-	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
@@ -27,7 +27,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 }
 
 func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
-	block *util.Block, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
+	block *externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
 
 	f.updateTransactionsToRebroadcast(block)
 
@@ -68,7 +68,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
-	err := f.Domain().ValidateAndInsertBlock(block, false)
+	err := f.Domain().ValidateAndInsertBlock(block)
 	if err != nil {
 		return err
 	}
