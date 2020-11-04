@@ -26,7 +26,7 @@ type HandleHandshakeContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	Domain() domain.Domain
 	AddressManager() *addressmanager.AddressManager
-	StartIBDIfRequired()
+	StartIBDIfRequired() error
 	AddToPeers(peer *peerpkg.Peer) error
 	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
@@ -91,7 +91,10 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		context.AddressManager().Good(peerAddress, subnetworkID)
 	}
 
-	context.StartIBDIfRequired()
+	err = context.StartIBDIfRequired()
+	if err != nil {
+		return nil, err
+	}
 
 	return peer, nil
 }

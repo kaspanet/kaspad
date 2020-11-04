@@ -20,7 +20,6 @@ type HandleIBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock) error
-	StartIBDIfRequired()
 	FinishIBD() error
 }
 

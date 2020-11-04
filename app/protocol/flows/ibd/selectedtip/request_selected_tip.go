@@ -12,7 +12,7 @@ import (
 // RequestSelectedTipContext is the interface for the context needed for the RequestSelectedTip flow.
 type RequestSelectedTipContext interface {
 	Domain() domain.Domain
-	StartIBDIfRequired()
+	StartIBDIfRequired() error
 }
 
 type requestSelectedTipFlow struct {
@@ -59,8 +59,7 @@ func (flow *requestSelectedTipFlow) runSelectedTipRequest() error {
 	}
 
 	flow.peer.SetSelectedTipHash(peerSelectedTipHash)
-	flow.StartIBDIfRequired()
-	return nil
+	return flow.StartIBDIfRequired()
 }
 
 func (flow *requestSelectedTipFlow) requestSelectedTip() error {
