@@ -91,6 +91,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
+	// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
+	err = bp.pruningManager.FindNextPruningPoint()
+	if err != nil {
+		return err
+	}
+
 	return bp.commitAllChanges()
 }
 

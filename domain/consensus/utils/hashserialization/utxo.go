@@ -3,6 +3,7 @@ package hashserialization
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"io"
 
 	"github.com/pkg/errors"
@@ -14,6 +15,41 @@ import (
 // It uses big endian to ensure that when outpoint is used as database key, the
 // keys will be iterated in an ascending order by the outpoint index.
 var outpointIndexByteOrder = binary.BigEndian
+
+const (
+	outpointLen             = externalapi.DomainHashSize + 4
+	entryMinLen             = 8 + 1 + 8 + 8
+	averageScriptPubKeySize = 20
+)
+
+// ReadOnlyUTXOSetToProtoUTXOSet converts ReadOnlyUTXOSetIterator to ProtoUTXOSet
+func ReadOnlyUTXOSetToProtoUTXOSet(iter model.ReadOnlyUTXOSetIterator) (*ProtoUTXOSet, error) {
+	protoUTXOSet := &ProtoUTXOSet{
+		Utxos: []*ProtoUTXO{},
+	}
+
+	for iter.Next() {
+		outpoint, entry := iter.Get()
+
+		serializedOutpoint := bytes.NewBuffer(make([]byte, 0, outpointLen))
+		err := serializeOutpoint(serializedOutpoint, outpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		serializedEntry := bytes.NewBuffer(make([]byte, 0, entryMinLen+averageScriptPubKeySize))
+		err = serializeUTXOEntry(serializedEntry, entry)
+		if err != nil {
+			return nil, err
+		}
+
+		protoUTXOSet.Utxos = append(protoUTXOSet.Utxos, &ProtoUTXO{
+			Entry:    serializedEntry.Bytes(),
+			Outpoint: serializedOutpoint.Bytes(),
+		})
+	}
+	return protoUTXOSet, nil
+}
 
 // SerializeUTXO returns the byte-slice representation for given UTXOEntry
 func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
