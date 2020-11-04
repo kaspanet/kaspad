@@ -12,9 +12,10 @@ type syncManager struct {
 	genesisBlockHash   *externalapi.DomainHash
 	targetTimePerBlock time.Duration
 
-	dagTraversalManager model.DAGTraversalManager
-	dagTopologyManager  model.DAGTopologyManager
-	ghostdagManager     model.GHOSTDAGManager
+	dagTraversalManager   model.DAGTraversalManager
+	dagTopologyManager    model.DAGTopologyManager
+	ghostdagManager       model.GHOSTDAGManager
+	consensusStateManager model.ConsensusStateManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore
@@ -30,6 +31,7 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
+	consensusStateManager model.ConsensusStateManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
 	blockHeaderStore model.BlockHeaderStore,
@@ -40,9 +42,10 @@ func New(
 		genesisBlockHash:   genesisBlockHash,
 		targetTimePerBlock: targetTimePerBlock,
 
-		dagTraversalManager: dagTraversalManager,
-		dagTopologyManager:  dagTopologyManager,
-		ghostdagManager:     ghostdagManager,
+		dagTraversalManager:   dagTraversalManager,
+		dagTopologyManager:    dagTopologyManager,
+		ghostdagManager:       ghostdagManager,
+		consensusStateManager: consensusStateManager,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,

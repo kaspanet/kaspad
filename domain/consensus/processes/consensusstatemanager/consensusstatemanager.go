@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -100,4 +101,8 @@ func New(
 	}
 
 	return csm, nil
+}
+
+func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainHash, error) {
+	panic("implement me")
 }
