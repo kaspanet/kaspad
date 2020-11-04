@@ -2,7 +2,6 @@ package consensusserialization
 
 import (
 	"bytes"
-	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"io"
 
@@ -11,13 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// outpointIndexByteOrder is the byte order for serializing the outpoint index.
-// It uses big endian to ensure that when outpoint is used as database key, the
-// keys will be iterated in an ascending order by the outpoint index.
-var outpointIndexByteOrder = binary.BigEndian
-
 const uint32Size = 4
-const outpointLength = externalapi.DomainHashSize + uint32Size
 
 // SerializeUTXO returns the byte-slice representation for given UTXOEntry-outpoint pair
 func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
@@ -59,7 +52,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 	}
 
 	var buf [uint32Size]byte
-	outpointIndexByteOrder.PutUint32(buf[:], outpoint.Index)
+	littleEndian.PutUint32(buf[:], outpoint.Index)
 	_, err = w.Write(buf[:])
 	if err != nil {
 		return errors.WithStack(err)
@@ -85,7 +78,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	index := outpointIndexByteOrder.Uint32(indexBytes)
+	index := littleEndian.Uint32(indexBytes)
 	return &externalapi.DomainOutpoint{
 		TransactionID: *transactionID,
 		Index:         index,
