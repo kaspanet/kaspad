@@ -4,12 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/mempool"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/mempool"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -17,9 +18,8 @@ import (
 // HandleRelayedTransactions and HandleRequestedTransactions flows.
 type TransactionsRelayContext interface {
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
 	SharedRequestedTransactions() *SharedRequestedTransactions
-	TxPool() *mempool.TxPool
 	Broadcast(message appmessage.Message) error
 	OnTransactionAddedToMempool()
 }
@@ -62,9 +62,9 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 }
 
 func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
-	inv *appmessage.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
+	inv *appmessage.MsgInvTransaction) (requestedIDs []*externalapi.DomainTransactionID, err error) {
 
-	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDs))
+	idsToRequest := make([]*externalapi.DomainTransactionID, 0, len(inv.TxIDs))
 	for _, txID := range inv.TxIDs {
 		if flow.isKnownTransaction(txID) {
 			continue
@@ -89,10 +89,10 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	return idsToRequest, nil
 }
 
-func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID) bool {
+func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *externalapi.DomainTransactionID) bool {
 	// Ask the transaction memory pool if the transaction is known
 	// to it in any form (main pool or orphan).
-	if flow.TxPool().HaveTransaction(txID) {
+	if flow.Domain().HaveTransactionInMempool(txID) {
 		return true
 	}
 
@@ -107,7 +107,7 @@ func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID
 	prevOut := appmessage.Outpoint{TxID: *txID}
 	for i := uint32(0); i < 2; i++ {
 		prevOut.Index = i
-		_, ok := flow.DAG().GetUTXOEntry(prevOut)
+		_, ok := flow.Domain().GetUTXOEntry(prevOut)
 		if ok {
 			return true
 		}
@@ -136,7 +136,7 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransact
 }
 
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
-	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
+	idsToBroadcast := make([]*externalapi.DomainTransactionID, len(acceptedTxs))
 	for i, tx := range acceptedTxs {
 		idsToBroadcast[i] = tx.Tx.ID()
 	}
@@ -170,7 +170,7 @@ func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
 	}
 }
 
-func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*daghash.TxID) error {
+func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*externalapi.DomainTransactionID) error {
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
 	defer flow.SharedRequestedTransactions().removeMany(requestedTransactions)

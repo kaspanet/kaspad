@@ -9,11 +9,6 @@ import (
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -23,6 +18,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util/subnetworkid"
 
@@ -38,8 +40,8 @@ type triedAddressBucketArray [TriedBucketCount][]*KnownAddress
 // AddressManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddressManager struct {
-	cfg             *config.Config
-	databaseContext *dbaccess.DatabaseContext
+	cfg      *config.Config
+	database database.Database
 
 	mutex              sync.Mutex
 	lookupFunc         func(string) ([]net.IP, error)
@@ -194,10 +196,10 @@ const (
 var ErrAddressNotFound = errors.New("address not found")
 
 // New returns a new Kaspa address manager.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) (*AddressManager, error) {
+func New(cfg *config.Config, database database.Database) (*AddressManager, error) {
 	addressManager := AddressManager{
 		cfg:               cfg,
-		databaseContext:   databaseContext,
+		database:          database,
 		lookupFunc:        cfg.Lookup,
 		random:            rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),
@@ -451,7 +453,7 @@ func (am *AddressManager) savePeers() error {
 		return err
 	}
 
-	return dbaccess.StorePeersState(am.databaseContext, serializedPeersState)
+	return dbaccess.StorePeersState(am.database, serializedPeersState)
 }
 
 func (am *AddressManager) serializePeersState() ([]byte, error) {
@@ -561,7 +563,7 @@ func (am *AddressManager) loadPeers() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	serializedPeerState, err := dbaccess.FetchPeersState(am.databaseContext)
+	serializedPeerState, err := dbaccess.FetchPeersState(am.database)
 	if dbaccess.IsNotFoundError(err) {
 		am.reset()
 		log.Info("No peers state was found in the database. Created a new one", am.totalNumAddresses())

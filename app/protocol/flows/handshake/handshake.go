@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
-	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 
@@ -23,7 +22,6 @@ import (
 type HandleHandshakeContext interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
 	AddressManager() *addressmanager.AddressManager
 	StartIBDIfRequired()
 	AddToPeers(peer *peerpkg.Peer) error

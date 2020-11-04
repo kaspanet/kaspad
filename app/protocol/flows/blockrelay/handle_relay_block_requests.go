@@ -5,7 +5,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -29,7 +29,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
 			block, err := context.Domain().GetBlock(hash)
-			if blockdag.IsNotInDAGErr(err) {
+			if errors.Is(err, database.ErrNotFound) {
 				return protocolerrors.Errorf(true, "block %s not found", hash)
 			} else if err != nil {
 				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
@@ -37,9 +37,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 
 			// TODO (Partial nodes): Convert block to partial block if needed
 
-			DomainBlock
-
-			err = outgoingRoute.Enqueue(msgBlock)
+			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
 			if err != nil {
 				return err
 			}

@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
+
+	"github.com/kaspanet/kaspad/domain"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
@@ -11,13 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
-	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/domain/mining"
-	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -82,24 +80,19 @@ func (a *ComponentManager) Stop() {
 
 // NewComponentManager returns a new ComponentManager instance.
 // Use Start() to begin all services within this ComponentManager
-func NewComponentManager(cfg *config.Config, databaseContext *dbaccess.DatabaseContext, interrupt chan<- struct{}) (*ComponentManager, error) {
-	indexManager, acceptanceIndex := setupIndexes(cfg)
+func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database, interrupt chan<- struct{}) (
+	*ComponentManager, error) {
 
-	sigCache := txscript.NewSigCache(cfg.SigCacheMaxSize)
-
-	// Create a new block DAG instance with the appropriate configuration.
-	dag, err := setupDAG(cfg, databaseContext, sigCache, indexManager)
+	domain, err := domain.New(cfg.ActiveNetParams, db)
 	if err != nil {
 		return nil, err
 	}
-
-	txMempool := setupMempool(cfg, dag, sigCache)
 
 	netAdapter, err := netadapter.NewNetAdapter(cfg)
 	if err != nil {
 		return nil, err
 	}
-	addressManager, err := addressmanager.New(cfg, databaseContext)
+	addressManager, err := addressmanager.New(cfg, db)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +100,11 @@ func NewComponentManager(cfg *config.Config, databaseContext *dbaccess.DatabaseC
 	if err != nil {
 		return nil, err
 	}
-	protocolManager, err := protocol.NewManager(cfg, dag, netAdapter, addressManager, txMempool, connectionManager)
+	protocolManager, err := protocol.NewManager(cfg, domain, netAdapter, addressManager, connectionManager)
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, txMempool, dag, sigCache, netAdapter, protocolManager, connectionManager, addressManager, acceptanceIndex, interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -126,58 +119,20 @@ func NewComponentManager(cfg *config.Config, databaseContext *dbaccess.DatabaseC
 
 func setupRPC(
 	cfg *config.Config,
-	txMempool *mempool.TxPool,
-	dag *blockdag.BlockDAG,
-	sigCache *txscript.SigCache,
+	domain domain.Domain,
 	netAdapter *netadapter.NetAdapter,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
 
-	blockTemplateGenerator := mining.NewBlkTmplGenerator(&mining.Policy{BlockMaxMass: cfg.BlockMaxMass}, txMempool, dag, sigCache)
-	rpcManager := rpc.NewManager(cfg, netAdapter, dag, protocolManager, connectionManager, blockTemplateGenerator, txMempool, addressManager, acceptanceIndex, shutDownChan)
+	rpcManager := rpc.NewManager(
+		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
-	dag.Subscribe(func(notification *blockdag.Notification) {
-		err := handleBlockDAGNotifications(notification, acceptanceIndex, rpcManager)
-		if err != nil {
-			panic(err)
-		}
-	})
+
 	return rpcManager
-}
-
-func handleBlockDAGNotifications(notification *blockdag.Notification,
-	acceptanceIndex *indexers.AcceptanceIndex, rpcManager *rpc.Manager) error {
-
-	switch notification.Type {
-	case blockdag.NTChainChanged:
-		if acceptanceIndex == nil {
-			return nil
-		}
-		chainChangedNotificationData := notification.Data.(*blockdag.ChainChangedNotificationData)
-		err := rpcManager.NotifyChainChanged(chainChangedNotificationData.RemovedChainBlockHashes,
-			chainChangedNotificationData.AddedChainBlockHashes)
-		if err != nil {
-			return err
-		}
-	case blockdag.NTFinalityConflict:
-		finalityConflictNotificationData := notification.Data.(*blockdag.FinalityConflictNotificationData)
-		err := rpcManager.NotifyFinalityConflict(finalityConflictNotificationData.ViolatingBlockHash.String())
-		if err != nil {
-			return err
-		}
-	case blockdag.NTFinalityConflictResolved:
-		finalityConflictResolvedNotificationData := notification.Data.(*blockdag.FinalityConflictResolvedNotificationData)
-		err := rpcManager.NotifyFinalityConflictResolved(finalityConflictResolvedNotificationData.FinalityBlockHash.String())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (a *ComponentManager) maybeSeedFromDNS() {
@@ -197,56 +152,6 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				a.addressManager.AddAddresses(addresses, addresses[0], nil)
 			})
 	}
-}
-
-func setupDAG(cfg *config.Config, databaseContext *dbaccess.DatabaseContext,
-	sigCache *txscript.SigCache, indexManager blockdag.IndexManager) (*blockdag.BlockDAG, error) {
-
-	dag, err := blockdag.New(&blockdag.Config{
-		DatabaseContext:  databaseContext,
-		DAGParams:        cfg.NetParams(),
-		TimeSource:       blockdag.NewTimeSource(),
-		SigCache:         sigCache,
-		IndexManager:     indexManager,
-		SubnetworkID:     cfg.SubnetworkID,
-		MaxUTXOCacheSize: cfg.MaxUTXOCacheSize,
-	})
-	return dag, err
-}
-
-func setupIndexes(cfg *config.Config) (blockdag.IndexManager, *indexers.AcceptanceIndex) {
-	// Create indexes if needed.
-	var indexes []indexers.Indexer
-	var acceptanceIndex *indexers.AcceptanceIndex
-	if cfg.AcceptanceIndex {
-		log.Info("acceptance index is enabled")
-		acceptanceIndex = indexers.NewAcceptanceIndex()
-		indexes = append(indexes, acceptanceIndex)
-	}
-
-	// Create an index manager if any of the optional indexes are enabled.
-	if len(indexes) < 0 {
-		return nil, nil
-	}
-	indexManager := indexers.NewManager(indexes)
-	return indexManager, acceptanceIndex
-}
-
-func setupMempool(cfg *config.Config, dag *blockdag.BlockDAG, sigCache *txscript.SigCache) *mempool.TxPool {
-	mempoolConfig := mempool.Config{
-		Policy: mempool.Policy{
-			AcceptNonStd:    cfg.RelayNonStd,
-			MaxOrphanTxs:    cfg.MaxOrphanTxs,
-			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MinRelayTxFee:   cfg.MinRelayTxFee,
-			MaxTxVersion:    1,
-		},
-		CalcTxSequenceLockFromReferencedUTXOEntries: dag.CalcTxSequenceLockFromReferencedUTXOEntries,
-		SigCache: sigCache,
-		DAG:      dag,
-	}
-
-	return mempool.New(&mempoolConfig)
 }
 
 // P2PNodeID returns the network ID associated with this ComponentManager

@@ -1,14 +1,13 @@
 package flowcontext
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/mempool"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/pkg/errors"
-	"time"
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
@@ -16,17 +15,14 @@ func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 
-	transactionsAcceptedToMempool, err := f.txPool.ProcessTransaction(tx, false)
+	err := f.Domain().ValidateAndInsertTransaction(tx, false)
 	if err != nil {
 		return err
 	}
 
-	if len(transactionsAcceptedToMempool) > 1 {
-		return errors.New("got more than one accepted transactions when no orphans were allowed")
-	}
-
-	f.transactionsToRebroadcast[*tx.ID()] = tx
-	inv := appmessage.NewMsgInvTransaction([]*daghash.TxID{tx.ID()})
+	transactionID := hashserialization.TransactionID(tx)
+	f.transactionsToRebroadcast[*transactionID] = tx
+	inv := appmessage.NewMsgInvTransaction([]*externalapi.DomainTransactionID{transactionID})
 	return f.Broadcast(inv)
 }
 
@@ -46,14 +42,14 @@ func (f *FlowContext) shouldRebroadcastTransactions() bool {
 	return time.Since(f.lastRebroadcastTime) > rebroadcastInterval
 }
 
-func (f *FlowContext) txIDsToRebroadcast() []*daghash.TxID {
+func (f *FlowContext) txIDsToRebroadcast() []*externalapi.DomainTransactionID {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 
-	txIDs := make([]*daghash.TxID, len(f.transactionsToRebroadcast))
+	txIDs := make([]*externalapi.DomainTransactionID, len(f.transactionsToRebroadcast))
 	i := 0
 	for _, tx := range f.transactionsToRebroadcast {
-		txIDs[i] = tx.ID()
+		txIDs[i] = hashserialization.TransactionID(tx)
 		i++
 	}
 	return txIDs
@@ -63,11 +59,6 @@ func (f *FlowContext) txIDsToRebroadcast() []*daghash.TxID {
 // data about requested transactions between different peers.
 func (f *FlowContext) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
 	return f.sharedRequestedTransactions
-}
-
-// TxPool returns the transaction pool associated to the manager.
-func (f *FlowContext) TxPool() *mempool.TxPool {
-	return f.txPool
 }
 
 // OnTransactionAddedToMempool notifies the handler function that a transaction

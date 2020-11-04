@@ -15,7 +15,7 @@ func HandleGetSelectedTipHash(context *rpccontext.Context, _ *router.Router, _ a
 	}
 
 	response := appmessage.NewGetSelectedTipHashResponseMessage(
-		hashserialization.HeaderHash(selectedTip.Header).String())
+		hashserialization.BlockHash(selectedTip).String())
 
 	return response, nil
 }

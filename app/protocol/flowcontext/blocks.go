@@ -2,22 +2,20 @@ package flowcontext
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
-func (f *FlowContext) OnNewBlock(block *util.Block) error {
-	transactionsAcceptedToMempool, err := f.txPool.HandleNewBlock(block)
-	if err != nil {
-		return err
-	}
+func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
+	f.Domain().HandleNewBlockTransactions(block.Transactions)
+
 	if f.onBlockAddedToDAGHandler != nil {
 		err := f.onBlockAddedToDAGHandler(block)
 		if err != nil {
@@ -25,10 +23,12 @@ func (f *FlowContext) OnNewBlock(block *util.Block) error {
 		}
 	}
 
-	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
+	return nil
 }
 
-func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
+func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
+	block *util.Block, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
+
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
@@ -36,14 +36,14 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, tr
 		return nil
 	}
 
-	var txIDsToRebroadcast []*daghash.TxID
+	var txIDsToRebroadcast []*externalapi.DomainTransactionID
 	if f.shouldRebroadcastTransactions() {
 		txIDsToRebroadcast = f.txIDsToRebroadcast()
 	}
 
-	txIDsToBroadcast := make([]*daghash.TxID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
+	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
 	for i, tx := range transactionsAcceptedToMempool {
-		txIDsToBroadcast[i] = tx.ID()
+		txIDsToBroadcast[i] = hashserialization.TransactionID(tx)
 	}
 	offset := len(transactionsAcceptedToMempool)
 	for i, txID := range txIDsToRebroadcast {
@@ -68,7 +68,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
-	_, _, err := f.Domain().ValidateAndInsertBlock(block, false)
+	err := f.Domain().ValidateAndInsertBlock(block, false)
 	if err != nil {
 		return err
 	}
@@ -76,5 +76,5 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(appmessage.NewMsgInvBlock(block.Hash()))
+	return f.Broadcast(appmessage.NewMsgInvBlock(hashserialization.BlockHash(block)))
 }

@@ -7,20 +7,12 @@ var (
 )
 
 // StorePeersState stores the peers state in the database.
-func StorePeersState(context Context, peersState []byte) error {
-	accessor, err := context.accessor()
-	if err != nil {
-		return err
-	}
-	return accessor.Put(peersKey, peersState)
+func StorePeersState(dbContext database.DataAccessor, peersState []byte) error {
+	return dbContext.Put(peersKey, peersState)
 }
 
 // FetchPeersState retrieves the peers state from the database.
 // Returns ErrNotFound if the state is missing from the database.
-func FetchPeersState(context Context) ([]byte, error) {
-	accessor, err := context.accessor()
-	if err != nil {
-		return nil, err
-	}
-	return accessor.Get(peersKey)
+func FetchPeersState(dbContext database.DataAccessor) ([]byte, error) {
+	return dbContext.Get(peersKey)
 }

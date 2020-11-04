@@ -1,14 +1,15 @@
 package peer
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/kaspanet/kaspad/util/subnetworkid"
@@ -19,7 +20,7 @@ type Peer struct {
 	connection *netadapter.NetConnection
 
 	selectedTipHashMtx sync.RWMutex
-	selectedTipHash    *daghash.Hash
+	selectedTipHash    *externalapi.DomainHash
 
 	userAgent                string
 	services                 appmessage.ServiceFlag
@@ -59,14 +60,14 @@ func (p *Peer) Connection() *netadapter.NetConnection {
 }
 
 // SelectedTipHash returns the selected tip of the peer.
-func (p *Peer) SelectedTipHash() *daghash.Hash {
+func (p *Peer) SelectedTipHash() *externalapi.DomainHash {
 	p.selectedTipHashMtx.RLock()
 	defer p.selectedTipHashMtx.RUnlock()
 	return p.selectedTipHash
 }
 
 // SetSelectedTipHash sets the selected tip of the peer.
-func (p *Peer) SetSelectedTipHash(hash *daghash.Hash) {
+func (p *Peer) SetSelectedTipHash(hash *externalapi.DomainHash) {
 	p.selectedTipHashMtx.Lock()
 	defer p.selectedTipHashMtx.Unlock()
 	p.selectedTipHash = hash

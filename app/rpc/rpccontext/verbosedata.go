@@ -24,8 +24,8 @@ import (
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // This method must be called with the DAG lock held for reads
 func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+	hash := hashserialization.BlockHash(block)
 	blockHeader := block.Header
-	hash := hashserialization.HeaderHash(blockHeader)
 
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),

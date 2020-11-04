@@ -6,20 +6,22 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/pkg/errors"
 )
 
 // RelayInvsContext is the interface for the context needed for the HandleRelayInvs flow.
 type RelayInvsContext interface {
+	Domain() domain.Domain
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
-	OnNewBlock(block *util.Block) error
+	OnNewBlock(block *externalapi.DomainBlock) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	StartIBDIfRequired()
 	IsInIBD() bool
@@ -57,8 +59,12 @@ func (flow *handleRelayInvsFlow) start() error {
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 
-		if flow.DAG().IsKnownBlock(inv.Hash) {
-			if flow.DAG().IsKnownInvalid(inv.Hash) {
+		blockInfo, err := flow.Domain().GetBlockInfo(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if blockInfo.Exists {
+			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
@@ -108,8 +114,8 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	numHashesToRequest := mathUtil.MinInt(appmessage.MsgRequestRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
-	pendingBlocks := map[daghash.Hash]struct{}{}
-	var filteredHashesToRequest []*daghash.Hash
+	pendingBlocks := map[externalapi.DomainHash]struct{}{}
+	var filteredHashesToRequest []*externalapi.DomainHash
 	for _, hash := range hashesToRequest {
 		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
 		if exists {
@@ -117,7 +123,11 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		}
 
 		// The block can become known from another peer in the process of orphan resolution
-		if flow.DAG().IsKnownBlock(hash) {
+		blockInfo, err := flow.Domain().GetBlockInfo(hash)
+		if err != nil {
+			return err
+		}
+		if blockInfo.Exists {
 			continue
 		}
 
@@ -187,20 +197,16 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 	}
 }
 
-func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *util.Block) error {
-	blockHash := block.Hash()
-	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
+func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
+	blockHash := hashserialization.BlockHash(block)
+	err := flow.Domain().ValidateAndInsertBlock(block, false)
 	if err != nil {
-		if !errors.As(err, &blockdag.RuleError{}) {
+		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
-	}
-
-	if isDelayed {
-		return nil
 	}
 
 	if isOrphan {

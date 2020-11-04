@@ -6,19 +6,22 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
 // HandleIBDContext is the interface for the context needed for the HandleIBD flow.
 type HandleIBDContext interface {
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
+	Config() *config.Config
 	OnNewBlock(block *util.Block) error
 	StartIBDIfRequired()
-	FinishIBD()
+	FinishIBD() error
 }
 
 type handleIBDFlow struct {
@@ -65,10 +68,10 @@ func (flow *handleIBDFlow) runIBD() error {
 	return flow.downloadBlocks(highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash,
+func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (lowHash *externalapi.DomainHash,
 	err error) {
 
-	lowHash = flow.DAG().Params.GenesisHash
+	lowHash = flow.Config().ActiveNetParams.GenesisHash
 	highHash := peerSelectedTipHash
 
 	for {
@@ -86,21 +89,25 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *dagha
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		if flow.DAG().IsInDAG(locatorHighHash) {
+		locatorHighHashInfo, err := flow.Domain().GetBlockInfo(locatorHighHash)
+		if err != nil {
+			return nil, err
+		}
+		if locatorHighHashInfo.Exists {
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash = flow.DAG().FindNextLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash = flow.Domain().FindNextBlockLocatorBoundaries(blockLocatorHashes)
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
+func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) error {
 
 	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
-func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.Hash, err error) {
+func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
@@ -114,8 +121,8 @@ func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash) error {
+func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *externalapi.DomainHash,
+	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	err := flow.sendGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
@@ -148,8 +155,8 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash) error {
+func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *externalapi.DomainHash,
+	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	msgGetBlockInvs := appmessage.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
