@@ -158,7 +158,6 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 x.BlockHash,
-		IsInMempool:               x.IsInMempool,
 		Time:                      x.Time,
 		BlockTime:                 x.BlockTime,
 	}, nil
@@ -205,7 +204,6 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 message.BlockHash,
-		IsInMempool:               message.IsInMempool,
 		Time:                      message.Time,
 		BlockTime:                 message.BlockTime,
 	}

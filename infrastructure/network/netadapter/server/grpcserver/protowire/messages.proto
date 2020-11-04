@@ -496,9 +496,8 @@ message TransactionVerboseData{
   repeated TransactionVerboseInput transactionVerboseInputs = 10;
   repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
   string blockHash = 12;
-  bool isInMempool = 13;
-  uint64 time = 14;
-  uint64 blockTime = 15;
+  uint64 time = 13;
+  uint64 blockTime = 14;
 }
 
 message TransactionVerboseInput{

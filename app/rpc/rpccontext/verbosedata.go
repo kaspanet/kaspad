@@ -112,11 +112,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 		txReply.BlockHash = blockHash
 	}
 
-	txReply.IsInMempool = isInMempool
-	if acceptingBlock != nil {
-		txReply.AcceptedBy = acceptingBlock.String()
-	}
-
 	return txReply, nil
 }
 

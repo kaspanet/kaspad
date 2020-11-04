@@ -74,8 +74,6 @@ type TransactionVerboseData struct {
 	TransactionVerboseInputs  []*TransactionVerboseInput
 	TransactionVerboseOutputs []*TransactionVerboseOutput
 	BlockHash                 string
-	AcceptedBy                string
-	IsInMempool               bool
 	Time                      uint64
 	BlockTime                 uint64
 }
