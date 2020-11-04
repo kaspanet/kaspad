@@ -25,15 +25,14 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.Domain
 }
 
 func (gm *ghostdagManager) less(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	chosenSelectedParent, err := gm.ChooseSelectedParent(blockHashA, blockHashB)
+	chosenSelectedParent, err := gm.ChooseSelectedParent([]*externalapi.DomainHash{blockHashA, blockHashB})
 	if err != nil {
 		return false, err
 	}
 	return chosenSelectedParent == blockHashB, nil
 }
 
-func (gm *ghostdagManager) ChooseSelectedParent(blockHashA *externalapi.DomainHash,
-	blockHashB *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (gm *ghostdagManager) ChooseSelectedParent(blockHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
 	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHashA)
 	if err != nil {

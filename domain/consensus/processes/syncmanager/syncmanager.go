@@ -4,37 +4,50 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"time"
 )
 
 type syncManager struct {
-	databaseContext  model.DBReader
-	genesisBlockHash *externalapi.DomainHash
+	databaseContext    model.DBReader
+	genesisBlockHash   *externalapi.DomainHash
+	targetTimePerBlock time.Duration
 
 	dagTraversalManager model.DAGTraversalManager
 	dagTopologyManager  model.DAGTopologyManager
+	ghostdagManager     model.GHOSTDAGManager
 
-	ghostdagDataStore model.GHOSTDAGDataStore
-	blockStatusStore  model.BlockStatusStore
+	ghostdagDataStore  model.GHOSTDAGDataStore
+	blockStatusStore   model.BlockStatusStore
+	blockerHeaderStore model.BlockHeaderStore
+	headerTipsStore    model.HeaderTipsStore
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
+	targetTimePerBlock time.Duration,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	blockStatusStore model.BlockStatusStore) model.SyncManager {
+	blockStatusStore model.BlockStatusStore,
+	blockerHeaderStore model.BlockHeaderStore,
+	headerTipsStore model.HeaderTipsStore) model.SyncManager {
 
 	return &syncManager{
-		databaseContext:  databaseContext,
-		genesisBlockHash: genesisBlockHash,
+		databaseContext:    databaseContext,
+		genesisBlockHash:   genesisBlockHash,
+		targetTimePerBlock: targetTimePerBlock,
 
 		dagTraversalManager: dagTraversalManager,
 		dagTopologyManager:  dagTopologyManager,
+		ghostdagManager:     ghostdagManager,
 
-		ghostdagDataStore: ghostdagDataStore,
-		blockStatusStore:  blockStatusStore,
+		ghostdagDataStore:  ghostdagDataStore,
+		blockStatusStore:   blockStatusStore,
+		blockerHeaderStore: blockerHeaderStore,
+		headerTipsStore:    headerTipsStore,
 	}
 }
 
