@@ -51,7 +51,7 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 		return false, err
 	}
 
-	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(virtualGhostdagData.SelectedParent, blockHash)
+	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent([]*externalapi.DomainHash{virtualGhostdagData.SelectedParent, blockHash})
 	if err != nil {
 		return false, err
 	}

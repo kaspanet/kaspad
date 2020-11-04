@@ -71,7 +71,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 		if err != nil {
 			return 0, err
 		}
-		newBluest, err := dm.ghostdagManager.ChooseSelectedParent(bluestParent, parents[i])
+		newBluest, err := dm.ghostdagManager.ChooseSelectedParent([]*externalapi.DomainHash{bluestParent, parents[i]})
 		if err != nil {
 			return 0, err
 		}

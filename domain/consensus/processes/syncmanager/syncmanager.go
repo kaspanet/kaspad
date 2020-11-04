@@ -16,10 +16,10 @@ type syncManager struct {
 	dagTopologyManager  model.DAGTopologyManager
 	ghostdagManager     model.GHOSTDAGManager
 
-	ghostdagDataStore  model.GHOSTDAGDataStore
-	blockStatusStore   model.BlockStatusStore
-	blockerHeaderStore model.BlockHeaderStore
-	headerTipsStore    model.HeaderTipsStore
+	ghostdagDataStore model.GHOSTDAGDataStore
+	blockStatusStore  model.BlockStatusStore
+	blockHeaderStore  model.BlockHeaderStore
+	headerTipsStore   model.HeaderTipsStore
 }
 
 // New instantiates a new SyncManager
@@ -32,7 +32,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
-	blockerHeaderStore model.BlockHeaderStore,
+	blockHeaderStore model.BlockHeaderStore,
 	headerTipsStore model.HeaderTipsStore) model.SyncManager {
 
 	return &syncManager{
@@ -44,10 +44,10 @@ func New(
 		dagTopologyManager:  dagTopologyManager,
 		ghostdagManager:     ghostdagManager,
 
-		ghostdagDataStore:  ghostdagDataStore,
-		blockStatusStore:   blockStatusStore,
-		blockerHeaderStore: blockerHeaderStore,
-		headerTipsStore:    headerTipsStore,
+		ghostdagDataStore: ghostdagDataStore,
+		blockStatusStore:  blockStatusStore,
+		blockHeaderStore:  blockHeaderStore,
+		headerTipsStore:   headerTipsStore,
 	}
 }
 

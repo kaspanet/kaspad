@@ -33,21 +33,23 @@ func (gm *ghostdagManager) less(blockHashA *externalapi.DomainHash, blockHashB *
 }
 
 func (gm *ghostdagManager) ChooseSelectedParent(blockHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
-
-	blockAGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHashA)
-	if err != nil {
-		return nil, err
-	}
-	blockBGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHashB)
+	selectedParentHash := blockHashes[0]
+	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, selectedParentHash)
 	if err != nil {
 		return nil, err
 	}
 
-	if gm.Less(blockHashA, blockAGHOSTDAGData, blockHashB, blockBGHOSTDAGData) {
-		return blockHashB, nil
+	for _, blockHash := range blockHashes[1:] {
+		blockGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, blockHash)
+		if err != nil {
+			return nil, err
+		}
+		if gm.Less(selectedParentHash, selectedParentGHOSTDAGData, blockHash, blockGHOSTDAGData) {
+			selectedParentHash = blockHash
+			selectedParentGHOSTDAGData = blockGHOSTDAGData
+		}
 	}
-
-	return blockHashA, nil
+	return selectedParentHash, nil
 }
 
 func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData,

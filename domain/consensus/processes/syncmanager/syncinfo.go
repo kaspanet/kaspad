@@ -73,7 +73,7 @@ func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHas
 }
 
 func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *externalapi.DomainHash) (bool, error) {
-	virtualSelectedParentHeader, err := sm.blockerHeaderStore.BlockHeader(sm.databaseContext, headerVirtualSelectedParentHash)
+	virtualSelectedParentHeader, err := sm.blockHeaderStore.BlockHeader(sm.databaseContext, headerVirtualSelectedParentHash)
 	if err != nil {
 		return false, err
 	}
