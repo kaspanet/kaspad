@@ -69,7 +69,7 @@ func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHas
 	if err != nil {
 		return nil, err
 	}
-	return sm.ghostdagManager.ChooseSelectedParent(headerTips)
+	return sm.ghostdagManager.ChooseSelectedParent(headerTips...)
 }
 
 func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *externalapi.DomainHash) (bool, error) {

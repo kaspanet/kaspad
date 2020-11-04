@@ -25,7 +25,7 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.Domain
 }
 
 func (gm *ghostdagManager) less(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	chosenSelectedParent, err := gm.ChooseSelectedParent([]*externalapi.DomainHash{blockHashA, blockHashB})
+	chosenSelectedParent, err := gm.ChooseSelectedParent(blockHashA, blockHashB)
 	if err != nil {
 		return false, err
 	}
