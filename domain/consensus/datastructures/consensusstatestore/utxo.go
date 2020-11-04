@@ -211,7 +211,11 @@ func (c consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.Re
 
 	c.stagedVirtualUTXOSet = make(model.UTXOCollection)
 	for virtualUTXOSetIterator.Next() {
-		outpoint, entry := virtualUTXOSetIterator.Get()
+		outpoint, entry, err := virtualUTXOSetIterator.Get()
+		if err != nil {
+			return err
+		}
+
 		if _, exists := c.stagedVirtualUTXOSet[*outpoint]; exists {
 			return errors.Errorf("outpoint %s is found more than once in the given iterator", outpoint)
 		}
