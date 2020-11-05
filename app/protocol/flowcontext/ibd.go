@@ -48,7 +48,7 @@ func (f *FlowContext) selectPeerForIBD() (*peerpkg.Peer, error) {
 
 	for _, peer := range f.peers {
 		peerSelectedTipHash := peer.SelectedTipHash()
-		blockInfo, err := f.domain.GetBlockInfo(peerSelectedTipHash)
+		blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (f *FlowContext) requestSelectedTipsIfRequired() {
 
 func (f *FlowContext) isDAGTimeCurrent() (bool, error) {
 	const minDurationToRequestSelectedTips = time.Minute
-	virtualSelectedParent, err := f.domain.GetVirtualSelectedParent()
+	virtualSelectedParent, err := f.domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return false, err
 	}

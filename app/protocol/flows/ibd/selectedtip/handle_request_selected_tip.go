@@ -57,7 +57,7 @@ func (flow *handleRequestSelectedTipFlow) receiveGetSelectedTip() error {
 }
 
 func (flow *handleRequestSelectedTipFlow) sendSelectedTipHash() error {
-	virtualSelectedParent, err := flow.Domain().GetVirtualSelectedParent()
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return err
 	}

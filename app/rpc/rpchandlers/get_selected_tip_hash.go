@@ -9,7 +9,7 @@ import (
 
 // HandleGetSelectedTipHash handles the respectively named RPC command
 func HandleGetSelectedTipHash(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	selectedTip, err := context.Domain.GetVirtualSelectedParent()
+	selectedTip, err := context.Domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return nil, err
 	}

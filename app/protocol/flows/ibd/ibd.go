@@ -88,7 +88,7 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *exter
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		locatorHighHashInfo, err := flow.Domain().GetBlockInfo(locatorHighHash)
+		locatorHighHashInfo, err := flow.Domain().Consensus().GetBlockInfo(locatorHighHash)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *exter
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash, err = flow.Domain().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +184,7 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
 	block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
 	blockHash := hashserialization.BlockHash(block)
-	blockInfo, err := flow.Domain().GetBlockInfo(blockHash)
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) 
 		log.Debugf("IBD block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	err = flow.Domain().ValidateAndInsertBlock(block)
+	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)

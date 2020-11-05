@@ -14,7 +14,7 @@ import (
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
-	f.Domain().HandleNewBlockTransactions(block.Transactions)
+	f.Domain().MiningManager().HandleNewBlockTransactions(block.Transactions)
 
 	if f.onBlockAddedToDAGHandler != nil {
 		err := f.onBlockAddedToDAGHandler(block)
@@ -68,7 +68,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
-	err := f.Domain().ValidateAndInsertBlock(block)
+	err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 		return errorMessage, nil
 	}
 
-	block, err := context.Domain.GetBlock(hash)
+	block, err := context.Domain.Consensus().GetBlock(hash)
 	if err != nil {
 		errorMessage := &appmessage.GetBlockResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Block %s not found", hash)

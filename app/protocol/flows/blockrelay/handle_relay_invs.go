@@ -59,7 +59,7 @@ func (flow *handleRelayInvsFlow) start() error {
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 
-		blockInfo, err := flow.Domain().GetBlockInfo(inv.Hash)
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		}
 
 		// The block can become known from another peer in the process of orphan resolution
-		blockInfo, err := flow.Domain().GetBlockInfo(hash)
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(hash)
 		if err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 
 func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
 	blockHash := hashserialization.BlockHash(block)
-	err := flow.Domain().ValidateAndInsertBlock(block)
+	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s", blockHash)
@@ -217,7 +217,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 			}
 
 			const maxOrphanBlueScoreDiff = 10000
-			virtualSelectedParent, err := flow.Domain().GetVirtualSelectedParent()
+			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 			if err != nil {
 				return err
 			}

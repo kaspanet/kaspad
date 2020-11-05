@@ -93,7 +93,7 @@ func receiveRequestIBDBlocks(incomingRoute *router.Route) (lowHash *externalapi.
 func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *externalapi.DomainHash,
 	highHash *externalapi.DomainHash) ([]*appmessage.MsgIBDBlock, error) {
 
-	blockHashes, err := flow.Domain().GetHashesBetween(lowHash, highHash)
+	blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (flow *handleRequestBlocksFlow) buildMsgIBDBlocks(lowHash *externalapi.Doma
 
 	msgIBDBlocks := make([]*appmessage.MsgIBDBlock, len(blockHashes))
 	for i, blockHash := range blockHashes {
-		block, err := flow.Domain().GetBlock(blockHash)
+		block, err := flow.Domain().Consensus().GetBlock(blockHash)
 		if err != nil {
 			return nil, err
 		}

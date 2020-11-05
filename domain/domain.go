@@ -9,13 +9,21 @@ import (
 )
 
 type Domain interface {
-	miningmanager.MiningManager
-	consensus.Consensus
+	MiningManager() miningmanager.MiningManager
+	Consensus() consensus.Consensus
 }
 
 type domain struct {
-	miningmanager.MiningManager
-	consensus.Consensus
+	miningManager miningmanager.MiningManager
+	consensus     consensus.Consensus
+}
+
+func (d domain) Consensus() consensus.Consensus {
+	return d.consensus
+}
+
+func (d domain) MiningManager() miningmanager.MiningManager {
+	return d.miningManager
 }
 
 func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Domain, error) {
@@ -29,7 +37,7 @@ func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Domai
 	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, constants.MaxMassAcceptedByBlock)
 
 	return &domain{
-		Consensus:     consensusInstance,
-		MiningManager: miningManager,
+		consensus:     consensusInstance,
+		miningManager: miningManager,
 	}, nil
 }

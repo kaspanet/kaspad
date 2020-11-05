@@ -48,7 +48,7 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *sendVersionFlow) start() error {
-	virtualSelectedParent, err := flow.Domain().GetVirtualSelectedParent()
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return err
 	}

@@ -91,7 +91,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *externalapi.DomainTransactionID) bool {
 	// Ask the transaction memory pool if the transaction is known
 	// to it in any form (main pool or orphan).
-	if _, ok := flow.Domain().GetTransaction(txID); ok {
+	if _, ok := flow.Domain().MiningManager().GetTransaction(txID); ok {
 		return true
 	}
 
@@ -173,7 +173,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				expectedID, txID)
 		}
 
-		err = flow.Domain().ValidateAndInsertTransaction(tx, true)
+		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, true)
 		if err != nil {
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
