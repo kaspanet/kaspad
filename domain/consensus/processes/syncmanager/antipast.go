@@ -195,5 +195,11 @@ func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.
 	if !exists {
 		return false, nil
 	}
-	panic("implement me")
+
+	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
+	if err != nil {
+		return false, err
+	}
+
+	return sm.dagTopologyManager.IsAncestorOf(headerTipsPruningPoint, blockHash)
 }
