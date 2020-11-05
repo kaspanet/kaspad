@@ -136,7 +136,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams,
+		dagParams.FinalityDepth(),
+		dagParams.PruningDepth(),
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,

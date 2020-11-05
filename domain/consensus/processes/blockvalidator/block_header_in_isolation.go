@@ -5,9 +5,9 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +33,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 }
 
 func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
-	hash := hashserialization.HeaderHash(header)
+	hash := consensusserialization.HeaderHash(header)
 	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}

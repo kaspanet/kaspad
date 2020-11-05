@@ -180,7 +180,7 @@ func (u utxoSetIterator) Next() bool {
 	return u.cursor.Next()
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) {
+func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
 	key, err := u.cursor.Key()
 	if err != nil {
 		panic(err)
@@ -188,20 +188,20 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 
 	utxoEntryBytes, err := u.cursor.Value()
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	outpoint, err = deserializeOutpoint(key.Suffix())
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	utxoEntry, err = deserializeUTXOEntry(utxoEntryBytes)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
-	return outpoint, utxoEntry
+	return outpoint, utxoEntry, nil
 }
 
 func (c consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
@@ -211,7 +211,11 @@ func (c consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.Re
 
 	c.stagedVirtualUTXOSet = make(model.UTXOCollection)
 	for virtualUTXOSetIterator.Next() {
-		outpoint, entry := virtualUTXOSetIterator.Get()
+		outpoint, entry, err := virtualUTXOSetIterator.Get()
+		if err != nil {
+			return err
+		}
+
 		if _, exists := c.stagedVirtualUTXOSet[*outpoint]; exists {
 			return errors.Errorf("outpoint %s is found more than once in the given iterator", outpoint)
 		}

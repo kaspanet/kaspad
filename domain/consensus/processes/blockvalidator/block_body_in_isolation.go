@@ -3,9 +3,9 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -141,7 +141,7 @@ func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainB
 		err := v.transactionValidator.ValidateTransactionInIsolation(tx)
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
-				"check", hashserialization.TransactionID(tx))
+				"check", consensusserialization.TransactionID(tx))
 		}
 	}
 
@@ -161,7 +161,7 @@ func (v *blockValidator) checkBlockHashMerkleRoot(block *externalapi.DomainBlock
 func (v *blockValidator) checkBlockDuplicateTransactions(block *externalapi.DomainBlock) error {
 	existingTxIDs := make(map[externalapi.DomainTransactionID]struct{})
 	for _, tx := range block.Transactions {
-		id := hashserialization.TransactionID(tx)
+		id := consensusserialization.TransactionID(tx)
 		if _, exists := existingTxIDs[*id]; exists {
 			return errors.Wrapf(ruleerrors.ErrDuplicateTx, "block contains duplicate "+
 				"transaction %s", id)
@@ -175,7 +175,7 @@ func (v *blockValidator) checkBlockDoubleSpends(block *externalapi.DomainBlock) 
 	usedOutpoints := make(map[externalapi.DomainOutpoint]*externalapi.DomainTransactionID)
 	for _, tx := range block.Transactions {
 		for _, input := range tx.Inputs {
-			txID := hashserialization.TransactionID(tx)
+			txID := consensusserialization.TransactionID(tx)
 			if spendingTxID, exists := usedOutpoints[input.PreviousOutpoint]; exists {
 				return errors.Wrapf(ruleerrors.ErrDoubleSpendInSameBlock, "transaction %s spends "+
 					"outpoint %s that was already spent by "+
@@ -193,14 +193,14 @@ func (v *blockValidator) checkBlockHasNoChainedTransactions(block *externalapi.D
 	transactions := block.Transactions
 	transactionsSet := make(map[externalapi.DomainTransactionID]struct{}, len(transactions))
 	for _, transaction := range transactions {
-		txID := hashserialization.TransactionID(transaction)
+		txID := consensusserialization.TransactionID(transaction)
 		transactionsSet[*txID] = struct{}{}
 	}
 
 	for _, transaction := range transactions {
 		for i, transactionInput := range transaction.Inputs {
 			if _, ok := transactionsSet[transactionInput.PreviousOutpoint.TransactionID]; ok {
-				txID := hashserialization.TransactionID(transaction)
+				txID := consensusserialization.TransactionID(transaction)
 				return errors.Wrapf(ruleerrors.ErrChainedTransactions, "block contains chained "+
 					"transactions: Input %d of transaction %s spend "+
 					"an output of transaction %s", i, txID, transactionInput.PreviousOutpoint.TransactionID)

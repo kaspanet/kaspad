@@ -5,7 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 
@@ -104,8 +104,8 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
 		return transactionid.Less(
-			hashserialization.TransactionID(acceptedTransactions[i]),
-			hashserialization.TransactionID(acceptedTransactions[j]))
+			consensusserialization.TransactionID(acceptedTransactions[i]),
+			consensusserialization.TransactionID(acceptedTransactions[j]))
 	})
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
@@ -122,8 +122,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 		return err
 	}
 
-	coinbaseTransactionHash := hashserialization.TransactionHash(coinbaseTransaction)
-	expectedCoinbaseTransactionHash := hashserialization.TransactionHash(expectedCoinbaseTransaction)
+	coinbaseTransactionHash := consensusserialization.TransactionHash(coinbaseTransaction)
+	expectedCoinbaseTransactionHash := consensusserialization.TransactionHash(expectedCoinbaseTransaction)
 	if *coinbaseTransactionHash != *expectedCoinbaseTransactionHash {
 		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
 	}

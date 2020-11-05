@@ -2,7 +2,7 @@ package blocktemplatebuilder
 
 import (
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"math"
 	"math/rand"
@@ -103,7 +103,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		if txsForBlockTemplate.totalMass+selectedTx.Mass < txsForBlockTemplate.totalMass ||
 			txsForBlockTemplate.totalMass+selectedTx.Mass > btb.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
-				"As such, stopping.", hashserialization.TransactionID(tx))
+				"As such, stopping.", consensusserialization.TransactionID(tx))
 			break
 		}
 
@@ -121,7 +121,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 				log.Tracef("Tx %s would exceed the gas limit in "+
 					"subnetwork %s. Removing all remaining txs from this "+
 					"subnetwork.",
-					hashserialization.TransactionID(tx), subnetworkID)
+					consensusserialization.TransactionID(tx), subnetworkID)
 				for _, candidateTx := range candidateTxs {
 					// candidateTxs are ordered by subnetwork, so we can safely assume
 					// that transactions after subnetworkID will not be relevant.
@@ -146,7 +146,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		txsForBlockTemplate.totalFees += selectedTx.Fee
 
 		log.Tracef("Adding tx %s (feePerMegaGram %d)",
-			hashserialization.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.Mass)
+			consensusserialization.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.Mass)
 
 		markCandidateTxForDeletion(selectedTx)
 	}
