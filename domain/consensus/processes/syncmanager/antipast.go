@@ -111,7 +111,16 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	lowHash := headerTipsPruningPoint
 	for selectedChildIterator.Next() {
-		lowHash = selectedChildIterator.Get()
+		selectedChild := selectedChildIterator.Get()
+		selectedChildStatus, err := sm.blockStatusStore.Get(sm.databaseContext, selectedChild)
+		if err != nil {
+			return nil, err
+		}
+
+		if selectedChildStatus != externalapi.StatusHeaderOnly {
+			lowHash = selectedChild
+			break
+		}
 	}
 
 	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)

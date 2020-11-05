@@ -64,7 +64,10 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 		return err
 	}
 
-	csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
+	err = csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
+	if err != nil {
+		return err
+	}
 
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
