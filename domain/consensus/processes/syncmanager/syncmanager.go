@@ -4,13 +4,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"time"
 )
 
 type syncManager struct {
 	databaseContext    model.DBReader
 	genesisBlockHash   *externalapi.DomainHash
-	targetTimePerBlock time.Duration
+	targetTimePerBlock int64
 
 	dagTraversalManager   model.DAGTraversalManager
 	dagTopologyManager    model.DAGTopologyManager
@@ -27,7 +26,7 @@ type syncManager struct {
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
-	targetTimePerBlock time.Duration,
+	targetTimePerBlock int64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,

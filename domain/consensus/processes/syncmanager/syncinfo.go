@@ -87,8 +87,8 @@ func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *exte
 	}
 	virtualSelectedParentTimeInMilliseconds := virtualSelectedParentHeader.TimeInMilliseconds
 
-	virtualSelectedParentTimestamp := mstime.UnixMilliseconds(virtualSelectedParentTimeInMilliseconds)
-	timeDifference := mstime.Now().Sub(virtualSelectedParentTimestamp)
+	nowInMilliseconds := mstime.Now().UnixMilliseconds()
+	timeDifference := nowInMilliseconds - virtualSelectedParentTimeInMilliseconds
 
 	maxTimeDifference := areHeaderTipsSyncedMaxTimeDifference * sm.targetTimePerBlock
 

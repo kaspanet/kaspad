@@ -182,7 +182,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	syncManager := syncmanager.New(
 		dbManager,
 		genesisHash,
-		dagParams.TargetTimePerBlock,
+		dagParams.TargetTimePerBlock.Milliseconds(),
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagManager,
