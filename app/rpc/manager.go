@@ -45,8 +45,6 @@ func NewManager(
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
 func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
-	m.context.BlockTemplateState.NotifyBlockAdded(block)
-
 	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
 	return m.context.NotificationManager.NotifyBlockAdded(notification)
 }
@@ -76,9 +74,4 @@ func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
 	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
-}
-
-// NotifyTransactionAddedToMempool notifies the manager that a transaction has been added to the mempool
-func (m *Manager) NotifyTransactionAddedToMempool() {
-	m.context.BlockTemplateState.NotifyMempoolTx()
 }
