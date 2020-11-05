@@ -2,18 +2,17 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	dagParams       *dagconfig.Params
+	finalityDepth   uint64
+	pruningDepth    uint64
 	databaseContext model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
-	pruningManager        model.PruningManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
 	blockValidator        model.BlockValidator
@@ -38,11 +37,11 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	dagParams *dagconfig.Params,
+	finalityDepth uint64,
+	pruningDepth uint64,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
-	pruningManager model.PruningManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
 	blockValidator model.BlockValidator,
@@ -62,13 +61,13 @@ func New(
 	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		dagParams:       dagParams,
+		finalityDepth:   finalityDepth,
+		pruningDepth:    pruningDepth,
 		databaseContext: databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,
 		dagTraversalManager:   dagTraversalManager,
-		pruningManager:        pruningManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
 		blockValidator:        blockValidator,

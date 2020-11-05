@@ -3,7 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -21,7 +21,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		return errorMessage, nil
 	}
 
-	log.Infof("Accepted domainBlock %s via submitBlock", hashserialization.BlockHash(domainBlock))
+	log.Infof("Accepted domainBlock %s via submitBlock", consensusserialization.BlockHash(domainBlock))
 
 	response := appmessage.NewSubmitBlockResponseMessage()
 	return response, nil

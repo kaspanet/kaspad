@@ -9,7 +9,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -95,7 +95,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 }
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes, client.Address())
 
 	err := client.SubmitBlock(block)
@@ -114,7 +114,7 @@ func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlo
 			return
 		default:
 			block.Header.Nonce = i
-			hash := hashserialization.BlockHash(block)
+			hash := consensusserialization.BlockHash(block)
 			atomic.AddUint64(&hashesTried, 1)
 			if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
 				foundBlock <- block

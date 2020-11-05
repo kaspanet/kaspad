@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
@@ -19,7 +19,7 @@ func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
 		return err
 	}
 
-	transactionID := hashserialization.TransactionID(tx)
+	transactionID := consensusserialization.TransactionID(tx)
 	f.transactionsToRebroadcast[*transactionID] = tx
 	inv := appmessage.NewMsgInvTransaction([]*externalapi.DomainTransactionID{transactionID})
 	return f.Broadcast(inv)
@@ -32,7 +32,7 @@ func (f *FlowContext) updateTransactionsToRebroadcast(block *externalapi.DomainB
 	// anymore, although they are not included in the UTXO set.
 	// This is probably ok, since red blocks are quite rare.
 	for _, tx := range block.Transactions {
-		delete(f.transactionsToRebroadcast, *hashserialization.TransactionID(tx))
+		delete(f.transactionsToRebroadcast, *consensusserialization.TransactionID(tx))
 	}
 }
 
@@ -48,7 +48,7 @@ func (f *FlowContext) txIDsToRebroadcast() []*externalapi.DomainTransactionID {
 	txIDs := make([]*externalapi.DomainTransactionID, len(f.transactionsToRebroadcast))
 	i := 0
 	for _, tx := range f.transactionsToRebroadcast {
-		txIDs[i] = hashserialization.TransactionID(tx)
+		txIDs[i] = consensusserialization.TransactionID(tx)
 		i++
 	}
 	return txIDs

@@ -3,8 +3,8 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -78,7 +78,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	// to avoid proof of work checks is set.
 	if !v.skipPoW {
 		// The block hash must be less than the claimed target.
-		hash := hashserialization.HeaderHash(header)
+		hash := consensusserialization.HeaderHash(header)
 		hashNum := hashes.ToBig(hash)
 		if hashNum.Cmp(target) > 0 {
 			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+

@@ -7,7 +7,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -132,8 +132,8 @@ func (bp *blockProcessor) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHas
 		}
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		acceptedTransactionIID := hashserialization.TransactionID(acceptedTransactions[i])
-		acceptedTransactionJID := hashserialization.TransactionID(acceptedTransactions[j])
+		acceptedTransactionIID := consensusserialization.TransactionID(acceptedTransactions[i])
+		acceptedTransactionJID := consensusserialization.TransactionID(acceptedTransactions[j])
 		return transactionid.Less(acceptedTransactionIID, acceptedTransactionJID)
 	})
 

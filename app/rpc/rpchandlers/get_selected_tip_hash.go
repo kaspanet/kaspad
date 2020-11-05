@@ -3,7 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -15,7 +15,7 @@ func HandleGetSelectedTipHash(context *rpccontext.Context, _ *router.Router, _ a
 	}
 
 	response := appmessage.NewGetSelectedTipHashResponseMessage(
-		hashserialization.BlockHash(selectedTip).String())
+		consensusserialization.BlockHash(selectedTip).String())
 
 	return response, nil
 }

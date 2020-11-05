@@ -107,11 +107,11 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 	blockInfo.BlockStatus = blockStatus
 
-	isBlockInHeaderPruningPointFutureAndVirtualPast, err := s.syncManager.IsBlockInHeaderPruningPointFutureAndVirtualPast(blockHash)
+	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
 	if err != nil {
 		return nil, err
 	}
-	blockInfo.IsBlockInHeaderPruningPointFutureAndVirtualPast = isBlockInHeaderPruningPointFutureAndVirtualPast
+	blockInfo.IsBlockInHeaderPruningPointFuture = isBlockInHeaderPruningPointFuture
 
 	return blockInfo, nil
 }

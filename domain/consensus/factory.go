@@ -80,12 +80,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTopologyManager,
 		ghostdagDataStore,
 		ghostdagManager)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		dagTopologyManager,
-		pruningStore,
-		blockStatusStore,
-		consensusStateStore)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
@@ -96,13 +90,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pastMedianTimeManager,
 		ghostdagDataStore)
 	difficultyManager := difficultymanager.New(
-		ghostdagManager)
+		dbManager,
+		ghostdagManager,
+		ghostdagDataStore,
+		blockHeaderStore,
+		dagTopologyManager,
+		dagTraversalManager,
+		dagParams.PowMax,
+		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.TargetTimePerBlock)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
-	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
+	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
+	genesisHash := (*externalapi.DomainHash)(dagParams.GenesisHash)
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
 		dbManager,
@@ -112,7 +114,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		false,
-		&genesisHash,
+		genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
@@ -134,11 +136,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams,
+		dagParams.FinalityDepth(),
+		dagParams.PruningDepth(),
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
-		pruningManager,
 		pastMedianTimeManager,
 		transactionValidator,
 		blockValidator,
@@ -160,13 +162,36 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		return nil, err
 	}
 
-	syncManager := syncmanager.New(
+	pruningManager := pruningmanager.New(
 		dbManager,
-		&genesisHash,
 		dagTraversalManager,
 		dagTopologyManager,
+		consensusStateManager,
+		consensusStateStore,
 		ghostdagDataStore,
-		blockStatusStore)
+		pruningStore,
+		blockStatusStore,
+		multisetStore,
+		acceptanceDataStore,
+		blockStore,
+		utxoDiffStore,
+		genesisHash,
+		dagParams.FinalityDepth(),
+		dagParams.PruningDepth())
+
+	syncManager := syncmanager.New(
+		dbManager,
+		genesisHash,
+		dagParams.TargetTimePerBlock.Milliseconds(),
+		dagTraversalManager,
+		dagTopologyManager,
+		ghostdagManager,
+		consensusStateManager,
+
+		ghostdagDataStore,
+		blockStatusStore,
+		blockHeaderStore,
+		headerTipsStore)
 
 	blockProcessor := blockprocessor.New(
 		dagParams,

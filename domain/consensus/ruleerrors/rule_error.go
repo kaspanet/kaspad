@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
 
@@ -231,6 +231,8 @@ var (
 	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
 
 	ErrMissingBlockHeaderInIBD = newRuleError("ErrMissingBlockHeaderInIBD")
+
+	ErrMalformedUTXO = newRuleError("ErrMalformedUTXO")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
@@ -306,7 +308,7 @@ type InvalidTransaction struct {
 }
 
 func (invalid InvalidTransaction) String() string {
-	return fmt.Sprintf("(%v: %s)", hashserialization.TransactionID(invalid.Transaction), invalid.err)
+	return fmt.Sprintf("(%v: %s)", consensusserialization.TransactionID(invalid.Transaction), invalid.err)
 }
 
 // ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid

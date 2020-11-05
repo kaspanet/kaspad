@@ -10,6 +10,7 @@ type consensusStateStore struct {
 	stagedTips               []*externalapi.DomainHash
 	stagedVirtualDiffParents []*externalapi.DomainHash
 	stagedVirtualUTXODiff    *model.UTXODiff
+	stagedVirtualUTXOSet     model.UTXOCollection
 }
 
 // New instantiates a new ConsensusStateStore
@@ -21,6 +22,7 @@ func (c consensusStateStore) Discard() {
 	c.stagedTips = nil
 	c.stagedVirtualUTXODiff = nil
 	c.stagedVirtualDiffParents = nil
+	c.stagedVirtualUTXOSet = nil
 }
 
 func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
@@ -32,10 +34,18 @@ func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	if err != nil {
 		return err
 	}
+
 	err = c.commitVirtualUTXODiff(dbTx)
 	if err != nil {
 		return err
 	}
+
+	err = c.commitVirtualUTXOSet(dbTx)
+	if err != nil {
+		return err
+	}
+
+	c.Discard()
 
 	return nil
 }
@@ -44,8 +54,4 @@ func (c consensusStateStore) IsStaged() bool {
 	return c.stagedTips != nil ||
 		c.stagedVirtualDiffParents != nil ||
 		c.stagedVirtualUTXODiff != nil
-}
-
-func (c consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
-	panic("implement me")
 }

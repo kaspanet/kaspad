@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
@@ -43,7 +43,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 
 	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
 	for i, tx := range transactionsAcceptedToMempool {
-		txIDsToBroadcast[i] = hashserialization.TransactionID(tx)
+		txIDsToBroadcast[i] = consensusserialization.TransactionID(tx)
 	}
 	offset := len(transactionsAcceptedToMempool)
 	for i, txID := range txIDsToRebroadcast {
@@ -76,5 +76,5 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(appmessage.NewMsgInvBlock(hashserialization.BlockHash(block)))
+	return f.Broadcast(appmessage.NewMsgInvBlock(consensusserialization.BlockHash(block)))
 }

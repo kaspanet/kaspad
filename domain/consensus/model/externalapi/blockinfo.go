@@ -5,5 +5,5 @@ type BlockInfo struct {
 	Exists      bool
 	BlockStatus BlockStatus
 
-	IsBlockInHeaderPruningPointFutureAndVirtualPast bool
+	IsBlockInHeaderPruningPointFuture bool
 }

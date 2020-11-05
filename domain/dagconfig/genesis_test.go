@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -17,7 +17,7 @@ import (
 // checking the encoded hash.
 func TestGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := hashserialization.BlockHash(appmessage.MsgBlockToDomainBlock(MainnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(MainnetParams.GenesisBlock))
 	if *MainnetParams.GenesisHash != *hash {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
@@ -29,7 +29,7 @@ func TestGenesisBlock(t *testing.T) {
 // validity by checking the hash.
 func TestTestnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := hashserialization.BlockHash(appmessage.MsgBlockToDomainBlock(TestnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(TestnetParams.GenesisBlock))
 	if *TestnetParams.GenesisHash != *hash {
 		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
@@ -41,7 +41,7 @@ func TestTestnetGenesisBlock(t *testing.T) {
 // for validity by checking the hash.
 func TestSimnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := hashserialization.BlockHash(appmessage.MsgBlockToDomainBlock(SimnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(SimnetParams.GenesisBlock))
 	if *SimnetParams.GenesisHash != *hash {
 		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
@@ -53,7 +53,7 @@ func TestSimnetGenesisBlock(t *testing.T) {
 // for validity by checking the encoded hash.
 func TestDevnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := hashserialization.BlockHash(appmessage.MsgBlockToDomainBlock(DevnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(DevnetParams.GenesisBlock))
 	if *DevnetParams.GenesisHash != *hash {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", spew.Sdump(hash),

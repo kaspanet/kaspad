@@ -3,7 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -14,7 +14,7 @@ func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, requ
 	submitTransactionRequest := request.(*appmessage.SubmitTransactionRequestMessage)
 
 	domainTransaction := appmessage.MsgTxToDomainTransaction(submitTransactionRequest.Transaction)
-	transactionID := hashserialization.TransactionID(domainTransaction)
+	transactionID := consensusserialization.TransactionID(domainTransaction)
 	err := context.ProtocolManager.AddTransaction(domainTransaction)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {

@@ -4,8 +4,8 @@ package externalapi
 // states of the consensus
 const (
 	SyncStateNormal SyncState = iota
-	SyncStateMissingUTXOSet
 	SyncStateHeadersFirst
+	SyncStateMissingUTXOSet
 	SyncStateMissingBlockBodies
 )
 
@@ -16,10 +16,10 @@ func (s SyncState) String() string {
 	switch s {
 	case SyncStateNormal:
 		return "SyncStateNormal"
-	case SyncStateMissingUTXOSet:
-		return "SyncStateMissingUTXOSet"
 	case SyncStateHeadersFirst:
 		return "SyncStateHeadersFirst"
+	case SyncStateMissingUTXOSet:
+		return "SyncStateMissingUTXOSet"
 	case SyncStateMissingBlockBodies:
 		return "SyncStateMissingBlockBodies"
 	}

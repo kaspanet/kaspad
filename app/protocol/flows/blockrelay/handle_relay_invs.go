@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
@@ -160,7 +160,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		}
 
 		block := appmessage.MsgBlockToDomainBlock(msgBlock)
-		blockHash := hashserialization.BlockHash(block)
+		blockHash := consensusserialization.BlockHash(block)
 
 		if _, ok := pendingBlocks[*blockHash]; !ok {
 			return protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
@@ -201,7 +201,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 }
 
 func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {

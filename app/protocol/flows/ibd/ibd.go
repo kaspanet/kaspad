@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -183,7 +183,7 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
 	block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err

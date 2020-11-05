@@ -8,4 +8,5 @@ type ConsensusStateManager interface {
 	PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error
 	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
 	RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSetIterator, error)
+	HeaderTipsPruningPoint() (*externalapi.DomainHash, error)
 }

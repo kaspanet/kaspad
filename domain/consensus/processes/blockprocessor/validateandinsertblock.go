@@ -3,7 +3,7 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
 
@@ -13,13 +13,24 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
+	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateMissingUTXOSet {
-		return errors.Errorf("cannot insert blocks while in %s mode", mode.State)
+		headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
+		if err != nil {
+			return err
+		}
+
+		if *hash != *headerTipsPruningPoint {
+			return errors.Errorf("cannot insert blocks other than the header pruning point "+
+				"while in %s mode", mode.State)
+		}
+
+		mode.State = externalapi.SyncStateMissingBlockBodies
 	}
 
-	hash := hashserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
-		return errors.Errorf("block %s contains transactions while validating in header only mode", hash)
+		mode.State = externalapi.SyncStateNormal
+		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
 
 	err = bp.checkBlockStatus(hash, mode)
@@ -67,6 +78,11 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
+	oldHeadersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	if err != nil {
+		return err
+	}
+
 	if mode.State == externalapi.SyncStateHeadersFirst {
 		err = bp.headerTipsManager.AddHeaderTip(hash)
 		if err != nil {
@@ -86,7 +102,31 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		bp.headerTipsStore.Stage(tips)
 	}
 
+	err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
+	if err != nil {
+		return err
+	}
+
+	// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
+	err = bp.pruningManager.FindNextPruningPoint()
+	if err != nil {
+		return err
+	}
+
 	return bp.commitAllChanges()
+}
+
+func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
+	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	if err != nil {
+		return err
+	}
+
+	if *headersSelectedTip == *oldHeadersSelectedTip {
+		return nil
+	}
+
+	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
 }
 
 func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *externalapi.SyncInfo) error {
@@ -124,7 +164,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 		return err
 	}
 
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
@@ -136,7 +176,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			hash := hashserialization.BlockHash(block)
+			hash := consensusserialization.BlockHash(block)
 			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
 			commitErr := bp.commitAllChanges()
 			if commitErr != nil {
@@ -149,7 +189,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 }
 
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 
 	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
@@ -168,7 +208,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	blockHash := hashserialization.BlockHash(block)
+	blockHash := consensusserialization.BlockHash(block)
 
 	if mode.State != externalapi.SyncStateHeadersFirst {
 		bp.blockStore.Stage(blockHash, block)

@@ -3,8 +3,9 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 )
 
 func (csm *consensusStateManager) calculateMultiset(
@@ -47,7 +48,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			TransactionID: *hashserialization.TransactionID(transaction),
+			TransactionID: *consensusserialization.TransactionID(transaction),
 			Index:         uint32(i),
 		}
 		utxoEntry := &externalapi.UTXOEntry{
@@ -68,7 +69,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}
@@ -89,14 +90,10 @@ func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntr
 	return nil
 }
 
-func calcMultisetFromUTXOSetIterator(iterator model.ReadOnlyUTXOSetIterator) (model.Multiset, error) {
+func calcMultisetFromProtoUTXOSet(protoUTXOSet *utxoserialization.ProtoUTXOSet) (model.Multiset, error) {
 	ms := multiset.New()
-	for iterator.Next() {
-		entry, outpoint := iterator.Get()
-		err := addUTXOToMultiset(ms, outpoint, entry)
-		if err != nil {
-			return nil, err
-		}
+	for _, utxo := range protoUTXOSet.Utxos {
+		ms.Add(utxo.EntryOutpointPair)
 	}
 	return ms, nil
 }

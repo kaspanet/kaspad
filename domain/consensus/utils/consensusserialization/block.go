@@ -1,4 +1,4 @@
-package hashserialization
+package consensusserialization
 
 import (
 	"io"

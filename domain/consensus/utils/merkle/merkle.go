@@ -4,8 +4,8 @@ import (
 	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
 
@@ -48,7 +48,7 @@ func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.Domain
 func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	txHashes := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
-		txHashes[i] = hashserialization.TransactionHash(tx)
+		txHashes[i] = consensusserialization.TransactionHash(tx)
 	}
 	return merkleRoot(txHashes)
 }
@@ -58,7 +58,7 @@ func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction) *ext
 func CalculateIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	txIDs := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
-		txIDs[i] = (*externalapi.DomainHash)(hashserialization.TransactionID(tx))
+		txIDs[i] = (*externalapi.DomainHash)(consensusserialization.TransactionID(tx))
 	}
 	return merkleRoot(txIDs)
 }

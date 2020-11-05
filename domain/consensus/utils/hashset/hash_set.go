@@ -84,3 +84,8 @@ func (hs HashSet) ToSlice() []*externalapi.DomainHash {
 
 	return slice
 }
+
+// Length returns the length of this HashSet
+func (hs HashSet) Length() int {
+	return hs.Length()
+}

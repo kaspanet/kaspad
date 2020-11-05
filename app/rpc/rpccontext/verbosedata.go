@@ -13,7 +13,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/pointers"
@@ -22,7 +22,7 @@ import (
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // This method must be called with the DAG lock held for reads
 func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
-	hash := hashserialization.BlockHash(block)
+	hash := consensusserialization.BlockHash(block)
 	blockHeader := block.Header
 
 	result := &appmessage.BlockVerboseData{
@@ -41,14 +41,14 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 
 	txIDs := make([]string, len(block.Transactions))
 	for i, tx := range block.Transactions {
-		txIDs[i] = hashserialization.TransactionID(tx).String()
+		txIDs[i] = consensusserialization.TransactionID(tx).String()
 	}
 	result.TxIDs = txIDs
 
 	if includeTransactionVerboseData {
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
 		for i, tx := range block.Transactions {
-			txID := hashserialization.TransactionID(tx).String()
+			txID := consensusserialization.TransactionID(tx).String()
 			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
 			if err != nil {
 				return nil, err
@@ -93,7 +93,7 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 
 	txReply := &appmessage.TransactionVerboseData{
 		TxID:                      txID,
-		Hash:                      hashserialization.TransactionHash(tx).String(),
+		Hash:                      consensusserialization.TransactionHash(tx).String(),
 		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
 		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
 		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(tx, nil),

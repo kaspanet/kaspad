@@ -15,8 +15,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
@@ -147,7 +147,7 @@ type orphanTx struct {
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeOrphan(tx *consensusexternalapi.DomainTransaction, removeRedeemers bool) {
 	// Nothing to do if passed tx is not an orphan.
-	txID := hashserialization.TransactionID(tx)
+	txID := consensusserialization.TransactionID(tx)
 	otx, exists := mp.orphans[*txID]
 	if !exists {
 		return
@@ -248,7 +248,7 @@ func (mp *mempool) addOrphan(tx *consensusexternalapi.DomainTransaction) {
 	// This will periodically remove any expired orphans and evict a random
 	// orphan if space is still needed.
 	mp.limitNumOrphans()
-	txID := hashserialization.TransactionID(tx)
+	txID := consensusserialization.TransactionID(tx)
 	mp.orphans[*txID] = &orphanTx{
 		tx:         tx,
 		expiration: mstime.Now().Add(orphanTTL),
@@ -261,7 +261,7 @@ func (mp *mempool) addOrphan(tx *consensusexternalapi.DomainTransaction) {
 		mp.orphansByPrev[txIn.PreviousOutpoint][*txID] = tx
 	}
 
-	log.Debugf("Stored orphan transaction %s (total: %d)", hashserialization.TransactionID(tx),
+	log.Debugf("Stored orphan transaction %s (total: %d)", consensusserialization.TransactionID(tx),
 		len(mp.orphans))
 }
 
@@ -357,7 +357,7 @@ func (mp *mempool) haveTransaction(txID *consensusexternalapi.DomainTransactionI
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
-		txID := hashserialization.TransactionID(tx)
+		txID := consensusserialization.TransactionID(tx)
 
 		if _, exists := mp.fetchTxDesc(txID); !exists {
 			continue
@@ -377,7 +377,7 @@ func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.D
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeTransactionAndItsChainedTransactions(tx *consensusexternalapi.DomainTransaction) error {
-	txID := hashserialization.TransactionID(tx)
+	txID := consensusserialization.TransactionID(tx)
 	// Remove any transactions which rely on this one.
 	for i := uint32(0); i < uint32(len(tx.Outputs)); i++ {
 		prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *txID, Index: i}
@@ -411,7 +411,7 @@ func (mp *mempool) cleanTransactionFromSets(tx *consensusexternalapi.DomainTrans
 		return err
 	}
 
-	txID := hashserialization.TransactionID(tx)
+	txID := consensusserialization.TransactionID(tx)
 	delete(mp.pool, *txID)
 	delete(mp.chainedTransactions, *txID)
 
@@ -424,7 +424,7 @@ func (mp *mempool) cleanTransactionFromSets(tx *consensusexternalapi.DomainTrans
 // This function MUST be called with the mempool lock held (for writes).
 
 func (mp *mempool) updateBlockTransactionChainedTransactions(tx *consensusexternalapi.DomainTransaction) {
-	prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *hashserialization.TransactionID(tx)}
+	prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *consensusserialization.TransactionID(tx)}
 	for txOutIdx := range tx.Outputs {
 		// Skip to the next available output if there are none.
 		prevOut.Index = uint32(txOutIdx)
@@ -438,7 +438,7 @@ func (mp *mempool) updateBlockTransactionChainedTransactions(tx *consensusextern
 		if txDesc.depCount == 0 {
 			// Transaction may be already removed by recursive calls, if removeRedeemers is true.
 			// So avoid moving it into main pool
-			txDescID := hashserialization.TransactionID(txDesc.DomainTransaction)
+			txDescID := consensusserialization.TransactionID(txDesc.DomainTransaction)
 			if _, ok := mp.chainedTransactions[*txDescID]; ok {
 				delete(mp.chainedTransactions, *txDescID)
 				mp.pool[*txDescID] = txDesc
@@ -452,7 +452,7 @@ func (mp *mempool) updateBlockTransactionChainedTransactions(tx *consensusextern
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeChainTransaction(tx *consensusexternalapi.DomainTransaction) {
-	delete(mp.chainedTransactions, *hashserialization.TransactionID(tx))
+	delete(mp.chainedTransactions, *consensusserialization.TransactionID(tx))
 	for _, txIn := range tx.Inputs {
 		delete(mp.chainedTransactionByPreviousOutpoint, txIn.PreviousOutpoint)
 	}
@@ -466,10 +466,10 @@ func (mp *mempool) removeChainTransaction(tx *consensusexternalapi.DomainTransac
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeDoubleSpends(tx *consensusexternalapi.DomainTransaction) error {
-	txID := *hashserialization.TransactionID(tx)
+	txID := *consensusserialization.TransactionID(tx)
 	for _, txIn := range tx.Inputs {
 		if txRedeemer, ok := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(txIn.PreviousOutpoint); ok {
-			if !(*hashserialization.TransactionID(txRedeemer) == txID) {
+			if !(*consensusserialization.TransactionID(txRedeemer) == txID) {
 				err := mp.removeTransactionAndItsChainedTransactions(txRedeemer)
 				if err != nil {
 					return err
@@ -492,7 +492,7 @@ func (mp *mempool) addTransaction(tx *consensusexternalapi.DomainTransaction, ma
 		DomainTransaction: tx,
 		depCount:          len(parentsInPool),
 	}
-	txID := *hashserialization.TransactionID(tx)
+	txID := *consensusserialization.TransactionID(tx)
 
 	if len(parentsInPool) == 0 {
 		mp.pool[txID] = txDescriptor
@@ -522,7 +522,7 @@ func (mp *mempool) checkPoolDoubleSpend(tx *consensusexternalapi.DomainTransacti
 		if txR, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(txIn.PreviousOutpoint); exists {
 			str := fmt.Sprintf("output %s already spent by "+
 				"transaction %s in the memory pool",
-				txIn.PreviousOutpoint, hashserialization.TransactionID(txR))
+				txIn.PreviousOutpoint, consensusserialization.TransactionID(txR))
 			return txRuleError(RejectDuplicate, str)
 		}
 	}
@@ -556,7 +556,7 @@ func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (
 func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) (
 	[]*consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
 
-	txID := hashserialization.TransactionID(tx)
+	txID := consensusserialization.TransactionID(tx)
 
 	// Don't accept the transaction if it already exists in the pool. This
 	// applies to orphan transactions as well when the reject duplicate
@@ -695,7 +695,7 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 		firstElement := processList.Remove(processList.Front())
 		processItem := firstElement.(*consensusexternalapi.DomainTransaction)
 
-		prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *hashserialization.TransactionID(processItem)}
+		prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *consensusserialization.TransactionID(processItem)}
 		for txOutIdx := range processItem.Outputs {
 			// Look up all orphans that redeem the output that is
 			// now available. This will typically only be one, but
@@ -775,7 +775,7 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 //
 // This function is safe for concurrent access.
 func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainTransaction, allowOrphan bool) error {
-	log.Tracef("Processing transaction %s", hashserialization.TransactionID(tx))
+	log.Tracef("Processing transaction %s", consensusserialization.TransactionID(tx))
 
 	// Protect concurrent access.
 	mp.mtx.Lock()
@@ -817,7 +817,7 @@ func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainT
 		// which is not really always the case.
 		str := fmt.Sprintf("orphan transaction %s references "+
 			"outputs of unknown or fully-spent "+
-			"transaction %s", hashserialization.TransactionID(tx), missingParents[0])
+			"transaction %s", consensusserialization.TransactionID(tx), missingParents[0])
 		return txRuleError(RejectDuplicate, str)
 	}
 
@@ -886,7 +886,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", hashserialization.TransactionID(tx), err)
+			log.Infof("Failed removing tx from mempool: %s, '%s'", consensusserialization.TransactionID(tx), err)
 		}
 		mp.removeOrphan(tx, false)
 		acceptedOrphans := mp.processOrphans(tx)
@@ -904,7 +904,7 @@ func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransact
 	for _, tx := range txs {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", hashserialization.TransactionID(tx), err)
+			log.Infof("Failed removing tx from mempool: %s, '%s'", consensusserialization.TransactionID(tx), err)
 		}
 		mp.removeOrphan(tx, true)
 	}
