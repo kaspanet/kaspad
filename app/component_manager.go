@@ -130,7 +130,6 @@ func setupRPC(
 	rpcManager := rpc.NewManager(
 		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
-	protocolManager.SetOnTransactionAddedToMempoolHandler(rpcManager.NotifyTransactionAddedToMempool)
 
 	return rpcManager
 }

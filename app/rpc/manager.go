@@ -49,21 +49,6 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	return m.context.NotificationManager.NotifyBlockAdded(notification)
 }
 
-// NotifyChainChanged notifies the manager that the DAG's selected parent chain has changed
-func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*externalapi.DomainHash,
-	addedChainBlockHashes []*externalapi.DomainHash) error {
-	addedChainBlocks, err := m.context.CollectChainBlocks(addedChainBlockHashes)
-	if err != nil {
-		return err
-	}
-	removedChainBlockHashStrings := make([]string, len(removedChainBlockHashes))
-	for i, removedChainBlockHash := range removedChainBlockHashes {
-		removedChainBlockHashStrings[i] = removedChainBlockHash.String()
-	}
-	notification := appmessage.NewChainChangedNotificationMessage(removedChainBlockHashStrings, addedChainBlocks)
-	return m.context.NotificationManager.NotifyChainChanged(notification)
-}
-
 // NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
 func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
