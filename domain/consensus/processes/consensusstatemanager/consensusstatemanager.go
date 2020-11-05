@@ -8,7 +8,8 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	dagParams       *dagconfig.Params
+	finalityDepth   uint64
+	pruningDepth    uint64
 	databaseContext model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
@@ -38,7 +39,8 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	dagParams *dagconfig.Params,
+	finalityDepth uint64,
+	pruningDepth uint64,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
@@ -61,7 +63,8 @@ func New(
 	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		dagParams:       dagParams,
+		finalityDepth:   finalityDepth,
+		pruningDepth:    pruningDepth,
 		databaseContext: databaseContext,
 
 		ghostdagManager:       ghostdagManager,
@@ -101,8 +104,4 @@ func New(
 	}
 
 	return csm, nil
-}
-
-func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainHash, error) {
-	panic("implement me")
 }

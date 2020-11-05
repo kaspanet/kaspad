@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
 
@@ -362,7 +362,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *external
 	// The final hash is the double sha256 of both the serialized modified
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
-	return hashserialization.TransactionHashForSigning(&txCopy, uint32(hashType)), nil
+	return consensusserialization.TransactionHashForSigning(&txCopy, uint32(hashType)), nil
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

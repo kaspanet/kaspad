@@ -3,7 +3,7 @@ package utxoalgebra
 import (
 	"reflect"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
@@ -33,7 +33,7 @@ func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.Domai
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			TransactionID: *hashserialization.TransactionID(transaction),
+			TransactionID: *consensusserialization.TransactionID(transaction),
 			Index:         uint32(i),
 		}
 		entry := &externalapi.UTXOEntry{

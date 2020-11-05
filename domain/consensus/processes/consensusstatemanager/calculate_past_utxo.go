@@ -179,7 +179,10 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 
 	pastUTXO := model.NewUTXODiff()
 	for virtualUTXOSetIterator.Next() {
-		outpoint, utxoEntry := virtualUTXOSetIterator.Get()
+		outpoint, utxoEntry, err := virtualUTXOSetIterator.Get()
+		if err != nil {
+			return nil, err
+		}
 		pastUTXO.ToAdd[*outpoint] = utxoEntry
 	}
 
@@ -223,7 +226,7 @@ func (u utxoSetIterator) Next() bool {
 	return u.index != len(u.pairs)
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) {
+func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
 	pair := u.pairs[u.index]
-	return &pair.outpoint, pair.entry
+	return &pair.outpoint, pair.entry, nil
 }

@@ -1,9 +1,12 @@
 package consensusstatemanager
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -29,13 +32,18 @@ func (csm *consensusStateManager) SetPruningPointUTXOSet(serializedUTXOSet []byt
 }
 
 func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byte) error {
-	headerTipsPruningPoint, err := csm.headerTipsPruningPoint()
+	headerTipsPruningPoint, err := csm.HeaderTipsPruningPoint()
 	if err != nil {
 		return err
 	}
 
-	utxoSetIterator := deserializeUTXOSet(serializedUTXOSet)
-	utxoSetMultiSet, err := calcMultisetFromUTXOSetIterator(utxoSetIterator)
+	protoUTXOSet := &utxoserialization.ProtoUTXOSet{}
+	err = proto.Unmarshal(serializedUTXOSet, protoUTXOSet)
+	if err != nil {
+		return err
+	}
+
+	utxoSetMultiSet, err := calcMultisetFromProtoUTXOSet(protoUTXOSet)
 	if err != nil {
 		return err
 	}
@@ -56,7 +64,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 		return err
 	}
 
-	csm.consensusStateStore.StageVirtualUTXOSet(utxoSetIterator)
+	csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
 
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
@@ -94,11 +102,33 @@ func (csm *consensusStateManager) commitSetPruningPointUTXOSetAll() error {
 	return dbTx.Commit()
 }
 
-func deserializeUTXOSet(serializedUTXOSet []byte) model.ReadOnlyUTXOSetIterator {
-	panic("implement me")
+type protoUTXOSetIterator struct {
+	utxoSet *utxoserialization.ProtoUTXOSet
+	index   int
 }
 
-func (csm *consensusStateManager) headerTipsPruningPoint() (*externalapi.DomainHash, error) {
+func (p protoUTXOSetIterator) Next() bool {
+	p.index++
+	return p.index != len(p.utxoSet.Utxos)
+}
+
+func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+	entry, outpoint, err := consensusserialization.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
+	if err != nil {
+		if consensusserialization.IsMalformedError(err) {
+			return nil, nil, errors.Wrap(ruleerrors.ErrMalformedUTXO, "malformed utxo")
+		}
+		return nil, nil, err
+	}
+
+	return outpoint, entry, nil
+}
+
+func protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet *utxoserialization.ProtoUTXOSet) model.ReadOnlyUTXOSetIterator {
+	return &protoUTXOSetIterator{utxoSet: protoUTXOSet}
+}
+
+func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainHash, error) {
 	headerTips, err := csm.headerTipsStore.Tips(csm.databaseContext)
 	if err != nil {
 		return nil, err
@@ -120,9 +150,5 @@ func (csm *consensusStateManager) headerTipsPruningPoint() (*externalapi.DomainH
 		return nil, err
 	}
 
-	return csm.dagTraversalManager.HighestChainBlockBelowBlueScore(virtualHeaderHash, virtualHeaderGHOSTDAGData.BlueScore-pruningDepth())
-}
-
-func pruningDepth() uint64 {
-	panic("unimplemented")
+	return csm.dagTraversalManager.HighestChainBlockBelowBlueScore(virtualHeaderHash, virtualHeaderGHOSTDAGData.BlueScore-csm.pruningDepth)
 }

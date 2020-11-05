@@ -16,7 +16,7 @@ type dagTraversalManager struct {
 	ghostdagManager    model.GHOSTDAGManager
 }
 
-// selectedParentIterator implements the `model.SelectedParentIterator` API
+// selectedParentIterator implements the `model.BlockIterator` API
 type selectedParentIterator struct {
 	databaseContext   model.DBReader
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -55,7 +55,7 @@ func New(
 
 // SelectedParentIterator creates an iterator over the selected
 // parent chain of the given highHash
-func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.SelectedParentIterator {
+func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.BlockIterator {
 	return &selectedParentIterator{
 		databaseContext:   dtm.databaseContext,
 		ghostdagDataStore: dtm.ghostdagDataStore,
@@ -79,7 +79,7 @@ func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *extern
 
 	requiredBlueScore := chainBlock.BlueScore - blueScore
 
-	// If we used `SelectedParentIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
+	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
 	for chainBlock.BlueScore >= requiredBlueScore {
 		if chainBlock.SelectedParent == nil { // genesis
 			return blockHash, nil
