@@ -225,11 +225,6 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
-// BlockHash computes the block identifier hash for this block.
-func (msg *MsgBlock) BlockHash() *externalapi.DomainHash {
-	return msg.Header.BlockHash()
-}
-
 // ConvertToPartial clears out all the payloads of the subnetworks that are
 // incompatible with the given subnetwork ID.
 // Note: this operation modifies the block in place.

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
@@ -35,8 +37,9 @@ func TestIntegrationBasicSync(t *testing.T) {
 		t.Fatalf("Timeout waiting for block added notification on node directly connected to miner")
 	}
 
-	if !header.BlockHash().IsEqual(block.Hash()) {
-		t.Errorf("Expected block with hash '%s', but got '%s'", block.Hash(), header.BlockHash())
+	blockHash := hashserialization.BlockHash(block)
+	if *header.BlockHash() != *blockHash {
+		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
 	}
 
 	select {
@@ -45,7 +48,8 @@ func TestIntegrationBasicSync(t *testing.T) {
 		t.Fatalf("Timeout waiting for block added notification on node indirectly connected to miner")
 	}
 
-	if !header.BlockHash().IsEqual(block.Hash()) {
-		t.Errorf("Expected block with hash '%s', but got '%s'", block.Hash(), header.BlockHash())
+	blockHash = hashserialization.BlockHash(block)
+	if *header.BlockHash() != *blockHash {
+		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
 	}
 }

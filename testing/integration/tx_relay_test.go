@@ -6,6 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -38,7 +43,7 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
-	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
+	tx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
 	response, err := payer.rpcClient.SubmitTransaction(tx)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
@@ -80,9 +85,9 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessa
 	}
 }
 
-func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee *appHarness) *appmessage.MsgTx {
+func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction, payer, payee *appHarness) *appmessage.MsgTx {
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(firstBlockCoinbase.TxID(), 0), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(hashserialization.TransactionID(firstBlockCoinbase), 0), []byte{})
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
@@ -93,9 +98,9 @@ func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee
 		t.Fatalf("Error generating script: %+v", err)
 	}
 
-	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.TxOut[0].Value-1, toScript)}
+	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.Outputs[0].Value-1, toScript)}
 
-	fromScript := firstBlockCoinbase.TxOut[0].ScriptPubKey
+	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
 	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
 
@@ -108,7 +113,8 @@ func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}
 
-	signatureScript, err := txscript.SignatureScript(tx, 0, fromScript, txscript.SigHashAll, privateKey, true)
+	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
+		fromScript, txscript.SigHashAll, privateKey, true)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

@@ -16,13 +16,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-// SetBlockBytes sets the internal serialized block byte buffer to the passed
-// buffer. It is used to inject errors and is only available to the test
-// package.
-func (b *Block) SetBlockBytes(buf []byte) {
-	b.serializedBlock = buf
-}
-
 // TstAppDataDir makes the internal appDataDir function available to the test
 // package.
 func TstAppDataDir(goos, appName string, roaming bool) string {

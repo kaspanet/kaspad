@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -26,15 +28,12 @@ func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
 }
 
 func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
-	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "")
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress)
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
 
-	block, err := mining.ConvertGetBlockTemplateResultToBlock(blockTemplate)
-	if err != nil {
-		t.Fatalf("Error parsing blockTemplate: %s", err)
-	}
+	block := appmessage.MsgBlockToDomainBlock(blockTemplate.MsgBlock)
 
 	solveBlock(block)
 

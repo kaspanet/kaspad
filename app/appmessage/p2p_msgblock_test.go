@@ -13,8 +13,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -72,23 +70,6 @@ func TestBlock(t *testing.T) {
 	if len(msg.Transactions) != 0 {
 		t.Errorf("ClearTransactions: wrong transactions - got %v, want %v",
 			len(msg.Transactions), 0)
-	}
-}
-
-// TestBlockHash tests the ability to generate the hash of a block accurately.
-func TestBlockHash(t *testing.T) {
-	// Block 1 hash.
-	hashStr := "5150f62f89507cc64dd7c9efbd536996a96efc77f759b513e978af82665448a6"
-	wantHash, err := hashes.FromString(hashStr)
-	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
-	}
-
-	// Ensure the hash produced is expected.
-	blockHash := blockOne.BlockHash()
-	if *blockHash != *wantHash {
-		t.Errorf("BlockHash: wrong hash - got %v, want %v",
-			spew.Sprint(blockHash), spew.Sprint(wantHash))
 	}
 }
 
