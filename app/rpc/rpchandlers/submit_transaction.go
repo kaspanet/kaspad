@@ -1,9 +1,6 @@
 package rpchandlers
 
 import (
-	"bytes"
-	"encoding/hex"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -16,24 +13,9 @@ import (
 func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitTransactionRequest := request.(*appmessage.SubmitTransactionRequestMessage)
 
-	serializedTx, err := hex.DecodeString(submitTransactionRequest.TransactionHex)
-	if err != nil {
-		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Transaction hex could not be parsed: %s", err)
-		return errorMessage, nil
-	}
-
-	msgTx := &appmessage.MsgTx{}
-	err = msgTx.Deserialize(bytes.NewReader(serializedTx))
-	if err != nil {
-		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Transaction decode failed: %s", err)
-		return errorMessage, nil
-	}
-
-	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(submitTransactionRequest.Transaction)
 	transactionID := hashserialization.TransactionID(domainTransaction)
-	err = context.ProtocolManager.AddTransaction(domainTransaction)
+	err := context.ProtocolManager.AddTransaction(domainTransaction)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {
 			return nil, err

@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type SubmitTransactionRequestMessage struct {
 	baseMessage
-	TransactionHex string
+	Transaction *MsgTx
 }
 
 // Command returns the protocol command string for the message
@@ -13,9 +13,9 @@ func (msg *SubmitTransactionRequestMessage) Command() MessageCommand {
 }
 
 // NewSubmitTransactionRequestMessage returns a instance of the message
-func NewSubmitTransactionRequestMessage(transactionHex string) *SubmitTransactionRequestMessage {
+func NewSubmitTransactionRequestMessage(transaction *MsgTx) *SubmitTransactionRequestMessage {
 	return &SubmitTransactionRequestMessage{
-		TransactionHex: transactionHex,
+		Transaction: transaction,
 	}
 }
 

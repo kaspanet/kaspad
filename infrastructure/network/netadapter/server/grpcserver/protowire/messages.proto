@@ -399,7 +399,7 @@ message AddPeerResponseMessage{
 }
 
 message SubmitTransactionRequestMessage{
-  string transactionHex = 1;
+  TransactionMessage transactionMessage = 1;
 }
 
 message SubmitTransactionResponseMessage{

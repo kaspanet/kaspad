@@ -1,7 +1,6 @@
 package rpccontext
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -113,18 +112,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	}
 
 	return txReply, nil
-}
-
-// msgTxToHex serializes a transaction using the latest protocol version and
-// returns a hex-encoded string of the result.
-func msgTxToHex(msgTx *appmessage.MsgTx) (string, error) {
-	var buf bytes.Buffer
-	err := msgTx.KaspaEncode(&buf, 0)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(buf.Bytes()), nil
 }
 
 func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.TransactionVerboseInput {
