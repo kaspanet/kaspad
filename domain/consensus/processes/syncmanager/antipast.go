@@ -99,7 +99,83 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	panic("implement me")
+	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
+	if err != nil {
+		return nil, err
+	}
+
+	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, headerTipsPruningPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	lowHash := headerTipsPruningPoint
+	for selectedChildIterator.Next() {
+		lowHash = selectedChildIterator.Get()
+	}
+
+	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)
+	if err != nil {
+		return nil, err
+	}
+
+	lowHashAnticone, err := sm.dagTraversalManager.AnticoneFromContext(highHash, lowHash)
+	if err != nil {
+		return nil, err
+	}
+
+	blockToRemoveFromHashesBetween := hashset.New()
+	for _, blockHash := range lowHashAnticone {
+		isHeaderOnlyBlock, err := sm.isHeaderOnlyBlock(blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		if !isHeaderOnlyBlock {
+			blockToRemoveFromHashesBetween.Add(blockHash)
+		}
+	}
+
+	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween)-len(lowHashAnticone))
+	for i, blockHash := range hashesBetween {
+		// If blockToRemoveFromHashesBetween is empty, no more blocks should be
+		// filtered, so we can copy the rest of hashesBetween into missingBlocks
+		if blockToRemoveFromHashesBetween.Length() == 0 {
+			missingBlocks = append(missingBlocks, hashesBetween[i:]...)
+			break
+		}
+
+		if blockToRemoveFromHashesBetween.Contains(blockHash) {
+			blockToRemoveFromHashesBetween.Remove(blockHash)
+			continue
+		}
+
+		missingBlocks = append(missingBlocks, blockHash)
+	}
+
+	if blockToRemoveFromHashesBetween.Length() != 0 {
+		return nil, errors.Errorf("blockToRemoveFromHashesBetween.Length() is expected to be 0")
+	}
+
+	return missingBlocks, nil
+}
+
+func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		return false, nil
+	}
+
+	status, err := sm.blockStatusStore.Get(sm.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	return status == externalapi.StatusHeaderOnly, nil
 }
 
 func (sm *syncManager) isBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {

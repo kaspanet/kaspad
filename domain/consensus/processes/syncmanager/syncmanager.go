@@ -10,8 +10,9 @@ type syncManager struct {
 	databaseContext  model.DBReader
 	genesisBlockHash *externalapi.DomainHash
 
-	dagTraversalManager model.DAGTraversalManager
-	dagTopologyManager  model.DAGTopologyManager
+	dagTraversalManager   model.DAGTraversalManager
+	dagTopologyManager    model.DAGTopologyManager
+	consensusStateManager model.ConsensusStateManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore
@@ -23,6 +24,8 @@ func New(
 	genesisBlockHash *externalapi.DomainHash,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
+	consensusStateManager model.ConsensusStateManager,
+
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore) model.SyncManager {
 
@@ -30,8 +33,9 @@ func New(
 		databaseContext:  databaseContext,
 		genesisBlockHash: genesisBlockHash,
 
-		dagTraversalManager: dagTraversalManager,
-		dagTopologyManager:  dagTopologyManager,
+		dagTraversalManager:   dagTraversalManager,
+		dagTopologyManager:    dagTopologyManager,
+		consensusStateManager: consensusStateManager,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
