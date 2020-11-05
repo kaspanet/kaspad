@@ -16,9 +16,6 @@ type syncManager struct {
 	dagTopologyManager    model.DAGTopologyManager
 	ghostdagManager       model.GHOSTDAGManager
 	consensusStateManager model.ConsensusStateManager
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManager    model.DAGTopologyManager
-	consensusStateManager model.ConsensusStateManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore
@@ -35,7 +32,6 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
 	consensusStateManager model.ConsensusStateManager,
-	consensusStateManager model.ConsensusStateManager,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
@@ -50,9 +46,6 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagManager:       ghostdagManager,
-		consensusStateManager: consensusStateManager,
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
 		ghostdagDataStore: ghostdagDataStore,
