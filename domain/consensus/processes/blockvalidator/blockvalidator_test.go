@@ -38,11 +38,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
+const difficultyForTest = uint32(0x207f83df)
+
 type mocDifficultyManager struct {
 }
 
 func (mdf *mocDifficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-	return uint32(0x207f83df), nil
+	return difficultyForTest, nil
 }
 
 func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params) *blockValidator {
@@ -152,9 +154,9 @@ func prepareParentHashes(numOfBlocks int, parents []*externalapi.DomainHash, tim
 	return result
 }
 
-func SetupDBManager(dbName string) (model.DBManager, func(), error) {
+func setupDBManager(dbName string) (model.DBManager, func(), error) {
 	var err error
-	tmpDir, err := ioutil.TempDir("", "SetupDBManager")
+	tmpDir, err := ioutil.TempDir("", "setupDBManager")
 	if err != nil {
 		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
 	}
@@ -181,8 +183,8 @@ func SetupDBManager(dbName string) (model.DBManager, func(), error) {
 	return dbManager, teardown, err
 }
 
-func TestValidateInvalidBlock(t *testing.T) {
-	dbManager, teardownFunc, err := SetupDBManager(t.Name())
+func TestValidateInvalidBlockInternal(t *testing.T) {
+	dbManager, teardownFunc, err := setupDBManager(t.Name())
 	if err != nil {
 		t.Fatalf("Failed to setup DBManager instance: %v", err)
 	}
@@ -273,6 +275,7 @@ func TestValidateInvalidBlock(t *testing.T) {
 		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
 		MergeSetReds:   make([]*externalapi.DomainHash, 1),
 	})
+	blockWithoutTransactions := createBlock(blockHeader, nil)
 
 	// checkParentsLimit
 	err = validator.checkParentsLimit(blockHeader)
@@ -317,7 +320,6 @@ func TestValidateInvalidBlock(t *testing.T) {
 	}
 
 	// checkBlockContainsAtLeastOneTransaction
-	blockWithoutTransactions := createBlock(blockHeader, nil)
 	err = validator.checkBlockContainsAtLeastOneTransaction(blockWithoutTransactions)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
@@ -446,7 +448,7 @@ func TestValidateValidBlock(t *testing.T) {
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
 		UTXOCommitment:       externalapi.DomainHash{},
 		TimeInMilliseconds:   mstime.Now().UnixMilliseconds() + int64(len(parentHashes)),
-		Bits:                 uint32(0x207f83df),
+		Bits:                 difficultyForTest,
 	}
 
 	blockWithThreeTx := createBlock(blockHeader, transactions)
