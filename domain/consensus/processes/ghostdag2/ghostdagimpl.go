@@ -52,7 +52,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 			selectedParent = w
 			maxNum = score
 		}
-		if score == maxNum && isLessHash(w, selectedParent) {
+		if score == maxNum && ismoreHash(w, selectedParent) {
 			selectedParent = w
 		}
 	}
@@ -111,15 +111,15 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	return nil
 }
 
-/* --------isLessHash(w, selectedParent)----------------*/
-func isLessHash(w *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
-	//Check if w is less then selectedParent
+/* --------isMoreHash(w, selectedParent)----------------*/
+func ismoreHash(w *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
+	//Check if w is more then selectedParent
 	for i := len(w) - 1; i >= 0; i-- {
 		switch {
 		case w[i] < selectedParent[i]:
-			return true
-		case w[i] > selectedParent[i]:
 			return false
+		case w[i] > selectedParent[i]:
+			return true
 		}
 	}
 	return false

@@ -137,7 +137,7 @@ func TestGHOSTDA(t *testing.T) {
 			hash:                   &externalapi.DomainHash{5},
 			parents:                []*externalapi.DomainHash{{2}, {3}, {4}},
 			expectedBlueScore:      6,
-			expectedSelectedParent: &externalapi.DomainHash{2},
+			expectedSelectedParent: &externalapi.DomainHash{4},
 			expectedMergeSetBlues:  []*externalapi.DomainHash{{2}, {3}, {4}},
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
@@ -221,7 +221,7 @@ func TestGHOSTDA(t *testing.T) {
 			hash:                   &externalapi.DomainHash{5},
 			parents:                []*externalapi.DomainHash{{2}, {3}, {4}},
 			expectedBlueScore:      6,
-			expectedSelectedParent: &externalapi.DomainHash{2},
+			expectedSelectedParent: &externalapi.DomainHash{4},
 			expectedMergeSetBlues:  []*externalapi.DomainHash{{2}, {3}, {4}},
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
@@ -290,7 +290,7 @@ func TestGHOSTDA(t *testing.T) {
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
-			hash:                   &externalapi.DomainHash{3},
+			hash:                   &externalapi.DomainHash{5},
 			parents:                []*externalapi.DomainHash{{1}},
 			expectedBlueScore:      3,
 			expectedSelectedParent: &externalapi.DomainHash{1},
@@ -306,7 +306,7 @@ func TestGHOSTDA(t *testing.T) {
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
-			hash:                   &externalapi.DomainHash{5},
+			hash:                   &externalapi.DomainHash{3},
 			parents:                []*externalapi.DomainHash{{2}},
 			expectedBlueScore:      3,
 			expectedSelectedParent: &externalapi.DomainHash{2},
@@ -314,96 +314,43 @@ func TestGHOSTDA(t *testing.T) {
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
-			hash:                   &externalapi.DomainHash{6},
+			hash:                   &externalapi.DomainHash{7},
 			parents:                []*externalapi.DomainHash{{3}, {5}},
 			expectedBlueScore:      6,
-			expectedSelectedParent: &externalapi.DomainHash{3},
+			expectedSelectedParent: &externalapi.DomainHash{5},
 			expectedMergeSetBlues:  []*externalapi.DomainHash{{2}, {3}, {5}},
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
-			hash:                   &externalapi.DomainHash{7},
-			parents:                []*externalapi.DomainHash{{3}, {4}},
+			hash:                   &externalapi.DomainHash{6},
+			parents:                []*externalapi.DomainHash{{5}, {4}},
 			expectedBlueScore:      6,
-			expectedSelectedParent: &externalapi.DomainHash{3},
-			expectedMergeSetBlues:  []*externalapi.DomainHash{{3}, {2}, {4}},
+			expectedSelectedParent: &externalapi.DomainHash{5},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{5}, {2}, {4}},
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
 			hash:                   &externalapi.DomainHash{8},
-			parents:                []*externalapi.DomainHash{{5}},
+			parents:                []*externalapi.DomainHash{{3}},
 			expectedBlueScore:      4,
-			expectedSelectedParent: &externalapi.DomainHash{5},
-			expectedMergeSetBlues:  []*externalapi.DomainHash{{5}},
+			expectedSelectedParent: &externalapi.DomainHash{3},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{3}},
 			expectedMergeSetReds:   []*externalapi.DomainHash{},
 		},
 		{
 			hash:                   &externalapi.DomainHash{9},
 			parents:                []*externalapi.DomainHash{{6}, {7}, {8}},
 			expectedBlueScore:      7,
-			expectedSelectedParent: &externalapi.DomainHash{6},
-			expectedMergeSetBlues:  []*externalapi.DomainHash{{6}},
-			expectedMergeSetReds:   []*externalapi.DomainHash{{4}, {8}, {7}},
+			expectedSelectedParent: &externalapi.DomainHash{7},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{7}},
+			expectedMergeSetReds:   []*externalapi.DomainHash{{4}, {8}, {6}},
 		},
 	}}
 
-	//testsArr := []*isolatedTest{&dag1, &dag2, &dag3, &dag4, &dag5}
-	//for testIndex, testInfo := range testsArr {
-	//	g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, (testInfo.k))
-	//	for i, testBlockData := range testInfo.subTests {
-	//		dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
-	//		err := g.GHOSTDAG(testBlockData.hash)
-	//		if err != nil {
-	//			t.Fatalf("test #%d failed: GHOSTDAG error: %s", i, err)
-	//		}
-	//		ghostdagData, err := ghostdagDataStore.Get(nil,  testBlockData.hash)
-	//		if err != nil{
-	//			t.Fatalf("test #%d failed: ghostdagDataStore error: %s", i, err)
-	//		}
-	//		if testBlockData.expectedBlueScore != ghostdagData.BlueScore {
-	//			t.Fatalf("test #%d failed: expected blue score %d but got %d", i, testBlockData.expectedBlueScore, ghostdagData.BlueScore)
-	//		}
-	//
-	//		if *testBlockData.expectedSelectedParent != *ghostdagData.SelectedParent {
-	//			t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
-	//		}
-	//
-	//		if !DeepEqualHashArrays(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
-	//			t.Fatalf("test #%d failed: expected merge set blues %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
-	//		}
-	//
-	//		if !DeepEqualHashArrays(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
-	//			t.Fatalf("test #%d failed: expected merge set reds %v but got %v", i, testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds)
-	//		}
-	//
-	//		err = ghostdagDataStore.Insert(nil, testBlockData.hash, ghostdagData)
-	//		if err != nil {
-	//			t.Fatalf("test #%d failed: Insert error: %s", i, err)
-	//		}
-	//	}
-	//	fmt.Printf("test %d finished \n", testIndex)
-	//
-	//	dagTopology := &DAGTopologyManagerImpl{
-	//		parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
-	//	}
-	//	dagTopology.parentsMap[*genesisHash] = nil
-	//
-	//	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-	//		dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-	//	}
-	//	ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
-	//		BlueScore:          1,
-	//		SelectedParent:     nil,
-	//		MergeSetBlues:      nil,
-	//		MergeSetReds:       nil,
-	//		BluesAnticoneSizes: nil,
-	//	}
-	//}
-
 	testsArr := []*isolatedTest{&dag1, &dag2, &dag3, &dag4, &dag5}
-	//testsArr := []*isolatedTest{&dag5, &dag1, &dag2, &dag3, &dag4 }
 	for testIndex, testInfo := range testsArr {
 		g := ghostdagmanager.New(nil, dagTopology, ghostdagDataStore, testInfo.k)
+		//g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, testInfo.k)
 		for i, testBlockData := range testInfo.subTests {
 			dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
 			err := g.GHOSTDAG(testBlockData.hash)
