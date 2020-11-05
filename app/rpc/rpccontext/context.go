@@ -19,7 +19,6 @@ type Context struct {
 	AddressManager    *addressmanager.AddressManager
 	ShutDownChan      chan<- struct{}
 
-	BlockTemplateState  *BlockTemplateState
 	NotificationManager *NotificationManager
 }
 
@@ -41,7 +40,6 @@ func NewContext(cfg *config.Config,
 		AddressManager:    addressManager,
 		ShutDownChan:      shutDownChan,
 	}
-	context.BlockTemplateState = NewBlockTemplateState(context)
 	context.NotificationManager = NewNotificationManager()
 	return context
 }

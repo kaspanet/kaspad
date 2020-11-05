@@ -127,41 +127,27 @@ func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlo
 func templatesLoop(client *minerClient, miningAddr util.Address,
 	newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, errChan chan error, stopChan chan struct{}) {
 
-	longPollID := ""
-	getBlockTemplateLongPoll := func() {
-		if longPollID != "" {
-			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Address())
-		} else {
-			log.Infof("Requesting template without longPollID from %s", client.Address())
-		}
-		template, err := client.GetBlockTemplate(miningAddr.String(), longPollID)
+	getBlockTemplate := func() {
+		template, err := client.GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Address())
+			log.Infof("Got timeout while requesting block template from %s", client.Address())
 			return
 		} else if err != nil {
 			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
 			return
 		}
-		if !template.IsConnected {
-			errChan <- errors.Errorf("Kaspad is not connected for %s", client.Address())
-			return
-		}
-		if template.LongPollID != longPollID {
-			log.Infof("Got new long poll template: %s", template.LongPollID)
-			longPollID = template.LongPollID
-			newTemplateChan <- template
-		}
+		newTemplateChan <- template
 	}
-	getBlockTemplateLongPoll()
+	getBlockTemplate()
 	for {
 		select {
 		case <-stopChan:
 			close(newTemplateChan)
 			return
 		case <-client.blockAddedNotificationChan:
-			getBlockTemplateLongPoll()
+			getBlockTemplate()
 		case <-time.Tick(500 * time.Millisecond):
-			getBlockTemplateLongPoll()
+			getBlockTemplate()
 		}
 	}
 }
@@ -175,20 +161,8 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 			close(stopOldTemplateSolving)
 		}
 
-		if !template.IsSynced {
-			if !mineWhenNotSynced {
-				errChan <- errors.Errorf("got template with isSynced=false")
-				return
-			}
-			log.Warnf("Got template with isSynced=false")
-		}
-
 		stopOldTemplateSolving = make(chan struct{})
-		block, err := mining.ConvertGetBlockTemplateResultToBlock(template)
-		if err != nil {
-			errChan <- errors.Errorf("Error parsing block: %s", err)
-			return
-		}
+		block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
 
 		spawn("solveBlock", func() {
 			solveBlock(block, stopOldTemplateSolving, foundBlock)

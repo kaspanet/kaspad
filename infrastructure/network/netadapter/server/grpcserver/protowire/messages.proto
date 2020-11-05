@@ -303,37 +303,12 @@ message SubmitBlockResponseMessage{
 
 message GetBlockTemplateRequestMessage{
   string payAddress = 1;
-  string longPollId = 2;
 }
 
 message GetBlockTemplateResponseMessage{
-  string bits = 1;
-  int64 currentTime = 2;
-  repeated string parentHashes = 3;
-  int32 massLimit = 4;
-  repeated GetBlockTemplateTransactionMessage transactions = 5;
-  string hashMerkleRoot = 6;
-  string acceptedIDMerkleRoot = 7;
-  string utxoCommitment = 8;
-  int32 version = 9;
-  string longPollId = 10;
-  string targetDifficulty = 11;
-  int64 minTime = 12;
-  int64 maxTime = 13;
-  repeated string mutableFields = 14;
-  string nonceRange = 15;
-  bool isSynced = 16;
-  bool isConnected = 17;
+  BlockMessage blockMessage = 1;
 
   RPCError error = 1000;
-}
-
-message GetBlockTemplateTransactionMessage{
-  string data = 1;
-  string id = 2;
-  repeated int64 depends = 3;
-  uint64 mass = 4;
-  uint64 fee = 5;
 }
 
 message NotifyBlockAddedRequestMessage{
