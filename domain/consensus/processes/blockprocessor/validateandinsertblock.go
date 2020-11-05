@@ -19,7 +19,8 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
-		return errors.Errorf("block %s contains transactions while validating in header only mode", hash)
+		mode.State = externalapi.SyncStateNormal
+		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
 
 	err = bp.checkBlockStatus(hash, mode)
