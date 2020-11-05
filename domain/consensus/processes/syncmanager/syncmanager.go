@@ -7,38 +7,50 @@ import (
 )
 
 type syncManager struct {
-	databaseContext  model.DBReader
-	genesisBlockHash *externalapi.DomainHash
+	databaseContext    model.DBReader
+	genesisBlockHash   *externalapi.DomainHash
+	targetTimePerBlock int64
 
 	dagTraversalManager   model.DAGTraversalManager
 	dagTopologyManager    model.DAGTopologyManager
+	ghostdagManager       model.GHOSTDAGManager
 	consensusStateManager model.ConsensusStateManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore
+	blockHeaderStore  model.BlockHeaderStore
+	headerTipsStore   model.HeaderTipsStore
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
+	targetTimePerBlock int64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager,
 	consensusStateManager model.ConsensusStateManager,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	blockStatusStore model.BlockStatusStore) model.SyncManager {
+	blockStatusStore model.BlockStatusStore,
+	blockHeaderStore model.BlockHeaderStore,
+	headerTipsStore model.HeaderTipsStore) model.SyncManager {
 
 	return &syncManager{
-		databaseContext:  databaseContext,
-		genesisBlockHash: genesisBlockHash,
+		databaseContext:    databaseContext,
+		genesisBlockHash:   genesisBlockHash,
+		targetTimePerBlock: targetTimePerBlock,
 
 		dagTraversalManager:   dagTraversalManager,
 		dagTopologyManager:    dagTopologyManager,
+		ghostdagManager:       ghostdagManager,
 		consensusStateManager: consensusStateManager,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
+		blockHeaderStore:  blockHeaderStore,
+		headerTipsStore:   headerTipsStore,
 	}
 }
 
@@ -56,11 +68,11 @@ func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHas
 	return sm.missingBlockBodyHashes(highHash)
 }
 
-func (sm *syncManager) IsBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFutureAndVirtualPast")
+func (sm *syncManager) IsBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFuture")
 	defer onEnd()
 
-	return sm.isBlockInHeaderPruningPointFutureAndVirtualPast(blockHash)
+	return sm.isBlockInHeaderPruningPointFuture(blockHash)
 }
 
 func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
@@ -81,5 +93,5 @@ func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetSyncInfo")
 	defer onEnd()
 
-	panic("implement me")
+	return sm.syncInfo()
 }

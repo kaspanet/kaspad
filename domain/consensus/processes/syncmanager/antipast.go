@@ -178,7 +178,7 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 	return status == externalapi.StatusHeaderOnly, nil
 }
 
-func (sm *syncManager) isBlockInHeaderPruningPointFutureAndVirtualPast(blockHash *externalapi.DomainHash) (bool, error) {
+func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
 	if err != nil {
 		return false, err
