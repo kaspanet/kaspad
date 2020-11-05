@@ -18,7 +18,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	}
 
 	var ibdRootUTXOBlockHash *externalapi.DomainHash
-	if syncState != externalapi.SyncStateMissingUTXOSet {
+	if syncState == externalapi.SyncStateMissingUTXOSet {
 		ibdRootUTXOBlockHash, err = sm.consensusStateManager.HeaderTipsPruningPoint()
 		if err != nil {
 			return nil, err
