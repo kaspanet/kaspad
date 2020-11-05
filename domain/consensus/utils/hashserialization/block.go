@@ -8,26 +8,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
-	timestamp := header.TimeInMilliseconds
-
-	numParents := len(header.ParentHashes)
-	if err := writeElements(w, header.Version, uint64(numParents)); err != nil {
-		return err
-	}
-	for _, hash := range header.ParentHashes {
-		if err := WriteElement(w, hash); err != nil {
-			return err
-		}
-	}
-	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
-}
-
+// BlockHash returns the given block's hash
 func BlockHash(block *externalapi.DomainBlock) *externalapi.DomainHash {
 	return HeaderHash(block.Header)
 }
 
-// HeaderHash returns the given header hash
+// HeaderHash returns the given header's hash
 func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.
@@ -41,4 +27,19 @@ func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 	}
 
 	return writer.Finalize()
+}
+
+func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
+	timestamp := header.TimeInMilliseconds
+
+	numParents := len(header.ParentHashes)
+	if err := writeElements(w, header.Version, uint64(numParents)); err != nil {
+		return err
+	}
+	for _, hash := range header.ParentHashes {
+		if err := WriteElement(w, hash); err != nil {
+			return err
+		}
+	}
+	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
 }

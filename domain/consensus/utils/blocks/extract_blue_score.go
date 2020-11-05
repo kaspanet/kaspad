@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
+// ExtractBlueScore extracts the block's blue score out of it's coinbase transaction's payload
 func ExtractBlueScore(block *externalapi.DomainBlock) (uint64, error) {
 	if len(block.Transactions) < transactionhelper.CoinbaseTransactionIndex+1 {
 		return 0, errors.New("Block has no coinbase transaction")

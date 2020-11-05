@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
+// DomainBlockToMsgBlock converts an externalapi.DomainBlock to MsgBlock
 func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	msgTxs := make([]*MsgTx, 0, len(domainBlock.Transactions))
 	for _, domainTransaction := range domainBlock.Transactions {
@@ -16,6 +17,7 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	}
 }
 
+// DomainBlockHeaderToBlockHeader converts an externalapi.DomainBlockHeader to BlockHeader
 func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *BlockHeader {
 	return &BlockHeader{
 		Version:              domainBlockHeader.Version,
@@ -29,6 +31,7 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHe
 	}
 }
 
+// MsgBlockToDomainBlock converts a MsgBlock to externalapi.DomainBlock
 func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 	transactions := make([]*externalapi.DomainTransaction, 0, len(msgBlock.Transactions))
 	for _, msgTx := range msgBlock.Transactions {
@@ -41,6 +44,7 @@ func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 	}
 }
 
+// BlockHeaderToDomainBlockHeader converts a BlockHeader to externalapi.DomainBlockHeader
 func BlockHeaderToDomainBlockHeader(blockHeader *BlockHeader) *externalapi.DomainBlockHeader {
 	return &externalapi.DomainBlockHeader{
 		Version:              blockHeader.Version,
@@ -54,7 +58,7 @@ func BlockHeaderToDomainBlockHeader(blockHeader *BlockHeader) *externalapi.Domai
 	}
 }
 
-// DomainTransactionToMsgTx converts a DomainTransaction into an appmessage.MsgTx
+// DomainTransactionToMsgTx converts an externalapi.DomainTransaction into an MsgTx
 func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) *MsgTx {
 	txIns := make([]*TxIn, 0, len(domainTransaction.Inputs))
 	for _, input := range domainTransaction.Inputs {
@@ -99,6 +103,7 @@ func domainOutpointToOutpoint(domainOutpoint externalapi.DomainOutpoint) *Outpoi
 		domainOutpoint.Index)
 }
 
+// MsgTxToDomainTransaction converts an MsgTx into externalapi.DomainTransaction
 func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 	transactionInputs := make([]*externalapi.DomainTransactionInput, 0, len(msgTx.TxIn))
 	for _, txIn := range msgTx.TxIn {
