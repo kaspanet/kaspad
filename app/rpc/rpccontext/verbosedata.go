@@ -171,7 +171,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 
 		output := &appmessage.TransactionVerboseOutput{}
 		output.Index = uint32(i)
-		output.Value = output.Value
+		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
 			Address: encodedAddr,
 			Asm:     disbuf,
