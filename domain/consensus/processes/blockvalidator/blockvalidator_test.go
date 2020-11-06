@@ -19,8 +19,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
@@ -219,7 +219,7 @@ func prepareParentHashes(numOfBlocks int, parents []*externalapi.DomainHash, tim
 			Bits:                 0,
 		}
 
-		headerHash := hashserialization.HeaderHash(header)
+		headerHash := consensusserialization.HeaderHash(header)
 		result[i] = headerHash
 	}
 
@@ -300,7 +300,7 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 
 	// create chained transctions
 	previousOutpoint := &externalapi.DomainOutpoint{
-		TransactionID: *hashserialization.TransactionID(transactions[0]),
+		TransactionID: *consensusserialization.TransactionID(transactions[0]),
 	}
 	chinedInput := &externalapi.DomainTransactionInput{
 		PreviousOutpoint: *previousOutpoint,
@@ -340,7 +340,7 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 	}
 	transactions = append(transactions, coinbaseTransactions...)
 	block := createBlock(blockHeader, transactions)
-	blockHash := hashserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.HeaderHash(block.Header)
 	dagTopologyManagerForTest.BlockParents[blockHash] = parentHashes
 	dagTopologyManagerForTest.BlockAncestors[parentHashes[0]] = parentHashes
 
@@ -529,7 +529,7 @@ func TestValidateValidBlock(t *testing.T) {
 	}
 
 	blockWithThreeTx := createBlock(blockHeader, transactions)
-	blockHash := hashserialization.HeaderHash(blockWithThreeTx.Header)
+	blockHash := consensusserialization.HeaderHash(blockWithThreeTx.Header)
 
 	validator.blockStore.Stage(blockHash, blockWithThreeTx)
 	validator.blockHeaderStore.Stage(blockHash, blockHeader)
@@ -544,7 +544,7 @@ func TestValidateValidBlock(t *testing.T) {
 	testedBlocks := []*externalapi.DomainBlock{blockWithCoinbaseTx, blockWithThreeTx}
 
 	for _, block := range testedBlocks {
-		blockHash := hashserialization.HeaderHash(block.Header)
+		blockHash := consensusserialization.HeaderHash(block.Header)
 		err = validator.ValidateHeaderInIsolation(blockHash)
 		if err != nil {
 			t.Fatalf("ValidateHeaderInIsolation: %v", err)
