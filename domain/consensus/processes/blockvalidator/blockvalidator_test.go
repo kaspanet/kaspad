@@ -10,20 +10,14 @@ import (
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
@@ -47,26 +41,113 @@ func (mdf *mocDifficultyManager) RequiredDifficulty(blockHash *externalapi.Domai
 	return difficultyForTest, nil
 }
 
+type mocPastMedianTimeManager struct {
+	PastMedianTimeForTest int64
+	err                   error
+}
+
+func (mdf *mocPastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
+	return mdf.PastMedianTimeForTest, mdf.err
+}
+
+type mocDAGTopologyManager struct {
+	BlockParents     map[*externalapi.DomainHash][]*externalapi.DomainHash
+	BlockChilds      map[*externalapi.DomainHash][]*externalapi.DomainHash
+	BlockAncestors   map[*externalapi.DomainHash][]*externalapi.DomainHash
+	BlockDescendants map[*externalapi.DomainHash][]*externalapi.DomainHash
+}
+
+func newMocDAGTopologyManager() *mocDAGTopologyManager {
+	return &mocDAGTopologyManager{
+		BlockParents:     make(map[*externalapi.DomainHash][]*externalapi.DomainHash),
+		BlockChilds:      make(map[*externalapi.DomainHash][]*externalapi.DomainHash),
+		BlockAncestors:   make(map[*externalapi.DomainHash][]*externalapi.DomainHash),
+		BlockDescendants: make(map[*externalapi.DomainHash][]*externalapi.DomainHash),
+	}
+}
+
+func (mdtm *mocDAGTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	return mdtm.BlockParents[blockHash], nil
+}
+func (mdtm *mocDAGTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	return mdtm.BlockChilds[blockHash], nil
+}
+func (mdtm *mocDAGTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	for _, parent := range mdtm.BlockParents[blockHashA] {
+		if parent == blockHashB {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (mdtm *mocDAGTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	for _, parent := range mdtm.BlockChilds[blockHashA] {
+		if parent == blockHashB {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+func (mdtm *mocDAGTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	for _, parent := range mdtm.BlockAncestors[blockHashA] {
+		if parent == blockHashB {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+func (mdtm *mocDAGTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	for _, parent := range mdtm.BlockDescendants[blockHashA] {
+		if parent == blockHashB {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+func (mdtm *mocDAGTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
+	for _, descendant := range potentialDescendants {
+		for _, ancestor := range mdtm.BlockAncestors[descendant] {
+			if ancestor == blockHash {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func (mdtm *mocDAGTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return false, nil
+}
+
+func (mdtm *mocDAGTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
+	mdtm.BlockParents[blockHash] = parentHashes
+	return nil
+}
+
+type mocMergeDepthManager struct {
+}
+
+func (mmdm *mocMergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.DomainHash) error {
+	return nil
+}
+func (mmdm *mocMergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	return nil, nil
+}
+
+var dagTopologyManagerForTest = newMocDAGTopologyManager()
+var pastMedianTimeManagerForTest = &mocPastMedianTimeManager{}
+
 func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params) *blockValidator {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
 	blockHeaderStore := blockheaderstore.New()
-	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
-	reachabilityDataStore := reachabilitydatastore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 
 	// Processes
-	reachabilityManager := reachabilitymanager.New(
-		dbManager,
-		ghostdagDataStore,
-		blockRelationStore,
-		reachabilityDataStore)
-	dagTopologyManager := dagtopologymanager.New(
-		dbManager,
-		reachabilityManager,
-		blockRelationStore)
+	dagTopologyManager := dagTopologyManagerForTest
 	ghostdagManager := ghostdagmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -77,11 +158,7 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 		dagTopologyManager,
 		ghostdagDataStore,
 		ghostdagManager)
-	pastMedianTimeManager := pastmediantimemanager.New(
-		dagParams.TimestampDeviationTolerance,
-		dbManager,
-		dagTraversalManager,
-		blockHeaderStore)
+	pastMedianTimeManager := pastMedianTimeManagerForTest
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dbManager,
 		pastMedianTimeManager,
@@ -92,12 +169,7 @@ func setupBlockValidator(dbManager model.DBManager, dagParams *dagconfig.Params)
 		ghostdagDataStore,
 		acceptanceDataStore)
 	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
-	mergeDepthManager := mergedepthmanager.New(
-		dagParams.FinalityDepth(),
-		dbManager,
-		dagTopologyManager,
-		dagTraversalManager,
-		ghostdagDataStore)
+	mergeDepthManager := &mocMergeDepthManager{}
 	vlidator := New(
 		dagParams.PowMax,
 		true,
@@ -201,9 +273,10 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 		HashMerkleRoot:       externalapi.DomainHash{},
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
 		UTXOCommitment:       externalapi.DomainHash{},
-		TimeInMilliseconds:   mstime.Now().UnixMilliseconds() + int64(len(parentHashes)),
+		TimeInMilliseconds:   time,
 		Bits:                 9999999,
 	}
+	time++
 
 	transactions := make([]*externalapi.DomainTransaction, 1000)
 	inputs := make([]*externalapi.DomainTransactionInput, 100)
@@ -215,7 +288,7 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 			Version:      1,
 			Inputs:       inputs,
 			Outputs:      nil,
-			LockTime:     0,
+			LockTime:     1,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 			Gas:          0,
 			PayloadHash:  externalapi.DomainHash{},
@@ -268,6 +341,9 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 	transactions = append(transactions, coinbaseTransactions...)
 	block := createBlock(blockHeader, transactions)
 	blockHash := hashserialization.HeaderHash(block.Header)
+	dagTopologyManagerForTest.BlockParents[blockHash] = parentHashes
+	dagTopologyManagerForTest.BlockAncestors[parentHashes[0]] = parentHashes
+
 	validator.blockStore.Stage(blockHash, block)
 	validator.blockHeaderStore.Stage(blockHash, blockHeader)
 	validator.ghostdagDataStore.Stage(blockHash, &model.BlockGHOSTDAGData{
@@ -296,6 +372,7 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 	}
 
 	// validateMedianTime
+	pastMedianTimeManagerForTest.PastMedianTimeForTest = time + 1
 	err = validator.validateMedianTime(blockHeader)
 	if err == nil {
 		t.Fatalf("Waiting for error, but got: %s", err)
@@ -381,7 +458,7 @@ func TestValidateInvalidBlockInternal(t *testing.T) {
 }
 
 func TestValidateValidBlock(t *testing.T) {
-	dbManager, teardownFunc, err := SetupDBManager(t.Name())
+	dbManager, teardownFunc, err := setupDBManager(t.Name())
 	if err != nil {
 		t.Fatalf("Failed to setup DBManager instance: %v", err)
 	}
@@ -453,11 +530,13 @@ func TestValidateValidBlock(t *testing.T) {
 
 	blockWithThreeTx := createBlock(blockHeader, transactions)
 	blockHash := hashserialization.HeaderHash(blockWithThreeTx.Header)
+
 	validator.blockStore.Stage(blockHash, blockWithThreeTx)
 	validator.blockHeaderStore.Stage(blockHash, blockHeader)
+	validator.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	validator.ghostdagDataStore.Stage(blockHash, &model.BlockGHOSTDAGData{
 		SelectedParent: &genesisHash,
-		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
+		MergeSetBlues:  make([]*externalapi.DomainHash, 999),
 		MergeSetReds:   make([]*externalapi.DomainHash, 1),
 	})
 
@@ -469,6 +548,11 @@ func TestValidateValidBlock(t *testing.T) {
 		err = validator.ValidateHeaderInIsolation(blockHash)
 		if err != nil {
 			t.Fatalf("ValidateHeaderInIsolation: %v", err)
+		}
+
+		err = validator.ValidateHeaderInContext(blockHash)
+		if err != nil {
+			t.Fatalf("ValidateHeaderInContext: %v", err)
 		}
 
 		err = validator.ValidateBodyInIsolation(blockHash)
