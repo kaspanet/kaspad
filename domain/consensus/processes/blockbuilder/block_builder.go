@@ -28,6 +28,7 @@ type blockBuilder struct {
 	ghostdagDataStore   model.GHOSTDAGDataStore
 }
 
+// New creates a new instance of a BlockBuilder
 func New(
 	databaseContext model.DBManager,
 
