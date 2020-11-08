@@ -27,6 +27,10 @@ func (h *headerTipsStore) Discard() {
 }
 
 func (h *headerTipsStore) Commit(dbTx model.DBTransaction) error {
+	if h.staging == nil {
+		return nil
+	}
+
 	tipsBytes, err := h.serializeTips(h.staging)
 	if err != nil {
 		return err

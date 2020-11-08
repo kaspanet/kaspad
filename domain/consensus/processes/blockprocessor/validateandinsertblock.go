@@ -73,9 +73,18 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	oldHeadersSelectedTip, hasOldHeadersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	hasTips, err := bp.headerTipsStore.HasTips(bp.databaseContext)
 	if err != nil {
 		return err
+	}
+
+	var oldHeadersSelectedTip *externalapi.DomainHash
+	if hasTips {
+		var err error
+		oldHeadersSelectedTip, err = bp.headerTipsManager.SelectedTip()
+		if err != nil {
+			return err
+		}
 	}
 
 	if mode.State == externalapi.SyncStateHeadersFirst || mode.State == externalapi.SyncStateMissingGenesis {
@@ -98,7 +107,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	if mode.State != externalapi.SyncStateMissingGenesis {
-		err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip, hasOldHeadersSelectedTip)
+		err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
 		if err != nil {
 			return err
 		}
@@ -115,19 +124,14 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	return bp.commitAllChanges()
 }
 
-func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash,
-	hasOldHeadersSelectedTip bool) error {
+func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
 
-	headersSelectedTip, hasSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
 	if err != nil {
 		return err
 	}
 
-	if !hasSelectedTip {
-		return errors.New("cannot find header selected tip")
-	}
-
-	if hasOldHeadersSelectedTip && *headersSelectedTip == *oldHeadersSelectedTip {
+	if *headersSelectedTip == *oldHeadersSelectedTip {
 		return nil
 	}
 

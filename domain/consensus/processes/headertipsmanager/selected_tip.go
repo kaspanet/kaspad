@@ -2,20 +2,16 @@ package headertipsmanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-func (h headerTipsManager) SelectedTip() (*externalapi.DomainHash, bool, error) {
+func (h headerTipsManager) SelectedTip() (*externalapi.DomainHash, error) {
 	tips, err := h.headerTipsStore.Tips(h.databaseContext)
 	if err != nil {
-		return nil, false, err
-	}
-
-	if len(tips) == 0 {
-		return nil, false, nil
+		return nil, err
 	}
 
 	selectedTip, err := h.ghostdagManager.ChooseSelectedParent(tips...)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	return selectedTip, true, nil
+	return selectedTip, nil
 }
