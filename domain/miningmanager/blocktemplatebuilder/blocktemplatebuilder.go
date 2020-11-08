@@ -1,15 +1,15 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus"
+	"math"
+	"sort"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	miningmanagerapi "github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"math"
-	"sort"
 )
 
 type candidateTx struct {
@@ -26,13 +26,13 @@ type candidateTx struct {
 
 // blockTemplateBuilder creates block templates for a miner to consume
 type blockTemplateBuilder struct {
-	consensus consensus.Consensus
+	consensus consensusexternalapi.Consensus
 	mempool   miningmanagerapi.Mempool
 	policy    policy
 }
 
 // New creates a new blockTemplateBuilder
-func New(consensus consensus.Consensus, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
+func New(consensus consensusexternalapi.Consensus, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensus: consensus,
 		mempool:   mempool,

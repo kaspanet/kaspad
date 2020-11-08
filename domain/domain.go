@@ -2,6 +2,7 @@ package domain
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
@@ -11,15 +12,15 @@ import (
 // Domain provides a reference to the domain's external aps
 type Domain interface {
 	MiningManager() miningmanager.MiningManager
-	Consensus() consensus.Consensus
+	Consensus() externalapi.Consensus
 }
 
 type domain struct {
 	miningManager miningmanager.MiningManager
-	consensus     consensus.Consensus
+	consensus     externalapi.Consensus
 }
 
-func (d domain) Consensus() consensus.Consensus {
+func (d domain) Consensus() externalapi.Consensus {
 	return d.consensus
 }
 

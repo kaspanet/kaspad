@@ -16,6 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
@@ -37,13 +38,13 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error)
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
 }
 
 type factory struct{}
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -193,6 +194,19 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headerTipsStore)
 
+	blockBuilder := blockbuilder.New(
+		dbManager,
+		difficultyManager,
+		pastMedianTimeManager,
+		coinbaseManager,
+		consensusStateManager,
+		ghostdagManager,
+		acceptanceDataStore,
+		blockRelationStore,
+		multisetStore,
+		ghostdagDataStore,
+	)
+
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		dbManager,
@@ -225,6 +239,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
+		blockBuilder:          blockBuilder,
 		consensusStateManager: consensusStateManager,
 		transactionValidator:  transactionValidator,
 		syncManager:           syncManager,

@@ -1,0 +1,91 @@
+package blockbuilder
+
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+)
+
+var tempBlockHash = &externalapi.DomainHash{
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+
+func (bb *blockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
+	defer onEnd()
+
+	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
+}
+
+func (bb blockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
+	transactions []*externalapi.DomainTransaction, acceptanceData model.AcceptanceData, multiset model.Multiset) (
+	*externalapi.DomainBlockHeader, error) {
+
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	timeInMilliseconds, err := bb.newBlockTime(ghostdagData)
+	if err != nil {
+		return nil, err
+	}
+	bits, err := bb.newBlockDifficulty(ghostdagData)
+	if err != nil {
+		return nil, err
+	}
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
+	acceptedIDMerkleRoot, err := bb.calculateAcceptedIDMerkleRoot(acceptanceData)
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment := multiset.Hash()
+
+	return &externalapi.DomainBlockHeader{
+		Version:              constants.BlockVersion,
+		ParentHashes:         parentHashes,
+		HashMerkleRoot:       *hashMerkleRoot,
+		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
+		UTXOCommitment:       *utxoCommitment,
+		TimeInMilliseconds:   timeInMilliseconds,
+		Bits:                 bits,
+	}, nil
+}
+
+func (bb *blockBuilder) buildBlockWithParents(
+	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+
+	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+	defer bb.blockRelationStore.Discard()
+
+	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	defer bb.ghostdagDataStore.Discard()
+
+	_, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
+	defer bb.acceptanceDataStore.Discard()
+
+	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)
+	if err != nil {
+		return nil, err
+	}
+	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
+
+	header, err := bb.buildHeaderWithParents(parentHashes, transactions, acceptanceData, multiset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainBlock{
+		Header:       header,
+		Transactions: transactionsWithCoinbase,
+	}, nil
+}

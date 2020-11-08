@@ -19,6 +19,8 @@ type blockBuilder struct {
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
+	consensusStateManager model.ConsensusStateManager
+	ghostdagManager       model.GHOSTDAGManager
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -32,6 +34,8 @@ func New(
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	coinbaseManager model.CoinbaseManager,
+	consensusStateManager model.ConsensusStateManager,
+	ghostdagManager model.GHOSTDAGManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -44,6 +48,8 @@ func New(
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		coinbaseManager:       coinbaseManager,
+		consensusStateManager: consensusStateManager,
+		ghostdagManager:       ghostdagManager,
 		acceptanceDataStore:   acceptanceDataStore,
 		blockRelationStore:    blockRelationStore,
 		multisetStore:         multisetStore,
@@ -60,21 +66,6 @@ func (bb *blockBuilder) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	defer onEnd()
 
 	return bb.buildBlock(coinbaseData, transactions)
-}
-
-func (bb *blockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
-
-	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
-	defer onEnd()
-
-	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
-}
-
-func (bb *blockBuilder) buildBlockWithParents(
-	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
-
 }
 
 func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
@@ -186,8 +177,12 @@ func (bb blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, 
 		return nil, err
 	}
 
+	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
+}
+
+func (bb blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
-	for _, blockAcceptanceData := range newBlockAcceptanceData {
+	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {
 			if !transactionAcceptance.IsAccepted {
 				continue
