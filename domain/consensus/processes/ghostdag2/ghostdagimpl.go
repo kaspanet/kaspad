@@ -1,29 +1,35 @@
 package ghostdag2
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"sort"
 )
 
 type ghostdagHelper struct {
 	k                  model.KType
 	dataStore          model.GHOSTDAGDataStore
-	dbAccess           *database.DomainDBContext
+	dbAccess           model.DBReader
 	dagTopologyManager model.DAGTopologyManager
+}
+
+func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	panic("implement me")
+}
+
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+	panic("implement me")
 }
 
 // New instantiates a new GHOSTDAGHelper -like a factory
 func New(
-	databaseContext *dbaccess.DatabaseContext,
+	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	k model.KType) model.GHOSTDAGManager {
 
 	return &ghostdagHelper{
-		dbAccess:           database.NewDomainDBContext(databaseContext),
+		dbAccess:           databaseContext,
 		dagTopologyManager: dagTopologyManager,
 		dataStore:          ghostdagDataStore,
 		k:                  k,
@@ -412,9 +418,4 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, blockHash)
 	//last
-}
-
-func (gh *ghostdagHelper) ChooseSelectedParent(blockHashA *externalapi.DomainHash,
-	blockHashB *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	panic("unimplemented")
 }
