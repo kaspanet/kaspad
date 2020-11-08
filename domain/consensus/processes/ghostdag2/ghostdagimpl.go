@@ -251,25 +251,25 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 		}
 		*counter++
 		return true, nil
-	} else {
-		isAnt2, err := gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain)
+	}
+	isAnt2, err := gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain)
+	if err != nil {
+		return false, err
+	}
+	//if gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain) {
+	if isAnt2 {
+		dataStore, err := gh.BlockData(chain)
 		if err != nil {
 			return false, err
 		}
-		//if gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain) {
-		if isAnt2 {
-			dataStore, err := gh.BlockData(chain)
-			if err != nil {
-				return false, err
-			}
-			if g := dataStore.MergeSetReds; contains(checkedBlock, g) {
-				//if g := gh.dataStore.Get(gh.dbAccess, chain).MergeSetReds; contains(checkedBlock, g) {
-				return false, nil
-			}
-		} else {
-			return true, nil
+		if g := dataStore.MergeSetReds; contains(checkedBlock, g) {
+			//if g := gh.dataStore.Get(gh.dbAccess, chain).MergeSetReds; contains(checkedBlock, g) {
+			return false, nil
 		}
+	} else {
+		return true, nil
 	}
+
 	return false, nil
 }
 
