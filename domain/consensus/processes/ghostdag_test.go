@@ -43,7 +43,8 @@ func TestGHOSTDA(t *testing.T) {
 	}
 
 	//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
-	implementationFactories := []implManager{{ghostdagmanager.New, "Original"},
+	implementationFactories := []implManager{
+		{ghostdagmanager.New, "Original"},
 		{ghostdag2.New, "Tal's impl"},
 	}
 
@@ -282,7 +283,7 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}}
 
-	//Test 5: Adding a block to the mergeSet will destroy one of the blue block K-cluster.(the block is keeping K-cluster )
+	//Test 5: Adding a block to the mergeSet will destroy one of the blue block K-cluster(not in the selected chain).(the block is keeping K-cluster )
 	dag5 := isolatedTest{k: 2, subTests: []testGhostdagData{
 		{
 			hash:                   &externalapi.DomainHash{1},
@@ -358,7 +359,67 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}}
 
-	testsArr := []*isolatedTest{&dag1, &dag2, &dag3, &dag4, &dag5}
+	//Test 6: Adding a block to the mergeSet will destroy one of the blue block K-cluster in the selected chain.(the block is keeping K-cluster )
+	dag6 := isolatedTest{k: 3, subTests: []testGhostdagData{
+		{
+			hash:                   &externalapi.DomainHash{1},
+			parents:                []*externalapi.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*externalapi.DomainHash{genesisHash},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{2},
+			parents:                []*externalapi.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*externalapi.DomainHash{genesisHash},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{3},
+			parents:                []*externalapi.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*externalapi.DomainHash{genesisHash},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{4},
+			parents:                []*externalapi.DomainHash{genesisHash},
+			expectedBlueScore:      2,
+			expectedSelectedParent: genesisHash,
+			expectedMergeSetBlues:  []*externalapi.DomainHash{genesisHash},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{6},
+			parents:                []*externalapi.DomainHash{{1}, {2}, {3}, {4}},
+			expectedBlueScore:      6,
+			expectedSelectedParent: &externalapi.DomainHash{4},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{4}, {3}, {2}, {1}},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{5},
+			parents:                []*externalapi.DomainHash{{1}, {2}, {3}},
+			expectedBlueScore:      5,
+			expectedSelectedParent: &externalapi.DomainHash{3},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{2}, {1}, {3}},
+			expectedMergeSetReds:   []*externalapi.DomainHash{},
+		},
+		{
+			hash:                   &externalapi.DomainHash{7},
+			parents:                []*externalapi.DomainHash{{5}, {6}},
+			expectedBlueScore:      7,
+			expectedSelectedParent: &externalapi.DomainHash{6},
+			expectedMergeSetBlues:  []*externalapi.DomainHash{{6}},
+			expectedMergeSetReds:   []*externalapi.DomainHash{{5}},
+		},
+	}}
+
+	testsArr := []*isolatedTest{&dag1, &dag2, &dag3, &dag4, &dag5, &dag6}
 	for _, factory := range implementationFactories {
 		fmt.Printf("____________________________\n")
 		for testNum, test := range testsArr {
