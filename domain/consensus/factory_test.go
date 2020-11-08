@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func TestNewFactory(t *testing.T) {
+func TestNewConsensus(t *testing.T) {
 	f := NewFactory()
 
 	dagParams := &dagconfig.DevnetParams
 
-	tmpDir, err := ioutil.TempDir("", "TestNewFactory")
+	tmpDir, err := ioutil.TempDir("", "TestNewConsensus")
 	if err != nil {
 		return
 	}
