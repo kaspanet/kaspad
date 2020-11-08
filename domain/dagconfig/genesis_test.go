@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // TestGenesisBlock tests the genesis block of the main network for validity by
@@ -19,8 +17,7 @@ func TestGenesisBlock(t *testing.T) {
 	hash := consensusserialization.BlockHash(MainnetParams.GenesisBlock)
 	if *MainnetParams.GenesisHash != *hash {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(MainnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash, MainnetParams.GenesisHash)
 	}
 }
 
@@ -31,8 +28,8 @@ func TestTestnetGenesisBlock(t *testing.T) {
 	hash := consensusserialization.BlockHash(TestnetParams.GenesisBlock)
 	if *TestnetParams.GenesisHash != *hash {
 		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(TestnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			TestnetParams.GenesisHash)
 	}
 }
 
@@ -43,8 +40,8 @@ func TestSimnetGenesisBlock(t *testing.T) {
 	hash := consensusserialization.BlockHash(SimnetParams.GenesisBlock)
 	if *SimnetParams.GenesisHash != *hash {
 		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(SimnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			SimnetParams.GenesisHash)
 	}
 }
 
@@ -55,7 +52,7 @@ func TestDevnetGenesisBlock(t *testing.T) {
 	hash := consensusserialization.BlockHash(DevnetParams.GenesisBlock)
 	if *DevnetParams.GenesisHash != *hash {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(DevnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			DevnetParams.GenesisHash)
 	}
 }
