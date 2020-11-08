@@ -60,7 +60,7 @@ func (f *FlowContext) selectPeerForIBD() (*peerpkg.Peer, error) {
 }
 
 func (f *FlowContext) requestSelectedTipsIfRequired() {
-	dagTimeCurrent, err := f.isDAGTimeCurrent()
+	dagTimeCurrent, err := f.shouldRequestSelectedTips()
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +70,7 @@ func (f *FlowContext) requestSelectedTipsIfRequired() {
 	f.requestSelectedTips()
 }
 
-func (f *FlowContext) isDAGTimeCurrent() (bool, error) {
+func (f *FlowContext) shouldRequestSelectedTips() (bool, error) {
 	const minDurationToRequestSelectedTips = time.Minute
 	virtualSelectedParent, err := f.domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {

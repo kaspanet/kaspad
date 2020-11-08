@@ -5,7 +5,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -28,10 +27,15 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
-			block, err := context.Domain().Consensus().GetBlock(hash)
-			if errors.Is(err, database.ErrNotFound) {
+			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
+			if err != nil {
+				return err
+			}
+			if !blockInfo.Exists {
 				return protocolerrors.Errorf(true, "block %s not found", hash)
-			} else if err != nil {
+			}
+			block, err := context.Domain().Consensus().GetBlock(hash)
+			if err != nil {
 				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
 			}
 
