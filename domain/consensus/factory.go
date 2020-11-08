@@ -40,6 +40,7 @@ import (
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (testapi.TestConsensus, error)
 }
 
 type factory struct{}
