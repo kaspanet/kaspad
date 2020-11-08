@@ -78,6 +78,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		}
 		newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
 	} else {
+		// Genesis's blue score is defined to be 0.
 		newBlockData.BlueScore = 0
 	}
 
