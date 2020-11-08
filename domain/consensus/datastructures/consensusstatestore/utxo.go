@@ -32,6 +32,10 @@ func (c consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) err
 		return errors.New("cannot commit virtual UTXO diff while virtual UTXO set is staged")
 	}
 
+	if c.stagedVirtualUTXODiff == nil {
+		return nil
+	}
+
 	for toRemoveOutpoint := range c.stagedVirtualUTXODiff.ToRemove {
 		dbKey, err := utxoKey(&toRemoveOutpoint)
 		if err != nil {

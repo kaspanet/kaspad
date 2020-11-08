@@ -73,12 +73,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	oldHeadersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	oldHeadersSelectedTip, hasOldHeadersSelectedTip, err := bp.headerTipsManager.SelectedTip()
 	if err != nil {
 		return err
 	}
 
-	if mode.State == externalapi.SyncStateHeadersFirst {
+	if mode.State == externalapi.SyncStateHeadersFirst || mode.State == externalapi.SyncStateMissingGenesis {
 		err = bp.headerTipsManager.AddHeaderTip(hash)
 		if err != nil {
 			return err
@@ -97,27 +97,37 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		bp.headerTipsStore.Stage(tips)
 	}
 
-	err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
-	if err != nil {
-		return err
+	if mode.State != externalapi.SyncStateMissingGenesis {
+		err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip, hasOldHeadersSelectedTip)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-	err = bp.pruningManager.FindNextPruningPoint()
-	if err != nil {
-		return err
+	if mode.State == externalapi.SyncStateNormal {
+		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
+		err = bp.pruningManager.FindNextPruningPoint()
+		if err != nil {
+			return err
+		}
 	}
 
 	return bp.commitAllChanges()
 }
 
-func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash,
+	hasOldHeadersSelectedTip bool) error {
+
+	headersSelectedTip, hasSelectedTip, err := bp.headerTipsManager.SelectedTip()
 	if err != nil {
 		return err
 	}
 
-	if *headersSelectedTip == *oldHeadersSelectedTip {
+	if !hasSelectedTip {
+		return errors.New("cannot find header selected tip")
+	}
+
+	if hasOldHeadersSelectedTip && *headersSelectedTip == *oldHeadersSelectedTip {
 		return nil
 	}
 
@@ -151,15 +161,28 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *e
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	// If any validation until (included) proof-of-work fails, simply
-	// return an error without writing anything in the database.
-	// This is to prevent spamming attacks.
-	err := bp.validatePreProofOfWork(block)
+	blockHash := consensusserialization.HeaderHash(block.Header)
+	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	blockHash := consensusserialization.HeaderHash(block.Header)
+	if !hasHeader {
+		bp.blockHeaderStore.Stage(blockHash, block.Header)
+		err = bp.dagTopologyManager.SetParents(blockHash, block.Header.ParentHashes)
+		if err != nil {
+			return err
+		}
+	}
+
+	// If any validation until (included) proof-of-work fails, simply
+	// return an error without writing anything in the database.
+	// This is to prevent spamming attacks.
+	err = bp.validatePreProofOfWork(block)
+	if err != nil {
+		return err
+	}
+
 	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
@@ -219,12 +242,6 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 	}
 
 	if !hasHeader {
-		bp.blockHeaderStore.Stage(blockHash, block.Header)
-
-		err := bp.dagTopologyManager.SetParents(blockHash, block.Header.ParentHashes)
-		if err != nil {
-			return err
-		}
 		err = bp.blockValidator.ValidateHeaderInContext(blockHash)
 		if err != nil {
 			return err

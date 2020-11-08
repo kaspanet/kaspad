@@ -825,7 +825,7 @@ func (rt *reachabilityManager) findAncestorOfThisAmongChildrenOfOther(this, othe
 
 	ancestor, ok := rt.findAncestorOfNode(otherChildren, this)
 	if !ok {
-		return nil, errors.Errorf("node is not an ancestor of node")
+		return nil, errors.Errorf("node is not an ancestor of this")
 	}
 
 	return ancestor, nil

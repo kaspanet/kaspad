@@ -7,11 +7,19 @@ import (
 
 // DbHashToDomainHash converts a DbHash to a DomainHash
 func DbHashToDomainHash(dbHash *DbHash) (*externalapi.DomainHash, error) {
+	if dbHash == nil {
+		return nil, nil
+	}
+
 	return hashes.FromBytes(dbHash.Hash)
 }
 
 // DomainHashToDbHash converts a DomainHash to a DbHash
 func DomainHashToDbHash(domainHash *externalapi.DomainHash) *DbHash {
+	if domainHash == nil {
+		return nil
+	}
+
 	return &DbHash{Hash: domainHash[:]}
 }
 

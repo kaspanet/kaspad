@@ -32,6 +32,15 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 }
 
 func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
+	hasTips, err := sm.headerTipsStore.HasTips(sm.databaseContext)
+	if err != nil {
+		return 0, err
+	}
+
+	if !hasTips {
+		return externalapi.SyncStateMissingGenesis, nil
+	}
+
 	headerVirtualSelectedParentHash, err := sm.headerVirtualSelectedParentHash()
 	if err != nil {
 		return 0, err

@@ -22,7 +22,7 @@ func (d dbTransaction) Rollback() error {
 }
 
 func (d dbTransaction) Commit() error {
-	return d.Commit()
+	return d.transaction.Commit()
 }
 
 func (d dbTransaction) RollbackUnlessClosed() error {

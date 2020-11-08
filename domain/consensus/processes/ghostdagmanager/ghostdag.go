@@ -35,14 +35,18 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	if err != nil {
 		return err
 	}
-	selectedParent, err := gm.findSelectedParent(blockParents)
-	if err != nil {
-		return err
-	}
 
-	newBlockData.SelectedParent = selectedParent
-	newBlockData.MergeSetBlues = append(newBlockData.MergeSetBlues, selectedParent)
-	newBlockData.BluesAnticoneSizes[*selectedParent] = 0
+	isGenesis := len(blockParents) == 0
+	if !isGenesis {
+		selectedParent, err := gm.findSelectedParent(blockParents)
+		if err != nil {
+			return err
+		}
+
+		newBlockData.SelectedParent = selectedParent
+		newBlockData.MergeSetBlues = append(newBlockData.MergeSetBlues, selectedParent)
+		newBlockData.BluesAnticoneSizes[*selectedParent] = 0
+	}
 
 	mergeSetWithoutSelectedParent, err := gm.mergeSetWithoutSelectedParent(newBlockData.SelectedParent, blockParents)
 	if err != nil {
@@ -67,11 +71,15 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		}
 	}
 
-	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.SelectedParent)
-	if err != nil {
-		return err
+	if !isGenesis {
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.SelectedParent)
+		if err != nil {
+			return err
+		}
+		newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
+	} else {
+		newBlockData.BlueScore = 0
 	}
-	newBlockData.BlueScore = selectedParentGHOSTDAGData.BlueScore + uint64(len(newBlockData.MergeSetBlues))
 
 	gm.ghostdagDataStore.Stage(blockHash, newBlockData)
 	return nil

@@ -19,7 +19,8 @@ func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
 			return err
 		}
 	}
-	return writeElements(w, header.HashMerkleRoot, header.AcceptedIDMerkleRoot, header.UTXOCommitment, timestamp, header.Bits, header.Nonce)
+	return writeElements(w, &header.HashMerkleRoot, &header.AcceptedIDMerkleRoot, &header.UTXOCommitment, timestamp,
+		header.Bits, header.Nonce)
 }
 
 // HeaderHash returns the given header hash

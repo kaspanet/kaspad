@@ -8,4 +8,5 @@ type BlockRelationStore interface {
 	StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *BlockRelations)
 	IsStaged() bool
 	BlockRelation(dbContext DBReader, blockHash *externalapi.DomainHash) (*BlockRelations, error)
+	Has(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
 }

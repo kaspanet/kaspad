@@ -41,24 +41,27 @@ func (ps *pruningStore) Discard() {
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
-	pruningPointBytes, err := ps.serializePruningPoint(ps.pruningPointStaging)
-	if err != nil {
-		return err
+	if ps.pruningPointStaging != nil {
+		pruningPointBytes, err := ps.serializePruningPoint(ps.pruningPointStaging)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(pruningBlockHashKey, pruningPointBytes)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = dbTx.Put(pruningBlockHashKey, pruningPointBytes)
-	if err != nil {
-		return err
-	}
+	if ps.serializedUTXOSetStaging != nil {
+		utxoSetBytes, err := ps.serializeUTXOSetBytes(ps.serializedUTXOSetStaging)
+		if err != nil {
+			return err
+		}
 
-	utxoSetBytes, err := ps.serializeUTXOSetBytes(ps.serializedUTXOSetStaging)
-	if err != nil {
-		return err
-	}
-
-	err = dbTx.Put(pruningSerializedUTXOSetkey, utxoSetBytes)
-	if err != nil {
-		return err
+		err = dbTx.Put(pruningSerializedUTXOSetkey, utxoSetBytes)
+		if err != nil {
+			return err
+		}
 	}
 
 	ps.Discard()

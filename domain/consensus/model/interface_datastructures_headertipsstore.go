@@ -8,4 +8,5 @@ type HeaderTipsStore interface {
 	Stage(tips []*externalapi.DomainHash)
 	IsStaged() bool
 	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
+	HasTips(dbContext DBReader) (bool, error)
 }
