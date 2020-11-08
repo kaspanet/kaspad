@@ -9,22 +9,9 @@ import (
 // current virtual. This process may result in a new virtual block
 // getting created
 func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
-	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
+	err := csm.resolveBlockStatusAndCheckFinality(blockHash)
 	if err != nil {
 		return err
-	}
-
-	if isNextVirtualSelectedParent {
-		blockStatus, err := csm.resolveBlockStatus(blockHash)
-		if err != nil {
-			return err
-		}
-		if blockStatus == externalapi.StatusValid {
-			err = csm.checkFinalityViolation(blockHash)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	newTips, err := csm.addTip(blockHash)
@@ -40,7 +27,36 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	return nil
 }
 
+func (csm *consensusStateManager) resolveBlockStatusAndCheckFinality(blockHash *externalapi.DomainHash) error {
+	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if !isNextVirtualSelectedParent {
+		return nil
+	}
+
+	blockStatus, err := csm.resolveBlockStatus(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if blockStatus == externalapi.StatusValid {
+		err = csm.checkFinalityViolation(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
+	if *blockHash == *csm.genesisHash {
+		return true, nil
+	}
+
 	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return false, err

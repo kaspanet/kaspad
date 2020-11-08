@@ -87,12 +87,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if mode.State == externalapi.SyncStateHeadersFirst || mode.State == externalapi.SyncStateMissingGenesis {
+	if mode.State == externalapi.SyncStateHeadersFirst {
 		err = bp.headerTipsManager.AddHeaderTip(hash)
 		if err != nil {
 			return err
 		}
-	} else if mode.State == externalapi.SyncStateNormal {
+	} else if mode.State == externalapi.SyncStateNormal || mode.State == externalapi.SyncStateMissingGenesis {
 		// Attempt to add the block to the virtual
 		err = bp.consensusStateManager.AddBlockToVirtual(hash)
 		if err != nil {

@@ -138,6 +138,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
+		genesisHash,
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,

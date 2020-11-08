@@ -8,7 +8,7 @@ import (
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
+	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error)
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
 	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction)
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
@@ -20,7 +20,7 @@ type miningManager struct {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock {
+func (mm *miningManager) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
 	return mm.blockTemplateBuilder.GetBlockTemplate(coinbaseData)
 }
 

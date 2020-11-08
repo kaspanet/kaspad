@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const rpcTimeout = 1 * time.Second
+const rpcTimeout = 1000000 * time.Second
 
 type testRPCClient struct {
 	*rpcclient.RPCClient

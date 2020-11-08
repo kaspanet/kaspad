@@ -27,7 +27,7 @@ const (
 	miningAddress3           = "kaspasim:qretklduvhg5h2aj7jd8w4heq7pvtkpv9q6w4sqfen"
 	miningAddress3PrivateKey = "eb0af684f2cdbb4ed2d85fbfe0b7f40654a7777fb2c47f142ffb5543b594d1e4"
 
-	defaultTimeout = 10 * time.Second
+	defaultTimeout = 1000000 * time.Second
 )
 
 func setConfig(t *testing.T, harness *appHarness) {

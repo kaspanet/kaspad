@@ -109,6 +109,10 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData
 			consensusserialization.TransactionID(acceptedTransactions[j]))
 	})
 
+	if len(acceptedTransactions) == 0 {
+		return &externalapi.DomainHash{}
+	}
+
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
 }
 func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externalapi.DomainHash,

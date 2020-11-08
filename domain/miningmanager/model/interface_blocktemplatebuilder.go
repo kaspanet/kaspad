@@ -6,5 +6,5 @@ import (
 
 // BlockTemplateBuilder builds block templates for miners to consume
 type BlockTemplateBuilder interface {
-	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
+	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error)
 }
