@@ -262,9 +262,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (
 	testapi.TestConsensus, error) {
 
-	mainConsensus, err := f.NewConsensus(dagParams, db)
+	consensusAsInterface, err := f.NewConsensus(dagParams, db)
 	if err != nil {
 		return nil, err
 	}
-	return &testConsensus{consensus: mainConsensus.(*consensus)}, nil
+
+	consensusAsObject := consensusAsInterface.(*consensus)
+
+	return &testConsensus{
+		consensus:        consensusAsObject,
+		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsObject.blockBuilder),
+	}, nil
 }

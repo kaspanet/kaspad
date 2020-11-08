@@ -7,10 +7,19 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
+type testBlockBuilder struct {
+	*blockBuilder
+}
+
 var tempBlockHash = &externalapi.DomainHash{
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 
-func (bb *blockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+// NewTestBlockBuilder creates an instance of a TestBlockBuilder
+func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder) model.TestBlockBuilder {
+	return &testBlockBuilder{blockBuilder: baseBlockBuilder.(*blockBuilder)}
+}
+
+func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
@@ -19,7 +28,7 @@ func (bb *blockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Domain
 	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
 }
 
-func (bb blockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
+func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
 	transactions []*externalapi.DomainTransaction, acceptanceData model.AcceptanceData, multiset model.Multiset) (
 	*externalapi.DomainBlockHeader, error) {
 
@@ -53,7 +62,7 @@ func (bb blockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Domain
 	}, nil
 }
 
-func (bb *blockBuilder) buildBlockWithParents(
+func (bb *testBlockBuilder) buildBlockWithParents(
 	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
