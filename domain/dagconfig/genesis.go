@@ -5,13 +5,12 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-var genesisTxOuts = []*appmessage.TxOut{}
+var genesisTxOuts = []*externalapi.DomainTransactionOutput{}
 
 var genesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -23,7 +22,7 @@ var genesisTxPayload = []byte{
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network.
-var genesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, genesisTxOuts,
+var genesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(1, []*externalapi.DomainTransactionInput{}, genesisTxOuts,
 	&subnetworks.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
 // genesisHash is the hash of the first block in the block DAG for the main
@@ -46,21 +45,21 @@ var genesisMerkleRoot = externalapi.DomainHash{
 
 // genesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the main network.
-var genesisBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
+var genesisBlock = externalapi.DomainBlock{
+	Header: &externalapi.DomainBlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       &genesisMerkleRoot,
-		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
-		UTXOCommitment:       &externalapi.DomainHash{},
-		Timestamp:            mstime.UnixMilliseconds(0x1730a81bdb4),
+		HashMerkleRoot:       genesisMerkleRoot,
+		AcceptedIDMerkleRoot: externalapi.DomainHash{},
+		UTXOCommitment:       externalapi.DomainHash{},
+		TimeInMilliseconds:   0x1730a81bdb4,
 		Bits:                 0x207fffff,
 		Nonce:                0x1,
 	},
-	Transactions: []*appmessage.MsgTx{genesisCoinbaseTx},
+	Transactions: []*externalapi.DomainTransaction{genesisCoinbaseTx},
 }
 
-var devnetGenesisTxOuts = []*appmessage.TxOut{}
+var devnetGenesisTxOuts = []*externalapi.DomainTransactionOutput{}
 
 var devnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -73,7 +72,8 @@ var devnetGenesisTxPayload = []byte{
 
 // devnetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the development network.
-var devnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, devnetGenesisTxOuts,
+var devnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(1,
+	[]*externalapi.DomainTransactionInput{}, devnetGenesisTxOuts,
 	&subnetworks.SubnetworkIDCoinbase, 0, devnetGenesisTxPayload)
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
@@ -96,21 +96,21 @@ var devnetGenesisMerkleRoot = externalapi.DomainHash{
 
 // devnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var devnetGenesisBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
+var devnetGenesisBlock = externalapi.DomainBlock{
+	Header: &externalapi.DomainBlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       &devnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
-		UTXOCommitment:       &externalapi.DomainHash{},
-		Timestamp:            mstime.UnixMilliseconds(0x17305b05694),
+		HashMerkleRoot:       devnetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: externalapi.DomainHash{},
+		UTXOCommitment:       externalapi.DomainHash{},
+		TimeInMilliseconds:   0x17305b05694,
 		Bits:                 0x1e7fffff,
 		Nonce:                268444,
 	},
-	Transactions: []*appmessage.MsgTx{devnetGenesisCoinbaseTx},
+	Transactions: []*externalapi.DomainTransaction{devnetGenesisCoinbaseTx},
 }
 
-var simnetGenesisTxOuts = []*appmessage.TxOut{}
+var simnetGenesisTxOuts = []*externalapi.DomainTransactionOutput{}
 
 var simnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -122,7 +122,8 @@ var simnetGenesisTxPayload = []byte{
 }
 
 // simnetGenesisCoinbaseTx is the coinbase transaction for the simnet genesis block.
-var simnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, simnetGenesisTxOuts,
+var simnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(1,
+	[]*externalapi.DomainTransactionInput{}, simnetGenesisTxOuts,
 	&subnetworks.SubnetworkIDCoinbase, 0, simnetGenesisTxPayload)
 
 // simnetGenesisHash is the hash of the first block in the block DAG for
@@ -145,21 +146,21 @@ var simnetGenesisMerkleRoot = externalapi.DomainHash{
 
 // simnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
-var simnetGenesisBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
+var simnetGenesisBlock = externalapi.DomainBlock{
+	Header: &externalapi.DomainBlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       &simnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
-		UTXOCommitment:       &externalapi.DomainHash{},
-		Timestamp:            mstime.UnixMilliseconds(0x173001df3d5),
+		HashMerkleRoot:       simnetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: externalapi.DomainHash{},
+		UTXOCommitment:       externalapi.DomainHash{},
+		TimeInMilliseconds:   0x173001df3d5,
 		Bits:                 0x207fffff,
 		Nonce:                0x0,
 	},
-	Transactions: []*appmessage.MsgTx{simnetGenesisCoinbaseTx},
+	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }
 
-var testnetGenesisTxOuts = []*appmessage.TxOut{}
+var testnetGenesisTxOuts = []*externalapi.DomainTransactionOutput{}
 
 var testnetGenesisTxPayload = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Blue score
@@ -169,7 +170,8 @@ var testnetGenesisTxPayload = []byte{
 }
 
 // testnetGenesisCoinbaseTx is the coinbase transaction for the testnet genesis block.
-var testnetGenesisCoinbaseTx = appmessage.NewSubnetworkMsgTx(1, []*appmessage.TxIn{}, testnetGenesisTxOuts,
+var testnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(1,
+	[]*externalapi.DomainTransactionInput{}, testnetGenesisTxOuts,
 	&subnetworks.SubnetworkIDCoinbase, 0, testnetGenesisTxPayload)
 
 // testnetGenesisHash is the hash of the first block in the block DAG for the test
@@ -192,16 +194,16 @@ var testnetGenesisMerkleRoot = externalapi.DomainHash{
 
 // testnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for testnet.
-var testnetGenesisBlock = appmessage.MsgBlock{
-	Header: appmessage.BlockHeader{
+var testnetGenesisBlock = externalapi.DomainBlock{
+	Header: &externalapi.DomainBlockHeader{
 		Version:              0x10000000,
 		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       &testnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: &externalapi.DomainHash{},
-		UTXOCommitment:       &externalapi.DomainHash{},
-		Timestamp:            mstime.UnixMilliseconds(0x1730a66a9d9),
+		HashMerkleRoot:       testnetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: externalapi.DomainHash{},
+		UTXOCommitment:       externalapi.DomainHash{},
+		TimeInMilliseconds:   0x1730a66a9d9,
 		Bits:                 0x1e7fffff,
 		Nonce:                0x162ca,
 	},
-	Transactions: []*appmessage.MsgTx{testnetGenesisCoinbaseTx},
+	Transactions: []*externalapi.DomainTransaction{testnetGenesisCoinbaseTx},
 }

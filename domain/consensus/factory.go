@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
@@ -32,8 +31,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/syncmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 )
@@ -246,81 +243,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	}
 
 	if !genesisInfo.Exists {
-		genesisBlock, err := msgBlockToDomainBlock(dagParams.GenesisBlock)
-		if err != nil {
-			return nil, err
-		}
-
-		err = c.ValidateAndInsertBlock(genesisBlock)
+		err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return c, nil
-}
-
-func msgBlockToDomainBlock(msgBlock *appmessage.MsgBlock) (*externalapi.DomainBlock, error) {
-	msgHeader := msgBlock.Header
-
-	parentHashes := make([]*externalapi.DomainHash, 0)
-	for _, parent := range msgHeader.ParentHashes {
-		hash, err := hashes.FromBytes(parent[:])
-		if err != nil {
-			return nil, err
-		}
-		parentHashes = append(parentHashes, hash)
-	}
-
-	msgTxCoinbase := msgBlock.Transactions[0]
-
-	cbInputs := make([]*externalapi.DomainTransactionInput, 0)
-	for _, in := range msgTxCoinbase.TxIn {
-		cbInputs = append(cbInputs, &externalapi.DomainTransactionInput{
-			PreviousOutpoint: externalapi.DomainOutpoint{
-				TransactionID: (externalapi.DomainTransactionID)(in.PreviousOutpoint.TxID),
-				Index:         in.PreviousOutpoint.Index,
-			},
-			SignatureScript: in.SignatureScript,
-			Sequence:        in.Sequence,
-			UTXOEntry:       nil,
-		})
-	}
-
-	cbOutputs := make([]*externalapi.DomainTransactionOutput, 0)
-	for _, out := range msgTxCoinbase.TxOut {
-		cbOutputs = append(cbOutputs, &externalapi.DomainTransactionOutput{
-			Value:           out.Value,
-			ScriptPublicKey: out.ScriptPubKey,
-		})
-	}
-
-	cbTx := &externalapi.DomainTransaction{
-		Version:      msgTxCoinbase.Version,
-		Inputs:       cbInputs,
-		Outputs:      cbOutputs,
-		LockTime:     msgTxCoinbase.LockTime,
-		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-		Gas:          msgTxCoinbase.Gas,
-		PayloadHash:  *(*externalapi.DomainHash)(msgTxCoinbase.PayloadHash),
-		Payload:      msgTxCoinbase.Payload,
-		Fee:          0,
-		Mass:         0,
-	}
-
-	return &externalapi.DomainBlock{
-		Header: &externalapi.DomainBlockHeader{
-			Version:              msgHeader.Version,
-			ParentHashes:         parentHashes,
-			HashMerkleRoot:       *msgHeader.HashMerkleRoot,
-			AcceptedIDMerkleRoot: *msgHeader.AcceptedIDMerkleRoot,
-			UTXOCommitment:       *msgHeader.UTXOCommitment,
-			TimeInMilliseconds:   msgHeader.Timestamp.UnixMilliseconds(),
-			Bits:                 msgHeader.Bits,
-			Nonce:                msgHeader.Nonce,
-		},
-		Transactions: []*externalapi.DomainTransaction{cbTx},
-	}, nil
 }
 
 // NewFactory creates a new Consensus factory

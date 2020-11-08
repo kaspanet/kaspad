@@ -80,7 +80,7 @@ type Params struct {
 	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
-	GenesisBlock *appmessage.MsgBlock
+	GenesisBlock *externalapi.DomainBlock
 
 	// GenesisHash is the starting block hash.
 	GenesisHash *externalapi.DomainHash
