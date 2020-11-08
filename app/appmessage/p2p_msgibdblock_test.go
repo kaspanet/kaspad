@@ -5,7 +5,6 @@
 package appmessage
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
 
@@ -62,57 +61,5 @@ func TestIBDBlock(t *testing.T) {
 	if len(msg.Transactions) != 0 {
 		t.Errorf("ClearTransactions: wrong transactions - got %v, want %v",
 			len(msg.Transactions), 0)
-	}
-}
-
-// TestIBDBlockEncoding tests the MsgIBDBlock appmessage encode and decode for various numbers
-// of transaction inputs and outputs and protocol versions.
-func TestIBDBlockEncoding(t *testing.T) {
-	tests := []struct {
-		in     *MsgIBDBlock // Message to encode
-		out    *MsgIBDBlock // Expected decoded message
-		buf    []byte       // Encoded value
-		txLocs []TxLoc      // Expected transaction locations
-		pver   uint32       // Protocol version for appmessage encoding
-	}{
-		// Latest protocol version.
-		{
-			&MsgIBDBlock{MsgBlock: &blockOne},
-			&MsgIBDBlock{MsgBlock: &blockOne},
-			blockOneBytes,
-			blockOneTxLocs,
-			ProtocolVersion,
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		// Encode the message to appmessage format.
-		var buf bytes.Buffer
-		err := test.in.KaspaEncode(&buf, test.pver)
-		if err != nil {
-			t.Errorf("KaspaEncode #%d error %v", i, err)
-			continue
-		}
-		if !bytes.Equal(buf.Bytes(), test.buf) {
-			t.Errorf("KaspaEncode #%d\n got: %s want: %s", i,
-				spew.Sdump(buf.Bytes()), spew.Sdump(test.buf))
-			continue
-		}
-
-		// Decode the message from appmessage format.
-		var msg MsgIBDBlock
-		msg.MsgBlock = new(MsgBlock)
-		rbuf := bytes.NewReader(test.buf)
-		err = msg.KaspaDecode(rbuf, test.pver)
-		if err != nil {
-			t.Errorf("KaspaDecode #%d error %v", i, err)
-			continue
-		}
-		if !reflect.DeepEqual(&msg, test.out) {
-			t.Errorf("KaspaDecode #%d\n got: %s want: %s", i,
-				spew.Sdump(&msg), spew.Sdump(test.out))
-			continue
-		}
 	}
 }

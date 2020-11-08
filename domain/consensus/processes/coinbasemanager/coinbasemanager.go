@@ -3,6 +3,7 @@ package coinbasemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -41,7 +42,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		}
 	}
 
-	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore, coinbaseData)
+	payload, err := coinbase.SerializeCoinbasePayload(ghostdagData.BlueScore, coinbaseData)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		LockTime:     0,
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 		Gas:          0,
-		PayloadHash:  payloadHash,
+		PayloadHash:  *payloadHash,
 		Payload:      payload,
 	}, nil
 }
@@ -84,7 +85,7 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 	}
 
 	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
-	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
+	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err
 	}

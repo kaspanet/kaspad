@@ -7,14 +7,14 @@ package appmessage
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/binaryserializer"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/pkg/errors"
 	"io"
 	"math"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
+	"github.com/kaspanet/kaspad/util/binaryserializer"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 )
 
 // MaxVarIntPayload is the maximum payload size for a variable length integer.
@@ -138,7 +138,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		}
 		return nil
 
-	case *daghash.Hash:
+	case *externalapi.DomainHash:
 		_, err := io.ReadFull(r, e[:])
 		if err != nil {
 			return err
@@ -148,7 +148,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 	case *id.ID:
 		return e.Deserialize(r)
 
-	case *subnetworkid.SubnetworkID:
+	case *externalapi.DomainSubnetworkID:
 		_, err := io.ReadFull(r, e[:])
 		if err != nil {
 			return err
@@ -263,7 +263,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
-	case *daghash.Hash:
+	case *externalapi.DomainHash:
 		_, err := w.Write(e[:])
 		if err != nil {
 			return err
@@ -273,7 +273,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 	case *id.ID:
 		return e.Serialize(w)
 
-	case *subnetworkid.SubnetworkID:
+	case *externalapi.DomainSubnetworkID:
 		_, err := w.Write(e[:])
 		if err != nil {
 			return err

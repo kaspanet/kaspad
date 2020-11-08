@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MaxInvPerRequestTransactionsMsg is the maximum number of hashes that can
@@ -13,7 +13,7 @@ const MaxInvPerRequestTransactionsMsg = MaxInvPerMsg
 // transactions relay protocol.
 type MsgRequestTransactions struct {
 	baseMessage
-	IDs []*daghash.TxID
+	IDs []*externalapi.DomainTransactionID
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -24,7 +24,7 @@ func (msg *MsgRequestTransactions) Command() MessageCommand {
 
 // NewMsgRequestTransactions returns a new kaspa RequestTransactions message that conforms to
 // the Message interface. See MsgRequestTransactions for details.
-func NewMsgRequestTransactions(ids []*daghash.TxID) *MsgRequestTransactions {
+func NewMsgRequestTransactions(ids []*externalapi.DomainTransactionID) *MsgRequestTransactions {
 	return &MsgRequestTransactions{
 		IDs: ids,
 	}

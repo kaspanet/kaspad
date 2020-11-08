@@ -18,7 +18,7 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
 	transaction *externalapi.DomainTransaction, utxoDiff *model.UTXODiff) error {
 
-	missingOutpoints := []externalapi.DomainOutpoint{}
+	missingOutpoints := []*externalapi.DomainOutpoint{}
 
 	for _, transactionInput := range transaction.Inputs {
 		// skip all inputs that have a pre-filled utxo entry
@@ -34,7 +34,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			}
 
 			if utxoalgebra.CollectionContains(utxoDiff.ToRemove, &transactionInput.PreviousOutpoint) {
-				missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
+				missingOutpoints = append(missingOutpoints, &transactionInput.PreviousOutpoint)
 				continue
 			}
 		}
@@ -45,7 +45,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 			return err
 		}
 		if !hasUTXOEntry {
-			missingOutpoints = append(missingOutpoints, transactionInput.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &transactionInput.PreviousOutpoint)
 			continue
 		}
 

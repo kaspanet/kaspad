@@ -12,14 +12,14 @@ func (x *KaspadMessage_Addresses) toAppMessage() (appmessage.Message, error) {
 			"[count %d, max %d]", len(x.Addresses.AddressList), appmessage.MaxAddressesPerMsg)
 	}
 
-	subnetworkID, err := protoAddresses.SubnetworkID.toWire()
+	subnetworkID, err := protoAddresses.SubnetworkID.toDomain()
 	if err != nil {
 		return nil, err
 	}
 
 	addressList := make([]*appmessage.NetAddress, len(protoAddresses.AddressList))
 	for i, address := range protoAddresses.AddressList {
-		addressList[i], err = address.toWire()
+		addressList[i], err = address.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
@@ -39,12 +39,12 @@ func (x *KaspadMessage_Addresses) fromAppMessage(msgAddresses *appmessage.MsgAdd
 
 	addressList := make([]*NetAddress, len(msgAddresses.AddrList))
 	for i, address := range msgAddresses.AddrList {
-		addressList[i] = wireNetAddressToProto(address)
+		addressList[i] = appMessageNetAddressToProto(address)
 	}
 
 	x.Addresses = &AddressesMessage{
 		IncludeAllSubnetworks: msgAddresses.IncludeAllSubnetworks,
-		SubnetworkID:          wireSubnetworkIDToProto(msgAddresses.SubnetworkID),
+		SubnetworkID:          domainSubnetworkIDToProto(msgAddresses.SubnetworkID),
 		AddressList:           addressList,
 	}
 	return nil

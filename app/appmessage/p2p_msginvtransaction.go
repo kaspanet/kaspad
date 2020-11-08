@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MaxInvPerTxInvMsg is the maximum number of hashes that can
@@ -13,7 +13,7 @@ const MaxInvPerTxInvMsg = MaxInvPerMsg
 // by sending their ID, and let the receiving node decide if it needs it.
 type MsgInvTransaction struct {
 	baseMessage
-	TxIDs []*daghash.TxID
+	TxIDs []*externalapi.DomainTransactionID
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -24,7 +24,7 @@ func (msg *MsgInvTransaction) Command() MessageCommand {
 
 // NewMsgInvTransaction returns a new kaspa TxInv message that conforms to
 // the Message interface. See MsgInvTransaction for details.
-func NewMsgInvTransaction(ids []*daghash.TxID) *MsgInvTransaction {
+func NewMsgInvTransaction(ids []*externalapi.DomainTransactionID) *MsgInvTransaction {
 	return &MsgInvTransaction{
 		TxIDs: ids,
 	}

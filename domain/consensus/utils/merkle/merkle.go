@@ -1,11 +1,12 @@
 package merkle
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/pkg/errors"
-	"math"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if
@@ -38,8 +39,8 @@ func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.Domain
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
-	hash := w.Finalize()
-	return &hash
+
+	return w.Finalize()
 }
 
 // CalculateHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.

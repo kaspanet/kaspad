@@ -6,12 +6,13 @@ package mempool
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.

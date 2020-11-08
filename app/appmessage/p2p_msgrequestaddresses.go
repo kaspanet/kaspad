@@ -5,7 +5,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgRequestAddresses implements the Message interface and represents a kaspa
@@ -17,7 +17,7 @@ import (
 type MsgRequestAddresses struct {
 	baseMessage
 	IncludeAllSubnetworks bool
-	SubnetworkID          *subnetworkid.SubnetworkID
+	SubnetworkID          *externalapi.DomainSubnetworkID
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -28,7 +28,7 @@ func (msg *MsgRequestAddresses) Command() MessageCommand {
 
 // NewMsgRequestAddresses returns a new kaspa RequestAddresses message that conforms to the
 // Message interface. See MsgRequestAddresses for details.
-func NewMsgRequestAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgRequestAddresses {
+func NewMsgRequestAddresses(includeAllSubnetworks bool, subnetworkID *externalapi.DomainSubnetworkID) *MsgRequestAddresses {
 	return &MsgRequestAddresses{
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,

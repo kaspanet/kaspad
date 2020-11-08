@@ -58,6 +58,11 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
+
+		err = bp.headerTipsManager.AddHeaderTip(hash)
+		if err != nil {
+			return err
+		}
 	}
 
 	if mode.State == externalapi.SyncStateHeadersFirst {
@@ -194,7 +199,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			hash := consensusserialization.HeaderHash(block.Header)
+			hash := consensusserialization.BlockHash(block)
 			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
 			commitErr := bp.commitAllChanges()
 			if commitErr != nil {
@@ -207,7 +212,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 }
 
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
-	blockHash := consensusserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.BlockHash(block)
 
 	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
@@ -226,7 +231,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	blockHash := consensusserialization.HeaderHash(block.Header)
+	blockHash := consensusserialization.BlockHash(block)
 
 	if mode.State != externalapi.SyncStateHeadersFirst {
 		bp.blockStore.Stage(blockHash, block)

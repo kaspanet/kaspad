@@ -2,7 +2,7 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ func (x *KaspadMessage_Transaction) fromAppMessage(msgTx *appmessage.MsgTx) erro
 func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 	inputs := make([]*appmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
-		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toWire()
+		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toDomain()
 		if err != nil {
 			return nil, err
 		}
@@ -40,14 +40,14 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, errors.New("transaction subnetwork field cannot be nil")
 	}
 
-	subnetworkID, err := x.SubnetworkID.toWire()
+	subnetworkID, err := x.SubnetworkID.toDomain()
 	if err != nil {
 		return nil, err
 	}
 
-	var payloadHash *daghash.Hash
+	var payloadHash *externalapi.DomainHash
 	if x.PayloadHash != nil {
-		payloadHash, err = x.PayloadHash.toWire()
+		payloadHash, err = x.PayloadHash.toDomain()
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	for i, input := range msgTx.TxIn {
 		protoInputs[i] = &TransactionInput{
 			PreviousOutpoint: &Outpoint{
-				TransactionID: wireTransactionIDToProto(&input.PreviousOutpoint.TxID),
+				TransactionID: domainTransactionIDToProto(&input.PreviousOutpoint.TxID),
 				Index:         input.PreviousOutpoint.Index,
 			},
 			SignatureScript: input.SignatureScript,
@@ -88,14 +88,14 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 
 	var payloadHash *Hash
 	if msgTx.PayloadHash != nil {
-		payloadHash = wireHashToProto(msgTx.PayloadHash)
+		payloadHash = domainHashToProto(msgTx.PayloadHash)
 	}
 	*x = TransactionMessage{
 		Version:      msgTx.Version,
 		Inputs:       protoInputs,
 		Outputs:      protoOutputs,
 		LockTime:     msgTx.LockTime,
-		SubnetworkID: wireSubnetworkIDToProto(&msgTx.SubnetworkID),
+		SubnetworkID: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
 		PayloadHash:  payloadHash,
 		Payload:      msgTx.Payload,

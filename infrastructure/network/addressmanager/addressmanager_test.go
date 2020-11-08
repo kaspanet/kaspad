@@ -6,17 +6,22 @@ package addressmanager
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/pkg/errors"
 )
@@ -108,7 +113,7 @@ func lookupFuncForTest(host string) ([]net.IP, error) {
 }
 
 func newAddrManagerForTest(t *testing.T, testName string,
-	localSubnetworkID *subnetworkid.SubnetworkID) (addressManager *AddressManager, teardown func()) {
+	localSubnetworkID *externalapi.DomainSubnetworkID) (addressManager *AddressManager, teardown func()) {
 
 	cfg := config.DefaultConfig()
 	cfg.SubnetworkID = localSubnetworkID
@@ -118,7 +123,7 @@ func newAddrManagerForTest(t *testing.T, testName string,
 		t.Fatalf("Error creating temporary directory: %s", err)
 	}
 
-	databaseContext, err := dbaccess.New(dbPath)
+	databaseContext, err := ldb.NewLevelDB(dbPath)
 	if err != nil {
 		t.Fatalf("error creating db: %s", err)
 	}
@@ -331,7 +336,7 @@ func TestGood(t *testing.T) {
 	addrsToAdd := 64 * 64
 	addrs := make([]*appmessage.NetAddress, addrsToAdd)
 	subnetworkCount := 32
-	subnetworkIDs := make([]*subnetworkid.SubnetworkID, subnetworkCount)
+	subnetworkIDs := make([]*externalapi.DomainSubnetworkID, subnetworkCount)
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
@@ -343,7 +348,7 @@ func TestGood(t *testing.T) {
 	}
 
 	for i := 0; i < subnetworkCount; i++ {
-		subnetworkIDs[i] = &subnetworkid.SubnetworkID{0xff - byte(i)}
+		subnetworkIDs[i] = &externalapi.DomainSubnetworkID{0xff - byte(i)}
 	}
 
 	srcAddr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
@@ -380,7 +385,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	addrKey := NetAddressKey(addr)
 	srcAddr := appmessage.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	oldSubnetwork := subnetworkid.SubnetworkIDNative
+	oldSubnetwork := &subnetworks.SubnetworkIDNative
 	amgr.AddAddress(addr, srcAddr, oldSubnetwork)
 	amgr.Good(addr, oldSubnetwork)
 
@@ -389,7 +394,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	if ka == nil {
 		t.Fatalf("Address was not found after first time .Good called")
 	}
-	if !ka.SubnetworkID().IsEqual(oldSubnetwork) {
+	if *ka.SubnetworkID() != *oldSubnetwork {
 		t.Fatalf("Address index did not point to oldSubnetwork")
 	}
 
@@ -406,7 +411,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	}
 
 	// now call .Good again with a different subnetwork
-	newSubnetwork := subnetworkid.SubnetworkIDRegistry
+	newSubnetwork := &subnetworks.SubnetworkIDRegistry
 	amgr.Good(addr, newSubnetwork)
 
 	// make sure address was updated in addressIndex under newSubnetwork
@@ -414,7 +419,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 	if ka == nil {
 		t.Fatalf("Address was not found after second time .Good called")
 	}
-	if !ka.SubnetworkID().IsEqual(newSubnetwork) {
+	if *ka.SubnetworkID() != *newSubnetwork {
 		t.Fatalf("Address index did not point to newSubnetwork")
 	}
 
@@ -444,7 +449,7 @@ func TestGoodChangeSubnetworkID(t *testing.T) {
 }
 
 func TestGetAddress(t *testing.T) {
-	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
+	localSubnetworkID := &externalapi.DomainSubnetworkID{0xff}
 	amgr, teardown := newAddrManagerForTest(t, "TestGetAddress", localSubnetworkID)
 	defer teardown()
 
@@ -465,7 +470,7 @@ func TestGetAddress(t *testing.T) {
 	amgr.Attempt(ka.NetAddress())
 
 	// Checks that we don't get it if we find that it has other subnetwork ID than expected.
-	actualSubnetworkID := &subnetworkid.SubnetworkID{0xfe}
+	actualSubnetworkID := &externalapi.DomainSubnetworkID{0xfe}
 	amgr.Good(ka.NetAddress(), actualSubnetworkID)
 	ka = amgr.GetAddress()
 	if ka != nil {
@@ -492,7 +497,7 @@ func TestGetAddress(t *testing.T) {
 	if ka.NetAddress().IP.String() != someIP {
 		t.Errorf("Wrong IP: got %v, want %v", ka.NetAddress().IP.String(), someIP)
 	}
-	if !ka.SubnetworkID().IsEqual(localSubnetworkID) {
+	if *ka.SubnetworkID() != *localSubnetworkID {
 		t.Errorf("Wrong Subnetwork ID: got %v, want %v", *ka.SubnetworkID(), localSubnetworkID)
 	}
 	amgr.Attempt(ka.NetAddress())

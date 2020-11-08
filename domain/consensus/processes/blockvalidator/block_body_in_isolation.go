@@ -3,13 +3,13 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -80,8 +80,7 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 }
 
 func (v *blockValidator) checkCoinbase(block *externalapi.DomainBlock) error {
-	_, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.
-		Transactions[transactionhelper.CoinbaseTransactionIndex])
+	_, _, err := coinbase.ExtractCoinbaseDataAndBlueScore(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
 	}
@@ -115,7 +114,7 @@ func (v *blockValidator) checkBlockContainsOnlyOneCoinbase(block *externalapi.Do
 }
 
 func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlock) error {
-	for i, tx := range block.Transactions[util.CoinbaseTransactionIndex+1:] {
+	for i, tx := range block.Transactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworks.Less(tx.SubnetworkID, block.Transactions[i].SubnetworkID) {
 			return errors.Wrapf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}

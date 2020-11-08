@@ -31,22 +31,22 @@ func (x *BlockMessage) toAppMessage() (appmessage.Message, error) {
 			"is %d", len(protoBlockHeader.ParentHashes), appmessage.MaxBlockParents)
 	}
 
-	parentHashes, err := protoHashesToWire(protoBlockHeader.ParentHashes)
+	parentHashes, err := protoHashesToDomain(protoBlockHeader.ParentHashes)
 	if err != nil {
 		return nil, err
 	}
 
-	hashMerkleRoot, err := protoBlockHeader.HashMerkleRoot.toWire()
+	hashMerkleRoot, err := protoBlockHeader.HashMerkleRoot.toDomain()
 	if err != nil {
 		return nil, err
 	}
 
-	acceptedIDMerkleRoot, err := protoBlockHeader.AcceptedIDMerkleRoot.toWire()
+	acceptedIDMerkleRoot, err := protoBlockHeader.AcceptedIDMerkleRoot.toDomain()
 	if err != nil {
 		return nil, err
 	}
 
-	utxoCommitment, err := protoBlockHeader.UtxoCommitment.toWire()
+	utxoCommitment, err := protoBlockHeader.UtxoCommitment.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -91,10 +91,10 @@ func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
 	header := msgBlock.Header
 	protoHeader := &BlockHeader{
 		Version:              header.Version,
-		ParentHashes:         wireHashesToProto(header.ParentHashes),
-		HashMerkleRoot:       wireHashToProto(header.HashMerkleRoot),
-		AcceptedIDMerkleRoot: wireHashToProto(header.AcceptedIDMerkleRoot),
-		UtxoCommitment:       wireHashToProto(header.UTXOCommitment),
+		ParentHashes:         domainHashesToProto(header.ParentHashes),
+		HashMerkleRoot:       domainHashToProto(header.HashMerkleRoot),
+		AcceptedIDMerkleRoot: domainHashToProto(header.AcceptedIDMerkleRoot),
+		UtxoCommitment:       domainHashToProto(header.UTXOCommitment),
 		Timestamp:            header.Timestamp.UnixMilliseconds(),
 		Bits:                 header.Bits,
 		Nonce:                header.Nonce,

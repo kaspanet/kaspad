@@ -2,10 +2,11 @@ package consensusserialization
 
 import (
 	"encoding/binary"
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
-	"io"
 )
 
 var (
@@ -75,7 +76,21 @@ func WriteElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
+	case externalapi.DomainHash:
+		_, err := w.Write(e[:])
+		if err != nil {
+			return err
+		}
+		return nil
+
 	case *externalapi.DomainHash:
+		_, err := w.Write(e[:])
+		if err != nil {
+			return err
+		}
+		return nil
+
+	case externalapi.DomainSubnetworkID:
 		_, err := w.Write(e[:])
 		if err != nil {
 			return err

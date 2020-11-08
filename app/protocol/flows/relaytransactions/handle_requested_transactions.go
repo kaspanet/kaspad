@@ -30,7 +30,7 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 		}
 
 		for _, transactionID := range msgRequestTransactions.IDs {
-			tx, ok := flow.TxPool().FetchTransaction(transactionID)
+			tx, ok := flow.Domain().MiningManager().GetTransaction(transactionID)
 
 			if !ok {
 				msgTransactionNotFound := appmessage.NewMsgTransactionNotFound(transactionID)
@@ -41,7 +41,7 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 				continue
 			}
 
-			err := flow.outgoingRoute.Enqueue(tx.MsgTx())
+			err := flow.outgoingRoute.Enqueue(appmessage.DomainTransactionToMsgTx(tx))
 			if err != nil {
 				return err
 			}

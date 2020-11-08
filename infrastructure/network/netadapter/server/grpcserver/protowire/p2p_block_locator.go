@@ -10,7 +10,7 @@ func (x *KaspadMessage_BlockLocator) toAppMessage() (appmessage.Message, error) 
 		return nil, errors.Errorf("too many block locator hashes for message "+
 			"[count %d, max %d]", len(x.BlockLocator.Hashes), appmessage.MaxBlockLocatorsPerMsg)
 	}
-	hashes, err := protoHashesToWire(x.BlockLocator.Hashes)
+	hashes, err := protoHashesToDomain(x.BlockLocator.Hashes)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (x *KaspadMessage_BlockLocator) fromAppMessage(msgBlockLocator *appmessage.
 			"[count %d, max %d]", len(msgBlockLocator.BlockLocatorHashes), appmessage.MaxBlockLocatorsPerMsg)
 	}
 	x.BlockLocator = &BlockLocatorMessage{
-		Hashes: wireHashesToProto(msgBlockLocator.BlockLocatorHashes),
+		Hashes: domainHashesToProto(msgBlockLocator.BlockLocatorHashes),
 	}
 	return nil
 }

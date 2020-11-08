@@ -6,19 +6,21 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
 // HandleIBDContext is the interface for the context needed for the HandleIBD flow.
 type HandleIBDContext interface {
-	DAG() *blockdag.BlockDAG
-	OnNewBlock(block *util.Block) error
-	StartIBDIfRequired()
-	FinishIBD()
+	Domain() domain.Domain
+	Config() *config.Config
+	OnNewBlock(block *externalapi.DomainBlock) error
+	FinishIBD() error
 }
 
 type handleIBDFlow struct {
@@ -65,10 +67,10 @@ func (flow *handleIBDFlow) runIBD() error {
 	return flow.downloadBlocks(highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *daghash.Hash) (lowHash *daghash.Hash,
+func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (lowHash *externalapi.DomainHash,
 	err error) {
 
-	lowHash = flow.DAG().Params.GenesisHash
+	lowHash = flow.Config().ActiveNetParams.GenesisHash
 	highHash := peerSelectedTipHash
 
 	for {
@@ -86,21 +88,28 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *dagha
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		if flow.DAG().IsInDAG(locatorHighHash) {
+		locatorHighHashInfo, err := flow.Domain().Consensus().GetBlockInfo(locatorHighHash)
+		if err != nil {
+			return nil, err
+		}
+		if locatorHighHashInfo.Exists {
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash = flow.DAG().FindNextLocatorBoundaries(blockLocatorHashes)
+		highHash, lowHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		if err != nil {
+			return nil, err
+		}
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *daghash.Hash, highHash *daghash.Hash) error {
+func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) error {
 
 	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
-func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.Hash, err error) {
+func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
@@ -114,8 +123,8 @@ func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*daghash.
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash) error {
+func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *externalapi.DomainHash,
+	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	err := flow.sendGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
@@ -148,8 +157,8 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *daghash.Hash,
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *daghash.Hash,
-	peerSelectedTipHash *daghash.Hash) error {
+func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *externalapi.DomainHash,
+	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	msgGetBlockInvs := appmessage.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
@@ -173,27 +182,24 @@ func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBloc
 }
 
 func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
-	block := util.NewBlock(msgIBDBlock.MsgBlock)
-	if flow.DAG().IsInDAG(block.Hash()) {
-		log.Debugf("IBD block %s is already in the DAG. Skipping...", block.Hash())
+	block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+	blockHash := consensusserialization.BlockHash(block)
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
+	if err != nil {
+		return err
+	}
+	if blockInfo.Exists {
+		log.Debugf("IBD block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
+	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
-		if !errors.As(err, &blockdag.RuleError{}) {
-			return errors.Wrapf(err, "failed to process block %s during IBD", block.Hash())
+		if !errors.As(err, &ruleerrors.RuleError{}) {
+			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
 		}
-		log.Infof("Rejected block %s from %s during IBD: %s", block.Hash(), flow.peer, err)
+		log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", block.Hash())
-	}
-	if isOrphan {
-		return protocolerrors.Errorf(true, "received orphan block %s "+
-			"during IBD", block.Hash())
-	}
-	if isDelayed {
-		return protocolerrors.Errorf(false, "received delayed block %s "+
-			"during IBD", block.Hash())
+		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
 	err = flow.OnNewBlock(block)
 	if err != nil {

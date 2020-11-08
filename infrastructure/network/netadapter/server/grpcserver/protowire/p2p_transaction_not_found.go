@@ -5,7 +5,7 @@ import (
 )
 
 func (x *KaspadMessage_TransactionNotFound) toAppMessage() (appmessage.Message, error) {
-	id, err := x.TransactionNotFound.Id.toWire()
+	id, err := x.TransactionNotFound.Id.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -14,7 +14,7 @@ func (x *KaspadMessage_TransactionNotFound) toAppMessage() (appmessage.Message, 
 
 func (x *KaspadMessage_TransactionNotFound) fromAppMessage(msgTransactionsNotFound *appmessage.MsgTransactionNotFound) error {
 	x.TransactionNotFound = &TransactionNotFoundMessage{
-		Id: wireTransactionIDToProto(msgTransactionsNotFound.ID),
+		Id: domainTransactionIDToProto(msgTransactionsNotFound.ID),
 	}
 	return nil
 }

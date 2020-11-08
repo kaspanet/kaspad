@@ -3,16 +3,20 @@ package protowire
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, error) {
+	blockAppMessage, err := x.SubmitBlockRequest.Block.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+
 	return &appmessage.SubmitBlockRequestMessage{
-		BlockHex: x.SubmitBlockRequest.BlockHex,
+		Block: blockAppMessage.(*appmessage.MsgBlock),
 	}, nil
 }
 
 func (x *KaspadMessage_SubmitBlockRequest) fromAppMessage(message *appmessage.SubmitBlockRequestMessage) error {
-	x.SubmitBlockRequest = &SubmitBlockRequestMessage{
-		BlockHex: message.BlockHex,
-	}
-	return nil
+
+	x.SubmitBlockRequest = &SubmitBlockRequestMessage{}
+	return x.SubmitBlockRequest.Block.fromAppMessage(message.Block)
 }
 
 func (x *KaspadMessage_SubmitBlockResponse) toAppMessage() (appmessage.Message, error) {
