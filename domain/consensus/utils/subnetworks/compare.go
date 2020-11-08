@@ -21,3 +21,13 @@ func cmp(a, b externalapi.DomainSubnetworkID) int {
 func Less(a, b externalapi.DomainSubnetworkID) bool {
 	return cmp(a, b) < 0
 }
+
+func IsEqual(a, b *externalapi.DomainSubnetworkID) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
+}
