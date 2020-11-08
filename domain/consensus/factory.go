@@ -221,7 +221,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headerTipsStore)
 
-	return &consensus{
+	c := &consensus{
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
@@ -235,7 +235,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pruningStore:      pruningStore,
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
-	}, nil
+	}
+
+	genesisInfo, err := c.GetBlockInfo(genesisHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if !genesisInfo.Exists {
+		err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c, nil
 }
 
 // NewFactory creates a new Consensus factory

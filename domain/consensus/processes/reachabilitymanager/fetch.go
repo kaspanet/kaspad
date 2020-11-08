@@ -6,6 +6,18 @@ import (
 )
 
 func (rt *reachabilityManager) data(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+	hasData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasData {
+		return &model.ReachabilityData{
+			TreeNode:          nil,
+			FutureCoveringSet: nil,
+		}, nil
+	}
+
 	return rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 }
 

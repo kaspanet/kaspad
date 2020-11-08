@@ -4,6 +4,7 @@ package externalapi
 // states of the consensus
 const (
 	SyncStateNormal SyncState = iota
+	SyncStateMissingGenesis
 	SyncStateHeadersFirst
 	SyncStateMissingUTXOSet
 	SyncStateMissingBlockBodies

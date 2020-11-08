@@ -18,14 +18,14 @@ func New() model.ConsensusStateStore {
 	return &consensusStateStore{}
 }
 
-func (c consensusStateStore) Discard() {
+func (c *consensusStateStore) Discard() {
 	c.stagedTips = nil
 	c.stagedVirtualUTXODiff = nil
 	c.stagedVirtualDiffParents = nil
 	c.stagedVirtualUTXOSet = nil
 }
 
-func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
+func (c *consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	err := c.commitTips(dbTx)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (c consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (c consensusStateStore) IsStaged() bool {
+func (c *consensusStateStore) IsStaged() bool {
 	return c.stagedTips != nil ||
 		c.stagedVirtualDiffParents != nil ||
 		c.stagedVirtualUTXODiff != nil

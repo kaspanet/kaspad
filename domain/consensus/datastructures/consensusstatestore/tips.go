@@ -9,7 +9,7 @@ import (
 
 var tipsKey = dbkeys.MakeBucket().Key([]byte("tips"))
 
-func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+func (c *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if c.stagedTips != nil {
 		return c.stagedTips, nil
 	}
@@ -22,11 +22,11 @@ func (c consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.Doma
 	return hashes.DeserializeHashSlice(tipsBytes)
 }
 
-func (c consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
+func (c *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
 	c.stagedTips = tipHashes
 }
 
-func (c consensusStateStore) commitTips(dbTx model.DBTransaction) error {
+func (c *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
 	tipsBytes := hashes.SerializeHashSlice(c.stagedTips)
 
 	err := dbTx.Put(tipsKey, tipsBytes)

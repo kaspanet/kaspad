@@ -26,9 +26,18 @@ func New(databaseContext model.DBReader,
 }
 
 func (h headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
-	tips, err := h.headerTipsStore.Tips(h.databaseContext)
+	tips := []*externalapi.DomainHash{}
+	hasTips, err := h.headerTipsStore.HasTips(h.databaseContext)
 	if err != nil {
 		return err
+	}
+
+	if hasTips {
+		var err error
+		tips, err = h.headerTipsStore.Tips(h.databaseContext)
+		if err != nil {
+			return err
+		}
 	}
 
 	newTips := make([]*externalapi.DomainHash, 0, len(tips)+1)

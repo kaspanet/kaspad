@@ -9,5 +9,6 @@ type ReachabilityDataStore interface {
 	StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash)
 	IsAnythingStaged() bool
 	ReachabilityData(dbContext DBReader, blockHash *externalapi.DomainHash) (*ReachabilityData, error)
+	HasReachabilityData(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
 	ReachabilityReindexRoot(dbContext DBReader) (*externalapi.DomainHash, error)
 }

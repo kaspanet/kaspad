@@ -26,12 +26,12 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
+	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if status != externalapi.StatusHeaderOnly {
+	if !isHeadersOnlyBlock {
 		err = v.ghostdagManager.GHOSTDAG(blockHash)
 		if err != nil {
 			return err
@@ -49,6 +49,24 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	}
 
 	return nil
+}
+
+func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		return false, nil
+	}
+
+	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	return status == externalapi.StatusHeaderOnly, nil
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent

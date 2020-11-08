@@ -7,21 +7,17 @@ package dagconfig
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // TestGenesisBlock tests the genesis block of the main network for validity by
 // checking the encoded hash.
 func TestGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(MainnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(MainnetParams.GenesisBlock)
 	if *MainnetParams.GenesisHash != *hash {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(MainnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash, MainnetParams.GenesisHash)
 	}
 }
 
@@ -29,11 +25,11 @@ func TestGenesisBlock(t *testing.T) {
 // validity by checking the hash.
 func TestTestnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(TestnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(TestnetParams.GenesisBlock)
 	if *TestnetParams.GenesisHash != *hash {
 		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(TestnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			TestnetParams.GenesisHash)
 	}
 }
 
@@ -41,11 +37,11 @@ func TestTestnetGenesisBlock(t *testing.T) {
 // for validity by checking the hash.
 func TestSimnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(SimnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(SimnetParams.GenesisBlock)
 	if *SimnetParams.GenesisHash != *hash {
 		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(SimnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			SimnetParams.GenesisHash)
 	}
 }
 
@@ -53,10 +49,10 @@ func TestSimnetGenesisBlock(t *testing.T) {
 // for validity by checking the encoded hash.
 func TestDevnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(appmessage.MsgBlockToDomainBlock(DevnetParams.GenesisBlock))
+	hash := consensusserialization.BlockHash(DevnetParams.GenesisBlock)
 	if *DevnetParams.GenesisHash != *hash {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
-			"not appear valid - got %v, want %v", spew.Sdump(hash),
-			spew.Sdump(DevnetParams.GenesisHash))
+			"not appear valid - got %v, want %v", hash,
+			DevnetParams.GenesisHash)
 	}
 }

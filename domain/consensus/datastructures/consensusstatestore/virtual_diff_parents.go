@@ -9,7 +9,7 @@ import (
 
 var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents"))
 
-func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if c.stagedVirtualDiffParents != nil {
 		return c.stagedVirtualDiffParents, nil
 	}
@@ -22,11 +22,11 @@ func (c consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*ex
 	return hashes.DeserializeHashSlice(virtualDiffParentsBytes)
 }
 
-func (c consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
+func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
 	c.stagedVirtualDiffParents = tipHashes
 }
 
-func (c consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
+func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
 	virtualDiffParentsBytes := hashes.SerializeHashSlice(c.stagedVirtualDiffParents)
 
 	err := dbTx.Put(virtualDiffParentsKey, virtualDiffParentsBytes)

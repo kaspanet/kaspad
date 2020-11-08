@@ -8,5 +8,10 @@ func (h headerTipsManager) SelectedTip() (*externalapi.DomainHash, error) {
 		return nil, err
 	}
 
-	return h.ghostdagManager.ChooseSelectedParent(tips...)
+	selectedTip, err := h.ghostdagManager.ChooseSelectedParent(tips...)
+	if err != nil {
+		return nil, err
+	}
+
+	return selectedTip, nil
 }

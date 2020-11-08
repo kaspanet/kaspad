@@ -14,28 +14,46 @@ type headerTipsStore struct {
 	staging []*externalapi.DomainHash
 }
 
-func (h headerTipsStore) Discard() {
+func (h *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
+	if h.staging != nil {
+		return len(h.staging) > 0, nil
+	}
+
+	return dbContext.Has(headerTipsKey)
+}
+
+func (h *headerTipsStore) Discard() {
 	h.staging = nil
 }
 
-func (h headerTipsStore) Commit(dbTx model.DBTransaction) error {
+func (h *headerTipsStore) Commit(dbTx model.DBTransaction) error {
+	if h.staging == nil {
+		return nil
+	}
+
 	tipsBytes, err := h.serializeTips(h.staging)
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Put(headerTipsKey, tipsBytes)
+	err = dbTx.Put(headerTipsKey, tipsBytes)
+	if err != nil {
+		return err
+	}
+
+	h.Discard()
+	return nil
 }
 
-func (h headerTipsStore) Stage(tips []*externalapi.DomainHash) {
+func (h *headerTipsStore) Stage(tips []*externalapi.DomainHash) {
 	h.staging = tips
 }
 
-func (h headerTipsStore) IsStaged() bool {
+func (h *headerTipsStore) IsStaged() bool {
 	return h.staging != nil
 }
 
-func (h headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+func (h *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if h.staging != nil {
 		return h.staging, nil
 	}
@@ -48,12 +66,12 @@ func (h headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHa
 	return h.deserializeTips(tipsBytes)
 }
 
-func (h headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
+func (h *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
 	dbTips := serialization.HeaderTipsToDBHeaderTips(tips)
 	return proto.Marshal(dbTips)
 }
 
-func (h headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
+func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
 	dbTips := &serialization.DbHeaderTips{}
 	err := proto.Unmarshal(tipsBytes, dbTips)
 	if err != nil {

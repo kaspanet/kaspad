@@ -88,6 +88,14 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	return rds.deserializeReachabilityData(reachabilityDataBytes)
 }
 
+func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+	if _, ok := rds.reachabilityDataStaging[*blockHash]; ok {
+		return true, nil
+	}
+
+	return dbContext.Has(rds.reachabilityDataBlockHashAsKey(blockHash))
+}
+
 // ReachabilityReindexRoot returns the current reachability reindex root
 func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBReader) (*externalapi.DomainHash, error) {
 	if rds.reachabilityReindexRootStaging != nil {
