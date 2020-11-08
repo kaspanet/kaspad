@@ -267,10 +267,10 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructur
 		return nil, err
 	}
 
-	consensusAsObject := consensusAsInterface.(*consensus)
+	consensusAsImplementation := consensusAsInterface.(*consensus)
 
 	return &testConsensus{
-		consensus:        consensusAsObject,
-		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsObject.blockBuilder),
+		consensus:        consensusAsImplementation,
+		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
 	}, nil
 }

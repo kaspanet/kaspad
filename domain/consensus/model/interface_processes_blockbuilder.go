@@ -9,6 +9,7 @@ type BlockBuilder interface {
 
 // TestBlockBuilder adds to the main BlockBuilder methods required by tests
 type TestBlockBuilder interface {
+	BlockBuilder
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
 }
