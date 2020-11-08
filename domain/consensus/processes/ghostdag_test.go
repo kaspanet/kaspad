@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"testing"
 )
@@ -31,10 +32,20 @@ func DeepEqualHashArrays(runtime, expected []*externalapi.DomainHash) bool {
 }
 
 func TestGHOSTDA(t *testing.T) {
-	//t.Errorf("helo") //keep running
-	//if false {
-	//	t.Fatalf("The test failed") // string - //stop
-	//}
+
+	type implManager struct {
+		function func(
+			databaseContext model.DBReader,
+			dagTopologyManager model.DAGTopologyManager,
+			ghostdagDataStore model.GHOSTDAGDataStore,
+			k model.KType) model.GHOSTDAGManager
+		implName string
+	}
+
+	//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
+	implementationFactories := []implManager{{ghostdagmanager.New, "Original"},
+		{ghostdag2.New, "Tal's impl"},
+	}
 
 	type testGhostdagData struct {
 		hash                   *externalapi.DomainHash
@@ -68,7 +79,7 @@ func TestGHOSTDA(t *testing.T) {
 	}
 
 	// ****************************** TESTS ****************************** //
-	// test1: Graph form is a chain. K = 0
+	// Test1: Graph form is a chain. K = 0
 	dag1 := isolatedTest{
 		k: 0,
 		subTests: []testGhostdagData{
@@ -99,7 +110,7 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}
 
-	//test2 : The graph’s longest chain was created by malicious miners (not the “heaviest”). K = 3
+	//Test2 : The graph’s longest chain was created by malicious miners (not the “heaviest”). K = 3
 	dag2 := isolatedTest{k: 3, subTests: []testGhostdagData{
 		{ /* 1*/
 			hash:                   &externalapi.DomainHash{1},
@@ -183,7 +194,7 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}}
 
-	// test3: Selected Parent choice: same score – decide by hashes. K = 3
+	// Test3: Selected Parent choice: same score – decide by hashes. K = 3
 	dag3 := isolatedTest{k: 3, subTests: []testGhostdagData{
 		{ /* 1*/
 			hash:                   &externalapi.DomainHash{1},
@@ -235,7 +246,7 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}}
 
-	//test 4: mergeSetReds is not empty, one of the block in the mergeSet is not connected to more than k . K = 1
+	//Test 4: mergeSetReds is not empty, one of the block in the mergeSet is not connected to more than k . K = 1
 	dag4 := isolatedTest{k: 1, subTests: []testGhostdagData{
 		{
 			hash:                   &externalapi.DomainHash{1},
@@ -271,7 +282,7 @@ func TestGHOSTDA(t *testing.T) {
 		},
 	}}
 
-	//test 5: Adding a block to the mergeSet will destroy one of the blue block K-cluster.(the block is keeping K-cluster )
+	//Test 5: Adding a block to the mergeSet will destroy one of the blue block K-cluster.(the block is keeping K-cluster )
 	dag5 := isolatedTest{k: 2, subTests: []testGhostdagData{
 		{
 			hash:                   &externalapi.DomainHash{1},
@@ -348,52 +359,57 @@ func TestGHOSTDA(t *testing.T) {
 	}}
 
 	testsArr := []*isolatedTest{&dag1, &dag2, &dag3, &dag4, &dag5}
-	for testIndex, testInfo := range testsArr {
-		g := ghostdagmanager.New(nil, dagTopology, ghostdagDataStore, testInfo.k)
-		//g := ghostdag2.New(nil, dagTopology, ghostdagDataStore, testInfo.k)
-		for i, testBlockData := range testInfo.subTests {
-			dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
-			err := g.GHOSTDAG(testBlockData.hash)
-			if err != nil {
-				t.Fatalf("test #%d failed: GHOSTDAG error: %s", i, err)
-			}
-			ghostdagData, err := ghostdagDataStore.Get(nil, testBlockData.hash)
-			if err != nil {
-				t.Fatalf("test #%d failed: ghostdagDataStore error: %s", i, err)
-			}
-			if testBlockData.expectedBlueScore != (ghostdagData.BlueScore) {
-				t.Fatalf("test #%d failed: expected blue score %d but got %d", i, testBlockData.expectedBlueScore, ghostdagData.BlueScore)
-			}
+	for _, factory := range implementationFactories {
+		fmt.Printf("____________________________\n")
+		for testNum, test := range testsArr {
+			g := factory.function(nil, dagTopology, ghostdagDataStore, test.k)
+			fmt.Printf("Impl:%s,  TestNum:%d\n", factory.implName, testNum+1)
+			for _, testBlockData := range test.subTests {
+				dagTopology.parentsMap[*testBlockData.hash] = testBlockData.parents
+				err := g.GHOSTDAG(testBlockData.hash)
+				if err != nil {
+					t.Fatalf("Test #%d failed:on  GHOSTDAG error: %s.", testNum+1, err)
+				}
+				ghostdagData, err := ghostdagDataStore.Get(nil, testBlockData.hash)
+				if err != nil {
+					t.Fatalf("Test #%d failed: ghostdagDataStore error: %s.", testNum+1, err)
+				}
+				if testBlockData.expectedBlueScore != (ghostdagData.BlueScore) {
+					t.Fatalf("Test #%d failed: expected blue score %d but got %d.", testNum+1, testBlockData.expectedBlueScore, ghostdagData.BlueScore)
+				}
 
-			if *testBlockData.expectedSelectedParent != *ghostdagData.SelectedParent {
-				t.Fatalf("test #%d failed: expected selected parent %v but got %v", i, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
+				if *testBlockData.expectedSelectedParent != *ghostdagData.SelectedParent {
+					t.Fatalf("Test #%d failed: expected selected parent %v but got %v.", testNum+1, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
+				}
+
+				if !DeepEqualHashArrays(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
+					t.Fatalf("Test #%d failed: expected merge set blues %v but got %v.", testNum+1, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+				}
+
+				if !DeepEqualHashArrays(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
+					t.Fatalf("Test #%d failed: expected merge set reds %v but got %v.", testNum+1, testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds)
+				}
+
 			}
+			fmt.Printf("    Test success!\n\n")
 
-			if !DeepEqualHashArrays(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
-				t.Fatalf("test #%d failed: expected merge set blues %v but got %v", i, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
+			//fmt.Printf("Test %d successfully finished. \n", testStruct.testNum+1)
+
+			dagTopology := &DAGTopologyManagerImpl{
+				parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
 			}
+			dagTopology.parentsMap[*genesisHash] = nil
 
-			if !DeepEqualHashArrays(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
-				t.Fatalf("test #%d failed: expected merge set reds %v but got %v", i, testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds)
+			ghostdagDataStore := &GHOSTDAGDataStoreImpl{
+				dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
 			}
-
-		}
-		fmt.Printf("test %d finished \n", testIndex)
-
-		dagTopology := &DAGTopologyManagerImpl{
-			parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
-		}
-		dagTopology.parentsMap[*genesisHash] = nil
-
-		ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-			dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-		}
-		ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
-			BlueScore:          1,
-			SelectedParent:     nil,
-			MergeSetBlues:      nil,
-			MergeSetReds:       nil,
-			BluesAnticoneSizes: nil,
+			ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
+				BlueScore:          1,
+				SelectedParent:     nil,
+				MergeSetBlues:      nil,
+				MergeSetReds:       nil,
+				BluesAnticoneSizes: nil,
+			}
 		}
 	}
 
@@ -416,7 +432,7 @@ func (ds *GHOSTDAGDataStoreImpl) Discard() {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTxProxy) error {
+func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
@@ -424,7 +440,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTxProxy) error {
 //	ds.dagMap[*blockHash] = blockGHOSTDAGData
 //	return nil
 //}
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBContextProxy, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil
@@ -500,5 +516,9 @@ func (gh *DAGTopologyManagerImpl) IsAncestorOfAny(blockHash *externalapi.DomainH
 	panic("unimplemented")
 }
 func (gh *DAGTopologyManagerImpl) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	panic("unimplemented")
+}
+
+func (gh *DAGTopologyManagerImpl) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
 	panic("unimplemented")
 }
