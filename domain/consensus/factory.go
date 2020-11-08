@@ -16,6 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
@@ -42,6 +43,11 @@ type Factory interface {
 }
 
 type factory struct{}
+
+// NewFactory creates a new Consensus factory
+func NewFactory() Factory {
+	return &factory{}
+}
 
 // NewConsensus instantiates a new Consensus
 func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
@@ -253,7 +259,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	}, nil
 }
 
-// NewFactory creates a new Consensus factory
-func NewFactory() Factory {
-	return &factory{}
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (
+	testapi.TestConsensus, error) {
+
+	mainConsensus, err := f.NewConsensus(dagParams, db)
+	if err != nil {
+		return nil, err
+	}
+	return &testConsensus{consensus: mainConsensus.(*consensus)}, nil
 }
