@@ -2,9 +2,10 @@ package hashes
 
 import (
 	"crypto/sha256"
+	"hash"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"hash"
 )
 
 // HashWriter is used to incrementally hash data without concatenating all of the data to a single buffer
@@ -25,13 +26,15 @@ func (h *HashWriter) Write(p []byte) (n int, err error) {
 }
 
 // Finalize returns the resulting double hash
-func (h *HashWriter) Finalize() externalapi.DomainHash {
+func (h *HashWriter) Finalize() *externalapi.DomainHash {
 	firstHashInTheSum := h.inner.Sum(nil)
-	return sha256.Sum256(firstHashInTheSum)
+	sum := externalapi.DomainHash(sha256.Sum256(firstHashInTheSum))
+
+	return &sum
 }
 
 // HashData hashes the given byte slice
-func HashData(data []byte) externalapi.DomainHash {
+func HashData(data []byte) *externalapi.DomainHash {
 	w := NewHashWriter()
 	_, err := w.Write(data)
 	if err != nil {

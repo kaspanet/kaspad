@@ -4,11 +4,12 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/domain"
+
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
-	"github.com/kaspanet/kaspad/domain/blockdag"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 
@@ -23,9 +24,9 @@ import (
 type HandleHandshakeContext interface {
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
 	AddressManager() *addressmanager.AddressManager
-	StartIBDIfRequired()
+	StartIBDIfRequired() error
 	AddToPeers(peer *peerpkg.Peer) error
 	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
@@ -90,7 +91,10 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 		context.AddressManager().Good(peerAddress, subnetworkID)
 	}
 
-	context.StartIBDIfRequired()
+	err = context.StartIBDIfRequired()
+	if err != nil {
+		return nil, err
+	}
 
 	return peer, nil
 }

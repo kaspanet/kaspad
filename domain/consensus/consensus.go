@@ -105,7 +105,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	if err != nil {
 		return nil, err
 	}
-	blockInfo.BlockStatus = &blockStatus
+	blockInfo.BlockStatus = blockStatus
 
 	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
 	if err != nil {

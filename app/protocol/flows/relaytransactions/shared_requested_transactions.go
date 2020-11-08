@@ -1,24 +1,25 @@
 package relaytransactions
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // SharedRequestedTransactions is a data structure that is shared between peers that
 // holds the IDs of all the requested transactions to prevent redundant requests.
 type SharedRequestedTransactions struct {
-	transactions map[daghash.TxID]struct{}
+	transactions map[externalapi.DomainTransactionID]struct{}
 	sync.Mutex
 }
 
-func (s *SharedRequestedTransactions) remove(txID *daghash.TxID) {
+func (s *SharedRequestedTransactions) remove(txID *externalapi.DomainTransactionID) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.transactions, *txID)
 }
 
-func (s *SharedRequestedTransactions) removeMany(txIDs []*daghash.TxID) {
+func (s *SharedRequestedTransactions) removeMany(txIDs []*externalapi.DomainTransactionID) {
 	s.Lock()
 	defer s.Unlock()
 	for _, txID := range txIDs {
@@ -26,7 +27,7 @@ func (s *SharedRequestedTransactions) removeMany(txIDs []*daghash.TxID) {
 	}
 }
 
-func (s *SharedRequestedTransactions) addIfNotExists(txID *daghash.TxID) (exists bool) {
+func (s *SharedRequestedTransactions) addIfNotExists(txID *externalapi.DomainTransactionID) (exists bool) {
 	s.Lock()
 	defer s.Unlock()
 	_, ok := s.transactions[*txID]
@@ -40,6 +41,6 @@ func (s *SharedRequestedTransactions) addIfNotExists(txID *daghash.TxID) (exists
 // NewSharedRequestedTransactions returns a new instance of SharedRequestedTransactions.
 func NewSharedRequestedTransactions() *SharedRequestedTransactions {
 	return &SharedRequestedTransactions{
-		transactions: make(map[daghash.TxID]struct{}),
+		transactions: make(map[externalapi.DomainTransactionID]struct{}),
 	}
 }

@@ -6,8 +6,6 @@ type GetBlockRequestMessage struct {
 	baseMessage
 	Hash                          string
 	SubnetworkID                  string
-	IncludeBlockHex               bool
-	IncludeBlockVerboseData       bool
 	IncludeTransactionVerboseData bool
 }
 
@@ -17,13 +15,10 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockRequestMessage returns a instance of the message
-func NewGetBlockRequestMessage(hash string, subnetworkID string, includeBlockHex bool,
-	includeBlockVerboseData bool, includeTransactionVerboseData bool) *GetBlockRequestMessage {
+func NewGetBlockRequestMessage(hash string, subnetworkID string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
 		Hash:                          hash,
 		SubnetworkID:                  subnetworkID,
-		IncludeBlockHex:               includeBlockHex,
-		IncludeBlockVerboseData:       includeBlockVerboseData,
 		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }
@@ -32,7 +27,6 @@ func NewGetBlockRequestMessage(hash string, subnetworkID string, includeBlockHex
 // its respective RPC message
 type GetBlockResponseMessage struct {
 	baseMessage
-	BlockHex         string
 	BlockVerboseData *BlockVerboseData
 
 	Error *RPCError
@@ -51,10 +45,6 @@ func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 // BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
-	Confirmations          uint64
-	Size                   int32
-	BlueScore              uint64
-	IsChainBlock           bool
 	Version                int32
 	VersionHex             string
 	HashMerkleRoot         string
@@ -68,16 +58,13 @@ type BlockVerboseData struct {
 	Difficulty             float64
 	ParentHashes           []string
 	SelectedParentHash     string
-	ChildHashes            []string
-	AcceptedBlockHashes    []string
 }
 
 // TransactionVerboseData holds verbose data about a transaction
 type TransactionVerboseData struct {
-	Hex                       string
 	TxID                      string
 	Hash                      string
-	Size                      int32
+	Size                      uint64
 	Version                   int32
 	LockTime                  uint64
 	SubnetworkID              string
@@ -87,8 +74,6 @@ type TransactionVerboseData struct {
 	TransactionVerboseInputs  []*TransactionVerboseInput
 	TransactionVerboseOutputs []*TransactionVerboseOutput
 	BlockHash                 string
-	AcceptedBy                string
-	IsInMempool               bool
 	Time                      uint64
 	BlockTime                 uint64
 }

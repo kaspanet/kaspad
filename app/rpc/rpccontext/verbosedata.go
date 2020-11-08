@@ -1,60 +1,29 @@
 package rpccontext
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/pointers"
 	"math/big"
 	"strconv"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/pointers"
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // This method must be called with the DAG lock held for reads
-func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
-	hash := block.Hash()
-	params := ctx.DAG.Params
-	blockHeader := block.MsgBlock().Header
-
-	blockBlueScore, err := ctx.DAG.BlueScoreByBlockHash(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the hashes for the next blocks unless there are none.
-	childHashes, err := ctx.DAG.ChildHashesByHash(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	blockConfirmations, err := ctx.DAG.BlockConfirmationsByHashNoLock(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedParentHash, err := ctx.DAG.SelectedParentHash(hash)
-	if err != nil {
-		return nil, err
-	}
-	selectedParentHashStr := ""
-	if selectedParentHash != nil {
-		selectedParentHashStr = selectedParentHash.String()
-	}
-
-	isChainBlock, err := ctx.DAG.IsInSelectedParentChain(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	acceptedBlockHashes, err := ctx.DAG.BluesByBlockHash(hash)
-	if err != nil {
-		return nil, err
-	}
+func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+	hash := consensusserialization.BlockHash(block)
+	blockHeader := block.Header
 
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
@@ -63,33 +32,24 @@ func (ctx *Context) BuildBlockVerboseData(block *util.Block, includeTransactionV
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
-		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
-		SelectedParentHash:   selectedParentHashStr,
+		ParentHashes:         externalapi.DomainHashesToStrings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
-		Time:                 blockHeader.Timestamp.UnixMilliseconds(),
-		Confirmations:        blockConfirmations,
-		BlueScore:            blockBlueScore,
-		IsChainBlock:         isChainBlock,
-		Size:                 int32(block.MsgBlock().SerializeSize()),
+		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, params),
-		ChildHashes:          daghash.Strings(childHashes),
-		AcceptedBlockHashes:  daghash.Strings(acceptedBlockHashes),
+		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
 	}
 
-	transactions := block.Transactions()
-	txIDs := make([]string, len(transactions))
-	for i, tx := range transactions {
-		txIDs[i] = tx.ID().String()
+	txIDs := make([]string, len(block.Transactions))
+	for i, tx := range block.Transactions {
+		txIDs[i] = consensusserialization.TransactionID(tx).String()
 	}
 	result.TxIDs = txIDs
 
 	if includeTransactionVerboseData {
-		transactions := block.Transactions()
-		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(transactions))
-		for i, tx := range transactions {
-			data, err := ctx.BuildTransactionVerboseData(tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), nil, false)
+		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
+		for i, tx := range block.Transactions {
+			txID := consensusserialization.TransactionID(tx).String()
+			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
 			if err != nil {
 				return nil, err
 			}
@@ -122,76 +82,53 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
-func (ctx *Context) BuildTransactionVerboseData(mtx *appmessage.MsgTx,
-	txID string, blockHeader *appmessage.BlockHeader, blockHash string,
-	acceptingBlock *daghash.Hash, isInMempool bool) (*appmessage.TransactionVerboseData, error) {
-
-	mtxHex, err := msgTxToHex(mtx)
-	if err != nil {
-		return nil, err
-	}
+func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
+	blockHeader *externalapi.DomainBlockHeader, blockHash string) (
+	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string
-	if mtx.PayloadHash != nil {
-		payloadHash = mtx.PayloadHash.String()
+	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
+		payloadHash = tx.PayloadHash.String()
 	}
 
 	txReply := &appmessage.TransactionVerboseData{
-		Hex:                       mtxHex,
 		TxID:                      txID,
-		Hash:                      mtx.TxHash().String(),
-		Size:                      int32(mtx.SerializeSize()),
-		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(mtx),
-		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(mtx, nil),
-		Version:                   mtx.Version,
-		LockTime:                  mtx.LockTime,
-		SubnetworkID:              mtx.SubnetworkID.String(),
-		Gas:                       mtx.Gas,
+		Hash:                      consensusserialization.TransactionHash(tx).String(),
+		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
+		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
+		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(tx, nil),
+		Version:                   tx.Version,
+		LockTime:                  tx.LockTime,
+		SubnetworkID:              tx.SubnetworkID.String(),
+		Gas:                       tx.Gas,
 		PayloadHash:               payloadHash,
-		Payload:                   hex.EncodeToString(mtx.Payload),
+		Payload:                   hex.EncodeToString(tx.Payload),
 	}
 
 	if blockHeader != nil {
-		txReply.Time = uint64(blockHeader.Timestamp.UnixMilliseconds())
-		txReply.BlockTime = uint64(blockHeader.Timestamp.UnixMilliseconds())
+		txReply.Time = uint64(blockHeader.TimeInMilliseconds)
+		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds)
 		txReply.BlockHash = blockHash
-	}
-
-	txReply.IsInMempool = isInMempool
-	if acceptingBlock != nil {
-		txReply.AcceptedBy = acceptingBlock.String()
 	}
 
 	return txReply, nil
 }
 
-// msgTxToHex serializes a transaction using the latest protocol version and
-// returns a hex-encoded string of the result.
-func msgTxToHex(msgTx *appmessage.MsgTx) (string, error) {
-	var buf bytes.Buffer
-	err := msgTx.KaspaEncode(&buf, 0)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(buf.Bytes()), nil
-}
-
-func (ctx *Context) buildTransactionVerboseInputs(mtx *appmessage.MsgTx) []*appmessage.TransactionVerboseInput {
-	inputs := make([]*appmessage.TransactionVerboseInput, len(mtx.TxIn))
-	for i, txIn := range mtx.TxIn {
+func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.TransactionVerboseInput {
+	inputs := make([]*appmessage.TransactionVerboseInput, len(tx.Inputs))
+	for i, transactionInput := range tx.Inputs {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
 		// error here.
-		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
+		disbuf, _ := txscript.DisasmString(transactionInput.SignatureScript)
 
 		input := &appmessage.TransactionVerboseInput{}
-		input.TxID = txIn.PreviousOutpoint.TxID.String()
-		input.OutputIndex = txIn.PreviousOutpoint.Index
-		input.Sequence = txIn.Sequence
+		input.TxID = transactionInput.PreviousOutpoint.TransactionID.String()
+		input.OutputIndex = transactionInput.PreviousOutpoint.Index
+		input.Sequence = transactionInput.Sequence
 		input.ScriptSig = &appmessage.ScriptSig{
 			Asm: disbuf,
-			Hex: hex.EncodeToString(txIn.SignatureScript),
+			Hex: hex.EncodeToString(transactionInput.SignatureScript),
 		}
 		inputs[i] = input
 	}
@@ -201,18 +138,18 @@ func (ctx *Context) buildTransactionVerboseInputs(mtx *appmessage.MsgTx) []*appm
 
 // buildTransactionVerboseOutputs returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func (ctx *Context) buildTransactionVerboseOutputs(mtx *appmessage.MsgTx, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
-	outputs := make([]*appmessage.TransactionVerboseOutput, len(mtx.TxOut))
-	for i, v := range mtx.TxOut {
+func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
+	outputs := make([]*appmessage.TransactionVerboseOutput, len(tx.Outputs))
+	for i, transactionOutput := range tx.Outputs {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
-		disbuf, _ := txscript.DisasmString(v.ScriptPubKey)
+		disbuf, _ := txscript.DisasmString(transactionOutput.ScriptPublicKey)
 
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			v.ScriptPubKey, ctx.DAG.Params)
+			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
@@ -234,11 +171,11 @@ func (ctx *Context) buildTransactionVerboseOutputs(mtx *appmessage.MsgTx, filter
 
 		output := &appmessage.TransactionVerboseOutput{}
 		output.Index = uint32(i)
-		output.Value = v.Value
+		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
 			Address: encodedAddr,
 			Asm:     disbuf,
-			Hex:     hex.EncodeToString(v.ScriptPubKey),
+			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey),
 			Type:    scriptClass.String(),
 		}
 		outputs[i] = output

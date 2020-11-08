@@ -27,11 +27,11 @@ func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction
 
 	standaloneMass := v.transactionMassStandalonePart(tx)
 	sigOpsCount := uint64(0)
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 		// Count the precise number of signature operations in the

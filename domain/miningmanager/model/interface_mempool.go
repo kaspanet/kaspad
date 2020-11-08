@@ -11,4 +11,5 @@ type Mempool interface {
 	Transactions() []*consensusexternalapi.DomainTransaction
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction)
+	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
 }

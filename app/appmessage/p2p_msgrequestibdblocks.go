@@ -5,7 +5,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgRequestIBDBlocks implements the Message interface and represents a kaspa
@@ -13,8 +13,8 @@ import (
 // low hash and until the high hash.
 type MsgRequestIBDBlocks struct {
 	baseMessage
-	LowHash  *daghash.Hash
-	HighHash *daghash.Hash
+	LowHash  *externalapi.DomainHash
+	HighHash *externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -26,7 +26,7 @@ func (msg *MsgRequestIBDBlocks) Command() MessageCommand {
 // NewMsgRequstIBDBlocks returns a new kaspa RequestIBDBlocks message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgRequstIBDBlocks(lowHash, highHash *daghash.Hash) *MsgRequestIBDBlocks {
+func NewMsgRequstIBDBlocks(lowHash, highHash *externalapi.DomainHash) *MsgRequestIBDBlocks {
 	return &MsgRequestIBDBlocks{
 		LowHash:  lowHash,
 		HighHash: highHash,

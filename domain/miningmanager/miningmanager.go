@@ -9,6 +9,7 @@ import (
 // known transactions that have no yet been added to any block
 type MiningManager interface {
 	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
+	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
 	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction)
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 }
@@ -33,4 +34,10 @@ func (mm *miningManager) HandleNewBlockTransactions(txs []*consensusexternalapi.
 // added to any block
 func (mm *miningManager) ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error {
 	return mm.mempool.ValidateAndInsertTransaction(transaction, allowOrphan)
+}
+
+func (mm *miningManager) GetTransaction(
+	transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool) {
+
+	return mm.mempool.GetTransaction(transactionID)
 }

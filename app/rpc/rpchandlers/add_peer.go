@@ -10,7 +10,7 @@ import (
 // HandleAddPeer handles the respectively named RPC command
 func HandleAddPeer(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	AddPeerRequest := request.(*appmessage.AddPeerRequestMessage)
-	address, err := network.NormalizeAddress(AddPeerRequest.Address, context.DAG.Params.DefaultPort)
+	address, err := network.NormalizeAddress(AddPeerRequest.Address, context.Config.ActiveNetParams.DefaultPort)
 	if err != nil {
 		errorMessage := &appmessage.AddPeerResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not parse address: %s", err)

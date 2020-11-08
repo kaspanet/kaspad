@@ -45,7 +45,7 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 		return protocolerrors.Errorf(true, "got unexpected "+
 			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
 	}
-	if !msgAddresses.SubnetworkID.IsEqual(context.Config().SubnetworkID) && msgAddresses.SubnetworkID != nil {
+	if msgAddresses.SubnetworkID != nil && *msgAddresses.SubnetworkID != *context.Config().SubnetworkID {
 		return protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
 			"are allowed in [%s] command, but got subnetwork ID %s",
 			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)

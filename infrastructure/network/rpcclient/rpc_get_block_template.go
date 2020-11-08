@@ -3,8 +3,8 @@ package rpcclient
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 // GetBlockTemplate sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) GetBlockTemplate(miningAddress string, longPollID string) (*appmessage.GetBlockTemplateResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockTemplateRequestMessage(miningAddress, longPollID))
+func (c *RPCClient) GetBlockTemplate(miningAddress string) (*appmessage.GetBlockTemplateResponseMessage, error) {
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetBlockTemplateRequestMessage(miningAddress))
 	if err != nil {
 		return nil, err
 	}

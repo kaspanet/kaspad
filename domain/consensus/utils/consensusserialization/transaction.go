@@ -1,12 +1,13 @@
 package consensusserialization
 
 import (
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
-	"io"
 )
 
 // txEncoding is a bitmask defining which transaction fields we
@@ -43,8 +44,7 @@ func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint3
 		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
 
-	res := writer.Finalize()
-	return &res
+	return writer.Finalize()
 }
 
 // TransactionHash returns the transaction hash.
@@ -60,8 +60,7 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 		panic(errors.Wrap(err, "TransactionHash() failed. this should never fail for structurally-valid transactions"))
 	}
 
-	res := writer.Finalize()
-	return &res
+	return writer.Finalize()
 }
 
 // TransactionID generates the Hash for the transaction without the signature script and payload field.
@@ -79,8 +78,9 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 		// and we assume we never construct malformed transactions.
 		panic(errors.Wrap(err, "TransactionID() failed. this should never fail for structurally-valid transactions"))
 	}
-	txID := externalapi.DomainTransactionID(writer.Finalize())
-	return &txID
+	transactionID := externalapi.DomainTransactionID(*writer.Finalize())
+
+	return &transactionID
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {

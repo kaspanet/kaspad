@@ -11,7 +11,7 @@ func (x *KaspadMessage_RequestTransactions) toAppMessage() (appmessage.Message, 
 			"[count %d, max %d]", len(x.RequestTransactions.Ids), appmessage.MaxInvPerRequestTransactionsMsg)
 	}
 
-	ids, err := protoTransactionIDsToWire(x.RequestTransactions.Ids)
+	ids, err := protoTransactionIDsToDomain(x.RequestTransactions.Ids)
 	if err != nil {
 		return nil, err
 	}

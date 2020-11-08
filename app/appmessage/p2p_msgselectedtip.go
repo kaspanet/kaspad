@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgSelectedTip implements the Message interface and represents a kaspa
@@ -10,7 +10,7 @@ import (
 type MsgSelectedTip struct {
 	baseMessage
 	// The selected tip hash of the generator of the message.
-	SelectedTipHash *daghash.Hash
+	SelectedTipHash *externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -21,7 +21,7 @@ func (msg *MsgSelectedTip) Command() MessageCommand {
 
 // NewMsgSelectedTip returns a new kaspa selectedtip message that conforms to the
 // Message interface.
-func NewMsgSelectedTip(selectedTipHash *daghash.Hash) *MsgSelectedTip {
+func NewMsgSelectedTip(selectedTipHash *externalapi.DomainHash) *MsgSelectedTip {
 	return &MsgSelectedTip{
 		SelectedTipHash: selectedTipHash,
 	}

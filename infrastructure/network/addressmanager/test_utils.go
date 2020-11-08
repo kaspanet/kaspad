@@ -1,16 +1,17 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
-	"github.com/pkg/errors"
 	"net"
 	"strconv"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // AddAddressByIP adds an address where we are given an ip:port and not a
 // appmessage.NetAddress.
-func AddAddressByIP(am *AddressManager, addressIP string, subnetworkID *subnetworkid.SubnetworkID) error {
+func AddAddressByIP(am *AddressManager, addressIP string, subnetworkID *externalapi.DomainSubnetworkID) error {
 	// Split IP and port
 	ipString, portString, err := net.SplitHostPort(addressIP)
 	if err != nil {

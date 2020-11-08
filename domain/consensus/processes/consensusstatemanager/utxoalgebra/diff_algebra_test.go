@@ -12,8 +12,8 @@ import (
 
 // TestUTXOCollection makes sure that model.UTXOCollection cloning and string representations work as expected.
 func TestUTXOCollection(t *testing.T) {
-	txID0, _ := transactionid.NewDomainTransactionIDFromString("0000000000000000000000000000000000000000000000000000000000000000")
-	txID1, _ := transactionid.NewDomainTransactionIDFromString("1111111111111111111111111111111111111111111111111111111111111111")
+	txID0, _ := transactionid.FromString("0000000000000000000000000000000000000000000000000000000000000000")
+	txID1, _ := transactionid.FromString("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
 	outpoint1 := externalapi.NewDomainOutpoint(txID1, 0)
 	utxoEntry0 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
@@ -71,8 +71,8 @@ func TestUTXOCollection(t *testing.T) {
 
 // Testmodel.UTXODiff makes sure that utxoDiff creation, cloning, and string representations work as expected.
 func TestUTXODiff(t *testing.T) {
-	txID0, _ := transactionid.NewDomainTransactionIDFromString("0000000000000000000000000000000000000000000000000000000000000000")
-	txID1, _ := transactionid.NewDomainTransactionIDFromString("1111111111111111111111111111111111111111111111111111111111111111")
+	txID0, _ := transactionid.FromString("0000000000000000000000000000000000000000000000000000000000000000")
+	txID1, _ := transactionid.FromString("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
 	outpoint1 := externalapi.NewDomainOutpoint(txID1, 0)
 	utxoEntry0 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
@@ -116,7 +116,7 @@ func TestUTXODiff(t *testing.T) {
 // Testmodel.UTXODiffRules makes sure that all diffFrom and WithDiff rules are followed.
 // Each test case represents a cell in the two tables outlined in the documentation for utxoDiff.
 func TestUTXODiffRules(t *testing.T) {
-	txID0, _ := transactionid.NewDomainTransactionIDFromString("0000000000000000000000000000000000000000000000000000000000000000")
+	txID0, _ := transactionid.FromString("0000000000000000000000000000000000000000000000000000000000000000")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
 	utxoEntry1 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
 	utxoEntry2 := externalapi.NewUTXOEntry(20, []byte{}, true, 1)

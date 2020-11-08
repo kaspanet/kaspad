@@ -9,11 +9,6 @@ import (
 	crand "crypto/rand" // for seeding
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"io"
 	"math/rand"
 	"net"
@@ -24,9 +19,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 )
 
 // AddressKey represents a "string" key in the form of ip:port for IPv4 addresses
@@ -38,8 +41,8 @@ type triedAddressBucketArray [TriedBucketCount][]*KnownAddress
 // AddressManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddressManager struct {
-	cfg             *config.Config
-	databaseContext *dbaccess.DatabaseContext
+	cfg      *config.Config
+	database database.Database
 
 	mutex              sync.Mutex
 	lookupFunc         func(string) ([]net.IP, error)
@@ -52,16 +55,16 @@ type AddressManager struct {
 	quit               chan struct{}
 	localAddressesLock sync.Mutex
 	localAddresses     map[AddressKey]*localAddress
-	localSubnetworkID  *subnetworkid.SubnetworkID
+	localSubnetworkID  *externalapi.DomainSubnetworkID
 
 	fullNodeNewAddressBucketArray     newAddressBucketArray
 	fullNodeNewAddressCount           int
 	fullNodeTriedAddressBucketArray   triedAddressBucketArray
 	fullNodeTriedAddressCount         int
-	subnetworkNewAddressBucketArrays  map[subnetworkid.SubnetworkID]*newAddressBucketArray
-	subnetworkNewAddressCounts        map[subnetworkid.SubnetworkID]int
-	subnetworkTriedAddresBucketArrays map[subnetworkid.SubnetworkID]*triedAddressBucketArray
-	subnetworkTriedAddressCounts      map[subnetworkid.SubnetworkID]int
+	subnetworkNewAddressBucketArrays  map[externalapi.DomainSubnetworkID]*newAddressBucketArray
+	subnetworkNewAddressCounts        map[externalapi.DomainSubnetworkID]int
+	subnetworkTriedAddresBucketArrays map[externalapi.DomainSubnetworkID]*triedAddressBucketArray
+	subnetworkTriedAddressCounts      map[externalapi.DomainSubnetworkID]int
 }
 
 type serializedKnownAddress struct {
@@ -189,15 +192,17 @@ const (
 	serializationVersion = 1
 )
 
+var peersDBKey = database.MakeBucket().Key([]byte("peers"))
+
 // ErrAddressNotFound is an error returned from some functions when a
 // given address is not found in the address manager
 var ErrAddressNotFound = errors.New("address not found")
 
 // New returns a new Kaspa address manager.
-func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) (*AddressManager, error) {
+func New(cfg *config.Config, database database.Database) (*AddressManager, error) {
 	addressManager := AddressManager{
 		cfg:               cfg,
-		databaseContext:   databaseContext,
+		database:          database,
 		lookupFunc:        cfg.Lookup,
 		random:            rand.New(rand.NewSource(time.Now().UnixNano())),
 		quit:              make(chan struct{}),
@@ -214,7 +219,7 @@ func New(cfg *config.Config, databaseContext *dbaccess.DatabaseContext) (*Addres
 
 // updateAddress is a helper function to either update an address already known
 // to the address manager, or to add the address if not already known.
-func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) updateAddress(netAddress, sourceAddress *appmessage.NetAddress, subnetworkID *externalapi.DomainSubnetworkID) {
 	// Filter out non-routable addresses. Note that non-routable
 	// also includes invalid and local addresses.
 	if !am.IsRoutable(netAddress) {
@@ -321,7 +326,7 @@ func (am *AddressManager) updateAddrTried(bucketIndex int, knownAddress *KnownAd
 
 // expireNew makes space in the new buckets by expiring the really bad entries.
 // If no bad entries are available we look at a few and remove the oldest.
-func (am *AddressManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, bucketIndex int) {
+func (am *AddressManager) expireNew(subnetworkID *externalapi.DomainSubnetworkID, bucketIndex int) {
 	// First see if there are any entries that are so bad we can just throw
 	// them away. otherwise we throw away the oldest entry in the cache.
 	// We keep track of oldest in the initial traversal and use that
@@ -361,7 +366,7 @@ func (am *AddressManager) expireNew(subnetworkID *subnetworkid.SubnetworkID, buc
 
 // pickTried selects an address from the tried bucket to be evicted.
 // We just choose the eldest.
-func (am *AddressManager) pickTried(subnetworkID *subnetworkid.SubnetworkID, bucketIndex int) (
+func (am *AddressManager) pickTried(subnetworkID *externalapi.DomainSubnetworkID, bucketIndex int) (
 	knownAddress *KnownAddress, knownAddressIndex int) {
 
 	var oldest *KnownAddress
@@ -383,8 +388,8 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *appmessa
 	data1 = append(data1, am.key[:]...)
 	data1 = append(data1, []byte(am.GroupKey(netAddress))...)
 	data1 = append(data1, []byte(am.GroupKey(srcAddress))...)
-	hash1 := daghash.DoubleHashB(data1)
-	hash64 := binary.LittleEndian.Uint64(hash1)
+	hash1 := hashes.HashData(data1)
+	hash64 := binary.LittleEndian.Uint64(hash1[:])
 	hash64 %= newBucketsPerGroup
 	var hashbuf [8]byte
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
@@ -393,8 +398,8 @@ func (am *AddressManager) newAddressBucketIndex(netAddress, srcAddress *appmessa
 	data2 = append(data2, am.GroupKey(srcAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
-	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % NewBucketCount)
+	hash2 := hashes.HashData(data2)
+	return int(binary.LittleEndian.Uint64(hash2[:]) % NewBucketCount)
 }
 
 func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddress) int {
@@ -402,8 +407,8 @@ func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddr
 	data1 := []byte{}
 	data1 = append(data1, am.key[:]...)
 	data1 = append(data1, []byte(NetAddressKey(netAddress))...)
-	hash1 := daghash.DoubleHashB(data1)
-	hash64 := binary.LittleEndian.Uint64(hash1)
+	hash1 := hashes.HashData(data1)
+	hash64 := binary.LittleEndian.Uint64(hash1[:])
 	hash64 %= triedBucketsPerGroup
 	var hashbuf [8]byte
 	binary.LittleEndian.PutUint64(hashbuf[:], hash64)
@@ -412,8 +417,8 @@ func (am *AddressManager) triedAddressBucketIndex(netAddress *appmessage.NetAddr
 	data2 = append(data2, am.GroupKey(netAddress)...)
 	data2 = append(data2, hashbuf[:]...)
 
-	hash2 := daghash.DoubleHashB(data2)
-	return int(binary.LittleEndian.Uint64(hash2) % TriedBucketCount)
+	hash2 := hashes.HashData(data2)
+	return int(binary.LittleEndian.Uint64(hash2[:]) % TriedBucketCount)
 }
 
 // addressHandler is the main handler for the address manager. It must be run
@@ -451,7 +456,7 @@ func (am *AddressManager) savePeers() error {
 		return err
 	}
 
-	return dbaccess.StorePeersState(am.databaseContext, serializedPeersState)
+	return am.database.Put(peersDBKey, serializedPeersState)
 }
 
 func (am *AddressManager) serializePeersState() ([]byte, error) {
@@ -561,8 +566,8 @@ func (am *AddressManager) loadPeers() error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	serializedPeerState, err := dbaccess.FetchPeersState(am.databaseContext)
-	if dbaccess.IsNotFoundError(err) {
+	serializedPeerState, err := am.database.Get(peersDBKey)
+	if database.IsNotFoundError(err) {
 		am.reset()
 		log.Info("No peers state was found in the database. Created a new one", am.totalNumAddresses())
 		return nil
@@ -608,7 +613,7 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 				"%s: %s", serializedKnownAddress.SourceAddress, err)
 		}
 		if serializedKnownAddress.SubnetworkID != "" {
-			knownAddress.subnetworkID, err = subnetworkid.NewFromStr(serializedKnownAddress.SubnetworkID)
+			knownAddress.subnetworkID, err = subnetworks.FromString(serializedKnownAddress.SubnetworkID)
 			if err != nil {
 				return errors.Errorf("failed to deserialize subnetwork id "+
 					"%s: %s", serializedKnownAddress.SubnetworkID, err)
@@ -623,7 +628,7 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 	}
 
 	for subnetworkIDStr := range peersState.SubnetworkNewAddressBucketArrays {
-		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
+		subnetworkID, err := subnetworks.FromString(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
@@ -661,7 +666,7 @@ func (am *AddressManager) deserializePeersState(serializedPeerState []byte) erro
 	}
 
 	for subnetworkIDString := range peersState.SubnetworkTriedAddressBucketArrays {
-		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDString)
+		subnetworkID, err := subnetworks.FromString(subnetworkIDString)
 		if err != nil {
 			return err
 		}
@@ -763,7 +768,7 @@ func (am *AddressManager) Stop() error {
 // AddAddresses adds new addresses to the address manager. It enforces a max
 // number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
-func (am *AddressManager) AddAddresses(addresses []*appmessage.NetAddress, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) AddAddresses(addresses []*appmessage.NetAddress, sourceAddress *appmessage.NetAddress, subnetworkID *externalapi.DomainSubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -775,7 +780,7 @@ func (am *AddressManager) AddAddresses(addresses []*appmessage.NetAddress, sourc
 // AddAddress adds a new address to the address manager. It enforces a max
 // number of addresses and silently ignores duplicate addresses. It is
 // safe for concurrent access.
-func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddress, subnetworkID *externalapi.DomainSubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -784,7 +789,7 @@ func (am *AddressManager) AddAddress(address, sourceAddress *appmessage.NetAddre
 
 // numAddresses returns the number of addresses that belongs to a specific subnetwork id
 // which are known to the address manager.
-func (am *AddressManager) numAddresses(subnetworkID *subnetworkid.SubnetworkID) int {
+func (am *AddressManager) numAddresses(subnetworkID *externalapi.DomainSubnetworkID) int {
 	if subnetworkID == nil {
 		return am.fullNodeNewAddressCount + am.fullNodeTriedAddressCount
 	}
@@ -826,7 +831,7 @@ func (am *AddressManager) NeedMoreAddresses() bool {
 
 // AddressCache returns the current address cache. It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
-func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*appmessage.NetAddress {
+func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID *externalapi.DomainSubnetworkID) []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -837,7 +842,7 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 	allAddresses := []*appmessage.NetAddress{}
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range am.addressIndex {
-		if includeAllSubnetworks || v.SubnetworkID().IsEqual(subnetworkID) {
+		if includeAllSubnetworks || *v.SubnetworkID() == *subnetworkID {
 			allAddresses = append(allAddresses, v.netAddress)
 		}
 	}
@@ -872,11 +877,11 @@ func (am *AddressManager) reset() {
 
 	// fill key with bytes from a good random source.
 	io.ReadFull(crand.Reader, am.key[:])
-	am.subnetworkNewAddressBucketArrays = make(map[subnetworkid.SubnetworkID]*newAddressBucketArray)
-	am.subnetworkTriedAddresBucketArrays = make(map[subnetworkid.SubnetworkID]*triedAddressBucketArray)
+	am.subnetworkNewAddressBucketArrays = make(map[externalapi.DomainSubnetworkID]*newAddressBucketArray)
+	am.subnetworkTriedAddresBucketArrays = make(map[externalapi.DomainSubnetworkID]*triedAddressBucketArray)
 
-	am.subnetworkNewAddressCounts = make(map[subnetworkid.SubnetworkID]int)
-	am.subnetworkTriedAddressCounts = make(map[subnetworkid.SubnetworkID]int)
+	am.subnetworkNewAddressCounts = make(map[externalapi.DomainSubnetworkID]int)
+	am.subnetworkTriedAddressCounts = make(map[externalapi.DomainSubnetworkID]int)
 
 	for i := range am.fullNodeNewAddressBucketArray {
 		am.fullNodeNewAddressBucketArray[i] = make(map[AddressKey]*KnownAddress)
@@ -1061,7 +1066,7 @@ func (am *AddressManager) Connected(address *appmessage.NetAddress) {
 // Good marks the given address as good. To be called after a successful
 // connection and version exchange. If the address is unknown to the address
 // manager it will be ignored.
-func (am *AddressManager) Good(address *appmessage.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) Good(address *appmessage.NetAddress, subnetworkID *externalapi.DomainSubnetworkID) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
@@ -1084,7 +1089,7 @@ func (am *AddressManager) Good(address *appmessage.NetAddress, subnetworkID *sub
 
 	if knownAddress.tried {
 		// If this address was already tried, and subnetworkID didn't change - don't do anything
-		if subnetworkID.IsEqual(oldSubnetworkID) {
+		if *subnetworkID == *oldSubnetworkID {
 			return
 		}
 
@@ -1183,21 +1188,21 @@ func (am *AddressManager) Good(address *appmessage.NetAddress, subnetworkID *sub
 	newAddressBucketArray[newAddressBucketIndex][knownAddressToRemoveKey] = knownAddressToRemove
 }
 
-func (am *AddressManager) newAddressBucketArray(subnetworkID *subnetworkid.SubnetworkID) *newAddressBucketArray {
+func (am *AddressManager) newAddressBucketArray(subnetworkID *externalapi.DomainSubnetworkID) *newAddressBucketArray {
 	if subnetworkID == nil {
 		return &am.fullNodeNewAddressBucketArray
 	}
 	return am.subnetworkNewAddressBucketArrays[*subnetworkID]
 }
 
-func (am *AddressManager) triedAddressBucketArray(subnetworkID *subnetworkid.SubnetworkID) *triedAddressBucketArray {
+func (am *AddressManager) triedAddressBucketArray(subnetworkID *externalapi.DomainSubnetworkID) *triedAddressBucketArray {
 	if subnetworkID == nil {
 		return &am.fullNodeTriedAddressBucketArray
 	}
 	return am.subnetworkTriedAddresBucketArrays[*subnetworkID]
 }
 
-func (am *AddressManager) incrementNewAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) incrementNewAddressCount(subnetworkID *externalapi.DomainSubnetworkID) {
 	if subnetworkID == nil {
 		am.fullNodeNewAddressCount++
 		return
@@ -1205,7 +1210,7 @@ func (am *AddressManager) incrementNewAddressCount(subnetworkID *subnetworkid.Su
 	am.subnetworkNewAddressCounts[*subnetworkID]++
 }
 
-func (am *AddressManager) decrementNewAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) decrementNewAddressCount(subnetworkID *externalapi.DomainSubnetworkID) {
 	if subnetworkID == nil {
 		am.fullNodeNewAddressCount--
 		return
@@ -1213,21 +1218,21 @@ func (am *AddressManager) decrementNewAddressCount(subnetworkID *subnetworkid.Su
 	am.subnetworkNewAddressCounts[*subnetworkID]--
 }
 
-func (am *AddressManager) triedAddressCount(subnetworkID *subnetworkid.SubnetworkID) int {
+func (am *AddressManager) triedAddressCount(subnetworkID *externalapi.DomainSubnetworkID) int {
 	if subnetworkID == nil {
 		return am.fullNodeTriedAddressCount
 	}
 	return am.subnetworkTriedAddressCounts[*subnetworkID]
 }
 
-func (am *AddressManager) newAddressCount(subnetworkID *subnetworkid.SubnetworkID) int {
+func (am *AddressManager) newAddressCount(subnetworkID *externalapi.DomainSubnetworkID) int {
 	if subnetworkID == nil {
 		return am.fullNodeNewAddressCount
 	}
 	return am.subnetworkNewAddressCounts[*subnetworkID]
 }
 
-func (am *AddressManager) incrementTriedAddressCount(subnetworkID *subnetworkid.SubnetworkID) {
+func (am *AddressManager) incrementTriedAddressCount(subnetworkID *externalapi.DomainSubnetworkID) {
 	if subnetworkID == nil {
 		am.fullNodeTriedAddressCount++
 		return

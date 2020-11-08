@@ -90,6 +90,8 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 }
 
 func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
+	missingParentHashes := []*externalapi.DomainHash{}
+
 	for _, parent := range header.ParentHashes {
 		exists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
@@ -97,8 +99,12 @@ func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader
 		}
 
 		if !exists {
-			return errors.Wrapf(ruleerrors.ErrMissingParent, "parent %s is missing", parent)
+			missingParentHashes = append(missingParentHashes, parent)
 		}
+	}
+
+	if len(missingParentHashes) > 0 {
+		return ruleerrors.NewErrMissingParents(missingParentHashes)
 	}
 
 	return nil

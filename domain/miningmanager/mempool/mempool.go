@@ -7,6 +7,11 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"sync"
+	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -17,8 +22,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"sync"
-	"time"
 )
 
 const (
@@ -106,6 +109,17 @@ func New(consensus consensus.Consensus) miningmanagermodel.Mempool {
 		consensus:                            consensus,
 		nextExpireScan:                       mstime.Now().Add(orphanExpireScanInterval),
 	}
+}
+
+func (mp *mempool) GetTransaction(
+	transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool) {
+
+	txDesc, exists := mp.fetchTxDesc(transactionID)
+	if !exists {
+		return nil, false
+	}
+
+	return txDesc.DomainTransaction, true
 }
 
 // txDescriptor is a descriptor containing a transaction in the mempool along with
@@ -342,7 +356,7 @@ func (mp *mempool) haveTransaction(txID *consensusexternalapi.DomainTransactionI
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
-	for _, tx := range txs[util.CoinbaseTransactionIndex+1:] {
+	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		txID := consensusserialization.TransactionID(tx)
 
 		if _, exists := mp.fetchTxDesc(txID); !exists {
@@ -539,7 +553,9 @@ func (mp *mempool) fetchTxDesc(txID *consensusexternalapi.DomainTransactionID) (
 // be added to the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) ([]consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
+func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransaction, rejectDupOrphans bool) (
+	[]*consensusexternalapi.DomainOutpoint, *txDescriptor, error) {
+
 	txID := consensusserialization.TransactionID(tx)
 
 	// Don't accept the transaction if it already exists in the pool. This
@@ -867,7 +883,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 		log.Errorf("Failed removing txs from pool: '%s'", err)
 	}
 	acceptedTxs := make([]*consensusexternalapi.DomainTransaction, 0)
-	for _, tx := range txs[util.CoinbaseTransactionIndex+1:] {
+	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
 			log.Infof("Failed removing tx from mempool: %s, '%s'", consensusserialization.TransactionID(tx), err)

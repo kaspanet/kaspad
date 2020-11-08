@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
@@ -123,16 +123,6 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 		return nil
 	}
 
-	// Drop indexes and exit if requested.
-	if app.cfg.DropAcceptanceIndex {
-		if err := indexers.DropAcceptanceIndex(databaseContext); err != nil {
-			log.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
-
 	// Create componentManager and start it.
 	componentManager, err := NewComponentManager(app.cfg, databaseContext, interrupt)
 	if err != nil {
@@ -188,8 +178,8 @@ func removeDatabase(cfg *config.Config) error {
 	return os.RemoveAll(dbPath)
 }
 
-func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
+func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 	log.Infof("Loading database from '%s'", dbPath)
-	return dbaccess.New(dbPath)
+	return ldb.NewLevelDB(dbPath)
 }

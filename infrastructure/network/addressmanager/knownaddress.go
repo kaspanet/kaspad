@@ -5,11 +5,11 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // KnownAddress tracks information about a known network address that is used
@@ -22,7 +22,7 @@ type KnownAddress struct {
 	lastSuccess    mstime.Time
 	tried          bool
 	referenceCount int // reference count of new buckets
-	subnetworkID   *subnetworkid.SubnetworkID
+	subnetworkID   *externalapi.DomainSubnetworkID
 	isBanned       bool
 	bannedTime     mstime.Time
 }
@@ -34,7 +34,7 @@ func (ka *KnownAddress) NetAddress() *appmessage.NetAddress {
 }
 
 // SubnetworkID returns the subnetwork ID of the known address.
-func (ka *KnownAddress) SubnetworkID() *subnetworkid.SubnetworkID {
+func (ka *KnownAddress) SubnetworkID() *externalapi.DomainSubnetworkID {
 	return ka.subnetworkID
 }
 
