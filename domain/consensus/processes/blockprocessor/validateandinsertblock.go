@@ -58,11 +58,6 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-
-		err = bp.headerTipsManager.AddHeaderTip(hash)
-		if err != nil {
-			return err
-		}
 	}
 
 	if mode.State == externalapi.SyncStateHeadersFirst {

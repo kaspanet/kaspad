@@ -312,9 +312,9 @@ func msgBlockToDomainBlock(msgBlock *appmessage.MsgBlock) (*externalapi.DomainBl
 		Header: &externalapi.DomainBlockHeader{
 			Version:              msgHeader.Version,
 			ParentHashes:         parentHashes,
-			HashMerkleRoot:       *(*externalapi.DomainHash)(msgHeader.HashMerkleRoot),
-			AcceptedIDMerkleRoot: *(*externalapi.DomainHash)(msgHeader.AcceptedIDMerkleRoot),
-			UTXOCommitment:       *(*externalapi.DomainHash)(msgHeader.UTXOCommitment),
+			HashMerkleRoot:       *msgHeader.HashMerkleRoot,
+			AcceptedIDMerkleRoot: *msgHeader.AcceptedIDMerkleRoot,
+			UTXOCommitment:       *msgHeader.UTXOCommitment,
 			TimeInMilliseconds:   msgHeader.Timestamp.UnixMilliseconds(),
 			Bits:                 msgHeader.Bits,
 			Nonce:                msgHeader.Nonce,

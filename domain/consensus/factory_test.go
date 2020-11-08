@@ -24,6 +24,6 @@ func TestNewFactory(t *testing.T) {
 
 	_, err = f.NewConsensus(dagParams, db)
 	if err != nil {
-		t.Fatal("error in NewConsensus")
+		t.Fatalf("error in NewConsensus: %+v", err)
 	}
 }
