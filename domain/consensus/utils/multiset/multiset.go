@@ -31,7 +31,7 @@ func (m multiset) Hash() *externalapi.DomainHash {
 }
 
 func (m multiset) Serialize() []byte {
-	return m.Serialize()
+	return m.ms.Serialize()[:]
 }
 
 // FromBytes deserializes the given bytes slice and returns a multiset.
