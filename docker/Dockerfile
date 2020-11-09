@@ -10,7 +10,8 @@ RUN go get -u golang.org/x/lint/golint \
       github.com/kisielk/errcheck \
       github.com/opennota/check/cmd/aligncheck \
       github.com/opennota/check/cmd/structcheck \
-      github.com/opennota/check/cmd/varcheck
+      github.com/opennota/check/cmd/varcheck \
+      honnef.co/go/tools/cmd/staticcheck 
 
 COPY go.mod .
 COPY go.sum .
