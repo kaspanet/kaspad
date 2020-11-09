@@ -22,6 +22,7 @@ func Less(a, b externalapi.DomainSubnetworkID) bool {
 	return cmp(a, b) < 0
 }
 
+// IsEqual returns true if a and b are equal or both nil
 func IsEqual(a, b *externalapi.DomainSubnetworkID) bool {
 	if a == nil && b == nil {
 		return true
