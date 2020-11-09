@@ -9,25 +9,6 @@ import (
 // current virtual. This process may result in a new virtual block
 // getting created
 func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
-	err := csm.resolveBlockStatusAndCheckFinality(blockHash)
-	if err != nil {
-		return err
-	}
-
-	newTips, err := csm.addTip(blockHash)
-	if err != nil {
-		return err
-	}
-
-	err = csm.updateVirtual(blockHash, newTips)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (csm *consensusStateManager) resolveBlockStatusAndCheckFinality(blockHash *externalapi.DomainHash) error {
 	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
 	if err != nil {
 		return err
@@ -47,6 +28,16 @@ func (csm *consensusStateManager) resolveBlockStatusAndCheckFinality(blockHash *
 		if err != nil {
 			return err
 		}
+	}
+
+	newTips, err := csm.addTip(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = csm.updateVirtual(blockHash, newTips)
+	if err != nil {
+		return err
 	}
 
 	return nil
