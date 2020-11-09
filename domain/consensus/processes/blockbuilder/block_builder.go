@@ -104,7 +104,7 @@ func (bb blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bb.newBlockTime(virtualGHOSTDAGData)
+	timeInMilliseconds, err := bb.newBlockTime()
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (bb blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error)
 	return virtualBlockRelations.Parents, nil
 }
 
-func (bb blockBuilder) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (int64, error) {
+func (bb blockBuilder) newBlockTime() (int64, error) {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
@@ -150,7 +150,7 @@ func (bb blockBuilder) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
 	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
+	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
 	if err != nil {
 		return 0, err
 	}
