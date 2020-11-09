@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -59,98 +59,107 @@ func TestGHOSTDAG(t *testing.T) {
 	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
 		dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
 	}
+	var dirName = "./dags"
+	items, _ := ioutil.ReadDir(dirName)
+	for _, item := range items {
+		if item.IsDir() {
+			fmt.Printf("please change path above. you are now on: %s./n", item.Name())
+		} else {
+			fmt.Printf("____________________________\n")
+			fmt.Printf("Current test: %s\n", item.Name())
 
-	dagArray := []string{"./dags/dag0.json"}
-	jsonFile, err := os.Open(dagArray[0])
-	if err != nil {
-		t.Fatalf("failed opening the json file %s: %v", dagArray[0], err)
-	}
-	defer jsonFile.Close()
-	var test testDag
-	decoder := json.NewDecoder(jsonFile)
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&test)
-	if err != nil {
-		t.Fatalf("TestGHOSTDAG:failed decoding json: %v", err)
-	}
-
-	var genesisId [32]byte //change genesis ID from type string to type []byte
-	copy(genesisId[:], test.GenesisID)
-	genesisHash := &externalapi.DomainHash{0}
-	*genesisHash = genesisId
-
-	dagTopology.parentsMap[*genesisHash] = nil
-	ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
-		BlueScore:          0,
-		SelectedParent:     nil,
-		MergeSetBlues:      nil,
-		MergeSetReds:       nil,
-		BluesAnticoneSizes: nil,
-	}
-
-	//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
-	implementationFactories := []implManager{
-		{ghostdagmanager.New, "Original"},
-		{ghostdag2.New, "Tal's impl"},
-	}
-
-	for _, factory := range implementationFactories {
-		fmt.Printf("____________________________\n")
-		//	for testNum, test := range testsArr {
-		testNum := 0
-		g := factory.function(nil, dagTopology, ghostdagDataStore, model.KType(test.K))
-		fmt.Printf("Impl:%s,  TestNum:%d\n", factory.implName, testNum+1)
-		for _, testBlockData := range test.Blocks {
-			testNum++
-			blockID := infoStrToByte(testBlockData.ID)
-			dagTopology.parentsMap[*blockID] = infoStrToByteArray(testBlockData.Parents)
-			err := g.GHOSTDAG(blockID)
+			jsonFile, err := os.Open(dirName + "/" + item.Name())
+			//jsonFile, err := os.Open("./dags/dag0.json")
 			if err != nil {
-				t.Fatalf("Test #%d failed:on  GHOSTDAG error: %s.", testNum+1, err)
+				t.Fatalf("failed opening the json file %s: %v", item.Name(), err)
 			}
-			ghostdagData, err := ghostdagDataStore.Get(nil, blockID)
+			defer jsonFile.Close()
+			var test testDag
+			decoder := json.NewDecoder(jsonFile)
+			decoder.DisallowUnknownFields()
+			err = decoder.Decode(&test)
 			if err != nil {
-				t.Fatalf("Test #%d failed: ghostdagDataStore error: %s.", testNum+1, err)
-			}
-			if testBlockData.Score != (ghostdagData.BlueScore) {
-				t.Fatalf("Test #%d failed: expected blue score %d but got %d.", testNum+1, testBlockData.Score, ghostdagData.BlueScore)
+				t.Fatalf("TestGHOSTDAG:failed decoding json: %v", err)
 			}
 
-			if *infoStrToByte(testBlockData.SelectedParent) != *ghostdagData.SelectedParent {
-				t.Fatalf("Test #%d failed: expected selected parent %v but got %v.", testNum+1, *infoStrToByte(testBlockData.SelectedParent), ghostdagData.SelectedParent)
+			var genesisId [32]byte //change genesis ID from type string to type []byte
+			copy(genesisId[:], test.GenesisID)
+			genesisHash := &externalapi.DomainHash{0}
+			*genesisHash = genesisId
+
+			dagTopology.parentsMap[*genesisHash] = nil
+			ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
+				BlueScore:          0,
+				SelectedParent:     nil,
+				MergeSetBlues:      nil,
+				MergeSetReds:       nil,
+				BluesAnticoneSizes: nil,
 			}
 
-			if !DeepEqualHashArrays(infoStrToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues) {
-				t.Fatalf("Test #%d failed: expected merge set blues %v but got %v.", testNum+1, infoStrToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues)
+			//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
+			implementationFactories := []implManager{
+				{ghostdagmanager.New, "Original"},
+				//{ghostdag2.New, "Tal's impl"},
 			}
 
-			if !DeepEqualHashArrays(infoStrToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds) {
-				t.Fatalf("Test #%d failed: expected merge set reds %v but got %v.", testNum+1, infoStrToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds)
-			}
+			for _, factory := range implementationFactories {
 
+				//	for testNum, test := range testsArr {
+				testNum := 0
+				g := factory.function(nil, dagTopology, ghostdagDataStore, model.KType(test.K))
+				fmt.Printf("Impl:%s \n", factory.implName)
+				for _, testBlockData := range test.Blocks {
+					testNum++
+					blockID := infoStrToByte(testBlockData.ID)
+					dagTopology.parentsMap[*blockID] = infoStrToByteArray(testBlockData.Parents)
+					err := g.GHOSTDAG(blockID)
+					if err != nil {
+						t.Fatalf("Test #%d failed:on  GHOSTDAG error: %s.", testNum+1, err)
+					}
+					ghostdagData, err := ghostdagDataStore.Get(nil, blockID)
+					if err != nil {
+						t.Fatalf("Test #%d failed: ghostdagDataStore error: %s.", testNum+1, err)
+					}
+					if testBlockData.Score != (ghostdagData.BlueScore) {
+						t.Fatalf("Test #%d failed: expected blue score %d but got %d.", testNum+1, testBlockData.Score, ghostdagData.BlueScore)
+					}
+
+					if *infoStrToByte(testBlockData.SelectedParent) != *ghostdagData.SelectedParent {
+						t.Fatalf("Test #%d failed: expected selected parent %v but got %v.", testNum+1, *infoStrToByte(testBlockData.SelectedParent), ghostdagData.SelectedParent)
+					}
+
+					if !DeepEqualHashArrays(infoStrToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues) {
+						t.Fatalf("Test #%d failed: expected merge set blues %v but got %v.", testNum+1, infoStrToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues)
+					}
+
+					if !DeepEqualHashArrays(infoStrToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds) {
+						t.Fatalf("Test #%d failed: expected merge set reds %v but got %v.", testNum+1, infoStrToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds)
+					}
+
+				}
+				fmt.Printf("    Test success!\n\n")
+
+				//fmt.Printf("Test %d successfully finished. \n", testStruct.testNum+1)
+
+				dagTopology := &DAGTopologyManagerImpl{
+					parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
+				}
+				dagTopology.parentsMap[*genesisHash] = nil
+
+				ghostdagDataStore := &GHOSTDAGDataStoreImpl{
+					dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
+				}
+				ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
+					BlueScore:          1,
+					SelectedParent:     nil,
+					MergeSetBlues:      nil,
+					MergeSetReds:       nil,
+					BluesAnticoneSizes: nil,
+				}
+				//}
+			}
 		}
-		fmt.Printf("    Test success!\n\n")
-
-		//fmt.Printf("Test %d successfully finished. \n", testStruct.testNum+1)
-
-		dagTopology := &DAGTopologyManagerImpl{
-			parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
-		}
-		dagTopology.parentsMap[*genesisHash] = nil
-
-		ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-			dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-		}
-		ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
-			BlueScore:          1,
-			SelectedParent:     nil,
-			MergeSetBlues:      nil,
-			MergeSetReds:       nil,
-			BluesAnticoneSizes: nil,
-		}
-		//}
 	}
-
 }
 
 func infoStrToByte(strID string) *externalapi.DomainHash {
