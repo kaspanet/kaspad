@@ -86,7 +86,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 
 	for i, blueBlock := range blueBlocks {
 		blockAccepanceData := &model.BlockAcceptanceData{
-			TransactionAcceptanceData: []*model.TransactionAcceptanceData{},
+			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
 
