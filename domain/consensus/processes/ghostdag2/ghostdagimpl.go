@@ -41,25 +41,24 @@ func New(
 func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error {
 	var maxNum uint64 = 0
 	var myScore uint64 = 0
-	var selectedParent *externalapi.DomainHash
 	/* find the selectedParent */
 	blockParents, err := gh.dagTopologyManager.Parents(blockCandidate)
 	if err != nil {
 		return err
 	}
-	for _, w := range blockParents {
-		blockData, err := gh.dataStore.Get(gh.dbAccess, w)
+	var selectedParent *externalapi.DomainHash = blockParents[0]
+	for _, parent := range blockParents {
+		blockData, err := gh.dataStore.Get(gh.dbAccess, parent)
 		if err != nil {
 			return err
 		}
-		score := blockData.BlueScore
-		//GHOSTDAGDataStore.get(w).blueScore()
-		if score > maxNum {
-			selectedParent = w
-			maxNum = score
+		blockScore := blockData.BlueScore
+		if blockScore > maxNum {
+			selectedParent = parent
+			maxNum = blockScore
 		}
-		if score == maxNum && ismoreHash(w, selectedParent) {
-			selectedParent = w
+		if blockScore == maxNum && ismoreHash(parent, selectedParent) {
+			selectedParent = parent
 		}
 	}
 	myScore = maxNum
