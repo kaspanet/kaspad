@@ -46,6 +46,11 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	err = v.checkBlockTransactionOrder(block)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkTransactionsInIsolation(block)
 	if err != nil {
 		return err
@@ -117,19 +122,6 @@ func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlo
 	for i, tx := range block.Transactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 		if i != 0 && subnetworks.Less(tx.SubnetworkID, block.Transactions[i].SubnetworkID) {
 			return errors.Wrapf(ruleerrors.ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
-		}
-	}
-	return nil
-}
-
-func (v *blockValidator) checkNoNonNativeTransactions(block *externalapi.DomainBlock) error {
-	// Disallow non-native/coinbase subnetworks in networks that don't allow them
-	if !v.enableNonNativeSubnetworks {
-		for _, tx := range block.Transactions {
-			if !(tx.SubnetworkID == subnetworks.SubnetworkIDNative ||
-				tx.SubnetworkID == subnetworks.SubnetworkIDCoinbase) {
-				return errors.Wrapf(ruleerrors.ErrInvalidSubnetwork, "non-native/coinbase subnetworks are not allowed")
-			}
 		}
 	}
 	return nil

@@ -91,7 +91,13 @@ func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) 
 	if ps.serializedUTXOSetStaging != nil {
 		return ps.serializedUTXOSetStaging, nil
 	}
-	return dbContext.Get(pruningSerializedUTXOSetkey)
+
+	dbPruningPointUTXOSetBytes, err := dbContext.Get(pruningSerializedUTXOSetkey)
+	if err != nil {
+		return nil, err
+	}
+
+	return ps.deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes)
 }
 
 func (ps *pruningStore) serializePruningPoint(pruningPoint *externalapi.DomainHash) ([]byte, error) {

@@ -96,6 +96,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		blockHeaderStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
+		dagParams.EnableNonNativeSubnetworks,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
