@@ -28,12 +28,12 @@ func (c *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODi
 }
 
 func (c *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) error {
-	if c.stagedVirtualUTXODiff == nil {
-		return nil
-	}
-
 	if c.stagedVirtualUTXOSet != nil {
 		return errors.New("cannot commit virtual UTXO diff while virtual UTXO set is staged")
+	}
+
+	if c.stagedVirtualUTXODiff == nil {
+		return nil
 	}
 
 	for toRemoveOutpoint := range c.stagedVirtualUTXODiff.ToRemove {
