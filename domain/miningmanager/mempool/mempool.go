@@ -12,7 +12,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
-	"github.com/kaspanet/kaspad/domain/consensus"
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
@@ -75,7 +74,7 @@ type mempool struct {
 	orphansByPrev map[consensusexternalapi.DomainOutpoint]map[consensusexternalapi.DomainTransactionID]*consensusexternalapi.DomainTransaction
 
 	mempoolUTXOSet *mempoolUTXOSet
-	consensus      consensus.Consensus
+	consensus      consensusexternalapi.Consensus
 
 	// nextExpireScan is the time after which the orphan pool will be
 	// scanned in order to evict orphans. This is NOT a hard deadline as
@@ -89,7 +88,7 @@ type mempool struct {
 
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
-func New(consensus consensus.Consensus) miningmanagermodel.Mempool {
+func New(consensus consensusexternalapi.Consensus) miningmanagermodel.Mempool {
 	policy := policy{
 		MaxTxVersion:    0,
 		AcceptNonStd:    false,

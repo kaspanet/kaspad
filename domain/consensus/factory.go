@@ -16,6 +16,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
@@ -37,13 +39,19 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error)
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (testapi.TestConsensus, error)
 }
 
 type factory struct{}
 
+// NewFactory creates a new Consensus factory
+func NewFactory() Factory {
+	return &factory{}
+}
+
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -193,6 +201,19 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headerTipsStore)
 
+	blockBuilder := blockbuilder.New(
+		dbManager,
+		difficultyManager,
+		pastMedianTimeManager,
+		coinbaseManager,
+		consensusStateManager,
+		ghostdagManager,
+		acceptanceDataStore,
+		blockRelationStore,
+		multisetStore,
+		ghostdagDataStore,
+	)
+
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		dbManager,
@@ -225,6 +246,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
+		blockBuilder:          blockBuilder,
 		consensusStateManager: consensusStateManager,
 		transactionValidator:  transactionValidator,
 		syncManager:           syncManager,
@@ -252,7 +274,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-// NewFactory creates a new Consensus factory
-func NewFactory() Factory {
-	return &factory{}
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (
+	testapi.TestConsensus, error) {
+
+	consensusAsInterface, err := f.NewConsensus(dagParams, db)
+	if err != nil {
+		return nil, err
+	}
+
+	consensusAsImplementation := consensusAsInterface.(*consensus)
+
+	return &testConsensus{
+		consensus:        consensusAsImplementation,
+		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
+	}, nil
 }

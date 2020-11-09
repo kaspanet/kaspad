@@ -116,17 +116,6 @@ func New(
 	}
 }
 
-// BuildBlock builds a block over the current state, with the given
-// coinbaseData and the given transactions
-func (bp *blockProcessor) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
-
-	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlock")
-	defer onEnd()
-
-	return bp.buildBlock(coinbaseData, transactions)
-}
-
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
 func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
