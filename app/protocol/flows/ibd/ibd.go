@@ -20,7 +20,7 @@ type HandleIBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock) error
-	FinishIBD() error
+	FinishIBD()
 }
 
 type handleIBDFlow struct {
@@ -55,6 +55,41 @@ func (flow *handleIBDFlow) runIBD() error {
 	flow.peer.WaitForIBDStart()
 	defer flow.FinishIBD()
 
+	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	if err != nil {
+		return err
+	}
+
+	for {
+		switch syncInfo.State {
+		case externalapi.SyncStateHeadersFirst:
+			err := flow.syncHeaders()
+			if err != nil {
+				return err
+			}
+		case externalapi.SyncStateMissingUTXOSet:
+			found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
+			if err != nil {
+				return err
+			}
+
+			if !found {
+				return nil
+			}
+		case externalapi.SyncStateMissingBlockBodies:
+			err := flow.syncMissingBlockBodies()
+			if err != nil {
+				return err
+			}
+		case externalapi.SyncStateNormal:
+			return nil
+		default:
+			return errors.Errorf("unexpected state %s", syncInfo.State)
+		}
+	}
+}
+
+func (flow *handleIBDFlow) syncHeaders() error {
 	peerSelectedTipHash := flow.peer.SelectedTipHash()
 	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, peerSelectedTipHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
@@ -64,7 +99,104 @@ func (flow *handleIBDFlow) runIBD() error {
 
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	return flow.downloadBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	return flow.downloadHeaders(highestSharedBlockHash, peerSelectedTipHash)
+}
+
+func (flow *handleIBDFlow) syncMissingBlockBodies() error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(flow.peer.SelectedTipHash())
+	if err != nil {
+		return err
+	}
+
+	for offset := 0; offset < len(hashes); offset += appmessage.MaxRequestIBDBlocksHashes {
+		var hashesToRequest []*externalapi.DomainHash
+		if offset+appmessage.MaxRequestIBDBlocksHashes < len(hashes) {
+			hashesToRequest = hashes[offset : offset+appmessage.MaxRequestIBDBlocksHashes]
+		} else {
+			hashesToRequest = hashes[offset:]
+		}
+
+		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
+		if err != nil {
+			return err
+		}
+
+		for _, expectedHash := range hashesToRequest {
+			message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+			if err != nil {
+				return err
+			}
+
+			msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
+			if !ok {
+				return protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
+			}
+
+			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+			blockHash := consensusserialization.BlockHash(block)
+			if *expectedHash != *blockHash {
+				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
+			}
+
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+			if err != nil {
+				return protocolerrors.ConvertToProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (flow *handleIBDFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
+	if err != nil {
+		return false, err
+	}
+
+	utxoSet, block, found, err := flow.receiveIBDRootUTXOSetAndBlock()
+	if err != nil {
+		return false, err
+	}
+
+	if !found {
+		return false, nil
+	}
+
+	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	if err != nil {
+		blockHash := consensusserialization.BlockHash(block)
+		return false, protocolerrors.ConvertToProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
+	}
+
+	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
+	if err != nil {
+		return false, protocolerrors.ConvertToProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
+	}
+
+	return true, nil
+}
+
+func (flow *handleIBDFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	switch message := message.(type) {
+	case *appmessage.MsgIBDRootUTXOSetAndBlock:
+		return message.UTXOSet,
+			appmessage.MsgBlockToDomainBlock(message.Block), true, nil
+	case *appmessage.MsgIBDRootNotFound:
+		return nil, nil, false, nil
+	default:
+		return nil, nil, false,
+			protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: %s or %s, got: %s",
+				appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdIBDRootNotFound, message.Command(),
+			)
+	}
 }
 
 func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (lowHash *externalapi.DomainHash,
@@ -123,17 +255,17 @@ func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*external
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleIBDFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
-	err := flow.sendGetBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	err := flow.sendRequestHeaders(highestSharedBlockHash, peerSelectedTipHash)
 	if err != nil {
 		return err
 	}
 
 	blocksReceived := 0
 	for {
-		msgIBDBlock, doneIBD, err := flow.receiveIBDBlock()
+		msgBlockHeader, doneIBD, err := flow.receiveHeader()
 		if err != nil {
 			return err
 		}
@@ -142,14 +274,14 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *externalapi.Do
 			return nil
 		}
 
-		err = flow.processIBDBlock(msgIBDBlock)
+		err = flow.processHeader(msgBlockHeader)
 		if err != nil {
 			return err
 		}
 
 		blocksReceived++
 		if blocksReceived%ibdBatchSize == 0 {
-			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextIBDBlocks())
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
 				return err
 			}
@@ -157,47 +289,52 @@ func (flow *handleIBDFlow) downloadBlocks(highestSharedBlockHash *externalapi.Do
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlocks(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleIBDFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
-	msgGetBlockInvs := appmessage.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleIBDFlow) receiveIBDBlock() (msgIBDBlock *appmessage.MsgIBDBlock, doneIBD bool, err error) {
+func (flow *handleIBDFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 	switch message := message.(type) {
-	case *appmessage.MsgIBDBlock:
+	case *appmessage.MsgBlockHeader:
 		return message, false, nil
-	case *appmessage.MsgDoneIBDBlocks:
+	case *appmessage.MsgDoneHeaders:
 		return nil, true, nil
 	default:
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
+				"expected: %s or %s, got: %s", appmessage.CmdHeader, appmessage.CmdDoneHeaders, message.Command())
 	}
 }
 
-func (flow *handleIBDFlow) processIBDBlock(msgIBDBlock *appmessage.MsgIBDBlock) error {
-	block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+func (flow *handleIBDFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHeader) error {
+	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
+	block := &externalapi.DomainBlock{
+		Header:       header,
+		Transactions: nil,
+	}
+
 	blockHash := consensusserialization.BlockHash(block)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err
 	}
 	if blockInfo.Exists {
-		log.Debugf("IBD block %s is already in the DAG. Skipping...", blockHash)
+		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
 	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
+			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
 		}
-		log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
+		log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}

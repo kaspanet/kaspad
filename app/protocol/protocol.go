@@ -180,33 +180,44 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 
 	return []*flow{
 		m.registerFlow("HandleIBD", router, []appmessage.MessageCommand{appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
-			appmessage.CmdDoneIBDBlocks}, isStopping, errChan,
+			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 
-		m.registerFlow("RequestSelectedTip", router, []appmessage.MessageCommand{appmessage.CmdSelectedTip}, isStopping, errChan,
+		m.registerFlow("RequestSelectedTip", router,
+			[]appmessage.MessageCommand{appmessage.CmdSelectedTip}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return selectedtip.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 
-		m.registerFlow("HandleRequestSelectedTip", router, []appmessage.MessageCommand{appmessage.CmdRequestSelectedTip}, isStopping, errChan,
+		m.registerFlow("HandleRequestSelectedTip", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestSelectedTip}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return selectedtip.HandleRequestSelectedTip(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleRequestBlockLocator", router, []appmessage.MessageCommand{appmessage.CmdRequestBlockLocator}, isStopping, errChan,
+		m.registerFlow("HandleRequestBlockLocator", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleRequestBlockLocator(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
-		m.registerFlow("HandleRequestIBDBlocks", router, []appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks, appmessage.CmdRequestNextIBDBlocks}, isStopping, errChan,
+		m.registerFlow("HandleRequestHeaders", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestHeaders, appmessage.CmdRequestNextHeaders}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleRequestIBDBlocks(m.context, incomingRoute, outgoingRoute)
+				return ibd.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.registerFlow("HandleRequestIBDRootUTXOSetAndBlock", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestIBDRootUTXOSetAndBlock}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return ibd.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 	}

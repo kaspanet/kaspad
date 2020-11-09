@@ -12,7 +12,7 @@ type Consensus interface {
 
 	GetHashesBetween(lowHash, highHash *DomainHash) ([]*DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
-	GetPruningPointUTXOSet() ([]byte, error)
+	GetPruningPointUTXOSet(expectedPruningPointHash *DomainHash) ([]byte, error)
 	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*DomainBlock, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)

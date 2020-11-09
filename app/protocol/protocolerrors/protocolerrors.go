@@ -1,6 +1,9 @@
 package protocolerrors
 
-import "github.com/pkg/errors"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
+)
 
 // ProtocolError is an error that signifies a violation
 // of the peer-to-peer protocol
@@ -49,4 +52,12 @@ func Wrapf(shouldBan bool, err error, format string, args ...interface{}) error 
 		ShouldBan: shouldBan,
 		Cause:     errors.Wrapf(err, format, args...),
 	}
+}
+
+func ConvertToProtocolErrorIfRuleError(err error, format string, args ...interface{}) error {
+	if !errors.As(err, &ruleerrors.RuleError{}) {
+		return err
+	}
+
+	return Wrapf(true, err, format, args...)
 }

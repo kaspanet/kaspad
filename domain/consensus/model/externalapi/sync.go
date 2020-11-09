@@ -1,5 +1,7 @@
 package externalapi
 
+import "fmt"
+
 // Each of the following represent one of the possible sync
 // states of the consensus
 const (
@@ -25,7 +27,7 @@ func (s SyncState) String() string {
 		return "SyncStateMissingBlockBodies"
 	}
 
-	return "<unknown state>"
+	return fmt.Sprintf("<unknown state (%d)>", s)
 }
 
 // SyncInfo holds info about the current sync state of the consensus
