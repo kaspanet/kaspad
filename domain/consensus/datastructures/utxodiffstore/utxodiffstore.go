@@ -65,10 +65,6 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
 		if utxoDiffChild == nil {
-			err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), []byte{})
-			if err != nil {
-				return err
-			}
 			continue
 		}
 
