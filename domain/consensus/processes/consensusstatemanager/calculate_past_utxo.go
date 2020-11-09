@@ -75,19 +75,9 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		return nil, nil, err
 	}
 
-	var selectedParentMedianTime int64
-	if *blockHash == *csm.genesisHash {
-		header, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, blockHash)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		selectedParentMedianTime = header.TimeInMilliseconds
-	} else {
-		selectedParentMedianTime, err = csm.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
-		if err != nil {
-			return nil, nil, err
-		}
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(blockHash)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	multiblockAcceptanceData := make(model.AcceptanceData, len(blueBlocks))

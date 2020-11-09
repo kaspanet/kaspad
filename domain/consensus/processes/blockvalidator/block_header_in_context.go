@@ -99,15 +99,10 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 		return nil
 	}
 
-	hash := consensusserialization.HeaderHash(header)
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
-	if err != nil {
-		return err
-	}
-
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+	hash := consensusserialization.HeaderHash(header)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(hash)
 	if err != nil {
 		return err
 	}

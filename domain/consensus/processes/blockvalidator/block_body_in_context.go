@@ -30,8 +30,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 
 	// If it's not genesis
 	if len(block.Header.ParentHashes) != 0 {
-
-		blockTime, err = v.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+		blockTime, err = v.pastMedianTimeManager.PastMedianTime(blockHash)
 		if err != nil {
 			return err
 		}

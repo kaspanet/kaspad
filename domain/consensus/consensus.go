@@ -68,11 +68,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return err
-	}
-	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
+	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}

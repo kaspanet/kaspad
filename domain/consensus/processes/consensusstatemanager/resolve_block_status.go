@@ -16,7 +16,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	}
 
 	// resolve the unverified blocks' statuses in opposite order
-	for i := len(unverifiedBlocks) - 1; i >= 0; i++ {
+	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
 
 		var blockStatus externalapi.BlockStatus
