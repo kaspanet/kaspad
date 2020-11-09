@@ -5,30 +5,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// Consensus maintains the current core state of the node
-type Consensus interface {
-	BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
-	ValidateAndInsertBlock(block *externalapi.DomainBlock) error
-	ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error
-
-	GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error)
-	GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error)
-	GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error)
-
-	GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	GetPruningPointUTXOSet() ([]byte, error)
-	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
-	GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
-	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
-	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
-	GetSyncInfo() (*externalapi.SyncInfo, error)
-}
-
 type consensus struct {
 	databaseContext model.DBReader
 
 	blockProcessor        model.BlockProcessor
+	blockBuilder          model.BlockBuilder
 	consensusStateManager model.ConsensusStateManager
 	transactionValidator  model.TransactionValidator
 	syncManager           model.SyncManager
@@ -46,7 +27,7 @@ type consensus struct {
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	return s.blockProcessor.BuildBlock(coinbaseData, transactions)
+	return s.blockBuilder.BuildBlock(coinbaseData, transactions)
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it

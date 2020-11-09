@@ -67,7 +67,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatu
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	pastUTXODiff, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceData(blockHash)
+	pastUTXODiff, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
 	if err != nil {
 		return 0, err
 	}

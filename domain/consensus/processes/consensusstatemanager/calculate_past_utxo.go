@@ -12,7 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
+func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
 	*model.UTXODiff, model.AcceptanceData, model.Multiset, error) {
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
@@ -167,7 +167,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 }
 
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (model.ReadOnlyUTXOSetIterator, error) {
-	diff, _, _, err := csm.calculatePastUTXOAndAcceptanceData(blockHash)
+	diff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
 	if err != nil {
 		return nil, err
 	}
