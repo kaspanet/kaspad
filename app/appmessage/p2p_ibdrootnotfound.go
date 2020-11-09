@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgDoneHeaders implements the Message interface and represents a kaspa
+// MsgIBDRootNotFound implements the Message interface and represents a kaspa
 // IBDRootNotFound message. It is used to notify the IBD root that was requested
 // by other peer was not found.
 //

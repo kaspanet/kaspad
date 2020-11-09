@@ -8,14 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// IBDBlockRequestsContext is the interface for the context needed for the HandleIBDBlockRequests flow.
-type IBDBlockRequestsContext interface {
+// HandleIBDBlockRequestsContext is the interface for the context needed for the HandleIBDBlockRequests flow.
+type HandleIBDBlockRequestsContext interface {
 	Domain() domain.Domain
 }
 
 // HandleIBDBlockRequests listens to appmessage.MsgRequestRelayBlocks messages and sends
 // their corresponding blocks to the requesting peer.
-func HandleIBDBlockRequests(context IBDBlockRequestsContext, incomingRoute *router.Route,
+func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route) error {
 
 	for {

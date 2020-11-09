@@ -7,7 +7,7 @@ func (x *KaspadMessage_IbdBlock) toAppMessage() (appmessage.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &appmessage.MsgIBDBlock{MsgBlock: msgBlock.(*appmessage.MsgBlock)}, nil
+	return &appmessage.MsgIBDBlock{MsgBlock: msgBlock}, nil
 }
 
 func (x *KaspadMessage_IbdBlock) fromAppMessage(msgIBDBlock *appmessage.MsgIBDBlock) error {

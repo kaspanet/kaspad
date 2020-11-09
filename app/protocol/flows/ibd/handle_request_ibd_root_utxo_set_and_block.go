@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
+// HandleRequestIBDRootUTXOSetAndBlockContext is the interface for the context needed for the HandleRequestIBDRootUTXOSetAndBlock flow.
 type HandleRequestIBDRootUTXOSetAndBlockContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
@@ -22,6 +23,8 @@ type handleRequestIBDRootUTXOSetAndBlockFlow struct {
 	incomingRoute, outgoingRoute *router.Route
 }
 
+// HandleRequestIBDRootUTXOSetAndBlock listens to appmessage.MsgRequestIBDRootUTXOSetAndBlock messages and sends
+// the IBD root UTXO set and block body.
 func HandleRequestIBDRootUTXOSetAndBlock(context HandleRequestIBDRootUTXOSetAndBlockContext, incomingRoute,
 	outgoingRoute *router.Route) error {
 	flow := &handleRequestIBDRootUTXOSetAndBlockFlow{

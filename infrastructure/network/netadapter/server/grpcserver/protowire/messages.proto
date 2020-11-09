@@ -11,9 +11,9 @@ message KaspadMessage {
     RequestBlockLocatorMessage requestBlockLocator = 4;
     BlockLocatorMessage blockLocator = 5;
     RequestAddressesMessage requestAddresses = 6;
-    RequestIBDBlocksMessage requestIBDBlocks = 7;
-    RequestNextIBDBlocksMessage requestNextIBDBlocks = 8;
-    DoneIBDBlocksMessage DoneIBDBlocks = 9;
+    RequestHeadersMessage requestHeaders = 7;
+    RequestNextHeadersMessage requestNextHeaders = 8;
+    DoneHeadersMessage DoneHeaders = 9;
     RequestRelayBlocksMessage requestRelayBlocks = 10;
     RequestSelectedTipMessage requestSelectedTip = 11;
     RequestTransactionsMessage requestTransactions = 12;
@@ -27,6 +27,11 @@ message KaspadMessage {
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
+    BlockHeaderMessage blockHeader = 23;
+    RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
+    IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
+    RequestIBDBlocksMessage requestIBDBlocks = 26;
+    IBDRootNotFoundMessage ibdRootNotFound = 27;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -144,11 +149,11 @@ message TransactionOutput{
 
 // BlockMessage start
 message BlockMessage{
-  BlockHeader header = 1;
+  BlockHeaderMessage header = 1;
   repeated TransactionMessage transactions = 2;
 }
 
-message BlockHeader{
+message BlockHeaderMessage{
   int32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
@@ -178,27 +183,27 @@ message BlockLocatorMessage{
 // BlockLocatorMessage end
 
 // GetBlocksMessage start
-message RequestIBDBlocksMessage{
+message RequestHeadersMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
 // GetBlocksMessage end
 
 // RequestNextIBDBlocksMessage start
-message RequestNextIBDBlocksMessage{
+message RequestNextHeadersMessage{
 }
 // RequestNextIBDBlocksMessage end
 
 // DoneIBDBlocksMessage start
-message DoneIBDBlocksMessage{
+message DoneHeadersMessage{
 }
 // DoneIBDBlocksMessage end
 
-// GetRelayBlocksMessage start
+// RequestRelayBlocksMessage start
 message RequestRelayBlocksMessage{
   repeated Hash hashes = 1;
 }
-// GetRelayBlocksMessage end
+// RequestRelayBlocksMessage end
 
 // GetSelectedTipMessage start
 message RequestSelectedTipMessage{
@@ -272,6 +277,30 @@ message RejectMessage{
   string reason = 1;
 }
 // RejectMessage end
+
+// RequestIBDRootUTXOSetAndBlockMessage start
+message RequestIBDRootUTXOSetAndBlockMessage{
+  Hash ibdRoot = 1;
+}
+// RequestIBDRootUTXOSetAndBlockMessage end
+
+// IBDRootUTXOSetAndBlockMessage start
+message IBDRootUTXOSetAndBlockMessage{
+  bytes utxoSet = 1;
+  BlockMessage block = 2;
+}
+// IBDRootUTXOSetAndBlockMessage end
+
+// RequestIBDBlocksMessage start
+message RequestIBDBlocksMessage{
+  repeated Hash hashes = 1;
+}
+// RequestIBDBlocksMessage end
+
+// IBDRootNotFoundMessage start
+message IBDRootNotFoundMessage{
+}
+// IBDRootNotFoundMessage end
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
@@ -455,7 +484,7 @@ message BlockVerboseData{
   double difficulty = 11;
   repeated string parentHashes = 12;
   string selectedParentHash = 13;
-  repeated string transactionIDs=14;
+  repeated string transactionIDs = 14;
 }
 
 message TransactionVerboseData{

@@ -54,7 +54,10 @@ func Wrapf(shouldBan bool, err error, format string, args ...interface{}) error 
 	}
 }
 
-func ConvertToProtocolErrorIfRuleError(err error, format string, args ...interface{}) error {
+// ConvertToBanningProtocolErrorIfRuleError converts the given error to
+// a banning protocol error if it's a rule error, and otherwise keep it
+// as is.
+func ConvertToBanningProtocolErrorIfRuleError(err error, format string, args ...interface{}) error {
 	if !errors.As(err, &ruleerrors.RuleError{}) {
 		return err
 	}

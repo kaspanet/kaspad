@@ -22,7 +22,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 	if err != nil {
 		return nil, err
 	}
-	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock.(*appmessage.MsgBlock)), nil
+	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock), nil
 }
 
 func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {

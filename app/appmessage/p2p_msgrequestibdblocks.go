@@ -4,8 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// MaxRequestIBDBlocksHashes is the maximum number of hashes that can
+// be in a single RequestIBDBlocks message.
 const MaxRequestIBDBlocksHashes = MaxInvPerMsg
 
+// MsgRequestIBDBlocks implements the Message interface and represents a kaspa
+// RequestIBDBlocks message. It is used to request blocks as part of the IBD
+// protocol.
 type MsgRequestIBDBlocks struct {
 	baseMessage
 	Hashes []*externalapi.DomainHash
@@ -17,6 +22,7 @@ func (msg *MsgRequestIBDBlocks) Command() MessageCommand {
 	return CmdRequestIBDBlocks
 }
 
+// NewMsgRequestIBDBlocks returns a new MsgRequestIBDBlocks.
 func NewMsgRequestIBDBlocks(hashes []*externalapi.DomainHash) *MsgRequestIBDBlocks {
 	return &MsgRequestIBDBlocks{
 		Hashes: hashes,

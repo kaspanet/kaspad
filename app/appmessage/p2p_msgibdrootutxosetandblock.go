@@ -1,5 +1,7 @@
 package appmessage
 
+// MsgIBDRootUTXOSetAndBlock implements the Message interface and represents a kaspa
+// IBDRootUTXOSetAndBlock message. It is used to answer RequestIBDRootUTXOSetAndBlock messages.
 type MsgIBDRootUTXOSetAndBlock struct {
 	baseMessage
 	UTXOSet []byte
@@ -12,6 +14,7 @@ func (msg *MsgIBDRootUTXOSetAndBlock) Command() MessageCommand {
 	return CmdRequestIBDRootUTXOSetAndBlock
 }
 
+// NewMsgIBDRootUTXOSetAndBlock returns a new MsgIBDRootUTXOSetAndBlock.
 func NewMsgIBDRootUTXOSetAndBlock(utxoSet []byte, block *MsgBlock) *MsgIBDRootUTXOSetAndBlock {
 	return &MsgIBDRootUTXOSetAndBlock{
 		UTXOSet: utxoSet,

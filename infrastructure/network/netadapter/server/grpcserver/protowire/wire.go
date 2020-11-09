@@ -93,15 +93,15 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestNextIBDBlocks:
-		payload := new(KaspadMessage_RequestNextIBDBlocks)
+	case *appmessage.MsgRequestNextHeaders:
+		payload := new(KaspadMessage_RequestNextHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgDoneIBDBlocks:
-		payload := new(KaspadMessage_DoneIBDBlocks)
+	case *appmessage.MsgDoneHeaders:
+		payload := new(KaspadMessage_DoneHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -205,6 +205,47 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+
+	case *appmessage.MsgBlockHeader:
+		payload := new(KaspadMessage_BlockHeader)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
+	case *appmessage.MsgRequestIBDRootUTXOSetAndBlock:
+		payload := new(KaspadMessage_RequestIBDRootUTXOSetAndBlock)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
+	case *appmessage.MsgIBDRootUTXOSetAndBlock:
+		payload := new(KaspadMessage_IbdRootUTXOSetAndBlock)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
+	case *appmessage.MsgRequestHeaders:
+		payload := new(KaspadMessage_RequestHeaders)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
+	case *appmessage.MsgIBDRootNotFound:
+		payload := new(KaspadMessage_IbdRootNotFound)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
 	default:
 		return nil, nil
 	}

@@ -38,7 +38,7 @@ func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Messag
 		return nil, err
 	}
 	return &appmessage.BlockAddedNotificationMessage{
-		Block: block.(*appmessage.MsgBlock),
+		Block: block,
 	}, nil
 }
 

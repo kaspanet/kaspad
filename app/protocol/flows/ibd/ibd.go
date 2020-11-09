@@ -141,7 +141,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies() error {
 
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
-				return protocolerrors.ConvertToProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
 		}
 	}
@@ -167,12 +167,12 @@ func (flow *handleIBDFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHa
 	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		blockHash := consensusserialization.BlockHash(block)
-		return false, protocolerrors.ConvertToProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
+		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
 	}
 
 	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
 	if err != nil {
-		return false, protocolerrors.ConvertToProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
+		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
 	}
 
 	return true, nil
