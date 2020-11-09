@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"sync"
+
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
@@ -95,6 +97,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		ghostdagDataStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
+		dagParams.EnableNonNativeSubnetworks,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
@@ -245,6 +248,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		headerTipsStore)
 
 	c := &consensus{
+		lock:            &sync.RWMutex{},
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
