@@ -217,7 +217,14 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 		m.registerFlow("HandleRequestIBDRootUTXOSetAndBlock", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDRootUTXOSetAndBlock}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
+				return ibd.HandleRequestIBDRootUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.registerFlow("HandleIBDBlockRequests", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return ibd.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 	}
