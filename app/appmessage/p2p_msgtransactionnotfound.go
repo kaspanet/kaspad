@@ -5,14 +5,14 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgTransactionNotFound defines a kaspa TransactionNotFound message which is sent in response to
 // a RequestTransactions message if any of the requested data in not available on the peer.
 type MsgTransactionNotFound struct {
 	baseMessage
-	ID *daghash.TxID
+	ID *externalapi.DomainTransactionID
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -23,7 +23,7 @@ func (msg *MsgTransactionNotFound) Command() MessageCommand {
 
 // NewMsgTransactionNotFound returns a new kaspa transactionsnotfound message that conforms to the
 // Message interface. See MsgTransactionNotFound for details.
-func NewMsgTransactionNotFound(id *daghash.TxID) *MsgTransactionNotFound {
+func NewMsgTransactionNotFound(id *externalapi.DomainTransactionID) *MsgTransactionNotFound {
 	return &MsgTransactionNotFound{
 		ID: id,
 	}

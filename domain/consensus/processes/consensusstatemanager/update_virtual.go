@@ -13,14 +13,17 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return err
 	}
 
-	csm.dagTopologyManager.SetParents(model.VirtualBlockHash, virtualParents)
+	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, virtualParents)
+	if err != nil {
+		return err
+	}
 
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	virtualUTXODiff, _, _, err := csm.calculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
+	virtualUTXODiff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -66,5 +69,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		}
 	}
 
-	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+
+	return nil
 }

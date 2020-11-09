@@ -5,11 +5,11 @@
 package blocklogger
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 var (
@@ -22,12 +22,12 @@ var (
 // LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
-func LogBlock(block *util.Block) error {
+func LogBlock(block *externalapi.DomainBlock) error {
 	mtx.Lock()
 	defer mtx.Unlock()
 
 	receivedLogBlocks++
-	receivedLogTx += int64(len(block.MsgBlock().Transactions))
+	receivedLogTx += int64(len(block.Transactions))
 
 	now := mstime.Now()
 	duration := now.Sub(lastBlockLogTime)
@@ -48,14 +48,9 @@ func LogBlock(block *util.Block) error {
 		txStr = "transaction"
 	}
 
-	blueScore, err := block.BlueScore()
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Processed %d %s in the last %s (%d %s, blue score %d, %s)",
+	log.Infof("Processed %d %s in the last %s (%d %s, %s)",
 		receivedLogBlocks, blockStr, tDuration, receivedLogTx,
-		txStr, blueScore, block.MsgBlock().Header.Timestamp)
+		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds))
 
 	receivedLogBlocks = 0
 	receivedLogTx = 0

@@ -103,14 +103,22 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 }
 
 func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-	// Go over the block's current relations (if they exist), and remove the block from all it's current parents
-	// Note: In theory we should also remove the block from all it's children, however, in practice no block
-	// ever has it's relations updated after getting any children, therefore we skip this step
-	currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+
+	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
-	if currentRelations != nil {
+
+	if hasRelations {
+		// Go over the block's current relations (if they exist), and remove the block from all its current parents
+		// Note: In theory we should also remove the block from all its children, however, in practice no block
+		// ever has its relations updated after getting any children, therefore we skip this step
+
+		currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+		if err != nil {
+			return err
+		}
+
 		for _, currentParent := range currentRelations.Parents {
 			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, currentParent)
 			if err != nil {

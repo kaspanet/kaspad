@@ -1,12 +1,20 @@
 package serialization
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 // BlockGHOSTDAGDataToDBBlockGHOSTDAGData converts BlockGHOSTDAGData to DbBlockGhostdagData
 func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) *DbBlockGhostdagData {
+	var selectedParent *DbHash
+	if blockGHOSTDAGData.SelectedParent != nil {
+		selectedParent = DomainHashToDbHash(blockGHOSTDAGData.SelectedParent)
+	}
+
 	return &DbBlockGhostdagData{
 		BlueScore:          blockGHOSTDAGData.BlueScore,
-		SelectedParent:     DomainHashToDbHash(blockGHOSTDAGData.SelectedParent),
+		SelectedParent:     selectedParent,
 		MergeSetBlues:      DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetBlues),
 		MergeSetReds:       DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetReds),
 		BluesAnticoneSizes: bluesAnticoneSizesToDBBluesAnticoneSizes(blockGHOSTDAGData.BluesAnticoneSizes),
@@ -15,9 +23,13 @@ func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTD
 
 // DBBlockGHOSTDAGDataToBlockGHOSTDAGData converts DbBlockGhostdagData to BlockGHOSTDAGData
 func DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData *DbBlockGhostdagData) (*model.BlockGHOSTDAGData, error) {
-	selectedParent, err := DbHashToDomainHash(dbBlockGHOSTDAGData.SelectedParent)
-	if err != nil {
-		return nil, err
+	var selectedParent *externalapi.DomainHash
+	if dbBlockGHOSTDAGData.SelectedParent != nil {
+		var err error
+		selectedParent, err = DbHashToDomainHash(dbBlockGHOSTDAGData.SelectedParent)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	mergetSetBlues, err := DbHashesToDomainHashes(dbBlockGHOSTDAGData.MergeSetBlues)

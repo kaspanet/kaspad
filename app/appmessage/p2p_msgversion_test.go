@@ -5,12 +5,13 @@
 package appmessage
 
 import (
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"net"
 	"reflect"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 )
 
 // TestVersion tests the MsgVersion API.
@@ -18,7 +19,7 @@ func TestVersion(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Create version message data.
-	selectedTipHash := &daghash.Hash{12, 34}
+	selectedTipHash := &externalapi.DomainHash{12, 34}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	generatedID, err := id.GenerateID()
@@ -44,7 +45,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if !msg.SelectedTipHash.IsEqual(selectedTipHash) {
+	if *msg.SelectedTipHash != *selectedTipHash {
 		t.Errorf("NewMsgVersion: wrong selected tip hash - got %s, want %s",
 			msg.SelectedTipHash, selectedTipHash)
 	}

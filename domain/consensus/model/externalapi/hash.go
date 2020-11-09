@@ -5,7 +5,7 @@ import "encoding/hex"
 // DomainHashSize of array used to store hashes.
 const DomainHashSize = 32
 
-// DomainHash is the domain representation of a daghash.Hash
+// DomainHash is the domain representation of a Hash
 type DomainHash [DomainHashSize]byte
 
 // String returns the Hash as the hexadecimal string of the byte-reversed
@@ -15,4 +15,14 @@ func (hash DomainHash) String() string {
 		hash[i], hash[DomainHashSize-1-i] = hash[DomainHashSize-1-i], hash[i]
 	}
 	return hex.EncodeToString(hash[:])
+}
+
+// DomainHashesToStrings returns a slice of strings representing the hashes in the given slice of hashes
+func DomainHashesToStrings(hashes []*DomainHash) []string {
+	strings := make([]string, len(hashes))
+	for i, hash := range hashes {
+		strings[i] = hash.String()
+	}
+
+	return strings
 }

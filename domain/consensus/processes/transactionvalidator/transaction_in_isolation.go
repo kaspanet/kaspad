@@ -133,7 +133,7 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
 		payloadHash := hashes.HashData(tx.Payload)
-		if tx.PayloadHash != payloadHash {
+		if tx.PayloadHash != *payloadHash {
 			return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
 		}
 	} else if tx.PayloadHash != (externalapi.DomainHash{}) {

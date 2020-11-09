@@ -3,7 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
 	"math"
@@ -40,7 +40,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions {
 		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore, blockTime) {
-			txID := hashserialization.TransactionID(tx)
+			txID := consensusserialization.TransactionID(tx)
 			return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
 				"transaction %s", txID)
 		}

@@ -6,7 +6,8 @@ package appmessage
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MaxAddressesPerMsg is the maximum number of addresses that can be in a single
@@ -26,7 +27,7 @@ const MaxAddressesPerMsg = 1000
 type MsgAddresses struct {
 	baseMessage
 	IncludeAllSubnetworks bool
-	SubnetworkID          *subnetworkid.SubnetworkID
+	SubnetworkID          *externalapi.DomainSubnetworkID
 	AddrList              []*NetAddress
 }
 
@@ -66,7 +67,7 @@ func (msg *MsgAddresses) Command() MessageCommand {
 
 // NewMsgAddresses returns a new kaspa Addresses message that conforms to the
 // Message interface. See MsgAddresses for details.
-func NewMsgAddresses(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgAddresses {
+func NewMsgAddresses(includeAllSubnetworks bool, subnetworkID *externalapi.DomainSubnetworkID) *MsgAddresses {
 	return &MsgAddresses{
 		IncludeAllSubnetworks: includeAllSubnetworks,
 		SubnetworkID:          subnetworkID,

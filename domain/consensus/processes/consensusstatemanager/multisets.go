@@ -3,13 +3,15 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 )
 
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
-	multiset, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
+	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return nil, err
 	}
@@ -24,14 +26,14 @@ func (csm *consensusStateManager) calculateMultiset(
 
 			isCoinbase := i == 0
 			var err error
-			err = addTransactionToMultiset(multiset, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
+			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	return multiset, nil
+	return ms, nil
 }
 
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
@@ -46,7 +48,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			TransactionID: *hashserialization.TransactionID(transaction),
+			TransactionID: *consensusserialization.TransactionID(transaction),
 			Index:         uint32(i),
 		}
 		utxoEntry := &externalapi.UTXOEntry{
@@ -67,7 +69,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}
@@ -79,11 +81,19 @@ func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := hashserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}
 	multiset.Remove(serializedUTXO)
 
 	return nil
+}
+
+func calcMultisetFromProtoUTXOSet(protoUTXOSet *utxoserialization.ProtoUTXOSet) (model.Multiset, error) {
+	ms := multiset.New()
+	for _, utxo := range protoUTXOSet.Utxos {
+		ms.Add(utxo.EntryOutpointPair)
+	}
+	return ms, nil
 }

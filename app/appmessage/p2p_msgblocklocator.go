@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MaxBlockLocatorsPerMsg is the maximum number of block locator hashes allowed
@@ -13,7 +13,7 @@ const MaxBlockLocatorsPerMsg = 500
 // syncing with you.
 type MsgBlockLocator struct {
 	baseMessage
-	BlockLocatorHashes []*daghash.Hash
+	BlockLocatorHashes []*externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -24,7 +24,7 @@ func (msg *MsgBlockLocator) Command() MessageCommand {
 
 // NewMsgBlockLocator returns a new kaspa locator message that conforms to
 // the Message interface. See MsgBlockLocator for details.
-func NewMsgBlockLocator(locatorHashes []*daghash.Hash) *MsgBlockLocator {
+func NewMsgBlockLocator(locatorHashes []*externalapi.DomainHash) *MsgBlockLocator {
 	return &MsgBlockLocator{
 		BlockLocatorHashes: locatorHashes,
 	}

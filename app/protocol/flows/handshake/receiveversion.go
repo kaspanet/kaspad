@@ -72,7 +72,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	}
 
 	// Disconnect from partial nodes in networks that don't allow them
-	if !flow.DAG().Params.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
+	if !flow.Config().ActiveNetParams.EnableNonNativeSubnetworks && msgVersion.SubnetworkID != nil {
 		return nil, protocolerrors.New(true, "partial nodes are not allowed")
 	}
 
@@ -84,7 +84,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	isRemoteNodeFull := msgVersion.SubnetworkID == nil
 	isOutbound := flow.peer.Connection().IsOutbound()
 	if (isLocalNodeFull && !isRemoteNodeFull && isOutbound) ||
-		(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.IsEqual(localSubnetworkID)) {
+		(!isLocalNodeFull && !isRemoteNodeFull && *msgVersion.SubnetworkID != *localSubnetworkID) {
 
 		return nil, protocolerrors.New(false, "incompatible subnetworks")
 	}

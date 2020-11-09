@@ -63,6 +63,14 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 	return brs.deserializeBlockRelations(blockRelationsBytes)
 }
 
+func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+	if _, ok := brs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	return dbContext.Has(brs.hashAsKey(blockHash))
+}
+
 func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }

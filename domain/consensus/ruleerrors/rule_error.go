@@ -2,8 +2,9 @@ package ruleerrors
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
 
@@ -225,12 +226,14 @@ var (
 	// ErrBuiltInTransactionHasGas indicates that a transaction with built in subnetwork ID has a non zero gas.
 	ErrBuiltInTransactionHasGas = newRuleError("ErrBuiltInTransactionHasGas")
 
-	// ErrMissingParent indicates one of the block parents is not found.
-	ErrMissingParent = newRuleError("ErrMissingParent")
-
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
-	ErrSubnetworksDisabled = newRuleError("ErrSubnetworksDisabled")
+	ErrSubnetworksDisabled    = newRuleError("ErrSubnetworksDisabled")
+	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
+
+	ErrMissingBlockHeaderInIBD = newRuleError("ErrMissingBlockHeaderInIBD")
+
+	ErrMalformedUTXO = newRuleError("ErrMalformedUTXO")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
@@ -267,18 +270,35 @@ func newRuleError(message string) RuleError {
 // ErrMissingTxOut indicates a transaction output referenced by an input
 // either does not exist or has already been spent.
 type ErrMissingTxOut struct {
-	MissingOutpoints []externalapi.DomainOutpoint
+	MissingOutpoints []*externalapi.DomainOutpoint
 }
 
 func (e ErrMissingTxOut) Error() string {
-	return fmt.Sprint(e.MissingOutpoints)
+	return fmt.Sprintf("missing the following outpoint: %v", e.MissingOutpoints)
 }
 
 // NewErrMissingTxOut Creates a new ErrMissingTxOut error wrapped in a RuleError
-func NewErrMissingTxOut(missingOutpoints []externalapi.DomainOutpoint) error {
+func NewErrMissingTxOut(missingOutpoints []*externalapi.DomainOutpoint) error {
 	return errors.WithStack(RuleError{
 		message: "ErrMissingTxOut",
 		inner:   ErrMissingTxOut{missingOutpoints},
+	})
+}
+
+// ErrMissingParents indicates a block points to unknown parent(s).
+type ErrMissingParents struct {
+	MissingParentHashes []*externalapi.DomainHash
+}
+
+func (e ErrMissingParents) Error() string {
+	return fmt.Sprintf("missing the following parent hashes: %v", e.MissingParentHashes)
+}
+
+// NewErrMissingParents creates a new ErrMissingParents error wrapped in a RuleError
+func NewErrMissingParents(missingParentHashes []*externalapi.DomainHash) error {
+	return errors.WithStack(RuleError{
+		message: "ErrMissingParents",
+		inner:   ErrMissingParents{missingParentHashes},
 	})
 }
 
@@ -289,7 +309,7 @@ type InvalidTransaction struct {
 }
 
 func (invalid InvalidTransaction) String() string {
-	return fmt.Sprintf("(%v: %s)", hashserialization.TransactionID(invalid.Transaction), invalid.err)
+	return fmt.Sprintf("(%v: %s)", consensusserialization.TransactionID(invalid.Transaction), invalid.err)
 }
 
 // ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid

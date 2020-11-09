@@ -6,22 +6,24 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/pkg/errors"
 )
 
 // RelayInvsContext is the interface for the context needed for the HandleRelayInvs flow.
 type RelayInvsContext interface {
+	Domain() domain.Domain
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
-	OnNewBlock(block *util.Block) error
+	OnNewBlock(block *externalapi.DomainBlock) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
-	StartIBDIfRequired()
+	StartIBDIfRequired() error
 	IsInIBD() bool
 	Broadcast(message appmessage.Message) error
 }
@@ -57,15 +59,22 @@ func (flow *handleRelayInvsFlow) start() error {
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 
-		if flow.DAG().IsKnownBlock(inv.Hash) {
-			if flow.DAG().IsKnownInvalid(inv.Hash) {
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if blockInfo.Exists {
+			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
 			continue
 		}
 
-		flow.StartIBDIfRequired()
+		err = flow.StartIBDIfRequired()
+		if err != nil {
+			return err
+		}
 		if flow.IsInIBD() {
 			// Block relay is disabled during IBD
 			continue
@@ -108,8 +117,8 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 	numHashesToRequest := mathUtil.MinInt(appmessage.MsgRequestRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
-	pendingBlocks := map[daghash.Hash]struct{}{}
-	var filteredHashesToRequest []*daghash.Hash
+	pendingBlocks := map[externalapi.DomainHash]struct{}{}
+	var filteredHashesToRequest []*externalapi.DomainHash
 	for _, hash := range hashesToRequest {
 		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
 		if exists {
@@ -117,7 +126,11 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		}
 
 		// The block can become known from another peer in the process of orphan resolution
-		if flow.DAG().IsKnownBlock(hash) {
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(hash)
+		if err != nil {
+			return err
+		}
+		if blockInfo.Exists {
 			continue
 		}
 
@@ -146,11 +159,11 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 			return err
 		}
 
-		block := util.NewBlock(msgBlock)
-		blockHash := block.Hash()
+		block := appmessage.MsgBlockToDomainBlock(msgBlock)
+		blockHash := consensusserialization.BlockHash(block)
 
 		if _, ok := pendingBlocks[*blockHash]; !ok {
-			return protocolerrors.Errorf(true, "got unrequested block %s", block.Hash())
+			return protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
 		}
 
 		err = flow.processAndRelayBlock(requestQueue, block)
@@ -187,45 +200,46 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (
 	}
 }
 
-func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *util.Block) error {
-	blockHash := block.Hash()
-	isOrphan, isDelayed, err := flow.DAG().ProcessBlock(block, blockdag.BFNone)
+func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
+	blockHash := consensusserialization.BlockHash(block)
+	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
-		if !errors.As(err, &blockdag.RuleError{}) {
+		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s", blockHash)
+		}
+
+		missingParentsError := &ruleerrors.ErrMissingParents{}
+		if errors.As(err, missingParentsError) {
+			blueScore, err := blocks.ExtractBlueScore(block)
+			if err != nil {
+				return protocolerrors.Errorf(true, "received an orphan "+
+					"block %s with malformed blue score", blockHash)
+			}
+
+			const maxOrphanBlueScoreDiff = 10000
+			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+			if err != nil {
+				return err
+			}
+			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
+			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
+				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
+					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
+					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
+				return nil
+			}
+
+			// Request the parents for the orphan block from the peer that sent it.
+			for _, missingAncestor := range missingParentsError.MissingParentHashes {
+				requestQueue.enqueueIfNotExists(missingAncestor)
+			}
+			return nil
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 
-	if isDelayed {
-		return nil
-	}
-
-	if isOrphan {
-		blueScore, err := block.BlueScore()
-		if err != nil {
-			return protocolerrors.Errorf(true, "received an orphan "+
-				"block %s with malformed blue score", blockHash)
-		}
-
-		const maxOrphanBlueScoreDiff = 10000
-		selectedTipBlueScore := flow.DAG().SelectedTipBlueScore()
-		if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
-			log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
-				"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
-				blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-			return nil
-		}
-
-		// Request the parents for the orphan block from the peer that sent it.
-		missingAncestors := flow.DAG().GetOrphanMissingAncestorHashes(blockHash)
-		for _, missingAncestor := range missingAncestors {
-			requestQueue.enqueueIfNotExists(missingAncestor)
-		}
-		return nil
-	}
 	err = blocklogger.LogBlock(block)
 	if err != nil {
 		return err
@@ -235,7 +249,10 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		return err
 	}
 
-	flow.StartIBDIfRequired()
+	err = flow.StartIBDIfRequired()
+	if err != nil {
+		return err
+	}
 	err = flow.OnNewBlock(block)
 	if err != nil {
 		return err

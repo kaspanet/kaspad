@@ -4,15 +4,15 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // RequestSelectedTipContext is the interface for the context needed for the RequestSelectedTip flow.
 type RequestSelectedTipContext interface {
-	DAG() *blockdag.BlockDAG
-	StartIBDIfRequired()
+	Domain() domain.Domain
+	StartIBDIfRequired() error
 }
 
 type requestSelectedTipFlow struct {
@@ -59,8 +59,7 @@ func (flow *requestSelectedTipFlow) runSelectedTipRequest() error {
 	}
 
 	flow.peer.SetSelectedTipHash(peerSelectedTipHash)
-	flow.StartIBDIfRequired()
-	return nil
+	return flow.StartIBDIfRequired()
 }
 
 func (flow *requestSelectedTipFlow) requestSelectedTip() error {
@@ -68,7 +67,7 @@ func (flow *requestSelectedTipFlow) requestSelectedTip() error {
 	return flow.outgoingRoute.Enqueue(msgGetSelectedTip)
 }
 
-func (flow *requestSelectedTipFlow) receiveSelectedTip() (selectedTipHash *daghash.Hash, err error) {
+func (flow *requestSelectedTipFlow) receiveSelectedTip() (selectedTipHash *externalapi.DomainHash, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err

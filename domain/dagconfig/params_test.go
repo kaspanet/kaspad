@@ -7,20 +7,21 @@ package dagconfig
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 func TestNewHashFromStr(t *testing.T) {
 	tests := []struct {
 		hexStr        string
-		expectedHash  *daghash.Hash
+		expectedHash  *externalapi.DomainHash
 		expectedPanic bool
 	}{
 		{"banana", nil, true},
 		{"0000000000000000000000000000000000000000000000000000000000000000",
-			&daghash.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false},
+			&externalapi.DomainHash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false},
 		{"0101010101010101010101010101010101010101010101010101010101010101",
-			&daghash.Hash{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, false},
+			&externalapi.DomainHash{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, false},
 	}
 
 	for _, test := range tests {
@@ -34,18 +35,18 @@ func TestNewHashFromStr(t *testing.T) {
 
 			result := newHashFromStr(test.hexStr)
 
-			if result.Cmp(test.expectedHash) != 0 {
+			if *result != *test.expectedHash {
 				t.Errorf("%s: Expected hash: %s, but got %s", test.hexStr, test.expectedHash, result)
 			}
 		}()
 	}
 }
 
-// newHashFromStr converts the passed big-endian hex string into a
-// daghash.Hash. It only differs from the one available in daghash in that
-// it panics on an error since it will only be called from tests.
-func newHashFromStr(hexStr string) *daghash.Hash {
-	hash, err := daghash.NewHashFromStr(hexStr)
+// newHashFromStr converts the passed big-endian hex string into a externalapi.DomainHash.
+// It only differs from the one available in hashes package in that it panics on an error
+// since it will only be called from tests.
+func newHashFromStr(hexStr string) *externalapi.DomainHash {
+	hash, err := hashes.FromString(hexStr)
 	if err != nil {
 		panic(err)
 	}

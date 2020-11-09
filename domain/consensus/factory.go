@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"sync"
+
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
@@ -16,6 +18,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockvalidator"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
@@ -37,13 +41,19 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error)
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (testapi.TestConsensus, error)
 }
 
 type factory struct{}
 
+// NewFactory creates a new Consensus factory
+func NewFactory() Factory {
+	return &factory{}
+}
+
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
 	blockStore := blockstore.New()
@@ -80,12 +90,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTopologyManager,
 		ghostdagDataStore,
 		ghostdagManager)
-	pruningManager := pruningmanager.New(
-		dagTraversalManager,
-		dagTopologyManager,
-		pruningStore,
-		blockStatusStore,
-		consensusStateStore)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
@@ -97,13 +101,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pastMedianTimeManager,
 		ghostdagDataStore)
 	difficultyManager := difficultymanager.New(
-		ghostdagManager)
+		dbManager,
+		ghostdagManager,
+		ghostdagDataStore,
+		blockHeaderStore,
+		dagTopologyManager,
+		dagTraversalManager,
+		dagParams.PowMax,
+		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.TargetTimePerBlock)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, headerTipsStore)
-	genesisHash := externalapi.DomainHash(*dagParams.GenesisHash)
+	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
+	genesisHash := (*externalapi.DomainHash)(dagParams.GenesisHash)
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
 		dbManager,
@@ -113,7 +125,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		false,
-		&genesisHash,
+		genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
@@ -135,17 +147,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams,
+		dagParams.FinalityDepth(),
+		dagParams.PruningDepth(),
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
-		pruningManager,
 		pastMedianTimeManager,
 		transactionValidator,
 		blockValidator,
 		reachabilityManager,
 		coinbaseManager,
 		mergeDepthManager,
+
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,
@@ -154,10 +167,56 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockRelationStore,
 		acceptanceDataStore,
-		blockHeaderStore)
+		blockHeaderStore,
+		headerTipsStore)
 	if err != nil {
 		return nil, err
 	}
+
+	pruningManager := pruningmanager.New(
+		dbManager,
+		dagTraversalManager,
+		dagTopologyManager,
+		consensusStateManager,
+		consensusStateStore,
+		ghostdagDataStore,
+		pruningStore,
+		blockStatusStore,
+		multisetStore,
+		acceptanceDataStore,
+		blockStore,
+		utxoDiffStore,
+		genesisHash,
+		dagParams.FinalityDepth(),
+		dagParams.PruningDepth())
+
+	syncManager := syncmanager.New(
+		dbManager,
+		genesisHash,
+		dagParams.TargetTimePerBlock.Milliseconds(),
+		dagTraversalManager,
+		dagTopologyManager,
+		ghostdagManager,
+		consensusStateManager,
+
+		ghostdagDataStore,
+		blockStatusStore,
+		blockHeaderStore,
+		headerTipsStore)
+
+	blockBuilder := blockbuilder.New(
+		dbManager,
+		difficultyManager,
+		pastMedianTimeManager,
+		coinbaseManager,
+		consensusStateManager,
+		ghostdagManager,
+		acceptanceDataStore,
+		blockRelationStore,
+		multisetStore,
+		ghostdagDataStore,
+	)
+
 	blockProcessor := blockprocessor.New(
 		dagParams,
 		dbManager,
@@ -171,6 +230,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		coinbaseManager,
 		headerTipsManager,
+		syncManager,
 
 		acceptanceDataStore,
 		blockStore,
@@ -185,12 +245,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headerTipsStore)
 
-	syncManager := syncmanager.New(dagTraversalManager)
-
-	return &consensus{
+	c := &consensus{
+		lock:            &sync.RWMutex{},
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
+		blockBuilder:          blockBuilder,
 		consensusStateManager: consensusStateManager,
 		transactionValidator:  transactionValidator,
 		syncManager:           syncManager,
@@ -201,10 +261,35 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pruningStore:      pruningStore,
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
-	}, nil
+	}
+
+	genesisInfo, err := c.GetBlockInfo(genesisHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if !genesisInfo.Exists {
+		err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c, nil
 }
 
-// NewFactory creates a new Consensus factory
-func NewFactory() Factory {
-	return &factory{}
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (
+	testapi.TestConsensus, error) {
+
+	consensusAsInterface, err := f.NewConsensus(dagParams, db)
+	if err != nil {
+		return nil, err
+	}
+
+	consensusAsImplementation := consensusAsInterface.(*consensus)
+
+	return &testConsensus{
+		consensus:        consensusAsImplementation,
+		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
+	}, nil
 }

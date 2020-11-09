@@ -4,12 +4,12 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/mempool"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
 )
 
@@ -17,9 +17,8 @@ import (
 // HandleRelayedTransactions and HandleRequestedTransactions flows.
 type TransactionsRelayContext interface {
 	NetAdapter() *netadapter.NetAdapter
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
 	SharedRequestedTransactions() *SharedRequestedTransactions
-	TxPool() *mempool.TxPool
 	Broadcast(message appmessage.Message) error
 	OnTransactionAddedToMempool()
 }
@@ -62,9 +61,9 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 }
 
 func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
-	inv *appmessage.MsgInvTransaction) (requestedIDs []*daghash.TxID, err error) {
+	inv *appmessage.MsgInvTransaction) (requestedIDs []*externalapi.DomainTransactionID, err error) {
 
-	idsToRequest := make([]*daghash.TxID, 0, len(inv.TxIDs))
+	idsToRequest := make([]*externalapi.DomainTransactionID, 0, len(inv.TxIDs))
 	for _, txID := range inv.TxIDs {
 		if flow.isKnownTransaction(txID) {
 			continue
@@ -89,29 +88,13 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	return idsToRequest, nil
 }
 
-func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *daghash.TxID) bool {
+func (flow *handleRelayedTransactionsFlow) isKnownTransaction(txID *externalapi.DomainTransactionID) bool {
 	// Ask the transaction memory pool if the transaction is known
 	// to it in any form (main pool or orphan).
-	if flow.TxPool().HaveTransaction(txID) {
+	if _, ok := flow.Domain().MiningManager().GetTransaction(txID); ok {
 		return true
 	}
 
-	// Check if the transaction exists from the point of view of the
-	// DAG's virtual block. Note that this is only a best effort
-	// since it is expensive to check existence of every output and
-	// the only purpose of this check is to avoid downloading
-	// already known transactions. Only the first two outputs are
-	// checked because the vast majority of transactions consist of
-	// two outputs where one is some form of "pay-to-somebody-else"
-	// and the other is a change output.
-	prevOut := appmessage.Outpoint{TxID: *txID}
-	for i := uint32(0); i < 2; i++ {
-		prevOut.Index = i
-		_, ok := flow.DAG().GetUTXOEntry(prevOut)
-		if ok {
-			return true
-		}
-	}
 	return false
 }
 
@@ -135,12 +118,8 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransact
 	return inv, nil
 }
 
-func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxs []*mempool.TxDesc) error {
-	idsToBroadcast := make([]*daghash.TxID, len(acceptedTxs))
-	for i, tx := range acceptedTxs {
-		idsToBroadcast[i] = tx.Tx.ID()
-	}
-	inv := appmessage.NewMsgInvTransaction(idsToBroadcast)
+func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxIDs []*externalapi.DomainTransactionID) error {
+	inv := appmessage.NewMsgInvTransaction(acceptedTxIDs)
 	return flow.Broadcast(inv)
 }
 
@@ -170,7 +149,7 @@ func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
 	}
 }
 
-func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*daghash.TxID) error {
+func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*externalapi.DomainTransactionID) error {
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
 	defer flow.SharedRequestedTransactions().removeMany(requestedTransactions)
@@ -180,42 +159,41 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 			return err
 		}
 		if msgTxNotFound != nil {
-			if !msgTxNotFound.ID.IsEqual(expectedID) {
+			if msgTxNotFound.ID != expectedID {
 				return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 					expectedID, msgTxNotFound.ID)
 			}
 
 			continue
 		}
-		tx := util.NewTx(msgTx)
-		if !tx.ID().IsEqual(expectedID) {
+		tx := appmessage.MsgTxToDomainTransaction(msgTx)
+		txID := consensusserialization.TransactionID(tx)
+		if txID != expectedID {
 			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
-				expectedID, tx.ID())
+				expectedID, txID)
 		}
 
-		acceptedTxs, err := flow.TxPool().ProcessTransaction(tx, true)
+		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, true)
 		if err != nil {
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
-				return errors.Wrapf(err, "failed to process transaction %s", tx.ID())
+				return errors.Wrapf(err, "failed to process transaction %s", txID)
 			}
 
-			shouldBan := false
+			shouldBan := true
 			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode == mempool.RejectInvalid {
-					shouldBan = true
+				if txRuleErr.RejectCode != mempool.RejectInvalid {
+					shouldBan = false
 				}
-			} else if dagRuleErr := (&blockdag.RuleError{}); errors.As(ruleErr.Err, dagRuleErr) {
-				shouldBan = true
 			}
 
 			if !shouldBan {
 				continue
 			}
 
-			return protocolerrors.Errorf(true, "rejected transaction %s", tx.ID())
+			return protocolerrors.Errorf(true, "rejected transaction %s", txID)
 		}
-		err = flow.broadcastAcceptedTransactions(acceptedTxs)
+		err = flow.broadcastAcceptedTransactions([]*externalapi.DomainTransactionID{txID})
 		if err != nil {
 			return err
 		}

@@ -2,14 +2,15 @@ package selectedtip
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
 // HandleRequestSelectedTipContext is the interface for the context needed for the HandleRequestSelectedTip flow.
 type HandleRequestSelectedTipContext interface {
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
 }
 
 type handleRequestSelectedTipFlow struct {
@@ -56,6 +57,10 @@ func (flow *handleRequestSelectedTipFlow) receiveGetSelectedTip() error {
 }
 
 func (flow *handleRequestSelectedTipFlow) sendSelectedTipHash() error {
-	msgSelectedTip := appmessage.NewMsgSelectedTip(flow.DAG().SelectedTipHash())
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err != nil {
+		return err
+	}
+	msgSelectedTip := appmessage.NewMsgSelectedTip(consensusserialization.BlockHash(virtualSelectedParent))
 	return flow.outgoingRoute.Enqueue(msgSelectedTip)
 }

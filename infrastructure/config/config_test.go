@@ -7,7 +7,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/kaspanet/kaspad/util/subnetworkid"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 func TestCreateDefaultConfigFile(t *testing.T) {
@@ -55,16 +57,16 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 
 // TestConstants makes sure that all constants hard-coded into the help text were not modified.
 func TestConstants(t *testing.T) {
-	zero := subnetworkid.SubnetworkID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if *subnetworkid.SubnetworkIDNative != zero {
-		t.Errorf("subnetworkid.SubnetworkIDNative value was changed from 0, therefore you probably need to update the help text for SubnetworkID")
+	zero := externalapi.DomainSubnetworkID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	if subnetworks.SubnetworkIDNative != zero {
+		t.Errorf("subnetworks.SubnetworkIDNative value was changed from 0, therefore you probably need to update the help text for SubnetworkID")
 	}
-	one := subnetworkid.SubnetworkID{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if *subnetworkid.SubnetworkIDCoinbase != one {
-		t.Errorf("subnetworkid.SubnetworkIDCoinbase value was changed from 1, therefore you probably need to update the help text for SubnetworkID")
+	one := externalapi.DomainSubnetworkID{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	if subnetworks.SubnetworkIDCoinbase != one {
+		t.Errorf("subnetworks.SubnetworkIDCoinbase value was changed from 1, therefore you probably need to update the help text for SubnetworkID")
 	}
-	two := subnetworkid.SubnetworkID{2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if *subnetworkid.SubnetworkIDRegistry != two {
-		t.Errorf("subnetworkid.SubnetworkIDRegistry value was changed from 2, therefore you probably need to update the help text for SubnetworkID")
+	two := externalapi.DomainSubnetworkID{2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	if subnetworks.SubnetworkIDRegistry != two {
+		t.Errorf("subnetworks.SubnetworkIDRegistry value was changed from 2, therefore you probably need to update the help text for SubnetworkID")
 	}
 }

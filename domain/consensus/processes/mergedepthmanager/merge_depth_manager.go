@@ -45,6 +45,11 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 		return err
 	}
 
+	// Return nil on genesis
+	if ghostdagData.SelectedParent == nil {
+		return nil
+	}
+
 	finalityPoint, err := mdm.finalityPoint(ghostdagData)
 	if err != nil {
 		return err

@@ -8,8 +8,8 @@ import (
 )
 
 func TestNewErrMissingTxOut(t *testing.T) {
-	outer := NewErrMissingTxOut([]externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
-	expectedOuterErr := "ErrMissingTxOut: [(0000000000000000000000000000000000000000000000000000000000ffffff: 5)]"
+	outer := NewErrMissingTxOut([]*externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
+	expectedOuterErr := "ErrMissingTxOut: missing the following outpoint: [(0000000000000000000000000000000000000000000000000000000000ffffff: 5)]"
 	inner := &ErrMissingTxOut{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestWrapInRuleError: Outer should contain ErrMissingTxOut in it")

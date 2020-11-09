@@ -8,24 +8,36 @@ import (
 type headerTipsManager struct {
 	databaseContext    model.DBReader
 	dagTopologyManager model.DAGTopologyManager
+	ghostdagManager    model.GHOSTDAGManager
 	headerTipsStore    model.HeaderTipsStore
 }
 
 // New instantiates a new HeaderTipsManager
 func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManager model.GHOSTDAGManager,
 	headerTipsStore model.HeaderTipsStore) model.HeaderTipsManager {
 	return &headerTipsManager{
 		databaseContext:    databaseContext,
 		dagTopologyManager: dagTopologyManager,
+		ghostdagManager:    ghostdagManager,
 		headerTipsStore:    headerTipsStore,
 	}
 }
 
 func (h headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
-	tips, err := h.headerTipsStore.Tips(h.databaseContext)
+	tips := []*externalapi.DomainHash{}
+	hasTips, err := h.headerTipsStore.HasTips(h.databaseContext)
 	if err != nil {
 		return err
+	}
+
+	if hasTips {
+		var err error
+		tips, err = h.headerTipsStore.Tips(h.databaseContext)
+		if err != nil {
+			return err
+		}
 	}
 
 	newTips := make([]*externalapi.DomainHash, 0, len(tips)+1)

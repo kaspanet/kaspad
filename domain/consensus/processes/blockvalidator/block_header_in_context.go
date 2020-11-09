@@ -3,8 +3,8 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
 	"github.com/pkg/errors"
 )
 
@@ -26,12 +26,12 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
+	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if status != externalapi.StatusHeaderOnly {
+	if !isHeadersOnlyBlock {
 		err = v.ghostdagManager.GHOSTDAG(blockHash)
 		if err != nil {
 			return err
@@ -49,6 +49,24 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	}
 
 	return nil
+}
+
+func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		return false, nil
+	}
+
+	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	return status == externalapi.StatusHeaderOnly, nil
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
@@ -81,7 +99,7 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 		return nil
 	}
 
-	hash := hashserialization.HeaderHash(header)
+	hash := consensusserialization.HeaderHash(header)
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
 	if err != nil {
 		return err

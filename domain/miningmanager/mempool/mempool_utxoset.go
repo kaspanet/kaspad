@@ -1,11 +1,14 @@
 package mempool
 
 import (
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"math"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
+
+const unacceptedBlueScore = math.MaxUint64
 
 func newMempoolUTXOSet() *mempoolUTXOSet {
 	return &mempoolUTXOSet{
@@ -39,7 +42,7 @@ func (mpus *mempoolUTXOSet) checkExists(tx *consensusexternalapi.DomainTransacti
 	}
 
 	// Check if it creates an already existing UTXO
-	outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *hashserialization.TransactionID(tx)}
+	outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *consensusserialization.TransactionID(tx)}
 	for i := range tx.Outputs {
 		outpoint.Index = uint32(i)
 		if _, exists := mpus.poolUnspentOutputs[outpoint]; exists {
@@ -54,20 +57,20 @@ func (mpus *mempoolUTXOSet) checkExists(tx *consensusexternalapi.DomainTransacti
 func (mpus *mempoolUTXOSet) addTx(tx *consensusexternalapi.DomainTransaction) error {
 	for _, txIn := range tx.Inputs {
 		if existingTx, exists := mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint]; exists {
-			return errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, hashserialization.TransactionID(existingTx))
+			return errors.Errorf("outpoint %s is already used by %s", txIn.PreviousOutpoint, consensusserialization.TransactionID(existingTx))
 		}
 		mpus.transactionByPreviousOutpoint[txIn.PreviousOutpoint] = tx
 	}
 
 	for i, txOut := range tx.Outputs {
-		outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *hashserialization.TransactionID(tx), Index: uint32(i)}
+		outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *consensusserialization.TransactionID(tx), Index: uint32(i)}
 		if _, exists := mpus.poolUnspentOutputs[outpoint]; exists {
 			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
 		mpus.poolUnspentOutputs[outpoint] = &consensusexternalapi.UTXOEntry{
 			Amount:          txOut.Value,
 			ScriptPublicKey: txOut.ScriptPublicKey,
-			BlockBlueScore:  blockdag.UnacceptedBlueScore,
+			BlockBlueScore:  unacceptedBlueScore,
 			IsCoinbase:      false,
 		}
 	}
@@ -84,7 +87,7 @@ func (mpus *mempoolUTXOSet) removeTx(tx *consensusexternalapi.DomainTransaction)
 		delete(mpus.transactionByPreviousOutpoint, txIn.PreviousOutpoint)
 	}
 
-	outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *hashserialization.TransactionID(tx)}
+	outpoint := consensusexternalapi.DomainOutpoint{TransactionID: *consensusserialization.TransactionID(tx)}
 	for i := range tx.Outputs {
 		outpoint.Index = uint32(i)
 		if _, exists := mpus.poolUnspentOutputs[outpoint]; !exists {

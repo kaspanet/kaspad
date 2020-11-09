@@ -4,7 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func utxoEntryToDBUTXOEntry(utxoEntry *externalapi.UTXOEntry) *DbUtxoEntry {
+// UTXOEntryToDBUTXOEntry converts UTXOEntry to DbUtxoEntry
+func UTXOEntryToDBUTXOEntry(utxoEntry *externalapi.UTXOEntry) *DbUtxoEntry {
 	return &DbUtxoEntry{
 		Amount:          utxoEntry.Amount,
 		ScriptPublicKey: utxoEntry.ScriptPublicKey,
@@ -13,7 +14,8 @@ func utxoEntryToDBUTXOEntry(utxoEntry *externalapi.UTXOEntry) *DbUtxoEntry {
 	}
 }
 
-func dbUTXOEntryToUTXOEntry(dbUtxoEntry *DbUtxoEntry) *externalapi.UTXOEntry {
+// DBUTXOEntryToUTXOEntry convert DbUtxoEntry ro UTXOEntry
+func DBUTXOEntryToUTXOEntry(dbUtxoEntry *DbUtxoEntry) *externalapi.UTXOEntry {
 	return &externalapi.UTXOEntry{
 		Amount:          dbUtxoEntry.Amount,
 		ScriptPublicKey: dbUtxoEntry.ScriptPublicKey,

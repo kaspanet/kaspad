@@ -5,8 +5,11 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/network"
@@ -14,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // These variables are the DAG proof-of-work limit parameters for each default
@@ -78,10 +80,10 @@ type Params struct {
 	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
-	GenesisBlock *appmessage.MsgBlock
+	GenesisBlock *externalapi.DomainBlock
 
 	// GenesisHash is the starting block hash.
-	GenesisHash *daghash.Hash
+	GenesisHash *externalapi.DomainHash
 
 	// PowMax defines the highest allowed proof of work value for a block
 	// as a uint256.
@@ -155,6 +157,11 @@ func (p *Params) NormalizeRPCServerAddress(addr string) (string, error) {
 // FinalityDepth returns the finality duration represented in blocks
 func (p *Params) FinalityDepth() uint64 {
 	return uint64(p.FinalityDuration / p.TargetTimePerBlock)
+}
+
+// PruningDepth returns the pruning duration represented in blocks
+func (p *Params) PruningDepth() uint64 {
+	return 2*p.FinalityDepth() + 4*constants.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.

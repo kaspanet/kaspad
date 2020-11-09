@@ -1,54 +1,56 @@
 package protowire
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"math"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/pkg/errors"
 )
 
-func (x *Hash) toWire() (*daghash.Hash, error) {
-	return daghash.NewHash(x.Bytes)
+func (x *Hash) toDomain() (*externalapi.DomainHash, error) {
+	return hashes.FromBytes(x.Bytes)
 }
 
-func protoHashesToWire(protoHashes []*Hash) ([]*daghash.Hash, error) {
-	hashes := make([]*daghash.Hash, len(protoHashes))
+func protoHashesToDomain(protoHashes []*Hash) ([]*externalapi.DomainHash, error) {
+	domainHashes := make([]*externalapi.DomainHash, len(protoHashes))
 	for i, protoHash := range protoHashes {
 		var err error
-		hashes[i], err = protoHash.toWire()
+		domainHashes[i], err = protoHash.toDomain()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return hashes, nil
+	return domainHashes, nil
 }
 
-func wireHashToProto(hash *daghash.Hash) *Hash {
+func domainHashToProto(hash *externalapi.DomainHash) *Hash {
 	return &Hash{
-		Bytes: hash.CloneBytes(),
+		Bytes: hash[:],
 	}
 }
 
-func wireHashesToProto(hashes []*daghash.Hash) []*Hash {
+func domainHashesToProto(hashes []*externalapi.DomainHash) []*Hash {
 	protoHashes := make([]*Hash, len(hashes))
 	for i, hash := range hashes {
-		protoHashes[i] = wireHashToProto(hash)
+		protoHashes[i] = domainHashToProto(hash)
 	}
 	return protoHashes
 }
 
-func (x *TransactionID) toWire() (*daghash.TxID, error) {
-	return daghash.NewTxID(x.Bytes)
+func (x *TransactionID) toDomain() (*externalapi.DomainTransactionID, error) {
+	return transactionid.FromBytes(x.Bytes)
 }
 
-func protoTransactionIDsToWire(protoIDs []*TransactionID) ([]*daghash.TxID, error) {
-	txIDs := make([]*daghash.TxID, len(protoIDs))
+func protoTransactionIDsToDomain(protoIDs []*TransactionID) ([]*externalapi.DomainTransactionID, error) {
+	txIDs := make([]*externalapi.DomainTransactionID, len(protoIDs))
 	for i, protoID := range protoIDs {
 		var err error
-		txIDs[i], err = protoID.toWire()
+		txIDs[i], err = protoID.toDomain()
 		if err != nil {
 			return nil, err
 		}
@@ -56,37 +58,37 @@ func protoTransactionIDsToWire(protoIDs []*TransactionID) ([]*daghash.TxID, erro
 	return txIDs, nil
 }
 
-func wireTransactionIDToProto(id *daghash.TxID) *TransactionID {
+func domainTransactionIDToProto(id *externalapi.DomainTransactionID) *TransactionID {
 	return &TransactionID{
-		Bytes: id.CloneBytes(),
+		Bytes: id[:],
 	}
 }
 
-func wireTransactionIDsToProto(ids []*daghash.TxID) []*TransactionID {
+func wireTransactionIDsToProto(ids []*externalapi.DomainTransactionID) []*TransactionID {
 	protoIDs := make([]*TransactionID, len(ids))
 	for i, hash := range ids {
-		protoIDs[i] = wireTransactionIDToProto(hash)
+		protoIDs[i] = domainTransactionIDToProto(hash)
 	}
 	return protoIDs
 }
 
-func (x *SubnetworkID) toWire() (*subnetworkid.SubnetworkID, error) {
+func (x *SubnetworkID) toDomain() (*externalapi.DomainSubnetworkID, error) {
 	if x == nil {
 		return nil, nil
 	}
-	return subnetworkid.New(x.Bytes)
+	return subnetworks.FromBytes(x.Bytes)
 }
 
-func wireSubnetworkIDToProto(id *subnetworkid.SubnetworkID) *SubnetworkID {
+func domainSubnetworkIDToProto(id *externalapi.DomainSubnetworkID) *SubnetworkID {
 	if id == nil {
 		return nil
 	}
 	return &SubnetworkID{
-		Bytes: id.CloneBytes(),
+		Bytes: id[:],
 	}
 }
 
-func (x *NetAddress) toWire() (*appmessage.NetAddress, error) {
+func (x *NetAddress) toAppMessage() (*appmessage.NetAddress, error) {
 	if x.Port > math.MaxUint16 {
 		return nil, errors.Errorf("port number is larger than %d", math.MaxUint16)
 	}
@@ -98,7 +100,7 @@ func (x *NetAddress) toWire() (*appmessage.NetAddress, error) {
 	}, nil
 }
 
-func wireNetAddressToProto(address *appmessage.NetAddress) *NetAddress {
+func appMessageNetAddressToProto(address *appmessage.NetAddress) *NetAddress {
 	return &NetAddress{
 		Timestamp: address.Timestamp.UnixMilliseconds(),
 		Services:  uint64(address.Services),

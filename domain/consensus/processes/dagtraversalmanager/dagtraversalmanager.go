@@ -16,7 +16,7 @@ type dagTraversalManager struct {
 	ghostdagManager    model.GHOSTDAGManager
 }
 
-// selectedParentIterator implements the `model.SelectedParentIterator` API
+// selectedParentIterator implements the `model.BlockIterator` API
 type selectedParentIterator struct {
 	databaseContext   model.DBReader
 	ghostdagDataStore model.GHOSTDAGDataStore
@@ -55,7 +55,7 @@ func New(
 
 // SelectedParentIterator creates an iterator over the selected
 // parent chain of the given highHash
-func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.SelectedParentIterator {
+func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.BlockIterator {
 	return &selectedParentIterator{
 		databaseContext:   dtm.databaseContext,
 		ghostdagDataStore: dtm.ghostdagDataStore,
@@ -68,7 +68,6 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.Dom
 // blueScore in the block with the given highHash's selected
 // parent chain
 func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
-
 	blockHash := highHash
 	chainBlock, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
 	if err != nil {
@@ -80,7 +79,7 @@ func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *extern
 
 	requiredBlueScore := chainBlock.BlueScore - blueScore
 
-	// If we used `SelectedParentIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
+	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
 	for chainBlock.BlueScore >= requiredBlueScore {
 		if chainBlock.SelectedParent == nil { // genesis
 			return blockHash, nil
@@ -92,4 +91,29 @@ func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *extern
 		}
 	}
 	return blockHash, nil
+}
+
+func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
+	if err != nil {
+		return nil, err
+	}
+
+	currentHash := highHash
+	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
+	iterator := dtm.SelectedParentIterator(highHash)
+	for iterator.Next() {
+		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent)
+		if err != nil {
+			return nil, err
+		}
+
+		if selectedParentBlockGHOSTDAGData.BlueScore < blueScore {
+			break
+		}
+		currentHash = selectedParentBlockGHOSTDAGData.SelectedParent
+		currentBlockGHOSTDAGData = selectedParentBlockGHOSTDAGData
+	}
+
+	return currentHash, nil
 }
