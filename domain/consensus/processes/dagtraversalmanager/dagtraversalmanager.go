@@ -85,7 +85,7 @@ func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *extern
 			return blockHash, nil
 		}
 		blockHash = chainBlock.SelectedParent
-		chainBlock, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
+		chainBlock, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, blockHash)
 		if err != nil {
 			return nil, err
 		}
