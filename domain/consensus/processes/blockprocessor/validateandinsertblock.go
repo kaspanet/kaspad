@@ -15,17 +15,22 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateMissingUTXOSet {
-		headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
-		if err != nil {
-			return err
-		}
+		if len(block.Transactions) == 0 {
+			// Allow processing headers while in state SyncStateMissingUTXOSet
+			mode.State = externalapi.SyncStateHeadersFirst
+		} else {
+			headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
+			if err != nil {
+				return err
+			}
 
-		if *hash != *headerTipsPruningPoint {
-			return errors.Errorf("cannot insert blocks other than the header pruning point "+
-				"while in %s mode", mode.State)
-		}
+			if *hash != *headerTipsPruningPoint {
+				return errors.Errorf("cannot insert blocks other than the header pruning point "+
+					"while in %s mode", mode.State)
+			}
 
-		mode.State = externalapi.SyncStateMissingBlockBodies
+			mode.State = externalapi.SyncStateMissingBlockBodies
+		}
 	}
 
 	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
