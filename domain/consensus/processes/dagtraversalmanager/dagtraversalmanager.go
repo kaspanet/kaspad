@@ -68,7 +68,7 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.Dom
 // blueScore in the block with the given highHash's selected
 // parent chain
 func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
-	blockHash := highHash
+	currentBlockHash := highHash
 	chainBlock, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
 	if err != nil {
 		return nil, err
@@ -82,15 +82,15 @@ func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *extern
 	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
 	for chainBlock.BlueScore >= requiredBlueScore {
 		if chainBlock.SelectedParent == nil { // genesis
-			return blockHash, nil
+			return currentBlockHash, nil
 		}
-		blockHash = chainBlock.SelectedParent
-		chainBlock, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, blockHash)
+		currentBlockHash = chainBlock.SelectedParent
+		chainBlock, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockHash)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return blockHash, nil
+	return currentBlockHash, nil
 }
 
 func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
