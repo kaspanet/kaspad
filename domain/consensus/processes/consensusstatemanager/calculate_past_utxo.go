@@ -223,7 +223,7 @@ func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
 
 func (u utxoSetIterator) Next() bool {
 	u.index++
-	return u.index != len(u.pairs)
+	return u.index < len(u.pairs)
 }
 
 func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {

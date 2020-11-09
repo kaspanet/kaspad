@@ -112,7 +112,7 @@ type protoUTXOSetIterator struct {
 
 func (p protoUTXOSetIterator) Next() bool {
 	p.index++
-	return p.index != len(p.utxoSet.Utxos)
+	return p.index < len(p.utxoSet.Utxos)
 }
 
 func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
