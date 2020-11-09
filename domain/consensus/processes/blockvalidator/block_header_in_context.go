@@ -21,11 +21,6 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.validateMedianTime(header)
-	if err != nil {
-		return err
-	}
-
 	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
 	if err != nil {
 		return err
@@ -36,6 +31,11 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		if err != nil {
 			return err
 		}
+	}
+
+	err = v.validateMedianTime(header)
+	if err != nil {
+		return err
 	}
 
 	err = v.checkMergeSizeLimit(blockHash)
