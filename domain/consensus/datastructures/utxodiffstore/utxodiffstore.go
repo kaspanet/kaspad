@@ -64,12 +64,16 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
-		utxoDiffChildBytes, err := uds.serializeUTXODiffChild(utxoDiffChild)
-		if err != nil {
-			return err
+		var utxoDiffChildBytes []byte
+		if utxoDiffChild != nil {
+			var err error
+			utxoDiffChildBytes, err = uds.serializeUTXODiffChild(utxoDiffChild)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
+		err := dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
 		if err != nil {
 			return err
 		}
