@@ -85,7 +85,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
-		blockAccepanceData := &model.BlockAcceptanceData{
+		blockAcceptanceData := &model.BlockAcceptanceData{
 			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
@@ -100,13 +100,13 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				return nil, nil, err
 			}
 
-			blockAccepanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+			blockAcceptanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
 				Transaction: transaction,
 				Fee:         fee,
 				IsAccepted:  isAccepted,
 			}
 		}
-		multiblockAcceptanceData[i] = blockAccepanceData
+		multiblockAcceptanceData[i] = blockAcceptanceData
 	}
 
 	return multiblockAcceptanceData, accumulatedUTXODiff, nil
