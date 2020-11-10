@@ -139,11 +139,14 @@ func (c *consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoi
 
 func (c *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbContext model.DBReader,
 	outpoint *externalapi.DomainOutpoint) (bool, error) {
-	if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
-		return false, nil
-	}
-	if _, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
-		return true, nil
+
+	if c.stagedVirtualUTXODiff != nil {
+		if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
+			return false, nil
+		}
+		if _, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
+			return true, nil
+		}
 	}
 
 	key, err := utxoKey(outpoint)
