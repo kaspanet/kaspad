@@ -25,8 +25,14 @@ func New() model.BlockStore {
 }
 
 // Stage stages the given block for the given blockHash
-func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
-	bms.staging[*blockHash] = block
+func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
+	clone, err := bms.clone(block)
+	if err != nil {
+		return err
+	}
+
+	bms.staging[*blockHash] = clone
+	return nil
 }
 
 func (bms *blockStore) IsStaged() bool {
