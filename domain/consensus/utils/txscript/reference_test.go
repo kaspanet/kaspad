@@ -13,11 +13,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 // scriptTestName returns a descriptive test name for the given reference script
@@ -212,18 +214,39 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
 func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransaction {
+	outpoint := externalapi.DomainOutpoint{
+		TransactionID: externalapi.DomainTransactionID{},
+		Index:         ^uint32(0),
+	}
+	input := &externalapi.DomainTransactionInput{
+		PreviousOutpoint: outpoint,
+		SignatureScript:  []byte{Op0, Op0},
+		Sequence:         appmessage.MaxTxInSequenceNum,
+	}
+	output := &externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPubKey}
+	coinbaseTx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  []*externalapi.DomainTransactionInput{input},
+		Outputs: []*externalapi.DomainTransactionOutput{output},
+	}
 
-	outpoint := appmessage.NewOutpoint(&externalapi.DomainTransactionID{}, ^uint32(0))
-	txIn := appmessage.NewTxIn(outpoint, []byte{Op0, Op0})
-	txOut := appmessage.NewTxOut(0, scriptPubKey)
-	coinbaseTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
+	outpoint = externalapi.DomainOutpoint{
+		TransactionID: *consensusserialization.TransactionID(coinbaseTx),
+		Index:         0,
+	}
+	input = &externalapi.DomainTransactionInput{
+		PreviousOutpoint: outpoint,
+		SignatureScript:  sigScript,
+		Sequence:         appmessage.MaxTxInSequenceNum,
+	}
+	output = &externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: nil}
+	spendingTx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  []*externalapi.DomainTransactionInput{input},
+		Outputs: []*externalapi.DomainTransactionOutput{output},
+	}
 
-	outpoint = appmessage.NewOutpoint(coinbaseTx.TxID(), 0)
-	txIn = appmessage.NewTxIn(outpoint, sigScript)
-	txOut = appmessage.NewTxOut(0, nil)
-	spendingTx := appmessage.NewNativeMsgTx(appmessage.TxVersion, []*appmessage.TxIn{txIn}, []*appmessage.TxOut{txOut})
-
-	return appmessage.MsgTxToDomainTransaction(spendingTx)
+	return spendingTx
 }
 
 // testScripts ensures all of the passed script tests execute with the expected
@@ -313,6 +336,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 		// other and the provided signature and public key scripts are
 		// used, then create a new engine to execute the scripts.
 		tx := createSpendingTx(scriptSig, scriptPubKey)
+
 		vm, err := NewEngine(scriptPubKey, tx, 0, flags, sigCache)
 		if err == nil {
 			err = vm.Execute()
