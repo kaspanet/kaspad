@@ -322,6 +322,11 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 				return err
 			}
 
+			// Genesis
+			if current == nil {
+				break
+			}
+
 			calculatedChildrenCount[*current]++
 
 			currentChildren, err := rt.children(current)
