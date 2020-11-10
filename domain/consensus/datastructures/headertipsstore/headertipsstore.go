@@ -87,15 +87,15 @@ func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Doma
 	return serialization.DBHeaderTipsToHeaderTips(dbTips)
 }
 
-func (c *headerTipsStore) clone(tips []*externalapi.DomainHash,
+func (h *headerTipsStore) clone(tips []*externalapi.DomainHash,
 ) ([]*externalapi.DomainHash, error) {
 
-	serialized, err := c.serializeTips(tips)
+	serialized, err := h.serializeTips(tips)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.deserializeTips(serialized)
+	return h.deserializeTips(serialized)
 }
 
 // New instantiates a new HeaderTipsStore
