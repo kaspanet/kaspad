@@ -15,21 +15,26 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateMissingUTXOSet {
-		headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
-		if err != nil {
-			return err
-		}
+		if isHeaderOnlyBlock(block) {
+			// Allow processing headers while in state SyncStateMissingUTXOSet
+			mode.State = externalapi.SyncStateHeadersFirst
+		} else {
+			headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
+			if err != nil {
+				return err
+			}
 
-		if *hash != *headerTipsPruningPoint {
-			return errors.Errorf("cannot insert blocks other than the header pruning point "+
-				"while in %s mode", mode.State)
-		}
+			if *hash != *headerTipsPruningPoint {
+				return errors.Errorf("cannot insert blocks other than the header pruning point "+
+					"while in %s mode", mode.State)
+			}
 
-		mode.State = externalapi.SyncStateMissingBlockBodies
+			mode.State = externalapi.SyncStateMissingBlockBodies
+		}
 	}
 
-	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
-		mode.State = externalapi.SyncStateNormal
+	if mode.State == externalapi.SyncStateHeadersFirst && !isHeaderOnlyBlock(block) {
+		mode.State = externalapi.SyncStateRelay
 		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
 
@@ -92,7 +97,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-	} else if mode.State == externalapi.SyncStateNormal || mode.State == externalapi.SyncStateMissingGenesis {
+	} else if mode.State == externalapi.SyncStateRelay || mode.State == externalapi.SyncStateMissingGenesis {
 		// Attempt to add the block to the virtual
 		err = bp.consensusStateManager.AddBlockToVirtual(hash)
 		if err != nil {
@@ -113,7 +118,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if mode.State == externalapi.SyncStateNormal {
+	if mode.State == externalapi.SyncStateRelay {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.FindNextPruningPoint()
 		if err != nil {
@@ -136,6 +141,10 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 	}
 
 	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
+}
+
+func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
+	return len(block.Transactions) == 0
 }
 
 func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *externalapi.SyncInfo) error {

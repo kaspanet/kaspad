@@ -129,7 +129,7 @@ func TestConvertToPartial(t *testing.T) {
 
 // blockOne is the first block in the mainnet block DAG.
 var blockOne = MsgBlock{
-	Header: BlockHeader{
+	Header: MsgBlockHeader{
 		Version:              1,
 		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,

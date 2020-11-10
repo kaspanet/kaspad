@@ -31,9 +31,11 @@ const MaxNumParentBlocks = 255
 // BaseBlockHeaderPayload + up to MaxNumParentBlocks hashes of parent blocks
 const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * externalapi.DomainHashSize)
 
-// BlockHeader defines information about a block and is used in the kaspa
+// MsgBlockHeader defines information about a block and is used in the kaspa
 // block (MsgBlock) and headers (MsgHeader) messages.
-type BlockHeader struct {
+type MsgBlockHeader struct {
+	baseMessage
+
 	// Version of the block. This is not the same as the protocol version.
 	Version int32
 
@@ -61,7 +63,7 @@ type BlockHeader struct {
 }
 
 // NumParentBlocks return the number of entries in ParentHashes
-func (h *BlockHeader) NumParentBlocks() byte {
+func (h *MsgBlockHeader) NumParentBlocks() byte {
 	numParents := len(h.ParentHashes)
 	if numParents > math.MaxUint8 {
 		panic(errors.Errorf("number of parents is %d, which is more than one byte can fit", numParents))
@@ -70,24 +72,30 @@ func (h *BlockHeader) NumParentBlocks() byte {
 }
 
 // BlockHash computes the block identifier hash for the given block header.
-func (h *BlockHeader) BlockHash() *externalapi.DomainHash {
+func (h *MsgBlockHeader) BlockHash() *externalapi.DomainHash {
 	return consensusserialization.HeaderHash(BlockHeaderToDomainBlockHeader(h))
 }
 
 // IsGenesis returns true iff this block is a genesis block
-func (h *BlockHeader) IsGenesis() bool {
+func (h *MsgBlockHeader) IsGenesis() bool {
 	return h.NumParentBlocks() == 0
 }
 
-// NewBlockHeader returns a new BlockHeader using the provided version, previous
+// Command returns the protocol command string for the message. This is part
+// of the Message interface implementation.
+func (h *MsgBlockHeader) Command() MessageCommand {
+	return CmdHeader
+}
+
+// NewBlockHeader returns a new MsgBlockHeader using the provided version, previous
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
 func NewBlockHeader(version int32, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
-	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64) *BlockHeader {
+	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64) *MsgBlockHeader {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
-	return &BlockHeader{
+	return &MsgBlockHeader{
 		Version:              version,
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       hashMerkleRoot,

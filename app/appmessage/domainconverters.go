@@ -17,9 +17,9 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	}
 }
 
-// DomainBlockHeaderToBlockHeader converts an externalapi.DomainBlockHeader to BlockHeader
-func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *BlockHeader {
-	return &BlockHeader{
+// DomainBlockHeaderToBlockHeader converts an externalapi.DomainBlockHeader to MsgBlockHeader
+func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *MsgBlockHeader {
+	return &MsgBlockHeader{
 		Version:              domainBlockHeader.Version,
 		ParentHashes:         domainBlockHeader.ParentHashes,
 		HashMerkleRoot:       &domainBlockHeader.HashMerkleRoot,
@@ -44,8 +44,8 @@ func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 	}
 }
 
-// BlockHeaderToDomainBlockHeader converts a BlockHeader to externalapi.DomainBlockHeader
-func BlockHeaderToDomainBlockHeader(blockHeader *BlockHeader) *externalapi.DomainBlockHeader {
+// BlockHeaderToDomainBlockHeader converts a MsgBlockHeader to externalapi.DomainBlockHeader
+func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) *externalapi.DomainBlockHeader {
 	return &externalapi.DomainBlockHeader{
 		Version:              blockHeader.Version,
 		ParentHashes:         blockHeader.ParentHashes,

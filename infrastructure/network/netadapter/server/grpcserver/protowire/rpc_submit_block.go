@@ -9,7 +9,7 @@ func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, e
 	}
 
 	return &appmessage.SubmitBlockRequestMessage{
-		Block: blockAppMessage.(*appmessage.MsgBlock),
+		Block: blockAppMessage,
 	}, nil
 }
 

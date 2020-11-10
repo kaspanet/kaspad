@@ -1,28 +1,31 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
-	lowHash, err := x.RequestIBDBlocks.LowHash.toDomain()
+	if len(x.RequestIBDBlocks.Hashes) > appmessage.MaxRequestIBDBlocksHashes {
+		return nil, errors.Errorf("too many hashes for message "+
+			"[count %d, max %d]", len(x.RequestIBDBlocks.Hashes), appmessage.MaxRequestIBDBlocksHashes)
+	}
+	hashes, err := protoHashesToDomain(x.RequestIBDBlocks.Hashes)
 	if err != nil {
 		return nil, err
 	}
-
-	highHash, err := x.RequestIBDBlocks.HighHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	return &appmessage.MsgRequestIBDBlocks{
-		LowHash:  lowHash,
-		HighHash: highHash,
-	}, nil
+	return &appmessage.MsgRequestRelayBlocks{Hashes: hashes}, nil
 }
 
-func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgGetBlocks *appmessage.MsgRequestIBDBlocks) error {
-	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
-		LowHash:  domainHashToProto(msgGetBlocks.LowHash),
-		HighHash: domainHashToProto(msgGetBlocks.HighHash),
+func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
+	if len(msgRequestIBDBlocks.Hashes) > appmessage.MaxRequestIBDBlocksHashes {
+		return errors.Errorf("too many hashes for message "+
+			"[count %d, max %d]", len(msgRequestIBDBlocks.Hashes), appmessage.MaxRequestIBDBlocksHashes)
 	}
+
+	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
+		Hashes: domainHashesToProto(msgRequestIBDBlocks.Hashes),
+	}
+
 	return nil
 }

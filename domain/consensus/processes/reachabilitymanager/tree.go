@@ -634,6 +634,9 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 			currentInterval.Start,
 			currentInterval.End-slackReachabilityIntervalForReclaiming,
 		))
+		if err != nil {
+			return err
+		}
 
 		currentParent, err := rt.parent(current)
 		if err != nil {

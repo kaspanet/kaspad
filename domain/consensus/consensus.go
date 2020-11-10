@@ -5,6 +5,8 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
 )
 
 type consensus struct {
@@ -128,11 +130,26 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
-func (s *consensus) GetPruningPointUTXOSet() ([]byte, error) {
+func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi.DomainHash) ([]byte, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	return s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+	pruningPointHash, err := s.pruningStore.PruningPoint(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	if *expectedPruningPointHash != *pruningPointHash {
+		return nil, errors.Wrapf(ruleerrors.ErrWrongPruningPointHash, "expected pruning point %s but got %s",
+			expectedPruningPointHash,
+			pruningPointHash)
+	}
+
+	serializedUTXOSet, err := s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+	return serializedUTXOSet, nil
 }
 
 func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {

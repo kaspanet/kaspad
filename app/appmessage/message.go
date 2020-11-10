@@ -34,7 +34,7 @@ const (
 	CmdVerAck
 	CmdRequestAddresses
 	CmdAddresses
-	CmdRequestIBDBlocks
+	CmdRequestHeaders
 	CmdBlock
 	CmdTx
 	CmdPing
@@ -48,10 +48,15 @@ const (
 	CmdInvTransaction
 	CmdRequestTransactions
 	CmdIBDBlock
-	CmdRequestNextIBDBlocks
-	CmdDoneIBDBlocks
+	CmdDoneHeaders
 	CmdTransactionNotFound
 	CmdReject
+	CmdHeader
+	CmdRequestNextHeaders
+	CmdRequestIBDRootUTXOSetAndBlock
+	CmdIBDRootUTXOSetAndBlock
+	CmdRequestIBDBlocks
+	CmdIBDRootNotFound
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -107,28 +112,32 @@ const (
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
 var ProtocolMessageCommandToString = map[MessageCommand]string{
-	CmdVersion:              "Version",
-	CmdVerAck:               "VerAck",
-	CmdRequestAddresses:     "RequestAddresses",
-	CmdAddresses:            "Addresses",
-	CmdRequestIBDBlocks:     "RequestBlocks",
-	CmdBlock:                "Block",
-	CmdTx:                   "Tx",
-	CmdPing:                 "Ping",
-	CmdPong:                 "Pong",
-	CmdRequestBlockLocator:  "RequestBlockLocator",
-	CmdBlockLocator:         "BlockLocator",
-	CmdSelectedTip:          "SelectedTip",
-	CmdRequestSelectedTip:   "RequestSelectedTip",
-	CmdInvRelayBlock:        "InvRelayBlock",
-	CmdRequestRelayBlocks:   "RequestRelayBlocks",
-	CmdInvTransaction:       "InvTransaction",
-	CmdRequestTransactions:  "RequestTransactions",
-	CmdIBDBlock:             "IBDBlock",
-	CmdRequestNextIBDBlocks: "RequestNextIBDBlocks",
-	CmdDoneIBDBlocks:        "DoneIBDBlocks",
-	CmdTransactionNotFound:  "TransactionNotFound",
-	CmdReject:               "Reject",
+	CmdVersion:                       "Version",
+	CmdVerAck:                        "VerAck",
+	CmdRequestAddresses:              "RequestAddresses",
+	CmdAddresses:                     "Addresses",
+	CmdRequestHeaders:                "RequestBlocks",
+	CmdBlock:                         "Block",
+	CmdTx:                            "Tx",
+	CmdPing:                          "Ping",
+	CmdPong:                          "Pong",
+	CmdRequestBlockLocator:           "RequestBlockLocator",
+	CmdBlockLocator:                  "BlockLocator",
+	CmdSelectedTip:                   "SelectedTip",
+	CmdRequestSelectedTip:            "RequestSelectedTip",
+	CmdInvRelayBlock:                 "InvRelayBlock",
+	CmdRequestRelayBlocks:            "RequestRelayBlocks",
+	CmdInvTransaction:                "InvTransaction",
+	CmdRequestTransactions:           "RequestTransactions",
+	CmdIBDBlock:                      "IBDBlock",
+	CmdDoneHeaders:                   "DoneIBDBlocks",
+	CmdTransactionNotFound:           "TransactionNotFound",
+	CmdReject:                        "Reject",
+	CmdHeader:                        "Header",
+	CmdRequestNextHeaders:            "RequestNextHeaders",
+	CmdRequestIBDRootUTXOSetAndBlock: "RequestPruningUTXOSetAndBlock",
+	CmdIBDRootUTXOSetAndBlock:        "IBDRootUTXOSetAndBlock",
+	CmdIBDRootNotFound:               "IBDRootNotFound",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

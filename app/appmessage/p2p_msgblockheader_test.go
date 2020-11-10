@@ -14,7 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/util/random"
 )
 
-// TestBlockHeader tests the BlockHeader API.
+// TestBlockHeader tests the MsgBlockHeader API.
 func TestBlockHeader(t *testing.T) {
 	nonce, err := random.Uint64()
 	if err != nil {
@@ -52,7 +52,7 @@ func TestIsGenesis(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	timestamp := mstime.UnixMilliseconds(0x495fab29000)
 
-	baseBlockHdr := &BlockHeader{
+	baseBlockHdr := &MsgBlockHeader{
 		Version:        1,
 		ParentHashes:   []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
@@ -60,7 +60,7 @@ func TestIsGenesis(t *testing.T) {
 		Bits:           bits,
 		Nonce:          nonce,
 	}
-	genesisBlockHdr := &BlockHeader{
+	genesisBlockHdr := &MsgBlockHeader{
 		Version:        1,
 		ParentHashes:   []*externalapi.DomainHash{},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
@@ -70,8 +70,8 @@ func TestIsGenesis(t *testing.T) {
 	}
 
 	tests := []struct {
-		in        *BlockHeader // Block header to encode
-		isGenesis bool         // Expected result for call of .IsGenesis
+		in        *MsgBlockHeader // Block header to encode
+		isGenesis bool            // Expected result for call of .IsGenesis
 	}{
 		{genesisBlockHdr, true},
 		{baseBlockHdr, false},
@@ -81,7 +81,7 @@ func TestIsGenesis(t *testing.T) {
 	for i, test := range tests {
 		isGenesis := test.in.IsGenesis()
 		if isGenesis != test.isGenesis {
-			t.Errorf("BlockHeader.IsGenesis: #%d got: %t, want: %t",
+			t.Errorf("MsgBlockHeader.IsGenesis: #%d got: %t, want: %t",
 				i, isGenesis, test.isGenesis)
 		}
 	}
