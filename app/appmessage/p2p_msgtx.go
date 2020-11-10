@@ -6,8 +6,9 @@ package appmessage
 
 import (
 	"encoding/binary"
-	"math"
 	"strconv"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
@@ -19,37 +20,9 @@ import (
 )
 
 const (
-	// TxVersion is the current latest supported transaction version.
-	TxVersion = 1
-
-	// MaxTxInSequenceNum is the maximum sequence number the sequence field
-	// of a transaction input can be.
-	MaxTxInSequenceNum uint64 = math.MaxUint64
-
 	// MaxPrevOutIndex is the maximum index the index field of a previous
 	// outpoint can be.
 	MaxPrevOutIndex uint32 = 0xffffffff
-
-	// SequenceLockTimeDisabled is a flag that if set on a transaction
-	// input's sequence number, the sequence number will not be interpreted
-	// as a relative locktime.
-	SequenceLockTimeDisabled = 1 << 31
-
-	// SequenceLockTimeIsSeconds is a flag that if set on a transaction
-	// input's sequence number, the relative locktime has units of 512
-	// seconds.
-	SequenceLockTimeIsSeconds = 1 << 22
-
-	// SequenceLockTimeMask is a mask that extracts the relative locktime
-	// when masked against the transaction input sequence number.
-	SequenceLockTimeMask = 0x0000ffff
-
-	// SequenceLockTimeGranularity is the defined time based granularity
-	// for milliseconds-based relative time locks. When converting from milliseconds
-	// to a sequence number, the value is right shifted by this amount,
-	// therefore the granularity of relative time locks in 524288 or 2^19
-	// seconds. Enforced relative lock times are multiples of 524288 milliseconds.
-	SequenceLockTimeGranularity = 19
 
 	// defaultTxInOutAlloc is the default size used for the backing array for
 	// transaction inputs and outputs. The array will dynamically grow as needed,
@@ -130,7 +103,7 @@ func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
 	return &TxIn{
 		PreviousOutpoint: *prevOut,
 		SignatureScript:  signatureScript,
-		Sequence:         MaxTxInSequenceNum,
+		Sequence:         constants.MaxTxInSequenceNum,
 	}
 }
 

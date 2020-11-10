@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 
@@ -221,7 +221,7 @@ func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransac
 	input := &externalapi.DomainTransactionInput{
 		PreviousOutpoint: outpoint,
 		SignatureScript:  []byte{Op0, Op0},
-		Sequence:         appmessage.MaxTxInSequenceNum,
+		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	output := &externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPubKey}
 	coinbaseTx := &externalapi.DomainTransaction{
@@ -237,7 +237,7 @@ func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransac
 	input = &externalapi.DomainTransactionInput{
 		PreviousOutpoint: outpoint,
 		SignatureScript:  sigScript,
-		Sequence:         appmessage.MaxTxInSequenceNum,
+		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	output = &externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: nil}
 	spendingTx := &externalapi.DomainTransaction{
