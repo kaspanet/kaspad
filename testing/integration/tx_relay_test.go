@@ -98,7 +98,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 		t.Fatalf("Error generating script: %+v", err)
 	}
 
-	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.Outputs[0].Value-1, toScript)}
+	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.Outputs[0].Value-1000, toScript)}
 
 	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
