@@ -20,7 +20,7 @@ type HandleIBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock) error
-	FinishIBD()
+	FinishIBD() error
 }
 
 type handleIBDFlow struct {
@@ -53,14 +53,24 @@ func (flow *handleIBDFlow) start() error {
 
 func (flow *handleIBDFlow) runIBD() error {
 	flow.peer.WaitForIBDStart()
-	defer flow.FinishIBD()
-
-	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	err := flow.ibdLoop()
 	if err != nil {
+		finishIBDErr := flow.FinishIBD()
+		if finishIBDErr != nil {
+			return finishIBDErr
+		}
 		return err
 	}
+	return flow.FinishIBD()
+}
 
+func (flow *handleIBDFlow) ibdLoop() error {
 	for {
+		syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+		if err != nil {
+			return err
+		}
+
 		switch syncInfo.State {
 		case externalapi.SyncStateHeadersFirst:
 			err := flow.syncHeaders()
@@ -81,7 +91,7 @@ func (flow *handleIBDFlow) runIBD() error {
 			if err != nil {
 				return err
 			}
-		case externalapi.SyncStateNormal:
+		case externalapi.SyncStateRelay:
 			return nil
 		default:
 			return errors.Errorf("unexpected state %s", syncInfo.State)

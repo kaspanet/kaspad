@@ -25,7 +25,7 @@ func (f *FlowContext) StartIBDIfRequired() error {
 		return err
 	}
 
-	if syncInfo.State == externalapi.SyncStateNormal {
+	if syncInfo.State == externalapi.SyncStateRelay {
 		return nil
 	}
 
@@ -63,23 +63,19 @@ func (f *FlowContext) selectPeerForIBD(syncInfo *externalapi.SyncInfo) (*peerpkg
 			if err != nil {
 				return nil, err
 			}
-			if !blockInfo.Exists {
-				return peer, nil
+
+			if syncInfo.State == externalapi.SyncStateHeadersFirst {
+				if !blockInfo.Exists {
+					return peer, nil
+				}
+			} else {
+				if blockInfo.Exists && blockInfo.BlockStatus == externalapi.StatusHeaderOnly &&
+					blockInfo.IsBlockInHeaderPruningPointFuture {
+					return peer, nil
+				}
 			}
 		}
 		return nil, nil
-	}
-
-	for _, peer := range f.peers {
-		blockInfo, err := f.domain.Consensus().GetBlockInfo(peer.SelectedTipHash())
-		if err != nil {
-			return nil, err
-		}
-
-		if blockInfo.Exists && blockInfo.BlockStatus == externalapi.StatusHeaderOnly &&
-			blockInfo.IsBlockInHeaderPruningPointFuture {
-			return peer, nil
-		}
 	}
 
 	return nil, nil
@@ -116,15 +112,12 @@ func (f *FlowContext) requestSelectedTips() {
 }
 
 // FinishIBD finishes the current IBD flow and starts a new one if required.
-func (f *FlowContext) FinishIBD() {
+func (f *FlowContext) FinishIBD() error {
 	f.ibdPeer = nil
 
 	atomic.StoreUint32(&f.isInIBD, 0)
 
-	err := f.StartIBDIfRequired()
-	if err != nil {
-		panic(err)
-	}
+	return f.StartIBDIfRequired()
 }
 
 // IBDPeer returns the currently active IBD peer.

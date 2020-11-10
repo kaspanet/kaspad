@@ -70,7 +70,7 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateMissingBlockBodies, nil
 	}
 
-	return externalapi.SyncStateNormal, nil
+	return externalapi.SyncStateRelay, nil
 }
 
 func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, error) {
