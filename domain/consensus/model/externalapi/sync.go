@@ -1,9 +1,11 @@
 package externalapi
 
+import "fmt"
+
 // Each of the following represent one of the possible sync
 // states of the consensus
 const (
-	SyncStateNormal SyncState = iota
+	SyncStateRelay SyncState = iota
 	SyncStateMissingGenesis
 	SyncStateHeadersFirst
 	SyncStateMissingUTXOSet
@@ -15,8 +17,8 @@ type SyncState uint8
 
 func (s SyncState) String() string {
 	switch s {
-	case SyncStateNormal:
-		return "SyncStateNormal"
+	case SyncStateRelay:
+		return "SyncStateRelay"
 	case SyncStateHeadersFirst:
 		return "SyncStateHeadersFirst"
 	case SyncStateMissingUTXOSet:
@@ -25,7 +27,7 @@ func (s SyncState) String() string {
 		return "SyncStateMissingBlockBodies"
 	}
 
-	return "<unknown state>"
+	return fmt.Sprintf("<unknown state (%d)>", s)
 }
 
 // SyncInfo holds info about the current sync state of the consensus

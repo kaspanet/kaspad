@@ -4,9 +4,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// MsgRequestRelayBlocksHashes is the maximum number of hashes that can
+// MaxRequestRelayBlocksHashes is the maximum number of hashes that can
 // be in a single RequestRelayBlocks message.
-const MsgRequestRelayBlocksHashes = MaxInvPerMsg
+const MaxRequestRelayBlocksHashes = MaxInvPerMsg
 
 // MsgRequestRelayBlocks implements the Message interface and represents a kaspa
 // RequestRelayBlocks message. It is used to request blocks as part of the block

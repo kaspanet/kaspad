@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sync/atomic"
 	"time"
 
@@ -19,7 +20,16 @@ func (f *FlowContext) StartIBDIfRequired() error {
 		return nil
 	}
 
-	peer, err := f.selectPeerForIBD()
+	syncInfo, err := f.domain.Consensus().GetSyncInfo()
+	if err != nil {
+		return err
+	}
+
+	if syncInfo.State == externalapi.SyncStateRelay {
+		return nil
+	}
+
+	peer, err := f.selectPeerForIBD(syncInfo)
 	if err != nil {
 		return err
 	}
@@ -42,20 +52,32 @@ func (f *FlowContext) IsInIBD() bool {
 
 // selectPeerForIBD returns the first peer whose selected tip
 // hash is not in our DAG
-func (f *FlowContext) selectPeerForIBD() (*peerpkg.Peer, error) {
+func (f *FlowContext) selectPeerForIBD(syncInfo *externalapi.SyncInfo) (*peerpkg.Peer, error) {
 	f.peersMutex.RLock()
 	defer f.peersMutex.RUnlock()
 
-	for _, peer := range f.peers {
-		peerSelectedTipHash := peer.SelectedTipHash()
-		blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
-		if err != nil {
-			return nil, err
+	if syncInfo.State == externalapi.SyncStateHeadersFirst {
+		for _, peer := range f.peers {
+			peerSelectedTipHash := peer.SelectedTipHash()
+			blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
+			if err != nil {
+				return nil, err
+			}
+
+			if syncInfo.State == externalapi.SyncStateHeadersFirst {
+				if !blockInfo.Exists {
+					return peer, nil
+				}
+			} else {
+				if blockInfo.Exists && blockInfo.BlockStatus == externalapi.StatusHeaderOnly &&
+					blockInfo.IsBlockInHeaderPruningPointFuture {
+					return peer, nil
+				}
+			}
 		}
-		if !blockInfo.Exists {
-			return peer, nil
-		}
+		return nil, nil
 	}
+
 	return nil, nil
 }
 

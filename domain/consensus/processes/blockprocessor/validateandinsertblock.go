@@ -34,7 +34,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	if mode.State == externalapi.SyncStateHeadersFirst && !isHeaderOnlyBlock(block) {
-		mode.State = externalapi.SyncStateNormal
+		mode.State = externalapi.SyncStateRelay
 		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
 
@@ -97,7 +97,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-	} else if mode.State == externalapi.SyncStateNormal {
+	} else if mode.State == externalapi.SyncStateRelay {
 		// Attempt to add the block to the virtual
 		err = bp.consensusStateManager.AddBlockToVirtual(hash)
 		if err != nil {
@@ -118,7 +118,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if mode.State == externalapi.SyncStateNormal {
+	if mode.State == externalapi.SyncStateRelay {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.FindNextPruningPoint()
 		if err != nil {
