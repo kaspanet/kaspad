@@ -7,6 +7,7 @@ package txscript
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
@@ -255,8 +256,6 @@ func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransact
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays. This avoids a lot of small
 	// allocations.
-	// Specifically avoid using appmessage.NewMsgTx() to prevent correcting errors by
-	// auto-generating various fields.
 	txCopy := externalapi.DomainTransaction{
 		Version:      tx.Version,
 		Inputs:       make([]*externalapi.DomainTransactionInput, len(tx.Inputs)),

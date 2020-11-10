@@ -12,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -100,30 +99,30 @@ func TestSignTxOutput(t *testing.T) {
 		SigHashNone | SigHashAnyOneCanPay,
 		SigHashSingle | SigHashAnyOneCanPay,
 	}
-	txIns := []*appmessage.TxIn{
+	inputs := []*externalapi.DomainTransactionInput{
 		{
-			PreviousOutpoint: appmessage.Outpoint{
-				TxID:  externalapi.DomainTransactionID{},
-				Index: 0,
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID{},
+				Index:         0,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutpoint: appmessage.Outpoint{
-				TxID:  externalapi.DomainTransactionID{},
-				Index: 1,
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID{},
+				Index:         1,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutpoint: appmessage.Outpoint{
-				TxID:  externalapi.DomainTransactionID{},
-				Index: 2,
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID{},
+				Index:         2,
 			},
 			Sequence: 4294967295,
 		},
 	}
-	txOuts := []*appmessage.TxOut{
+	outputs := []*externalapi.DomainTransactionOutput{
 		{
 			Value: 1,
 		},
@@ -134,7 +133,11 @@ func TestSignTxOutput(t *testing.T) {
 			Value: 3,
 		},
 	}
-	tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(1, txIns, txOuts))
+	tx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
 
 	// Pay to Pubkey Hash (uncompressed)
 	for _, hashType := range hashTypes {
@@ -704,7 +707,7 @@ func TestSignTxOutput(t *testing.T) {
 }
 
 type tstInput struct {
-	txout              *appmessage.TxOut
+	txout              *externalapi.DomainTransactionOutput
 	sigscriptGenerates bool
 	inputValidates     bool
 	indexOutOfRange    bool
@@ -718,7 +721,7 @@ type tstSigScript struct {
 	scriptAtWrongIndex bool
 }
 
-var coinbaseOutpoint = &appmessage.Outpoint{
+var coinbaseOutpoint = &externalapi.DomainOutpoint{
 	Index: (1 << 32) - 1,
 }
 
@@ -749,7 +752,10 @@ var sigScriptTests = []tstSigScript{
 		name: "one input uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -763,13 +769,19 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -783,7 +795,10 @@ var sigScriptTests = []tstSigScript{
 		name: "one input compressed",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: compressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -797,13 +812,19 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs compressed",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, compressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: compressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal+fee, compressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: compressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -817,7 +838,10 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashNone",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -831,7 +855,10 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashSingle",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -845,7 +872,10 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAll | SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -859,7 +889,10 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -873,7 +906,10 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType non-exist",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -887,7 +923,10 @@ var sigScriptTests = []tstSigScript{
 		name: "invalid compression",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -901,7 +940,10 @@ var sigScriptTests = []tstSigScript{
 		name: "short ScriptPubKey",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, shortScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: shortScriptPubKey,
+				},
 				sigscriptGenerates: false,
 				indexOutOfRange:    false,
 			},
@@ -914,13 +956,19 @@ var sigScriptTests = []tstSigScript{
 		name: "valid script at wrong index",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -934,13 +982,19 @@ var sigScriptTests = []tstSigScript{
 		name: "index out of range",
 		inputs: []tstInput{
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              appmessage.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: uncompressedScriptPubKey,
+				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -955,7 +1009,7 @@ var sigScriptTests = []tstSigScript{
 // Test the sigscript generation for valid and invalid inputs, all
 // hashTypes, and with and without compression. This test creates
 // sigscripts to spend fake coinbase inputs, as sigscripts cannot be
-// created for the MsgTxs in txTests, since they come from the blockDAG
+// created for the DomainTransactions in txTests, since they come from the blockDAG
 // and we don't have the private keys.
 func TestSignatureScript(t *testing.T) {
 	t.Parallel()
@@ -964,13 +1018,21 @@ func TestSignatureScript(t *testing.T) {
 
 nexttest:
 	for i := range sigScriptTests {
-		txOuts := []*appmessage.TxOut{appmessage.NewTxOut(500, []byte{OpReturn})}
-
-		txIns := []*appmessage.TxIn{}
-		for range sigScriptTests[i].inputs {
-			txIns = append(txIns, appmessage.NewTxIn(coinbaseOutpoint, nil))
+		outputs := []*externalapi.DomainTransactionOutput{
+			{Value: 500, ScriptPublicKey: []byte{OpReturn}},
 		}
-		tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts))
+
+		inputs := []*externalapi.DomainTransactionInput{}
+		for range sigScriptTests[i].inputs {
+			inputs = append(inputs, &externalapi.DomainTransactionInput{
+				PreviousOutpoint: *coinbaseOutpoint,
+			})
+		}
+		tx := &externalapi.DomainTransaction{
+			Version: 1,
+			Inputs:  inputs,
+			Outputs: outputs,
+		}
 
 		var script []byte
 		var err error
@@ -983,7 +1045,7 @@ nexttest:
 				idx = j
 			}
 			script, err = SignatureScript(tx, idx,
-				sigScriptTests[i].inputs[j].txout.ScriptPubKey,
+				sigScriptTests[i].inputs[j].txout.ScriptPublicKey,
 				sigScriptTests[i].hashType, privKey,
 				sigScriptTests[i].compress)
 
@@ -1017,7 +1079,7 @@ nexttest:
 		var scriptFlags ScriptFlags
 		for j := range tx.Inputs {
 			vm, err := NewEngine(sigScriptTests[i].
-				inputs[j].txout.ScriptPubKey, tx, j, scriptFlags, nil)
+				inputs[j].txout.ScriptPublicKey, tx, j, scriptFlags, nil)
 			if err != nil {
 				t.Errorf("cannot create script vm for test %v: %v",
 					sigScriptTests[i].name, err)

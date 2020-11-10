@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 // TestBadPC sets the pc to a deliberately bad result then confirms that Step()
@@ -25,10 +23,10 @@ func TestBadPC(t *testing.T) {
 	}
 
 	// tx with almost empty scripts.
-	txIns := []*appmessage.TxIn{
+	inputs := []*externalapi.DomainTransactionInput{
 		{
-			PreviousOutpoint: appmessage.Outpoint{
-				TxID: externalapi.DomainTransactionID([32]byte{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -44,11 +42,15 @@ func TestBadPC(t *testing.T) {
 			Sequence:        4294967295,
 		},
 	}
-	txOuts := []*appmessage.TxOut{{
-		Value:        1000000000,
-		ScriptPubKey: nil,
+	outputs := []*externalapi.DomainTransactionOutput{{
+		Value:           1000000000,
+		ScriptPublicKey: nil,
 	}}
-	tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(1, txIns, txOuts))
+	tx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
 	scriptPubKey := mustParseShortForm("NOP")
 
 	for _, test := range tests {
@@ -91,9 +93,9 @@ func TestCheckErrorCondition(t *testing.T) {
 
 	for i, test := range tests {
 		func() {
-			txIns := []*appmessage.TxIn{{
-				PreviousOutpoint: appmessage.Outpoint{
-					TxID: externalapi.DomainTransactionID([32]byte{
+			inputs := []*externalapi.DomainTransactionInput{{
+				PreviousOutpoint: externalapi.DomainOutpoint{
+					TransactionID: externalapi.DomainTransactionID([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -108,11 +110,15 @@ func TestCheckErrorCondition(t *testing.T) {
 				SignatureScript: nil,
 				Sequence:        4294967295,
 			}}
-			txOuts := []*appmessage.TxOut{{
-				Value:        1000000000,
-				ScriptPubKey: nil,
+			outputs := []*externalapi.DomainTransactionOutput{{
+				Value:           1000000000,
+				ScriptPublicKey: nil,
 			}}
-			tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(1, txIns, txOuts))
+			tx := &externalapi.DomainTransaction{
+				Version: 1,
+				Inputs:  inputs,
+				Outputs: outputs,
+			}
 
 			scriptPubKey := mustParseShortForm(test.script)
 
@@ -210,9 +216,9 @@ func TestDisasmPC(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	txIns := []*appmessage.TxIn{{
-		PreviousOutpoint: appmessage.Outpoint{
-			TxID: externalapi.DomainTransactionID([32]byte{
+	inputs := []*externalapi.DomainTransactionInput{{
+		PreviousOutpoint: externalapi.DomainOutpoint{
+			TransactionID: externalapi.DomainTransactionID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,
@@ -227,11 +233,15 @@ func TestDisasmPC(t *testing.T) {
 		SignatureScript: mustParseShortForm("OP_2"),
 		Sequence:        4294967295,
 	}}
-	txOuts := []*appmessage.TxOut{{
-		Value:        1000000000,
-		ScriptPubKey: nil,
+	outputs := []*externalapi.DomainTransactionOutput{{
+		Value:           1000000000,
+		ScriptPublicKey: nil,
 	}}
-	tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(1, txIns, txOuts))
+	tx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
 
 	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
@@ -270,9 +280,9 @@ func TestDisasmScript(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	txIns := []*appmessage.TxIn{{
-		PreviousOutpoint: appmessage.Outpoint{
-			TxID: externalapi.DomainTransactionID([32]byte{
+	inputs := []*externalapi.DomainTransactionInput{{
+		PreviousOutpoint: externalapi.DomainOutpoint{
+			TransactionID: externalapi.DomainTransactionID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,
@@ -287,11 +297,16 @@ func TestDisasmScript(t *testing.T) {
 		SignatureScript: mustParseShortForm("OP_2"),
 		Sequence:        4294967295,
 	}}
-	txOuts := []*appmessage.TxOut{{
-		Value:        1000000000,
-		ScriptPubKey: nil,
+	outputs := []*externalapi.DomainTransactionOutput{{
+		Value:           1000000000,
+		ScriptPublicKey: nil,
 	}}
-	tx := appmessage.MsgTxToDomainTransaction(appmessage.NewNativeMsgTx(1, txIns, txOuts))
+	tx := &externalapi.DomainTransaction{
+		Version: 1,
+		Inputs:  inputs,
+		Outputs: outputs,
+	}
+
 	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
