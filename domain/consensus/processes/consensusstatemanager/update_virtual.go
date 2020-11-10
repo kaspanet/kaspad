@@ -28,7 +28,10 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return err
 	}
 
-	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
+	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
+	if err != nil {
+		return err
+	}
 
 	err = csm.updateVirtualDiffParents(newBlockHash, virtualUTXODiff)
 	if err != nil {
@@ -63,13 +66,14 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 			if err != nil {
 				return err
 			}
-			csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
+			err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
+			if err != nil {
+				return err
+			}
 		} else {
 			newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 		}
 	}
 
-	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
-
-	return nil
+	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
 }

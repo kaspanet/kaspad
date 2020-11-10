@@ -5,8 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data *model.ReachabilityData) {
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data *model.ReachabilityData) error {
+	return rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 }
 
 func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.DomainHash, set model.FutureCoveringTreeNodeSet) error {
@@ -16,8 +16,7 @@ func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.Dom
 	}
 
 	data.FutureCoveringSet = set
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
-	return nil
+	return rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 }
 
 func (rt *reachabilityManager) stageTreeNode(blockHash *externalapi.DomainHash, node *model.ReachabilityTreeNode) error {
@@ -27,8 +26,7 @@ func (rt *reachabilityManager) stageTreeNode(blockHash *externalapi.DomainHash, 
 	}
 
 	data.TreeNode = node
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
-	return nil
+	return rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 }
 
 func (rt *reachabilityManager) stageReindexRoot(blockHash *externalapi.DomainHash) {

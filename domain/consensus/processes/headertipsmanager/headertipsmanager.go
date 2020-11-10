@@ -53,6 +53,10 @@ func (h headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 	}
 
 	newTips = append(newTips, hash)
-	h.headerTipsStore.Stage(newTips)
+	err = h.headerTipsStore.Stage(newTips)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
