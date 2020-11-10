@@ -25,8 +25,14 @@ func New() model.AcceptanceDataStore {
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) {
-	ads.staging[*blockHash] = acceptanceData
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
+	clone, err := ads.cloneAcceptanceData(acceptanceData)
+	if err != nil {
+		return err
+	}
+
+	ads.staging[*blockHash] = clone
+	return nil
 }
 
 func (ads *acceptanceDataStore) IsStaged() bool {
@@ -100,4 +106,13 @@ func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []
 
 func (ads *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
+}
+
+func (ads *acceptanceDataStore) cloneAcceptanceData(acceptanceData model.AcceptanceData) (model.AcceptanceData, error) {
+	serialized, err := ads.serializeAcceptanceData(acceptanceData)
+	if err != nil {
+		return nil, err
+	}
+
+	return ads.deserializeAcceptanceData(serialized)
 }

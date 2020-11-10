@@ -25,8 +25,14 @@ func New() model.BlockHeaderStore {
 }
 
 // Stage stages the given block header for the given blockHash
-func (bms *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) {
-	bms.staging[*blockHash] = blockHeader
+func (bms *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) error {
+	clone, err := bms.cloneHeader(blockHeader)
+	if err != nil {
+		return err
+	}
+
+	bms.staging[*blockHash] = clone
+	return nil
 }
 
 func (bms *blockHeaderStore) IsStaged() bool {
@@ -127,4 +133,13 @@ func (bms *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 		return nil, err
 	}
 	return serialization.DbBlockHeaderToDomainBlockHeader(dbBlockHeader)
+}
+
+func (bms *blockHeaderStore) cloneHeader(header *externalapi.DomainBlockHeader) (*externalapi.DomainBlockHeader, error) {
+	serialized, err := bms.serializeHeader(header)
+	if err != nil {
+		return nil, err
+	}
+
+	return bms.deserializeHeader(serialized)
 }

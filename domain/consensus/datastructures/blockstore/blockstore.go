@@ -128,3 +128,12 @@ func (bms *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainB
 func (bms *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
 }
+
+func (bms *blockStore) clone(block *externalapi.DomainBlock) (*externalapi.DomainBlock, error) {
+	serialized, err := bms.serializeBlock(block)
+	if err != nil {
+		return nil, err
+	}
+
+	return bms.deserializeBlock(serialized)
+}

@@ -22,8 +22,14 @@ func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*e
 	return hashes.DeserializeHashSlice(virtualDiffParentsBytes)
 }
 
-func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
-	c.stagedVirtualDiffParents = tipHashes
+func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) error {
+	clone, err := c.cloneVirtualDiffParents(tipHashes)
+	if err != nil {
+		return err
+	}
+
+	c.stagedVirtualDiffParents = clone
+	return nil
 }
 
 func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
@@ -35,4 +41,25 @@ func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction)
 	}
 
 	return nil
+}
+
+func (c *consensusStateStore) serializeVirtualDiffParents(virtualDiffParentsBytes []*externalapi.DomainHash) ([]byte, error) {
+	panic("unimplemented")
+}
+
+func (c *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParentsBytes []byte) ([]*externalapi.DomainHash,
+	error) {
+
+	panic("unimplemented")
+}
+
+func (c *consensusStateStore) cloneVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash,
+) ([]*externalapi.DomainHash, error) {
+
+	serialized, err := c.serializeVirtualDiffParents(virtualDiffParents)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.deserializeVirtualDiffParents(serialized)
 }

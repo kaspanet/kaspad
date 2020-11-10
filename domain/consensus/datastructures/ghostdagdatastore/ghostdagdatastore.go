@@ -23,8 +23,14 @@ func New() model.GHOSTDAGDataStore {
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
-	gds.staging[*blockHash] = blockGHOSTDAGData
+func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) error {
+	clone, err := gds.clone(blockGHOSTDAGData)
+	if err != nil {
+		return err
+	}
+
+	gds.staging[*blockHash] = clone
+	return nil
 }
 
 func (gds *ghostdagDataStore) IsStaged() bool {
@@ -82,4 +88,13 @@ func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataByte
 	}
 
 	return serialization.DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData)
+}
+
+func (gds *ghostdagDataStore) clone(blockGHOSTDAGData *model.BlockGHOSTDAGData) (*model.BlockGHOSTDAGData, error) {
+	serialized, err := gds.serializeBlockGHOSTDAGData(blockGHOSTDAGData)
+	if err != nil {
+		return nil, err
+	}
+
+	return gds.deserializeBlockGHOSTDAGData(serialized)
 }
