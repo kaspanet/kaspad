@@ -84,7 +84,7 @@ func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Doma
 		return nil, err
 	}
 
-	return serialization.DBHeaderTipsTOHeaderTips(dbTips)
+	return serialization.DBHeaderTipsToHeaderTips(dbTips)
 }
 
 func (c *headerTipsStore) clone(tips []*externalapi.DomainHash,
