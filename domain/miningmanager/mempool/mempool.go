@@ -614,8 +614,11 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 	// This will populate the missing UTXOEntries.
 	err = mp.consensus.ValidateTransactionAndPopulateWithConsensusData(tx)
 	missingOutpoints := ruleerrors.ErrMissingTxOut{}
-	if errors.As(err, &missingOutpoints) {
-		return missingOutpoints.MissingOutpoints, nil, nil
+	if err != nil {
+		if errors.As(err, &missingOutpoints) {
+			return missingOutpoints.MissingOutpoints, nil, nil
+		}
+		return nil, nil, err
 	}
 
 	// Don't allow transactions with non-standard inputs if the network

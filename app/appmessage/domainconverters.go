@@ -115,6 +115,11 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		transactionOutputs = append(transactionOutputs, txOutToDomainTransactionOutput(txOut))
 	}
 
+	payload := make([]byte, 0)
+	if msgTx.Payload != nil {
+		payload = msgTx.Payload
+	}
+
 	var payloadHash externalapi.DomainHash
 	if msgTx.PayloadHash != nil {
 		payloadHash = *msgTx.PayloadHash
@@ -128,7 +133,7 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
 		PayloadHash:  payloadHash,
-		Payload:      msgTx.Payload,
+		Payload:      payload,
 	}
 }
 
