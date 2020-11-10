@@ -639,22 +639,7 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 		}
 	}
 
-	//// NOTE: if you modify this code to accept non-standard transactions,
-	//// you should add code here to check that the transaction does a
-	//// reasonable number of ECDSA signature verifications.
-	//
-
-	// Don't allow transactions with fees too low to get into a mined block.
-	//
-	// Most miners allow a free transaction area in blocks they mine to go
-	// alongside the area used for high-priority transactions as well as
-	// transactions with fees. A transaction size of up to 1000 bytes is
-	// considered safe to go into this section. Further, the minimum fee
-	// calculated below on its own would encourage several small
-	// transactions to avoid fees rather than one single larger transaction
-	// which is more desirable. Therefore, as long as the size of the
-	// transaction does not exceeed 1000 less than the reserved space for
-	// high-priority transactions, don't require a fee for it.
+	// Don't allow transactions with fees too low to get into a mined block
 	serializedSize := int64(estimatedsize.TransactionEstimatedSerializedSize(tx))
 	minFee := uint64(calcMinRequiredTxRelayFee(serializedSize,
 		mp.policy.MinRelayTxFee))
