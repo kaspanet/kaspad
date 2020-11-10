@@ -66,10 +66,13 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+	err := bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+	if err != nil {
+		return nil, err
+	}
 	defer bb.blockRelationStore.Discard()
 
-	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
+	err = bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +82,10 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	if err != nil {
 		return nil, err
 	}
-	bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
+	err = bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
+	if err != nil {
+		return nil, err
+	}
 	defer bb.acceptanceDataStore.Discard()
 
 	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)

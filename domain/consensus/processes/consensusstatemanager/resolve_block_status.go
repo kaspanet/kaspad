@@ -68,7 +68,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	csm.acceptanceDataStore.Stage(blockHash, acceptanceData)
+	err = csm.acceptanceDataStore.Stage(blockHash, acceptanceData)
+	if err != nil {
+		return 0, err
+	}
 
 	block, err := csm.blockStore.Block(csm.databaseContext, blockHash)
 	if err != nil {
@@ -84,7 +87,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	}
 
 	csm.multisetStore.Stage(blockHash, multiset)
-	csm.utxoDiffStore.Stage(blockHash, pastUTXODiff, nil)
+	err = csm.utxoDiffStore.Stage(blockHash, pastUTXODiff, nil)
+	if err != nil {
+		return 0, err
+	}
 
 	err = csm.updateParentDiffs(blockHash, pastUTXODiff)
 	if err != nil {
@@ -120,7 +126,10 @@ func (csm *consensusStateManager) updateParentDiffs(
 			return err
 		}
 
-		csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		err = csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

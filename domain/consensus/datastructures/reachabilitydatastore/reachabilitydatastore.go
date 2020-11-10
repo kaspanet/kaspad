@@ -26,8 +26,15 @@ func New() model.ReachabilityDataStore {
 }
 
 // StageReachabilityData stages the given reachabilityData for the given blockHash
-func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
-	rds.reachabilityDataStaging[*blockHash] = reachabilityData
+func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
+	reachabilityData *model.ReachabilityData) error {
+	clone, err := rds.cloneReachabilityData(reachabilityData)
+	if err != nil {
+		return err
+	}
+
+	rds.reachabilityDataStaging[*blockHash] = clone
+	return nil
 }
 
 // StageReachabilityReindexRoot stages the given reachabilityReindexRoot
@@ -143,4 +150,13 @@ func (rds *reachabilityDataStore) deserializeReachabilityReindexRoot(reachabilit
 	}
 
 	return serialization.DbHashToDomainHash(dbHash)
+}
+
+func (rds *reachabilityDataStore) cloneReachabilityData(reachabilityData *model.ReachabilityData) (*model.ReachabilityData, error) {
+	serialized, err := rds.serializeReachabilityData(reachabilityData)
+	if err != nil {
+		return nil, err
+	}
+
+	return rds.deserializeReachabilityData(serialized)
 }

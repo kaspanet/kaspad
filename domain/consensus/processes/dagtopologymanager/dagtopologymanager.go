@@ -127,7 +127,11 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 			for i, parentChild := range parentRelations.Children {
 				if *parentChild == *blockHash {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
-					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
+					err = dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
+					if err != nil {
+						return err
+					}
+
 					break
 				}
 			}
@@ -149,15 +153,21 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		}
 		if !isBlockAlreadyInChildren {
 			parentRelations.Children = append(parentRelations.Children, blockHash)
-			dtm.blockRelationStore.StageBlockRelation(parent, parentRelations)
+			err = dtm.blockRelationStore.StageBlockRelation(parent, parentRelations)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	// Finally - create the relations for the block itself
-	dtm.blockRelationStore.StageBlockRelation(blockHash, &model.BlockRelations{
+	err = dtm.blockRelationStore.StageBlockRelation(blockHash, &model.BlockRelations{
 		Parents:  parentHashes,
 		Children: []*externalapi.DomainHash{},
 	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -58,7 +58,11 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 			"point UTXO set is %s but got %s", headerTipsPruningPointHeader.UTXOCommitment, *utxoSetMultiSet.Hash())
 	}
 
-	csm.consensusStateStore.StageTips(headerTipsPruningPointHeader.ParentHashes)
+	err = csm.consensusStateStore.StageTips(headerTipsPruningPointHeader.ParentHashes)
+	if err != nil {
+		return err
+	}
+
 	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, headerTipsPruningPointHeader.ParentHashes)
 	if err != nil {
 		return err
@@ -137,9 +141,13 @@ func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainH
 		return nil, err
 	}
 
-	csm.blockRelationStore.StageBlockRelation(virtualHeaderHash, &model.BlockRelations{
+	err = csm.blockRelationStore.StageBlockRelation(virtualHeaderHash, &model.BlockRelations{
 		Parents: headerTips,
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	defer csm.blockRelationStore.Discard()
 
 	err = csm.ghostdagManager.GHOSTDAG(virtualHeaderHash)

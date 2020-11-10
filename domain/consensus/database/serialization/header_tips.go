@@ -11,7 +11,7 @@ func HeaderTipsToDBHeaderTips(tips []*externalapi.DomainHash) *DbHeaderTips {
 	}
 }
 
-// DBHeaderTipsTOHeaderTips converts DbHeaderTips to a slice of hashes
-func DBHeaderTipsTOHeaderTips(dbHeaderTips *DbHeaderTips) ([]*externalapi.DomainHash, error) {
+// DBHeaderTipsToHeaderTips converts DbHeaderTips to a slice of hashes
+func DBHeaderTipsToHeaderTips(dbHeaderTips *DbHeaderTips) ([]*externalapi.DomainHash, error) {
 	return DbHashesToDomainHashes(dbHeaderTips.Tips)
 }

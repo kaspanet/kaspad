@@ -25,8 +25,14 @@ func New() model.BlockStore {
 }
 
 // Stage stages the given block for the given blockHash
-func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
-	bms.staging[*blockHash] = block
+func (bms *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
+	clone, err := bms.clone(block)
+	if err != nil {
+		return err
+	}
+
+	bms.staging[*blockHash] = clone
+	return nil
 }
 
 func (bms *blockStore) IsStaged() bool {
@@ -127,4 +133,13 @@ func (bms *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainB
 
 func (bms *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
+}
+
+func (bms *blockStore) clone(block *externalapi.DomainBlock) (*externalapi.DomainBlock, error) {
+	serialized, err := bms.serializeBlock(block)
+	if err != nil {
+		return nil, err
+	}
+
+	return bms.deserializeBlock(serialized)
 }
