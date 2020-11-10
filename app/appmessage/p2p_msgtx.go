@@ -163,7 +163,7 @@ type MsgTx struct {
 	LockTime     uint64
 	SubnetworkID externalapi.DomainSubnetworkID
 	Gas          uint64
-	PayloadHash  *externalapi.DomainHash
+	PayloadHash  externalapi.DomainHash
 	Payload      []byte
 }
 
@@ -310,9 +310,9 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
 	}
 
-	var payloadHash *externalapi.DomainHash
+	var payloadHash externalapi.DomainHash
 	if *subnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = hashes.HashData(payload)
+		payloadHash = *hashes.HashData(payload)
 	}
 
 	return &MsgTx{
