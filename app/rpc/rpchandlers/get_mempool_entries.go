@@ -8,5 +8,5 @@ import (
 
 // HandleGetMempoolEntries handles the respectively named RPC command
 func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	return nil, nil
+	return &appmessage.GetMempoolEntriesResponseMessage{}, nil
 }
