@@ -228,6 +228,7 @@ var (
 
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
+	ErrSubnetworksDisabled    = newRuleError("ErrSubnetworksDisabled")
 	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
 
 	ErrMissingBlockHeaderInIBD = newRuleError("ErrMissingBlockHeaderInIBD")

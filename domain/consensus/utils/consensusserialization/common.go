@@ -13,10 +13,6 @@ var (
 	// littleEndian is a convenience variable since binary.LittleEndian is
 	// quite long.
 	littleEndian = binary.LittleEndian
-
-	// bigEndian is a convenience variable since binary.BigEndian is quite
-	// long.
-	bigEndian = binary.BigEndian
 )
 
 // errNoEncodingForType signifies that there's no encoding for the given type.
