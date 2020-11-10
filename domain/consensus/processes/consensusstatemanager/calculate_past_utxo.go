@@ -52,6 +52,9 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		utxoDiffs = append(utxoDiffs, utxoDiff)
 
 		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// apply the diffs in reverse order
