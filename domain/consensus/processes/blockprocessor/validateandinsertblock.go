@@ -15,7 +15,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	hash := consensusserialization.HeaderHash(block.Header)
 	if mode.State == externalapi.SyncStateMissingUTXOSet {
-		if len(block.Transactions) == 0 {
+		if isHeaderOnlyBlock(block) {
 			// Allow processing headers while in state SyncStateMissingUTXOSet
 			mode.State = externalapi.SyncStateHeadersFirst
 		} else {
@@ -33,7 +33,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if mode.State == externalapi.SyncStateHeadersFirst && len(block.Transactions) != 0 {
+	if mode.State == externalapi.SyncStateHeadersFirst && !isHeaderOnlyBlock(block) {
 		mode.State = externalapi.SyncStateNormal
 		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
@@ -141,6 +141,10 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 	}
 
 	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
+}
+
+func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
+	return len(block.Transactions) == 0
 }
 
 func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *externalapi.SyncInfo) error {
