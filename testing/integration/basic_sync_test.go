@@ -18,19 +18,19 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	app2OnBlockAddedChan := make(chan *appmessage.BlockHeader)
+	app2OnBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
 	setOnBlockAddedHandler(t, appHarness2, func(notification *appmessage.BlockAddedNotificationMessage) {
 		app2OnBlockAddedChan <- &notification.Block.Header
 	})
 
-	app3OnBlockAddedChan := make(chan *appmessage.BlockHeader)
+	app3OnBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
 	setOnBlockAddedHandler(t, appHarness3, func(notification *appmessage.BlockAddedNotificationMessage) {
 		app3OnBlockAddedChan <- &notification.Block.Header
 	})
 
 	block := mineNextBlock(t, appHarness1)
 
-	var header *appmessage.BlockHeader
+	var header *appmessage.MsgBlockHeader
 	select {
 	case header = <-app2OnBlockAddedChan:
 	case <-time.After(defaultTimeout):

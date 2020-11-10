@@ -26,7 +26,7 @@ func TestTxRelay(t *testing.T) {
 	connect(t, payer, mediator)
 	connect(t, mediator, payee)
 
-	payeeBlockAddedChan := make(chan *appmessage.BlockHeader)
+	payeeBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
 	setOnBlockAddedHandler(t, payee, func(notification *appmessage.BlockAddedNotificationMessage) {
 		payeeBlockAddedChan <- &notification.Block.Header
 	})
@@ -77,7 +77,7 @@ func TestTxRelay(t *testing.T) {
 	}
 }
 
-func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.BlockHeader) {
+func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.MsgBlockHeader) {
 	select {
 	case <-payeeBlockAddedChan:
 	case <-time.After(defaultTimeout):
