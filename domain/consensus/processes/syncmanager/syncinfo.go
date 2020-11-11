@@ -64,11 +64,11 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateMissingUTXOSet, nil
 	}
 
-	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
+	headerVirtualSelectedParentStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerVirtualSelectedParentHash)
 	if err != nil {
 		return 0, err
 	}
-	if *virtualSelectedParentHash != *headerVirtualSelectedParentHash {
+	if headerVirtualSelectedParentStatus == externalapi.StatusHeaderOnly {
 		return externalapi.SyncStateMissingBlockBodies, nil
 	}
 
