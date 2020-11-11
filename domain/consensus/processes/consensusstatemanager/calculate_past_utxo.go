@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
@@ -18,6 +19,10 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	if blockGHOSTDAGData.SelectedParent == nil {
+		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
 	}
 
 	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
@@ -44,16 +49,27 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	// collect the UTXO diffs
 	var utxoDiffs []*model.UTXODiff
 	nextBlockHash := blockHash
-	for nextBlockHash != nil {
+	for {
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
 
+		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nextBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			break
+		}
+
 		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
+		}
+		if nextBlockHash == nil {
+			break
 		}
 	}
 
