@@ -116,7 +116,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdVerAck:                        "VerAck",
 	CmdRequestAddresses:              "RequestAddresses",
 	CmdAddresses:                     "Addresses",
-	CmdRequestHeaders:                "RequestBlocks",
+	CmdRequestHeaders:                "RequestHeaders",
 	CmdBlock:                         "Block",
 	CmdTx:                            "Tx",
 	CmdPing:                          "Ping",
