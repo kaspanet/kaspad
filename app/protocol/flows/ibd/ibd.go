@@ -2,6 +2,7 @@ package ibd
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
@@ -151,6 +152,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies() error {
 			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+			}
+			err = flow.OnNewBlock(block)
+			if err != nil {
+				return err
+			}
+			err = blocklogger.LogBlock(block)
+			if err != nil {
+				return err
 			}
 		}
 	}
