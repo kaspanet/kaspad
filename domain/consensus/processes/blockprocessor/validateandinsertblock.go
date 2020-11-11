@@ -42,6 +42,20 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		log.Warnf("block %s contains transactions while validating in header only mode", hash)
 	}
 
+	if syncInfo.State == externalapi.SyncStateMissingBlockBodies {
+		headerTips, err := bp.headerTipsStore.Tips(bp.databaseContext)
+		if err != nil {
+			return err
+		}
+		selectedHeaderTip, err := bp.ghostdagManager.ChooseSelectedParent(headerTips...)
+		if err != nil {
+			return err
+		}
+		if *selectedHeaderTip == *hash {
+			syncInfo.State = externalapi.SyncStateRelay
+		}
+	}
+
 	err = bp.checkBlockStatus(hash, syncInfo)
 	if err != nil {
 		return err
