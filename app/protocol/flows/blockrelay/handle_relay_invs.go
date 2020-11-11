@@ -93,7 +93,6 @@ func (flow *handleRelayInvsFlow) start() error {
 }
 
 func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error) {
-
 	if len(flow.invsQueue) > 0 {
 		var inv *appmessage.MsgInvRelayBlock
 		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
@@ -180,9 +179,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
 //
 // Note: this function assumes msgChan can contain only appmessage.MsgInvRelayBlock and appmessage.MsgBlock messages.
-func (flow *handleRelayInvsFlow) readMsgBlock() (
-	msgBlock *appmessage.MsgBlock, err error) {
-
+func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, err error) {
 	for {
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
