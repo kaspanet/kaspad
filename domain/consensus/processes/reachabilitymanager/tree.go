@@ -725,7 +725,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 		return "", err
 	}
 
-	lines := []string{intervalString(nodeInterval)}
+	lines := []string{nodeInterval.String()}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
@@ -745,7 +745,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 				return "", err
 			}
 
-			line += intervalString(childInterval)
+			line += childInterval.String()
 			queue = append(queue, child)
 		}
 		lines = append([]string{line}, lines...)

@@ -1,6 +1,9 @@
 package model
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 // ReachabilityData holds the set of data required to answer
 // reachability queries
@@ -39,6 +42,10 @@ type ReachabilityTreeNode struct {
 type ReachabilityInterval struct {
 	Start uint64
 	End   uint64
+}
+
+func (ri *ReachabilityInterval) String() string {
+	return fmt.Sprintf("[%d,%d]", ri.Start, ri.End)
 }
 
 // FutureCoveringTreeNodeSet represents a collection of blocks in the future of

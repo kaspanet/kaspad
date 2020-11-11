@@ -1,7 +1,6 @@
 package reachabilitymanager
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/pkg/errors"
 	"math"
@@ -115,9 +114,4 @@ func intervalSplitWithExponentialBias(ri *model.ReachabilityInterval, sizes []ui
 // intervalContains returns true if ri contains other.
 func intervalContains(ri *model.ReachabilityInterval, other *model.ReachabilityInterval) bool {
 	return ri.Start <= other.Start && other.End <= ri.End
-}
-
-// intervalString returns a string representation of the interval.
-func intervalString(ri *model.ReachabilityInterval) string {
-	return fmt.Sprintf("[%d,%d]", ri.Start, ri.End)
 }
