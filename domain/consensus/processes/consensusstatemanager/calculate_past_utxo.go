@@ -21,6 +21,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		return nil, nil, nil, err
 	}
 
+	// Genesis
 	if blockGHOSTDAGData.SelectedParent == nil {
 		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
 	}
