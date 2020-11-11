@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
@@ -320,6 +321,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	}
 	teardown = func() {
 		db.Close()
+		os.RemoveAll(testDatabaseDir)
 	}
 
 	return tc, teardown, nil
