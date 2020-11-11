@@ -12,7 +12,7 @@ type MsgIBDRootNotFound struct {
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgIBDRootNotFound) Command() MessageCommand {
-	return CmdDoneHeaders
+	return CmdIBDRootNotFound
 }
 
 // NewMsgIBDRootNotFound returns a new kaspa IBDRootNotFound message that conforms to the
