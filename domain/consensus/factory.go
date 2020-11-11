@@ -248,7 +248,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		headerTipsStore)
 
 	c := &consensus{
-		lock:            &sync.RWMutex{},
+		lock:            &sync.Mutex{},
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,
