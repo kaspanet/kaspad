@@ -5,6 +5,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 )
 
+func (tc *testConsensus) DatabaseContext() model.DBReader {
+	return tc.databaseContext
+}
+
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
 	return tc.AcceptanceDataStore()
 }
