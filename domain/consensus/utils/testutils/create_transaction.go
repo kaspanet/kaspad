@@ -17,6 +17,7 @@ var SimpleCoinbaseData = &externalapi.DomainCoinbaseData{ScriptPublicKey: opTrue
 
 // CreateTransaction create a transaction that spends the first output of provided transaction.
 // Assumes that the output being spent has opTrueScript as it's scriptPublicKey
+// Creates the value of the spent output minus 1 sompi
 func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.DomainTransaction, error) {
 	scriptPublicKey, err := txscript.PayToScriptHashScript(opTrueScript)
 	if err != nil {
@@ -36,7 +37,7 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 	}
 	output := &externalapi.DomainTransactionOutput{
 		ScriptPublicKey: scriptPublicKey,
-		Value:           uint64(1),
+		Value:           txToSpend.Outputs[0].Value - 1,
 	}
 	return &externalapi.DomainTransaction{
 		Version: constants.TransactionVersion,

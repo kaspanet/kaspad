@@ -21,3 +21,15 @@ const (
 	// StatusHeaderOnly indicates that the block transactions are not held (pruned or wasn't added yet)
 	StatusHeaderOnly
 )
+
+var blockStatusStrings = map[BlockStatus]string{
+	StatusInvalid:                 "Invalid",
+	StatusValid:                   "Valid",
+	StatusUTXOPendingVerification: "UTXOPendingVerification",
+	StatusDisqualifiedFromChain:   "DisqualifiedFromChain",
+	StatusHeaderOnly:              "HeaderOnly",
+}
+
+func (bs BlockStatus) String() string {
+	return blockStatusStrings[bs]
+}
