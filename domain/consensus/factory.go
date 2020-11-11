@@ -315,9 +315,12 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
 
+	testBlockBuilder := blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder)
+	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
 	tc = &testConsensus{
-		consensus:        consensusAsImplementation,
-		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
+		consensus:                 consensusAsImplementation,
+		testBlockBuilder:          testBlockBuilder,
+		testConsensusStateManager: testConsensusStateManager,
 	}
 	teardown = func() {
 		db.Close()

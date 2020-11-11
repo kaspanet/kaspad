@@ -13,7 +13,8 @@ import (
 
 type testConsensus struct {
 	*consensus
-	testBlockBuilder model.TestBlockBuilder
+	testBlockBuilder          model.TestBlockBuilder
+	testConsensusStateManager model.TestConsensusStateManager
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
