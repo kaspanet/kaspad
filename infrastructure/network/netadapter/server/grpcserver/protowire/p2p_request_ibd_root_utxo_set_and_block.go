@@ -13,6 +13,7 @@ func (x *KaspadMessage_RequestIBDRootUTXOSetAndBlock) toAppMessage() (appmessage
 
 func (x *KaspadMessage_RequestIBDRootUTXOSetAndBlock) fromAppMessage(
 	msgRequestIBDRootUTXOSetAndBlock *appmessage.MsgRequestIBDRootUTXOSetAndBlock) error {
+
 	x.RequestIBDRootUTXOSetAndBlock = &RequestIBDRootUTXOSetAndBlockMessage{}
 	x.RequestIBDRootUTXOSetAndBlock.IbdRoot = domainHashToProto(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 	return nil
