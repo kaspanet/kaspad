@@ -13,6 +13,10 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
+	if len(block.Transactions) == 0 && syncInfo.State != externalapi.SyncStateRelay {
+		syncInfo.State = externalapi.SyncStateHeadersFirst
+	}
+
 	hash := consensusserialization.HeaderHash(block.Header)
 	if syncInfo.State == externalapi.SyncStateMissingUTXOSet {
 		if isHeaderOnlyBlock(block) {
