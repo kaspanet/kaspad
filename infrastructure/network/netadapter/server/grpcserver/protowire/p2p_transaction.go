@@ -3,7 +3,6 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
 )
 
@@ -87,10 +86,6 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		}
 	}
 
-	var payloadHash *Hash
-	if msgTx.SubnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = domainHashToProto(&msgTx.PayloadHash)
-	}
 	*x = TransactionMessage{
 		Version:      msgTx.Version,
 		Inputs:       protoInputs,
@@ -98,7 +93,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  payloadHash,
+		PayloadHash:  domainHashToProto(&msgTx.PayloadHash),
 		Payload:      msgTx.Payload,
 	}
 
