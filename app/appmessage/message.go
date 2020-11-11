@@ -137,6 +137,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdRequestNextHeaders:            "RequestNextHeaders",
 	CmdRequestIBDRootUTXOSetAndBlock: "RequestPruningUTXOSetAndBlock",
 	CmdIBDRootUTXOSetAndBlock:        "IBDRootUTXOSetAndBlock",
+	CmdRequestIBDBlocks:              "RequestIBDBlocks",
 	CmdIBDRootNotFound:               "IBDRootNotFound",
 }
 
