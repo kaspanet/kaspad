@@ -54,11 +54,15 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateHeadersFirst, nil
 	}
 
-	headerVirtualSelectedParentBlockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerVirtualSelectedParentHash)
+	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
 	if err != nil {
 		return 0, err
 	}
-	if headerVirtualSelectedParentBlockStatus != externalapi.StatusValid {
+	headerTipsPruningPointStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerTipsPruningPoint)
+	if err != nil {
+		return 0, err
+	}
+	if headerTipsPruningPointStatus != externalapi.StatusValid {
 		return externalapi.SyncStateMissingUTXOSet, nil
 	}
 
