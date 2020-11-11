@@ -130,7 +130,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdInvTransaction:                "InvTransaction",
 	CmdRequestTransactions:           "RequestTransactions",
 	CmdIBDBlock:                      "IBDBlock",
-	CmdDoneHeaders:                   "DoneIBDBlocks",
+	CmdDoneHeaders:                   "DoneHeaders",
 	CmdTransactionNotFound:           "TransactionNotFound",
 	CmdReject:                        "Reject",
 	CmdHeader:                        "Header",
