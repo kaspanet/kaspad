@@ -19,12 +19,28 @@ type consensus struct {
 	transactionValidator  model.TransactionValidator
 	syncManager           model.SyncManager
 	pastMedianTimeManager model.PastMedianTimeManager
+	blockValidator        model.BlockValidator
+	coinbaseManager       model.CoinbaseManager
+	dagTopologyManager    model.DAGTopologyManager
+	dagTraversalManager   model.DAGTraversalManager
+	difficultyManager     model.DifficultyManager
+	ghostdagManager       model.GHOSTDAGManager
+	headerTipsManager     model.HeaderTipsManager
+	mergeDepthManager     model.MergeDepthManager
+	pruningManager        model.PruningManager
+	reachabilityManager   model.ReachabilityManager
 
-	blockStore        model.BlockStore
-	blockHeaderStore  model.BlockHeaderStore
-	pruningStore      model.PruningStore
-	ghostdagDataStore model.GHOSTDAGDataStore
-	blockStatusStore  model.BlockStatusStore
+	blockStore            model.BlockStore
+	blockHeaderStore      model.BlockHeaderStore
+	pruningStore          model.PruningStore
+	ghostdagDataStore     model.GHOSTDAGDataStore
+	blockRelationStore    model.BlockRelationStore
+	blockStatusStore      model.BlockStatusStore
+	consensusStateStore   model.ConsensusStateStore
+	headerTipsStore       model.HeaderTipsStore
+	multisetStore         model.MultisetStore
+	reachabilityDataStore model.ReachabilityDataStore
+	utxoDiffStore         model.UTXODiffStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions

@@ -219,6 +219,10 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 				return err
 			}
 			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
+			if err != nil {
+				return err
+			}
+
 			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",

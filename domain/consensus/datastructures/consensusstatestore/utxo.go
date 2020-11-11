@@ -23,7 +23,7 @@ func (c *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODi
 		return errors.New("cannot stage virtual UTXO diff while virtual UTXO set is staged")
 	}
 
-	c.stagedVirtualUTXODiff = virtualUTXODiff
+	c.stagedVirtualUTXODiff = c.cloneUTXODiff(virtualUTXODiff)
 	return nil
 }
 
@@ -226,4 +226,36 @@ func (c *consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.R
 	}
 
 	return nil
+}
+
+func (c *consensusStateStore) cloneUTXODiff(diff *model.UTXODiff) *model.UTXODiff {
+	utxoDiffCopy := &model.UTXODiff{
+		ToAdd:    make(model.UTXOCollection, len(diff.ToAdd)),
+		ToRemove: make(model.UTXOCollection, len(diff.ToRemove)),
+	}
+
+	for outpoint, entry := range diff.ToAdd {
+		scriptPublicKeyCopy := make([]byte, len(entry.ScriptPublicKey))
+		copy(scriptPublicKeyCopy, entry.ScriptPublicKey)
+		utxoDiffCopy.ToAdd[outpoint] = cloneUTXOEntry(entry)
+	}
+
+	for outpoint, entry := range diff.ToRemove {
+		scriptPublicKeyCopy := make([]byte, len(entry.ScriptPublicKey))
+		copy(scriptPublicKeyCopy, entry.ScriptPublicKey)
+		utxoDiffCopy.ToRemove[outpoint] = cloneUTXOEntry(entry)
+	}
+
+	return diff
+}
+
+func cloneUTXOEntry(entry *externalapi.UTXOEntry) *externalapi.UTXOEntry {
+	scriptPublicKeyCopy := make([]byte, len(entry.ScriptPublicKey))
+	copy(scriptPublicKeyCopy, entry.ScriptPublicKey)
+	return &externalapi.UTXOEntry{
+		Amount:          entry.Amount,
+		ScriptPublicKey: scriptPublicKeyCopy,
+		BlockBlueScore:  entry.BlockBlueScore,
+		IsCoinbase:      entry.IsCoinbase,
+	}
 }

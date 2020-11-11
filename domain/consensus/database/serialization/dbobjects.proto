@@ -142,3 +142,11 @@ message DbPruningPointUTXOSetBytes {
 message DbHeaderTips {
   repeated DbHash tips = 1;
 }
+
+message DbTips {
+  repeated DbHash tips = 1;
+}
+
+message DbVirtualDiffParents {
+  repeated DbHash virtualDiffParents = 1;
+}

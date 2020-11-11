@@ -1,7 +1,11 @@
 package consensus
 
 import (
+	"io/ioutil"
+	"os"
 	"sync"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -42,7 +46,7 @@ import (
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (testapi.TestConsensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
 }
 
 type factory struct{}
@@ -257,12 +261,27 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		transactionValidator:  transactionValidator,
 		syncManager:           syncManager,
 		pastMedianTimeManager: pastMedianTimeManager,
+		blockValidator:        blockValidator,
+		coinbaseManager:       coinbaseManager,
+		dagTopologyManager:    dagTopologyManager,
+		dagTraversalManager:   dagTraversalManager,
+		difficultyManager:     difficultyManager,
+		ghostdagManager:       ghostdagManager,
+		headerTipsManager:     headerTipsManager,
+		mergeDepthManager:     mergeDepthManager,
+		pruningManager:        pruningManager,
+		reachabilityManager:   reachabilityManager,
 
-		blockStore:        blockStore,
-		blockHeaderStore:  blockHeaderStore,
-		pruningStore:      pruningStore,
-		ghostdagDataStore: ghostdagDataStore,
-		blockStatusStore:  blockStatusStore,
+		blockStore:            blockStore,
+		blockHeaderStore:      blockHeaderStore,
+		pruningStore:          pruningStore,
+		ghostdagDataStore:     ghostdagDataStore,
+		blockStatusStore:      blockStatusStore,
+		blockRelationStore:    blockRelationStore,
+		consensusStateStore:   consensusStateStore,
+		headerTipsStore:       headerTipsStore,
+		multisetStore:         multisetStore,
+		reachabilityDataStore: reachabilityDataStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
@@ -280,18 +299,32 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (
-	testapi.TestConsensus, error) {
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+	tc testapi.TestConsensus, teardown func(), err error) {
 
+	testDatabaseDir, err := ioutil.TempDir("", testName)
+	if err != nil {
+		return nil, nil, err
+	}
+	db, err := ldb.NewLevelDB(testDatabaseDir)
+	if err != nil {
+		return nil, nil, err
+	}
 	consensusAsInterface, err := f.NewConsensus(dagParams, db)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
 
-	return &testConsensus{
+	tc = &testConsensus{
 		consensus:        consensusAsImplementation,
 		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
-	}, nil
+	}
+	teardown = func() {
+		db.Close()
+		os.RemoveAll(testDatabaseDir)
+	}
+
+	return tc, teardown, nil
 }

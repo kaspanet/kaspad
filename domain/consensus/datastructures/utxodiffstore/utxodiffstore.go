@@ -28,9 +28,15 @@ func New() model.UTXODiffStore {
 }
 
 // Stage stages the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
-	uds.utxoDiffStaging[*blockHash] = utxoDiff
-	uds.utxoDiffChildStaging[*blockHash] = utxoDiffChild
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
+	clone, err := uds.cloneUTXODiff(utxoDiff)
+	if err != nil {
+		return err
+	}
+
+	uds.utxoDiffStaging[*blockHash] = clone
+	uds.utxoDiffChildStaging[*blockHash] = &*utxoDiffChild
+	return nil
 }
 
 func (uds *utxoDiffStore) IsStaged() bool {
@@ -183,4 +189,13 @@ func (uds *utxoDiffStore) deserializeUTXODiffChild(utxoDiffChildBytes []byte) (*
 	}
 
 	return serialization.DbHashToDomainHash(dbHash)
+}
+
+func (uds *utxoDiffStore) cloneUTXODiff(diff *model.UTXODiff) (*model.UTXODiff, error) {
+	serialized, err := uds.serializeUTXODiff(diff)
+	if err != nil {
+		return nil, err
+	}
+
+	return uds.deserializeUTXODiff(serialized)
 }
