@@ -77,7 +77,7 @@ func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) 
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: domainTransaction.SubnetworkID,
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  &domainTransaction.PayloadHash,
+		PayloadHash:  domainTransaction.PayloadHash,
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -121,7 +121,7 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
-		PayloadHash:  *msgTx.PayloadHash,
+		PayloadHash:  msgTx.PayloadHash,
 		Payload:      msgTx.Payload,
 	}
 }
