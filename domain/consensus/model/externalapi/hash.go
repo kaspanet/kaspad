@@ -17,6 +17,14 @@ func (hash DomainHash) String() string {
 	return hex.EncodeToString(hash[:])
 }
 
+// Clone clones the hash
+func (hash *DomainHash) Clone() *DomainHash {
+	if hash == nil {
+		return nil
+	}
+	return &*hash
+}
+
 // DomainHashesToStrings returns a slice of strings representing the hashes in the given slice of hashes
 func DomainHashesToStrings(hashes []*DomainHash) []string {
 	strings := make([]string, len(hashes))
