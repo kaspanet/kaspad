@@ -33,10 +33,12 @@ func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *mod
 	if err != nil {
 		return err
 	}
-	utxoDiffChildClone := uds.cloneUTXODiffChild(utxoDiffChild)
-
 	uds.utxoDiffStaging[*blockHash] = utxoDiffClone
-	uds.utxoDiffChildStaging[*blockHash] = utxoDiffChildClone
+
+	if utxoDiffChild != nil {
+		utxoDiffChildClone := uds.cloneUTXODiffChild(utxoDiffChild)
+		uds.utxoDiffChildStaging[*blockHash] = utxoDiffChildClone
+	}
 	return nil
 }
 
@@ -71,10 +73,6 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
-		if utxoDiffChild == nil {
-			continue
-		}
-
 		utxoDiffChildBytes, err := uds.serializeUTXODiffChild(utxoDiffChild)
 		if err != nil {
 			return err

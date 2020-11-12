@@ -69,9 +69,6 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		if err != nil {
 			return nil, err
 		}
-		if nextBlockHash == nil {
-			break
-		}
 	}
 
 	// apply the diffs in reverse order
