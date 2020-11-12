@@ -322,7 +322,9 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 				return err
 			}
 
-			// Genesis
+			// If the current is now nil, it means that the previous
+			// `current` was the genesis block -- the only block that
+			// does not have parents
 			if current == nil {
 				break
 			}
