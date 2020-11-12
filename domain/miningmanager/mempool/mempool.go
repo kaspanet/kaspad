@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -90,7 +92,7 @@ type mempool struct {
 // transactions until they are mined into a block.
 func New(consensus consensusexternalapi.Consensus) miningmanagermodel.Mempool {
 	policy := policy{
-		MaxTxVersion:    1,
+		MaxTxVersion:    constants.TransactionVersion,
 		AcceptNonStd:    false,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,

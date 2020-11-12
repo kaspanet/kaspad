@@ -8,5 +8,7 @@ import (
 
 // HandleGetSubnetwork handles the respectively named RPC command
 func HandleGetSubnetwork(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	return &appmessage.GetSubnetworkResponseMessage{}, nil
+	response := &appmessage.GetSubnetworkResponseMessage{}
+	response.Error = appmessage.RPCErrorf("not implemented")
+	return response, nil
 }

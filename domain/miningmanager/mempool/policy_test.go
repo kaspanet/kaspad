@@ -8,7 +8,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
@@ -174,7 +175,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 	dummyTxIn := consensusexternalapi.DomainTransactionInput{
 		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
-		Sequence:         appmessage.MaxTxInSequenceNum,
+		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
@@ -205,7 +206,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name:       "Transaction version too high",
-			tx:         consensusexternalapi.DomainTransaction{Version: appmessage.TxVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
+			tx:         consensusexternalapi.DomainTransaction{Version: constants.TransactionVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
@@ -238,7 +239,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: bytes.Repeat([]byte{0x00},
 					maxStandardSigScriptSize+1),
-				Sequence: appmessage.MaxTxInSequenceNum,
+				Sequence: constants.MaxTxInSequenceNum,
 			}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
@@ -250,7 +251,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: []byte{
 					txscript.OpCheckSigVerify},
-				Sequence: appmessage.MaxTxInSequenceNum,
+				Sequence: constants.MaxTxInSequenceNum,
 			}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,

@@ -155,7 +155,7 @@ var simnetGenesisBlock = externalapi.DomainBlock{
 		UTXOCommitment:       externalapi.DomainHash{},
 		TimeInMilliseconds:   0x175bca27c39,
 		Bits:                 0x207fffff,
-		Nonce:                0x1,
+		Nonce:                1,
 	},
 	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }

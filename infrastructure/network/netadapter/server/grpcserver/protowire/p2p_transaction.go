@@ -45,7 +45,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	var payloadHash *externalapi.DomainHash
+	payloadHash := &externalapi.DomainHash{}
 	if x.PayloadHash != nil {
 		payloadHash, err = x.PayloadHash.toDomain()
 		if err != nil {
@@ -60,7 +60,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		LockTime:     x.LockTime,
 		SubnetworkID: *subnetworkID,
 		Gas:          x.Gas,
-		PayloadHash:  payloadHash,
+		PayloadHash:  *payloadHash,
 		Payload:      x.Payload,
 	}, nil
 }
@@ -86,10 +86,6 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		}
 	}
 
-	var payloadHash *Hash
-	if msgTx.PayloadHash != nil {
-		payloadHash = domainHashToProto(msgTx.PayloadHash)
-	}
 	*x = TransactionMessage{
 		Version:      msgTx.Version,
 		Inputs:       protoInputs,
@@ -97,7 +93,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  payloadHash,
+		PayloadHash:  domainHashToProto(&msgTx.PayloadHash),
 		Payload:      msgTx.Payload,
 	}
 

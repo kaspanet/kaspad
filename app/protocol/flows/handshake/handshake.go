@@ -86,9 +86,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 	}
 
 	if peerAddress != nil {
-		subnetworkID := peer.SubnetworkID()
-		context.AddressManager().AddAddress(peerAddress, peerAddress, subnetworkID)
-		context.AddressManager().Good(peerAddress, subnetworkID)
+		context.AddressManager().AddAddresses(peerAddress)
 	}
 
 	err = context.StartIBDIfRequired()

@@ -2,7 +2,6 @@ package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
@@ -241,10 +240,6 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 
-	err = blocklogger.LogBlock(block)
-	if err != nil {
-		return err
-	}
 	err = flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err

@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -33,7 +32,7 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 			Index:         0,
 		},
 		SignatureScript: signatureScript,
-		Sequence:        appmessage.MaxTxInSequenceNum,
+		Sequence:        constants.MaxTxInSequenceNum,
 	}
 	output := &externalapi.DomainTransactionOutput{
 		ScriptPublicKey: scriptPublicKey,

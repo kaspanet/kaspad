@@ -77,7 +77,7 @@ func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) 
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: domainTransaction.SubnetworkID,
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  &domainTransaction.PayloadHash,
+		PayloadHash:  domainTransaction.PayloadHash,
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -120,11 +120,6 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		payload = msgTx.Payload
 	}
 
-	var payloadHash externalapi.DomainHash
-	if msgTx.PayloadHash != nil {
-		payloadHash = *msgTx.PayloadHash
-	}
-
 	return &externalapi.DomainTransaction{
 		Version:      msgTx.Version,
 		Inputs:       transactionInputs,
@@ -132,7 +127,7 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
-		PayloadHash:  payloadHash,
+		PayloadHash:  msgTx.PayloadHash,
 		Payload:      payload,
 	}
 }

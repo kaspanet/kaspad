@@ -21,7 +21,7 @@ func (s selectedChildIterator) Next() bool {
 
 	for _, child := range children {
 		if *child == *model.VirtualBlockHash {
-			continue
+			break
 		}
 
 		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)

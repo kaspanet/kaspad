@@ -13,7 +13,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	if len(block.Transactions) == 0 && syncInfo.State != externalapi.SyncStateRelay {
+	if isHeaderOnlyBlock(block) && syncInfo.State != externalapi.SyncStateRelay {
 		syncInfo.State = externalapi.SyncStateHeadersFirst
 	}
 
@@ -151,7 +151,6 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 }
 
 func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-
 	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
 	if err != nil {
 		return err

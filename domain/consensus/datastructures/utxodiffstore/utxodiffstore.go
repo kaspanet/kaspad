@@ -34,14 +34,12 @@ func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *mod
 	if err != nil {
 		return err
 	}
-
-	var utxoDiffChildClone *externalapi.DomainHash
-	if utxoDiffChild != nil {
-		utxoDiffChildClone = &*utxoDiffChild
-	}
-
 	uds.utxoDiffStaging[*blockHash] = utxoDiffClone
-	uds.utxoDiffChildStaging[*blockHash] = utxoDiffChildClone
+
+	if utxoDiffChild != nil {
+		utxoDiffChildClone := uds.cloneUTXODiffChild(utxoDiffChild)
+		uds.utxoDiffChildStaging[*blockHash] = utxoDiffChildClone
+	}
 	return nil
 }
 
@@ -212,4 +210,8 @@ func (uds *utxoDiffStore) cloneUTXODiff(diff *model.UTXODiff) (*model.UTXODiff, 
 	}
 
 	return uds.deserializeUTXODiff(serialized)
+}
+
+func (uds *utxoDiffStore) cloneUTXODiffChild(diffChild *externalapi.DomainHash) *externalapi.DomainHash {
+	return diffChild.Clone()
 }
