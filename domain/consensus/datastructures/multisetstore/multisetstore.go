@@ -65,7 +65,7 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the multiset associated with the given blockHash
 func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.Multiset, error) {
 	if multiset, ok := ms.staging[*blockHash]; ok {
-		return multiset, nil
+		return multiset.Clone()
 	}
 
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))

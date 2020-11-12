@@ -11,6 +11,10 @@ import (
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
+	if blockGHOSTDAGData.SelectedParent == nil {
+		return multiset.New(), nil
+	}
+
 	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return nil, err

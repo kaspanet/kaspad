@@ -24,8 +24,13 @@ func (csm *consensusStateManager) checkFinalityViolation(
 func (csm *consensusStateManager) virtualFinalityPoint(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (
 	*externalapi.DomainHash, error) {
 
+	blueScore := virtualGHOSTDAGData.BlueScore - csm.finalityDepth
+	if virtualGHOSTDAGData.BlueScore < csm.finalityDepth {
+		blueScore = 0
+	}
+
 	return csm.dagTraversalManager.HighestChainBlockBelowBlueScore(
-		model.VirtualBlockHash, virtualGHOSTDAGData.BlueScore-csm.finalityDepth)
+		model.VirtualBlockHash, blueScore)
 }
 
 func (csm *consensusStateManager) isViolatingFinality(

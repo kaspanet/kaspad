@@ -14,6 +14,7 @@ const (
 
 // HandleGetBlocks handles the respectively named RPC command
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-
-	return nil, nil
+	response := &appmessage.GetBlocksResponseMessage{}
+	response.Error = appmessage.RPCErrorf("not implemented")
+	return response, nil
 }

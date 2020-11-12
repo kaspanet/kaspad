@@ -40,7 +40,9 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 
 			// TODO (Partial nodes): Convert block to partial block if needed
 
-			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
+			blockMessage := appmessage.DomainBlockToMsgBlock(block)
+			ibdBlockMessage := appmessage.NewMsgIBDBlock(blockMessage)
+			err = outgoingRoute.Enqueue(ibdBlockMessage)
 			if err != nil {
 				return err
 			}

@@ -97,7 +97,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
-		blockHeaderStore)
+		blockHeaderStore,
+		ghostdagDataStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
 		dbManager,
@@ -152,6 +153,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
+		genesisHash,
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
@@ -249,7 +251,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		headerTipsStore)
 
 	c := &consensus{
-		lock:            &sync.RWMutex{},
+		lock:            &sync.Mutex{},
 		databaseContext: dbManager,
 
 		blockProcessor:        blockProcessor,

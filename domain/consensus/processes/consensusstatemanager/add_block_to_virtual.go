@@ -14,16 +14,19 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 		return err
 	}
 
-	if isNextVirtualSelectedParent {
-		blockStatus, err := csm.resolveBlockStatus(blockHash)
+	if !isNextVirtualSelectedParent {
+		return nil
+	}
+
+	blockStatus, err := csm.resolveBlockStatus(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if blockStatus == externalapi.StatusValid {
+		err = csm.checkFinalityViolation(blockHash)
 		if err != nil {
 			return err
-		}
-		if blockStatus == externalapi.StatusValid {
-			err = csm.checkFinalityViolation(blockHash)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -41,6 +44,10 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 }
 
 func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
+	if *blockHash == *csm.genesisHash {
+		return true, nil
+	}
+
 	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return false, err

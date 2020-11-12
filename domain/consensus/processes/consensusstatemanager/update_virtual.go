@@ -23,10 +23,12 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return err
 	}
 
-	virtualUTXODiff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
+	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err := csm.CalculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
+	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
+	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
 	if err != nil {

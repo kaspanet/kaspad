@@ -56,6 +56,10 @@ func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction) *ext
 // CalculateIDMerkleRoot calculates the merkle root of a tree consisted of the given transaction IDs.
 // See `merkleRoot` for more info.
 func CalculateIDMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+	if len(transactions) == 0 {
+		return &externalapi.DomainHash{}
+	}
+
 	txIDs := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
 		txIDs[i] = (*externalapi.DomainHash)(consensusserialization.TransactionID(tx))

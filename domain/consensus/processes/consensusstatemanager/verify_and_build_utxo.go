@@ -43,11 +43,7 @@ func (csm *consensusStateManager) verifyAndBuildUTXO(block *externalapi.DomainBl
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
 	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff, err error) error {
 
-	ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
-	if err != nil {
-		return err
-	}
-	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(blockHash)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 type consensus struct {
-	lock            *sync.RWMutex
+	lock            *sync.Mutex
 	databaseContext model.DBReader
 
 	blockProcessor        model.BlockProcessor
@@ -48,8 +48,8 @@ type consensus struct {
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.blockBuilder.BuildBlock(coinbaseData, transactions)
 }
@@ -66,8 +66,8 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
 // and populates it with any missing consensus data
 func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
 	if err != nil {
@@ -79,11 +79,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return err
-	}
-	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
+	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -93,22 +89,22 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.blockStore.Block(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	blockInfo := &externalapi.BlockInfo{}
 
@@ -137,22 +133,22 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.syncManager.GetHashesBetween(lowHash, highHash)
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
 func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi.DomainHash) ([]byte, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	pruningPointHash, err := s.pruningStore.PruningPoint(s.databaseContext)
 	if err != nil {
@@ -173,40 +169,40 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 }
 
 func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.consensusStateManager.SetPruningPointUTXOSet(serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	return s.GetBlock(virtualGHOSTDAGData.SelectedParent)
+	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent)
 }
 
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.syncManager.CreateBlockLocator(lowHash, highHash)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
 }
 
 func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	return s.syncManager.GetSyncInfo()
 }

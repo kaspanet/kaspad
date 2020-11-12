@@ -31,7 +31,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 
 	mergeSetSize := 1 // starts counting from 1 because selectedParent is already in the mergeSet
 
-	for len(selectedVirtualParents) < constants.MaxBlockParents {
+	for candidatesHeap.Len() > 0 && len(selectedVirtualParents) < constants.MaxBlockParents {
 		candidate := candidatesHeap.Pop()
 		mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents)
 		if err != nil {
