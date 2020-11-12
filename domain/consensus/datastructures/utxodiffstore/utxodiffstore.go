@@ -82,7 +82,7 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
+		err = dbTx.Put(uds.utxoDiffChildHashAsKey(&hash), utxoDiffChildBytes)
 		if err != nil {
 			return err
 		}
@@ -168,7 +168,8 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff *model.UTXODiff) ([]byte, error) {
-	bytes, err := proto.Marshal(serialization.UTXODiffToDBUTXODiff(utxoDiff))
+	dbUtxoDiff := serialization.UTXODiffToDBUTXODiff(utxoDiff)
+	bytes, err := proto.Marshal(dbUtxoDiff)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
