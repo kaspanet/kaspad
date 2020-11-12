@@ -1,7 +1,6 @@
 package transactionvalidator
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -248,14 +247,14 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		// mask in order to obtain the time lock delta required before
 		// this input can be spent.
 		sequenceNum := input.Sequence
-		relativeLock := int64(sequenceNum & appmessage.SequenceLockTimeMask)
+		relativeLock := int64(sequenceNum & constants.SequenceLockTimeMask)
 
 		switch {
 		// Relative time locks are disabled for this input, so we can
 		// skip any further calculation.
-		case sequenceNum&appmessage.SequenceLockTimeDisabled == appmessage.SequenceLockTimeDisabled:
+		case sequenceNum&constants.SequenceLockTimeDisabled == constants.SequenceLockTimeDisabled:
 			continue
-		case sequenceNum&appmessage.SequenceLockTimeIsSeconds == appmessage.SequenceLockTimeIsSeconds:
+		case sequenceNum&constants.SequenceLockTimeIsSeconds == constants.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
@@ -290,11 +289,11 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			}
 
 			// Time based relative time-locks have a time granularity of
-			// appmessage.SequenceLockTimeGranularity, so we shift left by this
+			// constants.SequenceLockTimeGranularity, so we shift left by this
 			// amount to convert to the proper relative time-lock. We also
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock << appmessage.SequenceLockTimeGranularity) - 1
+			timeLockMilliseconds := (relativeLock << constants.SequenceLockTimeGranularity) - 1
 			timeLock := medianTime + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock
