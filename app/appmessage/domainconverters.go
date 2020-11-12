@@ -120,11 +120,6 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		payload = msgTx.Payload
 	}
 
-	var payloadHash externalapi.DomainHash
-	if msgTx.PayloadHash != nil {
-		payloadHash = *msgTx.PayloadHash
-	}
-
 	return &externalapi.DomainTransaction{
 		Version:      msgTx.Version,
 		Inputs:       transactionInputs,
@@ -133,7 +128,7 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
 		PayloadHash:  msgTx.PayloadHash,
-		Payload:      msgTx.Payload,
+		Payload:      payload,
 	}
 }
 

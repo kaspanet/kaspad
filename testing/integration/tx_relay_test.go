@@ -2,6 +2,7 @@ package integration
 
 import (
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"strings"
 	"testing"
 	"time"
@@ -102,7 +103,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 
 	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
-	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {
