@@ -42,5 +42,6 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 		Version: constants.TransactionVersion,
 		Inputs:  []*externalapi.DomainTransactionInput{input},
 		Outputs: []*externalapi.DomainTransactionOutput{output},
+		Payload: []byte{},
 	}, nil
 }
