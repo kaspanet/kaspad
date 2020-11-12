@@ -11,7 +11,7 @@ type MsgIBDRootUTXOSetAndBlock struct {
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
 func (msg *MsgIBDRootUTXOSetAndBlock) Command() MessageCommand {
-	return CmdRequestIBDRootUTXOSetAndBlock
+	return CmdIBDRootUTXOSetAndBlock
 }
 
 // NewMsgIBDRootUTXOSetAndBlock returns a new MsgIBDRootUTXOSetAndBlock.

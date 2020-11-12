@@ -95,7 +95,7 @@ func (bb *blockBuilder) newBlockCoinbaseTransaction(
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
 }
 
-func (bb blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
+func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
 	parentHashes, err := bb.newBlockParentHashes()
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (bb blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bb.newBlockTime(virtualGHOSTDAGData)
+	timeInMilliseconds, err := bb.newBlockTime()
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (bb blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction
 	}, nil
 }
 
-func (bb blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
+func (bb *blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
 	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (bb blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error)
 	return virtualBlockRelations.Parents, nil
 }
 
-func (bb blockBuilder) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (int64, error) {
+func (bb *blockBuilder) newBlockTime() (int64, error) {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks. Thus, choose the maximum between the
 	// current time and one second after the past median time. The current
@@ -150,7 +150,7 @@ func (bb blockBuilder) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
 	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(virtualGHOSTDAGData.SelectedParent)
+	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
 	if err != nil {
 		return 0, err
 	}
@@ -160,7 +160,7 @@ func (bb blockBuilder) newBlockTime(virtualGHOSTDAGData *model.BlockGHOSTDAGData
 	return newTimestamp, nil
 }
 
-func (bb blockBuilder) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (uint32, error) {
+func (bb *blockBuilder) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (uint32, error) {
 	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return 0, err
@@ -168,11 +168,11 @@ func (bb blockBuilder) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTD
 	return bb.difficultyManager.RequiredDifficulty(virtualGHOSTDAGData.SelectedParent)
 }
 
-func (bb blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
 	return merkle.CalculateHashMerkleRoot(transactions)
 }
 
-func (bb blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
 	newBlockAcceptanceData, err := bb.acceptanceDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (bb blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, 
 	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
 }
 
-func (bb blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {
@@ -200,7 +200,7 @@ func (bb blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.Accept
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions), nil
 }
 
-func (bb blockBuilder) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
 	newBlockMultiset, err := bb.multisetStore.Get(bb.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err

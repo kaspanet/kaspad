@@ -13,7 +13,7 @@ import (
 var byteOrder = binary.LittleEndian
 
 const uint64Len = 8
-const scriptPubKeyLengthLength = 1
+const lengthOfscriptPubKeyLength = 1
 
 // SerializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func SerializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
@@ -23,14 +23,14 @@ func SerializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.Domain
 			"longer than the max allowed length of %d", constants.CoinbasePayloadScriptPublicKeyMaxLength)
 	}
 
-	payload := make([]byte, uint64Len+scriptPubKeyLengthLength+scriptPubKeyLength+len(coinbaseData.ExtraData))
+	payload := make([]byte, uint64Len+lengthOfscriptPubKeyLength+scriptPubKeyLength+len(coinbaseData.ExtraData))
 	byteOrder.PutUint64(payload[:uint64Len], blueScore)
 	if len(coinbaseData.ScriptPublicKey) > math.MaxUint8 {
 		return nil, errors.Errorf("script public key is bigger than %d", math.MaxUint8)
 	}
 	payload[uint64Len] = uint8(len(coinbaseData.ScriptPublicKey))
-	copy(payload[uint64Len+scriptPubKeyLengthLength:], coinbaseData.ScriptPublicKey)
-	copy(payload[uint64Len+scriptPubKeyLengthLength+scriptPubKeyLength:], coinbaseData.ExtraData)
+	copy(payload[uint64Len+lengthOfscriptPubKeyLength:], coinbaseData.ScriptPublicKey)
+	copy(payload[uint64Len+lengthOfscriptPubKeyLength+scriptPubKeyLength:], coinbaseData.ExtraData)
 	return payload, nil
 }
 
@@ -38,7 +38,7 @@ func SerializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.Domain
 func ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
 	coinbaseData *externalapi.DomainCoinbaseData, err error) {
 
-	minLength := uint64Len + scriptPubKeyLengthLength
+	minLength := uint64Len + lengthOfscriptPubKeyLength
 	if len(coinbaseTx.Payload) < minLength {
 		return 0, nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen,
 			"coinbase payload is less than the minimum length of %d", minLength)
@@ -58,7 +58,7 @@ func ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) 
 	}
 
 	return blueScore, &externalapi.DomainCoinbaseData{
-		ScriptPublicKey: coinbaseTx.Payload[uint64Len+scriptPubKeyLengthLength : uint64Len+scriptPubKeyLengthLength+scriptPubKeyLength],
-		ExtraData:       coinbaseTx.Payload[uint64Len+scriptPubKeyLengthLength+scriptPubKeyLengthLength:],
+		ScriptPublicKey: coinbaseTx.Payload[uint64Len+lengthOfscriptPubKeyLength : uint64Len+lengthOfscriptPubKeyLength+scriptPubKeyLength],
+		ExtraData:       coinbaseTx.Payload[uint64Len+lengthOfscriptPubKeyLength+scriptPubKeyLength:],
 	}, nil
 }

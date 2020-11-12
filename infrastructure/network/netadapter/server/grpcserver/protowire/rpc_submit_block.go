@@ -14,8 +14,7 @@ func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, e
 }
 
 func (x *KaspadMessage_SubmitBlockRequest) fromAppMessage(message *appmessage.SubmitBlockRequestMessage) error {
-
-	x.SubmitBlockRequest = &SubmitBlockRequestMessage{}
+	x.SubmitBlockRequest = &SubmitBlockRequestMessage{Block: &BlockMessage{}}
 	return x.SubmitBlockRequest.Block.fromAppMessage(message.Block)
 }
 

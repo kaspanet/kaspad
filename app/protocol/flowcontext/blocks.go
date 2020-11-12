@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -14,6 +15,11 @@ import (
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
+	err := blocklogger.LogBlock(block)
+	if err != nil {
+		return err
+	}
+
 	f.Domain().MiningManager().HandleNewBlockTransactions(block.Transactions)
 
 	if f.onBlockAddedToDAGHandler != nil {

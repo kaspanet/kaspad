@@ -28,10 +28,6 @@ func (c *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODi
 }
 
 func (c *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) error {
-	if c.stagedVirtualUTXOSet != nil {
-		return errors.New("cannot commit virtual UTXO diff while virtual UTXO set is staged")
-	}
-
 	if c.stagedVirtualUTXODiff == nil {
 		return nil
 	}
@@ -66,8 +62,8 @@ func (c *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) er
 }
 
 func (c *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) error {
-	if c.stagedVirtualUTXODiff != nil {
-		return errors.New("cannot commit virtual UTXO set while virtual UTXO diff is staged")
+	if c.stagedVirtualUTXOSet == nil {
+		return nil
 	}
 
 	for outpoint, utxoEntry := range c.stagedVirtualUTXOSet {
@@ -143,11 +139,14 @@ func (c *consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoi
 
 func (c *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbContext model.DBReader,
 	outpoint *externalapi.DomainOutpoint) (bool, error) {
-	if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
-		return false, nil
-	}
-	if _, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
-		return true, nil
+
+	if c.stagedVirtualUTXODiff != nil {
+		if _, ok := c.stagedVirtualUTXODiff.ToRemove[*outpoint]; ok {
+			return false, nil
+		}
+		if _, ok := c.stagedVirtualUTXODiff.ToAdd[*outpoint]; ok {
+			return true, nil
+		}
 	}
 
 	key, err := utxoKey(outpoint)
