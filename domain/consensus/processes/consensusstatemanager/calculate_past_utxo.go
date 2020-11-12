@@ -2,9 +2,8 @@ package consensusstatemanager
 
 import (
 	"errors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -16,26 +15,23 @@ import (
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
 	*model.UTXODiff, model.AcceptanceData, model.Multiset, error) {
 
+	// The genesis block has an empty UTXO diff, empty acceptance data, and a blank multiset
+	if *blockHash == *csm.genesisHash {
+		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
+	}
+
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
-	// Genesis
-	if blockGHOSTDAGData.SelectedParent == nil {
-		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
-	}
-
 	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
 	acceptanceData, utxoDiff, err := csm.applyBlueBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
 	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
