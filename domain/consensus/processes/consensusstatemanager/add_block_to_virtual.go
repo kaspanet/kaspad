@@ -14,19 +14,17 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 		return err
 	}
 
-	if !isNextVirtualSelectedParent {
-		return nil
-	}
-
-	blockStatus, err := csm.resolveBlockStatus(blockHash)
-	if err != nil {
-		return err
-	}
-
-	if blockStatus == externalapi.StatusValid {
-		err = csm.checkFinalityViolation(blockHash)
+	if isNextVirtualSelectedParent {
+		blockStatus, err := csm.resolveBlockStatus(blockHash)
 		if err != nil {
 			return err
+		}
+
+		if blockStatus == externalapi.StatusValid {
+			err = csm.checkFinalityViolation(blockHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
