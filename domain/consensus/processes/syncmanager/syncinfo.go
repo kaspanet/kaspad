@@ -52,6 +52,12 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateHeadersFirst, nil
 	}
 
+	// Once the header tips are synced, check the status of
+	// the pruning point from the point of view of the header
+	// tips. We check it against StatusValid (rather than
+	// StatusHeaderOnly) because once we do receive the
+	// UTXO set of said pruning point, the state is explicitly
+	// set to StatusValid.
 	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
 	if err != nil {
 		return 0, err
