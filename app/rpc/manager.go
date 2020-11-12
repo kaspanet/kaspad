@@ -5,16 +5,31 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
+
+// Handler is the interface for the RPC handlers
+type Handler interface {
+	Execute(router *router.Router, request appmessage.Message) (appmessage.Message, error)
+}
+
+type handlerInContext struct {
+	context *rpccontext.Context
+	handler handlerFunc
+}
+
+func (hic *handlerInContext) Execute(router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	return hic.handler(hic.context, router, request)
+}
 
 // Manager is an RPC manager
 type Manager struct {
-	context *rpccontext.Context
+	context  *rpccontext.Context
+	handlers map[appmessage.MessageCommand]Handler
 }
 
 // NewManager creates a new RPC Manager
@@ -38,25 +53,16 @@ func NewManager(
 			shutDownChan,
 		),
 	}
+
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
 
+	for command, handler := range rpcHandlers {
+		handlerInContext := handlerInContext{
+			context: manager.context,
+			handler: handler,
+		}
+		manager.RegisterHandler(command, &handlerInContext)
+	}
+
 	return &manager
-}
-
-// NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
-	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
-	return m.context.NotificationManager.NotifyBlockAdded(notification)
-}
-
-// NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
-func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
-	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
-	return m.context.NotificationManager.NotifyFinalityConflict(notification)
-}
-
-// NotifyFinalityConflictResolved notifies the manager that a finality conflict in the DAG has been resolved
-func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
-	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
-	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }

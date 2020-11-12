@@ -156,7 +156,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams)
+			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams.Prefix)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.

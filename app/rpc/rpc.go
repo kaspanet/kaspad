@@ -9,36 +9,43 @@ import (
 	"github.com/pkg/errors"
 )
 
-type handler func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
+type handlerFunc func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
 
-var handlers = map[appmessage.MessageCommand]handler{
-	appmessage.CmdGetCurrentNetworkRequestMessage:       rpchandlers.HandleGetCurrentNetwork,
-	appmessage.CmdSubmitBlockRequestMessage:             rpchandlers.HandleSubmitBlock,
-	appmessage.CmdGetBlockTemplateRequestMessage:        rpchandlers.HandleGetBlockTemplate,
-	appmessage.CmdNotifyBlockAddedRequestMessage:        rpchandlers.HandleNotifyBlockAdded,
-	appmessage.CmdGetPeerAddressesRequestMessage:        rpchandlers.HandleGetPeerAddresses,
-	appmessage.CmdGetSelectedTipHashRequestMessage:      rpchandlers.HandleGetSelectedTipHash,
-	appmessage.CmdGetMempoolEntryRequestMessage:         rpchandlers.HandleGetMempoolEntry,
-	appmessage.CmdGetConnectedPeerInfoRequestMessage:    rpchandlers.HandleGetConnectedPeerInfo,
-	appmessage.CmdAddPeerRequestMessage:                 rpchandlers.HandleAddPeer,
-	appmessage.CmdSubmitTransactionRequestMessage:       rpchandlers.HandleSubmitTransaction,
-	appmessage.CmdNotifyChainChangedRequestMessage:      rpchandlers.HandleNotifyChainChanged,
-	appmessage.CmdGetBlockRequestMessage:                rpchandlers.HandleGetBlock,
-	appmessage.CmdGetSubnetworkRequestMessage:           rpchandlers.HandleGetSubnetwork,
-	appmessage.CmdGetChainFromBlockRequestMessage:       rpchandlers.HandleGetChainFromBlock,
-	appmessage.CmdGetBlocksRequestMessage:               rpchandlers.HandleGetBlocks,
-	appmessage.CmdGetBlockCountRequestMessage:           rpchandlers.HandleGetBlockCount,
-	appmessage.CmdGetBlockDAGInfoRequestMessage:         rpchandlers.HandleGetBlockDAGInfo,
-	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
-	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
-	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
-	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleShutDown,
-	appmessage.CmdGetHeadersRequestMessage:              rpchandlers.HandleGetHeaders,
+func defaultHandlerFunc(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	return nil, errors.New("Not implemented")
+}
+
+var rpcHandlers = map[appmessage.MessageCommand]handlerFunc{
+	appmessage.CmdNotifyBlockAddedRequestMessage:           defaultHandlerFunc,
+	appmessage.CmdNotifyTransactionAddedRequestMessage:     defaultHandlerFunc,
+	appmessage.CmdNotifyUTXOOfAddressChangedRequestMessage: defaultHandlerFunc,
+	appmessage.CmdNotifyFinalityConflictsRequestMessage:    defaultHandlerFunc,
+	appmessage.CmdNotifyChainChangedRequestMessage:         defaultHandlerFunc,
+	appmessage.CmdGetCurrentNetworkRequestMessage:          rpchandlers.HandleGetCurrentNetwork,
+	appmessage.CmdSubmitBlockRequestMessage:                rpchandlers.HandleSubmitBlock,
+	appmessage.CmdGetBlockTemplateRequestMessage:           rpchandlers.HandleGetBlockTemplate,
+	appmessage.CmdGetPeerAddressesRequestMessage:           rpchandlers.HandleGetPeerAddresses,
+	appmessage.CmdGetSelectedTipHashRequestMessage:         rpchandlers.HandleGetSelectedTipHash,
+	appmessage.CmdGetMempoolEntryRequestMessage:            rpchandlers.HandleGetMempoolEntry,
+	appmessage.CmdGetConnectedPeerInfoRequestMessage:       rpchandlers.HandleGetConnectedPeerInfo,
+	appmessage.CmdAddPeerRequestMessage:                    rpchandlers.HandleAddPeer,
+	appmessage.CmdSubmitTransactionRequestMessage:          rpchandlers.HandleSubmitTransaction,
+	appmessage.CmdGetBlockRequestMessage:                   rpchandlers.HandleGetBlock,
+	appmessage.CmdGetSubnetworkRequestMessage:              rpchandlers.HandleGetSubnetwork,
+	appmessage.CmdGetChainFromBlockRequestMessage:          rpchandlers.HandleGetChainFromBlock,
+	appmessage.CmdGetBlocksRequestMessage:                  rpchandlers.HandleGetBlocks,
+	appmessage.CmdGetBlockCountRequestMessage:              rpchandlers.HandleGetBlockCount,
+	appmessage.CmdGetBlockDAGInfoRequestMessage:            rpchandlers.HandleGetBlockDAGInfo,
+	appmessage.CmdResolveFinalityConflictRequestMessage:    rpchandlers.HandleResolveFinalityConflict,
+	appmessage.CmdGetMempoolEntriesRequestMessage:          rpchandlers.HandleGetMempoolEntries,
+	appmessage.CmdShutDownRequestMessage:                   rpchandlers.HandleShutDown,
+	appmessage.CmdGetHeadersRequestMessage:                 rpchandlers.HandleGetHeaders,
+	appmessage.CmdGetUTXOsByAddressRequestMessage:          rpchandlers.HandleGetUTXOsByAddress,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
-	messageTypes := make([]appmessage.MessageCommand, 0, len(handlers))
-	for messageType := range handlers {
+	messageTypes := make([]appmessage.MessageCommand, 0, len(m.handlers))
+	for messageType := range m.handlers {
 		messageTypes = append(messageTypes, messageType)
 	}
 	incomingRoute, err := router.AddIncomingRoute(messageTypes)
@@ -62,11 +69,11 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 		if err != nil {
 			return err
 		}
-		handler, ok := handlers[request.Command()]
+		handler, ok := m.handlers[request.Command()]
 		if !ok {
 			return err
 		}
-		response, err := handler(m.context, router, request)
+		response, err := handler.Execute(router, request)
 		if err != nil {
 			return err
 		}
@@ -87,4 +94,9 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 		return
 	}
 	panic(err)
+}
+
+// RegisterHandler registers new rpc handler
+func (m *Manager) RegisterHandler(command appmessage.MessageCommand, rpcHandler Handler) {
+	m.handlers[command] = rpcHandler
 }

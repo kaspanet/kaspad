@@ -67,7 +67,7 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 	ScriptClass, util.Address, error) {
 
 	class, address, err := ExtractScriptPubKeyAddress(script,
-		dagParams)
+		dagParams.Prefix)
 	if err != nil {
 		return nil, NonStandardTy, nil, err
 	}
@@ -127,7 +127,7 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 
 		// We already know this information somewhere up the stack.
 		class, _, _ :=
-			ExtractScriptPubKeyAddress(script, dagParams)
+			ExtractScriptPubKeyAddress(script, dagParams.Prefix)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)

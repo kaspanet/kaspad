@@ -2,6 +2,7 @@ package rpccontext
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol"
+	"github.com/kaspanet/kaspad/app/wallet/walletnotification"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -19,7 +20,7 @@ type Context struct {
 	AddressManager    *addressmanager.AddressManager
 	ShutDownChan      chan<- struct{}
 
-	NotificationManager *NotificationManager
+	NotificationManager *walletnotification.Manager
 }
 
 // NewContext creates a new RPC context
@@ -40,6 +41,5 @@ func NewContext(cfg *config.Config,
 		AddressManager:    addressManager,
 		ShutDownChan:      shutDownChan,
 	}
-	context.NotificationManager = NewNotificationManager()
 	return context
 }

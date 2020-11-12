@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/app/wallet"
 	"sync/atomic"
 
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -126,7 +127,12 @@ func setupRPC(
 
 	rpcManager := rpc.NewManager(
 		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
-	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
+
+	if cfg.Wallet {
+		walletManager := wallet.NewManager(rpcManager)
+		walletManager.RegisterWalletHandlers(rpcManager)
+		protocolManager.SetOnBlockAddedToDAGHandler(walletManager.NotifyBlockAddedToDAG)
+	}
 
 	return rpcManager
 }

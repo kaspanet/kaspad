@@ -79,8 +79,16 @@ message KaspadMessage {
     GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
     ShutDownRequestMessage shutDownRequest = 1045;
     ShutDownResponseMessage shutDownResponse = 1046;
-    GetHeadersRequestMessage getHeadersRequest = 10347;
+    GetHeadersRequestMessage getHeadersRequest = 1047;
     GetHeadersResponseMessage getHeadersResponse = 1048;
+    NotifyTransactionAddedRequestMessage notifyTransactionAddedRequest = 1049;
+    NotifyTransactionAddedResponseMessage notifyTransactionAddedResponse = 1050;
+    TransactionAddedNotificationMessage transactionAddedNotification = 1051;
+    NotifyUTXOOfAddressChangedRequestMessage notifyUTXOOfAddressChangedRequest = 1052;
+    NotifyUTXOOfAddressChangedResponseMessage notifyUTXOOfAddressChangedResponse = 1053;
+    UTXOOfAddressChangedNotificationMessage utxoOfAddressChangedNotification = 1054;
+    GetUTXOsByAddressRequestMessage getUTXOsByAddressRequest = 1055;
+    GetUTXOsByAddressResponseMessage getUTXOsByAddressResponse = 1056;
   }
 }
 
@@ -622,6 +630,47 @@ message GetHeadersRequestMessage{
 
 message GetHeadersResponseMessage{
   repeated string headers = 1;
+  RPCError error = 1000;
+}
+
+message NotifyTransactionAddedRequestMessage{
+  TransactionMessage transaction = 1;
+}
+
+message NotifyTransactionAddedResponseMessage{
+  RPCError error = 1000;
+}
+
+message TransactionAddedNotificationMessage{
+  TransactionMessage transaction = 1;
+}
+
+message NotifyUTXOOfAddressChangedRequestMessage{
+  repeated string addresses = 1;
+}
+
+message NotifyUTXOOfAddressChangedResponseMessage{
+  RPCError error = 1000;
+}
+
+message UTXOOfAddressChangedNotificationMessage{
+  repeated string changedAddresses = 1;
+}
+
+message UTXOVerboseData{
+  uint64 amount = 1;
+  bytes scriptPubKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message GetUTXOsByAddressRequestMessage{
+  string address = 1;
+}
+
+message GetUTXOsByAddressResponseMessage{
+  string address = 1;
+  repeated UTXOVerboseData utxosVerboseData = 2;
   RPCError error = 1000;
 }
 

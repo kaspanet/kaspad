@@ -6,9 +6,9 @@ package txscript
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -254,7 +254,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // ExtractScriptPubKeyAddress returns the type of script and its addresses.
 // Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
-func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+func ExtractScriptPubKeyAddress(scriptPubKey []byte, prefix util.Bech32Prefix) (ScriptClass, util.Address, error) {
 	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey)
 	if err != nil {
@@ -268,8 +268,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params
 		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
-		addr, err := util.NewAddressPubKeyHash(pops[2].data,
-			dagParams.Prefix)
+		addr, err := util.NewAddressPubKeyHash(pops[2].data, prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}
@@ -280,8 +279,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params
 		//  OP_HASH160 <scripthash> OP_EQUAL
 		// Therefore the script hash is the 2nd item on the stack.
 		// If the script hash ss invalid for some reason, return a nil address.
-		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
-			dagParams.Prefix)
+		addr, err := util.NewAddressScriptHashFromHash(pops[1].data, prefix)
 		if err != nil {
 			return scriptClass, nil, nil
 		}
