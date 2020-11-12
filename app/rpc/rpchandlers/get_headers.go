@@ -8,5 +8,7 @@ import (
 
 // HandleGetHeaders handles the respectively named RPC command
 func HandleGetHeaders(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	return &appmessage.GetHeadersResponseMessage{}, nil
+	response := &appmessage.GetHeadersResponseMessage{}
+	response.Error = appmessage.RPCErrorf("not implemented")
+	return response, nil
 }
