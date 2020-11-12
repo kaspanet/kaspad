@@ -14,5 +14,5 @@ const (
 
 // HandleGetChainFromBlock handles the respectively named RPC command
 func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	return nil, nil
+	return &appmessage.GetChainFromBlockResponseMessage{}, nil
 }

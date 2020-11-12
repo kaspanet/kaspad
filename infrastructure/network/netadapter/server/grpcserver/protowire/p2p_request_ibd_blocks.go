@@ -14,7 +14,7 @@ func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, err
 	if err != nil {
 		return nil, err
 	}
-	return &appmessage.MsgRequestRelayBlocks{Hashes: hashes}, nil
+	return &appmessage.MsgRequestIBDBlocks{Hashes: hashes}, nil
 }
 
 func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {

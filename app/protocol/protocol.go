@@ -180,7 +180,8 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 
 	return []*flow{
 		m.registerFlow("HandleIBD", router, []appmessage.MessageCommand{appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
-			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock}, isStopping, errChan,
+			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdHeader},
+			isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
 			},

@@ -14,6 +14,8 @@ func (x *KaspadMessage_IbdRootUTXOSetAndBlock) toAppMessage() (appmessage.Messag
 }
 
 func (x *KaspadMessage_IbdRootUTXOSetAndBlock) fromAppMessage(msgIBDRootUTXOSetAndBlock *appmessage.MsgIBDRootUTXOSetAndBlock) error {
+	x.IbdRootUTXOSetAndBlock = &IBDRootUTXOSetAndBlockMessage{}
 	x.IbdRootUTXOSetAndBlock.UtxoSet = msgIBDRootUTXOSetAndBlock.UTXOSet
+	x.IbdRootUTXOSetAndBlock.Block = &BlockMessage{}
 	return x.IbdRootUTXOSetAndBlock.Block.fromAppMessage(msgIBDRootUTXOSetAndBlock.Block)
 }

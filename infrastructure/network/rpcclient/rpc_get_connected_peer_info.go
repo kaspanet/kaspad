@@ -12,9 +12,9 @@ func (c *RPCClient) GetConnectedPeerInfo() (*appmessage.GetConnectedPeerInfoResp
 	if err != nil {
 		return nil, err
 	}
-	getMempoolEntryResponse := response.(*appmessage.GetConnectedPeerInfoResponseMessage)
-	if getMempoolEntryResponse.Error != nil {
-		return nil, c.convertRPCError(getMempoolEntryResponse.Error)
+	getConnectedPeerInfoResponse := response.(*appmessage.GetConnectedPeerInfoResponseMessage)
+	if getConnectedPeerInfoResponse.Error != nil {
+		return nil, c.convertRPCError(getConnectedPeerInfoResponse.Error)
 	}
-	return getMempoolEntryResponse, nil
+	return getConnectedPeerInfoResponse, nil
 }

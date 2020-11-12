@@ -115,8 +115,8 @@ func (flow *handleRequestBlocksFlow) buildMsgBlockHeaders(lowHash *externalapi.D
 }
 
 func (flow *handleRequestBlocksFlow) sendHeaders(headers []*appmessage.MsgBlockHeader) error {
-	for _, msgIBDBlock := range headers {
-		err := flow.outgoingRoute.Enqueue(msgIBDBlock)
+	for _, msgBlockHeader := range headers {
+		err := flow.outgoingRoute.Enqueue(msgBlockHeader)
 		if err != nil {
 			return err
 		}

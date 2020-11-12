@@ -21,11 +21,6 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.validateMedianTime(header)
-	if err != nil {
-		return err
-	}
-
 	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
 	if err != nil {
 		return err
@@ -36,6 +31,11 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		if err != nil {
 			return err
 		}
+	}
+
+	err = v.validateMedianTime(header)
+	if err != nil {
+		return err
 	}
 
 	err = v.checkMergeSizeLimit(blockHash)
@@ -99,15 +99,10 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 		return nil
 	}
 
-	hash := consensusserialization.HeaderHash(header)
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
-	if err != nil {
-		return err
-	}
-
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+	hash := consensusserialization.HeaderHash(header)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(hash)
 	if err != nil {
 		return err
 	}

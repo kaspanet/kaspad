@@ -32,7 +32,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdResolveFinalityConflictRequestMessage: rpchandlers.HandleResolveFinalityConflict,
 	appmessage.CmdNotifyFinalityConflictsRequestMessage: rpchandlers.HandleNotifyFinalityConflicts,
 	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
-	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleGetMempoolEntries,
+	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleShutDown,
 	appmessage.CmdGetHeadersRequestMessage:              rpchandlers.HandleGetHeaders,
 }
 

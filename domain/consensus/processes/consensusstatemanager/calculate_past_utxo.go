@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
@@ -18,6 +19,11 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	// Genesis
+	if blockGHOSTDAGData.SelectedParent == nil {
+		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
 	}
 
 	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
@@ -44,16 +50,27 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	// collect the UTXO diffs
 	var utxoDiffs []*model.UTXODiff
 	nextBlockHash := blockHash
-	for nextBlockHash != nil {
+	for {
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
 
+		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nextBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			break
+		}
+
 		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
+		}
+		if nextBlockHash == nil {
+			break
 		}
 	}
 
@@ -78,7 +95,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		return nil, nil, err
 	}
 
-	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(ghostdagData.SelectedParent)
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(blockHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,8 +105,8 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
-		blockAccepanceData := &model.BlockAcceptanceData{
-			TransactionAcceptanceData: []*model.TransactionAcceptanceData{},
+		blockAcceptanceData := &model.BlockAcceptanceData{
+			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
 
@@ -103,13 +120,13 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				return nil, nil, err
 			}
 
-			blockAccepanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+			blockAcceptanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
 				Transaction: transaction,
 				Fee:         fee,
 				IsAccepted:  isAccepted,
 			}
 		}
-		multiblockAcceptanceData[i] = blockAccepanceData
+		multiblockAcceptanceData[i] = blockAcceptanceData
 	}
 
 	return multiblockAcceptanceData, accumulatedUTXODiff, nil
@@ -226,7 +243,7 @@ func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
 
 func (u utxoSetIterator) Next() bool {
 	u.index++
-	return u.index != len(u.pairs)
+	return u.index < len(u.pairs)
 }
 
 func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {

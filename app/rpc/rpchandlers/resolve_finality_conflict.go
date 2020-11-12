@@ -8,5 +8,5 @@ import (
 
 // HandleResolveFinalityConflict handles the respectively named RPC command
 func HandleResolveFinalityConflict(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	return nil, nil
+	return &appmessage.ResolveFinalityConflictResponseMessage{}, nil
 }

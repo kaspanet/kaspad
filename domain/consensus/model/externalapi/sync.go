@@ -19,6 +19,8 @@ func (s SyncState) String() string {
 	switch s {
 	case SyncStateRelay:
 		return "SyncStateRelay"
+	case SyncStateMissingGenesis:
+		return "SyncStateMissingGenesis"
 	case SyncStateHeadersFirst:
 		return "SyncStateHeadersFirst"
 	case SyncStateMissingUTXOSet:

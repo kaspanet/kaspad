@@ -842,7 +842,7 @@ func (am *AddressManager) AddressCache(includeAllSubnetworks bool, subnetworkID 
 	allAddresses := []*appmessage.NetAddress{}
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range am.addressIndex {
-		if includeAllSubnetworks || *v.SubnetworkID() == *subnetworkID {
+		if includeAllSubnetworks || subnetworks.IsEqual(v.SubnetworkID(), subnetworkID) {
 			allAddresses = append(allAddresses, v.netAddress)
 		}
 	}

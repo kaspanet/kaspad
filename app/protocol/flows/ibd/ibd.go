@@ -153,6 +153,14 @@ func (flow *handleIBDFlow) syncMissingBlockBodies() error {
 			if err != nil {
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
+			err = flow.OnNewBlock(block)
+			if err != nil {
+				return err
+			}
+			err = blocklogger.LogBlock(block)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -347,14 +355,6 @@ func (flow *handleIBDFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHead
 		log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
-	}
-	err = flow.OnNewBlock(block)
-	if err != nil {
-		return err
-	}
-	err = blocklogger.LogBlock(block)
-	if err != nil {
-		return err
 	}
 	return nil
 }

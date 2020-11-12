@@ -2,12 +2,14 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
 	finalityDepth   uint64
 	pruningDepth    uint64
+	genesisHash     *externalapi.DomainHash
 	databaseContext model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
@@ -39,6 +41,7 @@ func New(
 	databaseContext model.DBManager,
 	finalityDepth uint64,
 	pruningDepth uint64,
+	genesisHash *externalapi.DomainHash,
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
@@ -63,6 +66,7 @@ func New(
 	csm := &consensusStateManager{
 		finalityDepth:   finalityDepth,
 		pruningDepth:    pruningDepth,
+		genesisHash:     genesisHash,
 		databaseContext: databaseContext,
 
 		ghostdagManager:       ghostdagManager,

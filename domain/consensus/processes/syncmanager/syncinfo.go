@@ -9,7 +9,7 @@ import (
 // areHeaderTipsSyncedMaxTimeDifference is the number of blocks from
 // the header virtual selected parent (estimated by timestamps) for
 // kaspad to be considered not synced
-const areHeaderTipsSyncedMaxTimeDifference = 300
+const areHeaderTipsSyncedMaxTimeDifference = 300_000 // 5 minutes
 
 func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	syncState, err := sm.resolveSyncState()
@@ -36,7 +36,6 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	if !hasTips {
 		return externalapi.SyncStateMissingGenesis, nil
 	}
@@ -45,7 +44,6 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	isSynced, err := sm.areHeaderTipsSynced(headerVirtualSelectedParentHash)
 	if err != nil {
 		return 0, err
@@ -54,11 +52,15 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateHeadersFirst, nil
 	}
 
-	headerVirtualSelectedParentBlockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerVirtualSelectedParentHash)
+	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
 	if err != nil {
 		return 0, err
 	}
-	if headerVirtualSelectedParentBlockStatus != externalapi.StatusValid {
+	headerTipsPruningPointStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerTipsPruningPoint)
+	if err != nil {
+		return 0, err
+	}
+	if headerTipsPruningPointStatus != externalapi.StatusValid {
 		return externalapi.SyncStateMissingUTXOSet, nil
 	}
 
