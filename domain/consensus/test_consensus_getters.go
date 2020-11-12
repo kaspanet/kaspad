@@ -102,8 +102,8 @@ func (tc *testConsensus) PruningManager() model.PruningManager {
 	return tc.pruningManager
 }
 
-func (tc *testConsensus) ReachabilityManager() model.ReachabilityManager {
-	return tc.reachabilityManager
+func (tc *testConsensus) ReachabilityManager() model.TestReachabilityManager {
+	return tc.testReachabilityManager
 }
 
 func (tc *testConsensus) SyncManager() model.SyncManager {

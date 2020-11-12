@@ -13,7 +13,12 @@ import (
 
 type testConsensus struct {
 	*consensus
-	testBlockBuilder model.TestBlockBuilder
+	testBlockBuilder        model.TestBlockBuilder
+	testReachabilityManager model.TestReachabilityManager
+}
+
+func (tc *testConsensus) DBReader() model.DBReader {
+	return tc.consensus.databaseContext
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
@@ -32,6 +37,13 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
+
+	if coinbaseData == nil {
+		coinbaseData = &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: []byte{},
+			ExtraData:       []byte{},
+		}
+	}
 
 	block, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
 	if err != nil {

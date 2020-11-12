@@ -317,6 +317,8 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	tc = &testConsensus{
 		consensus:        consensusAsImplementation,
 		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
+		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
+			reachabilityManager),
 	}
 	teardown = func() {
 		db.Close()

@@ -9,6 +9,8 @@ import (
 type TestConsensus interface {
 	externalapi.Consensus
 
+	DBReader() model.DBReader
+
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)
 
@@ -43,7 +45,7 @@ type TestConsensus interface {
 	MergeDepthManager() model.MergeDepthManager
 	PastMedianTimeManager() model.PastMedianTimeManager
 	PruningManager() model.PruningManager
-	ReachabilityManager() model.ReachabilityManager
+	ReachabilityManager() model.TestReachabilityManager
 	SyncManager() model.SyncManager
 	TransactionValidator() model.TransactionValidator
 }

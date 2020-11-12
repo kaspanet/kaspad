@@ -10,3 +10,9 @@ type ReachabilityManager interface {
 	IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	UpdateReindexRoot(selectedTip *externalapi.DomainHash) error
 }
+
+type TestReachabilityManager interface {
+	ReachabilityManager
+	ReachabilityReindexWindow() uint64
+	ReachabilityReindexSlack() uint64
+}
