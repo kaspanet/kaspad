@@ -19,6 +19,8 @@ type TestConsensus interface {
 	AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error)
 
+	SolveAndAddBlock(block *externalapi.DomainBlock) (*externalapi.DomainHash, error)
+
 	AcceptanceDataStore() model.AcceptanceDataStore
 	BlockHeaderStore() model.BlockHeaderStore
 	BlockRelationStore() model.BlockRelationStore

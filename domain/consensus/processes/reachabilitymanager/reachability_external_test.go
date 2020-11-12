@@ -13,7 +13,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
 		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
+			t.Fatalf("NewTestConsensus: %+v", err)
 		}
 		defer tearDown()
 

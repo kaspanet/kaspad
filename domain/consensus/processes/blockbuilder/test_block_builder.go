@@ -36,7 +36,8 @@ func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Do
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bb.newBlockTime()
+
+	timeInMilliseconds, err := bb.pastMedianTimeManager.PastMedianTime(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
-	header, err := bb.buildHeaderWithParents(parentHashes, transactions, acceptanceData, multiset)
+	header, err := bb.buildHeaderWithParents(parentHashes, transactionsWithCoinbase, acceptanceData, multiset)
 	if err != nil {
 		return nil, err
 	}

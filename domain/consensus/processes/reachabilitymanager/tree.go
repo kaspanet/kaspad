@@ -13,7 +13,8 @@ import (
 var (
 	// reachabilityReindexWindow is the target window size for reachability
 	// reindexes. Note that this is not a constant for testing purposes.
-	reachabilityReindexWindow uint64 = 200
+	// TODO: return to 200
+	reachabilityReindexWindow uint64 = 2
 
 	// reachabilityReindexSlack is the slack interval given to reachability
 	// tree nodes not in the selected parent chain. Note that this is not
@@ -626,7 +627,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 	// current node with an interval that is smaller by
 	// slackReachabilityIntervalForReclaiming. This is to make room
 	// for the new node.
-	for current != commonAncestor {
+	for *current != *commonAncestor {
 		currentInterval, err := rt.interval(current)
 		if err != nil {
 			return err
@@ -882,7 +883,7 @@ func (rt *reachabilityManager) splitChildrenAroundChild(node, child *externalapi
 	}
 
 	for i, candidateChild := range nodeChildren {
-		if candidateChild == child {
+		if *candidateChild == *child {
 			return nodeChildren[:i], nodeChildren[i+1:], nil
 		}
 	}

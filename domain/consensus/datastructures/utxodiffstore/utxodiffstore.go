@@ -77,7 +77,7 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffChildBytes)
+		err = dbTx.Put(uds.utxoDiffChildHashAsKey(&hash), utxoDiffChildBytes)
 		if err != nil {
 			return err
 		}

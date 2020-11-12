@@ -14,19 +14,17 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 		return err
 	}
 
-	if !isNextVirtualSelectedParent {
-		return nil
-	}
-
-	blockStatus, err := csm.resolveBlockStatus(blockHash)
-	if err != nil {
-		return err
-	}
-
-	if blockStatus == externalapi.StatusValid {
-		err = csm.checkFinalityViolation(blockHash)
+	if isNextVirtualSelectedParent {
+		blockStatus, err := csm.resolveBlockStatus(blockHash)
 		if err != nil {
 			return err
+		}
+
+		if blockStatus == externalapi.StatusValid {
+			err = csm.checkFinalityViolation(blockHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -62,28 +60,32 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 }
 
 func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
-	currentTips, err := csm.consensusStateStore.Tips(csm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-
-	newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
-	if err != nil {
-		return nil, err
-	}
-
-	newTips = []*externalapi.DomainHash{newTipHash}
-
-	for _, currentTip := range currentTips {
-		isCurrentTipInNewTipParents := false
-		for _, newTipParent := range newTipParents {
-			if *currentTip == *newTipParent {
-				isCurrentTipInNewTipParents = true
-				break
-			}
+	if *newTipHash == *csm.genesisHash {
+		newTips = []*externalapi.DomainHash{newTipHash}
+	} else {
+		currentTips, err := csm.consensusStateStore.Tips(csm.databaseContext)
+		if err != nil {
+			return nil, err
 		}
-		if !isCurrentTipInNewTipParents {
-			newTips = append(newTips, currentTip)
+
+		newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
+		if err != nil {
+			return nil, err
+		}
+
+		newTips = []*externalapi.DomainHash{newTipHash}
+
+		for _, currentTip := range currentTips {
+			isCurrentTipInNewTipParents := false
+			for _, newTipParent := range newTipParents {
+				if *currentTip == *newTipParent {
+					isCurrentTipInNewTipParents = true
+					break
+				}
+			}
+			if !isCurrentTipInNewTipParents {
+				newTips = append(newTips, currentTip)
+			}
 		}
 	}
 

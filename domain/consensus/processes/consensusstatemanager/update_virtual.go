@@ -27,7 +27,11 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
-	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
+	err = csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
+	if err != nil {
+		return err
+	}
+
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
@@ -46,34 +50,39 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 func (csm *consensusStateManager) updateVirtualDiffParents(
 	newBlockHash *externalapi.DomainHash, virtualUTXODiff *model.UTXODiff) error {
 
-	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
-	if err != nil {
-		return err
-	}
+	var newVirtualDiffParents []*externalapi.DomainHash
+	if *newBlockHash == *csm.genesisHash {
+		newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
+	} else {
+		virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+		if err != nil {
+			return err
+		}
 
-	newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
-	if err != nil {
-		return err
-	}
-	newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
+		newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
+		if err != nil {
+			return err
+		}
+		newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
 
-	newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
-	for _, virtualDiffParent := range virtualDiffParents {
-		if newBlockParents.Contains(virtualDiffParent) {
-			virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-			if err != nil {
-				return err
+		newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
+		for _, virtualDiffParent := range virtualDiffParents {
+			if newBlockParents.Contains(virtualDiffParent) {
+				virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
+				if err != nil {
+					return err
+				}
+				newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
+				if err != nil {
+					return err
+				}
+				err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
+				if err != nil {
+					return err
+				}
+			} else {
+				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 			}
-			newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
-			if err != nil {
-				return err
-			}
-			err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
-			if err != nil {
-				return err
-			}
-		} else {
-			newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 		}
 	}
 

@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"sync"
 
@@ -29,7 +31,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/headertipsmanager"
@@ -317,6 +318,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	consensusAsImplementation := consensusAsInterface.(*consensus)
 
 	tc = &testConsensus{
+		rd:               rand.New(rand.NewSource(0)),
 		consensus:        consensusAsImplementation,
 		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
