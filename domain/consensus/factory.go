@@ -1,7 +1,9 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"sync"
 
@@ -29,7 +31,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/headertipsmanager"
@@ -78,7 +79,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	reachabilityManager := reachabilitymanager.New(
 		dbManager,
 		ghostdagDataStore,
-		blockRelationStore,
 		reachabilityDataStore)
 	dagTopologyManager := dagtopologymanager.New(
 		dbManager,
@@ -320,9 +320,12 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	testBlockBuilder := blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder)
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
 	tc = &testConsensus{
+		rd:               rand.New(rand.NewSource(0)),
 		consensus:                 consensusAsImplementation,
 		testBlockBuilder:          testBlockBuilder,
 		testConsensusStateManager: testConsensusStateManager,
+		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
+			reachabilityManager),
 	}
 	teardown = func() {
 		db.Close()
