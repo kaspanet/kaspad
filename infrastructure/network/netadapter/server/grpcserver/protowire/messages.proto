@@ -88,12 +88,12 @@ message KaspadMessage {
 // P2P                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-// GetAddressesMessage start
+// RequestAddressesMessage start
 message RequestAddressesMessage{
   bool includeAllSubnetworks = 1;
   SubnetworkID subnetworkID = 2;
 }
-// GetAddressesMessage end
+// RequestAddressesMessage end
 
 // AddressesMessage start
 message AddressesMessage{

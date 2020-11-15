@@ -1127,7 +1127,7 @@ func (*KaspadMessage_GetHeadersRequest) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_GetHeadersResponse) isKaspadMessage_Payload() {}
 
-// GetAddressesMessage start
+// RequestAddressesMessage start
 type RequestAddressesMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
