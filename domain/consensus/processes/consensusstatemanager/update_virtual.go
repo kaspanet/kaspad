@@ -69,7 +69,6 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
 		for _, virtualDiffParent := range virtualDiffParents {
 			if !newBlockParents.Contains(virtualDiffParent) {
-
 				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 			}
 		}
