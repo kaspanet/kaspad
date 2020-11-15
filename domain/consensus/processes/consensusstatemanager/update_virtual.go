@@ -27,6 +27,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
+
 	err = csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
 	if err != nil {
 		return err

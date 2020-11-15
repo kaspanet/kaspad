@@ -7,9 +7,10 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 

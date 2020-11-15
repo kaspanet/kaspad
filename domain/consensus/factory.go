@@ -120,7 +120,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
-	genesisHash := (*externalapi.DomainHash)(dagParams.GenesisHash)
+	genesisHash := dagParams.GenesisHash
 	mergeDepthManager := mergedepthmanager.New(
 		dagParams.FinalityDepth(),
 		dbManager,
@@ -317,10 +317,13 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
 
+	testBlockBuilder := blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder)
+	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
 	tc = &testConsensus{
 		rd:               rand.New(rand.NewSource(0)),
-		consensus:        consensusAsImplementation,
-		testBlockBuilder: blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder),
+		consensus:                 consensusAsImplementation,
+		testBlockBuilder:          testBlockBuilder,
+		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
 			reachabilityManager),
 	}

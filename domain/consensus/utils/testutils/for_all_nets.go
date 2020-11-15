@@ -22,6 +22,6 @@ func ForAllNets(t *testing.T, setDifficultyToMinimum bool, testFunc func(*testin
 			params.TargetTimePerBlock = dagconfig.SimnetParams.TargetTimePerBlock
 		}
 
-		testFunc(t, &params)
+		t.Run(params.Name, func(t *testing.T) { testFunc(t, &params) })
 	}
 }

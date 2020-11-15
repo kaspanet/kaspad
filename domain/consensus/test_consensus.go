@@ -1,11 +1,13 @@
 package consensus
 
 import (
+	"errors"
+	"math"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-	"math/rand"
 )
 
 type testConsensus struct {
@@ -14,10 +16,7 @@ type testConsensus struct {
 
 	testBlockBuilder        model.TestBlockBuilder
 	testReachabilityManager model.TestReachabilityManager
-}
-
-func (tc *testConsensus) DatabaseContext() model.DBReader {
-	return tc.consensus.databaseContext
+	testConsensusStateManager model.TestConsensusStateManager
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
@@ -39,7 +38,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 
 	if coinbaseData == nil {
 		coinbaseData = &externalapi.DomainCoinbaseData{
-			ScriptPublicKey: []byte{},
+			ScriptPublicKey: testutils.OpTrueScript(),
 			ExtraData:       []byte{},
 		}
 	}

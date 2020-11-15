@@ -34,11 +34,11 @@ type TestConsensus interface {
 	ReachabilityDataStore() model.ReachabilityDataStore
 	UTXODiffStore() model.UTXODiffStore
 
-	BlockBuilder() model.BlockBuilder
+	BlockBuilder() model.TestBlockBuilder
 	BlockProcessor() model.BlockProcessor
 	BlockValidator() model.BlockValidator
 	CoinbaseManager() model.CoinbaseManager
-	ConsensusStateManager() model.ConsensusStateManager
+	ConsensusStateManager() model.TestConsensusStateManager
 	DAGTopologyManager() model.DAGTopologyManager
 	DAGTraversalManager() model.DAGTraversalManager
 	DifficultyManager() model.DifficultyManager

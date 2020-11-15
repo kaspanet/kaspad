@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/pkg/errors"
 )
 
 var utxoDiffBucket = dbkeys.MakeBucket([]byte("utxo-diffs"))
@@ -73,6 +74,10 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		}
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
+		if utxoDiffChild == nil {
+			continue
+		}
+
 		utxoDiffChildBytes, err := uds.serializeUTXODiffChild(utxoDiffChild)
 		if err != nil {
 			return err
@@ -163,28 +168,37 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff *model.UTXODiff) ([]byte, error) {
-	return proto.Marshal(serialization.UTXODiffToDBUTXODiff(utxoDiff))
+	dbUtxoDiff := serialization.UTXODiffToDBUTXODiff(utxoDiff)
+	bytes, err := proto.Marshal(dbUtxoDiff)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return bytes, nil
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (*model.UTXODiff, error) {
 	dbUTXODiff := &serialization.DbUtxoDiff{}
 	err := proto.Unmarshal(utxoDiffBytes, dbUTXODiff)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return serialization.DBUTXODiffToUTXODiff(dbUTXODiff)
 }
 
 func (uds *utxoDiffStore) serializeUTXODiffChild(utxoDiffChild *externalapi.DomainHash) ([]byte, error) {
-	return proto.Marshal(serialization.DomainHashToDbHash(utxoDiffChild))
+	bytes, err := proto.Marshal(serialization.DomainHashToDbHash(utxoDiffChild))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return bytes, nil
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiffChild(utxoDiffChildBytes []byte) (*externalapi.DomainHash, error) {
 	dbHash := &serialization.DbHash{}
 	err := proto.Unmarshal(utxoDiffChildBytes, dbHash)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return serialization.DbHashToDomainHash(dbHash)

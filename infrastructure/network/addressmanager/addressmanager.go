@@ -141,13 +141,13 @@ func (am *AddressManager) BannedAddresses() []*appmessage.NetAddress {
 	return result
 }
 
-// NotBannedAddressesWithException returns all not banned addresses with excpetion
-func (am *AddressManager) NotBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
+// notBannedAddressesWithException returns all not banned addresses with excpetion
+func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
 	exceptionsKeys := netAddressesKeys(exceptions)
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.addresses)-len(exceptions))
+	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
 	for key, address := range am.addresses {
 		if !exceptionsKeys[key] {
 			result = append(result, address)
@@ -159,13 +159,13 @@ func (am *AddressManager) NotBannedAddressesWithException(exceptions []*appmessa
 
 // RandomAddress returns a random address that isn't banned and isn't in exceptions
 func (am *AddressManager) RandomAddress(exceptions []*appmessage.NetAddress) *appmessage.NetAddress {
-	validAddresses := am.NotBannedAddressesWithException(exceptions)
+	validAddresses := am.notBannedAddressesWithException(exceptions)
 	return am.random.RandomAddress(validAddresses)
 }
 
 // RandomAddresses returns count addresses at random that aren't banned and aren't in exceptions
 func (am *AddressManager) RandomAddresses(count int, exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
-	validAddresses := am.NotBannedAddressesWithException(exceptions)
+	validAddresses := am.notBannedAddressesWithException(exceptions)
 	return am.random.RandomAddresses(validAddresses, count)
 }
 

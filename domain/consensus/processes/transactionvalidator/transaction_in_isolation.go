@@ -40,11 +40,6 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	err = v.checkTransactionPayload(tx)
-	if err != nil {
-		return err
-	}
-
 	err = v.checkNativeTransactionPayload(tx)
 	if err != nil {
 		return err
@@ -188,13 +183,5 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 			"transaction that was expected to be partial has a payload "+
 				"with length > 0")
 	}
-	return nil
-}
-
-func (v *transactionValidator) checkTransactionPayload(tx *externalapi.DomainTransaction) error {
-	if tx.Payload == nil {
-		return errors.Wrapf(ruleerrors.ErrInvalidPayload, "nil payload is not allowed")
-	}
-
 	return nil
 }
