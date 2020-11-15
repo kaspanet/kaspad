@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// DeserializeUTXOCollection deserializes the UTXO collection from the provided reader
 func DeserializeUTXOCollection(r io.Reader) (UTXOCollection, error) {
 	count, err := appmessage.ReadVarInt(r)
 	if err != nil {
@@ -27,6 +28,7 @@ func DeserializeUTXOCollection(r io.Reader) (UTXOCollection, error) {
 	return collection, nil
 }
 
+// SerializeUTXOCollection serializes the provided UTXO collection into the provided writer
 func SerializeUTXOCollection(w io.Writer, collection UTXOCollection) error {
 	err := appmessage.WriteVarInt(w, uint64(len(collection)))
 	if err != nil {

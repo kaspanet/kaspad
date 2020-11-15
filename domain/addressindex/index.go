@@ -103,7 +103,7 @@ func getAddress(scriptPublicKey []byte, prefix util.Bech32Prefix) (string, error
 	return addressStr, err
 }
 
-// Update updates the Index in the database
+// AddBlock adds the provided block's content to the Index
 func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, prefix util.Bech32Prefix) (UTXOMap, error) {
 	transactions := block.Transactions
 	toAdd := make(UTXOMap)
@@ -124,8 +124,8 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 			if err != nil {
 				return nil, err
 			}
-			txId := consensusserialization.TransactionID(transaction)
-			outpoint := externalapi.NewDomainOutpoint(txId, uint32(i))
+			txID := consensusserialization.TransactionID(transaction)
+			outpoint := externalapi.NewDomainOutpoint(txID, uint32(i))
 			if err != nil {
 				return nil, err
 			}
@@ -214,8 +214,8 @@ func GetAddressesAndUTXOsFromTransaction(transaction *externalapi.DomainTransact
 		if err != nil {
 			return nil, nil, err
 		}
-		txId := consensusserialization.TransactionID(transaction)
-		outpoint := externalapi.NewDomainOutpoint(txId, uint32(i))
+		txID := consensusserialization.TransactionID(transaction)
+		outpoint := externalapi.NewDomainOutpoint(txID, uint32(i))
 		isCoinbase := transactionhelper.IsCoinBase(transaction)
 		entry := externalapi.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, isCoinbase, blueScore)
 		utxos.Add(outpoint, entry)

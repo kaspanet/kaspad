@@ -27,5 +27,4 @@ func HandleGetUTXOsByAddress(context *rpccontext.Context, _ *router.Router, requ
 
 	response := appmessage.NewGetUTXOsByAddressResponseMessage(getUTXOsRequest.Address, utxosVerboseData)
 	return response, nil
-	return nil, nil
 }

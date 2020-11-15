@@ -19,7 +19,7 @@ func NewGetUTXOsByAddressRequestMessage(address string) *GetUTXOsByAddressReques
 	}
 }
 
-// BlockVerboseData holds verbose data about a UTXO
+// UTXOVerboseData holds verbose data about a UTXO
 type UTXOVerboseData struct {
 	Amount         uint64
 	ScriptPubKey   []byte

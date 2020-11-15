@@ -32,7 +32,7 @@ func NewManager(rpcManager *rpc.Manager) *Manager {
 	}
 }
 
-// RegisterWalletHandlers register all wallet manger handlers to the sender
+// RegisterWalletHandlers registers all wallet manager handlers to the sender
 func (m *Manager) RegisterWalletHandlers() {
 	for command, handler := range walletHandlers {
 		handlerInContext := wallethandlers.HandlerInContext{
@@ -61,7 +61,7 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	return nil
 }
 
-// NotifyTransactionAddedToDAG notifies the manager that a transaction has been added
+// NotifyTransactionAdded notifies the manager that a transaction has been added
 func (m *Manager) NotifyTransactionAdded(transaction *externalapi.DomainTransaction, status externalapi.TransactionStatus, blueScore uint64, blockHash *externalapi.DomainHash, prefix util.Bech32Prefix) error {
 	addresses, utxos, err := addressindex.GetAddressesAndUTXOsFromTransaction(transaction, blueScore, prefix)
 	if err != nil {

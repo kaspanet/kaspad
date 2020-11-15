@@ -105,7 +105,7 @@ func (m *Manager) RegisterHandler(command appmessage.MessageCommand, rpcHandler 
 	m.handlers[command] = rpcHandler
 }
 
-// SetNotifier set new rpc notifier
+// SetNotifier sets new rpc notifier
 func (m *Manager) SetNotifier(notifier Notifier) {
 	m.notifier = notifier
 }

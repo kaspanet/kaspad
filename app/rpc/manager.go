@@ -18,6 +18,7 @@ type Handler interface {
 	Execute(router *router.Router, request appmessage.Message) (appmessage.Message, error)
 }
 
+// Notifier is the interface for the RPC notifier
 type Notifier interface {
 	AddListener(router *router.Router)
 	RemoveListener(router *router.Router)
