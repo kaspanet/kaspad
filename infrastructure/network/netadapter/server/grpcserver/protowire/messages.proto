@@ -91,7 +91,7 @@ message KaspadMessage {
 // RequestAddressesMessage start
 message RequestAddressesMessage{
   bool includeAllSubnetworks = 1;
-  SubnetworkID subnetworkID = 2;
+  SubnetworkId subnetworkId = 2;
 }
 // RequestAddressesMessage end
 
@@ -101,13 +101,13 @@ message AddressesMessage{
 }
 
 message NetAddress{
-  int64  timestamp = 1;
+  int64 timestamp = 1;
   uint64 services = 2;
   bytes ip = 3;
   uint32 port = 4;
 }
 
-message SubnetworkID{
+message SubnetworkId{
   bytes bytes = 1;
 }
 // AddressesMessage end
@@ -118,30 +118,30 @@ message TransactionMessage{
   repeated TransactionInput inputs = 2;
   repeated TransactionOutput outputs = 3;
   uint64 lockTime = 4;
-  SubnetworkID subnetworkID = 5;
+  SubnetworkId subnetworkId = 5;
   uint64 gas = 6;
   Hash payloadHash = 7;
-  bytes Payload = 8;
+  bytes payload = 8;
 }
 
 message TransactionInput{
-  Outpoint PreviousOutpoint = 1;
-  bytes SignatureScript = 2;
-  uint64 Sequence = 3;
+  Outpoint previousOutpoint = 1;
+  bytes signatureScript = 2;
+  uint64 sequence = 3;
 }
 
 message Outpoint{
-  TransactionID transactionID = 1;
+  TransactionId transactionId = 1;
   uint32 index = 2;
 }
 
-message TransactionID{
+message TransactionId{
   bytes bytes = 1;
 }
 
 message TransactionOutput{
   uint64 value = 1;
-  bytes ScriptPubKey = 2;
+  bytes scriptPubKey = 2;
 }
 // TransactionMessage end
 
@@ -155,7 +155,7 @@ message BlockHeaderMessage{
   int32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
-  Hash acceptedIDMerkleRoot = 4;
+  Hash acceptedIdMerkleRoot = 4;
   Hash utxoCommitment = 5;
   int64 timestamp = 6;
   uint32 bits = 7;
@@ -210,13 +210,13 @@ message RequestSelectedTipMessage{
 
 // RequestTransactionsMessage start
 message RequestTransactionsMessage {
-  repeated TransactionID ids = 1;
+  repeated TransactionId ids = 1;
 }
 // GetTransactionsMessage end
 
 // TransactionNotFoundMessage start
 message TransactionNotFoundMessage{
-  TransactionID id = 1;
+  TransactionId id = 1;
 }
 // TransactionsNotFoundMessage end
 
@@ -228,7 +228,7 @@ message InvRelayBlockMessage{
 
 // InvTransactionMessage start
 message InvTransactionsMessage{
-  repeated TransactionID ids = 1;
+  repeated TransactionId ids = 1;
 }
 // InvTransactionMessage end
 
@@ -265,7 +265,7 @@ message VersionMessage{
   string userAgent = 6;
   Hash selectedTipHash = 7;
   bool disableRelayTx = 8;
-  SubnetworkID subnetworkID = 9;
+  SubnetworkId subnetworkId = 9;
   string network = 10;
 }
 // VersionMessage end

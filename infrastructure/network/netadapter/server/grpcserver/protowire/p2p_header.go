@@ -31,7 +31,7 @@ func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) 
 		return nil, err
 	}
 
-	acceptedIDMerkleRoot, err := x.AcceptedIDMerkleRoot.toDomain()
+	acceptedIDMerkleRoot, err := x.AcceptedIdMerkleRoot.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (x *BlockHeaderMessage) fromAppMessage(msgBlockHeader *appmessage.MsgBlockH
 		Version:              msgBlockHeader.Version,
 		ParentHashes:         domainHashesToProto(msgBlockHeader.ParentHashes),
 		HashMerkleRoot:       domainHashToProto(msgBlockHeader.HashMerkleRoot),
-		AcceptedIDMerkleRoot: domainHashToProto(msgBlockHeader.AcceptedIDMerkleRoot),
+		AcceptedIdMerkleRoot: domainHashToProto(msgBlockHeader.AcceptedIDMerkleRoot),
 		UtxoCommitment:       domainHashToProto(msgBlockHeader.UTXOCommitment),
 		Timestamp:            msgBlockHeader.Timestamp.UnixMilliseconds(),
 		Bits:                 msgBlockHeader.Bits,
