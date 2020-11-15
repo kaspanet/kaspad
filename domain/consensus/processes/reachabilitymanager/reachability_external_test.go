@@ -20,6 +20,15 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
+		if err != nil {
+			t.Fatalf("ReachabilityReindexRoot: %s", err)
+		}
+
+		if *reindexRoot != *params.GenesisHash {
+			t.Fatalf("reindex root is expected to initially be genesis")
+		}
+
 		// Add a block on top of the genesis block
 		chainRootBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
@@ -35,6 +44,15 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 				t.Fatalf("AddBlock: %+v", err)
 			}
 			chainRootBlockTipHash = chainBlock
+		}
+
+		newReindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
+		if err != nil {
+			t.Fatalf("ReachabilityReindexRoot: %s", err)
+		}
+
+		if *newReindexRoot != *reindexRoot {
+			t.Fatalf("reindex root is expected to change")
 		}
 
 		// Add another block over genesis
