@@ -69,20 +69,22 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
 		for _, virtualDiffParent := range virtualDiffParents {
 			if !newBlockParents.Contains(virtualDiffParent) {
-				virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-				if err != nil {
-					return err
-				}
-				newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
-				if err != nil {
-					return err
-				}
-				err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
-				if err != nil {
-					return err
-				}
-
 				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
+			}
+		}
+
+		for _, virtualDiffParent := range newVirtualDiffParents {
+			virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
+			if err != nil {
+				return err
+			}
+			newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
+			if err != nil {
+				return err
+			}
+			err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, nil)
+			if err != nil {
+				return err
 			}
 		}
 	}
