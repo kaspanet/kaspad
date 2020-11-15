@@ -3,6 +3,8 @@ package consensusstatemanager
 import (
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
@@ -51,7 +53,10 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 		return err
 	}
 
-	for _, transaction := range block.Transactions {
+	for i, transaction := range block.Transactions {
+		if i == transactionhelper.CoinbaseTransactionIndex {
+			continue
+		}
 		err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, pastUTXODiff)
 		if err != nil {
 			return err
