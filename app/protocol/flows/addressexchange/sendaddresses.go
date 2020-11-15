@@ -1,6 +1,7 @@
 package addressexchange
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"math/rand"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -20,13 +21,13 @@ func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, ou
 		return err
 	}
 
-	msgGetAddresses := message.(*appmessage.MsgRequestAddresses)
-	addresses := context.AddressManager().Addresses()
-	msgAddresses := appmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
-	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
-	if err != nil {
-		return err
+	_, ok := message.(*appmessage.MsgRequestAddresses)
+	if !ok {
+		return protocolerrors.Errorf(true, "unexpected message. "+
+			"Expected: %s, got: %s", appmessage.CmdRequestAddresses, message.Command())
 	}
+	addresses := context.AddressManager().Addresses()
+	msgAddresses := appmessage.NewMsgAddresses(shuffleAddresses(addresses))
 
 	return outgoingRoute.Enqueue(msgAddresses)
 }

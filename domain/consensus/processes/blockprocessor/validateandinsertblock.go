@@ -205,11 +205,6 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 		if err != nil {
 			return err
 		}
-
-		err = bp.dagTopologyManager.SetParents(blockHash, block.Header.ParentHashes)
-		if err != nil {
-			return err
-		}
 	}
 
 	// If any validation until (included) proof-of-work fails, simply

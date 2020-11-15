@@ -33,20 +33,10 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	msgAddresses := message.(*appmessage.MsgAddresses)
-	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
+	if len(msgAddresses.AddressList) > addressmanager.GetAddressesMax {
 		return protocolerrors.Errorf(true, "address count exceeded %d", addressmanager.GetAddressesMax)
 	}
 
-	if msgAddresses.IncludeAllSubnetworks {
-		return protocolerrors.Errorf(true, "got unexpected "+
-			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
-	}
-	if msgAddresses.SubnetworkID != nil && *msgAddresses.SubnetworkID != *context.Config().SubnetworkID {
-		return protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
-			"are allowed in [%s] command, but got subnetwork ID %s",
-			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
-	}
-
-	context.AddressManager().AddAddresses(msgAddresses.AddrList...)
+	context.AddressManager().AddAddresses(msgAddresses.AddressList...)
 	return nil
 }
