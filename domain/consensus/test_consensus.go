@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
@@ -33,6 +35,13 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
+
+	if coinbaseData == nil {
+		coinbaseData = &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: testutils.OpTrueScript(),
+			ExtraData:       []byte{},
+		}
+	}
 
 	block, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
 	if err != nil {
