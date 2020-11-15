@@ -66,10 +66,6 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 			ScriptPublicKey: dbTransactionOutput.ScriptPublicKey,
 		}
 	}
-	// protobuf incorrectly deserializes empty slice into nil, therefore, convert it to empty byte slice instead
-	if dbTransaction.Payload == nil {
-		dbTransaction.Payload = []byte{}
-	}
 
 	return &externalapi.DomainTransaction{
 		Version:      dbTransaction.Version,
