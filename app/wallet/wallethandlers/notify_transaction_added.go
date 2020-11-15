@@ -14,7 +14,7 @@ func HandleNotifyTransactionAdded(context walletcontext.Context, router *router.
 	}
 
 	transactionAddedRequestMessage := request.(*appmessage.NotifyTransactionAddedRequestMessage)
-	listener.PropagateTransactionAddedNotifications(transactionAddedRequestMessage.Transaction.TxHash())
+	listener.PropagateTransactionAddedNotifications(transactionAddedRequestMessage.Addresses)
 
 	response := appmessage.NewNotifyTransactionAddedResponseMessage()
 	return response, nil

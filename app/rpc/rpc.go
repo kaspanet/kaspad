@@ -52,11 +52,15 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 	if err != nil {
 		panic(err)
 	}
-	m.context.NotificationManager.AddListener(router)
+
+	if m.notifier != nil {
+		m.notifier.AddListener(router)
+	}
 
 	spawn("routerInitializer-handleIncomingMessages", func() {
-		defer m.context.NotificationManager.RemoveListener(router)
-
+		if m.notifier != nil {
+			defer m.notifier.RemoveListener(router)
+		}
 		err := m.handleIncomingMessages(router, incomingRoute)
 		m.handleError(err, netConnection)
 	})
@@ -99,4 +103,9 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 // RegisterHandler registers new rpc handler
 func (m *Manager) RegisterHandler(command appmessage.MessageCommand, rpcHandler Handler) {
 	m.handlers[command] = rpcHandler
+}
+
+// SetNotifier set new rpc notifier
+func (m *Manager) SetNotifier(notifier Notifier) {
+	m.notifier = notifier
 }

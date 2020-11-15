@@ -24,7 +24,7 @@ type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
-type OnTransactionAddedToMempoolHandler func()
+type OnTransactionAddedToMempoolHandler func(transaction *externalapi.DomainTransaction) error
 
 // FlowContext holds state that is relevant to more than one flow or one peer, and allows communication between
 // different flows that can be associated to different peers.

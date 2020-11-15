@@ -2,7 +2,6 @@ package rpccontext
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol"
-	"github.com/kaspanet/kaspad/app/wallet/walletnotification"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/addressindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
@@ -21,8 +20,6 @@ type Context struct {
 	AddressManager    *addressmanager.AddressManager
 	UTXOAddressIndex  *addressindex.Index
 	ShutDownChan      chan<- struct{}
-
-	NotificationManager *walletnotification.Manager
 }
 
 // NewContext creates a new RPC context

@@ -27,7 +27,6 @@ func DeserializeUTXOCollection(r io.Reader) (UTXOCollection, error) {
 	return collection, nil
 }
 
-
 func SerializeUTXOCollection(w io.Writer, collection UTXOCollection) error {
 	err := appmessage.WriteVarInt(w, uint64(len(collection)))
 	if err != nil {
@@ -46,4 +45,3 @@ func SerializeUTXOCollection(w io.Writer, collection UTXOCollection) error {
 	}
 	return nil
 }
-

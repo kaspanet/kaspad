@@ -62,8 +62,8 @@ func (f *FlowContext) SharedRequestedTransactions() *relaytransactions.SharedReq
 
 // OnTransactionAddedToMempool notifies the handler function that a transaction
 // has been added to the mempool
-func (f *FlowContext) OnTransactionAddedToMempool() {
+func (f *FlowContext) OnTransactionAddedToMempool(transaction *externalapi.DomainTransaction) {
 	if f.onTransactionAddedToMempoolHandler != nil {
-		f.onTransactionAddedToMempoolHandler()
+		f.onTransactionAddedToMempoolHandler(transaction)
 	}
 }

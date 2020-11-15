@@ -1,8 +1,6 @@
 package walletnotification
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -24,8 +22,8 @@ type Listener struct {
 	propagateFinalityConflictNotifications         bool
 	propagateFinalityConflictResolvedNotifications bool
 	propagateUTXOOfAddressChangedNotifications     bool
-	subscribedTransactions                         map[externalapi.DomainHash]struct{}
-	subscribedAddresses                            map[string]struct{}
+	subscribedAddressesForTransactions             map[string]struct{}
+	subscribedAddressesForUTXOs                    map[string]struct{}
 }
 
 // NewNotificationManager creates a new Manager
@@ -81,16 +79,14 @@ func (nm *Manager) NotifyBlockAdded(notification *appmessage.BlockAddedNotificat
 }
 
 // NotifyTransactionAdded notifies the notification manager that a transaction has been added to the DAG
-func (nm *Manager) NotifyTransactionAdded(transactions []*externalapi.DomainTransaction) error {
+func (nm *Manager) NotifyTransactionAdded(notification *appmessage.TransactionAddedNotificationMessage) error {
 	nm.RLock()
 	defer nm.RUnlock()
 
 	for router, listener := range nm.listeners {
 		if listener.propagateTransactionAddedNotifications {
-			for _, tx := range transactions {
-				if _, ok := listener.subscribedTransactions[*consensusserialization.TransactionHash(tx)]; ok {
-					delete(listener.subscribedTransactions, *consensusserialization.TransactionHash(tx))
-					notification := appmessage.NewTransactionAddedNotificationMessage(appmessage.DomainTransactionToMsgTx(tx))
+			for _, address := range notification.Addresses {
+				if _, ok := listener.subscribedAddressesForTransactions[address]; ok {
 					err := router.OutgoingRoute().Enqueue(notification)
 					if err != nil {
 						return err
@@ -111,7 +107,7 @@ func (nm *Manager) NotifyUTXOOfAddressChanged(notification *appmessage.UTXOOfAdd
 		if listener.propagateUTXOOfAddressChangedNotifications {
 			var changedAddressesForListener []string
 			for _, address := range notification.ChangedAddresses {
-				if _, ok := listener.subscribedAddresses[address]; ok {
+				if _, ok := listener.subscribedAddressesForUTXOs[address]; ok {
 					changedAddressesForListener = append(changedAddressesForListener, address)
 				}
 			}
@@ -194,14 +190,16 @@ func (nl *Listener) PropagateBlockAddedNotifications() {
 
 // PropagateTransactionAddedNotifications instructs the listener to send transaction added notifications
 // to the remote listener
-func (nl *Listener) PropagateTransactionAddedNotifications(txHash *externalapi.DomainHash) {
+func (nl *Listener) PropagateTransactionAddedNotifications(addresses []string) {
 	nl.propagateTransactionAddedNotifications = true
 
-	if nl.subscribedTransactions == nil {
-		nl.subscribedTransactions = make(map[externalapi.DomainHash]struct{})
+	if nl.subscribedAddressesForTransactions == nil {
+		nl.subscribedAddressesForTransactions = make(map[string]struct{})
 	}
 
-	nl.subscribedTransactions[*txHash] = struct{}{}
+	for _, address := range addresses {
+		nl.subscribedAddressesForTransactions[address] = struct{}{}
+	}
 }
 
 // PropagateUTXOOfAddressChangedNotifications instructs the listener to send utxo of address changed notifications
@@ -209,12 +207,12 @@ func (nl *Listener) PropagateTransactionAddedNotifications(txHash *externalapi.D
 func (nl *Listener) PropagateUTXOOfAddressChangedNotifications(addresses []string) {
 	nl.propagateUTXOOfAddressChangedNotifications = true
 
-	if nl.subscribedAddresses == nil {
-		nl.subscribedAddresses = make(map[string]struct{})
+	if nl.subscribedAddressesForUTXOs == nil {
+		nl.subscribedAddressesForUTXOs = make(map[string]struct{})
 	}
 
 	for _, address := range addresses {
-		nl.subscribedAddresses[address] = struct{}{}
+		nl.subscribedAddressesForUTXOs[address] = struct{}{}
 	}
 }
 

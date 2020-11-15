@@ -316,6 +316,27 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.NotifyTransactionAddedRequestMessage:
+		payload := new(KaspadMessage_NotifyTransactionAddedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyTransactionAddedResponseMessage:
+		payload := new(KaspadMessage_NotifyTransactionAddedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.TransactionAddedNotificationMessage:
+		payload := new(KaspadMessage_TransactionAddedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *appmessage.GetPeerAddressesRequestMessage:
 		payload := new(KaspadMessage_GetPeerAddressesRequest)
 		err := payload.fromAppMessage(message)

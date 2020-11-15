@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/wallet"
 	"github.com/kaspanet/kaspad/domain/addressindex"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"sync/atomic"
 
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -134,26 +135,42 @@ func setupRPC(
 
 	if cfg.Wallet {
 		walletManager := wallet.NewManager(rpcManager)
-		walletManager.RegisterWalletHandlers(rpcManager)
+		walletManager.RegisterWalletHandlers()
 		protocolManager.SetOnBlockAddedToDAGHandler(func(block *externalapi.DomainBlock) error {
-			changedUTXOs, err := utxoAddressIndex.AddBlock(block, cfg.NetParams().Prefix)
-			if err != nil{
+			changedUTXOs, err := utxoAddressIndex.AddBlock(block, 0, cfg.NetParams().Prefix)
+			if err != nil {
 				return err
 			}
 			var changedAddresses []string
-			for changedAddress := range changedUTXOs{
+			for changedAddress := range changedUTXOs {
 				changedAddresses = append(changedAddresses, changedAddress)
 			}
 
-			if len(changedAddresses) > 0{
+			if len(changedAddresses) > 0 {
 				err = walletManager.NotifyUTXOOfAddressChanged(changedAddresses)
-				if err != nil{
+				if err != nil {
 					return err
 				}
 			}
 
 			err = walletManager.NotifyBlockAddedToDAG(block)
-			if err != nil{
+			if err != nil {
+				return err
+			}
+
+			for _, transaction := range block.Transactions {
+				err = walletManager.NotifyTransactionAdded(transaction, externalapi.StatusConfirmed, 0, consensusserialization.BlockHash(block), cfg.NetParams().Prefix)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		protocolManager.SetOnTransactionAddedToMempoolHandler(func(transaction *externalapi.DomainTransaction) error {
+			err := walletManager.NotifyTransactionAdded(transaction, externalapi.StatusUnconfirmed, 0, nil, cfg.NetParams().Prefix)
+			if err != nil {
 				return err
 			}
 

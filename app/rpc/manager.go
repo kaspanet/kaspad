@@ -18,6 +18,11 @@ type Handler interface {
 	Execute(router *router.Router, request appmessage.Message) (appmessage.Message, error)
 }
 
+type Notifier interface {
+	AddListener(router *router.Router)
+	RemoveListener(router *router.Router)
+}
+
 type handlerInContext struct {
 	context *rpccontext.Context
 	handler handlerFunc
@@ -31,6 +36,7 @@ func (hic *handlerInContext) Execute(router *router.Router, request appmessage.M
 type Manager struct {
 	context  *rpccontext.Context
 	handlers map[appmessage.MessageCommand]Handler
+	notifier Notifier
 }
 
 // NewManager creates a new RPC Manager
@@ -55,6 +61,7 @@ func NewManager(
 			utxoAddressIndex,
 			shutDownChan,
 		),
+		handlers: make(map[appmessage.MessageCommand]Handler),
 	}
 
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)

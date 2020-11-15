@@ -1,10 +1,12 @@
 package appmessage
 
+import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 // NotifyTransactionAddedRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyTransactionAddedRequestMessage struct {
 	baseMessage
-	Transaction *MsgTx
+	Addresses []string
 }
 
 // Command returns the protocol command string for the message
@@ -13,8 +15,10 @@ func (msg *NotifyTransactionAddedRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyTransactionAddedRequestMessage returns a instance of the message
-func NewNotifyTransactionAddedRequestMessage() *NotifyTransactionAddedRequestMessage {
-	return &NotifyTransactionAddedRequestMessage{}
+func NewNotifyTransactionAddedRequestMessage(addresses []string) *NotifyTransactionAddedRequestMessage {
+	return &NotifyTransactionAddedRequestMessage{
+		Addresses: addresses,
+	}
 }
 
 // NotifyTransactionAddedResponseMessage is an appmessage corresponding to
@@ -38,7 +42,11 @@ func NewNotifyTransactionAddedResponseMessage() *NotifyTransactionAddedResponseM
 // its respective RPC message
 type TransactionAddedNotificationMessage struct {
 	baseMessage
-	Transaction *MsgTx
+	Addresses        []string
+	BlockHash        string
+	UTXOsVerboseData []*UTXOVerboseData
+	Transaction      *MsgTx
+	Status           uint32
 }
 
 // Command returns the protocol command string for the message
@@ -47,8 +55,12 @@ func (msg *TransactionAddedNotificationMessage) Command() MessageCommand {
 }
 
 // NewTransactionAddedNotificationMessage returns a instance of the message
-func NewTransactionAddedNotificationMessage(transaction *MsgTx) *TransactionAddedNotificationMessage {
+func NewTransactionAddedNotificationMessage(addresses []string, blockHash *externalapi.DomainHash, utxosVerboseData []*UTXOVerboseData, transaction *MsgTx, status externalapi.TransactionStatus) *TransactionAddedNotificationMessage {
 	return &TransactionAddedNotificationMessage{
-		Transaction: transaction,
+		Addresses:        addresses,
+		BlockHash:        blockHash.String(),
+		UTXOsVerboseData: utxosVerboseData,
+		Transaction:      transaction,
+		Status:           uint32(status),
 	}
 }

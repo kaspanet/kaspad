@@ -2,9 +2,7 @@ package addressindex
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/domain/addressindex/dbaccess"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -38,7 +36,7 @@ func (in *Index) GetUTXOsByAddress(address string) (UTXOCollection, error) {
 		return collection, nil
 	}
 
-	value, err := dbaccess.GetFromUTXOMap(in.dbContext, []byte(address))
+	value, err := getFromUTXOMap(in.dbContext, []byte(address))
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, nil
@@ -106,7 +104,7 @@ func getAddress(scriptPublicKey []byte, prefix util.Bech32Prefix) (string, error
 }
 
 // Update updates the Index in the database
-func (in *Index) AddBlock(block *externalapi.DomainBlock, prefix util.Bech32Prefix) (UTXOMap, error) {
+func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, prefix util.Bech32Prefix) (UTXOMap, error) {
 	transactions := block.Transactions
 	toAdd := make(UTXOMap)
 	toRemove := make(UTXOMap)
@@ -128,7 +126,6 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, prefix util.Bech32Pref
 			}
 			txId := consensusserialization.TransactionID(transaction)
 			outpoint := externalapi.NewDomainOutpoint(txId, uint32(i))
-			blueScore, err := blocks.ExtractBlueScore(block)
 			if err != nil {
 				return nil, err
 			}
@@ -190,11 +187,45 @@ func (in *Index) Update(toAdd UTXOMap, toRemove UTXOMap) (UTXOMap, error) {
 		}
 
 		serializedUTXOCollection := buffer.Bytes()
-		err = dbaccess.AddToUTXOMap(in.dbContext, []byte(address), serializedUTXOCollection)
+		err = addToUTXOMap(in.dbContext, []byte(address), serializedUTXOCollection)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return changedAddresses, nil
+}
+
+// GetAddressesAndUTXOsFromTransaction extracts addresses and utxos from transaction
+func GetAddressesAndUTXOsFromTransaction(transaction *externalapi.DomainTransaction, blueScore uint64, prefix util.Bech32Prefix) ([]string, UTXOCollection, error) {
+	addressMap := make(map[string]struct{})
+	utxos := make(UTXOCollection)
+
+	for _, txIn := range transaction.Inputs {
+		address, err := getAddress(txIn.UTXOEntry.ScriptPublicKey, prefix)
+		if err != nil {
+			return nil, nil, err
+		}
+		addressMap[address] = struct{}{}
+	}
+
+	for i, txOut := range transaction.Outputs {
+		address, err := getAddress(txOut.ScriptPublicKey, prefix)
+		if err != nil {
+			return nil, nil, err
+		}
+		txId := consensusserialization.TransactionID(transaction)
+		outpoint := externalapi.NewDomainOutpoint(txId, uint32(i))
+		isCoinbase := transactionhelper.IsCoinBase(transaction)
+		entry := externalapi.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, isCoinbase, blueScore)
+		utxos.Add(outpoint, entry)
+		addressMap[address] = struct{}{}
+	}
+
+	addresses := make([]string, 0, len(addressMap))
+	for address := range addressMap {
+		addresses = append(addresses, address)
+	}
+
+	return addresses, utxos, nil
 }

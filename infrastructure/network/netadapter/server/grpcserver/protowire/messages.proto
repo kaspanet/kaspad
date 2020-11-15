@@ -634,7 +634,7 @@ message GetHeadersResponseMessage{
 }
 
 message NotifyTransactionAddedRequestMessage{
-  TransactionMessage transaction = 1;
+  repeated string addresses = 1;
 }
 
 message NotifyTransactionAddedResponseMessage{
@@ -642,7 +642,11 @@ message NotifyTransactionAddedResponseMessage{
 }
 
 message TransactionAddedNotificationMessage{
-  TransactionMessage transaction = 1;
+  repeated string addresses = 1;
+  string blockHash = 2;
+  repeated UTXOVerboseData utxosVerboseData = 3;
+  TransactionMessage transaction = 4;
+  uint32 status = 5;
 }
 
 message NotifyUTXOOfAddressChangedRequestMessage{

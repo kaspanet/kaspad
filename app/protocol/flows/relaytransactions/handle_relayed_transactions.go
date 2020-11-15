@@ -20,7 +20,7 @@ type TransactionsRelayContext interface {
 	Domain() domain.Domain
 	SharedRequestedTransactions() *SharedRequestedTransactions
 	Broadcast(message appmessage.Message) error
-	OnTransactionAddedToMempool()
+	OnTransactionAddedToMempool(transaction *externalapi.DomainTransaction)
 }
 
 type handleRelayedTransactionsFlow struct {
@@ -197,7 +197,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		if err != nil {
 			return err
 		}
-		flow.OnTransactionAddedToMempool()
+		flow.OnTransactionAddedToMempool(tx)
 	}
 	return nil
 }
