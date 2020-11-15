@@ -68,7 +68,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 
 		newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
 		for _, virtualDiffParent := range virtualDiffParents {
-			if newBlockParents.Contains(virtualDiffParent) {
+			if !newBlockParents.Contains(virtualDiffParent) {
 				virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
 				if err != nil {
 					return err
@@ -81,7 +81,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 				if err != nil {
 					return err
 				}
-			} else {
+
 				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 			}
 		}
