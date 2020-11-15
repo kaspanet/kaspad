@@ -88,11 +88,16 @@ message KaspadMessage {
 // P2P                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-// AddressesMessage start
-message AddressesMessage{
+// RequestAddressesMessage start
+message RequestAddressesMessage{
   bool includeAllSubnetworks = 1;
   SubnetworkID subnetworkID = 2;
-  repeated NetAddress addressList = 3;
+}
+// RequestAddressesMessage end
+
+// AddressesMessage start
+message AddressesMessage{
+  repeated NetAddress addressList = 1;
 }
 
 message NetAddress{
@@ -106,13 +111,6 @@ message SubnetworkID{
   bytes bytes = 1;
 }
 // AddressesMessage end
-
-// GetAddressesMessage start
-message RequestAddressesMessage{
-  bool includeAllSubnetworks = 1;
-  SubnetworkID subnetworkID = 2;
-}
-// GetAddressesMessage end
 
 // TransactionMessage start
 message TransactionMessage{

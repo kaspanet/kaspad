@@ -25,6 +25,11 @@ func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi
 		return err
 	}
 
+	err = v.dagTopologyManager.SetParents(blockHash, header.ParentHashes)
+	if err != nil {
+		return err
+	}
+
 	err = v.validateDifficulty(blockHash)
 	if err != nil {
 		return err
