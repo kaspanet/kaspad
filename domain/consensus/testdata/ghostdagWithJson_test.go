@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"io/ioutil"
@@ -99,7 +100,7 @@ func TestGHOSTDAG(t *testing.T) {
 			//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
 			implementationFactories := []implManager{
 				{ghostdagmanager.New, "Original"},
-				//{ghostdag2.New, "Tal's impl"},
+				{ghostdag2.New, "Tal's impl"},
 			}
 
 			for _, factory := range implementationFactories {

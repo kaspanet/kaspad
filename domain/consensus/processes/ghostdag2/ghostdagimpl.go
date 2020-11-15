@@ -90,6 +90,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if *d == *selectedParent {
 			if !contains(selectedParent, blues) {
 				blues = append(blues, selectedParent)
+				blueSet = append(blueSet, selectedParent)
 			}
 			continue
 		}
@@ -138,79 +139,129 @@ func ismoreHash(w *externalapi.DomainHash, selectedParent *externalapi.DomainHas
 /* ---------------divideBluesReds--------------------- */
 func (gh *ghostdagHelper) divideBlueRed(selectedParent *externalapi.DomainHash, desiredBlock *externalapi.DomainHash,
 	blues *[]*externalapi.DomainHash, reds *[]*externalapi.DomainHash, blueSet *[]*externalapi.DomainHash) error {
+	var k = int(gh.k)
 	counter := 0
-	var chain = selectedParent
-	var stop = false
-	for chain != nil { /*nil -> after genesis*/
-		// iterate on the selected parent chain, for each node in the chain i check also for his mergeSet.
-		isValid, err := gh.validateKCluster(chain, desiredBlock, &counter, blueSet)
+	// check if anticone with desiredBlock.
+	var suspectsBlues = make([]*externalapi.DomainHash, 0)
+	var isMergeBlue = true
+	//check that not-connected to at most k.
+	for _, block := range *blueSet {
+		isAnt, err := gh.isAnticone(block, desiredBlock)
 		if err != nil {
 			return err
 		}
-		if !isValid {
-			stop = true
+		if isAnt {
+			counter++
+			suspectsBlues = append(suspectsBlues, block)
+		}
+		if counter > k {
+			isMergeBlue = false
 			break
 		}
-		/* Check valid for the blues of the chain */
-		blockData, err := gh.dataStore.Get(gh.dbAccess, chain)
-		if err != nil {
-			return err
-		}
-
-		for _, b := range blockData.MergeSetBlues {
-			//if !gh.validateKCluster(b, desiredBlock, &counter, blueSet) { /* ret false*/
-			isValid2, err := gh.validateKCluster(b, desiredBlock, &counter, blueSet)
-			if err != nil {
-				return err
-			}
-			if !isValid2 {
-				stop = true
-				break
-			}
-		}
-
-		if stop {
-			break
-		}
-		//chain = gh.dataStore.Get(gh.dbAccess, chain).SelectedParent
-		blockData2, err := gh.dataStore.Get(gh.dbAccess, chain)
-		if err != nil {
-			return err
-		}
-		chain = blockData2.SelectedParent
 	}
-	if stop {
+	if !isMergeBlue {
 		if !contains(desiredBlock, *reds) {
 			*reds = append(*reds, desiredBlock)
 		}
-	} else {
-		var isBlue bool = true
+		return nil
+	}
 
-		for _, e := range *blues {
-			isDestroyed, err := gh.checkIfDestroy(e, blues)
-			if err != nil {
-				return err
-			}
-			if isDestroyed {
-				isBlue = false
-				break
-			}
+	// check that the k-cluster of each blue is still valid.
+	for _, blue := range suspectsBlues {
+		isDestroyed, err := gh.checkIfDestroy(blue, blueSet)
+		if err != nil {
+			return err
 		}
-		if !isBlue {
-			if !contains(desiredBlock, *reds) {
-				*reds = append(*reds, desiredBlock)
-			}
-		} else {
-			if !contains(desiredBlock, *blues) {
-				*blues = append(*blues, desiredBlock)
-			}
-			if !contains(desiredBlock, *blueSet) {
-				*blueSet = append(*blueSet, desiredBlock)
-			}
+		if isDestroyed {
+			isMergeBlue = false
+			break
 		}
+	}
+	if !isMergeBlue {
+		if !contains(desiredBlock, *reds) {
+			*reds = append(*reds, desiredBlock)
+		}
+		return nil
+	}
+	if !contains(desiredBlock, *blues) {
+		*blues = append(*blues, desiredBlock)
+	}
+	if !contains(desiredBlock, *blueSet) {
+		*blueSet = append(*blueSet, desiredBlock)
 	}
 	return nil
 }
+
+// OldisAnticone
+//var chain = selectedParent
+//var stop = false
+//for chain != nil { /*nil -> after genesis*/
+//	// iterate on the selected parent chain, for each node in the chain i check also for his mergeSet.
+//	isValid, err := gh.validateKCluster(chain, desiredBlock, &counter, blueSet)
+//	if err != nil {
+//		return err
+//	}
+//	if !isValid {
+//		stop = true
+//		break
+//	}
+//	/* Check valid for the blues of the chain */
+//	blockData, err := gh.dataStore.Get(gh.dbAccess, chain)
+//	if err != nil {
+//		return err
+//	}
+//
+//	for _, b := range blockData.MergeSetBlues {
+//		isValid2, err := gh.validateKCluster(b, desiredBlock, &counter, blueSet)
+//		if err != nil {
+//			return err
+//		}
+//		if !isValid2 {
+//			stop = true
+//			break
+//		}
+//	}
+//
+//	if stop {
+//		break
+//	}
+//	//chain = gh.dataStore.Get(gh.dbAccess, chain).SelectedParent
+//	blockData2, err := gh.dataStore.Get(gh.dbAccess, chain)
+//	if err != nil {
+//		return err
+//	}
+//	chain = blockData2.SelectedParent
+//}
+//if stop {
+//	if !contains(desiredBlock, *reds) {
+//		*reds = append(*reds, desiredBlock)
+//	}
+//} else {
+//	var isBlue bool = true
+//
+//	for _, e := range *blues {
+//		isDestroyed, err := gh.checkIfDestroy(e, blues)
+//		if err != nil {
+//			return err
+//		}
+//		if isDestroyed {
+//			isBlue = false
+//			break
+//		}
+//	}
+//	if !isBlue {
+//		if !contains(desiredBlock, *reds) {
+//			*reds = append(*reds, desiredBlock)
+//		}
+//	} else {
+//		if !contains(desiredBlock, *blues) {
+//			*blues = append(*blues, desiredBlock)
+//		}
+//		if !contains(desiredBlock, *blueSet) {
+//			*blueSet = append(*blueSet, desiredBlock)
+//		}
+//	}
+//}
 
 /* ---------------isAnticone-------------------------- */
 func (gh *ghostdagHelper) isAnticone(h1, h2 *externalapi.DomainHash) (bool, error) {
@@ -284,13 +335,13 @@ func contains(s *externalapi.DomainHash, g []*externalapi.DomainHash) bool {
 
 /* ----------------checkIfDestroy------------------- */
 /* find number of not-connected in his blue*/
-func (gh *ghostdagHelper) checkIfDestroy(chain *externalapi.DomainHash, blueSet *[]*externalapi.DomainHash) (bool, error) {
+func (gh *ghostdagHelper) checkIfDestroy(block_blue *externalapi.DomainHash, blueSet *[]*externalapi.DomainHash) (bool, error) {
 	// Goal: check that the K-cluster of each block in the blueSet is not destroyed when adding the block to the mergeSet.
 	var k int = int(gh.k)
 	counter := 0
-	for _, s2 := range *blueSet {
+	for _, blue := range *blueSet {
 		//if gh.isAnticone(s2, chain) {
-		isAnt, err := gh.isAnticone(s2, chain)
+		isAnt, err := gh.isAnticone(blue, block_blue)
 		if err != nil {
 			return true, err
 		}
@@ -388,28 +439,32 @@ func (gh *ghostdagHelper) findBlueSet(blueSet *[]*externalapi.DomainHash, h *ext
 
 /* ----------------sortByBlueScore------------------- */
 func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
-	//var err error
-	//
-	//sort.SliceStable(*arr, func(i, j int) bool {
-	//
-	//	isSmaller := gh.dataStore.Get(gh.dbAccess, (*arr)[i]).BlueScore < gh.dataStore.Get(gh.dbAccess, (*arr)[j]).BlueScore
-	//	return isSmaller
-	//})
-	//return nil
-	blockData := make([]*model.BlockGHOSTDAGData, len(arr))
 
-	for i, h := range arr {
-		var err error
-		blockData[i], err = gh.dataStore.Get(gh.dbAccess, h)
-		if err != nil {
-			return err
+	var err error = nil
+	sort.SliceStable(arr, func(i, j int) bool {
+
+		blockRight, error := gh.dataStore.Get(gh.dbAccess, arr[i])
+		if error != nil {
+			err = error
+			return false
 		}
-	}
-	sort.SliceStable(blockData, func(i, j int) bool {
-		isSmaller := blockData[i].BlueScore < blockData[j].BlueScore
+
+		blockLeft, error := gh.dataStore.Get(gh.dbAccess, arr[j])
+		if error != nil {
+			err = error
+			return false
+		}
+		var isSmaller bool = false
+		if blockRight.BlueScore < blockLeft.BlueScore {
+			isSmaller = true
+		} else {
+			if blockRight.BlueScore == blockLeft.BlueScore {
+				isSmaller = ismoreHash(arr[j], arr[i])
+			}
+		}
 		return isSmaller
 	})
-	return nil
+	return err
 }
 
 /* --------------------------------------------- */
