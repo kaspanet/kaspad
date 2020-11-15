@@ -76,6 +76,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
+		// Make two chains of size reachabilityReindexWindow and check that the reindex root is not changed.
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			_, err := tc.AddBlock([]*externalapi.DomainHash{chain1RootBlock}, nil, nil)
 			if err != nil {
