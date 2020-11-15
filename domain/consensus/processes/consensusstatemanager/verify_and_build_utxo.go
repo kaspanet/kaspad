@@ -31,6 +31,9 @@ func (csm *consensusStateManager) verifyAndBuildUTXO(block *externalapi.DomainBl
 
 	coinbaseTransaction := block.Transactions[0]
 	err = csm.validateCoinbaseTransaction(blockHash, coinbaseTransaction)
+	if err != nil {
+		return err
+	}
 
 	err = csm.validateBlockTransactionsAgainstPastUTXO(block, blockHash, pastUTXODiff, err)
 	if err != nil {
