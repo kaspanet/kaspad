@@ -84,7 +84,7 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
 		if doubleSpendingBlock1Status != externalapi.StatusDisqualifiedFromChain {
-			t.Fatalf("GoodBlock status expected to be '%s', but is '%s'",
+			t.Fatalf("doubleSpendingBlock1 status expected to be '%s', but is '%s'",
 				externalapi.StatusDisqualifiedFromChain, doubleSpendingBlock1Status)
 		}
 
@@ -101,7 +101,7 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
 		if doubleSpendingBlock2Status != externalapi.StatusDisqualifiedFromChain {
-			t.Fatalf("GoodBlock status expected to be '%s', but is '%s'",
+			t.Fatalf("doubleSpendingBlock2 status expected to be '%s', but is '%s'",
 				externalapi.StatusDisqualifiedFromChain, doubleSpendingBlock2Status)
 		}
 
@@ -144,7 +144,7 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
 		if goodBlock2Status != externalapi.StatusValid {
-			t.Fatalf("GoodBlock status expected to be '%s', but is '%s'", externalapi.StatusValid, goodBlock2Status)
+			t.Fatalf("GoodBlock2 status expected to be '%s', but is '%s'", externalapi.StatusValid, goodBlock2Status)
 		}
 	})
 }
