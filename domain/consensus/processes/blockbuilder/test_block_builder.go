@@ -3,20 +3,25 @@ package blockbuilder
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 type testBlockBuilder struct {
 	*blockBuilder
+	testConsensus testapi.TestConsensus
 }
 
 var tempBlockHash = &externalapi.DomainHash{
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 
 // NewTestBlockBuilder creates an instance of a TestBlockBuilder
-func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder) model.TestBlockBuilder {
-	return &testBlockBuilder{blockBuilder: baseBlockBuilder.(*blockBuilder)}
+func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus testapi.TestConsensus) model.TestBlockBuilder {
+	return &testBlockBuilder{
+		blockBuilder:  baseBlockBuilder.(*blockBuilder),
+		testConsensus: testConsensus,
+	}
 }
 
 func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
@@ -79,6 +84,20 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	}
 	defer bb.ghostdagDataStore.Discard()
 
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+	if err != nil {
+		return nil, err
+	}
+	defer bb.testConsensus.BlockStatusStore().Discard()
+	defer bb.acceptanceDataStore.Discard()
+	defer bb.multisetStore.Discard()
+	defer bb.testConsensus.UTXODiffStore().Discard()
+
 	_, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
 	if err != nil {
 		return nil, err
@@ -87,7 +106,6 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	if err != nil {
 		return nil, err
 	}
-	defer bb.acceptanceDataStore.Discard()
 
 	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)
 	if err != nil {
