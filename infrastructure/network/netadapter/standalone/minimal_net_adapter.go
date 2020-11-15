@@ -1,7 +1,6 @@
 package standalone
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/protocol/common"
@@ -21,11 +20,10 @@ import (
 // MinimalNetAdapter allows tests and other tools to use a simple network adapter without implementing
 // all the required supporting structures.
 type MinimalNetAdapter struct {
-	cfg            *config.Config
-	lock           sync.Mutex
-	netAdapter     *netadapter.NetAdapter
-	addressManager *addressmanager.AddressManager
-	routesChan     <-chan *Routes
+	cfg        *config.Config
+	lock       sync.Mutex
+	netAdapter *netadapter.NetAdapter
+	routesChan <-chan *Routes
 }
 
 // NewMinimalNetAdapter creates a new instance of a MinimalNetAdapter
@@ -46,17 +44,11 @@ func NewMinimalNetAdapter(cfg *config.Config) (*MinimalNetAdapter, error) {
 		return nil, errors.Wrap(err, "Error starting netAdapter")
 	}
 
-	addressManager, err := addressmanager.New(&addressmanager.Config{AcceptUnroutable: true})
-	if err != nil {
-		return nil, errors.Wrap(err, "Error creating addressManager")
-	}
-
 	return &MinimalNetAdapter{
-		cfg:            cfg,
-		lock:           sync.Mutex{},
-		netAdapter:     netAdapter,
-		addressManager: addressManager,
-		routesChan:     routesChan,
+		cfg:        cfg,
+		lock:       sync.Mutex{},
+		netAdapter: netAdapter,
+		routesChan: routesChan,
 	}, nil
 }
 
@@ -158,7 +150,7 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		return errors.Errorf("expected third message to be of type %s, but got %s", appmessage.CmdRequestAddresses, msg.Command())
 	}
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgAddresses{
-		AddressList: mna.addressManager.Addresses(),
+		AddressList: []*appmessage.NetAddress{},
 	})
 
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgRequestAddresses{
@@ -172,11 +164,10 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 	if err != nil {
 		return err
 	}
-	msgAddresses, ok := msg.(*appmessage.MsgAddresses)
+	_, ok = msg.(*appmessage.MsgAddresses)
 	if !ok {
 		return errors.Errorf("expected fourth message to be of type %s, but got %s", appmessage.CmdAddresses, msg.Command())
 	}
-	mna.addressManager.AddAddresses(msgAddresses.AddressList...)
 
 	return nil
 }
