@@ -11,6 +11,8 @@ type reachabilityManager struct {
 	databaseContext       model.DBReader
 	reachabilityDataStore model.ReachabilityDataStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
+	reindexSlack          uint64
+	reindexWindow         uint64
 }
 
 // New instantiates a new reachabilityManager
@@ -23,6 +25,8 @@ func New(
 		databaseContext:       databaseContext,
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
+		reindexSlack:          defaultReindexSlack,
+		reindexWindow:         defaultReindexWindow,
 	}
 }
 

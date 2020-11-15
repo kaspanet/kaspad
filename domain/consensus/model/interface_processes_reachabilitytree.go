@@ -13,6 +13,7 @@ type ReachabilityManager interface {
 
 type TestReachabilityManager interface {
 	ReachabilityManager
-	ReachabilityReindexWindow() uint64
+	SetReachabilityReindexWindow(reindexWindow uint64)
+	SetReachabilityReindexSlack(reindexSlack uint64)
 	ReachabilityReindexSlack() uint64
 }

@@ -7,11 +7,15 @@ type testReachabilityManager struct {
 }
 
 func (t testReachabilityManager) ReachabilityReindexSlack() uint64 {
-	return reachabilityReindexSlack
+	return t.reachabilityManager.reindexSlack
 }
 
-func (t testReachabilityManager) ReachabilityReindexWindow() uint64 {
-	return reachabilityReindexWindow
+func (t testReachabilityManager) SetReachabilityReindexSlack(reindexSlack uint64) {
+	t.reachabilityManager.reindexSlack = reindexSlack
+}
+
+func (t testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uint64) {
+	t.reachabilityManager.reindexWindow = reindexWindow
 }
 
 func NewTestReachabilityManager(manager model.ReachabilityManager) model.TestReachabilityManager {
