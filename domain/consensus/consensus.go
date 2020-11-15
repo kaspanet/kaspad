@@ -30,6 +30,7 @@ type consensus struct {
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
 
+	acceptanceDataStore   model.AcceptanceDataStore
 	blockStore            model.BlockStore
 	blockHeaderStore      model.BlockHeaderStore
 	pruningStore          model.PruningStore

@@ -273,6 +273,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		pruningManager:        pruningManager,
 		reachabilityManager:   reachabilityManager,
 
+		acceptanceDataStore:   acceptanceDataStore,
 		blockStore:            blockStore,
 		blockHeaderStore:      blockHeaderStore,
 		pruningStore:          pruningStore,

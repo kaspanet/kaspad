@@ -72,17 +72,17 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
+	defer bb.testConsensus.DiscardAllStores()
+
 	err := bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 	if err != nil {
 		return nil, err
 	}
-	defer bb.blockRelationStore.Discard()
 
 	err = bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	defer bb.ghostdagDataStore.Discard()
 
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
 	if err != nil {
@@ -93,10 +93,6 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	if err != nil {
 		return nil, err
 	}
-	defer bb.testConsensus.BlockStatusStore().Discard()
-	defer bb.acceptanceDataStore.Discard()
-	defer bb.multisetStore.Discard()
-	defer bb.testConsensus.UTXODiffStore().Discard()
 
 	_, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
 	if err != nil {
