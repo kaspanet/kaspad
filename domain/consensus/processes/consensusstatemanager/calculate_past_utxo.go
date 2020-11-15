@@ -2,6 +2,7 @@ package consensusstatemanager
 
 import (
 	"errors"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 
@@ -64,6 +65,9 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
+		}
+		if nextBlockHash == nil {
+			break
 		}
 	}
 

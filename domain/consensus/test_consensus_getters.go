@@ -1,6 +1,13 @@
 package consensus
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
+)
+
+func (tc *testConsensus) DatabaseContext() model.DBReader {
+	return tc.databaseContext
+}
 
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
 	return tc.AcceptanceDataStore()
@@ -50,8 +57,8 @@ func (tc *testConsensus) UTXODiffStore() model.UTXODiffStore {
 	return tc.utxoDiffStore
 }
 
-func (tc *testConsensus) BlockBuilder() model.BlockBuilder {
-	return tc.blockBuilder
+func (tc *testConsensus) BlockBuilder() model.TestBlockBuilder {
+	return blockbuilder.NewTestBlockBuilder(tc.blockBuilder)
 }
 
 func (tc *testConsensus) BlockProcessor() model.BlockProcessor {
@@ -66,8 +73,8 @@ func (tc *testConsensus) CoinbaseManager() model.CoinbaseManager {
 	return tc.coinbaseManager
 }
 
-func (tc *testConsensus) ConsensusStateManager() model.ConsensusStateManager {
-	return tc.consensusStateManager
+func (tc *testConsensus) ConsensusStateManager() model.TestConsensusStateManager {
+	return tc.testConsensusStateManager
 }
 
 func (tc *testConsensus) DAGTopologyManager() model.DAGTopologyManager {
