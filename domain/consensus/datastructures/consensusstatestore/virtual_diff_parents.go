@@ -34,6 +34,10 @@ func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.D
 }
 
 func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
+	if c.stagedVirtualDiffParents == nil {
+		return nil
+	}
+
 	virtualDiffParentsBytes, err := c.serializeVirtualDiffParents(c.stagedVirtualDiffParents)
 	if err != nil {
 		return err

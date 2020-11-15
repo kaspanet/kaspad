@@ -34,6 +34,10 @@ func (c *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) err
 }
 
 func (c *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
+	if c.stagedTips == nil {
+		return nil
+	}
+
 	tipsBytes, err := c.serializeTips(c.stagedTips)
 	if err != nil {
 		return err

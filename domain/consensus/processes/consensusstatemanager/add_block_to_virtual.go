@@ -60,6 +60,24 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 }
 
 func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
+	newTips, err = csm.calculateNewTips(newTipHash)
+	if err != nil {
+		return nil, err
+	}
+
+	err = csm.consensusStateStore.StageTips(newTips)
+	if err != nil {
+		return nil, err
+	}
+
+	return newTips, nil
+}
+
+func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	if *newTipHash == *csm.genesisHash {
+		return []*externalapi.DomainHash{newTipHash}, nil
+	}
+
 	currentTips, err := csm.consensusStateStore.Tips(csm.databaseContext)
 	if err != nil {
 		return nil, err
@@ -70,7 +88,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 		return nil, err
 	}
 
-	newTips = []*externalapi.DomainHash{newTipHash}
+	newTips := []*externalapi.DomainHash{newTipHash}
 
 	for _, currentTip := range currentTips {
 		isCurrentTipInNewTipParents := false
@@ -83,11 +101,6 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 		if !isCurrentTipInNewTipParents {
 			newTips = append(newTips, currentTip)
 		}
-	}
-
-	err = csm.consensusStateStore.StageTips(newTips)
-	if err != nil {
-		return nil, err
 	}
 
 	return newTips, nil
