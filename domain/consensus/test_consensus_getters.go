@@ -9,7 +9,7 @@ func (tc *testConsensus) DatabaseContext() model.DBReader {
 }
 
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
-	return tc.AcceptanceDataStore()
+	return tc.acceptanceDataStore
 }
 
 func (tc *testConsensus) BlockHeaderStore() model.BlockHeaderStore {

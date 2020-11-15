@@ -21,6 +21,8 @@ type TestConsensus interface {
 
 	SolveAndAddBlock(block *externalapi.DomainBlock) (*externalapi.DomainHash, error)
 
+	DiscardAllStores()
+
 	AcceptanceDataStore() model.AcceptanceDataStore
 	BlockHeaderStore() model.BlockHeaderStore
 	BlockRelationStore() model.BlockRelationStore
