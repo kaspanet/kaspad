@@ -1,7 +1,7 @@
 package consensusstatemanager
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"

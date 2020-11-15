@@ -27,10 +27,12 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
+
 	err = csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
 	if err != nil {
 		return err
 	}
+
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)

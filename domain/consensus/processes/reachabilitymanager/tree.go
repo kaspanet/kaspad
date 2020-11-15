@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	// reachabilityReindexWindow is the target window size for reachability
+	// defaultReindexWindow is the default target window size for reachability
 	// reindexes. Note that this is not a constant for testing purposes.
-	reachabilityReindexWindow uint64 = 200
+	defaultReindexWindow uint64 = 200
 
-	// reachabilityReindexSlack is the slack interval given to reachability
+	// defaultReindexSlack is default the slack interval given to reachability
 	// tree nodes not in the selected parent chain. Note that this is not
 	// a constant for testing purposes.
-	reachabilityReindexSlack uint64 = 1 << 12
+	defaultReindexSlack uint64 = 1 << 12
 
 	// slackReachabilityIntervalForReclaiming is the slack interval to
 	// reclaim during reachability reindexes earlier than the reindex root.
@@ -627,7 +627,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 	// current node with an interval that is smaller by
 	// slackReachabilityIntervalForReclaiming. This is to make room
 	// for the new node.
-	for current != commonAncestor {
+	for *current != *commonAncestor {
 		currentInterval, err := rt.interval(current)
 		if err != nil {
 			return err
@@ -733,7 +733,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 		return "", err
 	}
 
-	lines := []string{intervalString(nodeInterval)}
+	lines := []string{nodeInterval.String()}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
@@ -753,7 +753,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 				return "", err
 			}
 
-			line += intervalString(childInterval)
+			line += childInterval.String()
 			queue = append(queue, child)
 		}
 		lines = append([]string{line}, lines...)
@@ -814,7 +814,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return nil, false, err
 	}
 
-	if newTreeNodeGHOSTDAGData.BlueScore-reindexRootChosenChildGHOSTDAGData.BlueScore < reachabilityReindexWindow {
+	if newTreeNodeGHOSTDAGData.BlueScore-reindexRootChosenChildGHOSTDAGData.BlueScore < rt.reindexWindow {
 		return nil, false, nil
 	}
 
@@ -883,7 +883,7 @@ func (rt *reachabilityManager) splitChildrenAroundChild(node, child *externalapi
 	}
 
 	for i, candidateChild := range nodeChildren {
-		if candidateChild == child {
+		if *candidateChild == *child {
 			return nodeChildren[:i], nodeChildren[i+1:], nil
 		}
 	}
@@ -904,8 +904,8 @@ func (rt *reachabilityManager) tightenIntervalsBeforeReindexRootChosenChild(
 	}
 
 	intervalBeforeReindexRootStart := newReachabilityInterval(
-		reindexRootInterval.Start+reachabilityReindexSlack,
-		reindexRootInterval.Start+reachabilityReindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
+		reindexRootInterval.Start+rt.reindexSlack,
+		reindexRootInterval.Start+rt.reindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
 	)
 
 	err = rt.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
@@ -931,8 +931,8 @@ func (rt *reachabilityManager) tightenIntervalsAfterReindexRootChosenChild(
 	}
 
 	intervalAfterReindexRootEnd := newReachabilityInterval(
-		reindexRootInterval.End-reachabilityReindexSlack-reindexRootChildNodesAfterChosenSizesSum,
-		reindexRootInterval.End-reachabilityReindexSlack-1,
+		reindexRootInterval.End-rt.reindexSlack-reindexRootChildNodesAfterChosenSizesSum,
+		reindexRootInterval.End-rt.reindexSlack-1,
 	)
 
 	err = rt.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
@@ -953,8 +953,8 @@ func (rt *reachabilityManager) expandIntervalInReindexRootChosenChild(reindexRoo
 	}
 
 	newReindexRootChildInterval := newReachabilityInterval(
-		reindexRootInterval.Start+reindexRootChildNodesBeforeChosenSizesSum+reachabilityReindexSlack,
-		reindexRootInterval.End-reindexRootChildNodesAfterChosenSizesSum-reachabilityReindexSlack-1,
+		reindexRootInterval.Start+reindexRootChildNodesBeforeChosenSizesSum+rt.reindexSlack,
+		reindexRootInterval.End-reindexRootChildNodesAfterChosenSizesSum-rt.reindexSlack-1,
 	)
 
 	reindexRootChosenChildInterval, err := rt.interval(reindexRootChosenChild)
@@ -973,8 +973,8 @@ func (rt *reachabilityManager) expandIntervalInReindexRootChosenChild(reindexRoo
 		// reindex root moves), newReindexRootChildInterval is likely to
 		// contain reindexRootChosenChild.Interval.
 		err := rt.stageInterval(reindexRootChosenChild, newReachabilityInterval(
-			newReindexRootChildInterval.Start+reachabilityReindexSlack,
-			newReindexRootChildInterval.End-reachabilityReindexSlack,
+			newReindexRootChildInterval.Start+rt.reindexSlack,
+			newReindexRootChildInterval.End-rt.reindexSlack,
 		))
 		if err != nil {
 			return err

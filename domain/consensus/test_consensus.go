@@ -1,21 +1,22 @@
 package consensus
 
 import (
-	"errors"
-	"math"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
+	"math/rand"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/util"
 )
 
 type testConsensus struct {
 	*consensus
+	rd *rand.Rand
+
 	testBlockBuilder          model.TestBlockBuilder
+	testReachabilityManager   model.TestReachabilityManager
 	testConsensusStateManager model.TestConsensusStateManager
 }
 
@@ -48,28 +49,16 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, err
 	}
 
-	solveBlock(block)
+	return tc.SolveAndAddBlock(block)
+}
 
-	// Use blockProcessor.ValidateAndInsertBlock instead of tc.ValidateAndInsertBlock to avoid double-locking
-	// the conscensus lock.
-	err = tc.blockProcessor.ValidateAndInsertBlock(block)
+func (tc *testConsensus) SolveAndAddBlock(block *externalapi.DomainBlock) (*externalapi.DomainHash, error) {
+	mining.SolveBlock(block, tc.rd)
+
+	err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
 		return nil, err
 	}
 
 	return consensusserialization.BlockHash(block), nil
-}
-
-func solveBlock(block *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
-
-	for i := uint64(0); i < math.MaxUint64; i++ {
-		block.Header.Nonce = i
-		hash := consensusserialization.BlockHash(block)
-		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
-			return
-		}
-	}
-
-	panic(errors.New("went over all the nonce space and couldn't find a single one that gives a valid block"))
 }

@@ -36,7 +36,8 @@ func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Do
 	if err != nil {
 		return nil, err
 	}
-	timeInMilliseconds, err := bb.newBlockTime()
+
+	timeInMilliseconds, err := bb.pastMedianTimeManager.PastMedianTime(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}

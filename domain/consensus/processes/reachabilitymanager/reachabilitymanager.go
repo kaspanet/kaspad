@@ -9,23 +9,24 @@ import (
 // reachability queries in sub-linear time
 type reachabilityManager struct {
 	databaseContext       model.DBReader
-	blockRelationStore    model.BlockRelationStore
 	reachabilityDataStore model.ReachabilityDataStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
+	reindexSlack          uint64
+	reindexWindow         uint64
 }
 
 // New instantiates a new reachabilityManager
 func New(
 	databaseContext model.DBReader,
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 ) model.ReachabilityManager {
 	return &reachabilityManager{
 		databaseContext:       databaseContext,
 		ghostdagDataStore:     ghostdagDataStore,
-		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
+		reindexSlack:          defaultReindexSlack,
+		reindexWindow:         defaultReindexWindow,
 	}
 }
 
