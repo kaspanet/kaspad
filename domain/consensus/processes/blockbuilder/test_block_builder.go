@@ -103,7 +103,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 		return nil, err
 	}
 
-	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)
+	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(tempBlockHash, coinbaseData)
 	if err != nil {
 		return nil, err
 	}
