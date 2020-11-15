@@ -16,12 +16,12 @@ const uint32Size = 4
 func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
 
-	err := serializeOutpoint(w, outpoint)
+	err := SerializeOutpoint(w, outpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	err = serializeUTXOEntry(w, entry)
+	err = SerializeUTXOEntry(w, entry)
 	if err != nil {
 		return nil, err
 	}
@@ -32,12 +32,12 @@ func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOut
 // DeserializeUTXO deserializes the given byte slice to UTXOEntry-outpoint pair
 func DeserializeUTXO(utxoBytes []byte) (entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint, err error) {
 	r := bytes.NewReader(utxoBytes)
-	outpoint, err = deserializeOutpoint(r)
+	outpoint, err = DeserializeOutpoint(r)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	entry, err = deserializeUTXOEntry(r)
+	entry, err = DeserializeUTXOEntry(r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -45,7 +45,7 @@ func DeserializeUTXO(utxoBytes []byte) (entry *externalapi.UTXOEntry, outpoint *
 	return entry, outpoint, nil
 }
 
-func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
+func SerializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 	_, err := w.Write(outpoint.TransactionID[:])
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 	return nil
 }
 
-func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
+func DeserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	transactionIDBytes := make([]byte, externalapi.DomainHashSize)
 	_, err := io.ReadFull(r, transactionIDBytes)
 	if err != nil {
@@ -89,7 +89,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	}, nil
 }
 
-func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
+func SerializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 	err := writeElements(w, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 	return nil
 }
 
-func deserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
+func DeserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
 	entry := &externalapi.UTXOEntry{}
 	err := readElements(r, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
 	if err != nil {

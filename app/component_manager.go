@@ -3,6 +3,8 @@ package app
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/app/wallet"
+	"github.com/kaspanet/kaspad/domain/addressindex"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sync/atomic"
 
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -102,7 +104,9 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, interrupt)
+
+	utxoAddressIndex := addressindex.NewIndex(db, cfg.MaxUTXOCacheSize)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoAddressIndex, interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -122,16 +126,39 @@ func setupRPC(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoAddressIndex *addressindex.Index,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
-
 	rpcManager := rpc.NewManager(
-		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
+		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoAddressIndex, shutDownChan)
 
 	if cfg.Wallet {
 		walletManager := wallet.NewManager(rpcManager)
 		walletManager.RegisterWalletHandlers(rpcManager)
-		protocolManager.SetOnBlockAddedToDAGHandler(walletManager.NotifyBlockAddedToDAG)
+		protocolManager.SetOnBlockAddedToDAGHandler(func(block *externalapi.DomainBlock) error {
+			changedUTXOs, err := utxoAddressIndex.AddBlock(block, cfg.NetParams().Prefix)
+			if err != nil{
+				return err
+			}
+			var changedAddresses []string
+			for changedAddress := range changedUTXOs{
+				changedAddresses = append(changedAddresses, changedAddress)
+			}
+
+			if len(changedAddresses) > 0{
+				err = walletManager.NotifyUTXOOfAddressChanged(changedAddresses)
+				if err != nil{
+					return err
+				}
+			}
+
+			err = walletManager.NotifyBlockAddedToDAG(block)
+			if err != nil{
+				return err
+			}
+
+			return nil
+		})
 	}
 
 	return rpcManager

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/wallet/walletnotification"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/addressindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
@@ -18,6 +19,7 @@ type Context struct {
 	ProtocolManager   *protocol.Manager
 	ConnectionManager *connmanager.ConnectionManager
 	AddressManager    *addressmanager.AddressManager
+	UTXOAddressIndex  *addressindex.Index
 	ShutDownChan      chan<- struct{}
 
 	NotificationManager *walletnotification.Manager
@@ -30,6 +32,7 @@ func NewContext(cfg *config.Config,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoAddressIndex *addressindex.Index,
 	shutDownChan chan<- struct{}) *Context {
 
 	context := &Context{
@@ -40,6 +43,7 @@ func NewContext(cfg *config.Config,
 		ConnectionManager: connectionManager,
 		AddressManager:    addressManager,
 		ShutDownChan:      shutDownChan,
+		UTXOAddressIndex:  utxoAddressIndex,
 	}
 	return context
 }

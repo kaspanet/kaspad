@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/addressindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
@@ -40,6 +41,7 @@ func NewManager(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoAddressIndex *addressindex.Index,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
@@ -50,6 +52,7 @@ func NewManager(
 			protocolManager,
 			connectionManager,
 			addressManager,
+			utxoAddressIndex,
 			shutDownChan,
 		),
 	}
