@@ -26,7 +26,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		// Add chain of defaultReindexWindow blocks above chainRootBlock.
+		// Add chain of reachabilityReindexWindow blocks above chainRootBlock.
 		// This should move the reindex root
 		chainRootBlockTipHash := chainRootBlock
 		for i := uint64(0); i < reachabilityReindexWindow; i++ {
@@ -115,8 +115,8 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Make sure that tight intervals have been applied to chain2. Since
-		// we added defaultReindexWindow-1 blocks to chain2, the size
-		// of the interval at its root should be equal to defaultReindexWindow
+		// we added reachabilityReindexWindow-1 blocks to chain2, the size
+		// of the interval at its root should be equal to reachabilityReindexWindow
 		if intervalSize(chain2RootBlock) != reachabilityReindexWindow {
 			t.Fatalf("got unexpected chain2RootBlock interval. Want: %d, got: %d",
 				intervalSize(chain2RootBlock), reachabilityReindexWindow)
@@ -169,7 +169,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		// Add a chain of defaultReindexWindow blocks above centerBlock.
+		// Add a chain of reachabilityReindexWindow blocks above centerBlock.
 		// This will move the reindex root to centerBlock
 		centerTipHash := centerBlock
 		for i := uint64(0); i < reachabilityReindexWindow; i++ {
@@ -212,7 +212,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				expectedCenterInterval, intervalSize(centerBlock))
 		}
 
-		// Add a chain of defaultReindexWindow - 1 blocks above leftBlock.
+		// Add a chain of reachabilityReindexWindow - 1 blocks above leftBlock.
 		// Each addition will trigger a low-than-reindex-root reindex. We
 		// expect the centerInterval to shrink by 1 each time, but its child
 		// to remain unaffected
@@ -242,7 +242,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			}
 		}
 
-		// Add a chain of defaultReindexWindow - 1 blocks above rightBlock.
+		// Add a chain of reachabilityReindexWindow - 1 blocks above rightBlock.
 		// Each addition will trigger a low-than-reindex-root reindex. We
 		// expect the centerInterval to shrink by 1 each time, but its child
 		// to remain unaffected
@@ -279,7 +279,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
-		// Add a chain of defaultReindexWindow + 1 blocks above the genesis.
+		// Add a chain of reachabilityReindexWindow + 1 blocks above the genesis.
 		// This will set the reindex root to the child of genesis
 		chainTipHash := params.GenesisHash
 		for i := uint64(0); i < reachabilityReindexWindow+1; i++ {
