@@ -1,11 +1,12 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
@@ -282,6 +283,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		headerTipsStore:       headerTipsStore,
 		multisetStore:         multisetStore,
 		reachabilityDataStore: reachabilityDataStore,
+		utxoDiffStore:         utxoDiffStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
@@ -317,20 +319,20 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
 
-	testBlockBuilder := blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder)
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
-	tc = &testConsensus{
-		rd:               rand.New(rand.NewSource(0)),
+
+	tstConsensus := &testConsensus{
+		rd:                        rand.New(rand.NewSource(0)),
 		consensus:                 consensusAsImplementation,
-		testBlockBuilder:          testBlockBuilder,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
 			reachabilityManager),
 	}
+	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
 	teardown = func() {
 		db.Close()
 		os.RemoveAll(testDatabaseDir)
 	}
 
-	return tc, teardown, nil
+	return tstConsensus, teardown, nil
 }

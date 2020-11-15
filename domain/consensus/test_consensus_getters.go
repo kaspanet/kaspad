@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
 )
 
 func (tc *testConsensus) DatabaseContext() model.DBReader {
@@ -58,7 +57,7 @@ func (tc *testConsensus) UTXODiffStore() model.UTXODiffStore {
 }
 
 func (tc *testConsensus) BlockBuilder() model.TestBlockBuilder {
-	return blockbuilder.NewTestBlockBuilder(tc.blockBuilder)
+	return tc.testBlockBuilder
 }
 
 func (tc *testConsensus) BlockProcessor() model.BlockProcessor {
