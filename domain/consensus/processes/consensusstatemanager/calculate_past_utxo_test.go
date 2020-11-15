@@ -27,8 +27,7 @@ func TestUTXOCommitment(t *testing.T) {
 		genesisHash := params.GenesisHash
 
 		// Block A:
-		blockAHash, err := consensus.AddBlock(
-			[]*externalapi.DomainHash{genesisHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		blockAHash, err := consensus.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}
@@ -37,8 +36,7 @@ func TestUTXOCommitment(t *testing.T) {
 			t.Fatalf("Error getting block A: %+v", err)
 		}
 		// Block B:
-		blockBHash, err := consensus.AddBlock(
-			[]*externalapi.DomainHash{blockAHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		blockBHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block B: %+v", err)
 		}
@@ -47,14 +45,13 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating transaction: %+v", err)
 		}
-		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, testutils.SimpleCoinbaseData,
+		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil,
 			[]*externalapi.DomainTransaction{blockCTransaction})
 		if err != nil {
 			t.Fatalf("Error creating block C: %+v", err)
 		}
 		// Block D:
-		blockDHash, err := consensus.AddBlock(
-			[]*externalapi.DomainHash{blockBHash, blockCHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		blockDHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash, blockCHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block D: %+v", err)
 		}
@@ -108,8 +105,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		// Build a short chain
 		currentHash := params.GenesisHash
 		for i := 0; i < 3; i++ {
-			currentHash, err = consensus.AddBlock(
-				[]*externalapi.DomainHash{currentHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+			currentHash, err = consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating block A: %+v", err)
 			}
@@ -126,8 +122,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		firstMultisetHash := firstMultiset.Hash()
 
 		// Add another block on top of testedBlock
-		_, err = consensus.AddBlock(
-			[]*externalapi.DomainHash{testedBlockHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		_, err = consensus.AddBlock([]*externalapi.DomainHash{testedBlockHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}

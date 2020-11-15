@@ -26,13 +26,11 @@ func TestDoubleSpends(t *testing.T) {
 		defer teardown()
 
 		// Mine chain of two blocks to fund our double spend
-		firstBlockHash, err := consensus.AddBlock(
-			[]*externalapi.DomainHash{params.GenesisHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		firstBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating firstBlock: %+v", err)
 		}
-		fundingBlockHash, err := consensus.AddBlock(
-			[]*externalapi.DomainHash{firstBlockHash}, testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{})
+		fundingBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{firstBlockHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock: %+v", err)
 		}
@@ -61,7 +59,7 @@ func TestDoubleSpends(t *testing.T) {
 		}
 
 		// Mine a block with spendingTransaction1 and make sure that it's valid
-		goodBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, testutils.SimpleCoinbaseData,
+		goodBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1})
 		if err != nil {
 			t.Fatalf("Error adding goodBlock1: %+v", err)
@@ -76,8 +74,8 @@ func TestDoubleSpends(t *testing.T) {
 
 		// To check that a block containing the same transaction already in it's past is disqualified:
 		// Add a block on top of goodBlock, containing spendingTransaction1, and make sure it's disqualified
-		doubleSpendingBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash},
-			testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{spendingTransaction1})
+		doubleSpendingBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+			[]*externalapi.DomainTransaction{spendingTransaction1})
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock1: %+v", err)
 		}
@@ -93,8 +91,8 @@ func TestDoubleSpends(t *testing.T) {
 		// To check that a block containing a transaction that double-spends a transaction that
 		// is in it's past is disqualified:
 		// Add a block on top of goodBlock, containing spendingTransaction2, and make sure it's disqualified
-		doubleSpendingBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash},
-			testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{spendingTransaction2})
+		doubleSpendingBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+			[]*externalapi.DomainTransaction{spendingTransaction2})
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock2: %+v", err)
 		}
@@ -110,8 +108,8 @@ func TestDoubleSpends(t *testing.T) {
 		// To make sure that a block double-spending itself is rejected:
 		// Add a block on top of goodBlock, containing both spendingTransaction1 and spendingTransaction2, and make
 		// sure AddBlock returns a RuleError
-		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash},
-			testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
+		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
 		if err == nil {
 			t.Fatalf("No error when adding a self-double-spending block")
 		}
@@ -123,8 +121,8 @@ func TestDoubleSpends(t *testing.T) {
 		// To make sure that a block containing the same transaction twice is rejected:
 		// Add a block on top of goodBlock, containing spendingTransaction1 twice, and make
 		// sure AddBlock returns a RuleError
-		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash},
-			testutils.SimpleCoinbaseData, []*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
+		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
 		if err == nil {
 			t.Fatalf("No error when adding a block containing the same transactin twice")
 		}
@@ -135,7 +133,7 @@ func TestDoubleSpends(t *testing.T) {
 
 		// Check that a block will not get disqualified if it has a transaction that double spends
 		// a transaction from its anticone.
-		goodBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, testutils.SimpleCoinbaseData,
+		goodBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction2})
 		if err != nil {
 			t.Fatalf("Error adding goodBlock: %+v", err)
