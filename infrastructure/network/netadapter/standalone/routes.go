@@ -16,6 +16,7 @@ type Routes struct {
 	netConnection                *netadapter.NetConnection
 	IncomingRoute, OutgoingRoute *router.Route
 	handshakeRoute               *router.Route
+	addressesRoute               *router.Route
 	pingRoute                    *router.Route
 }
 
