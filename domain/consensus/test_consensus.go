@@ -16,7 +16,7 @@ type testConsensus struct {
 	testReachabilityManager model.TestReachabilityManager
 }
 
-func (tc *testConsensus) DBReader() model.DBReader {
+func (tc *testConsensus) DatabaseContext() model.DBReader {
 	return tc.consensus.databaseContext
 }
 

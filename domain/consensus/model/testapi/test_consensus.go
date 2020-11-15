@@ -9,7 +9,7 @@ import (
 type TestConsensus interface {
 	externalapi.Consensus
 
-	DBReader() model.DBReader
+	DatabaseContext() model.DBReader
 
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error)

@@ -58,7 +58,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DBReader(), hash)
+			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
@@ -88,7 +88,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DBReader())
+			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 			if err != nil {
 				t.Fatalf("ReachabilityReindexRoot: %s", err)
 			}
@@ -105,7 +105,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Make sure that chain1RootBlock is now the reindex root
-		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DBReader())
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
@@ -146,7 +146,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DBReader(), hash)
+			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
@@ -181,7 +181,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		}
 
 		// Make sure that centerBlock is now the reindex root
-		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DBReader())
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
@@ -216,7 +216,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		// Each addition will trigger a low-than-reindex-root reindex. We
 		// expect the centerInterval to shrink by 1 each time, but its child
 		// to remain unaffected
-		cetnerData, err := tc.ReachabilityDataStore().ReachabilityData(tc.DBReader(), centerBlock)
+		cetnerData, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), centerBlock)
 		if err != nil {
 			t.Fatalf("ReachabilityData: %s", err)
 		}
