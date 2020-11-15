@@ -66,7 +66,16 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		}
 		newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
 
-		newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
+		newVirtualDiffParents := []*externalapi.DomainHash{}
+		status, err := csm.blockStatusStore.Get(csm.databaseContext, newBlockHash)
+		if err != nil {
+			return err
+		}
+
+		if status == externalapi.StatusValid {
+			newVirtualDiffParents = append(newVirtualDiffParents, newBlockHash)
+		}
+
 		for _, virtualDiffParent := range virtualDiffParents {
 			if !newBlockParents.Contains(virtualDiffParent) {
 				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
