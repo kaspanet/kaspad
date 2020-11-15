@@ -83,24 +83,23 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 		return nil, err
 	}
 
-		newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
-		if err != nil {
-			return nil, err
-		}
+	newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
+	if err != nil {
+		return nil, err
+	}
 
 	newTips := []*externalapi.DomainHash{newTipHash}
 
-		for _, currentTip := range currentTips {
-			isCurrentTipInNewTipParents := false
-			for _, newTipParent := range newTipParents {
-				if *currentTip == *newTipParent {
-					isCurrentTipInNewTipParents = true
-					break
-				}
+	for _, currentTip := range currentTips {
+		isCurrentTipInNewTipParents := false
+		for _, newTipParent := range newTipParents {
+			if *currentTip == *newTipParent {
+				isCurrentTipInNewTipParents = true
+				break
 			}
-			if !isCurrentTipInNewTipParents {
-				newTips = append(newTips, currentTip)
-			}
+		}
+		if !isCurrentTipInNewTipParents {
+			newTips = append(newTips, currentTip)
 		}
 	}
 

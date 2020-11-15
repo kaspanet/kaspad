@@ -1,8 +1,9 @@
 package consensus
 
 import (
-	"errors"
-	"math"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
+	"math/rand"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 
@@ -14,8 +15,8 @@ type testConsensus struct {
 	*consensus
 	rd *rand.Rand
 
-	testBlockBuilder        model.TestBlockBuilder
-	testReachabilityManager model.TestReachabilityManager
+	testBlockBuilder          model.TestBlockBuilder
+	testReachabilityManager   model.TestReachabilityManager
 	testConsensusStateManager model.TestConsensusStateManager
 }
 
