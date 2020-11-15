@@ -34,9 +34,6 @@ var (
 	// ErrNoParents indicates that the block is missing parents
 	ErrNoParents = newRuleError("ErrNoParents")
 
-	// ErrWrongParentsOrder indicates that the block's parents are not ordered by hash, as expected
-	ErrWrongParentsOrder = newRuleError("ErrWrongParentsOrder")
-
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
 	// than the difficulty required.
 	ErrDifficultyTooLow = newRuleError("ErrDifficultyTooLow")
