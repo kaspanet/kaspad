@@ -234,12 +234,12 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		// Each addition will trigger a low-than-reindex-root reindex. We
 		// expect the centerInterval to shrink by 1 each time, but its child
 		// to remain unaffected
-		cetnerData, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), centerBlock)
+		centerData, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), centerBlock)
 		if err != nil {
 			t.Fatalf("ReachabilityData: %s", err)
 		}
 
-		treeChildOfCenterBlock := cetnerData.TreeNode.Children[0]
+		treeChildOfCenterBlock := centerData.TreeNode.Children[0]
 		treeChildOfCenterBlockOriginalIntervalSize := intervalSize(treeChildOfCenterBlock)
 		leftTipHash := leftBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
