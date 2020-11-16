@@ -42,11 +42,11 @@ func domainHashesToProto(hashes []*externalapi.DomainHash) []*Hash {
 	return protoHashes
 }
 
-func (x *TransactionID) toDomain() (*externalapi.DomainTransactionID, error) {
+func (x *TransactionId) toDomain() (*externalapi.DomainTransactionID, error) {
 	return transactionid.FromBytes(x.Bytes)
 }
 
-func protoTransactionIDsToDomain(protoIDs []*TransactionID) ([]*externalapi.DomainTransactionID, error) {
+func protoTransactionIDsToDomain(protoIDs []*TransactionId) ([]*externalapi.DomainTransactionID, error) {
 	txIDs := make([]*externalapi.DomainTransactionID, len(protoIDs))
 	for i, protoID := range protoIDs {
 		var err error
@@ -58,32 +58,32 @@ func protoTransactionIDsToDomain(protoIDs []*TransactionID) ([]*externalapi.Doma
 	return txIDs, nil
 }
 
-func domainTransactionIDToProto(id *externalapi.DomainTransactionID) *TransactionID {
-	return &TransactionID{
+func domainTransactionIDToProto(id *externalapi.DomainTransactionID) *TransactionId {
+	return &TransactionId{
 		Bytes: id[:],
 	}
 }
 
-func wireTransactionIDsToProto(ids []*externalapi.DomainTransactionID) []*TransactionID {
-	protoIDs := make([]*TransactionID, len(ids))
+func wireTransactionIDsToProto(ids []*externalapi.DomainTransactionID) []*TransactionId {
+	protoIDs := make([]*TransactionId, len(ids))
 	for i, hash := range ids {
 		protoIDs[i] = domainTransactionIDToProto(hash)
 	}
 	return protoIDs
 }
 
-func (x *SubnetworkID) toDomain() (*externalapi.DomainSubnetworkID, error) {
+func (x *SubnetworkId) toDomain() (*externalapi.DomainSubnetworkID, error) {
 	if x == nil {
 		return nil, nil
 	}
 	return subnetworks.FromBytes(x.Bytes)
 }
 
-func domainSubnetworkIDToProto(id *externalapi.DomainSubnetworkID) *SubnetworkID {
+func domainSubnetworkIDToProto(id *externalapi.DomainSubnetworkID) *SubnetworkId {
 	if id == nil {
 		return nil
 	}
-	return &SubnetworkID{
+	return &SubnetworkId{
 		Bytes: id[:],
 	}
 }

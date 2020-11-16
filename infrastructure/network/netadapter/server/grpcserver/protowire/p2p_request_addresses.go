@@ -6,7 +6,7 @@ import (
 
 func (x *KaspadMessage_RequestAddresses) toAppMessage() (appmessage.Message, error) {
 	protoGetAddresses := x.RequestAddresses
-	subnetworkID, err := protoGetAddresses.SubnetworkID.toDomain()
+	subnetworkID, err := protoGetAddresses.SubnetworkId.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func (x *KaspadMessage_RequestAddresses) toAppMessage() (appmessage.Message, err
 func (x *KaspadMessage_RequestAddresses) fromAppMessage(msgGetAddresses *appmessage.MsgRequestAddresses) error {
 	x.RequestAddresses = &RequestAddressesMessage{
 		IncludeAllSubnetworks: msgGetAddresses.IncludeAllSubnetworks,
-		SubnetworkID:          domainSubnetworkIDToProto(msgGetAddresses.SubnetworkID),
+		SubnetworkId:          domainSubnetworkIDToProto(msgGetAddresses.SubnetworkID),
 	}
 	return nil
 }

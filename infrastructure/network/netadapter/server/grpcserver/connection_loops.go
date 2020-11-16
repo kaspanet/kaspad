@@ -67,7 +67,9 @@ func (c *gRPCConnection) receiveLoop() error {
 		}
 		message, err := protoMessage.ToAppMessage()
 		if err != nil {
-			c.onInvalidMessageHandler(err)
+			if c.onInvalidMessageHandler != nil {
+				c.onInvalidMessageHandler(err)
+			}
 			return err
 		}
 
@@ -88,7 +90,9 @@ func (c *gRPCConnection) receiveLoop() error {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				return nil
 			}
-			c.onInvalidMessageHandler(err)
+			if c.onInvalidMessageHandler != nil {
+				c.onInvalidMessageHandler(err)
+			}
 			return err
 		}
 	}
