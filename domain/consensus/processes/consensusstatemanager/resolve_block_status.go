@@ -15,11 +15,17 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 		return 0, err
 	}
 
+	// If there's no unverified blocks in the given block's chain - this means the given block already has a
+	// UTXO-verified status, and therefore it should be retrieved from the store and returned
+	if len(unverifiedBlocks) == 0 {
+		return csm.blockStatusStore.Get(csm.databaseContext, blockHash)
+	}
+
+	var blockStatus externalapi.BlockStatus
 	// resolve the unverified blocks' statuses in opposite order
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
 
-		var blockStatus externalapi.BlockStatus
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
@@ -33,7 +39,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 		selectedParentStatus = blockStatus
 	}
 
-	return 0, nil
+	return blockStatus, nil
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatus(blockHash *externalapi.DomainHash) (
