@@ -427,7 +427,7 @@ message AddPeerResponseMessage{
 }
 
 message SubmitTransactionRequestMessage{
-  TransactionMessage transactionMessage = 1;
+  TransactionMessage transaction = 1;
 }
 
 message SubmitTransactionResponseMessage{
