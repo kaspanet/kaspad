@@ -238,12 +238,12 @@ func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
 	return &utxoSetIterator{index: 0, pairs: pairs}
 }
 
-func (u utxoSetIterator) Next() bool {
+func (u *utxoSetIterator) Next() bool {
 	u.index++
 	return u.index < len(u.pairs)
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
 	pair := u.pairs[u.index]
 	return &pair.outpoint, pair.entry, nil
 }
