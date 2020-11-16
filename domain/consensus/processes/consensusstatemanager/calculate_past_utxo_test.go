@@ -3,6 +3,8 @@ package consensusstatemanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
@@ -22,8 +24,9 @@ func TestUTXOCommitment(t *testing.T) {
 		defer teardown()
 
 		// Build the following DAG:
-		// G <- A <- B <- D
-		//        <- C <-
+		// G <- A <- B <- C <- E
+		//             <- D <-
+		// Where block D has a non-coinbase transaction
 		genesisHash := params.GenesisHash
 
 		// Block A:
@@ -31,43 +34,49 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}
-		blockA, err := consensus.GetBlock(blockAHash)
-		if err != nil {
-			t.Fatalf("Error getting block A: %+v", err)
-		}
 		// Block B:
 		blockBHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block B: %+v", err)
 		}
-		// Block C:
-		blockCTransaction, err := testutils.CreateTransaction(blockA.Transactions[0])
+		blockB, err := consensus.GetBlock(blockBHash)
 		if err != nil {
-			t.Fatalf("Error creating transaction: %+v", err)
+			t.Fatalf("Error getting block B: %+v", err)
 		}
-		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil,
-			[]*externalapi.DomainTransaction{blockCTransaction})
+		// Block C:
+		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block C: %+v", err)
 		}
 		// Block D:
-		blockDHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash, blockCHash}, nil, nil)
+		blockDTransaction, err := testutils.CreateTransaction(
+			blockB.Transactions[transactionhelper.CoinbaseTransactionIndex])
+		if err != nil {
+			t.Fatalf("Error creating transaction: %+v", err)
+		}
+		blockDHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil,
+			[]*externalapi.DomainTransaction{blockDTransaction})
 		if err != nil {
 			t.Fatalf("Error creating block D: %+v", err)
 		}
-		blockD, err := consensus.GetBlock(blockDHash)
+		// Block E:
+		blockEHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockCHash, blockDHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Error getting block D: %+v", err)
+			t.Fatalf("Error creating block E: %+v", err)
+		}
+		blockE, err := consensus.GetBlock(blockEHash)
+		if err != nil {
+			t.Fatalf("Error getting block E: %+v", err)
 		}
 
-		// Get the past UTXO set of block D
+		// Get the past UTXO set of block E
 		csm := consensus.ConsensusStateManager()
-		utxoSetIterator, err := csm.RestorePastUTXOSetIterator(blockDHash)
+		utxoSetIterator, err := csm.RestorePastUTXOSetIterator(blockEHash)
 		if err != nil {
-			t.Fatalf("Error restoring past UTXO of block D: %+v", err)
+			t.Fatalf("Error restoring past UTXO of block E: %+v", err)
 		}
 
-		// Build a Multiset for block D
+		// Build a Multiset for block E
 		ms := multiset.New()
 		for utxoSetIterator.Next() {
 			outpoint, entry, err := utxoSetIterator.Get()
@@ -84,10 +93,10 @@ func TestUTXOCommitment(t *testing.T) {
 		utxoCommitment := ms.Hash()
 
 		// Make sure that the two commitments are equal
-		if *utxoCommitment != blockD.Header.UTXOCommitment {
+		if *utxoCommitment != blockE.Header.UTXOCommitment {
 			t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
 				"actual UTXO commitment don't match. Want: %s, got: %s",
-				utxoCommitment, blockD.Header.UTXOCommitment)
+				utxoCommitment, blockE.Header.UTXOCommitment)
 		}
 	})
 }
