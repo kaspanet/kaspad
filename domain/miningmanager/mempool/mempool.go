@@ -621,7 +621,7 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 			return missingOutpoints.MissingOutpoints, nil, nil
 		}
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, nil, wrapInTxRuleError(RejectInvalid, err)
+			return nil, nil, newRuleError(err)
 		}
 		return nil, nil, err
 	}
