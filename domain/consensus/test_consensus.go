@@ -38,9 +38,11 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
+	scriptPublicKey, _ := testutils.OpTrueScript()
+
 	if coinbaseData == nil {
 		coinbaseData = &externalapi.DomainCoinbaseData{
-			ScriptPublicKey: testutils.OpTrueScript(),
+			ScriptPublicKey: scriptPublicKey,
 			ExtraData:       []byte{},
 		}
 	}
