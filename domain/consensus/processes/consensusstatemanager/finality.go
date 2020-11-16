@@ -8,6 +8,10 @@ import (
 func (csm *consensusStateManager) checkFinalityViolation(
 	blockHash *externalapi.DomainHash) error {
 
+	if *blockHash == *csm.genesisHash {
+		return nil
+	}
+
 	isViolatingFinality, err := csm.isViolatingFinality(blockHash)
 	if err != nil {
 		return err
