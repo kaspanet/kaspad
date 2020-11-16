@@ -36,4 +36,6 @@ func (s SyncState) String() string {
 type SyncInfo struct {
 	State                SyncState
 	IBDRootUTXOBlockHash *DomainHash
+	HeaderCount          uint64
+	BlockCount           uint64
 }

@@ -143,3 +143,15 @@ func (bms *blockHeaderStore) cloneHeader(header *externalapi.DomainBlockHeader) 
 
 	return bms.deserializeHeader(serialized)
 }
+
+func (bms *blockHeaderStore) Count(dbContext model.DBReader) (uint64, error) {
+	cursor, err := dbContext.Cursor(bucket)
+	if err != nil {
+		return 0, err
+	}
+	count := uint64(0)
+	for cursor.Next() {
+		count++
+	}
+	return count, nil
+}

@@ -25,9 +25,20 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 		}
 	}
 
+	headerCount, err := sm.getHeaderCount()
+	if err != nil {
+		return nil, err
+	}
+	blockCount, err := sm.getBlockCount()
+	if err != nil {
+		return nil, err
+	}
+
 	return &externalapi.SyncInfo{
 		State:                syncState,
 		IBDRootUTXOBlockHash: ibdRootUTXOBlockHash,
+		HeaderCount:          headerCount,
+		BlockCount:           blockCount,
 	}, nil
 }
 
@@ -110,4 +121,12 @@ func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *exte
 	maxTimeDifference := areHeaderTipsSyncedMaxTimeDifference * sm.targetTimePerBlock
 
 	return timeDifference <= maxTimeDifference, nil
+}
+
+func (sm *syncManager) getHeaderCount() (uint64, error) {
+	return sm.blockHeaderStore.Count(sm.databaseContext)
+}
+
+func (sm *syncManager) getBlockCount() (uint64, error) {
+	return sm.blockStore.Count(sm.databaseContext)
 }
