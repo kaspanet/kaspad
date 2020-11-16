@@ -1,10 +1,9 @@
 package consensusstatemanager
 
 import (
-	"errors"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -186,7 +185,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 }
 
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (model.ReadOnlyUTXOSetIterator, error) {
-	diff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
+	blockDiff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -196,25 +195,25 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, err
 	}
 
-	pastUTXO := model.NewUTXODiff()
+	virtualUTXO := model.NewUTXODiff()
 	for virtualUTXOSetIterator.Next() {
 		outpoint, utxoEntry, err := virtualUTXOSetIterator.Get()
 		if err != nil {
 			return nil, err
 		}
-		pastUTXO.ToAdd[*outpoint] = utxoEntry
+		virtualUTXO.ToAdd[*outpoint] = utxoEntry
 	}
 
-	diff, err = utxoalgebra.WithDiff(pastUTXO, diff)
+	blockUTXO, err := utxoalgebra.WithDiff(virtualUTXO, blockDiff)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(diff.ToRemove) > 0 {
-		return nil, errors.New("diff.ToRemove is expected to be empty")
+	if len(blockUTXO.ToRemove) > 0 {
+		return nil, errors.New("blockUTXO.ToRemove is expected to be empty")
 	}
 
-	return newUTXOSetIterator(diff.ToAdd), nil
+	return newUTXOSetIterator(blockUTXO.ToAdd), nil
 }
 
 type utxoOutpointEntryPair struct {
