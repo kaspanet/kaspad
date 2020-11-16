@@ -119,6 +119,14 @@ func (csm *consensusStateManager) updateParentDiffs(
 			continue
 		}
 
+		parentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, parentHash)
+		if err != nil {
+			return err
+		}
+		if parentStatus != externalapi.StatusValid {
+			continue
+		}
+
 		// parents that till now didn't have a utxo-diff child - were actually virtual's diffParents.
 		// Update them to have the new block as their utxo-diff child
 		parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
