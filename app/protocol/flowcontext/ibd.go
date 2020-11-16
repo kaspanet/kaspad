@@ -56,28 +56,24 @@ func (f *FlowContext) selectPeerForIBD(syncInfo *externalapi.SyncInfo) (*peerpkg
 	f.peersMutex.RLock()
 	defer f.peersMutex.RUnlock()
 
-	if syncInfo.State == externalapi.SyncStateHeadersFirst {
-		for _, peer := range f.peers {
-			peerSelectedTipHash := peer.SelectedTipHash()
-			blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
-			if err != nil {
-				return nil, err
-			}
+	for _, peer := range f.peers {
+		peerSelectedTipHash := peer.SelectedTipHash()
+		blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
+		if err != nil {
+			return nil, err
+		}
 
-			if syncInfo.State == externalapi.SyncStateHeadersFirst {
-				if !blockInfo.Exists {
-					return peer, nil
-				}
-			} else {
-				if blockInfo.Exists && blockInfo.BlockStatus == externalapi.StatusHeaderOnly &&
-					blockInfo.IsBlockInHeaderPruningPointFuture {
-					return peer, nil
-				}
+		if syncInfo.State == externalapi.SyncStateHeadersFirst {
+			if !blockInfo.Exists {
+				return peer, nil
+			}
+		} else {
+			if blockInfo.Exists && blockInfo.BlockStatus == externalapi.StatusHeaderOnly &&
+				blockInfo.IsBlockInHeaderPruningPointFuture {
+				return peer, nil
 			}
 		}
-		return nil, nil
 	}
-
 	return nil, nil
 }
 
