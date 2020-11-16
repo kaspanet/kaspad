@@ -3,6 +3,8 @@ package consensusstatemanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -34,6 +36,7 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}
+		checkBlockUTXOCommitment(t, consensus, blockAHash, "A")
 		// Block B:
 		blockBHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
@@ -43,11 +46,13 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting block B: %+v", err)
 		}
+		checkBlockUTXOCommitment(t, consensus, blockBHash, "B")
 		// Block C:
 		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block C: %+v", err)
 		}
+		checkBlockUTXOCommitment(t, consensus, blockCHash, "C")
 		// Block D:
 		blockDTransaction, err := testutils.CreateTransaction(
 			blockB.Transactions[transactionhelper.CoinbaseTransactionIndex])
@@ -59,46 +64,51 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating block D: %+v", err)
 		}
+		checkBlockUTXOCommitment(t, consensus, blockDHash, "D")
 		// Block E:
 		blockEHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockCHash, blockDHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block E: %+v", err)
 		}
-		blockE, err := consensus.GetBlock(blockEHash)
-		if err != nil {
-			t.Fatalf("Error getting block E: %+v", err)
-		}
-
-		// Get the past UTXO set of block E
-		csm := consensus.ConsensusStateManager()
-		utxoSetIterator, err := csm.RestorePastUTXOSetIterator(blockEHash)
-		if err != nil {
-			t.Fatalf("Error restoring past UTXO of block E: %+v", err)
-		}
-
-		// Build a Multiset for block E
-		ms := multiset.New()
-		for utxoSetIterator.Next() {
-			outpoint, entry, err := utxoSetIterator.Get()
-			if err != nil {
-				t.Fatalf("Error getting from UTXOSet iterator: %+v", err)
-			}
-			err = consensus.ConsensusStateManager().AddUTXOToMultiset(ms, entry, outpoint)
-			if err != nil {
-				t.Fatalf("Error adding utxo to multiset: %+v", err)
-			}
-		}
-
-		// Turn the multiset into a UTXO commitment
-		utxoCommitment := ms.Hash()
-
-		// Make sure that the two commitments are equal
-		if *utxoCommitment != blockE.Header.UTXOCommitment {
-			t.Fatalf("TestUTXOCommitment: calculated UTXO commitment and "+
-				"actual UTXO commitment don't match. Want: %s, got: %s",
-				utxoCommitment, blockE.Header.UTXOCommitment)
-		}
+		checkBlockUTXOCommitment(t, consensus, blockEHash, "E")
 	})
+}
+
+func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blockHash *externalapi.DomainHash, blockName string) {
+	block, err := consensus.GetBlock(blockHash)
+	if err != nil {
+		t.Fatalf("Error getting block %s: %+v", blockName, err)
+	}
+
+	// Get the past UTXO set of block
+	csm := consensus.ConsensusStateManager()
+	utxoSetIterator, err := csm.RestorePastUTXOSetIterator(blockHash)
+	if err != nil {
+		t.Fatalf("Error restoring past UTXO of block %s: %+v", blockName, err)
+	}
+
+	// Build a Multiset
+	ms := multiset.New()
+	for utxoSetIterator.Next() {
+		outpoint, entry, err := utxoSetIterator.Get()
+		if err != nil {
+			t.Fatalf("Error getting from UTXOSet iterator: %+v", err)
+		}
+		err = consensus.ConsensusStateManager().AddUTXOToMultiset(ms, entry, outpoint)
+		if err != nil {
+			t.Fatalf("Error adding utxo to multiset: %+v", err)
+		}
+	}
+
+	// Turn the multiset into a UTXO commitment
+	utxoCommitment := ms.Hash()
+
+	// Make sure that the two commitments are equal
+	if *utxoCommitment != block.Header.UTXOCommitment {
+		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment for block %s and "+
+			"actual UTXO commitment don't match. Want: %s, got: %s", blockName,
+			utxoCommitment, block.Header.UTXOCommitment)
+	}
 }
 
 func TestPastUTXOMultiset(t *testing.T) {
