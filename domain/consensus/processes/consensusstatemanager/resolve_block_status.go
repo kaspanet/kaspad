@@ -82,7 +82,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	err = csm.verifyAndBuildUTXO(block, blockHash, pastUTXODiff, acceptanceData, multiset)
+	err = csm.verifyUTXO(block, blockHash, pastUTXODiff, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			return externalapi.StatusDisqualifiedFromChain, nil

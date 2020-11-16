@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
-func TestIsInPast(t *testing.T) {
+func TestIsAncestorOf(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestIsInPast")
