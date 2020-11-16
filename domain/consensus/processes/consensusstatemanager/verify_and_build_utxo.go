@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) verifyAndBuildUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
+func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
 	pastUTXODiff *model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
 
 	err := csm.validateUTXOCommitment(block, blockHash, multiset)

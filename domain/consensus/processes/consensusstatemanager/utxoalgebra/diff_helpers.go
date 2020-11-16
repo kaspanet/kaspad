@@ -31,9 +31,10 @@ func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.Domai
 	}
 
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
+	transactionID := *consensusserialization.TransactionID(transaction)
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			TransactionID: *consensusserialization.TransactionID(transaction),
+			TransactionID: transactionID,
 			Index:         uint32(i),
 		}
 		entry := &externalapi.UTXOEntry{
