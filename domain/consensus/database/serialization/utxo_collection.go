@@ -8,8 +8,9 @@ func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) []*Db
 	items := make([]*DbUtxoCollectionItem, len(utxoCollection))
 	i := 0
 	for outpoint, entry := range utxoCollection {
+		outpointCopy := outpoint
 		items[i] = &DbUtxoCollectionItem{
-			Outpoint:  DomainOutpointToDbOutpoint(&outpoint),
+			Outpoint:  DomainOutpointToDbOutpoint(&outpointCopy),
 			UtxoEntry: UTXOEntryToDBUTXOEntry(entry),
 		}
 		i++
