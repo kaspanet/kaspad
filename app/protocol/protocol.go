@@ -50,15 +50,9 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			return
 		}
 
-		spawn("Manager.routerInitializer-netConnection.DequeueInvalidMessage", func() {
-			for {
-				isOpen, err := netConnection.DequeueInvalidMessage()
-				if !isOpen {
-					return
-				}
-				if atomic.AddUint32(&isStopping, 1) == 1 {
-					errChan <- protocolerrors.Wrap(true, err, "received bad message")
-				}
+		netConnection.SetOnInvalidMessageHandler(func(err error) {
+			if atomic.AddUint32(&isStopping, 1) == 1 {
+				errChan <- protocolerrors.Wrap(true, err, "received bad message")
 			}
 		})
 
