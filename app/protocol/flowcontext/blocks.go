@@ -20,12 +20,20 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 
-	f.Domain().MiningManager().HandleNewBlockTransactions(block.Transactions)
+	unorphanedBlocks, err := f.UnorphanBlocks()
+	if err != nil {
+		return err
+	}
 
-	if f.onBlockAddedToDAGHandler != nil {
-		err := f.onBlockAddedToDAGHandler(block)
-		if err != nil {
-			return err
+	blocksToAnnounce := append([]*externalapi.DomainBlock{block}, unorphanedBlocks...)
+	for _, blockToAnnounce := range blocksToAnnounce {
+		f.Domain().MiningManager().HandleNewBlockTransactions(blockToAnnounce.Transactions)
+
+		if f.onBlockAddedToDAGHandler != nil {
+			err := f.onBlockAddedToDAGHandler(blockToAnnounce)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

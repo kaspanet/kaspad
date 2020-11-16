@@ -14,16 +14,17 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphans[*orphanHash] = orphanBlock
 }
 
-func (f *FlowContext) UnorphanBlocks(blockHash *externalapi.DomainHash) error {
+func (f *FlowContext) UnorphanBlocks() ([]*externalapi.DomainBlock, error) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
 
+	unorphanedBlocks := make([]*externalapi.DomainBlock, 0)
 	for orphanHash, orphanBlock := range f.orphans {
 		canBeUnorphaned := true
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
 			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if !orphanBlockParentInfo.Exists {
 				canBeUnorphaned = false
@@ -31,10 +32,14 @@ func (f *FlowContext) UnorphanBlocks(blockHash *externalapi.DomainHash) error {
 			}
 		}
 		if canBeUnorphaned {
-			return f.unorphanBlock(orphanHash)
+			err := f.unorphanBlock(orphanHash)
+			if err != nil {
+				return nil, err
+			}
+			unorphanedBlocks = append(unorphanedBlocks, orphanBlock)
 		}
 	}
-	return nil
+	return unorphanedBlocks, nil
 }
 
 func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) error {
@@ -43,10 +48,6 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) error {
 		return errors.Errorf("attempted to unorphan a non-orphan block")
 	}
 	err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
-	if err != nil {
-		return err
-	}
-	err = f.OnNewBlock(orphanBlock)
 	if err != nil {
 		return err
 	}
