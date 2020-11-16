@@ -136,26 +136,6 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 
 	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff)
 	if err != nil {
-		return false, 0, err
-	}
-
-	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
-	if transactionhelper.IsCoinBase(transaction) {
-		if !isSelectedParent {
-			return false, accumulatedMassBefore, nil
-		}
-
-		err := utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
-		if err != nil {
-			return false, 0, err
-		}
-
-		return true, accumulatedMassBefore, nil
-	}
-
-	err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-		transaction, blockHash, selectedParentPastMedianTime)
-	if err != nil {
 		if !errors.As(err, &(ruleerrors.RuleError{})) {
 			return false, 0, err
 		}
@@ -163,9 +143,31 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 		return false, accumulatedMassBefore, nil
 	}
 
-	isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
+	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
+	if transactionhelper.IsCoinBase(transaction) {
+		if !isSelectedParent {
+			return false, accumulatedMassBefore, nil
+		}
+	} else {
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+			transaction, blockHash, selectedParentPastMedianTime)
+		if err != nil {
+			if !errors.As(err, &(ruleerrors.RuleError{})) {
+				return false, 0, err
+			}
 
-	return isAccepted, accumulatedMassAfter, nil
+			return false, accumulatedMassBefore, nil
+		}
+
+		isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
+	}
+
+	err = utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
+	if err != nil {
+		return false, 0, err
+	}
+
+	return true, accumulatedMassAfter, nil
 }
 
 func (csm *consensusStateManager) checkTransactionMass(
