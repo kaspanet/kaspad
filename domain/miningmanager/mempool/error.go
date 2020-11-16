@@ -94,6 +94,10 @@ func txRuleError(c RejectCode, desc string) RuleError {
 	}
 }
 
+func wrapInTxRuleError(rejectCode RejectCode, err error) RuleError {
+	return txRuleError(rejectCode, err.Error())
+}
+
 // extractRejectCode attempts to return a relevant reject code for a given error
 // by examining the error for known types. It will return true if a code
 // was successfully extracted.
