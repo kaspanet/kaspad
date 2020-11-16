@@ -237,7 +237,7 @@ func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
 		}
 		i++
 	}
-	return &utxoSetIterator{index: 0, pairs: pairs}
+	return &utxoSetIterator{index: -1, pairs: pairs}
 }
 
 func (u *utxoSetIterator) Next() bool {
