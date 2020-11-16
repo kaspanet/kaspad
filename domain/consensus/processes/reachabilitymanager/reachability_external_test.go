@@ -9,7 +9,7 @@ import (
 )
 
 func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
-	reachabilityReindexWindow := uint64(2)
+	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
@@ -51,7 +51,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *newReindexRoot != *reindexRoot {
+		if *newReindexRoot == *reindexRoot {
 			t.Fatalf("reindex root is expected to change")
 		}
 
@@ -64,7 +64,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 }
 
 func TestUpdateReindexRoot(t *testing.T) {
-	reachabilityReindexWindow := uint64(2)
+	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
@@ -95,13 +95,15 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Make two chains of size reachabilityReindexWindow and check that the reindex root is not changed.
+		chain1Tip, chain2Tip := chain1RootBlock, chain2RootBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
-			_, err := tc.AddBlock([]*externalapi.DomainHash{chain1RootBlock}, nil, nil)
+			var err error
+			chain1Tip, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			_, err = tc.AddBlock([]*externalapi.DomainHash{chain2RootBlock}, nil, nil)
+			chain2Tip, err = tc.AddBlock([]*externalapi.DomainHash{chain2Tip}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -117,7 +119,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Add another block over chain1. This will move the reindex root to chain1RootBlock
-		_, err = tc.AddBlock([]*externalapi.DomainHash{chain1RootBlock}, nil, nil)
+		_, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -143,7 +145,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		// Make sure that the rest of the interval has been allocated to
 		// chain1RootNode, minus slack from both sides
 		expectedChain1RootIntervalSize := intervalSize(params.GenesisHash) - 1 -
-			intervalSize(chain2RootBlock) - 2*reachabilityReindexWindow
+			intervalSize(chain2RootBlock) - 2*tc.ReachabilityManager().ReachabilityReindexSlack()
 		if intervalSize(chain1RootBlock) != expectedChain1RootIntervalSize {
 			t.Fatalf("got unexpected chain1RootBlock interval. Want: %d, got: %d",
 				intervalSize(chain1RootBlock), expectedChain1RootIntervalSize)
@@ -152,7 +154,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 }
 
 func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
-	reachabilityReindexWindow := uint64(2)
+	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
@@ -286,7 +288,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 }
 
 func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
-	reachabilityReindexWindow := uint64(2)
+	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
