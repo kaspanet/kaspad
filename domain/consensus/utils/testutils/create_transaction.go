@@ -11,10 +11,9 @@ import (
 // Assumes that the output being spent has opTrueScript as it's scriptPublicKey
 // Creates the value of the spent output minus 1 sompi
 func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.DomainTransaction, error) {
-	opTrueScript := OpTrueScript()
+	scriptPublicKey, redeemScript := OpTrueScript()
 
-	scriptPublicKey := opTrueScript
-	signatureScript, err := txscript.PayToScriptHashSignatureScript(opTrueScript, nil)
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
 	if err != nil {
 		return nil, err
 	}
