@@ -209,7 +209,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		blockStatusStore,
 		blockHeaderStore,
-		headerTipsStore)
+		headerTipsStore,
+		blockStore)
 
 	blockBuilder := blockbuilder.New(
 		dbManager,

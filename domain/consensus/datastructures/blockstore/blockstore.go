@@ -143,3 +143,15 @@ func (bms *blockStore) clone(block *externalapi.DomainBlock) (*externalapi.Domai
 
 	return bms.deserializeBlock(serialized)
 }
+
+func (bms *blockStore) Count(dbContext model.DBReader) (uint64, error) {
+	cursor, err := dbContext.Cursor(bucket)
+	if err != nil {
+		return 0, err
+	}
+	count := uint64(0)
+	for cursor.Next() {
+		count++
+	}
+	return count, nil
+}
