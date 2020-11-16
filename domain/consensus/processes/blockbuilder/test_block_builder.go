@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 )
 
 type testBlockBuilder struct {
@@ -89,9 +90,20 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 		return nil, err
 	}
 
-	_, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+	selectedParentStatus, err := bb.testConsensus.BlockStatusStore().Get(bb.databaseContext, ghostdagData.SelectedParent)
 	if err != nil {
 		return nil, err
+	}
+
+	if selectedParentStatus == externalapi.StatusUTXOPendingVerification {
+		selectedParentStatus, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
+		return nil, errors.Errorf("Error building block with selectedParent %s with status DisqualifiedFromChain",
+			ghostdagData.SelectedParent)
 	}
 
 	_, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
