@@ -87,7 +87,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(candidatesHeap mod
 			for i, parentChild := range parentChildren {
 				if *parentChild == *model.VirtualBlockHash {
 					parentChildren = append(parentChildren[:i], parentChildren[i+1:]...)
-					continue
+					break
 				}
 			}
 

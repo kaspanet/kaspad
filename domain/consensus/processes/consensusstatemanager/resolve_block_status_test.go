@@ -122,13 +122,13 @@ func TestDoubleSpends(t *testing.T) {
 		// Add a block on top of goodBlock, containing spendingTransaction1 twice, and make
 		// sure AddBlock returns a RuleError
 		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
-			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
+			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction1})
 		if err == nil {
 			t.Fatalf("No error when adding a block containing the same transactin twice")
 		}
-		if !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
+		if !errors.Is(err, ruleerrors.ErrDuplicateTx) {
 			t.Fatalf("Adding block that contains the same transaction twice should have "+
-				"returned ruleerrors.ErrDoubleSpendInSameBlock, but instead got: %+v", err)
+				"returned ruleerrors.ErrDuplicateTx, but instead got: %+v", err)
 		}
 
 		// Check that a block will not get disqualified if it has a transaction that double spends
