@@ -126,9 +126,9 @@ func TestDoubleSpends(t *testing.T) {
 		if err == nil {
 			t.Fatalf("No error when adding a block containing the same transactin twice")
 		}
-		if !errors.Is(err, ruleerrors.ErrDuplicateTx) {
+		if !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
 			t.Fatalf("Adding block that contains the same transaction twice should have "+
-				"returned ruleerrors.ErrDuplicateTx, but instead got: %+v", err)
+				"returned ruleerrors.ErrDoubleSpendInSameBlock, but instead got: %+v", err)
 		}
 
 		// Check that a block will not get disqualified if it has a transaction that double spends

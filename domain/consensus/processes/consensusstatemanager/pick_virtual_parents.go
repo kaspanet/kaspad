@@ -83,6 +83,14 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(candidatesHeap mod
 				return nil, err
 			}
 
+			// remove virtual from parentChildren if it's there
+			for i, parentChild := range parentChildren {
+				if *parentChild == *model.VirtualBlockHash {
+					parentChildren = append(parentChildren[:i], parentChildren[i+1:]...)
+					continue
+				}
+			}
+
 			if disqualifiedCandidates.ContainsAllInSlice(parentChildren) {
 				err := candidatesHeap.Push(parent)
 				if err != nil {
