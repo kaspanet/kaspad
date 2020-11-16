@@ -20,6 +20,7 @@ type syncManager struct {
 	blockStatusStore  model.BlockStatusStore
 	blockHeaderStore  model.BlockHeaderStore
 	headerTipsStore   model.HeaderTipsStore
+	blockStore        model.BlockStore
 }
 
 // New instantiates a new SyncManager
@@ -35,7 +36,8 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore) model.SyncManager {
+	headerTipsStore model.HeaderTipsStore,
+	blockStore model.BlockStore) model.SyncManager {
 
 	return &syncManager{
 		databaseContext:    databaseContext,
@@ -51,6 +53,7 @@ func New(
 		blockStatusStore:  blockStatusStore,
 		blockHeaderStore:  blockHeaderStore,
 		headerTipsStore:   headerTipsStore,
+		blockStore:        blockStore,
 	}
 }
 
