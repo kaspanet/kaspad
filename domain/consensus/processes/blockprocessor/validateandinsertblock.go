@@ -8,6 +8,9 @@ import (
 )
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
+	hash := consensusserialization.HeaderHash(block.Header)
+	log.Debugf("Validating block %s", hash)
+
 	syncInfo, err := bp.syncManager.GetSyncInfo()
 	if err != nil {
 		return err
@@ -17,7 +20,6 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		syncInfo.State = externalapi.SyncStateHeadersFirst
 	}
 
-	hash := consensusserialization.HeaderHash(block.Header)
 	if syncInfo.State == externalapi.SyncStateMissingUTXOSet {
 		if isHeaderOnlyBlock(block) {
 			// Allow processing headers while in state SyncStateMissingUTXOSet
@@ -147,7 +149,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	return bp.commitAllChanges()
+	err = bp.commitAllChanges()
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Block %s validated and inserted", hash)
+	return nil
 }
 
 func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
