@@ -51,34 +51,34 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 func (csm *consensusStateManager) updateVirtualDiffParents(
 	newBlockHash *externalapi.DomainHash, virtualUTXODiff *model.UTXODiff) error {
 
-	// If the status of the new block is not `Valid` - virtualDiffParents didn't change
-	status, err := csm.blockStatusStore.Get(csm.databaseContext, newBlockHash)
-	if err != nil {
-		return err
-	}
-	if status != externalapi.StatusValid {
-		return nil
-	}
-
 	var newVirtualDiffParents []*externalapi.DomainHash
 	if *newBlockHash == *csm.genesisHash {
 		newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
 	} else {
-		virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+		oldVirtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 		if err != nil {
 			return err
 		}
 
-		newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
+		// If the status of the new block is not `Valid` - virtualDiffParents didn't change
+		status, err := csm.blockStatusStore.Get(csm.databaseContext, newBlockHash)
 		if err != nil {
 			return err
 		}
-		newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
+		if status != externalapi.StatusValid {
+			newVirtualDiffParents = oldVirtualDiffParents
+		} else {
+			newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
+			if err != nil {
+				return err
+			}
+			newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
 
-		newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
-		for _, virtualDiffParent := range virtualDiffParents {
-			if !newBlockParents.Contains(virtualDiffParent) {
-				newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
+			newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
+			for _, virtualDiffParent := range oldVirtualDiffParents {
+				if !newBlockParents.Contains(virtualDiffParent) {
+					newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
+				}
 			}
 		}
 	}
