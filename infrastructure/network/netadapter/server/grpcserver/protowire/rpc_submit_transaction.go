@@ -3,7 +3,7 @@ package protowire
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
-	msgTx, err := x.SubmitTransactionRequest.TransactionMessage.toAppMessage()
+	msgTx, err := x.SubmitTransactionRequest.Transaction.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -14,9 +14,9 @@ func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Mess
 
 func (x *KaspadMessage_SubmitTransactionRequest) fromAppMessage(message *appmessage.SubmitTransactionRequestMessage) error {
 	x.SubmitTransactionRequest = &SubmitTransactionRequestMessage{
-		TransactionMessage: &TransactionMessage{},
+		Transaction: &TransactionMessage{},
 	}
-	x.SubmitTransactionRequest.TransactionMessage.fromAppMessage(message.Transaction)
+	x.SubmitTransactionRequest.Transaction.fromAppMessage(message.Transaction)
 	return nil
 }
 

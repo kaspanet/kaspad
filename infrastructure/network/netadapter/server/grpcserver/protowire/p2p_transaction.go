@@ -19,7 +19,7 @@ func (x *KaspadMessage_Transaction) fromAppMessage(msgTx *appmessage.MsgTx) erro
 func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 	inputs := make([]*appmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
-		prevTxID, err := protoInput.PreviousOutpoint.TransactionID.toDomain()
+		prevTxID, err := protoInput.PreviousOutpoint.TransactionId.toDomain()
 		if err != nil {
 			return nil, err
 		}
@@ -36,11 +36,11 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		}
 	}
 
-	if x.SubnetworkID == nil {
+	if x.SubnetworkId == nil {
 		return nil, errors.New("transaction subnetwork field cannot be nil")
 	}
 
-	subnetworkID, err := x.SubnetworkID.toDomain()
+	subnetworkID, err := x.SubnetworkId.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	for i, input := range msgTx.TxIn {
 		protoInputs[i] = &TransactionInput{
 			PreviousOutpoint: &Outpoint{
-				TransactionID: domainTransactionIDToProto(&input.PreviousOutpoint.TxID),
+				TransactionId: domainTransactionIDToProto(&input.PreviousOutpoint.TxID),
 				Index:         input.PreviousOutpoint.Index,
 			},
 			SignatureScript: input.SignatureScript,
@@ -91,7 +91,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		Inputs:       protoInputs,
 		Outputs:      protoOutputs,
 		LockTime:     msgTx.LockTime,
-		SubnetworkID: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
+		SubnetworkId: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
 		PayloadHash:  domainHashToProto(&msgTx.PayloadHash),
 		Payload:      msgTx.Payload,

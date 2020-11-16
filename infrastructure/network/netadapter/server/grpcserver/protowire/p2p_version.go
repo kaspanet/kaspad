@@ -22,7 +22,7 @@ func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	subnetworkID, err := x.Version.SubnetworkID.toDomain()
+	subnetworkID, err := x.Version.SubnetworkId.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (x *KaspadMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion
 		UserAgent:       msgVersion.UserAgent,
 		SelectedTipHash: domainHashToProto(msgVersion.SelectedTipHash),
 		DisableRelayTx:  msgVersion.DisableRelayTx,
-		SubnetworkID:    domainSubnetworkIDToProto(msgVersion.SubnetworkID),
+		SubnetworkId:    domainSubnetworkIDToProto(msgVersion.SubnetworkID),
 	}
 	return nil
 }

@@ -30,6 +30,11 @@ func (e RuleError) Error() string {
 	return e.Err.Error()
 }
 
+// Unwrap unwraps the wrapped error
+func (e RuleError) Unwrap() error {
+	return e.Err
+}
+
 // RejectCode represents a numeric value by which a remote peer indicates
 // why a message was rejected.
 type RejectCode uint8
@@ -91,6 +96,12 @@ func (e TxRuleError) Error() string {
 func txRuleError(c RejectCode, desc string) RuleError {
 	return RuleError{
 		Err: TxRuleError{RejectCode: c, Description: desc},
+	}
+}
+
+func newRuleError(err error) RuleError {
+	return RuleError{
+		Err: err,
 	}
 }
 

@@ -58,10 +58,6 @@ func (c *gRPCConnection) Start(router *router.Router) {
 		panic(errors.New("onDisconnectedHandler is nil"))
 	}
 
-	if c.onInvalidMessageHandler == nil {
-		panic(errors.New("onInvalidMessageHandler is nil"))
-	}
-
 	c.router = router
 
 	spawn("gRPCConnection.Start-connectionLoops", func() {
