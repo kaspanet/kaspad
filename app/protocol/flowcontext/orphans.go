@@ -21,7 +21,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	// Find all the children of rootBlock among the orphans
 	// and add them to the process queue
 	rootBlockHash := consensusserialization.BlockHash(rootBlock)
-	processQueue := f.findOrphansOfParentBlock(*rootBlockHash)
+	processQueue := f.findChildOrphansOfBlock(*rootBlockHash)
 
 	var unorphanedBlocks []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
@@ -29,7 +29,9 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
 		orphanBlock := f.orphans[orphanHash]
 
-		log.Tracef("Considering to unorphan block %s with parents", orphanHash, orphanBlock.Header.ParentHashes)
+		log.Tracef("Considering to unorphan block %s with parents %s",
+			orphanHash, orphanBlock.Header.ParentHashes)
+
 		canBeUnorphaned := true
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
 			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash)
@@ -39,6 +41,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			if !orphanBlockParentInfo.Exists {
 				log.Tracef("Cannot unorphan block %s. It's missing at "+
 					"least the following parent: %s", orphanHash, orphanBlockParentHash)
+
 				canBeUnorphaned = false
 				break
 			}
@@ -50,20 +53,20 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			}
 			unorphanedBlocks = append(unorphanedBlocks, orphanBlock)
 
-			// Add the orphans of the block that had just been
+			// Add the child orphans of the block that had just been
 			// unorphaned to the process queue unless they already
 			// appear in it
-			orphansOfUnorphanedBlock := f.findOrphansOfParentBlock(orphanHash)
-			for _, candidateOrphan := range orphansOfUnorphanedBlock {
+			unorphanedBlockChildren := f.findChildOrphansOfBlock(orphanHash)
+			for _, unorphanedBlockChild := range unorphanedBlockChildren {
 				exists := false
 				for _, queueOrphan := range processQueue {
-					if queueOrphan == candidateOrphan {
+					if queueOrphan == unorphanedBlockChild {
 						exists = true
 						break
 					}
 				}
 				if !exists {
-					processQueue = append(processQueue, candidateOrphan)
+					processQueue = append(processQueue, unorphanedBlockChild)
 				}
 			}
 		}
@@ -72,17 +75,17 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	return unorphanedBlocks, nil
 }
 
-func (f *FlowContext) findOrphansOfParentBlock(blockHash externalapi.DomainHash) []externalapi.DomainHash {
-	var orphansOfParentBlock []externalapi.DomainHash
+func (f *FlowContext) findChildOrphansOfBlock(blockHash externalapi.DomainHash) []externalapi.DomainHash {
+	var childOrphans []externalapi.DomainHash
 	for orphanHash, orphanBlock := range f.orphans {
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
 			if *orphanBlockParentHash == blockHash {
-				orphansOfParentBlock = append(orphansOfParentBlock, orphanHash)
+				childOrphans = append(childOrphans, orphanHash)
 				break
 			}
 		}
 	}
-	return orphansOfParentBlock
+	return childOrphans
 }
 
 func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) error {
