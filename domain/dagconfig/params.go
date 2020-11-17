@@ -5,9 +5,10 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -32,7 +33,7 @@ var (
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the test network. It is the value 2^239 - 1.
-	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// simnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
@@ -41,7 +42,7 @@ var (
 	// devnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
 	// 2^239 - 1.
-	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 )
 
 const (
