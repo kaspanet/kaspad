@@ -22,10 +22,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 
 	newBlocks := append([]*externalapi.DomainBlock{block}, unorphanedBlocks...)
 	for _, newBlock := range newBlocks {
-		err := blocklogger.LogBlock(block)
-		if err != nil {
-			return err
-		}
+		blocklogger.LogBlock(block)
 
 		f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 
