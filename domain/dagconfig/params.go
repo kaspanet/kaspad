@@ -32,7 +32,7 @@ var (
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^239 - 1.
+	// can have for the test network. It is the value 2^255 - 1.
 	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// simnetPowMax is the highest proof of work value a Kaspa block
@@ -41,7 +41,7 @@ var (
 
 	// devnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
-	// 2^239 - 1.
+	// 2^255 - 1.
 	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 )
 
