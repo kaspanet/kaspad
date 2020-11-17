@@ -25,13 +25,25 @@ type Routes struct {
 func (r *Routes) WaitForMessageOfType(command appmessage.MessageCommand, timeout time.Duration) (appmessage.Message, error) {
 	timeoutTime := time.Now().Add(timeout)
 	for {
-		message, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
+		route := r.chooseRouteForCommand(command)
+		message, err := route.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
 		if err != nil {
 			return nil, errors.Wrapf(err, "error waiting for message of type %s", command)
 		}
 		if message.Command() == command {
 			return message, nil
 		}
+	}
+}
+
+func (r *Routes) chooseRouteForCommand(command appmessage.MessageCommand) *router.Route {
+	switch command {
+	case appmessage.CmdAddresses:
+		fallthrough
+	case appmessage.CmdRequestAddresses:
+		return r.addressesRoute
+	default:
+		return r.IncomingRoute
 	}
 }
 

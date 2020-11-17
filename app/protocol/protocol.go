@@ -118,7 +118,7 @@ func (m *Manager) registerAddressFlows(router *routerpkg.Router, isStopping *uin
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerOneTimeFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
+		m.registerFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return addressexchange.SendAddresses(m.context, incomingRoute, outgoingRoute)
 			},
