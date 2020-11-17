@@ -160,17 +160,17 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(parents []*externa
 		return nil, err
 	}
 
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	virtualFinalityPoint, err := csm.virtualFinalityPoint(virtualGHOSTDAGData)
+	virtualFinalityPoint, err := csm.virtualFinalityPoint()
 	if err != nil {
 		return nil, err
 	}
 
 	badReds := []*externalapi.DomainHash{}
+
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
 	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds {
 		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, redBlock)
 		if err != nil {
