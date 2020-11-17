@@ -152,6 +152,9 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgAddresses{
 		AddressList: []*appmessage.NetAddress{},
 	})
+	if err != nil {
+		return err
+	}
 
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgRequestAddresses{
 		IncludeAllSubnetworks: true,
