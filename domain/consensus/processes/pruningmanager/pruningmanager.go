@@ -98,7 +98,7 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 	}
 
 	// get Virtual(pruningDepth)
-	candidatePHash, err := pm.dagTraversalManager.HighestChainBlockBelowBlueScore(model.VirtualBlockHash, pm.pruningDepth)
+	candidatePHash, err := pm.dagTraversalManager.BlockAtDepth(model.VirtualBlockHash, pm.pruningDepth)
 	if err != nil {
 		return err
 	}
