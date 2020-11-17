@@ -39,16 +39,11 @@ func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Do
 	transactions []*externalapi.DomainTransaction, acceptanceData model.AcceptanceData, multiset model.Multiset) (
 	*externalapi.DomainBlockHeader, error) {
 
-	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
 	timeInMilliseconds, err := bb.pastMedianTimeManager.PastMedianTime(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bb.newBlockDifficulty(ghostdagData)
+	bits, err := bb.newBlockDifficulty()
 	if err != nil {
 		return nil, err
 	}

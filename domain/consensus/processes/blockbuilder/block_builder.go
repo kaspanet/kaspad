@@ -100,15 +100,11 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 	if err != nil {
 		return nil, err
 	}
-	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
 	timeInMilliseconds, err := bb.newBlockTime()
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bb.newBlockDifficulty(virtualGHOSTDAGData)
+	bits, err := bb.newBlockDifficulty()
 	if err != nil {
 		return nil, err
 	}
@@ -160,12 +156,8 @@ func (bb *blockBuilder) newBlockTime() (int64, error) {
 	return newTimestamp, nil
 }
 
-func (bb *blockBuilder) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (uint32, error) {
-	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return 0, err
-	}
-	return bb.difficultyManager.RequiredDifficulty(virtualGHOSTDAGData.SelectedParent)
+func (bb *blockBuilder) newBlockDifficulty() (uint32, error) {
+	return bb.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
 }
 
 func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
