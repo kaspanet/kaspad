@@ -10,7 +10,7 @@ import (
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	// get list of all blocks in the selected parent chain that have not yet resolved their status
-	unverifiedBlocks, selectedParentStatus, err := csm.getUnverifiedChainBlocksAndSelectedParentStatus(blockHash)
+	unverifiedBlocks, err := csm.getUnverifiedChainBlocks(blockHash)
 	if err != nil {
 		return 0, err
 	}
@@ -19,6 +19,11 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	// UTXO-verified status, and therefore it should be retrieved from the store and returned
 	if len(unverifiedBlocks) == 0 {
 		return csm.blockStatusStore.Get(csm.databaseContext, blockHash)
+	}
+
+	selectedParentStatus, err := csm.findSelectedParentStatus(unverifiedBlocks)
+	if err != nil {
+		return 0, err
 	}
 
 	var blockStatus externalapi.BlockStatus
@@ -42,33 +47,46 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	return blockStatus, nil
 }
 
-func (csm *consensusStateManager) getUnverifiedChainBlocksAndSelectedParentStatus(blockHash *externalapi.DomainHash) (
-	[]*externalapi.DomainHash, externalapi.BlockStatus, error) {
+// findSelectedParentStatus returns the status of the selectedParent of the last block in the unverifiedBlocks chain
+func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*externalapi.DomainHash) (
+	externalapi.BlockStatus, error) {
+	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
+	if *lastUnverifiedBlock == *csm.genesisHash {
+		return externalapi.StatusValid, nil
+	}
+	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, lastUnverifiedBlock)
+	if err != nil {
+		return 0, err
+	}
+	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent)
+}
 
-	unverifiedBlocks := []*externalapi.DomainHash{blockHash}
+func (csm *consensusStateManager) getUnverifiedChainBlocks(
+	blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+
+	unverifiedBlocks := []*externalapi.DomainHash{}
 	currentHash := blockHash
 	for {
-		ghostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
+		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, currentHash)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
+		}
+		if currentBlockStatus != externalapi.StatusUTXOPendingVerification {
+			return unverifiedBlocks, nil
 		}
 
-		if ghostdagData.SelectedParent == nil {
-			return unverifiedBlocks, externalapi.StatusValid, nil
-		}
+		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
-		selectedParentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, ghostdagData.SelectedParent)
+		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 
-		if selectedParentStatus != externalapi.StatusUTXOPendingVerification {
-			return unverifiedBlocks, selectedParentStatus, nil
+		if currentBlockGHOSTDAGData.SelectedParent == nil {
+			return unverifiedBlocks, nil // this means we reached genesis
 		}
 
-		unverifiedBlocks = append(unverifiedBlocks, ghostdagData.SelectedParent)
-
-		currentHash = ghostdagData.SelectedParent
+		currentHash = currentBlockGHOSTDAGData.SelectedParent
 	}
 }
 
