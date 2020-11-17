@@ -95,11 +95,9 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 		return nil, err
 	}
 
-	if selectedParentStatus == externalapi.StatusUTXOPendingVerification {
-		selectedParentStatus, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
-		if err != nil {
-			return nil, err
-		}
+	selectedParentStatus, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+	if err != nil {
+		return nil, err
 	}
 	if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 		return nil, errors.Errorf("Error building block with selectedParent %s with status DisqualifiedFromChain",
