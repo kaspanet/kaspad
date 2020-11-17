@@ -21,7 +21,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	// Find all the children of rootBlock among the orphans
 	// and add them to the process queue
 	rootBlockHash := consensusserialization.BlockHash(rootBlock)
-	processQueue := f.findChildOrphansOfBlock(rootBlockHash)
+	processQueue := f.addChildOrphansToProcessQueue(rootBlockHash, []externalapi.DomainHash{})
 
 	var unorphanedBlocks []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
@@ -52,27 +52,34 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 				return nil, err
 			}
 			unorphanedBlocks = append(unorphanedBlocks, orphanBlock)
-
-			// Add the child orphans of the block that had just been
-			// unorphaned to the process queue unless they already
-			// appear in it
-			unorphanedBlockChildren := f.findChildOrphansOfBlock(&orphanHash)
-			for _, unorphanedBlockChild := range unorphanedBlockChildren {
-				exists := false
-				for _, queueOrphan := range processQueue {
-					if queueOrphan == unorphanedBlockChild {
-						exists = true
-						break
-					}
-				}
-				if !exists {
-					processQueue = append(processQueue, unorphanedBlockChild)
-				}
-			}
+			processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
 		}
 	}
 
 	return unorphanedBlocks, nil
+}
+
+// addChildOrphansToProcessQueue finds all child orphans of `blockHash`
+// and adds them to the given `processQueue` if they don't already exist
+// inside of it
+// Note that this method does not modify the given `processQueue`
+func (f *FlowContext) addChildOrphansToProcessQueue(blockHash *externalapi.DomainHash,
+	processQueue []externalapi.DomainHash) []externalapi.DomainHash {
+
+	blockChildren := f.findChildOrphansOfBlock(blockHash)
+	for _, blockChild := range blockChildren {
+		exists := false
+		for _, queueOrphan := range processQueue {
+			if queueOrphan == blockChild {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			processQueue = append(processQueue, blockChild)
+		}
+	}
+	return processQueue
 }
 
 func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash) []externalapi.DomainHash {
