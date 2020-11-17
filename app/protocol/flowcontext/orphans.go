@@ -23,13 +23,13 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	rootBlockHash := consensusserialization.BlockHash(rootBlock)
 	processQueue := f.findOrphansOfParentBlock(*rootBlockHash)
 
-	unorphanedBlocks := make([]*externalapi.DomainBlock, 0)
+	var unorphanedBlocks []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
 		var orphanHash externalapi.DomainHash
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
 		orphanBlock := f.orphans[orphanHash]
 
-		log.Tracef("Considering to unorphan block %s with parents\n", orphanHash, orphanBlock.Header.ParentHashes)
+		log.Tracef("Considering to unorphan block %s with parents", orphanHash, orphanBlock.Header.ParentHashes)
 		canBeUnorphaned := true
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
 			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash)
@@ -38,7 +38,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			}
 			if !orphanBlockParentInfo.Exists {
 				log.Tracef("Cannot unorphan block %s. It's missing at "+
-					"least the following parent: %s\n", orphanHash, orphanBlockParentHash)
+					"least the following parent: %s", orphanHash, orphanBlockParentHash)
 				canBeUnorphaned = false
 				break
 			}
