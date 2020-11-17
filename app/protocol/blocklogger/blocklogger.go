@@ -22,7 +22,7 @@ var (
 // LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
-func LogBlock(block *externalapi.DomainBlock) error {
+func LogBlock(block *externalapi.DomainBlock) {
 	mtx.Lock()
 	defer mtx.Unlock()
 
@@ -32,7 +32,7 @@ func LogBlock(block *externalapi.DomainBlock) error {
 	now := mstime.Now()
 	duration := now.Sub(lastBlockLogTime)
 	if duration < time.Second*10 {
-		return nil
+		return
 	}
 
 	// Truncate the duration to 10s of milliseconds.
@@ -55,5 +55,4 @@ func LogBlock(block *externalapi.DomainBlock) error {
 	receivedLogBlocks = 0
 	receivedLogTx = 0
 	lastBlockLogTime = now
-	return nil
 }

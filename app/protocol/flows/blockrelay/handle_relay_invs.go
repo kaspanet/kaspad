@@ -25,6 +25,7 @@ type RelayInvsContext interface {
 	StartIBDIfRequired() error
 	IsInIBD() bool
 	Broadcast(message appmessage.Message) error
+	AddOrphan(orphanBlock *externalapi.DomainBlock)
 }
 
 type handleRelayInvsFlow struct {
@@ -228,6 +229,9 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
 				return nil
 			}
+
+			// Add the orphan to the orphan pool
+			flow.AddOrphan(block)
 
 			// Request the parents for the orphan block from the peer that sent it.
 			for _, missingAncestor := range missingParentsError.MissingParentHashes {

@@ -15,17 +15,22 @@ import (
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
-	err := blocklogger.LogBlock(block)
+	unorphanedBlocks, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	f.Domain().MiningManager().HandleNewBlockTransactions(block.Transactions)
+	newBlocks := append([]*externalapi.DomainBlock{block}, unorphanedBlocks...)
+	for _, newBlock := range newBlocks {
+		blocklogger.LogBlock(block)
 
-	if f.onBlockAddedToDAGHandler != nil {
-		err := f.onBlockAddedToDAGHandler(block)
-		if err != nil {
-			return err
+		f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+
+		if f.onBlockAddedToDAGHandler != nil {
+			err := f.onBlockAddedToDAGHandler(newBlock)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

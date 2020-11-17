@@ -51,6 +51,9 @@ type FlowContext struct {
 
 	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex
+
+	orphans      map[externalapi.DomainHash]*externalapi.DomainBlock
+	orphansMutex sync.Mutex
 }
 
 // New returns a new instance of FlowContext.
@@ -67,6 +70,7 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
 		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
+		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 	}
 }
 
