@@ -13,6 +13,8 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 
 	orphanHash := consensusserialization.BlockHash(orphanBlock)
 	f.orphans[*orphanHash] = orphanBlock
+
+	log.Infof("Received a block with missing parents, adding to orphan pool: %s", orphanHash)
 }
 
 // UnorphanBlocks removes the block from the orphan set, and remove all of the blocks that are not orphans anymore.
