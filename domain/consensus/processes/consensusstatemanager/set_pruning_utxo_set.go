@@ -156,14 +156,5 @@ func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainH
 	}
 	defer csm.ghostdagDataStore.Discard()
 
-	virtualHeaderGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, virtualHeaderHash)
-	if err != nil {
-		return nil, err
-	}
-
-	blueScore := virtualHeaderGHOSTDAGData.BlueScore - csm.pruningDepth
-	if csm.pruningDepth > virtualHeaderGHOSTDAGData.BlueScore {
-		blueScore = 0
-	}
-	return csm.dagTraversalManager.HighestChainBlockBelowBlueScore(virtualHeaderHash, blueScore)
+	return csm.dagTraversalManager.BlockAtDepth(virtualHeaderHash, csm.pruningDepth)
 }

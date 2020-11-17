@@ -159,6 +159,9 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 		}
 
 		isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
+		if !isAccepted {
+			return false, accumulatedMassBefore, nil
+		}
 	}
 
 	err = utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)

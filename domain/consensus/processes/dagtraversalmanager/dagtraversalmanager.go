@@ -64,15 +64,19 @@ func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.Dom
 	}
 }
 
-// HighestChainBlockBelowBlueScore returns the hash of the
-// highest block with a blue score lower than the given
-// blueScore in the selected-parent-chain of the block
-// with the given highHash's selected parent chain
-func (dtm *dagTraversalManager) HighestChainBlockBelowBlueScore(highHash *externalapi.DomainHash, requiredBlueScore uint64) (*externalapi.DomainHash, error) {
+// BlockAtDepth returns the hash of the highest block with a blue score
+// lower than (highHash.blueSore - depth) in the selected-parent-chain
+// of the block with the given highHash's selected parent chain.
+func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
 	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
 	if err != nil {
 		return nil, err
+	}
+
+	requiredBlueScore := uint64(0)
+	if highBlockGHOSTDAGData.BlueScore > depth {
+		requiredBlueScore = highBlockGHOSTDAGData.BlueScore - depth
 	}
 
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData

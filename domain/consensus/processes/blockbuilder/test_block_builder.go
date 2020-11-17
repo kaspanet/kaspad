@@ -99,12 +99,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 		return nil, err
 	}
 
-	selectedParentStatus, err := bb.testConsensus.BlockStatusStore().Get(bb.databaseContext, ghostdagData.SelectedParent)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedParentStatus, err = bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AddOrphan adds the block to the orphan set
 func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
@@ -14,6 +15,7 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphans[*orphanHash] = orphanBlock
 }
 
+// UnorphanBlocks removes the block from the orphan set, and remove all of the blocks that are not orphans anymore.
 func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*externalapi.DomainBlock, error) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
