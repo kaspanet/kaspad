@@ -18,6 +18,7 @@ func (t testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uint
 	t.reachabilityManager.reindexWindow = reindexWindow
 }
 
+// NewTestReachabilityManager creates an instance of a TestReachabilityManager
 func NewTestReachabilityManager(manager model.ReachabilityManager) model.TestReachabilityManager {
 	return &testReachabilityManager{reachabilityManager: manager.(*reachabilityManager)}
 }

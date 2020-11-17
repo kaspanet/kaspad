@@ -11,6 +11,7 @@ type ReachabilityManager interface {
 	UpdateReindexRoot(selectedTip *externalapi.DomainHash) error
 }
 
+// TestReachabilityManager adds to the main ReachabilityManager methods required by tests
 type TestReachabilityManager interface {
 	ReachabilityManager
 	SetReachabilityReindexWindow(reindexWindow uint64)

@@ -1,15 +1,17 @@
 package mining
 
 import (
+	"math"
+	"math/rand"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	utilsMath "github.com/kaspanet/kaspad/domain/consensus/utils/math"
 	"github.com/pkg/errors"
-	"math"
-	"math/rand"
 )
 
+// SolveBlock increments the given block's nonce until it matches the difficulty requirements in its bits field
 func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
 	targetDifficulty := utilsMath.CompactToBig(block.Header.Bits)
 
