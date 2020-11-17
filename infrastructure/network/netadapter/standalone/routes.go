@@ -38,10 +38,12 @@ func (r *Routes) WaitForMessageOfType(command appmessage.MessageCommand, timeout
 
 func (r *Routes) chooseRouteForCommand(command appmessage.MessageCommand) *router.Route {
 	switch command {
-	case appmessage.CmdAddresses:
-		fallthrough
-	case appmessage.CmdRequestAddresses:
+	case appmessage.CmdVersion, appmessage.CmdVerAck:
+		return r.handshakeRoute
+	case appmessage.CmdRequestAddresses, appmessage.CmdAddresses:
 		return r.addressesRoute
+	case appmessage.CmdPing:
+		return r.pingRoute
 	default:
 		return r.IncomingRoute
 	}
