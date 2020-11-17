@@ -20,7 +20,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 
-	unorphanedBlocks, err := f.UnorphanBlocks()
+	unorphanedBlocks, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
