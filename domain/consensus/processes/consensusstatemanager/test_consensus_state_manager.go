@@ -9,6 +9,7 @@ type testConsensusStateManager struct {
 	*consensusStateManager
 }
 
+// NewTestConsensusStateManager creates an instance of a TestConsensusStateManager
 func NewTestConsensusStateManager(baseConsensusStateManager model.ConsensusStateManager) model.TestConsensusStateManager {
 	return &testConsensusStateManager{consensusStateManager: baseConsensusStateManager.(*consensusStateManager)}
 }
