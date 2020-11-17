@@ -25,30 +25,36 @@ func (csm *consensusStateManager) checkFinalityViolation(
 	return nil
 }
 
-func (csm *consensusStateManager) virtualFinalityPoint(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (
+func (csm *consensusStateManager) virtualFinalityPoint() (
 	*externalapi.DomainHash, error) {
 
-	blueScore := virtualGHOSTDAGData.BlueScore - csm.finalityDepth
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	finalityPointBlueScore := virtualGHOSTDAGData.BlueScore - csm.finalityDepth
 	if virtualGHOSTDAGData.BlueScore < csm.finalityDepth {
-		blueScore = 0
+		// if there's no `csm.finalityDepth` blocks in the DAG
+		// practically - returns the genesis
+		finalityPointBlueScore = 0
 	}
 
 	return csm.dagTraversalManager.HighestChainBlockBelowBlueScore(
-		model.VirtualBlockHash, blueScore)
+		model.VirtualBlockHash, finalityPointBlueScore)
 }
 
 func (csm *consensusStateManager) isViolatingFinality(
 	blockHash *externalapi.DomainHash) (bool, error) {
 
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	virtualFinalityPoint, err := csm.virtualFinalityPoint()
 	if err != nil {
 		return false, err
 	}
 
-	virtualFinalityPoint, err := csm.virtualFinalityPoint(virtualGHOSTDAGData)
+	isInSelectedParentChain, err := csm.dagTopologyManager.IsInSelectedParentChainOf(virtualFinalityPoint, blockHash)
 	if err != nil {
 		return false, err
 	}
-
-	return csm.dagTopologyManager.IsInSelectedParentChainOf(virtualFinalityPoint, blockHash)
+	return !isInSelectedParentChain, nil
 }
