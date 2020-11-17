@@ -13,6 +13,7 @@ import (
 type testBlockBuilder struct {
 	*blockBuilder
 	testConsensus testapi.TestConsensus
+	nonceCounter  uint64
 }
 
 var tempBlockHash = &externalapi.DomainHash{
@@ -35,15 +36,16 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
 }
 
-func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
+func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
 	transactions []*externalapi.DomainTransaction, acceptanceData model.AcceptanceData, multiset model.Multiset) (
 	*externalapi.DomainBlockHeader, error) {
 
-	timeInMilliseconds, err := bb.pastMedianTimeManager.PastMedianTime(tempBlockHash)
+	timeInMilliseconds, err := bb.minBlockTime(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bb.newBlockDifficulty()
+
+	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +56,7 @@ func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Do
 	}
 	utxoCommitment := multiset.Hash()
 
+	bb.nonceCounter++
 	return &externalapi.DomainBlockHeader{
 		Version:              constants.BlockVersion,
 		ParentHashes:         parentHashes,
@@ -62,6 +65,7 @@ func (bb testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.Do
 		UTXOCommitment:       *utxoCommitment,
 		TimeInMilliseconds:   timeInMilliseconds,
 		Bits:                 bits,
+		Nonce:                bb.nonceCounter,
 	}, nil
 }
 

@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"sync"
 
@@ -130,7 +129,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore)
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
-		false,
+		dagParams.SkipProofOfWork,
 		genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
@@ -324,7 +323,6 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
 
 	tstConsensus := &testConsensus{
-		rd:                        rand.New(rand.NewSource(0)),
 		consensus:                 consensusAsImplementation,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.

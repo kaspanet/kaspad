@@ -12,7 +12,7 @@ import (
 func TestIsAncestorOf(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestIsInPast")
+		tc, tearDown, err := factory.NewTestConsensus(params, "TestIsAncestorOf")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}

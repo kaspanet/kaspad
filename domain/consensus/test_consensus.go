@@ -1,18 +1,13 @@
 package consensus
 
 import (
-	"math/rand"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 )
 
 type testConsensus struct {
 	*consensus
-	rd *rand.Rand
 
 	testBlockBuilder          model.TestBlockBuilder
 	testReachabilityManager   model.TestReachabilityManager
@@ -41,13 +36,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, err
 	}
 
-	return tc.SolveAndAddBlock(block)
-}
-
-func (tc *testConsensus) SolveAndAddBlock(block *externalapi.DomainBlock) (*externalapi.DomainHash, error) {
-	mining.SolveBlock(block, tc.rd)
-
-	err := tc.blockProcessor.ValidateAndInsertBlock(block)
+	err = tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
 		return nil, err
 	}

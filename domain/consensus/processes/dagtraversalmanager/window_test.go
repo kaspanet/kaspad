@@ -108,12 +108,12 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"D", "C"},
 				id:                               "E",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"D", "C"},
 				id:                               "F",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"A"},
@@ -128,37 +128,37 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "D", "C", "B", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "C", "D", "B", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "D", "C", "B", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "C", "D", "B", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "C", "B", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "D", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "C", "B", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "D", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "C", "B", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "D", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "C", "B", "A"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "D", "B", "A"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "C", "B"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "B"},
 			},
 		},
 		"kaspa-devnet": {

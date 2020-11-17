@@ -32,8 +32,8 @@ var (
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^255 - 1.
-	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	// can have for the test network. It is the value 2^239 - 1.
+	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 
 	// simnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
@@ -41,8 +41,8 @@ var (
 
 	// devnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
-	// 2^255 - 1.
-	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	// 2^239 - 1.
+	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
 const (
@@ -147,6 +147,8 @@ type Params struct {
 
 	// DisableDifficultyAdjustment determine whether to use difficulty
 	DisableDifficultyAdjustment bool
+
+	SkipProofOfWork bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default

@@ -145,8 +145,8 @@ func (bb *blockBuilder) newBlockTime() (int64, error) {
 	// timestamp is truncated to a millisecond boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
-	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	newTimestamp := mstime.Now().UnixMilliseconds()
+	minTimestamp, err := bb.minBlockTime(model.VirtualBlockHash)
 	if err != nil {
 		return 0, err
 	}
@@ -154,6 +154,15 @@ func (bb *blockBuilder) newBlockTime() (int64, error) {
 		newTimestamp = minTimestamp
 	}
 	return newTimestamp, nil
+}
+
+func (bb *blockBuilder) minBlockTime(hash *externalapi.DomainHash) (int64, error) {
+	pastMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(hash)
+	if err != nil {
+		return 0, err
+	}
+
+	return pastMedianTime + 1, nil
 }
 
 func (bb *blockBuilder) newBlockDifficulty() (uint32, error) {
