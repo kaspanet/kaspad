@@ -21,7 +21,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	// Find all the children of rootBlock among the orphans
 	// and add them to the process queue
 	rootBlockHash := consensusserialization.BlockHash(rootBlock)
-	processQueue := f.findChildOrphansOfBlock(*rootBlockHash)
+	processQueue := f.findChildOrphansOfBlock(rootBlockHash)
 
 	var unorphanedBlocks []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
@@ -56,7 +56,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			// Add the child orphans of the block that had just been
 			// unorphaned to the process queue unless they already
 			// appear in it
-			unorphanedBlockChildren := f.findChildOrphansOfBlock(orphanHash)
+			unorphanedBlockChildren := f.findChildOrphansOfBlock(&orphanHash)
 			for _, unorphanedBlockChild := range unorphanedBlockChildren {
 				exists := false
 				for _, queueOrphan := range processQueue {
@@ -75,11 +75,11 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	return unorphanedBlocks, nil
 }
 
-func (f *FlowContext) findChildOrphansOfBlock(blockHash externalapi.DomainHash) []externalapi.DomainHash {
+func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash) []externalapi.DomainHash {
 	var childOrphans []externalapi.DomainHash
 	for orphanHash, orphanBlock := range f.orphans {
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
-			if *orphanBlockParentHash == blockHash {
+			if *orphanBlockParentHash == *blockHash {
 				childOrphans = append(childOrphans, orphanHash)
 				break
 			}
