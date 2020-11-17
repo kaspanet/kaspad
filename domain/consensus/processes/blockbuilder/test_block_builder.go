@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -74,6 +75,14 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
 	defer bb.testConsensus.DiscardAllStores()
+
+	if coinbaseData == nil {
+		scriptPublicKey, _ := testutils.OpTrueScript()
+		coinbaseData = &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: scriptPublicKey,
+			ExtraData:       []byte{},
+		}
+	}
 
 	err := bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 	if err != nil {
