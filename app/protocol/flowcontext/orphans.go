@@ -2,6 +2,7 @@ package flowcontext
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
 )
@@ -104,12 +105,17 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) error {
 	if !ok {
 		return errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
-	err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
-	if err != nil {
-		return err
-	}
 	delete(f.orphans, orphanHash)
 
-	log.Debugf("Unorphaned block %s", orphanHash)
+	err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			log.Infof("Validation failed for orphan block %s: %s", orphanHash, err)
+			return nil
+		}
+		return err
+	}
+
+	log.Infof("Unorphaned block %s", orphanHash)
 	return nil
 }
