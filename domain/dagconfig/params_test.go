@@ -69,3 +69,20 @@ func TestMustRegisterPanic(t *testing.T) {
 	// Intentionally try to register duplicate params to force a panic.
 	mustRegister(&MainnetParams)
 }
+
+// TestSkipProofOfWork ensures all of the hard coded network params don't set SkipProofOfWork as true.
+func TestSkipProofOfWork(t *testing.T) {
+	allParams := []Params{
+		MainnetParams,
+		TestnetParams,
+		SimnetParams,
+		DevnetParams,
+	}
+
+	for _, params := range allParams {
+		if params.SkipProofOfWork {
+			t.Errorf("SkipProofOfWork is enabled for %s. This option should be "+
+				"used only for tests.", params.Name)
+		}
+	}
+}

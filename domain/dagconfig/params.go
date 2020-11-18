@@ -148,6 +148,7 @@ type Params struct {
 	// DisableDifficultyAdjustment determine whether to use difficulty
 	DisableDifficultyAdjustment bool
 
+	// SkipProofOfWork indicates whether proof of work should be checked.
 	SkipProofOfWork bool
 }
 
