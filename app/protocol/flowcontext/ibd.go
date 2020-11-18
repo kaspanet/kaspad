@@ -58,11 +58,15 @@ func (f *FlowContext) selectPeerForIBD(syncInfo *externalapi.SyncInfo) (*peerpkg
 
 	for _, peer := range f.peers {
 		peerSelectedTipHash := peer.SelectedTipHash()
+
+		if f.IsOrphan(peerSelectedTipHash) {
+			continue
+		}
+
 		blockInfo, err := f.domain.Consensus().GetBlockInfo(peerSelectedTipHash)
 		if err != nil {
 			return nil, err
 		}
-
 		if syncInfo.State == externalapi.SyncStateHeadersFirst {
 			if !blockInfo.Exists {
 				return peer, nil

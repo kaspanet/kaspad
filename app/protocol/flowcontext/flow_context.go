@@ -53,7 +53,7 @@ type FlowContext struct {
 	peersMutex sync.RWMutex
 
 	orphans      map[externalapi.DomainHash]*externalapi.DomainBlock
-	orphansMutex sync.Mutex
+	orphansMutex sync.RWMutex
 }
 
 // New returns a new instance of FlowContext.
