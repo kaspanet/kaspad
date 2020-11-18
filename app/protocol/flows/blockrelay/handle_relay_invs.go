@@ -26,6 +26,7 @@ type RelayInvsContext interface {
 	IsInIBD() bool
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
+	IsOrphan(blockHash *externalapi.DomainHash) bool
 }
 
 type handleRelayInvsFlow struct {
@@ -68,6 +69,10 @@ func (flow *handleRelayInvsFlow) start() error {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
+			continue
+		}
+
+		if flow.IsOrphan(inv.Hash) {
 			continue
 		}
 
