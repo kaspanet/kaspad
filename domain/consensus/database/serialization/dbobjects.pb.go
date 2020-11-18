@@ -1629,6 +1629,100 @@ func (x *DbVirtualDiffParents) GetVirtualDiffParents() []*DbHash {
 	return nil
 }
 
+type DbBlockCount struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Count uint64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+}
+
+func (x *DbBlockCount) Reset() {
+	*x = DbBlockCount{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dbobjects_proto_msgTypes[28]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DbBlockCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DbBlockCount) ProtoMessage() {}
+
+func (x *DbBlockCount) ProtoReflect() protoreflect.Message {
+	mi := &file_dbobjects_proto_msgTypes[28]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DbBlockCount.ProtoReflect.Descriptor instead.
+func (*DbBlockCount) Descriptor() ([]byte, []int) {
+	return file_dbobjects_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *DbBlockCount) GetCount() uint64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type DbBlockHeaderCount struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Count uint64 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+}
+
+func (x *DbBlockHeaderCount) Reset() {
+	*x = DbBlockHeaderCount{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dbobjects_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DbBlockHeaderCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DbBlockHeaderCount) ProtoMessage() {}
+
+func (x *DbBlockHeaderCount) ProtoReflect() protoreflect.Message {
+	mi := &file_dbobjects_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DbBlockHeaderCount.ProtoReflect.Descriptor instead.
+func (*DbBlockHeaderCount) Descriptor() ([]byte, []int) {
+	return file_dbobjects_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *DbBlockHeaderCount) GetCount() uint64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_dbobjects_proto protoreflect.FileDescriptor
 
 var file_dbobjects_proto_rawDesc = []byte{
@@ -1858,10 +1952,15 @@ var file_dbobjects_proto_rawDesc = []byte{
 	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c,
 	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x44, 0x62, 0x48, 0x61, 0x73, 0x68, 0x52, 0x12,
 	0x76, 0x69, 0x72, 0x74, 0x75, 0x61, 0x6c, 0x44, 0x69, 0x66, 0x66, 0x50, 0x61, 0x72, 0x65, 0x6e,
-	0x74, 0x73, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64,
-	0x2f, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x73, 0x22, 0x24, 0x0a, 0x0c, 0x44, 0x62, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x43, 0x6f, 0x75,
+	0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x04, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x2a, 0x0a, 0x12, 0x44, 0x62, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14,
+	0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
+	0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70,
+	0x61, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1876,7 +1975,7 @@ func file_dbobjects_proto_rawDescGZIP() []byte {
 	return file_dbobjects_proto_rawDescData
 }
 
-var file_dbobjects_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_dbobjects_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_dbobjects_proto_goTypes = []interface{}{
 	(*DbBlock)(nil),                     // 0: serialization.DbBlock
 	(*DbBlockHeader)(nil),               // 1: serialization.DbBlockHeader
@@ -1906,6 +2005,8 @@ var file_dbobjects_proto_goTypes = []interface{}{
 	(*DbHeaderTips)(nil),                // 25: serialization.DbHeaderTips
 	(*DbTips)(nil),                      // 26: serialization.DbTips
 	(*DbVirtualDiffParents)(nil),        // 27: serialization.DbVirtualDiffParents
+	(*DbBlockCount)(nil),                // 28: serialization.DbBlockCount
+	(*DbBlockHeaderCount)(nil),          // 29: serialization.DbBlockHeaderCount
 }
 var file_dbobjects_proto_depIdxs = []int32{
 	1,  // 0: serialization.DbBlock.header:type_name -> serialization.DbBlockHeader
@@ -2292,6 +2393,30 @@ func file_dbobjects_proto_init() {
 				return nil
 			}
 		}
+		file_dbobjects_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DbBlockCount); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_dbobjects_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DbBlockHeaderCount); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2299,7 +2424,7 @@ func file_dbobjects_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_dbobjects_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -59,10 +59,18 @@ func NewFactory() Factory {
 
 // NewConsensus instantiates a new Consensus
 func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
+	dbManager := consensusdatabase.New(db)
+
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
-	blockStore := blockstore.New()
-	blockHeaderStore := blockheaderstore.New()
+	blockStore, err := blockstore.New(dbManager)
+	if err != nil {
+		return nil, err
+	}
+	blockHeaderStore, err := blockheaderstore.New(dbManager)
+	if err != nil {
+		return nil, err
+	}
 	blockRelationStore := blockrelationstore.New()
 	blockStatusStore := blockstatusstore.New()
 	multisetStore := multisetstore.New()
@@ -72,8 +80,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New()
 	headerTipsStore := headertipsstore.New()
-
-	dbManager := consensusdatabase.New(db)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(

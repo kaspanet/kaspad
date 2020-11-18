@@ -150,3 +150,11 @@ message DbTips {
 message DbVirtualDiffParents {
   repeated DbHash virtualDiffParents = 1;
 }
+
+message DbBlockCount {
+  uint64 count = 1;
+}
+
+message DbBlockHeaderCount {
+  uint64 count = 1;
+}
