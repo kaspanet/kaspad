@@ -63,7 +63,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New()
-	blockStore := blockstore.New()
+	blockStore, err := blockstore.New(dbManager)
+	if err != nil {
+		return nil, err
+	}
 	blockHeaderStore, err := blockheaderstore.New(dbManager)
 	if err != nil {
 		return nil, err

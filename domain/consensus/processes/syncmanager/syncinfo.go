@@ -26,10 +26,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	}
 
 	headerCount := sm.getHeaderCount()
-	blockCount, err := sm.getBlockCount()
-	if err != nil {
-		return nil, err
-	}
+	blockCount := sm.getBlockCount()
 
 	return &externalapi.SyncInfo{
 		State:                syncState,
@@ -124,6 +121,6 @@ func (sm *syncManager) getHeaderCount() uint64 {
 	return sm.blockHeaderStore.Count()
 }
 
-func (sm *syncManager) getBlockCount() (uint64, error) {
-	return sm.blockStore.Count(sm.databaseContext)
+func (sm *syncManager) getBlockCount() uint64 {
+	return sm.blockStore.Count()
 }
