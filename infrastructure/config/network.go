@@ -48,10 +48,7 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 	}
 
 	if numNets == 0 {
-		message := "Mainnet has not launched yet, use --testnet to run in testnet mode"
-		err := errors.Errorf(message)
-		fmt.Fprintln(os.Stderr, err)
-		return err
+		return errors.Errorf("Mainnet has not launched yet, use --testnet to run in testnet mode")
 	}
 
 	return nil

@@ -46,7 +46,7 @@ func StartApp() error {
 	// initializes logging and configures it accordingly.
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 	defer panics.HandlePanic(log, "MAIN", nil)
