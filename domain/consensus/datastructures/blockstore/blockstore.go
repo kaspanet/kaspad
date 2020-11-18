@@ -34,7 +34,7 @@ func New(dbContext model.DBReader) (model.BlockStore, error) {
 }
 
 func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
-	var count uint64
+	count := uint64(0)
 	hasCountBytes, err := dbContext.Has(countKey)
 	if err != nil {
 		return err
