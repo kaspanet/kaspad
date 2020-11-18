@@ -249,6 +249,8 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		return err
 	}
 
+	log.Infof("Accepted block %s via relay", blockHash)
+
 	err = flow.StartIBDIfRequired()
 	if err != nil {
 		return err

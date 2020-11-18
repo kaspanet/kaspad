@@ -58,6 +58,7 @@ type BlockVerboseData struct {
 	Difficulty             float64
 	ParentHashes           []string
 	SelectedParentHash     string
+	BlueScore              uint64
 }
 
 // TransactionVerboseData holds verbose data about a transaction

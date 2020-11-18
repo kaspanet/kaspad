@@ -21,7 +21,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		return errorMessage, nil
 	}
 
-	log.Infof("Accepted domainBlock %s via submitBlock", consensusserialization.BlockHash(domainBlock))
+	log.Infof("Accepted block %s via submitBlock", consensusserialization.BlockHash(domainBlock))
 
 	response := appmessage.NewSubmitBlockResponseMessage()
 	return response, nil

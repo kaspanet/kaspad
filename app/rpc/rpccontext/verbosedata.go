@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"math/big"
 	"strconv"
 
@@ -25,6 +26,11 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	hash := consensusserialization.BlockHash(block)
 	blockHeader := block.Header
 
+	blueScore, err := blocks.ExtractBlueScore(block)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -37,6 +43,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
+		BlueScore:            blueScore,
 	}
 
 	txIDs := make([]string, len(block.Transactions))
