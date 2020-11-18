@@ -9,19 +9,48 @@ import (
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-headers"))
+var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
 	toDelete map[externalapi.DomainHash]struct{}
+	count    uint64
 }
 
 // New instantiates a new BlockHeaderStore
-func New() model.BlockHeaderStore {
-	return &blockHeaderStore{
+func New(dbContext model.DBReader) (model.BlockHeaderStore, error) {
+	blockHeaderStore := &blockHeaderStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
+
+	err := blockHeaderStore.initializeCount(dbContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return blockHeaderStore, nil
+}
+
+func (bms *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
+	var count uint64
+	hasCountBytes, err := dbContext.Has(countKey)
+	if err != nil {
+		return err
+	}
+	if hasCountBytes {
+		countBytes, err := dbContext.Get(countKey)
+		if err != nil {
+			return err
+		}
+		count, err = bms.deserializeHeaderCount(countBytes)
+		if err != nil {
+			return err
+		}
+	}
+	bms.count = count
+	return nil
 }
 
 // Stage stages the given block header for the given blockHash
@@ -61,6 +90,11 @@ func (bms *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err := bms.commitCount(dbTx)
+	if err != nil {
+		return err
 	}
 
 	bms.Discard()
@@ -144,14 +178,29 @@ func (bms *blockHeaderStore) cloneHeader(header *externalapi.DomainBlockHeader) 
 	return bms.deserializeHeader(serialized)
 }
 
-func (bms *blockHeaderStore) Count(dbContext model.DBReader) (uint64, error) {
-	cursor, err := dbContext.Cursor(bucket)
+func (bms *blockHeaderStore) Count() uint64 {
+	return bms.count + uint64(len(bms.staging)) - uint64(len(bms.toDelete))
+}
+
+func (bms *blockHeaderStore) deserializeHeaderCount(countBytes []byte) (uint64, error) {
+	dbBlockHeaderCount := &serialization.DbBlockHeaderCount{}
+	err := proto.Unmarshal(countBytes, dbBlockHeaderCount)
 	if err != nil {
 		return 0, err
 	}
-	count := uint64(0)
-	for cursor.Next() {
-		count++
+	return dbBlockHeaderCount.Count, nil
+}
+
+func (bms *blockHeaderStore) commitCount(dbTx model.DBTransaction) error {
+	count := bms.Count()
+	countBytes, err := bms.serializeHeaderCount(count)
+	if err != nil {
+		return err
 	}
-	return count, nil
+	return dbTx.Put(countKey, countBytes)
+}
+
+func (bms *blockHeaderStore) serializeHeaderCount(count uint64) ([]byte, error) {
+	dbBlockHeaderCount := &serialization.DbBlockHeaderCount{Count: count}
+	return proto.Marshal(dbBlockHeaderCount)
 }

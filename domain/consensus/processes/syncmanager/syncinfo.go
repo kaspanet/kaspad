@@ -25,10 +25,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 		}
 	}
 
-	headerCount, err := sm.getHeaderCount()
-	if err != nil {
-		return nil, err
-	}
+	headerCount := sm.getHeaderCount()
 	blockCount, err := sm.getBlockCount()
 	if err != nil {
 		return nil, err
@@ -123,8 +120,8 @@ func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *exte
 	return timeDifference <= maxTimeDifference, nil
 }
 
-func (sm *syncManager) getHeaderCount() (uint64, error) {
-	return sm.blockHeaderStore.Count(sm.databaseContext)
+func (sm *syncManager) getHeaderCount() uint64 {
+	return sm.blockHeaderStore.Count()
 }
 
 func (sm *syncManager) getBlockCount() (uint64, error) {
