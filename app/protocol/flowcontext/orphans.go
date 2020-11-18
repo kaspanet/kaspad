@@ -17,6 +17,15 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	log.Infof("Received a block with missing parents, adding to orphan pool: %s", orphanHash)
 }
 
+// IsOrphan returns whether the given blockHash belongs to an orphan block
+func (f *FlowContext) IsOrphan(blockHash *externalapi.DomainHash) bool {
+	f.orphansMutex.RLock()
+	defer f.orphansMutex.RUnlock()
+
+	_, ok := f.orphans[*blockHash]
+	return ok
+}
+
 // UnorphanBlocks removes the block from the orphan set, and remove all of the blocks that are not orphans anymore.
 func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*externalapi.DomainBlock, error) {
 	f.orphansMutex.Lock()
