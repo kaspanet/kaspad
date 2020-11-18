@@ -2,6 +2,8 @@ package flowcontext
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -81,6 +83,10 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			log.Infof("Validation failed for block %s: %s", err)
+			return nil
+		}
 		return err
 	}
 	err = f.OnNewBlock(block)
