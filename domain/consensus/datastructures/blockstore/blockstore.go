@@ -197,7 +197,12 @@ func (bs *blockStore) commitCount(dbTx model.DBTransaction) error {
 	if err != nil {
 		return err
 	}
-	return dbTx.Put(countKey, countBytes)
+	err = dbTx.Put(countKey, countBytes)
+	if err != nil {
+		return err
+	}
+	bs.count = count
+	return nil
 }
 
 func (bs *blockStore) serializeBlockCount(count uint64) ([]byte, error) {

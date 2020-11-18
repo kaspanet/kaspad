@@ -197,7 +197,12 @@ func (bhs *blockHeaderStore) commitCount(dbTx model.DBTransaction) error {
 	if err != nil {
 		return err
 	}
-	return dbTx.Put(countKey, countBytes)
+	err = dbTx.Put(countKey, countBytes)
+	if err != nil {
+		return err
+	}
+	bhs.count = count
+	return nil
 }
 
 func (bhs *blockHeaderStore) serializeHeaderCount(count uint64) ([]byte, error) {
