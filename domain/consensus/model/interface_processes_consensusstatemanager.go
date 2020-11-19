@@ -18,4 +18,5 @@ type TestConsensusStateManager interface {
 	AddUTXOToMultiset(multiset Multiset, entry *externalapi.UTXOEntry,
 		outpoint *externalapi.DomainOutpoint) error
 	ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error)
+	VirtualFinalityPoint() (*externalapi.DomainHash, error)
 }
