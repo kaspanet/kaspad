@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/cache"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
@@ -14,6 +15,7 @@ var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
+	cache    *cache.Cache
 	toDelete map[externalapi.DomainHash]struct{}
 	count    uint64
 }
@@ -22,6 +24,7 @@ type blockHeaderStore struct {
 func New(dbContext model.DBReader) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
+		cache:    cache.New(100_000),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 
@@ -83,6 +86,8 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+
+		bhs.cache.Add(&hash, header)
 	}
 
 	for hash := range bhs.toDelete {
@@ -90,6 +95,8 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+
+		bhs.cache.Remove(&hash)
 	}
 
 	err := bhs.commitCount(dbTx)
@@ -105,6 +112,10 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
 	if header, ok := bhs.staging[*blockHash]; ok {
 		return header, nil
+	}
+
+	if header, ok := bhs.cache.Get(blockHash); ok {
+		return header.(*externalapi.DomainBlockHeader), nil
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))

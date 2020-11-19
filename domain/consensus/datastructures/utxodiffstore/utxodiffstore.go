@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/cache"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/pkg/errors"
 )
@@ -15,6 +16,7 @@ var utxoDiffChildBucket = dbkeys.MakeBucket([]byte("utxo-diff-children"))
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
 	utxoDiffStaging      map[externalapi.DomainHash]*model.UTXODiff
+	utxoDiffCache        *cache.Cache
 	utxoDiffChildStaging map[externalapi.DomainHash]*externalapi.DomainHash
 	toDelete             map[externalapi.DomainHash]struct{}
 }
@@ -23,6 +25,7 @@ type utxoDiffStore struct {
 func New() model.UTXODiffStore {
 	return &utxoDiffStore{
 		utxoDiffStaging:      make(map[externalapi.DomainHash]*model.UTXODiff),
+		utxoDiffCache:        cache.New(100_000),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete:             make(map[externalapi.DomainHash]struct{}),
 	}
@@ -69,6 +72,8 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+
+		uds.utxoDiffCache.Add(&hash, utxoDiff)
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
 		if utxoDiffChild == nil {
@@ -95,6 +100,8 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+
+		uds.utxoDiffCache.Remove(&hash)
 	}
 
 	uds.Discard()
@@ -105,6 +112,10 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	if utxoDiff, ok := uds.utxoDiffStaging[*blockHash]; ok {
 		return utxoDiff, nil
+	}
+
+	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
+		return utxoDiff.(*model.UTXODiff), nil
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
