@@ -18,18 +18,21 @@ func checkIntersection(collection1 model.UTXOCollection, collection2 model.UTXOC
 }
 
 // checkIntersectionWithRule checks if there is an intersection between two model.UTXOCollections satisfying arbitrary rule
+// returns the first outpoint in the two collections' intersection satsifying the rule, and a boolean indicating whether
+// such outpoint exists
 func checkIntersectionWithRule(collection1 model.UTXOCollection, collection2 model.UTXOCollection,
-	extraRule func(*externalapi.DomainOutpoint, *externalapi.UTXOEntry, *externalapi.UTXOEntry) bool) *externalapi.DomainOutpoint {
+	extraRule func(*externalapi.DomainOutpoint, *externalapi.UTXOEntry, *externalapi.UTXOEntry) bool) (
+	*externalapi.DomainOutpoint, bool) {
 
 	for outpoint, utxoEntry := range collection1 {
 		if diffEntry, ok := CollectionGet(collection2, &outpoint); ok {
 			if extraRule(&outpoint, utxoEntry, diffEntry) {
-				return &outpoint
+				return &outpoint, true
 			}
 		}
 	}
 
-	return nil
+	return nil, false
 }
 
 // minInt returns the smaller of x or y integer values
@@ -143,7 +146,8 @@ func DiffFrom(this, other *model.UTXODiff) (*model.UTXODiff, error) {
 				collectionContainsWithBlueScore(other.ToRemove, outpoint, utxoEntry.BlockBlueScore)))
 	}
 
-	if offendingOutpoint := checkIntersectionWithRule(this.ToRemove, other.ToAdd, isNotAddedOutputRemovedWithBlueScore); offendingOutpoint != nil {
+	if offendingOutpoint, ok :=
+		checkIntersectionWithRule(this.ToRemove, other.ToAdd, isNotAddedOutputRemovedWithBlueScore); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.ToAdd and in other.ToRemove", offendingOutpoint)
 	}
 
@@ -156,16 +160,17 @@ func DiffFrom(this, other *model.UTXODiff) (*model.UTXODiff, error) {
 					collectionContainsWithBlueScore(other.ToAdd, outpoint, utxoEntry.BlockBlueScore)))
 		}
 
-	if offendingOutpoint := checkIntersectionWithRule(this.ToAdd, other.ToRemove, isNotRemovedOutputAddedWithBlueScore); offendingOutpoint != nil {
+	if offendingOutpoint, ok :=
+		checkIntersectionWithRule(this.ToAdd, other.ToRemove, isNotRemovedOutputAddedWithBlueScore); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.ToRemove and in other.ToAdd", offendingOutpoint)
 	}
 
 	// if have the same entry in this.ToRemove and other.ToRemove
 	// and existing entry is with different blue score, in this case - this is an error
-	if offendingOutpoint := checkIntersectionWithRule(this.ToRemove, other.ToRemove,
+	if offendingOutpoint, ok := checkIntersectionWithRule(this.ToRemove, other.ToRemove,
 		func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry *externalapi.UTXOEntry) bool {
 			return utxoEntry.BlockBlueScore != diffEntry.BlockBlueScore
-		}); offendingOutpoint != nil {
+		}); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.ToRemove and other.ToRemove with different "+
 			"blue scores, with no corresponding entry in this.ToAdd", offendingOutpoint)
 	}
@@ -203,19 +208,18 @@ func DiffFrom(this, other *model.UTXODiff) (*model.UTXODiff, error) {
 // WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
 func WithDiffInPlace(this *model.UTXODiff, diff *model.UTXODiff) error {
-	if offendingOutpoint := checkIntersectionWithRule(diff.ToRemove, this.ToRemove,
+	if offendingOutpoint, ok := checkIntersectionWithRule(diff.ToRemove, this.ToRemove,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry *externalapi.UTXOEntry) bool {
 			return !collectionContainsWithBlueScore(this.ToAdd, outpoint, entryToAdd.BlockBlueScore)
-
-		}); offendingOutpoint != nil {
+		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.ToRemove and in diff.ToRemove", offendingOutpoint)
 	}
 
-	if offendingOutpoint := checkIntersectionWithRule(diff.ToAdd, this.ToAdd,
+	if offendingOutpoint, ok := checkIntersectionWithRule(diff.ToAdd, this.ToAdd,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry *externalapi.UTXOEntry) bool {
 			return !collectionContainsWithBlueScore(diff.ToRemove, outpoint, existingEntry.BlockBlueScore)
-		}); offendingOutpoint != nil {
+		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.ToAdd and in diff.ToAdd", offendingOutpoint)
 	}
