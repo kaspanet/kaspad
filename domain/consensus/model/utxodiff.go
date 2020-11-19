@@ -44,3 +44,32 @@ func (uc UTXOCollection) String() string {
 func (d UTXODiff) String() string {
 	return fmt.Sprintf("ToAdd: %s; ToRemove: %s", d.ToAdd, d.ToRemove)
 }
+
+func (d *UTXODiff) Clone() *UTXODiff {
+	clone := &UTXODiff{
+		ToAdd:    make(UTXOCollection, len(d.ToAdd)),
+		ToRemove: make(UTXOCollection, len(d.ToRemove)),
+	}
+
+	for outpoint, entry := range d.ToAdd {
+		clone.ToAdd[outpoint] = cloneUTXOEntry(entry)
+	}
+
+	for outpoint, entry := range d.ToRemove {
+		clone.ToRemove[outpoint] = cloneUTXOEntry(entry)
+	}
+
+	return clone
+}
+
+func cloneUTXOEntry(entry *externalapi.UTXOEntry) *externalapi.UTXOEntry {
+	scriptPublicKeyClone := make([]byte, len(entry.ScriptPublicKey))
+	copy(scriptPublicKeyClone, entry.ScriptPublicKey)
+
+	return &externalapi.UTXOEntry{
+		Amount:          entry.Amount,
+		ScriptPublicKey: scriptPublicKeyClone,
+		BlockBlueScore:  entry.BlockBlueScore,
+		IsCoinbase:      entry.IsCoinbase,
+	}
+}
