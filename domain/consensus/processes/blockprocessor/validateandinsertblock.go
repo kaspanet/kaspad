@@ -1,6 +1,7 @@
 package blockprocessor
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
@@ -155,6 +156,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	log.Debugf("Block %s validated and inserted", hash)
+	virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+	log.Debugf("New virtual's blue score: %d", virtualGhostDAGData.BlueScore)
+
 	return nil
 }
 

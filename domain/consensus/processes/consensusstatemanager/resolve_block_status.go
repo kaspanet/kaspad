@@ -42,6 +42,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 
 		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
+		log.Debugf("Block %s status resolved to `%s`", unverifiedBlockHash, blockStatus)
 	}
 
 	return blockStatus, nil

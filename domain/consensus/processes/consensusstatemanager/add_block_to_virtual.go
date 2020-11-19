@@ -26,6 +26,9 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 				return err
 			}
 		}
+	} else {
+		log.Debugf("Block %s is not next virtual selected parent. Therefore leaving him with status `%s`",
+			blockHash, externalapi.StatusUTXOPendingVerification)
 	}
 
 	newTips, err := csm.addTip(blockHash)
