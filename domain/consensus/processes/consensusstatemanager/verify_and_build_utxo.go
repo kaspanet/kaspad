@@ -70,28 +70,28 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 	log.Tracef("The past median time of %s is %d", blockHash, selectedParentMedianTime)
 
 	for i, transaction := range block.Transactions {
-		transactionId := consensusserialization.TransactionID(transaction)
+		transactionID := consensusserialization.TransactionID(transaction)
 		log.Tracef("Validating transaction %s in block %s against "+
-			"the block's past UTXO", transactionId, blockHash)
+			"the block's past UTXO", transactionID, blockHash)
 		if i == transactionhelper.CoinbaseTransactionIndex {
-			log.Tracef("Skipping transaction %s because it is the coinbase", transactionId)
+			log.Tracef("Skipping transaction %s because it is the coinbase", transactionID)
 			continue
 		}
 
-		log.Tracef("Populating transaction %s with UTXO entries", transactionId)
+		log.Tracef("Populating transaction %s with UTXO entries", transactionID)
 		err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, pastUTXODiff)
 		if err != nil {
 			return err
 		}
 
-		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionId)
+		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
 			transaction, blockHash, selectedParentMedianTime)
 		if err != nil {
 			return err
 		}
 		log.Tracef("Validation against the block's past UTXO "+
-			"passed for transaction %s in block %s", transactionId, blockHash)
+			"passed for transaction %s in block %s", transactionID, blockHash)
 	}
 	return nil
 }

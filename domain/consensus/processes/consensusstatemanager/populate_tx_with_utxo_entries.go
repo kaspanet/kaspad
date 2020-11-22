@@ -19,9 +19,9 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
 	transaction *externalapi.DomainTransaction, utxoDiff *model.UTXODiff) error {
 
-	transactionId := consensusserialization.TransactionID(transaction)
-	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionId)
-	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionId)
+	transactionID := consensusserialization.TransactionID(transaction)
+	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionID)
+	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionID)
 
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, transactionInput := range transaction.Inputs {

@@ -142,9 +142,9 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		for j, transaction := range blueBlock.Transactions {
 			var isAccepted bool
 
-			transactionId := consensusserialization.TransactionID(transaction)
+			transactionID := consensusserialization.TransactionID(transaction)
 			log.Tracef("Attempting to accept transaction %s in block %s",
-				transactionId, blueBlockHash)
+				transactionID, blueBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
 				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore)
@@ -152,7 +152,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				return nil, nil, err
 			}
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
-				transactionId, blueBlockHash, isAccepted, transaction.Fee)
+				transactionID, blueBlockHash, isAccepted, transaction.Fee)
 
 			blockAcceptanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
 				Transaction: transaction,
@@ -171,11 +171,11 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64, err error) {
 
-	transactionId := consensusserialization.TransactionID(transaction)
-	log.Tracef("maybeAcceptTransaction start for transaction %s in block %s", transactionId, blockHash)
-	defer log.Tracef("maybeAcceptTransaction end for transaction %s in block %s", transactionId, blockHash)
+	transactionID := consensusserialization.TransactionID(transaction)
+	log.Tracef("maybeAcceptTransaction start for transaction %s in block %s", transactionID, blockHash)
+	defer log.Tracef("maybeAcceptTransaction end for transaction %s in block %s", transactionID, blockHash)
 
-	log.Tracef("Populating transaction %s with UTXO entries", transactionId)
+	log.Tracef("Populating transaction %s with UTXO entries", transactionID)
 	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff)
 	if err != nil {
 		if !errors.As(err, &(ruleerrors.RuleError{})) {
@@ -190,12 +190,12 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 		if !isSelectedParent {
 			log.Tracef("Transaction %s is the coinbase of block %s "+
 				"but said block is not in the selected parent chain. "+
-				"As such, it is not accepted", transactionId, blockHash)
+				"As such, it is not accepted", transactionID, blockHash)
 			return false, accumulatedMassBefore, nil
 		}
-		log.Tracef("Transaction %s is the coinbase of block %s", transactionId, blockHash)
+		log.Tracef("Transaction %s is the coinbase of block %s", transactionID, blockHash)
 	} else {
-		log.Tracef("Validating transaction %s in block %s", transactionId, blockHash)
+		log.Tracef("Validating transaction %s in block %s", transactionID, blockHash)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
 			transaction, blockHash, selectedParentPastMedianTime)
 		if err != nil {
@@ -204,21 +204,21 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 			}
 
 			log.Tracef("Validation failed for transaction %s "+
-				"in block %s: %s", transactionId, blockHash, err)
+				"in block %s: %s", transactionID, blockHash, err)
 			return false, accumulatedMassBefore, nil
 		}
-		log.Tracef("Validation passed for transaction %s in block %s", transactionId, blockHash)
+		log.Tracef("Validation passed for transaction %s in block %s", transactionID, blockHash)
 
-		log.Tracef("Check mass for transaction %s in block %s", transactionId, blockHash)
+		log.Tracef("Check mass for transaction %s in block %s", transactionID, blockHash)
 		isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
 		if !isAccepted {
 			log.Tracef("Transaction %s in block %s has too much mass, "+
-				"and cannot be accepted", transactionId, blockHash)
+				"and cannot be accepted", transactionID, blockHash)
 			return false, accumulatedMassBefore, nil
 		}
 	}
 
-	log.Tracef("Adding transaction %s in block %s to the accumulated diff", transactionId, blockHash)
+	log.Tracef("Adding transaction %s in block %s to the accumulated diff", transactionID, blockHash)
 	err = utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
 	if err != nil {
 		return false, 0, err
@@ -231,14 +231,14 @@ func (csm *consensusStateManager) checkTransactionMass(
 	transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64) {
 
-	transactionId := consensusserialization.TransactionID(transaction)
-	log.Tracef("checkTransactionMass start for transaction %s", transactionId)
-	defer log.Tracef("checkTransactionMass end for transaction %s", transactionId)
+	transactionID := consensusserialization.TransactionID(transaction)
+	log.Tracef("checkTransactionMass start for transaction %s", transactionID)
+	defer log.Tracef("checkTransactionMass end for transaction %s", transactionID)
 
 	log.Tracef("Adding transaction %s with mass %d to the "+
-		"so-far accumulated mass of %d", transactionId, transaction.Mass, accumulatedMassBefore)
+		"so-far accumulated mass of %d", transactionID, transaction.Mass, accumulatedMassBefore)
 	accumulatedMassAfter = accumulatedMassBefore + transaction.Mass
-	log.Tracef("Accumulated mass including transaction %s: %d", transactionId, accumulatedMassAfter)
+	log.Tracef("Accumulated mass including transaction %s: %d", transactionID, accumulatedMassAfter)
 
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
