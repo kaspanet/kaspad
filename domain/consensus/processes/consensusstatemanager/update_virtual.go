@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
 func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash, tips []*externalapi.DomainHash) error {
@@ -68,15 +67,14 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		if status != externalapi.StatusValid {
 			newVirtualDiffParents = oldVirtualDiffParents
 		} else {
-			newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
-			if err != nil {
-				return err
-			}
-			newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
-
 			newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
 			for _, virtualDiffParent := range oldVirtualDiffParents {
-				if !newBlockParents.Contains(virtualDiffParent) {
+				isAncestorOfNewBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, newBlockHash)
+				if err != nil {
+					return err
+				}
+
+				if !isAncestorOfNewBlock {
 					newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
 				}
 			}
