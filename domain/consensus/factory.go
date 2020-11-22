@@ -48,6 +48,8 @@ import (
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
 	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
+	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+		tc testapi.TestConsensus, teardown func(), err error)
 }
 
 type factory struct{}
@@ -312,11 +314,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
 	tc testapi.TestConsensus, teardown func(), err error) {
 
-	testDatabaseDir, err := ioutil.TempDir("", testName)
+	dataDir, err := ioutil.TempDir("", testName)
 	if err != nil {
 		return nil, nil, err
 	}
-	db, err := ldb.NewLevelDB(testDatabaseDir)
+
+	return f.NewTestConsensusWithDataDir(dagParams, dataDir)
+}
+
+func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+	tc testapi.TestConsensus, teardown func(), err error) {
+
+	db, err := ldb.NewLevelDB(dataDir)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -338,7 +347,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
 	teardown = func() {
 		db.Close()
-		os.RemoveAll(testDatabaseDir)
+		os.RemoveAll(dataDir)
 	}
 
 	return tstConsensus, teardown, nil
