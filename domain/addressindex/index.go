@@ -97,7 +97,8 @@ func (in *Index) checkAndCleanCachedData() {
 	}
 }
 
-func getAddress(scriptPublicKey []byte, prefix util.Bech32Prefix) (string, error) {
+// GetAddress extracts addresses from scriptPublicKey
+func GetAddress(scriptPublicKey []byte, prefix util.Bech32Prefix) (string, error) {
 	_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPublicKey, prefix)
 	addressStr := address.EncodeAddress()
 	return addressStr, err
@@ -111,7 +112,7 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 
 	for _, transaction := range transactions {
 		for _, txIn := range transaction.Inputs {
-			address, err := getAddress(txIn.UTXOEntry.ScriptPublicKey, prefix)
+			address, err := GetAddress(txIn.UTXOEntry.ScriptPublicKey, prefix)
 			if err != nil {
 				return nil, err
 			}
@@ -120,7 +121,7 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 
 		isCoinbase := transactionhelper.IsCoinBase(transaction)
 		for i, txOut := range transaction.Outputs {
-			address, err := getAddress(txOut.ScriptPublicKey, prefix)
+			address, err := GetAddress(txOut.ScriptPublicKey, prefix)
 			if err != nil {
 				return nil, err
 			}
@@ -202,7 +203,7 @@ func GetAddressesAndUTXOsFromTransaction(transaction *externalapi.DomainTransact
 	utxos := make(UTXOCollection)
 
 	for _, txIn := range transaction.Inputs {
-		address, err := getAddress(txIn.UTXOEntry.ScriptPublicKey, prefix)
+		address, err := GetAddress(txIn.UTXOEntry.ScriptPublicKey, prefix)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -210,7 +211,7 @@ func GetAddressesAndUTXOsFromTransaction(transaction *externalapi.DomainTransact
 	}
 
 	for i, txOut := range transaction.Outputs {
-		address, err := getAddress(txOut.ScriptPublicKey, prefix)
+		address, err := GetAddress(txOut.ScriptPublicKey, prefix)
 		if err != nil {
 			return nil, nil, err
 		}

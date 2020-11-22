@@ -116,6 +116,8 @@ const (
 	CmdUTXOOfAddressChangedNotificationMessage
 	CmdGetUTXOsByAddressRequestMessage
 	CmdGetUTXOsByAddressResponseMessage
+	CmdGetTransactionsByAddressesRequestMessage
+	CmdGetTransactionsByAddressesResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -206,6 +208,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdUTXOOfAddressChangedNotificationMessage:     "UTXOOfAddressChangedNotificationMessage",
 	CmdGetUTXOsByAddressRequestMessage:             "GetUTXOsByAddressRequestMessage",
 	CmdGetUTXOsByAddressResponseMessage:            "GetUTXOsByAddressResponseMessage",
+	CmdGetTransactionsByAddressesRequestMessage:    "GetTransactionsByAddressesRequestMessage",
+	CmdGetTransactionsByAddressesResponseMessage:   "GetTransactionsByAddressesResponseMessage",
 }
 
 // Message is an interface that describes a kaspa message. A type that

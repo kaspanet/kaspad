@@ -11,8 +11,13 @@ import (
 
 type handlerFunc func(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error)
 
-func defaultHandlerFunc(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	return nil, errors.New("Not implemented")
+var (
+	// ErrHandlerNotImplemented indicates that a handler isn't implemented
+	ErrHandlerNotImplemented = errors.New("handler isn't implemented")
+)
+
+func defaultHandlerFunc(_ *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+	return nil, ErrHandlerNotImplemented
 }
 
 var rpcHandlers = map[appmessage.MessageCommand]handlerFunc{
@@ -41,6 +46,7 @@ var rpcHandlers = map[appmessage.MessageCommand]handlerFunc{
 	appmessage.CmdShutDownRequestMessage:                   rpchandlers.HandleShutDown,
 	appmessage.CmdGetHeadersRequestMessage:                 rpchandlers.HandleGetHeaders,
 	appmessage.CmdGetUTXOsByAddressRequestMessage:          rpchandlers.HandleGetUTXOsByAddress,
+	appmessage.CmdGetTransactionsByAddressesRequestMessage: rpchandlers.HandleGetTransactionsByAddresses,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
@@ -92,6 +98,11 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	if errors.Is(err, router.ErrTimeout) {
 		log.Warnf("Got timeout from %s. Disconnecting...", netConnection)
 		netConnection.Disconnect()
+		return
+	}
+	if errors.Is(err, ErrHandlerNotImplemented) {
+		netConnection.Disconnect()
+		log.Error(err)
 		return
 	}
 	if errors.Is(err, router.ErrRouteClosed) {

@@ -89,6 +89,8 @@ message KaspadMessage {
     UTXOOfAddressChangedNotificationMessage utxoOfAddressChangedNotification = 1054;
     GetUTXOsByAddressRequestMessage getUTXOsByAddressRequest = 1055;
     GetUTXOsByAddressResponseMessage getUTXOsByAddressResponse = 1056;
+    GetTransactionsByAddressesRequestMessage getTransactionsByAddressesRequest = 1057;
+    GetTransactionsByAddressesResponseMessage getTransactionsByAddressesResponse = 1058;
   }
 }
 
@@ -675,6 +677,17 @@ message GetUTXOsByAddressRequestMessage{
 message GetUTXOsByAddressResponseMessage{
   string address = 1;
   repeated UTXOVerboseData utxosVerboseData = 2;
+  RPCError error = 1000;
+}
+
+message GetTransactionsByAddressesRequestMessage{
+  string startingBlockHash = 1;
+  repeated string addresses = 2;
+}
+
+message GetTransactionsByAddressesResponseMessage{
+  string lasBlockScanned = 1;
+  repeated TransactionVerboseData transactions = 2;
   RPCError error = 1000;
 }
 

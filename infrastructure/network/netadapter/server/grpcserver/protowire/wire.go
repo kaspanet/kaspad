@@ -11,7 +11,11 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
-	appMessage, err := x.Payload.(converter).toAppMessage()
+	payload, ok := x.Payload.(converter)
+	if !ok {
+		return nil, errors.New("Invalid message")
+	}
+	appMessage, err := payload.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -640,6 +644,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.GetUTXOsByAddressResponseMessage:
 		payload := new(KaspadMessage_GetUTXOsByAddressResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTransactionsByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetTransactionsByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTransactionsByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetTransactionsByAddressesResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
