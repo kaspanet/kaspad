@@ -58,7 +58,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 	defer log.Tracef("addTransactionToMultiset end for transaction %s", transactionId)
 
 	for _, input := range transaction.Inputs {
-		log.Tracef("Removing input %s at index %s from the multiset",
+		log.Tracef("Removing input %s at index %d from the multiset",
 			input.PreviousOutpoint.TransactionID, input.PreviousOutpoint.Index)
 		err := removeUTXOFromMultiset(multiset, input.UTXOEntry, &input.PreviousOutpoint)
 		if err != nil {
@@ -77,7 +77,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 			BlockBlueScore:  blockBlueScore,
 			IsCoinbase:      isCoinbase,
 		}
-		log.Tracef("Adding input %s at index %s from the multiset", transactionId, i)
+		log.Tracef("Adding input %s at index %d from the multiset", transactionId, i)
 		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)
 		if err != nil {
 			return err

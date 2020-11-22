@@ -20,8 +20,8 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	defer log.Tracef("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
 
 	if *blockHash == *csm.genesisHash {
-		log.Tracef("Block %s is the genesis. By definition, " +
-			"it has an empty UTXO diff, empty acceptance data, and a blank multiset")
+		log.Tracef("Block %s is the genesis. By definition, "+
+			"it has an empty UTXO diff, empty acceptance data, and a blank multiset", blockHash)
 		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
 	}
 
@@ -30,7 +30,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Restoring the past UTXO of block %s with selectedParent",
+	log.Tracef("Restoring the past UTXO of block %s with selectedParent %s",
 		blockHash, blockGHOSTDAGData.SelectedParent)
 	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
 	if err != nil {
@@ -119,7 +119,6 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Tracef("The blue blocks for %s are: %s", blockHash, blueBlocks)
 
 	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(blockHash)
 	if err != nil {
@@ -132,19 +131,20 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
-		log.Tracef("Applying blue block %s", blueBlock)
+		blueBlockHash := consensusserialization.BlockHash(blueBlock)
+		log.Tracef("Applying blue block %s", blueBlockHash)
 		blockAcceptanceData := &model.BlockAcceptanceData{
 			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
-		log.Tracef("Is blue block %s the selected parent: %t", blueBlock, isSelectedParent)
+		log.Tracef("Is blue block %s the selected parent: %t", blueBlockHash, isSelectedParent)
 
 		for j, transaction := range blueBlock.Transactions {
 			var isAccepted bool
 
 			transactionId := consensusserialization.TransactionID(transaction)
 			log.Tracef("Attempting to accept transaction %s in block %s",
-				transactionId, blueBlock)
+				transactionId, blueBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
 				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore)
@@ -152,7 +152,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				return nil, nil, err
 			}
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
-				transactionId, blueBlock, isAccepted, transaction.Fee)
+				transactionId, blueBlockHash, isAccepted, transaction.Fee)
 
 			blockAcceptanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
 				Transaction: transaction,

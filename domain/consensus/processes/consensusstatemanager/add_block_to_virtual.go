@@ -19,14 +19,14 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	}
 
 	if isNextVirtualSelectedParent {
-		log.Tracef("Block %s is the new virtual. Resolving its block status")
+		log.Tracef("Block %s is the new virtual. Resolving its block status", blockHash)
 		blockStatus, err := csm.resolveBlockStatus(blockHash)
 		if err != nil {
 			return err
 		}
 
 		if blockStatus == externalapi.StatusValid {
-			log.Tracef("Block %s is tentatively valid. Resolving whether it violates finality")
+			log.Tracef("Block %s is tentatively valid. Resolving whether it violates finality", blockHash)
 			err = csm.checkFinalityViolation(blockHash)
 			if err != nil {
 				return err
@@ -68,7 +68,8 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 	defer log.Tracef("isNextVirtualSelectedParent end for block %s", blockHash)
 
 	if *blockHash == *csm.genesisHash {
-		log.Tracef("Block %s is the genesis block, therefore it is the selected parent by definition")
+		log.Tracef("Block %s is the genesis block, therefore it is "+
+			"the selected parent by definition", blockHash)
 		return true, nil
 	}
 
@@ -92,7 +93,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 	log.Tracef("addTip start for new tip %s", newTipHash)
 	defer log.Tracef("addTip end for new tip %s", newTipHash)
 
-	log.Tracef("Calculating the new tips for new tip %s")
+	log.Tracef("Calculating the new tips for new tip %s", newTipHash)
 	newTips, err = csm.calculateNewTips(newTipHash)
 	if err != nil {
 		return nil, err

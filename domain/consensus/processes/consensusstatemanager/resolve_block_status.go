@@ -24,13 +24,14 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	// If there's no unverified blocks in the given block's chain - this means the given block already has a
 	// UTXO-verified status, and therefore it should be retrieved from the store and returned
 	if len(unverifiedBlocks) == 0 {
-		log.Tracef("There are not unverified blocks in %s's selected parent chain. " +
-			"This means that the block already has a UTXO-verified status.")
+		log.Tracef("There are not unverified blocks in %s's selected parent chain. "+
+			"This means that the block already has a UTXO-verified status.", blockHash)
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, blockHash)
 		if err != nil {
 			return 0, err
 		}
-		log.Tracef("Block %s's status resolved to: %s", status)
+		log.Tracef("Block %s's status resolved to: %s", blockHash, status)
+		return status, nil
 	}
 
 	log.Tracef("Finding the status of the selected parent of %s", blockHash)
@@ -102,7 +103,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 			return unverifiedBlocks, nil
 		}
 
-		log.Tracef("Block %s is unverified. Adding it to the unverified block collection")
+		log.Tracef("Block %s is unverified. Adding it to the unverified block collection", currentHash)
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
 		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
@@ -130,7 +131,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	log.Tracef("Staging the calculate acceptance data of block %s")
+	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
 	err = csm.acceptanceDataStore.Stage(blockHash, acceptanceData)
 	if err != nil {
 		return 0, err
