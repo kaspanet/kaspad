@@ -19,11 +19,7 @@ func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown()
+		consensus := factory.NewTestConsensus(t, params)
 
 		// Mine chain of two blocks to fund our double spend
 		firstBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)

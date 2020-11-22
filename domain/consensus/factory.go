@@ -1,9 +1,8 @@
 package consensus
 
 import (
-	"io/ioutil"
-	"os"
 	"sync"
+	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 
@@ -47,7 +46,7 @@ import (
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
+	NewTestConsensus(tb testing.TB, dagParams *dagconfig.Params) testapi.TestConsensus
 }
 
 type factory struct{}
@@ -308,20 +307,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
-	tc testapi.TestConsensus, teardown func(), err error) {
-
-	testDatabaseDir, err := ioutil.TempDir("", testName)
-	if err != nil {
-		return nil, nil, err
-	}
+func (f *factory) NewTestConsensus(tb testing.TB, dagParams *dagconfig.Params) testapi.TestConsensus {
+	testDatabaseDir := tb.TempDir()
 	db, err := ldb.NewLevelDB(testDatabaseDir)
 	if err != nil {
-		return nil, nil, err
+		tb.Fatalf("NewTestConsensus failed creating a new Database: %v", err)
 	}
 	consensusAsInterface, err := f.NewConsensus(dagParams, db)
 	if err != nil {
-		return nil, nil, err
+		tb.Fatalf("NewTestConsensus failed creating a new consensus: %v", err)
 	}
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
@@ -335,10 +329,10 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 			reachabilityManager),
 	}
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
-	teardown = func() {
-		db.Close()
-		os.RemoveAll(testDatabaseDir)
-	}
-
-	return tstConsensus, teardown, nil
+	tb.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			tb.Errorf("NewTestConsensus failed cleaning up the database: %v", err)
+		}
+	})
+	return tstConsensus
 }

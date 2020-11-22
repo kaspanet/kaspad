@@ -19,11 +19,7 @@ func TestUTXOCommitment(t *testing.T) {
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown()
+		consensus := factory.NewTestConsensus(t, params)
 
 		// Build the following DAG:
 		// G <- A <- B <- C <- E
@@ -115,14 +111,11 @@ func TestPastUTXOMultiset(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown()
+		consensus := factory.NewTestConsensus(t, params)
 
 		// Build a short chain
 		currentHash := params.GenesisHash
+		var err error
 		for i := 0; i < 3; i++ {
 			currentHash, err = consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {

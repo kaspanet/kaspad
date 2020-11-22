@@ -12,11 +12,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
-		if err != nil {
-			t.Fatalf("NewTestConsensus: %+v", err)
-		}
-		defer tearDown()
+		tc := factory.NewTestConsensus(t, params)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -67,11 +63,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
-		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
-		}
-		defer tearDown()
+		tc := factory.NewTestConsensus(t, params)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -157,11 +149,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
-		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
-		}
-		defer tearDown()
+		tc := factory.NewTestConsensus(t, params)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -291,16 +279,13 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
-		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
-		}
-		defer tearDown()
+		tc := factory.NewTestConsensus(t, params)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
 		// Add a chain of reachabilityReindexWindow + 1 blocks above the genesis.
 		// This will set the reindex root to the child of genesis
+		var err error
 		chainTipHash := params.GenesisHash
 		for i := uint64(0); i < reachabilityReindexWindow+1; i++ {
 			chainTipHash, err = tc.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)

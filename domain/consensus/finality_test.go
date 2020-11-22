@@ -15,11 +15,7 @@ func TestFinality(t *testing.T) {
 		params.FinalityDuration = 50 * params.TargetTimePerBlock
 
 		factory := NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestFinality")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown()
+		consensus := factory.NewTestConsensus(t, params)
 
 		buildAndInsertBlock := func(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 			block, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
@@ -39,6 +35,7 @@ func TestFinality(t *testing.T) {
 		var mainChainTip *externalapi.DomainBlock
 		mainChainTipHash := params.GenesisHash
 
+		var err error
 		for i := uint64(0); i < finalityInterval-1; i++ {
 			mainChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{mainChainTipHash})
 			if err != nil {
@@ -60,7 +57,7 @@ func TestFinality(t *testing.T) {
 		var sideChainTip *externalapi.DomainBlock
 		sideChainTipHash := params.GenesisHash
 		for i := uint64(0); i < finalityInterval-2; i++ {
-			sideChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
+			sideChainTip, err := buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
@@ -80,7 +77,7 @@ func TestFinality(t *testing.T) {
 
 		// Add two more blocks in the side-chain until it becomes the selected chain
 		for i := uint64(0); i < 2; i++ {
-			sideChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
+			sideChainTip, err := buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
