@@ -10,6 +10,7 @@ import (
 )
 
 const ibdBatchSize = router.DefaultMaxMessages
+const maxHeaders = appmessage.MaxInvPerMsg
 
 // RequestIBDBlocksContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestIBDBlocksContext interface {
@@ -97,7 +98,7 @@ func (flow *handleRequestBlocksFlow) buildMsgBlockHeaders(lowHash *externalapi.D
 	if err != nil {
 		return nil, err
 	}
-	const maxHeaders = appmessage.MaxInvPerMsg
+
 	if len(blockHashes) > maxHeaders {
 		blockHashes = blockHashes[:maxHeaders]
 	}
