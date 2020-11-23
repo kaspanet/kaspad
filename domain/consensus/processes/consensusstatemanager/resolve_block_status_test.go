@@ -151,7 +151,7 @@ func TestDoubleSpends(t *testing.T) {
 
 func TestResolveBlockStatusSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, "TestResolveBlockStatusSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
