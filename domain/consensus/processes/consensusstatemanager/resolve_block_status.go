@@ -178,6 +178,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
 
 	if *blockHash == *csm.genesisHash {
+		log.Tracef("Genesis block doesn't have ancestors to remove from the virtual diff parents")
 		return nil
 	}
 
@@ -188,6 +189,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 
 	for _, virtualDiffParent := range virtualDiffParents {
 		if *virtualDiffParent == *blockHash {
+			log.Tracef("Skipping updating virtual diff parent %s because it was updated before.")
 			continue
 		}
 
@@ -202,9 +204,9 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 			continue
 		}
 
-		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
 		// parents that till now didn't have a utxo-diff child - were actually virtual's diffParents.
 		// Update them to have the new block as their utxo-diff child
+		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
 		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
 		if err != nil {
 			return err
