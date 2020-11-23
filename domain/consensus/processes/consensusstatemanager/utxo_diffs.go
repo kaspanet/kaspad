@@ -19,11 +19,11 @@ func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
 	}
 
 	if utxoDiffChild == nil {
-		log.Tracef("Adding block %s to the virtual diff parents")
+		log.Tracef("Adding block %s to the virtual diff parents", blockHash)
 		return csm.addToVirtualDiffParents(blockHash)
 	}
 
-	log.Tracef("Removing block %s from the virtual diff parents")
+	log.Tracef("Removing block %s from the virtual diff parents", blockHash)
 	return csm.removeFromVirtualDiffParents(blockHash)
 }
 
@@ -49,7 +49,7 @@ func (csm *consensusStateManager) addToVirtualDiffParents(blockHash *externalapi
 	}
 
 	if isInVirtualDiffParents {
-		log.Tracef("Block %s is already a virtual diff parent, so there's no need to add it")
+		log.Tracef("Block %s is already a virtual diff parent, so there's no need to add it", blockHash)
 		return nil
 	}
 

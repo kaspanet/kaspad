@@ -189,7 +189,8 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 
 	for _, virtualDiffParent := range virtualDiffParents {
 		if *virtualDiffParent == *blockHash {
-			log.Tracef("Skipping updating virtual diff parent %s because it was updated before.")
+			log.Tracef("Skipping updating virtual diff parent %s "+
+				"because it was updated before.", virtualDiffParent)
 			continue
 		}
 
