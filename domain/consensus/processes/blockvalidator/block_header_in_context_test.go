@@ -15,7 +15,7 @@ import (
 func TestValidateMedianTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestFinality")
+		tc, teardown, err := factory.NewTestConsensus(params, "TestValidateMedianTime")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -68,7 +68,7 @@ func TestValidateMedianTime(t *testing.T) {
 
 		for i := 0; i < 100; i++ {
 			blockTime += 1000
-			tip, tipHash = addBlock(blockTime, []*externalapi.DomainHash{tipHash}, nil)
+			_, tipHash = addBlock(blockTime, []*externalapi.DomainHash{tipHash}, nil)
 		}
 
 		// Checks that a block is invalid if it has timestamp equals to past median time
