@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/wallet"
 	"github.com/kaspanet/kaspad/domain/addressindex"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"sync/atomic"
 
@@ -158,8 +159,13 @@ func setupRPC(
 				return err
 			}
 
+			blueScore, err := blocks.ExtractBlueScore(block)
+			if err != nil {
+				return err
+			}
+
 			for _, transaction := range block.Transactions {
-				err = walletManager.NotifyTransactionAdded(transaction, externalapi.StatusConfirmed, 0, consensusserialization.BlockHash(block), cfg.NetParams().Prefix)
+				err = walletManager.NotifyTransactionAdded(transaction, externalapi.StatusConfirmed, blueScore, consensusserialization.BlockHash(block), cfg.NetParams().Prefix)
 				if err != nil {
 					return err
 				}
