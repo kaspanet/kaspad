@@ -19,6 +19,7 @@ type DomainTransaction struct {
 	Mass uint64
 
 	// ID is a field that is used to cache the transaction ID.
+	// Always use consensusserialization.TransactionID instead of accessing this field directly
 	ID *DomainTransactionID
 }
 

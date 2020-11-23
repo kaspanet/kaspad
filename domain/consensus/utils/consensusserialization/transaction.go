@@ -86,7 +86,9 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 	}
 	transactionID := externalapi.DomainTransactionID(*writer.Finalize())
 
-	return &transactionID
+	tx.ID = &transactionID
+
+	return tx.ID
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
