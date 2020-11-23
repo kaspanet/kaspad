@@ -162,8 +162,8 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	log.Tracef("Updating the parent utxoDiffs of block %s", blockHash)
-	err = csm.removeAncestorsFromVirtualDiffParents(blockHash, pastUTXODiff)
+	log.Tracef("Remove block ancestors from virtual diff parents and assign %s as their diff child", blockHash)
+	err = csm.removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(blockHash, pastUTXODiff)
 	if err != nil {
 		return 0, err
 	}
@@ -171,11 +171,11 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	return externalapi.StatusValid, nil
 }
 
-func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParents(
+func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
 	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
 
-	log.Tracef("removeAncestorsFromVirtualDiffParents start for block %s", blockHash)
-	defer log.Tracef("removeAncestorsFromVirtualDiffParents end for block %s", blockHash)
+	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
+	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
 
 	if *blockHash == *csm.genesisHash {
 		return nil
