@@ -35,7 +35,7 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 			// Re-fetch the block status for logging purposes
 			// because it could've been changed in
 			// checkFinalityViolation
-			blockStatus, err = csm.resolveBlockStatus(blockHash)
+			blockStatus, err = csm.blockStatusStore.Get(csm.databaseContext, blockHash)
 			if err != nil {
 				return err
 			}
