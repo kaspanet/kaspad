@@ -157,67 +157,67 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	csm.multisetStore.Stage(blockHash, multiset)
 
 	log.Tracef("Staging the utxoDiff of block %s", blockHash)
-	err = csm.utxoDiffStore.Stage(blockHash, pastUTXODiff, nil)
+	err = csm.stageDiff(blockHash, pastUTXODiff, nil)
 	if err != nil {
 		return 0, err
 	}
 
-	log.Tracef("Updating the parent utxoDiffs of block %s", blockHash)
-	err = csm.updateParentDiffs(blockHash, pastUTXODiff)
+	log.Tracef("Remove block ancestors from virtual diff parents and assign %s as their diff child", blockHash)
+	err = csm.removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(blockHash, pastUTXODiff)
 	if err != nil {
 		return 0, err
 	}
 
 	return externalapi.StatusValid, nil
 }
-func (csm *consensusStateManager) updateParentDiffs(
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
-	log.Tracef("updateParentDiffs start for block %s", blockHash)
-	defer log.Tracef("updateParentDiffs end for block %s", blockHash)
 
-	parentHashes, err := csm.dagTopologyManager.Parents(blockHash)
+func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
+	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+
+	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
+	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
+
+	if *blockHash == *csm.genesisHash {
+		log.Tracef("Genesis block doesn't have ancestors to remove from the virtual diff parents")
+		return nil
+	}
+
+	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 	if err != nil {
 		return err
 	}
-	log.Tracef("Parent hashes for block %s are: %s", blockHash, parentHashes)
 
-	for _, parentHash := range parentHashes {
-		// skip all parents that already have a utxo-diff child
-		parentHasUTXODiffChild, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, parentHash)
-		if err != nil {
-			return err
-		}
-		if parentHasUTXODiffChild {
-			log.Tracef("Skipping parent %s of block %s because it "+
-				"already has a UTXO diff-child", parentHash, blockHash)
+	for _, virtualDiffParent := range virtualDiffParents {
+		if *virtualDiffParent == *blockHash {
+			log.Tracef("Skipping updating virtual diff parent %s "+
+				"because it was updated before.", virtualDiffParent)
 			continue
 		}
 
-		parentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, parentHash)
+		isAncestorOfBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, blockHash)
 		if err != nil {
 			return err
 		}
-		if parentStatus != externalapi.StatusValid {
-			log.Tracef("Skipping parent %s of block %s because it "+
-				"has a non-valid status %s", parentHash, blockHash, parentStatus)
+
+		if !isAncestorOfBlock {
+			log.Tracef("Skipping block %s because it's not an "+
+				"ancestor of %s", virtualDiffParent, blockHash)
 			continue
 		}
 
 		// parents that didn't have a utxo-diff child until now were actually virtual's diffParents.
 		// Update them to have the new block as their utxo-diff child
-		log.Tracef("Resolving new UTXO diff of parent %s", parentHash)
-		parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
+		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
+		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
 		if err != nil {
 			return err
 		}
-		parentNewDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, parentCurrentDiff)
+		newDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, currentDiff)
 		if err != nil {
 			return err
 		}
-		log.Tracef("The new UTXO diff parent %s resolved to: %s", parentHash, parentNewDiff)
 
-		log.Tracef("Staging the new UTXO diff and diff child for parent %s", parentHash)
-		err = csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		err = csm.stageDiff(virtualDiffParent, newDiff, blockHash)
 		if err != nil {
 			return err
 		}

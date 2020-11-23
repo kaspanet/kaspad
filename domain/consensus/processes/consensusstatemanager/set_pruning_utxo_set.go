@@ -90,7 +90,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 	}
 
 	log.Tracef("Updating the header tips pruning point diff parents with an empty UTXO diff")
-	err = csm.updateVirtualDiffParents(headerTipsPruningPoint, model.NewUTXODiff())
+	err = csm.updateVirtualDiffParents(model.NewUTXODiff())
 	if err != nil {
 		return err
 	}
