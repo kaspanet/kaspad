@@ -130,7 +130,6 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 			err := tc.TransactionValidator().ValidateTransactionInIsolation(tx)
 			if !errors.Is(err, test.expectedErr) {
 				t.Errorf("TestValidateTransactionInIsolation: '%s': unexpected error %+v", test.name, err)
-				continue
 			}
 		}
 	})
