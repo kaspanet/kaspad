@@ -15,12 +15,17 @@ func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi
 		return err
 	}
 
-	err = v.checkProofOfWork(header)
+	err = v.checkParentsExist(header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsExist(header)
+	err = v.checkParentsIncest(header)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkProofOfWork(header)
 	if err != nil {
 		return err
 	}
