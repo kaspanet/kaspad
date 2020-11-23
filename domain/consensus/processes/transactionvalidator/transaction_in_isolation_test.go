@@ -23,9 +23,6 @@ type txSubnetworkData struct {
 
 func TestValidateTransactionInIsolation(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		// Set finalityInterval to 50 blocks, so that test runs quickly
-		params.FinalityDuration = 50 * params.TargetTimePerBlock
-
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, "TestValidateTransactionInIsolation")
 		if err != nil {
