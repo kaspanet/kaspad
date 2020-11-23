@@ -78,7 +78,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 		return err
 	}
 
-	err = csm.updateVirtualDiffParents(headerTipsPruningPoint, model.NewUTXODiff())
+	err = csm.updateVirtualDiffParents(model.NewUTXODiff())
 	if err != nil {
 		return err
 	}

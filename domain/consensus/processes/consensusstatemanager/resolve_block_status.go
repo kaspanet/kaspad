@@ -116,7 +116,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	}
 
 	csm.multisetStore.Stage(blockHash, multiset)
-	err = csm.utxoDiffStore.Stage(blockHash, pastUTXODiff, nil)
+	err = csm.stageDiff(blockHash, pastUTXODiff, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -128,42 +128,53 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 
 	return externalapi.StatusValid, nil
 }
+
 func (csm *consensusStateManager) updateParentDiffs(
 	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
-	parentHashes, err := csm.dagTopologyManager.Parents(blockHash)
+
+	if *blockHash == *csm.genesisHash {
+		return nil
+	}
+
+	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 	if err != nil {
 		return err
 	}
-	for _, parentHash := range parentHashes {
-		// skip all parents that already have a utxo-diff child
-		parentHasUTXODiffChild, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, parentHash)
-		if err != nil {
-			return err
-		}
-		if parentHasUTXODiffChild {
+
+	for _, virtualDiffParent := range virtualDiffParents {
+		if *virtualDiffParent == *blockHash {
 			continue
 		}
 
-		parentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, parentHash)
+		isAncestorOfBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, blockHash)
 		if err != nil {
 			return err
 		}
-		if parentStatus != externalapi.StatusValid {
+
+		if !isAncestorOfBlock {
+			continue
+		}
+
+		status, err := csm.blockStatusStore.Get(csm.databaseContext, virtualDiffParent)
+		if err != nil {
+			return err
+		}
+		if status != externalapi.StatusValid {
 			continue
 		}
 
 		// parents that till now didn't have a utxo-diff child - were actually virtual's diffParents.
 		// Update them to have the new block as their utxo-diff child
-		parentCurrentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, parentHash)
+		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
 		if err != nil {
 			return err
 		}
-		parentNewDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, parentCurrentDiff)
+		newDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, currentDiff)
 		if err != nil {
 			return err
 		}
 
-		err = csm.utxoDiffStore.Stage(parentHash, parentNewDiff, blockHash)
+		err = csm.stageDiff(virtualDiffParent, newDiff, blockHash)
 		if err != nil {
 			return err
 		}

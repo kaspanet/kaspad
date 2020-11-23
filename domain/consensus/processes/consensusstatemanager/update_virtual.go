@@ -39,7 +39,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return err
 	}
 
-	err = csm.updateVirtualDiffParents(newBlockHash, virtualUTXODiff)
+	err = csm.updateVirtualDiffParents(virtualUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -47,41 +47,14 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	return nil
 }
 
-func (csm *consensusStateManager) updateVirtualDiffParents(
-	newBlockHash *externalapi.DomainHash, virtualUTXODiff *model.UTXODiff) error {
+func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff *model.UTXODiff) error {
 
-	var newVirtualDiffParents []*externalapi.DomainHash
-	if *newBlockHash == *csm.genesisHash {
-		newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
-	} else {
-		oldVirtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
-		if err != nil {
-			return err
-		}
-
-		// If the status of the new block is not `Valid` - virtualDiffParents didn't change
-		status, err := csm.blockStatusStore.Get(csm.databaseContext, newBlockHash)
-		if err != nil {
-			return err
-		}
-		if status != externalapi.StatusValid {
-			newVirtualDiffParents = oldVirtualDiffParents
-		} else {
-			newVirtualDiffParents = []*externalapi.DomainHash{newBlockHash}
-			for _, virtualDiffParent := range oldVirtualDiffParents {
-				isAncestorOfNewBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, newBlockHash)
-				if err != nil {
-					return err
-				}
-
-				if !isAncestorOfNewBlock {
-					newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
-				}
-			}
-		}
+	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+	if err != nil {
+		return err
 	}
 
-	for _, virtualDiffParent := range newVirtualDiffParents {
+	for _, virtualDiffParent := range virtualDiffParents {
 		virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
 		if err != nil {
 			return err
@@ -90,11 +63,11 @@ func (csm *consensusStateManager) updateVirtualDiffParents(
 		if err != nil {
 			return err
 		}
-		err = csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, nil)
+		err = csm.stageDiff(virtualDiffParent, newDiff, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	return nil
 }
