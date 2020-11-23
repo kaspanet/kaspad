@@ -81,3 +81,73 @@ func TestValidateMedianTime(t *testing.T) {
 		addBlock(pastMedianTime(tipHash)-1, []*externalapi.DomainHash{tipHash}, ruleerrors.ErrTimeTooOld)
 	})
 }
+
+func TestCheckParentsIncest(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, "TestCheckParentsIncest")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown()
+
+		a, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		b, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		c, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		directParentsRelationBlock := &externalapi.DomainBlock{
+			Header: &externalapi.DomainBlockHeader{
+				Version:              0,
+				ParentHashes:         []*externalapi.DomainHash{a, b},
+				HashMerkleRoot:       externalapi.DomainHash{},
+				AcceptedIDMerkleRoot: externalapi.DomainHash{},
+				UTXOCommitment:       externalapi.DomainHash{},
+				TimeInMilliseconds:   0,
+				Bits:                 0,
+				Nonce:                0,
+			},
+			Transactions: nil,
+		}
+
+		err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
+		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
+			t.Fatalf("unexpected error %+v", err)
+		}
+
+		indirectParentsRelationBlock := &externalapi.DomainBlock{
+			Header: &externalapi.DomainBlockHeader{
+				Version:              0,
+				ParentHashes:         []*externalapi.DomainHash{params.GenesisHash, b},
+				HashMerkleRoot:       externalapi.DomainHash{},
+				AcceptedIDMerkleRoot: externalapi.DomainHash{},
+				UTXOCommitment:       externalapi.DomainHash{},
+				TimeInMilliseconds:   0,
+				Bits:                 0,
+				Nonce:                0,
+			},
+			Transactions: nil,
+		}
+
+		err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
+		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
+			t.Fatalf("unexpected error %+v", err)
+		}
+
+		// Try to add block with unrelated parents
+		_, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %s", err)
+		}
+	})
+}
