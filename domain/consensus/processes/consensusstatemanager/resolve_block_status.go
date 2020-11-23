@@ -204,7 +204,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 			continue
 		}
 
-		// parents that till now didn't have a utxo-diff child - were actually virtual's diffParents.
+		// parents that didn't have a utxo-diff child until now were actually virtual's diffParents.
 		// Update them to have the new block as their utxo-diff child
 		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
 		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
