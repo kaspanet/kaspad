@@ -65,6 +65,12 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 
 // TransactionID generates the Hash for the transaction without the signature script and payload field.
 func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransactionID {
+
+	// If transaction ID is already cached, return it
+	if tx.ID != nil {
+		return tx.ID
+	}
+
 	// Encode the transaction, replace signature script with zeroes, cut off
 	// payload and calculate double sha256 on the result.
 	var encodingFlags txEncoding

@@ -17,6 +17,9 @@ type DomainTransaction struct {
 
 	Fee  uint64
 	Mass uint64
+
+	// ID is a field that is used to cache the transaction ID.
+	ID *DomainTransactionID
 }
 
 // DomainTransactionInput represents a Kaspa transaction input
