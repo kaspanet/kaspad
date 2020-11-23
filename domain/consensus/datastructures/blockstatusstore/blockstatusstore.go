@@ -62,7 +62,7 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalap
 		return 0, err
 	}
 
-	return bss.deserializeHeader(statusBytes)
+	return bss.deserializeBlockStatus(statusBytes)
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists
@@ -84,7 +84,7 @@ func (bss *blockStatusStore) serializeBlockStatus(status externalapi.BlockStatus
 	return proto.Marshal(dbBlockStatus)
 }
 
-func (bss *blockStatusStore) deserializeHeader(statusBytes []byte) (externalapi.BlockStatus, error) {
+func (bss *blockStatusStore) deserializeBlockStatus(statusBytes []byte) (externalapi.BlockStatus, error) {
 	dbBlockStatus := &serialization.DbBlockStatus{}
 	err := proto.Unmarshal(statusBytes, dbBlockStatus)
 	if err != nil {

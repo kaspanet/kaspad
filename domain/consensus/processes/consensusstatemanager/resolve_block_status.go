@@ -121,7 +121,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	err = csm.updateParentDiffs(blockHash, pastUTXODiff)
+	err = csm.removeAncestorsFromVirtualDiffParents(blockHash, pastUTXODiff)
 	if err != nil {
 		return 0, err
 	}
@@ -129,7 +129,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	return externalapi.StatusValid, nil
 }
 
-func (csm *consensusStateManager) updateParentDiffs(
+func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParents(
 	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
 
 	if *blockHash == *csm.genesisHash {

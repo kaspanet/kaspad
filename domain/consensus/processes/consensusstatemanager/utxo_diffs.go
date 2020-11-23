@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
@@ -21,17 +22,29 @@ func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
 }
 
 func (csm *consensusStateManager) addToVirtualDiffParents(blockHash *externalapi.DomainHash) error {
-	var virtualDiffParents []*externalapi.DomainHash
+	var oldVirtualDiffParents []*externalapi.DomainHash
 	if *blockHash != *csm.genesisHash {
 		var err error
-		virtualDiffParents, err = csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+		oldVirtualDiffParents, err = csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 		if err != nil {
 			return err
 		}
 	}
 
-	virtualDiffParents = append(virtualDiffParents, blockHash)
-	return csm.consensusStateStore.StageVirtualDiffParents(virtualDiffParents)
+	isInVirtualDiffParents := false
+	for _, diffParent := range oldVirtualDiffParents {
+		if *diffParent == *blockHash {
+			isInVirtualDiffParents = true
+			break
+		}
+	}
+
+	if isInVirtualDiffParents {
+		return nil
+	}
+
+	newVirtualDiffParents := append([]*externalapi.DomainHash{blockHash}, oldVirtualDiffParents...)
+	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
 }
 
 func (csm *consensusStateManager) removeFromVirtualDiffParents(blockHash *externalapi.DomainHash) error {
@@ -45,6 +58,11 @@ func (csm *consensusStateManager) removeFromVirtualDiffParents(blockHash *extern
 		if *diffParent != *blockHash {
 			newVirtualDiffParents = append(newVirtualDiffParents, diffParent)
 		}
+	}
+
+	if len(newVirtualDiffParents) != len(oldVirtualDiffParents)-1 {
+		return errors.Errorf("expected to remove one member from virtual diff parents and "+
+			"have a length of %d but got length of %d", len(oldVirtualDiffParents)-1, len(newVirtualDiffParents))
 	}
 
 	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
