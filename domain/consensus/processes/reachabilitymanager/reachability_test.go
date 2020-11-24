@@ -23,10 +23,9 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) error {
+func (r *reachabilityDataStoreMock) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
-	return nil
 }
 
 func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {

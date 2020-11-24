@@ -24,7 +24,7 @@ func New() model.BlockStatusStore {
 
 // Stage stages the given blockStatus for the given blockHash
 func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus externalapi.BlockStatus) {
-	bss.staging[*blockHash] = blockStatus
+	bss.staging[*blockHash] = blockStatus.Clone()
 }
 
 func (bss *blockStatusStore) IsStaged() bool {

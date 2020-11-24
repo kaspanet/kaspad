@@ -12,15 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DiffClone returns a new UTXODiff which is identical to the given diff
-func DiffClone(diff *model.UTXODiff) *model.UTXODiff {
-	clone := &model.UTXODiff{
-		ToAdd:    collectionClone(diff.ToAdd),
-		ToRemove: collectionClone(diff.ToRemove),
-	}
-	return clone
-}
-
 // DiffAddTransaction modifies the provided utxoDiff with provided transaction.
 func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
 	for _, input := range transaction.Inputs {
