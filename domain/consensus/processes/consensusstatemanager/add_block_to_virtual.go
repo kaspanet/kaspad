@@ -101,10 +101,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 	}
 	log.Tracef("The new tips are: %s", newTips)
 
-	err = csm.consensusStateStore.StageTips(newTips)
-	if err != nil {
-		return nil, err
-	}
+	csm.consensusStateStore.StageTips(newTips)
 	log.Tracef("Staged the new tips %s", newTips)
 
 	return newTips, nil

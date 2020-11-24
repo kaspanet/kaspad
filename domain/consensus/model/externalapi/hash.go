@@ -22,7 +22,18 @@ func (hash *DomainHash) Clone() *DomainHash {
 	if hash == nil {
 		return nil
 	}
-	return &*hash
+
+	hashClone := *hash
+	return &hashClone
+}
+
+// CloneHashes returns a clone of the given hashes slice
+func CloneHashes(hashes []*DomainHash) []*DomainHash {
+	clone := make([]*DomainHash, len(hashes))
+	for i, hash := range hashes {
+		clone[i] = hash.Clone()
+	}
+	return clone
 }
 
 // DomainHashesToStrings returns a slice of strings representing the hashes in the given slice of hashes

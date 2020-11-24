@@ -11,5 +11,25 @@ type BlockGHOSTDAGData struct {
 	BluesAnticoneSizes map[externalapi.DomainHash]KType
 }
 
+// Clone returns a clone of BlockGHOSTDAGData
+func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
+	if bgd == nil {
+		return nil
+	}
+
+	bluesAnticoneSizesClone := make(map[externalapi.DomainHash]KType, len(bgd.BluesAnticoneSizes))
+	for hash, size := range bgd.BluesAnticoneSizes {
+		bluesAnticoneSizesClone[hash] = size
+	}
+
+	return &BlockGHOSTDAGData{
+		BlueScore:          bgd.BlueScore,
+		SelectedParent:     bgd.SelectedParent.Clone(),
+		MergeSetBlues:      externalapi.CloneHashes(bgd.MergeSetBlues),
+		MergeSetReds:       externalapi.CloneHashes(bgd.MergeSetReds),
+		BluesAnticoneSizes: bluesAnticoneSizesClone,
+	}
+}
+
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
 type KType byte

@@ -12,6 +12,18 @@ type ReachabilityData struct {
 	FutureCoveringSet FutureCoveringTreeNodeSet
 }
 
+// Clone returns a clone of ReachabilityData
+func (rd *ReachabilityData) Clone() *ReachabilityData {
+	if rd == nil {
+		return nil
+	}
+
+	return &ReachabilityData{
+		TreeNode:          rd.TreeNode.Clone(),
+		FutureCoveringSet: externalapi.CloneHashes(rd.FutureCoveringSet),
+	}
+}
+
 // ReachabilityTreeNode represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
@@ -36,12 +48,37 @@ type ReachabilityTreeNode struct {
 	Interval *ReachabilityInterval
 }
 
+// Clone returns a clone of ReachabilityTreeNode
+func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
+	if rtn == nil {
+		return nil
+	}
+
+	return &ReachabilityTreeNode{
+		Children: externalapi.CloneHashes(rtn.Children),
+		Parent:   rtn.Parent.Clone(),
+		Interval: rtn.Interval.Clone(),
+	}
+}
+
 // ReachabilityInterval represents an interval to be used within the
 // tree reachability algorithm. See ReachabilityTreeNode for further
 // details.
 type ReachabilityInterval struct {
 	Start uint64
 	End   uint64
+}
+
+// Clone returns a clone of ReachabilityInterval
+func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
+	if ri == nil {
+		return nil
+	}
+
+	return &ReachabilityInterval{
+		Start: ri.Start,
+		End:   ri.End,
+	}
 }
 
 func (ri *ReachabilityInterval) String() string {

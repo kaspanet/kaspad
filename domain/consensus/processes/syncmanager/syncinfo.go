@@ -57,6 +57,14 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateHeadersFirst, nil
 	}
 
+	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
+	if err != nil {
+		return 0, err
+	}
+	if *virtualSelectedParentHash == *headerVirtualSelectedParentHash {
+		return externalapi.SyncStateRelay, nil
+	}
+
 	// Once the header tips are synced, check the status of
 	// the pruning point from the point of view of the header
 	// tips. We check it against StatusValid (rather than
@@ -75,15 +83,7 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateMissingUTXOSet, nil
 	}
 
-	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
-	if err != nil {
-		return 0, err
-	}
-	if *virtualSelectedParentHash != *headerVirtualSelectedParentHash {
-		return externalapi.SyncStateMissingBlockBodies, nil
-	}
-
-	return externalapi.SyncStateRelay, nil
+	return externalapi.SyncStateMissingBlockBodies, nil
 }
 
 func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, error) {

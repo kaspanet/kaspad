@@ -22,14 +22,8 @@ func New() model.BlockRelationStore {
 	}
 }
 
-func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) error {
-	clone, err := brs.clone(blockRelations)
-	if err != nil {
-		return err
-	}
-
-	brs.staging[*blockHash] = clone
-	return nil
+func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) {
+	brs.staging[*blockHash] = blockRelations.Clone()
 }
 
 func (brs *blockRelationStore) IsStaged() bool {
@@ -93,13 +87,4 @@ func (brs *blockRelationStore) deserializeBlockRelations(blockRelationsBytes []b
 		return nil, err
 	}
 	return serialization.DbBlockRelationsToDomainBlockRelations(dbBlockRelations)
-}
-
-func (brs *blockRelationStore) clone(blockRelations *model.BlockRelations) (*model.BlockRelations, error) {
-	serialized, err := brs.serializeBlockRelations(blockRelations)
-	if err != nil {
-		return nil, err
-	}
-
-	return brs.deserializeBlockRelations(serialized)
 }

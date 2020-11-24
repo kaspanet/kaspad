@@ -48,13 +48,3 @@ func collectionContainsWithBlueScore(collection model.UTXOCollection, outpoint *
 	entry, ok := CollectionGet(collection, outpoint)
 	return ok && entry.BlockBlueScore == blueScore
 }
-
-// clone returns a clone of this collection
-func collectionClone(collection model.UTXOCollection) model.UTXOCollection {
-	clone := make(model.UTXOCollection, len(collection))
-	for outpoint, entry := range collection {
-		collectionAdd(clone, &outpoint, entry)
-	}
-
-	return clone
-}

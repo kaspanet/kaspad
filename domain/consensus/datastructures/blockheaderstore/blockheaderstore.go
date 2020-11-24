@@ -54,14 +54,8 @@ func (bhs *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
 }
 
 // Stage stages the given block header for the given blockHash
-func (bhs *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) error {
-	clone, err := bhs.cloneHeader(blockHeader)
-	if err != nil {
-		return err
-	}
-
-	bhs.staging[*blockHash] = clone
-	return nil
+func (bhs *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) {
+	bhs.staging[*blockHash] = blockHeader.Clone()
 }
 
 func (bhs *blockHeaderStore) IsStaged() bool {
@@ -167,15 +161,6 @@ func (bhs *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi
 		return nil, err
 	}
 	return serialization.DbBlockHeaderToDomainBlockHeader(dbBlockHeader)
-}
-
-func (bhs *blockHeaderStore) cloneHeader(header *externalapi.DomainBlockHeader) (*externalapi.DomainBlockHeader, error) {
-	serialized, err := bhs.serializeHeader(header)
-	if err != nil {
-		return nil, err
-	}
-
-	return bhs.deserializeHeader(serialized)
 }
 
 func (bhs *blockHeaderStore) Count() uint64 {

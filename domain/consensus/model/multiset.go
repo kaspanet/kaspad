@@ -8,5 +8,5 @@ type Multiset interface {
 	Remove(data []byte)
 	Hash() *externalapi.DomainHash
 	Serialize() []byte
-	Clone() (Multiset, error)
+	Clone() Multiset
 }
