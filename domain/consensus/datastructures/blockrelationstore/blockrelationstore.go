@@ -53,6 +53,7 @@ func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		brs.cache.Add(&hash, blockRelations)
 	}
 
 	brs.Discard()
@@ -61,7 +62,11 @@ func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 
 func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	if blockRelations, ok := brs.staging[*blockHash]; ok {
-		return blockRelations, nil
+		return brs.clone(blockRelations)
+	}
+
+	if blockRelations, ok := brs.cache.Get(blockHash); ok {
+		return brs.clone(blockRelations.(*model.BlockRelations))
 	}
 
 	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
@@ -69,11 +74,20 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 		return nil, err
 	}
 
-	return brs.deserializeBlockRelations(blockRelationsBytes)
+	blockRelations, err := brs.deserializeBlockRelations(blockRelationsBytes)
+	if err != nil {
+		return nil, err
+	}
+	brs.cache.Add(blockHash, blockRelations)
+	return blockRelations, nil
 }
 
 func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := brs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if brs.cache.Has(blockHash) {
 		return true, nil
 	}
 
