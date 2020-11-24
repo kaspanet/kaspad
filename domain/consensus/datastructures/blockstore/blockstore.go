@@ -2,6 +2,7 @@ package blockstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -15,6 +16,7 @@ var countKey = dbkeys.MakeBucket().Key([]byte("blocks-count"))
 type blockStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlock
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    simplelru.LRUCache
 	count    uint64
 }
 
@@ -25,7 +27,13 @@ func New(dbContext model.DBReader) (model.BlockStore, error) {
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 
-	err := blockStore.initializeCount(dbContext)
+	cache, err := simplelru.NewLRU(100, nil)
+	if err != nil {
+		return nil, err
+	}
+	blockStore.cache = cache
+
+	err = blockStore.initializeCount(dbContext)
 	if err != nil {
 		return nil, err
 	}
