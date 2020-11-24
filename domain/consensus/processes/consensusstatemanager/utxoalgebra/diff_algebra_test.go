@@ -58,7 +58,7 @@ func TestUTXOCollection(t *testing.T) {
 		}
 
 		// Test model.UTXOCollection cloning
-		collectionClone := collectionClone(test.collection)
+		collectionClone := test.collection.Clone()
 		if reflect.ValueOf(collectionClone).Pointer() == reflect.ValueOf(test.collection).Pointer() {
 			t.Errorf("collection is reference-equal to its clone in test \"%s\". ", test.name)
 		}
@@ -95,7 +95,7 @@ func TestUTXODiff(t *testing.T) {
 	}
 
 	// Test utxoDiff cloning
-	clonedDiff := DiffClone(diff)
+	clonedDiff := diff.Clone()
 	if clonedDiff == diff {
 		t.Errorf("cloned diff is reference-equal to the original")
 	}
@@ -576,7 +576,7 @@ func TestUTXODiffRules(t *testing.T) {
 		}
 
 		// Repeat WithDiff check test.this time using withDiffInPlace
-		thisClone := DiffClone(test.this)
+		thisClone := test.this.Clone()
 		err = WithDiffInPlace(thisClone, test.other)
 
 		// Test whether withDiffInPlace returned an error

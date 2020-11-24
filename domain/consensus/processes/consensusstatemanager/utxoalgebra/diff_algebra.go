@@ -242,7 +242,7 @@ func WithDiffInPlace(this *model.UTXODiff, diff *model.UTXODiff) error {
 // WithDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
 // first d, and than diff were applied to some base
 func WithDiff(this *model.UTXODiff, diff *model.UTXODiff) (*model.UTXODiff, error) {
-	clone := DiffClone(this)
+	clone := this.Clone()
 
 	err := WithDiffInPlace(clone, diff)
 	if err != nil {

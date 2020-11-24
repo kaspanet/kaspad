@@ -127,7 +127,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	log.Tracef("The past median time for block %s is: %d", blockHash, selectedParentMedianTime)
 
 	multiblockAcceptanceData := make(model.AcceptanceData, len(blueBlocks))
-	accumulatedUTXODiff := utxoalgebra.DiffClone(selectedParentPastUTXODiff)
+	accumulatedUTXODiff := selectedParentPastUTXODiff.Clone()
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {

@@ -11,18 +11,18 @@ import (
 // UTXOCollection represents a set of UTXOs indexed by their outpoints
 type UTXOCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
 
-// UTXODiff represents a diff between two UTXO Sets.
-type UTXODiff struct {
-	ToAdd    UTXOCollection
-	ToRemove UTXOCollection
-}
-
-// NewUTXODiff instantiates an empty UTXODiff
-func NewUTXODiff() *UTXODiff {
-	return &UTXODiff{
-		ToAdd:    UTXOCollection{},
-		ToRemove: UTXOCollection{},
+// Clone returns a clone of UTXOCollection
+func (uc UTXOCollection) Clone() UTXOCollection {
+	if uc == nil {
+		return nil
 	}
+
+	clone := make(UTXOCollection, len(uc))
+	for outpoint, entry := range uc {
+		clone[outpoint] = entry.Clone()
+	}
+
+	return clone
 }
 
 func (uc UTXOCollection) String() string {
@@ -41,6 +41,32 @@ func (uc UTXOCollection) String() string {
 	return fmt.Sprintf("[ %s ]", strings.Join(utxoStrings, ", "))
 }
 
+// UTXODiff represents a diff between two UTXO Sets.
+type UTXODiff struct {
+	ToAdd    UTXOCollection
+	ToRemove UTXOCollection
+}
+
+// Clone returns a clone of TransactionAcceptanceData
+func (d *UTXODiff) Clone() *UTXODiff {
+	if d == nil {
+		return nil
+	}
+
+	return &UTXODiff{
+		ToAdd:    d.ToAdd.Clone(),
+		ToRemove: d.ToRemove.Clone(),
+	}
+}
+
 func (d UTXODiff) String() string {
 	return fmt.Sprintf("ToAdd: %s; ToRemove: %s", d.ToAdd, d.ToRemove)
+}
+
+// NewUTXODiff instantiates an empty UTXODiff
+func NewUTXODiff() *UTXODiff {
+	return &UTXODiff{
+		ToAdd:    UTXOCollection{},
+		ToRemove: UTXOCollection{},
+	}
 }

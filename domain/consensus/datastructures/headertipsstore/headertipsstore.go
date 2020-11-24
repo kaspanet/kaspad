@@ -45,14 +45,8 @@ func (h *headerTipsStore) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (h *headerTipsStore) Stage(tips []*externalapi.DomainHash) error {
-	clone, err := h.clone(tips)
-	if err != nil {
-		return err
-	}
-
-	h.staging = clone
-	return nil
+func (h *headerTipsStore) Stage(tips []*externalapi.DomainHash) {
+	h.staging = externalapi.CloneHashes(tips)
 }
 
 func (h *headerTipsStore) IsStaged() bool {
@@ -85,17 +79,6 @@ func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Doma
 	}
 
 	return serialization.DBHeaderTipsToHeaderTips(dbTips)
-}
-
-func (h *headerTipsStore) clone(tips []*externalapi.DomainHash,
-) ([]*externalapi.DomainHash, error) {
-
-	serialized, err := h.serializeTips(tips)
-	if err != nil {
-		return nil, err
-	}
-
-	return h.deserializeTips(serialized)
 }
 
 // New instantiates a new HeaderTipsStore

@@ -54,14 +54,8 @@ func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 }
 
 // Stage stages the given block for the given blockHash
-func (bs *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
-	clone, err := bs.clone(block)
-	if err != nil {
-		return err
-	}
-
-	bs.staging[*blockHash] = clone
-	return nil
+func (bs *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
+	bs.staging[*blockHash] = block.Clone()
 }
 
 func (bs *blockStore) IsStaged() bool {
@@ -167,15 +161,6 @@ func (bs *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBl
 
 func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
-}
-
-func (bs *blockStore) clone(block *externalapi.DomainBlock) (*externalapi.DomainBlock, error) {
-	serialized, err := bs.serializeBlock(block)
-	if err != nil {
-		return nil, err
-	}
-
-	return bs.deserializeBlock(serialized)
 }
 
 func (bs *blockStore) Count() uint64 {

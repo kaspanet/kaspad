@@ -83,12 +83,9 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 		}
 	}
 
-	err := bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
-	if err != nil {
-		return nil, err
-	}
+	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 
-	err = bb.ghostdagManager.GHOSTDAG(tempBlockHash)
+	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -111,10 +108,8 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 	if err != nil {
 		return nil, err
 	}
-	err = bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
-	if err != nil {
-		return nil, err
-	}
+
+	bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
 
 	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(tempBlockHash, coinbaseData)
 	if err != nil {
