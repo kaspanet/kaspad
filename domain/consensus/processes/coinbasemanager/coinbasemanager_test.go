@@ -27,14 +27,6 @@ import (
 	"testing"
 )
 
-// VirtualBlockHash is a marker hash for the virtual block
-var VirtualBlockHash = &externalapi.DomainHash{
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-}
-
 func createCoinbaseTransaction(t *testing.T, scriptPublicKey []byte, value uint64) *externalapi.DomainTransaction {
 	dummyTxOut := externalapi.DomainTransactionOutput{
 		Value:           value,
@@ -92,63 +84,6 @@ func setupDBForTest(dbName string) (infrastructuredatabase.Database, func(), err
 	return db, teardown, err
 }
 
-func createTransaction(inputs []*externalapi.DomainTransactionInput,
-	scriptPublicKey []byte, value uint64) *externalapi.DomainTransaction {
-	dummyTxOut := externalapi.DomainTransactionOutput{
-		Value:           value,
-		ScriptPublicKey: scriptPublicKey,
-	}
-
-	transaction := &externalapi.DomainTransaction{
-		Version:      constants.TransactionVersion,
-		Inputs:       inputs,
-		Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-		LockTime:     0,
-		SubnetworkID: subnetworks.SubnetworkIDNative,
-		Gas:          0,
-		Fee:          1000,
-	}
-
-	return transaction
-}
-
-func setupDBManager(dbName string) (model.DBManager, func(), error) {
-	var err error
-	tmpDir, err := ioutil.TempDir("", "setupDBManager")
-	if err != nil {
-		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
-	}
-
-	dbPath := filepath.Join(tmpDir, dbName)
-	_ = os.RemoveAll(dbPath)
-	db, err := ldb.NewLevelDB(dbPath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	originalLDBOptions := ldb.Options
-	ldb.Options = func() *opt.Options {
-		return nil
-	}
-
-	teardown := func() {
-		db.Close()
-		ldb.Options = originalLDBOptions
-		os.RemoveAll(dbPath)
-	}
-
-	dbManager := consensusdatabase.New(db)
-	return dbManager, teardown, err
-}
-
-func createBlock(header *externalapi.DomainBlockHeader,
-	transactions []*externalapi.DomainTransaction) *externalapi.DomainBlock {
-	return &externalapi.DomainBlock{
-		Header:       header,
-		Transactions: transactions,
-	}
-}
-
 func TestExpectedCoinbaseTransaction(t *testing.T) {
 	dagParams := &dagconfig.SimnetParams
 	consensusFactory := consensus.NewFactory()
@@ -165,6 +100,9 @@ func TestExpectedCoinbaseTransaction(t *testing.T) {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
 	scriptPublicKey, err := txscript.PayToAddrScript(miningAddr)
+	if err != nil {
+		t.Fatalf("txscript.PayToAddrScript: %v", err)
+	}
 
 	ghostdagDataStore := ghostdagdatastore.New()
 	acceptanceDataStore := acceptancedatastore.New()
@@ -205,7 +143,7 @@ func TestExpectedCoinbaseTransaction(t *testing.T) {
 			ghostdagDataStore,
 			acceptanceDataStore)
 
-		_, err = coinbaseManager.ExpectedCoinbaseTransaction(VirtualBlockHash,
+		_, err = coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash,
 			coinbaseData) //expectedDomainTransaction
 		if err != nil {
 			t.Fatalf("DomainTransaction: failed getting expected coinbase transaction:error-%v", err)
