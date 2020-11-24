@@ -91,6 +91,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bs.cache.Add(hash, block)
 	}
 
 	for hash := range bs.toDelete {
@@ -98,6 +99,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bs.cache.Remove(hash)
 	}
 
 	err := bs.commitCount(dbTx)
@@ -115,6 +117,10 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 		return block, nil
 	}
 
+	if block, ok := bs.cache.Get(blockHash); ok {
+		return block.(*externalapi.DomainBlock), nil
+	}
+
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
 	if err != nil {
 		return nil, err
@@ -126,6 +132,10 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 // HasBlock returns whether a block with a given hash exists in the store.
 func (bs *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := bs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if bs.cache.Contains(blockHash) {
 		return true, nil
 	}
 
