@@ -3,7 +3,7 @@ package externalapi
 // BlockStatus represents the validation state of the block.
 type BlockStatus byte
 
-// Clone returns a clone of TransactionAcceptanceData
+// Clone returns a clone of BlockStatus
 func (bs BlockStatus) Clone() BlockStatus {
 	return bs
 }

@@ -47,7 +47,7 @@ type UTXODiff struct {
 	ToRemove UTXOCollection
 }
 
-// Clone returns a clone of TransactionAcceptanceData
+// Clone returns a clone of UTXODiff
 func (d *UTXODiff) Clone() *UTXODiff {
 	if d == nil {
 		return nil

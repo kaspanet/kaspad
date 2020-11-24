@@ -84,7 +84,7 @@ type DomainOutpoint struct {
 	Index         uint32
 }
 
-// Clone returns a clone of TransactionAcceptanceData
+// Clone returns a clone of DomainOutpoint
 func (op *DomainOutpoint) Clone() *DomainOutpoint {
 	if op == nil {
 		return nil
@@ -115,7 +115,7 @@ type DomainTransactionOutput struct {
 	ScriptPublicKey []byte
 }
 
-// Clone returns a clone of TransactionAcceptanceData
+// Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 	if output == nil {
 		return nil

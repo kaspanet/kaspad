@@ -69,7 +69,7 @@ type ReachabilityInterval struct {
 	End   uint64
 }
 
-// Clone returns a clone of TransactionAcceptanceData
+// Clone returns a clone of ReachabilityInterval
 func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
 	if ri == nil {
 		return nil
