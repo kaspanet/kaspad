@@ -126,7 +126,7 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *ex
 		return nil, err
 	}
 	bhs.cache.Add(blockHash, header)
-	return header, nil
+	return bhs.cloneHeader(header)
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.

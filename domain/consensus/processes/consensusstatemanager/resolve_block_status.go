@@ -154,7 +154,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	log.Debugf("UTXO verification for block %s passed", blockHash)
 
 	log.Tracef("Staging the multiset of block %s", blockHash)
-	csm.multisetStore.Stage(blockHash, multiset)
+	err = csm.multisetStore.Stage(blockHash, multiset)
+	if err != nil {
+		return 0, err
+	}
 
 	log.Tracef("Staging the utxoDiff of block %s", blockHash)
 	err = csm.stageDiff(blockHash, pastUTXODiff, nil)

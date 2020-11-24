@@ -92,7 +92,7 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 		return nil, err
 	}
 	ads.cache.Add(blockHash, acceptanceData)
-	return acceptanceData, nil
+	return ads.cloneAcceptanceData(acceptanceData)
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash

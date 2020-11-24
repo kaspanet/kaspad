@@ -126,7 +126,7 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 		return nil, err
 	}
 	bs.cache.Add(blockHash, block)
-	return block, nil
+	return bs.clone(block)
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.

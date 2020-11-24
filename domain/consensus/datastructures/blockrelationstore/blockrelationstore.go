@@ -79,7 +79,7 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 		return nil, err
 	}
 	brs.cache.Add(blockHash, blockRelations)
-	return blockRelations, nil
+	return brs.clone(blockRelations)
 }
 
 func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {

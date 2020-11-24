@@ -81,7 +81,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externala
 		return nil, err
 	}
 	gds.cache.Add(blockHash, blockGHOSTDAGData)
-	return blockGHOSTDAGData, nil
+	return gds.clone(blockGHOSTDAGData)
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

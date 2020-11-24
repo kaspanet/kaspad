@@ -28,8 +28,13 @@ func New(cacheSize int) model.MultisetStore {
 }
 
 // Stage stages the given multiset for the given blockHash
-func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
-	ms.staging[*blockHash] = multiset
+func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) error {
+	multisetClone, err := multiset.Clone()
+	if err != nil {
+		return err
+	}
+	ms.staging[*blockHash] = multisetClone
+	return nil
 }
 
 func (ms *multisetStore) IsStaged() bool {
@@ -47,11 +52,11 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(ms.hashAsKey(&hash), multisetBytes)
 		if err != nil {
 			return err
 		}
+		ms.cache.Add(&hash, multiset)
 	}
 
 	for hash := range ms.toDelete {
@@ -59,6 +64,7 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ms.cache.Remove(&hash)
 	}
 
 	ms.Discard()
@@ -71,12 +77,21 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 		return multiset.Clone()
 	}
 
+	if multiset, ok := ms.cache.Get(blockHash); ok {
+		return multiset.(model.Multiset).Clone()
+	}
+
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))
 	if err != nil {
 		return nil, err
 	}
 
-	return ms.deserializeMultiset(multisetBytes)
+	multiset, err := ms.deserializeMultiset(multisetBytes)
+	if err != nil {
+		return nil, err
+	}
+	ms.cache.Add(blockHash, multiset)
+	return multiset.Clone()
 }
 
 // Delete deletes the multiset associated with the given blockHash
