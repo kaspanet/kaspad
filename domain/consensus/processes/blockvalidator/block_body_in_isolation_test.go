@@ -91,10 +91,7 @@ func TestCheckBlockSanity(t *testing.T) {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
 		}
 
-		err = consensus.BlockStore().Stage(blockHash, &exampleValidBlock)
-		if err != nil {
-			t.Fatalf("Failed storing block: %v", err)
-		}
+		consensus.BlockStore().Stage(blockHash, &exampleValidBlock)
 
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
@@ -103,10 +100,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 		// Test with block with wrong transactions sorting order
 		blockHash = consensusserialization.BlockHash(&blockWithWrongTxOrder)
-		err = consensus.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
-		if err != nil {
-			t.Fatalf("Failed storing block: %v", err)
-		}
+		consensus.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
 			t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
@@ -115,10 +109,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		// Test a block with invalid parents order
 		// We no longer require blocks to have ordered parents
 		blockHash = consensusserialization.BlockHash(&unOrderedParentsBlock)
-		err = consensus.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
-		if err != nil {
-			t.Fatalf("Failed storing block: %v", err)
-		}
+		consensus.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
