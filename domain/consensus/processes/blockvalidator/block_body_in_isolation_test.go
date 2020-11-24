@@ -34,7 +34,7 @@ func TestChainedTransactions(t *testing.T) {
 
 		tx1, err := testutils.CreateTransaction(block1.Transactions[0])
 		if err != nil {
-			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+			t.Fatalf("Error creating tx1: %+v", err)
 		}
 
 		chainedTx, err := testutils.CreateTransaction(tx1)
@@ -61,7 +61,7 @@ func TestChainedTransactions(t *testing.T) {
 
 		tx2, err := testutils.CreateTransaction(block2.Transactions[0])
 		if err != nil {
-			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+			t.Fatalf("Error creating tx2: %+v", err)
 		}
 
 		// Check that a block is valid if it contains two non chained transactions
