@@ -16,14 +16,14 @@ var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-re
 type reachabilityDataStore struct {
 	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
 	reachabilityReindexRootStaging *externalapi.DomainHash
-	cache                          *lrucache.LRUCache
+	reachabilityDataCache          *lrucache.LRUCache
 }
 
 // New instantiates a new ReachabilityDataStore
 func New(cacheSize int) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
 		reachabilityDataStaging: make(map[externalapi.DomainHash]*model.ReachabilityData),
-		cache:                   lrucache.New(cacheSize),
+		reachabilityDataCache:   lrucache.New(cacheSize),
 	}
 }
 
@@ -70,11 +70,11 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(rds.reachabilityDataBlockHashAsKey(&hash), reachabilityDataBytes)
 		if err != nil {
 			return err
 		}
+		rds.reachabilityDataCache.Add(&hash, reachabilityData)
 	}
 
 	rds.Discard()
@@ -86,7 +86,11 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 
 	if reachabilityData, ok := rds.reachabilityDataStaging[*blockHash]; ok {
-		return reachabilityData, nil
+		return rds.cloneReachabilityData(reachabilityData)
+	}
+
+	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
+		return rds.cloneReachabilityData(reachabilityData.(*model.ReachabilityData))
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
@@ -94,11 +98,20 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 		return nil, err
 	}
 
-	return rds.deserializeReachabilityData(reachabilityDataBytes)
+	reachabilityData, err := rds.deserializeReachabilityData(reachabilityDataBytes)
+	if err != nil {
+		return nil, err
+	}
+	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
+	return rds.cloneReachabilityData(reachabilityData)
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := rds.reachabilityDataStaging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if rds.reachabilityDataCache.Has(blockHash) {
 		return true, nil
 	}
 
