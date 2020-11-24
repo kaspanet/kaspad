@@ -50,11 +50,11 @@ func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(gds.hashAsKey(&hash), blockGhostdagDataBytes)
 		if err != nil {
 			return err
 		}
+		gds.cache.Add(&hash, blockGHOSTDAGData)
 	}
 
 	gds.Discard()
@@ -64,7 +64,11 @@ func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the blockGHOSTDAGData associated with the given blockHash
 func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	if blockGHOSTDAGData, ok := gds.staging[*blockHash]; ok {
-		return blockGHOSTDAGData, nil
+		return gds.clone(blockGHOSTDAGData)
+	}
+
+	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash); ok {
+		return gds.clone(blockGHOSTDAGData.(*model.BlockGHOSTDAGData))
 	}
 
 	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.hashAsKey(blockHash))
@@ -72,7 +76,12 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externala
 		return nil, err
 	}
 
-	return gds.deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes)
+	blockGHOSTDAGData, err := gds.deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes)
+	if err != nil {
+		return nil, err
+	}
+	gds.cache.Add(blockHash, blockGHOSTDAGData)
+	return blockGHOSTDAGData, nil
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
