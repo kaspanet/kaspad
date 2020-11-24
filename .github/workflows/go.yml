@@ -22,8 +22,24 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Build
-      run: go build -v .
+    - name: lint check
+      run: | 
+        go get -u golang.org/x/lint/golint \
+            github.com/kisielk/errcheck \
+            github.com/opennota/check/cmd/aligncheck \
+            github.com/opennota/check/cmd/structcheck \
+            github.com/opennota/check/cmd/varcheck \
+            honnef.co/go/tools/cmd/staticcheck 
+        go mod download
+        GOFMT_RESULT=`go fmt ./...`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
+        go vet ./...
+        golint -set_exit_status ./...
+        staticcheck -checks SA4006 ./...
+        GOOS=linux go build -a -installsuffix cgo -o kaspad .
+    - name: test
+      run: go test ./...
 
-    - name: Test
-      run: go test -v .
+
+
+
+
