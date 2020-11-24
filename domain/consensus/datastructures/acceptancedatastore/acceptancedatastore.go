@@ -1,6 +1,7 @@
 package acceptancedatastore
 
 import (
+	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -14,14 +15,23 @@ var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
 type acceptanceDataStore struct {
 	staging  map[externalapi.DomainHash]model.AcceptanceData
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    simplelru.LRUCache
 }
 
 // New instantiates a new AcceptanceDataStore
-func New() model.AcceptanceDataStore {
-	return &acceptanceDataStore{
+func New(cacheSize int) (model.AcceptanceDataStore, error) {
+	acceptanceDataStore := &acceptanceDataStore{
 		staging:  make(map[externalapi.DomainHash]model.AcceptanceData),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
+
+	cache, err := simplelru.NewLRU(cacheSize, nil)
+	if err != nil {
+		return nil, err
+	}
+	acceptanceDataStore.cache = cache
+
+	return acceptanceDataStore, nil
 }
 
 // Stage stages the given acceptanceData for the given blockHash

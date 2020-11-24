@@ -2,6 +2,7 @@ package blockheaderstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -15,17 +16,24 @@ var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
 type blockHeaderStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    simplelru.LRUCache
 	count    uint64
 }
 
 // New instantiates a new BlockHeaderStore
-func New(dbContext model.DBReader) (model.BlockHeaderStore, error) {
+func New(dbContext model.DBReader, cacheSize int) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 
-	err := blockHeaderStore.initializeCount(dbContext)
+	cache, err := simplelru.NewLRU(cacheSize, nil)
+	if err != nil {
+		return nil, err
+	}
+	blockHeaderStore.cache = cache
+
+	err = blockHeaderStore.initializeCount(dbContext)
 	if err != nil {
 		return nil, err
 	}

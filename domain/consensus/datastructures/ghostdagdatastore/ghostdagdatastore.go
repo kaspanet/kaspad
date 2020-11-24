@@ -2,6 +2,7 @@ package ghostdagdatastore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -13,13 +14,22 @@ var bucket = dbkeys.MakeBucket([]byte("block-ghostdag-data"))
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
 	staging map[externalapi.DomainHash]*model.BlockGHOSTDAGData
+	cache   simplelru.LRUCache
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New() model.GHOSTDAGDataStore {
-	return &ghostdagDataStore{
+func New(cacheSize int) (model.GHOSTDAGDataStore, error) {
+	ghostdagDataStore := &ghostdagDataStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
 	}
+
+	cache, err := simplelru.NewLRU(cacheSize, nil)
+	if err != nil {
+		return nil, err
+	}
+	ghostdagDataStore.cache = cache
+
+	return ghostdagDataStore, nil
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash

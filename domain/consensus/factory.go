@@ -62,24 +62,55 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	acceptanceDataStore := acceptancedatastore.New()
-	blockStore, err := blockstore.New(dbManager)
+	storeCacheSize := int(dagParams.FinalityDepth())
+	acceptanceDataStore, err := acceptancedatastore.New(storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager)
+	blockStore, err := blockstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New()
-	blockStatusStore := blockstatusstore.New()
-	multisetStore := multisetstore.New()
-	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New()
-	utxoDiffStore := utxodiffstore.New()
-	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New()
-	headerTipsStore := headertipsstore.New()
+	blockHeaderStore, err := blockheaderstore.New(dbManager, storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	blockRelationStore, err := blockrelationstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	blockStatusStore, err := blockstatusstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	multisetStore, err := multisetstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	pruningStore, err := pruningstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	reachabilityDataStore, err := reachabilitydatastore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	utxoDiffStore, err := utxodiffstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	consensusStateStore, err := consensusstatestore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	ghostdagDataStore, err := ghostdagdatastore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	headerTipsStore, err := headertipsstore.New(storeCacheSize)
+	if err != nil {
+		return nil, err
+	}
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(

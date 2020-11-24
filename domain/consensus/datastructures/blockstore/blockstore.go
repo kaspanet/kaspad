@@ -21,13 +21,13 @@ type blockStore struct {
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader) (model.BlockStore, error) {
+func New(dbContext model.DBReader, cacheSize int) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 	}
 
-	cache, err := simplelru.NewLRU(100, nil)
+	cache, err := simplelru.NewLRU(cacheSize, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package headertipsstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -12,6 +13,20 @@ var headerTipsKey = dbkeys.MakeBucket().Key([]byte("header-tips"))
 
 type headerTipsStore struct {
 	staging []*externalapi.DomainHash
+	cache   simplelru.LRUCache
+}
+
+// New instantiates a new HeaderTipsStore
+func New(cacheSize int) (model.HeaderTipsStore, error) {
+	headerTipsStore := &headerTipsStore{}
+
+	cache, err := simplelru.NewLRU(cacheSize, nil)
+	if err != nil {
+		return nil, err
+	}
+	headerTipsStore.cache = cache
+
+	return headerTipsStore, nil
 }
 
 func (h *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
@@ -96,9 +111,4 @@ func (h *headerTipsStore) clone(tips []*externalapi.DomainHash,
 	}
 
 	return h.deserializeTips(serialized)
-}
-
-// New instantiates a new HeaderTipsStore
-func New() model.HeaderTipsStore {
-	return &headerTipsStore{}
 }
