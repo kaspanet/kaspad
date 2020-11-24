@@ -26,7 +26,7 @@ func (d *dbTransaction) Commit() error {
 }
 
 func (d *dbTransaction) RollbackUnlessClosed() error {
-	return d.RollbackUnlessClosed()
+	return d.transaction.RollbackUnlessClosed()
 }
 
 func newDBTransaction(transaction database.Transaction) model.DBTransaction {
