@@ -1,9 +1,9 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 // consensusStateStore represents a store for the current consensus state
@@ -12,20 +12,14 @@ type consensusStateStore struct {
 	stagedVirtualDiffParents []*externalapi.DomainHash
 	stagedVirtualUTXODiff    *model.UTXODiff
 	stagedVirtualUTXOSet     model.UTXOCollection
-	cache                    simplelru.LRUCache
+	cache                    *lrucache.LRUCache
 }
 
 // New instantiates a new ConsensusStateStore
-func New(cacheSize int) (model.ConsensusStateStore, error) {
-	consensusStateStore := &consensusStateStore{}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
+func New(cacheSize int) model.ConsensusStateStore {
+	return &consensusStateStore{
+		cache: lrucache.New(cacheSize),
 	}
-	consensusStateStore.cache = cache
-
-	return consensusStateStore, nil
 }
 
 func (c *consensusStateStore) Discard() {

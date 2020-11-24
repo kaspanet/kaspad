@@ -2,11 +2,11 @@ package reachabilitydatastore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var reachabilityDataBucket = dbkeys.MakeBucket([]byte("reachability-data"))
@@ -16,23 +16,15 @@ var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-re
 type reachabilityDataStore struct {
 	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
 	reachabilityReindexRootStaging *externalapi.DomainHash
-	cache                          simplelru.LRUCache
+	cache                          *lrucache.LRUCache
 }
 
 // New instantiates a new ReachabilityDataStore
-func New(cacheSize int) (model.ReachabilityDataStore, error) {
-	reachabilityDataStore := &reachabilityDataStore{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]*model.ReachabilityData),
-		reachabilityReindexRootStaging: nil,
+func New(cacheSize int) model.ReachabilityDataStore {
+	return &reachabilityDataStore{
+		reachabilityDataStaging: make(map[externalapi.DomainHash]*model.ReachabilityData),
+		cache:                   lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	reachabilityDataStore.cache = cache
-
-	return reachabilityDataStore, nil
 }
 
 // StageReachabilityData stages the given reachabilityData for the given blockHash

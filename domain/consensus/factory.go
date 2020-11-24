@@ -63,10 +63,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	// Data Structures
 	storeCacheSize := int(dagParams.FinalityDepth())
-	acceptanceDataStore, err := acceptancedatastore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
+	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
 	blockStore, err := blockstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
@@ -75,42 +72,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore, err := blockrelationstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	blockStatusStore, err := blockstatusstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	multisetStore, err := multisetstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	pruningStore, err := pruningstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	reachabilityDataStore, err := reachabilitydatastore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	utxoDiffStore, err := utxodiffstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	consensusStateStore, err := consensusstatestore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	ghostdagDataStore, err := ghostdagdatastore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
-	headerTipsStore, err := headertipsstore.New(storeCacheSize)
-	if err != nil {
-		return nil, err
-	}
+	blockRelationStore := blockrelationstore.New(storeCacheSize)
+	blockStatusStore := blockstatusstore.New(storeCacheSize)
+	multisetStore := multisetstore.New(storeCacheSize)
+	pruningStore := pruningstore.New(storeCacheSize)
+	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
+	utxoDiffStore := utxodiffstore.New(storeCacheSize)
+	consensusStateStore := consensusstatestore.New(storeCacheSize)
+	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
+	headerTipsStore := headertipsstore.New(storeCacheSize)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(

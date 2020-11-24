@@ -2,11 +2,11 @@ package blockstatusstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
@@ -14,22 +14,15 @@ var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
 	staging map[externalapi.DomainHash]externalapi.BlockStatus
-	cache   simplelru.LRUCache
+	cache   *lrucache.LRUCache
 }
 
 // New instantiates a new BlockStatusStore
-func New(cacheSize int) (model.BlockStatusStore, error) {
-	blockStatusStore := &blockStatusStore{
+func New(cacheSize int) model.BlockStatusStore {
+	return &blockStatusStore{
 		staging: make(map[externalapi.DomainHash]externalapi.BlockStatus),
+		cache:   lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	blockStatusStore.cache = cache
-
-	return blockStatusStore, nil
 }
 
 // Stage stages the given blockStatus for the given blockHash

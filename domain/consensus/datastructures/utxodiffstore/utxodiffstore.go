@@ -2,11 +2,11 @@ package utxodiffstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/pkg/errors"
 )
 
@@ -18,24 +18,17 @@ type utxoDiffStore struct {
 	utxoDiffStaging      map[externalapi.DomainHash]*model.UTXODiff
 	utxoDiffChildStaging map[externalapi.DomainHash]*externalapi.DomainHash
 	toDelete             map[externalapi.DomainHash]struct{}
-	cache                simplelru.LRUCache
+	cache                *lrucache.LRUCache
 }
 
 // New instantiates a new UTXODiffStore
-func New(cacheSize int) (model.UTXODiffStore, error) {
-	utxoDiffStore := &utxoDiffStore{
+func New(cacheSize int) model.UTXODiffStore {
+	return &utxoDiffStore{
 		utxoDiffStaging:      make(map[externalapi.DomainHash]*model.UTXODiff),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete:             make(map[externalapi.DomainHash]struct{}),
+		cache:                lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	utxoDiffStore.cache = cache
-
-	return utxoDiffStore, nil
 }
 
 // Stage stages the given utxoDiff for the given blockHash

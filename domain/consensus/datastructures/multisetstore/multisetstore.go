@@ -2,11 +2,11 @@ package multisetstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("multisets"))
@@ -15,23 +15,16 @@ var bucket = dbkeys.MakeBucket([]byte("multisets"))
 type multisetStore struct {
 	staging  map[externalapi.DomainHash]model.Multiset
 	toDelete map[externalapi.DomainHash]struct{}
-	cache    simplelru.LRUCache
+	cache    *lrucache.LRUCache
 }
 
 // New instantiates a new MultisetStore
-func New(cacheSize int) (model.MultisetStore, error) {
-	multisetStore := &multisetStore{
+func New(cacheSize int) model.MultisetStore {
+	return &multisetStore{
 		staging:  make(map[externalapi.DomainHash]model.Multiset),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	multisetStore.cache = cache
-
-	return multisetStore, nil
 }
 
 // Stage stages the given multiset for the given blockHash

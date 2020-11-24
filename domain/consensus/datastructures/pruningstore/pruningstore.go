@@ -2,11 +2,11 @@ package pruningstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var pruningBlockHashKey = dbkeys.MakeBucket().Key([]byte("pruning-block-hash"))
@@ -16,23 +16,14 @@ var pruningSerializedUTXOSetkey = dbkeys.MakeBucket().Key([]byte("pruning-utxo-s
 type pruningStore struct {
 	pruningPointStaging      *externalapi.DomainHash
 	serializedUTXOSetStaging []byte
-	cache                    simplelru.LRUCache
+	cache                    *lrucache.LRUCache
 }
 
 // New instantiates a new PruningStore
-func New(cacheSize int) (model.PruningStore, error) {
-	pruningStore := &pruningStore{
-		pruningPointStaging:      nil,
-		serializedUTXOSetStaging: nil,
+func New(cacheSize int) model.PruningStore {
+	return &pruningStore{
+		cache: lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	pruningStore.cache = cache
-
-	return pruningStore, nil
 }
 
 // Stage stages the pruning state

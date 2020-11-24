@@ -32,6 +32,11 @@ func (c *LRUCache) Get(key *externalapi.DomainHash) (interface{}, bool) {
 	return data, true
 }
 
+func (c *LRUCache) Has(key *externalapi.DomainHash) bool {
+	_, ok := c.cache[*key]
+	return ok
+}
+
 func (c *LRUCache) Remove(key *externalapi.DomainHash) {
 	delete(c.cache, *key)
 }

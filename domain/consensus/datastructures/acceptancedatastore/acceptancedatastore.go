@@ -1,11 +1,11 @@
 package acceptancedatastore
 
 import (
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -15,23 +15,16 @@ var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
 type acceptanceDataStore struct {
 	staging  map[externalapi.DomainHash]model.AcceptanceData
 	toDelete map[externalapi.DomainHash]struct{}
-	cache    simplelru.LRUCache
+	cache    *lrucache.LRUCache
 }
 
 // New instantiates a new AcceptanceDataStore
-func New(cacheSize int) (model.AcceptanceDataStore, error) {
-	acceptanceDataStore := &acceptanceDataStore{
+func New(cacheSize int) model.AcceptanceDataStore {
+	return &acceptanceDataStore{
 		staging:  make(map[externalapi.DomainHash]model.AcceptanceData),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	acceptanceDataStore.cache = cache
-
-	return acceptanceDataStore, nil
 }
 
 // Stage stages the given acceptanceData for the given blockHash
@@ -64,7 +57,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		ads.cache.Add(hash, acceptanceData)
+		ads.cache.Add(&hash, acceptanceData)
 	}
 
 	for hash := range ads.toDelete {
@@ -72,7 +65,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		ads.cache.Remove(hash)
+		ads.cache.Remove(&hash)
 	}
 
 	ads.Discard()

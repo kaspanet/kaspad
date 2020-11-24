@@ -2,11 +2,11 @@ package blockrelationstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-relations"))
@@ -14,22 +14,15 @@ var bucket = dbkeys.MakeBucket([]byte("block-relations"))
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
 	staging map[externalapi.DomainHash]*model.BlockRelations
-	cache   simplelru.LRUCache
+	cache   *lrucache.LRUCache
 }
 
 // New instantiates a new BlockRelationStore
-func New(cacheSize int) (model.BlockRelationStore, error) {
-	blockRelationStore := &blockRelationStore{
+func New(cacheSize int) model.BlockRelationStore {
+	return &blockRelationStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
+		cache:   lrucache.New(cacheSize),
 	}
-
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	blockRelationStore.cache = cache
-
-	return blockRelationStore, nil
 }
 
 func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) error {

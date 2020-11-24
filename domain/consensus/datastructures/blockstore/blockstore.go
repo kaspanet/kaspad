@@ -2,11 +2,11 @@ package blockstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/golang-lru/simplelru"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("blocks"))
@@ -16,7 +16,7 @@ var countKey = dbkeys.MakeBucket().Key([]byte("blocks-count"))
 type blockStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlock
 	toDelete map[externalapi.DomainHash]struct{}
-	cache    simplelru.LRUCache
+	cache    *lrucache.LRUCache
 	count    uint64
 }
 
@@ -25,15 +25,10 @@ func New(dbContext model.DBReader, cacheSize int) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
 
-	cache, err := simplelru.NewLRU(cacheSize, nil)
-	if err != nil {
-		return nil, err
-	}
-	blockStore.cache = cache
-
-	err = blockStore.initializeCount(dbContext)
+	err := blockStore.initializeCount(dbContext)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +86,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		bs.cache.Add(hash, block)
+		bs.cache.Add(&hash, block)
 	}
 
 	for hash := range bs.toDelete {
@@ -99,7 +94,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		bs.cache.Remove(hash)
+		bs.cache.Remove(&hash)
 	}
 
 	err := bs.commitCount(dbTx)
@@ -140,7 +135,7 @@ func (bs *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.
 		return true, nil
 	}
 
-	if bs.cache.Contains(blockHash) {
+	if bs.cache.Has(blockHash) {
 		return true, nil
 	}
 
