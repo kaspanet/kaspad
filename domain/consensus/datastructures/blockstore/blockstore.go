@@ -126,7 +126,12 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	return bs.deserializeBlock(blockBytes)
+	block, err := bs.deserializeBlock(blockBytes)
+	if err != nil {
+		return nil, err
+	}
+	bs.cache.Add(blockHash, block)
+	return block, nil
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.

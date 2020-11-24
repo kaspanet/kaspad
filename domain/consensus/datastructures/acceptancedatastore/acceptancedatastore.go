@@ -64,6 +64,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ads.cache.Add(hash, acceptanceData)
 	}
 
 	for hash := range ads.toDelete {
@@ -71,6 +72,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ads.cache.Remove(hash)
 	}
 
 	ads.Discard()
@@ -83,12 +85,21 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 		return acceptanceData, nil
 	}
 
+	if acceptanceData, ok := ads.cache.Get(blockHash); ok {
+		return acceptanceData.(model.AcceptanceData), nil
+	}
+
 	acceptanceDataBytes, err := dbContext.Get(ads.hashAsKey(blockHash))
 	if err != nil {
 		return nil, err
 	}
 
-	return ads.deserializeAcceptanceData(acceptanceDataBytes)
+	acceptanceData, err := ads.deserializeAcceptanceData(acceptanceDataBytes)
+	if err != nil {
+		return nil, err
+	}
+	ads.cache.Add(blockHash, acceptanceData)
+	return acceptanceData, nil
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
