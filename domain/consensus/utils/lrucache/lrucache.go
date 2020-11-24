@@ -16,8 +16,8 @@ func New(capacity int) *LRUCache {
 	}
 }
 
-func (c *LRUCache) Add(key *externalapi.DomainHash, data interface{}) {
-	c.cache[*key] = data
+func (c *LRUCache) Add(key *externalapi.DomainHash, value interface{}) {
+	c.cache[*key] = value
 
 	if len(c.cache) > c.capacity {
 		c.evictRandom()
@@ -25,11 +25,11 @@ func (c *LRUCache) Add(key *externalapi.DomainHash, data interface{}) {
 }
 
 func (c *LRUCache) Get(key *externalapi.DomainHash) (interface{}, bool) {
-	data, ok := c.cache[*key]
+	value, ok := c.cache[*key]
 	if !ok {
 		return nil, false
 	}
-	return data, true
+	return value, true
 }
 
 func (c *LRUCache) Has(key *externalapi.DomainHash) bool {

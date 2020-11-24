@@ -75,11 +75,11 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the acceptanceData associated with the given blockHash
 func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.AcceptanceData, error) {
 	if acceptanceData, ok := ads.staging[*blockHash]; ok {
-		return acceptanceData, nil
+		return ads.cloneAcceptanceData(acceptanceData)
 	}
 
 	if acceptanceData, ok := ads.cache.Get(blockHash); ok {
-		return acceptanceData.(model.AcceptanceData), nil
+		return ads.cloneAcceptanceData(acceptanceData.(model.AcceptanceData))
 	}
 
 	acceptanceDataBytes, err := dbContext.Get(ads.hashAsKey(blockHash))

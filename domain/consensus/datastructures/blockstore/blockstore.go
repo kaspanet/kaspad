@@ -109,11 +109,11 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 // Block gets the block associated with the given blockHash
 func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	if block, ok := bs.staging[*blockHash]; ok {
-		return block, nil
+		return bs.clone(block)
 	}
 
 	if block, ok := bs.cache.Get(blockHash); ok {
-		return block.(*externalapi.DomainBlock), nil
+		return bs.clone(block.(*externalapi.DomainBlock))
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))

@@ -109,11 +109,11 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 // BlockHeader gets the block header associated with the given blockHash
 func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
 	if header, ok := bhs.staging[*blockHash]; ok {
-		return header, nil
+		return bhs.cloneHeader(header)
 	}
 
 	if header, ok := bhs.cache.Get(blockHash); ok {
-		return header.(*externalapi.DomainBlockHeader), nil
+		return bhs.cloneHeader(header.(*externalapi.DomainBlockHeader))
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
