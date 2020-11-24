@@ -27,8 +27,6 @@ import (
 	"testing"
 )
 
-
-
 // VirtualBlockHash is a marker hash for the virtual block
 var VirtualBlockHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -36,7 +34,6 @@ var VirtualBlockHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 }
-
 
 func createCoinbaseTransaction(t *testing.T, scriptPublicKey []byte, value uint64) *externalapi.DomainTransaction {
 	dummyTxOut := externalapi.DomainTransactionOutput{
@@ -66,7 +63,6 @@ func createCoinbaseTransaction(t *testing.T, scriptPublicKey []byte, value uint6
 
 	return transaction
 }
-
 
 func setupDBForTest(dbName string) (infrastructuredatabase.Database, func(), error) {
 	var err error
@@ -116,7 +112,6 @@ func createTransaction(inputs []*externalapi.DomainTransactionInput,
 	return transaction
 }
 
-
 func setupDBManager(dbName string) (model.DBManager, func(), error) {
 	var err error
 	tmpDir, err := ioutil.TempDir("", "setupDBManager")
@@ -154,7 +149,6 @@ func createBlock(header *externalapi.DomainBlockHeader,
 	}
 }
 
-
 func TestExpectedCoinbaseTransaction(t *testing.T) {
 	dagParams := &dagconfig.SimnetParams
 	consensusFactory := consensus.NewFactory()
@@ -171,7 +165,6 @@ func TestExpectedCoinbaseTransaction(t *testing.T) {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
 	scriptPublicKey, err := txscript.PayToAddrScript(miningAddr)
-
 
 	ghostdagDataStore := ghostdagdatastore.New()
 	acceptanceDataStore := acceptancedatastore.New()
@@ -212,10 +205,10 @@ func TestExpectedCoinbaseTransaction(t *testing.T) {
 			ghostdagDataStore,
 			acceptanceDataStore)
 
-		_ , err = coinbaseManager.ExpectedCoinbaseTransaction(VirtualBlockHash,
+		_, err = coinbaseManager.ExpectedCoinbaseTransaction(VirtualBlockHash,
 			coinbaseData) //expectedDomainTransaction
 		if err != nil {
-			t.Fatalf("DomainTransaction: failed getting expected coinbase transaction:error-%v",err)
+			t.Fatalf("DomainTransaction: failed getting expected coinbase transaction:error-%v", err)
 		}
 		// Check 10 transactions are not exist
 		for _, tx2 := range transactions {
