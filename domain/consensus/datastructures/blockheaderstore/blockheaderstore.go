@@ -91,6 +91,7 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bhs.cache.Add(hash, header)
 	}
 
 	for hash := range bhs.toDelete {
@@ -98,6 +99,7 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bhs.cache.Remove(hash)
 	}
 
 	err := bhs.commitCount(dbTx)
@@ -115,17 +117,30 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *ex
 		return header, nil
 	}
 
+	if header, ok := bhs.cache.Get(blockHash); ok {
+		return header.(*externalapi.DomainBlockHeader), nil
+	}
+
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
 	if err != nil {
 		return nil, err
 	}
 
-	return bhs.deserializeHeader(headerBytes)
+	header, err := bhs.deserializeHeader(headerBytes)
+	if err != nil {
+		return nil, err
+	}
+	bhs.cache.Add(blockHash, header)
+	return header, nil
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.
 func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := bhs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if bhs.cache.Contains(blockHash) {
 		return true, nil
 	}
 
