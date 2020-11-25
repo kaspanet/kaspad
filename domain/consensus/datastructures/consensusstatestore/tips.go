@@ -12,11 +12,11 @@ var tipsKey = dbkeys.MakeBucket().Key([]byte("tips"))
 
 func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if css.tipsStaging != nil {
-		return css.cloneTips(css.tipsStaging)
+		return externalapi.CloneHashes(css.tipsStaging), nil
 	}
 
 	if css.tipsCache != nil {
-		return css.cloneTips(css.tipsCache)
+		return externalapi.CloneHashes(css.tipsCache), nil
 	}
 
 	tipsBytes, err := dbContext.Get(tipsKey)
@@ -29,17 +29,11 @@ func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.D
 		return nil, err
 	}
 	css.tipsCache = tips
-	return css.cloneTips(tips)
+	return externalapi.CloneHashes(tips), nil
 }
 
-func (css *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) error {
-	clone, err := css.cloneTips(tipHashes)
-	if err != nil {
-		return err
-	}
-
-	css.tipsStaging = clone
-	return nil
+func (css *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
+	css.tipsStaging = externalapi.CloneHashes(tipHashes)
 }
 
 func (css *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
@@ -77,15 +71,4 @@ func (css *consensusStateStore) deserializeTips(tipsBytes []byte) ([]*externalap
 	}
 
 	return serialization.DBTipsToTips(dbTips)
-}
-
-func (css *consensusStateStore) cloneTips(tips []*externalapi.DomainHash,
-) ([]*externalapi.DomainHash, error) {
-
-	serialized, err := css.serializeTips(tips)
-	if err != nil {
-		return nil, err
-	}
-
-	return css.deserializeTips(serialized)
 }

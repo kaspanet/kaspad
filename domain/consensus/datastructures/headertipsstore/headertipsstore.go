@@ -55,14 +55,8 @@ func (hts *headerTipsStore) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (hts *headerTipsStore) Stage(tips []*externalapi.DomainHash) error {
-	clone, err := hts.clone(tips)
-	if err != nil {
-		return err
-	}
-
-	hts.staging = clone
-	return nil
+func (hts *headerTipsStore) Stage(tips []*externalapi.DomainHash) {
+	hts.staging = externalapi.CloneHashes(tips)
 }
 
 func (hts *headerTipsStore) IsStaged() bool {
@@ -71,11 +65,11 @@ func (hts *headerTipsStore) IsStaged() bool {
 
 func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if hts.staging != nil {
-		return hts.clone(hts.staging)
+		return externalapi.CloneHashes(hts.staging)
 	}
 
 	if hts.cache != nil {
-		return hts.clone(hts.cache)
+		return externalapi.CloneHashes(hts.cache)
 	}
 
 	tipsBytes, err := dbContext.Get(headerTipsKey)
@@ -88,7 +82,7 @@ func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.Domai
 		return nil, err
 	}
 	hts.cache = tips
-	return hts.clone(tips)
+	return externalapi.CloneHashes(tips)
 }
 
 func (hts *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
@@ -104,15 +98,4 @@ func (hts *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Do
 	}
 
 	return serialization.DBHeaderTipsToHeaderTips(dbTips)
-}
-
-func (hts *headerTipsStore) clone(tips []*externalapi.DomainHash,
-) ([]*externalapi.DomainHash, error) {
-
-	serialized, err := hts.serializeTips(tips)
-	if err != nil {
-		return nil, err
-	}
-
-	return hts.deserializeTips(serialized)
 }

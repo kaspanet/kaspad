@@ -13,10 +13,7 @@ func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
 	defer log.Tracef("stageDiff end for block %s", blockHash)
 
 	log.Tracef("Staging block %s as the diff child of %s", utxoDiffChild, blockHash)
-	err := csm.utxoDiffStore.Stage(blockHash, utxoDiff, utxoDiffChild)
-	if err != nil {
-		return err
-	}
+	csm.utxoDiffStore.Stage(blockHash, utxoDiff, utxoDiffChild)
 
 	if utxoDiffChild == nil {
 		log.Tracef("Adding block %s to the virtual diff parents", blockHash)
@@ -55,7 +52,8 @@ func (csm *consensusStateManager) addToVirtualDiffParents(blockHash *externalapi
 
 	newVirtualDiffParents := append([]*externalapi.DomainHash{blockHash}, oldVirtualDiffParents...)
 	log.Tracef("Staging virtual diff parents after adding %s to it", blockHash)
-	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	return nil
 }
 
 func (csm *consensusStateManager) removeFromVirtualDiffParents(blockHash *externalapi.DomainHash) error {
@@ -80,5 +78,6 @@ func (csm *consensusStateManager) removeFromVirtualDiffParents(blockHash *extern
 	}
 
 	log.Tracef("Staging virtual diff parents after removing %s from it", blockHash)
-	return csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
+	return nil
 }

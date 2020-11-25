@@ -82,10 +82,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.BlueScore = 0
 	}
 
-	err = gm.ghostdagDataStore.Stage(blockHash, newBlockData)
-	if err != nil {
-		return err
-	}
+	gm.ghostdagDataStore.Stage(blockHash, newBlockData)
 
 	return nil
 }

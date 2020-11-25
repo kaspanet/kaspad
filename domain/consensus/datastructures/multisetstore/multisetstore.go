@@ -28,13 +28,8 @@ func New(cacheSize int) model.MultisetStore {
 }
 
 // Stage stages the given multiset for the given blockHash
-func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) error {
-	multisetClone, err := multiset.Clone()
-	if err != nil {
-		return err
-	}
-	ms.staging[*blockHash] = multisetClone
-	return nil
+func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
+	ms.staging[*blockHash] = multiset.Clone()
 }
 
 func (ms *multisetStore) IsStaged() bool {
@@ -74,7 +69,7 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the multiset associated with the given blockHash
 func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.Multiset, error) {
 	if multiset, ok := ms.staging[*blockHash]; ok {
-		return multiset.Clone()
+		return multiset.Clone(), nil
 	}
 
 	if multiset, ok := ms.cache.Get(blockHash); ok {

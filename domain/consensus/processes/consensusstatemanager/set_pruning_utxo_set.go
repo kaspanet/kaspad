@@ -67,10 +67,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 	log.Tracef("Header tip pruning point multiset validation passed")
 
 	log.Tracef("Staging the parent hashes for the header tips pruning point as the DAG tips")
-	err = csm.consensusStateStore.StageTips(headerTipsPruningPointHeader.ParentHashes)
-	if err != nil {
-		return err
-	}
+	csm.consensusStateStore.StageTips(headerTipsPruningPointHeader.ParentHashes)
 
 	log.Tracef("Setting the parent hashes for the header tips pruning point as the virtual parents")
 	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, headerTipsPruningPointHeader.ParentHashes)
@@ -159,12 +156,10 @@ func (csm *consensusStateManager) HeaderTipsPruningPoint() (*externalapi.DomainH
 	log.Tracef("The current header tips are: %s", headerTips)
 
 	log.Tracef("Temporarily staging the parents of the virtual header to be the header tips: %s", headerTips)
-	err = csm.blockRelationStore.StageBlockRelation(virtualHeaderHash, &model.BlockRelations{
+	csm.blockRelationStore.StageBlockRelation(virtualHeaderHash, &model.BlockRelations{
 		Parents: headerTips,
 	})
-	if err != nil {
-		return nil, err
-	}
+
 	defer csm.blockRelationStore.Discard()
 
 	err = csm.ghostdagManager.GHOSTDAG(virtualHeaderHash)

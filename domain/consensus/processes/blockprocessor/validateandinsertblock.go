@@ -129,10 +129,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-		err = bp.headerTipsStore.Stage(tips)
-		if err != nil {
-			return err
-		}
+		bp.headerTipsStore.Stage(tips)
 	}
 
 	if syncInfo.State != externalapi.SyncStateMissingGenesis {
@@ -216,10 +213,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 	}
 
 	if !hasHeader {
-		err = bp.blockHeaderStore.Stage(blockHash, block.Header)
-		if err != nil {
-			return err
-		}
+		bp.blockHeaderStore.Stage(blockHash, block.Header)
 	}
 
 	// If any validation until (included) proof-of-work fails, simply
@@ -276,12 +270,9 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 	blockHash := consensusserialization.BlockHash(block)
 
 	if mode.State != externalapi.SyncStateHeadersFirst {
-		err := bp.blockStore.Stage(blockHash, block)
-		if err != nil {
-			return err
-		}
+		bp.blockStore.Stage(blockHash, block)
 
-		err = bp.blockValidator.ValidateBodyInIsolation(blockHash)
+		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err
 		}

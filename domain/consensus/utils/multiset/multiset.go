@@ -34,8 +34,9 @@ func (m multiset) Serialize() []byte {
 	return m.ms.Serialize()[:]
 }
 
-func (m multiset) Clone() (model.Multiset, error) {
-	return FromBytes(m.Serialize())
+func (m multiset) Clone() model.Multiset {
+	msClone := *m.ms
+	return &multiset{ms: &msClone}
 }
 
 // FromBytes deserializes the given bytes slice and returns a multiset.

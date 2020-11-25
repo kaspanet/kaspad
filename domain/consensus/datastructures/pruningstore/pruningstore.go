@@ -26,7 +26,7 @@ func New() model.PruningStore {
 
 // Stage stages the pruning state
 func (ps *pruningStore) Stage(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte) {
-	ps.pruningPointStaging = &(*pruningPointBlockHash)
+	ps.pruningPointStaging = pruningPointBlockHash.Clone()
 	ps.serializedUTXOSetStaging = pruningPointUTXOSetBytes
 }
 

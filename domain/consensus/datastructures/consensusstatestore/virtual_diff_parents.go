@@ -12,11 +12,11 @@ var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents
 
 func (css *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if css.virtualDiffParentsStaging != nil {
-		return css.cloneVirtualDiffParents(css.virtualDiffParentsStaging)
+		return externalapi.CloneHashes(css.virtualDiffParentsStaging), nil
 	}
 
 	if css.virtualDiffParentsCache != nil {
-		return css.cloneVirtualDiffParents(css.virtualDiffParentsCache)
+		return externalapi.CloneHashes(css.virtualDiffParentsCache), nil
 	}
 
 	virtualDiffParentsBytes, err := dbContext.Get(virtualDiffParentsKey)
@@ -29,17 +29,11 @@ func (css *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]
 		return nil, err
 	}
 	css.virtualDiffParentsCache = virtualDiffParents
-	return css.cloneVirtualDiffParents(virtualDiffParents)
+	return externalapi.CloneHashes(virtualDiffParents), nil
 }
 
-func (css *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) error {
-	clone, err := css.cloneVirtualDiffParents(tipHashes)
-	if err != nil {
-		return err
-	}
-
-	css.virtualDiffParentsStaging = clone
-	return nil
+func (css *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
+	css.virtualDiffParentsStaging = externalapi.CloneHashes(tipHashes)
 }
 
 func (css *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
@@ -77,15 +71,4 @@ func (css *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParents
 	}
 
 	return serialization.DBVirtualDiffParentsToVirtualDiffParents(dbVirtualDiffParents)
-}
-
-func (css *consensusStateStore) cloneVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash,
-) ([]*externalapi.DomainHash, error) {
-
-	serialized, err := css.serializeVirtualDiffParents(virtualDiffParents)
-	if err != nil {
-		return nil, err
-	}
-
-	return css.deserializeVirtualDiffParents(serialized)
 }

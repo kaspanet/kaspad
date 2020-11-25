@@ -35,10 +35,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	}
 
 	log.Tracef("Staging new acceptance data for the virtual block")
-	err = csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
-	if err != nil {
-		return err
-	}
+	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
 
 	log.Tracef("Staging new multiset for the virtual block")
 	err = csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
