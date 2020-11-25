@@ -15,12 +15,14 @@ func HandleGetUTXOsByAddress(context *rpccontext.Context, _ *router.Router, requ
 	}
 
 	utxosVerboseData := make([]*appmessage.UTXOVerboseData, 0, len(utxosByAddress))
-	for _, utxoEntry := range utxosByAddress {
+	for outpoint, utxoEntry := range utxosByAddress {
 		utxoVerboseData := &appmessage.UTXOVerboseData{
 			Amount:         utxoEntry.Amount,
 			ScriptPubKey:   utxoEntry.ScriptPublicKey,
 			BlockBlueScore: utxoEntry.BlockBlueScore,
 			IsCoinbase:     utxoEntry.IsCoinbase,
+			TxID:           outpoint.TransactionID.String(),
+			Index:          outpoint.Index,
 		}
 		utxosVerboseData = append(utxosVerboseData, utxoVerboseData)
 	}

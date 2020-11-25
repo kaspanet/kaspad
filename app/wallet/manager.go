@@ -68,12 +68,14 @@ func (m *Manager) NotifyTransactionAdded(transaction *externalapi.DomainTransact
 		return err
 	}
 	utxosVerboseData := make([]*appmessage.UTXOVerboseData, 0, len(utxos))
-	for _, utxoEntry := range utxos {
+	for outpoint, utxoEntry := range utxos {
 		utxoVerboseData := &appmessage.UTXOVerboseData{
 			Amount:         utxoEntry.Amount,
 			ScriptPubKey:   utxoEntry.ScriptPublicKey,
 			BlockBlueScore: utxoEntry.BlockBlueScore,
 			IsCoinbase:     utxoEntry.IsCoinbase,
+			TxID:           outpoint.TransactionID.String(),
+			Index:          outpoint.Index,
 		}
 		utxosVerboseData = append(utxosVerboseData, utxoVerboseData)
 	}

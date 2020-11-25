@@ -668,6 +668,8 @@ message UTXOVerboseData{
   bytes scriptPubKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
+  string txID = 5;
+  uint32 index = 6;
 }
 
 message GetUTXOsByAddressRequestMessage{

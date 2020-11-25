@@ -69,6 +69,8 @@ func (x *UTXOVerboseData) toAppMessage() (*appmessage.UTXOVerboseData, error) {
 		ScriptPubKey:   x.ScriptPubKey,
 		BlockBlueScore: x.BlockBlueScore,
 		IsCoinbase:     x.IsCoinbase,
+		TxID:           x.TxID,
+		Index:          x.Index,
 	}, nil
 }
 
@@ -78,6 +80,8 @@ func (x *UTXOVerboseData) fromAppMessage(message *appmessage.UTXOVerboseData) er
 		ScriptPubKey:   message.ScriptPubKey,
 		BlockBlueScore: message.BlockBlueScore,
 		IsCoinbase:     message.IsCoinbase,
+		TxID:           message.TxID,
+		Index:          message.Index,
 	}
 	return nil
 }

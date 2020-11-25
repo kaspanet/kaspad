@@ -25,6 +25,8 @@ type UTXOVerboseData struct {
 	ScriptPubKey   []byte
 	BlockBlueScore uint64
 	IsCoinbase     bool
+	TxID           string
+	Index          uint32
 }
 
 // GetUTXOsByAddressResponseMessage is an appmessage corresponding to
