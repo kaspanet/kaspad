@@ -254,7 +254,10 @@ func (csm *consensusStateManager) checkTransactionMass(
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (
 	model.ReadOnlyUTXOSetIterator, error) {
 
-	blockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, blockHash)
+	blockStatus, err := csm.resolveBlockStatus(blockHash)
+	if err != nil {
+		return nil, err
+	}
 	if blockStatus != externalapi.StatusValid {
 		return nil, errors.Errorf(
 			"block %s, has status '%s', and therefore can't restore it's UTXO set. Only blocks with status '%s' can be restored.",
@@ -265,7 +268,7 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 	defer log.Tracef("RestorePastUTXOSetIterator end for block %s", blockHash)
 
 	log.Tracef("Calculating UTXO diff for block %s", blockHash)
-	blockDiff, _, _, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
+	blockDiff, err := csm.restorePastUTXO(blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -275,23 +278,5 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, err
 	}
 
-	virtualUTXO := model.NewUTXODiff()
-	for virtualUTXOSetIterator.Next() {
-		outpoint, utxoEntry, err := virtualUTXOSetIterator.Get()
-		if err != nil {
-			return nil, err
-		}
-		virtualUTXO.ToAdd[*outpoint] = utxoEntry
-	}
-
-	blockUTXO, err := utxoalgebra.WithDiff(virtualUTXO, blockDiff)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(blockUTXO.ToRemove) > 0 {
-		return nil, errors.New("blockUTXO.ToRemove is expected to be empty")
-	}
-
-	return utxo.CollectionIterator(blockUTXO.ToAdd), nil
+	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff)
 }

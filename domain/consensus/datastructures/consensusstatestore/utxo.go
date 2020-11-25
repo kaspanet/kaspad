@@ -185,7 +185,7 @@ type utxoSetIterator struct {
 	cursor model.DBCursor
 }
 
-func newUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
+func newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
 	return &utxoSetIterator{cursor: cursor}
 }
 

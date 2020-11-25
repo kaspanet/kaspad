@@ -17,6 +17,7 @@ type readOnlyUTXOIteratorWithDiff struct {
 	toAddIterator model.ReadOnlyUTXOSetIterator
 }
 
+// IteratorWithDiff applies a UTXODiff to given utxo iterator
 func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff *model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
 	if iteratorWithDiff, ok := iterator.(*readOnlyUTXOIteratorWithDiff); ok {
 		combinedDiff, err := utxoalgebra.WithDiff(iteratorWithDiff.diff, diff)
