@@ -16,7 +16,6 @@ type pruningStore struct {
 	pruningPointStaging      *externalapi.DomainHash
 	serializedUTXOSetStaging []byte
 	pruningPointCache        *externalapi.DomainHash
-	serializedUTXOSetCache   []byte
 }
 
 // New instantiates a new PruningStore
@@ -61,7 +60,6 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		ps.serializedUTXOSetCache = ps.serializedUTXOSetStaging
 	}
 
 	ps.Discard()
@@ -97,10 +95,6 @@ func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) 
 		return ps.serializedUTXOSetStaging, nil
 	}
 
-	if ps.serializedUTXOSetCache != nil {
-		return ps.serializedUTXOSetCache, nil
-	}
-
 	dbPruningPointUTXOSetBytes, err := dbContext.Get(pruningSerializedUTXOSetkey)
 	if err != nil {
 		return nil, err
@@ -110,7 +104,6 @@ func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) 
 	if err != nil {
 		return nil, err
 	}
-	ps.serializedUTXOSetCache = pruningPointUTXOSet
 	return pruningPointUTXOSet, nil
 }
 
