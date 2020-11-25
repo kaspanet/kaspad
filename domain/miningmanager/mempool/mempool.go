@@ -858,7 +858,7 @@ func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) {
+func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) []*consensusexternalapi.DomainTransaction {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
@@ -886,6 +886,8 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 			acceptedTxs = append(acceptedTxs, acceptedOrphan.DomainTransaction)
 		}
 	}
+
+	return acceptedTxs
 }
 
 func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) {
