@@ -10,9 +10,13 @@ import (
 
 var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents"))
 
-func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if c.stagedVirtualDiffParents != nil {
-		return c.stagedVirtualDiffParents, nil
+func (css *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	if css.virtualDiffParentsStaging != nil {
+		return css.cloneVirtualDiffParents(css.virtualDiffParentsStaging)
+	}
+
+	if css.virtualDiffParentsCache != nil {
+		return css.cloneVirtualDiffParents(css.virtualDiffParentsCache)
 	}
 
 	virtualDiffParentsBytes, err := dbContext.Get(virtualDiffParentsKey)
@@ -20,43 +24,48 @@ func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*e
 		return nil, err
 	}
 
-	return c.deserializeVirtualDiffParents(virtualDiffParentsBytes)
+	virtualDiffParents, err := css.deserializeVirtualDiffParents(virtualDiffParentsBytes)
+	if err != nil {
+		return nil, err
+	}
+	css.virtualDiffParentsCache = virtualDiffParents
+	return css.cloneVirtualDiffParents(virtualDiffParents)
 }
 
-func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) error {
-	clone, err := c.cloneVirtualDiffParents(tipHashes)
+func (css *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) error {
+	clone, err := css.cloneVirtualDiffParents(tipHashes)
 	if err != nil {
 		return err
 	}
 
-	c.stagedVirtualDiffParents = clone
+	css.virtualDiffParentsStaging = clone
 	return nil
 }
 
-func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
-	if c.stagedVirtualDiffParents == nil {
+func (css *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
+	if css.virtualDiffParentsStaging == nil {
 		return nil
 	}
 
-	virtualDiffParentsBytes, err := c.serializeVirtualDiffParents(c.stagedVirtualDiffParents)
+	virtualDiffParentsBytes, err := css.serializeVirtualDiffParents(css.virtualDiffParentsStaging)
 	if err != nil {
 		return err
 	}
-
 	err = dbTx.Put(virtualDiffParentsKey, virtualDiffParentsBytes)
 	if err != nil {
 		return err
 	}
+	css.virtualDiffParentsCache = css.virtualDiffParentsStaging
 
 	return nil
 }
 
-func (c *consensusStateStore) serializeVirtualDiffParents(virtualDiffParentsBytes []*externalapi.DomainHash) ([]byte, error) {
+func (css *consensusStateStore) serializeVirtualDiffParents(virtualDiffParentsBytes []*externalapi.DomainHash) ([]byte, error) {
 	virtualDiffParents := serialization.VirtualDiffParentsToDBHeaderVirtualDiffParents(virtualDiffParentsBytes)
 	return proto.Marshal(virtualDiffParents)
 }
 
-func (c *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParentsBytes []byte) ([]*externalapi.DomainHash,
+func (css *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParentsBytes []byte) ([]*externalapi.DomainHash,
 	error) {
 
 	dbVirtualDiffParents := &serialization.DbVirtualDiffParents{}
@@ -68,13 +77,13 @@ func (c *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParentsBy
 	return serialization.DBVirtualDiffParentsToVirtualDiffParents(dbVirtualDiffParents)
 }
 
-func (c *consensusStateStore) cloneVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash,
+func (css *consensusStateStore) cloneVirtualDiffParents(virtualDiffParents []*externalapi.DomainHash,
 ) ([]*externalapi.DomainHash, error) {
 
-	serialized, err := c.serializeVirtualDiffParents(virtualDiffParents)
+	serialized, err := css.serializeVirtualDiffParents(virtualDiffParents)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.deserializeVirtualDiffParents(serialized)
+	return css.deserializeVirtualDiffParents(serialized)
 }
