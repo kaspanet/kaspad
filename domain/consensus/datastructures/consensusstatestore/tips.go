@@ -57,6 +57,8 @@ func (css *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
 	}
 	css.tipsCache = css.tipsStaging
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
 }
 

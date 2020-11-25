@@ -57,6 +57,8 @@ func (css *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransactio
 	}
 	css.virtualDiffParentsCache = css.virtualDiffParentsStaging
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
 }
 

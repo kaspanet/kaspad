@@ -58,6 +58,8 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 		}
 	}
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
 }
 
@@ -81,6 +83,8 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		}
 	}
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
 }
 
