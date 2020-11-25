@@ -250,7 +250,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 	return true, accumulatedMassAfter
 }
 
-// RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a model.UTXOSetIterator
+// RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a model.ReadOnlyUTXOSetIterator
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (
 	model.ReadOnlyUTXOSetIterator, error) {
 
