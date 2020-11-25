@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var pruningBlockHashKey = dbkeys.MakeBucket().Key([]byte("pruning-block-hash"))
@@ -16,14 +15,13 @@ var pruningSerializedUTXOSetkey = dbkeys.MakeBucket().Key([]byte("pruning-utxo-s
 type pruningStore struct {
 	pruningPointStaging      *externalapi.DomainHash
 	serializedUTXOSetStaging []byte
-	cache                    *lrucache.LRUCache
+	pruningPointCache        *externalapi.DomainHash
+	serializedUTXOSetCache   []byte
 }
 
 // New instantiates a new PruningStore
-func New(cacheSize int) model.PruningStore {
-	return &pruningStore{
-		cache: lrucache.New(cacheSize),
-	}
+func New() model.PruningStore {
+	return &pruningStore{}
 }
 
 // Stage stages the pruning state
@@ -51,6 +49,7 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ps.pruningPointCache = ps.pruningPointStaging
 	}
 
 	if ps.serializedUTXOSetStaging != nil {
@@ -58,11 +57,11 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(pruningSerializedUTXOSetkey, utxoSetBytes)
 		if err != nil {
 			return err
 		}
+		ps.serializedUTXOSetCache = ps.serializedUTXOSetStaging
 	}
 
 	ps.Discard()
@@ -75,16 +74,21 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.Dom
 		return ps.pruningPointStaging, nil
 	}
 
-	blockHashBytes, err := dbContext.Get(pruningBlockHashKey)
+	if ps.pruningPointCache != nil {
+		return ps.pruningPointCache, nil
+	}
+
+	pruningPointBytes, err := dbContext.Get(pruningBlockHashKey)
 	if err != nil {
 		return nil, err
 	}
 
-	blockHash, err := ps.deserializePruningPoint(blockHashBytes)
+	pruningPoint, err := ps.deserializePruningPoint(pruningPointBytes)
 	if err != nil {
 		return nil, err
 	}
-	return blockHash, nil
+	ps.pruningPointCache = pruningPoint
+	return pruningPoint, nil
 }
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
@@ -93,12 +97,21 @@ func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) 
 		return ps.serializedUTXOSetStaging, nil
 	}
 
+	if ps.serializedUTXOSetCache != nil {
+		return ps.serializedUTXOSetCache, nil
+	}
+
 	dbPruningPointUTXOSetBytes, err := dbContext.Get(pruningSerializedUTXOSetkey)
 	if err != nil {
 		return nil, err
 	}
 
-	return ps.deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes)
+	pruningPointUTXOSet, err := ps.deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes)
+	if err != nil {
+		return nil, err
+	}
+	ps.serializedUTXOSetCache = pruningPointUTXOSet
+	return pruningPointUTXOSet, nil
 }
 
 func (ps *pruningStore) serializePruningPoint(pruningPoint *externalapi.DomainHash) ([]byte, error) {
@@ -131,6 +144,10 @@ func (ps *pruningStore) deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes []byt
 
 func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) {
 	if ps.pruningPointStaging != nil {
+		return true, nil
+	}
+
+	if ps.pruningPointCache != nil {
 		return true, nil
 	}
 

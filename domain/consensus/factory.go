@@ -75,7 +75,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	blockRelationStore := blockrelationstore.New(storeCacheSize)
 	blockStatusStore := blockstatusstore.New(storeCacheSize)
 	multisetStore := multisetstore.New(storeCacheSize)
-	pruningStore := pruningstore.New(storeCacheSize)
+	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
 	utxoDiffStore := utxodiffstore.New(storeCacheSize)
 	consensusStateStore := consensusstatestore.New(storeCacheSize)
