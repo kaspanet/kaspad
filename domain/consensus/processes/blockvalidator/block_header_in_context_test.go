@@ -2,6 +2,8 @@ package blockvalidator_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -9,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestValidateMedianTime(t *testing.T) {
@@ -22,7 +23,7 @@ func TestValidateMedianTime(t *testing.T) {
 		defer teardown()
 
 		addBlock := func(blockTime int64, parents []*externalapi.DomainHash, expectedErr error) (*externalapi.DomainBlock, *externalapi.DomainHash) {
-			block, err := tc.BuildBlockWithParents(parents, nil, nil)
+			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
 			if err != nil {
 				t.Fatalf("BuildBlockWithParents: %+v", err)
 			}

@@ -1,13 +1,14 @@
 package consensus
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 func TestConsensus_GetBlockInfo(t *testing.T) {
@@ -20,7 +21,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		}
 		defer teardown()
 
-		invalidBlock, err := consensus.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		invalidBlock, _, err := consensus.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

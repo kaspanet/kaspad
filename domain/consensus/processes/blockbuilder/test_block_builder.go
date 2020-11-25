@@ -27,8 +27,11 @@ func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus test
 	}
 }
 
-func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+// BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
+// and returns the block together with its past UTXO-set.
+func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
+	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
+	*externalapi.DomainBlock, *model.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
 	defer onEnd()
@@ -69,9 +72,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	}, nil
 }
 
-func (bb *testBlockBuilder) buildBlockWithParents(
-	parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *model.UTXODiff, error) {
 
 	defer bb.testConsensus.DiscardAllStores()
 
@@ -87,43 +88,43 @@ func (bb *testBlockBuilder) buildBlockWithParents(
 
 	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
-		return nil, errors.Errorf("Error building block with selectedParent %s with status DisqualifiedFromChain",
+		return nil, nil, errors.Errorf("Error building block with selectedParent %s with status DisqualifiedFromChain",
 			ghostdagData.SelectedParent)
 	}
 
-	_, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
+	pastUTXO, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
 
 	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(tempBlockHash, coinbaseData)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
 	header, err := bb.buildHeaderWithParents(parentHashes, transactionsWithCoinbase, acceptanceData, multiset)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return &externalapi.DomainBlock{
 		Header:       header,
 		Transactions: transactionsWithCoinbase,
-	}, nil
+	}, pastUTXO, nil
 }

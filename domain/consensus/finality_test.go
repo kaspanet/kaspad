@@ -27,7 +27,7 @@ func TestFinality(t *testing.T) {
 		defer teardown()
 
 		buildAndInsertBlock := func(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-			block, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
+			block, _, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -184,7 +184,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		checkViolatingMergeDepth := func(consensus testapi.TestConsensus, parents []*externalapi.DomainHash) (*externalapi.DomainBlock, bool) {
-			block, err := consensus.BuildBlockWithParents(parents, nil, nil)
+			block, _, err := consensus.BuildBlockWithParents(parents, nil, nil)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: BuildBlockWithParents failed: %v", err)
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
@@ -210,7 +210,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		buildAndInsertBlock := func(consensus testapi.TestConsensus, parentHashes []*externalapi.DomainHash) *externalapi.DomainBlock {
-			block, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
+			block, _, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed building block: %v", err)
 			}
