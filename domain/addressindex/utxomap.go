@@ -17,6 +17,12 @@ func (uc UTXOCollection) Remove(outpoint *externalapi.DomainOutpoint) {
 	delete(uc, *outpoint)
 }
 
+// Get returns the UTXOEntry associated with the given Outpoint, and a boolean indicating if such entry was found
+func (uc UTXOCollection) Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
+	entry, ok := uc[*outpoint]
+	return entry, ok
+}
+
 // UTXOMap represents a set of UTXOs sets indexed by their addresses
 type UTXOMap map[string]UTXOCollection
 
@@ -32,16 +38,27 @@ func (um UTXOMap) Get(address string) (UTXOCollection, bool) {
 
 // Add adds a new UTXO entry associated with an address to this UTXOMap
 func (um UTXOMap) Add(address string, outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) {
+	if len(address) == 0 {
+		return
+	}
+
 	if collection, ok := um[address]; ok {
 		collection[*outpoint] = entry
+	} else {
+		collection := make(UTXOCollection)
+		collection[*outpoint] = entry
+		um[address] = collection
 	}
 }
 
 // Remove removes an outpoint associated with an address from this UTXOMap if it exists
-func (um UTXOMap) Remove(address string, outpoint *externalapi.DomainOutpoint) {
+func (um UTXOMap) Remove(address string, outpoint *externalapi.DomainOutpoint) bool {
 	if collection, ok := um[address]; ok {
 		delete(collection, *outpoint)
+		return true
 	}
+
+	return false
 }
 
 // Addresses returns all addresses

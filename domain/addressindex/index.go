@@ -2,6 +2,7 @@ package addressindex
 
 import (
 	"bytes"
+	"errors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -70,23 +71,32 @@ func (in *Index) GetUTXOsByAddresses(addresses []string) (UTXOMap, error) {
 	return result, nil
 }
 
-// getSizeOfAddressAndOutpoint returns estimated size of UTXOEntry & Outpoint in bytes
-func getSizeOfAddressAndOutpoint(address string) uint64 {
-	const staticSize = uint64(unsafe.Sizeof(externalapi.DomainOutpoint{}))
-	return staticSize + uint64(len(address))
+// getSizeOfUTXOEntryAndOutpoint returns estimated size of UTXOEntry & Outpoint in bytes
+func getSizeOfUTXOEntryAndOutpoint(entry *externalapi.UTXOEntry) uint64 {
+	const staticSize = uint64(unsafe.Sizeof(externalapi.DomainOutpoint{})) + uint64(unsafe.Sizeof(externalapi.UTXOEntry{}))
+	return staticSize + uint64(len(entry.ScriptPublicKey))
 }
 
 // add adds a new UTXO entry associated with an address to this Index
 func (in *Index) add(address string, outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) {
 	in.utxoMapCache.Add(address, outpoint, entry)
-	in.estimatedSize += getSizeOfAddressAndOutpoint(address)
+	in.estimatedSize += getSizeOfUTXOEntryAndOutpoint(entry)
 	in.checkAndCleanCachedData()
 }
 
-// remove removes a new UTXO associated with an address to this Index
-func (in *Index) remove(address string, outpoint *externalapi.DomainOutpoint) {
-	in.utxoMapCache.Remove(address, outpoint)
-	in.checkAndCleanCachedData()
+// remove removes an UTXO associated with an address from this Index
+func (in *Index) remove(address string, outpoint *externalapi.DomainOutpoint) bool {
+	utxosOfAddress, ok := in.utxoMapCache.Get(address)
+	if !ok {
+		return false
+	}
+	entry, ok := utxosOfAddress.Get(outpoint)
+	if !ok {
+		return false
+	}
+	utxosOfAddress.Remove(outpoint)
+	in.estimatedSize -= getSizeOfUTXOEntryAndOutpoint(entry)
+	return true
 }
 
 // checkAndCleanCachedData checks the Index estimated size and clean it if it reaches the limit
@@ -100,8 +110,11 @@ func (in *Index) checkAndCleanCachedData() {
 // GetAddress extracts addresses from scriptPublicKey
 func GetAddress(scriptPublicKey []byte, prefix util.Bech32Prefix) (string, error) {
 	_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPublicKey, prefix)
-	addressStr := address.EncodeAddress()
-	return addressStr, err
+	if address != nil {
+		addressStr := address.EncodeAddress()
+		return addressStr, nil
+	}
+	return "", err
 }
 
 // AddBlock adds the provided block's content to the Index
@@ -116,7 +129,7 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 			if err != nil {
 				return nil, err
 			}
-			toRemove[address].Add(&txIn.PreviousOutpoint, txIn.UTXOEntry)
+			toRemove.Add(address, &txIn.PreviousOutpoint, txIn.UTXOEntry)
 		}
 
 		isCoinbase := transactionhelper.IsCoinBase(transaction)
@@ -127,11 +140,8 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 			}
 			txID := consensusserialization.TransactionID(transaction)
 			outpoint := externalapi.NewDomainOutpoint(txID, uint32(i))
-			if err != nil {
-				return nil, err
-			}
 			entry := externalapi.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, isCoinbase, blueScore)
-			toAdd[address].Add(outpoint, entry)
+			toAdd.Add(address, outpoint, entry)
 		}
 	}
 
@@ -141,41 +151,38 @@ func (in *Index) AddBlock(block *externalapi.DomainBlock, blueScore uint64, pref
 // Update updates the Index in the database
 func (in *Index) Update(toAdd UTXOMap, toRemove UTXOMap) (UTXOMap, error) {
 	changedAddresses := make(UTXOMap)
-
-	for address, utxos := range toRemove {
-		collection, ok := changedAddresses[address]
-		if !ok {
-			collection, err := in.GetUTXOsByAddress(address)
-			if err != nil {
-				return nil, err
-			}
-			changedAddresses[address] = collection
+	for address, utxosToRemove := range toRemove {
+		utxosOfAddress, err := in.GetUTXOsByAddress(address)
+		if err != nil {
+			return nil, err
 		}
-
-		for outpoint := range utxos {
+		if utxosOfAddress == nil {
+			return nil, errors.New("address was not found")
+		}
+		for outpoint := range utxosToRemove {
 			in.remove(address, &outpoint)
-			collection.Remove(&outpoint)
+			utxosOfAddress.Remove(&outpoint)
 		}
+		changedAddresses[address] = utxosOfAddress
 	}
 
-	for address, utxos := range toAdd {
-		collection, ok := changedAddresses[address]
+	for address, utxosToAdd := range toAdd {
+		utxosOfAddress, ok := changedAddresses.Get(address)
 		if !ok {
-			collection, err := in.GetUTXOsByAddress(address)
+			var err error
+			utxosOfAddress, err = in.GetUTXOsByAddress(address)
 			if err != nil && !database.IsNotFoundError(err) {
 				return nil, err
 			}
-
-			if collection == nil {
-				collection = make(UTXOCollection)
+			if utxosOfAddress == nil {
+				utxosOfAddress = make(UTXOCollection)
 			}
-
-			changedAddresses[address] = collection
+			changedAddresses[address] = utxosOfAddress
 		}
 
-		for outpoint, utxoEntry := range utxos {
+		for outpoint, utxoEntry := range utxosToAdd {
 			in.add(address, &outpoint, utxoEntry)
-			collection.Add(&outpoint, utxoEntry)
+			utxosOfAddress.Add(&outpoint, utxoEntry)
 		}
 	}
 

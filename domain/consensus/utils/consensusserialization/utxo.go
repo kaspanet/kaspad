@@ -115,13 +115,13 @@ func SerializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 // DeserializeUTXOEntry deserializes the UTXO entry from the provided reader
 func DeserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
 	entry := &externalapi.UTXOEntry{}
-	err := readElements(r, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
+	err := readElements(r, &entry.BlockBlueScore, &entry.Amount, &entry.IsCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
 	count := uint64(len(entry.ScriptPublicKey))
-	err = readElement(r, count)
+	err = readElement(r, &count)
 	if err != nil {
 		return nil, err
 	}
