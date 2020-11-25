@@ -6,71 +6,76 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var headerTipsKey = dbkeys.MakeBucket().Key([]byte("header-tips"))
 
 type headerTipsStore struct {
 	staging []*externalapi.DomainHash
-	cache   *lrucache.LRUCache
+	cache   []*externalapi.DomainHash
 }
 
 // New instantiates a new HeaderTipsStore
-func New(cacheSize int) model.HeaderTipsStore {
-	return &headerTipsStore{
-		cache: lrucache.New(cacheSize),
-	}
+func New() model.HeaderTipsStore {
+	return &headerTipsStore{}
 }
 
-func (h *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
-	if h.staging != nil {
-		return len(h.staging) > 0, nil
+func (hts *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
+	if len(hts.staging) > 0 {
+		return true, nil
+	}
+
+	if len(hts.cache) > 0 {
+		return true, nil
 	}
 
 	return dbContext.Has(headerTipsKey)
 }
 
-func (h *headerTipsStore) Discard() {
-	h.staging = nil
+func (hts *headerTipsStore) Discard() {
+	hts.staging = nil
 }
 
-func (h *headerTipsStore) Commit(dbTx model.DBTransaction) error {
-	if h.staging == nil {
+func (hts *headerTipsStore) Commit(dbTx model.DBTransaction) error {
+	if hts.staging == nil {
 		return nil
 	}
 
-	tipsBytes, err := h.serializeTips(h.staging)
+	tipsBytes, err := hts.serializeTips(hts.staging)
 	if err != nil {
 		return err
 	}
-
 	err = dbTx.Put(headerTipsKey, tipsBytes)
 	if err != nil {
 		return err
 	}
+	hts.cache = hts.staging
 
-	h.Discard()
+	hts.Discard()
 	return nil
 }
 
-func (h *headerTipsStore) Stage(tips []*externalapi.DomainHash) error {
-	clone, err := h.clone(tips)
+func (hts *headerTipsStore) Stage(tips []*externalapi.DomainHash) error {
+	clone, err := hts.clone(tips)
 	if err != nil {
 		return err
 	}
 
-	h.staging = clone
+	hts.staging = clone
 	return nil
 }
 
-func (h *headerTipsStore) IsStaged() bool {
-	return h.staging != nil
+func (hts *headerTipsStore) IsStaged() bool {
+	return hts.staging != nil
 }
 
-func (h *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if h.staging != nil {
-		return h.staging, nil
+func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	if hts.staging != nil {
+		return hts.clone(hts.staging)
+	}
+
+	if hts.cache != nil {
+		return hts.clone(hts.cache)
 	}
 
 	tipsBytes, err := dbContext.Get(headerTipsKey)
@@ -78,15 +83,20 @@ func (h *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainH
 		return nil, err
 	}
 
-	return h.deserializeTips(tipsBytes)
+	tips, err := hts.deserializeTips(tipsBytes)
+	if err != nil {
+		return nil, err
+	}
+	hts.cache = tips
+	return hts.clone(tips)
 }
 
-func (h *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
+func (hts *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
 	dbTips := serialization.HeaderTipsToDBHeaderTips(tips)
 	return proto.Marshal(dbTips)
 }
 
-func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
+func (hts *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
 	dbTips := &serialization.DbHeaderTips{}
 	err := proto.Unmarshal(tipsBytes, dbTips)
 	if err != nil {
@@ -96,13 +106,13 @@ func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Doma
 	return serialization.DBHeaderTipsToHeaderTips(dbTips)
 }
 
-func (h *headerTipsStore) clone(tips []*externalapi.DomainHash,
+func (hts *headerTipsStore) clone(tips []*externalapi.DomainHash,
 ) ([]*externalapi.DomainHash, error) {
 
-	serialized, err := h.serializeTips(tips)
+	serialized, err := hts.serializeTips(tips)
 	if err != nil {
 		return nil, err
 	}
 
-	return h.deserializeTips(serialized)
+	return hts.deserializeTips(serialized)
 }

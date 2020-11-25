@@ -80,7 +80,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	utxoDiffStore := utxodiffstore.New(storeCacheSize)
 	consensusStateStore := consensusstatestore.New(storeCacheSize)
 	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
-	headerTipsStore := headertipsstore.New(storeCacheSize)
+	headerTipsStore := headertipsstore.New()
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
