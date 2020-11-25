@@ -38,10 +38,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
 
 	log.Tracef("Staging new multiset for the virtual block")
-	err = csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
-	if err != nil {
-		return err
-	}
+	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	log.Tracef("Staging new UTXO diff for the virtual block")
 	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)

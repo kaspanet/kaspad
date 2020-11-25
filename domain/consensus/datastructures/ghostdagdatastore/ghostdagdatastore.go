@@ -58,11 +58,11 @@ func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the blockGHOSTDAGData associated with the given blockHash
 func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	if blockGHOSTDAGData, ok := gds.staging[*blockHash]; ok {
-		return gds.clone(blockGHOSTDAGData)
+		return blockGHOSTDAGData.Clone(), nil
 	}
 
 	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash); ok {
-		return gds.clone(blockGHOSTDAGData.(*model.BlockGHOSTDAGData))
+		return blockGHOSTDAGData.(*model.BlockGHOSTDAGData).Clone(), nil
 	}
 
 	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.hashAsKey(blockHash))
@@ -75,7 +75,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externala
 		return nil, err
 	}
 	gds.cache.Add(blockHash, blockGHOSTDAGData)
-	return gds.clone(blockGHOSTDAGData)
+	return blockGHOSTDAGData.Clone(), nil
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

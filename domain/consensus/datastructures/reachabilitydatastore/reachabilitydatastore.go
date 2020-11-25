@@ -81,11 +81,11 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 
 	if reachabilityData, ok := rds.reachabilityDataStaging[*blockHash]; ok {
-		return rds.cloneReachabilityData(reachabilityData)
+		return reachabilityData.Clone(), nil
 	}
 
 	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
-		return rds.cloneReachabilityData(reachabilityData.(*model.ReachabilityData))
+		return reachabilityData.(*model.ReachabilityData).Clone(), nil
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
@@ -98,7 +98,7 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 		return nil, err
 	}
 	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
-	return rds.cloneReachabilityData(reachabilityData)
+	return reachabilityData.Clone(), nil
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {

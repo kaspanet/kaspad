@@ -73,7 +73,7 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 	}
 
 	if multiset, ok := ms.cache.Get(blockHash); ok {
-		return multiset.(model.Multiset).Clone()
+		return multiset.(model.Multiset).Clone(), nil
 	}
 
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))
@@ -86,7 +86,7 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 		return nil, err
 	}
 	ms.cache.Add(blockHash, multiset)
-	return multiset.Clone()
+	return multiset.Clone(), nil
 }
 
 // Delete deletes the multiset associated with the given blockHash

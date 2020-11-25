@@ -109,11 +109,11 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 // UTXODiff gets the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	if utxoDiff, ok := uds.utxoDiffStaging[*blockHash]; ok {
-		return uds.cloneUTXODiff(utxoDiff)
+		return utxoDiff.Clone(), nil
 	}
 
 	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
-		return uds.cloneUTXODiff(utxoDiff.(*model.UTXODiff))
+		return utxoDiff.(*model.UTXODiff).Clone(), nil
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
@@ -126,17 +126,17 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *external
 		return nil, err
 	}
 	uds.utxoDiffCache.Add(blockHash, utxoDiff)
-	return uds.cloneUTXODiff(utxoDiff)
+	return utxoDiff.Clone(), nil
 }
 
 // UTXODiffChild gets the utxoDiff child associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	if utxoDiffChild, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
-		return uds.cloneUTXODiffChild(utxoDiffChild), nil
+		return utxoDiffChild.Clone(), nil
 	}
 
 	if utxoDiffChild, ok := uds.utxoDiffChildCache.Get(blockHash); ok {
-		return uds.cloneUTXODiffChild(utxoDiffChild.(*externalapi.DomainHash)), nil
+		return utxoDiffChild.(*externalapi.DomainHash).Clone(), nil
 	}
 
 	utxoDiffChildBytes, err := dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
@@ -149,7 +149,7 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 		return nil, err
 	}
 	uds.utxoDiffChildCache.Add(blockHash, utxoDiffChild)
-	return uds.cloneUTXODiffChild(utxoDiffChild), nil
+	return utxoDiffChild.Clone(), nil
 }
 
 // HasUTXODiffChild returns true if the given blockHash has a UTXODiffChild

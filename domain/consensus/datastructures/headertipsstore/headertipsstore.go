@@ -65,11 +65,11 @@ func (hts *headerTipsStore) IsStaged() bool {
 
 func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if hts.staging != nil {
-		return externalapi.CloneHashes(hts.staging)
+		return externalapi.CloneHashes(hts.staging), nil
 	}
 
 	if hts.cache != nil {
-		return externalapi.CloneHashes(hts.cache)
+		return externalapi.CloneHashes(hts.cache), nil
 	}
 
 	tipsBytes, err := dbContext.Get(headerTipsKey)
@@ -82,7 +82,7 @@ func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.Domai
 		return nil, err
 	}
 	hts.cache = tips
-	return externalapi.CloneHashes(tips)
+	return externalapi.CloneHashes(tips), nil
 }
 
 func (hts *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
