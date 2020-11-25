@@ -62,6 +62,7 @@ func SerializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 
 // DeserializeOutpoint deserializes the outpoint from the provided reader
 func DeserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
+	outpoint := &externalapi.DomainOutpoint{}
 	transactionIDBytes := make([]byte, externalapi.DomainHashSize)
 	_, err := io.ReadFull(r, transactionIDBytes)
 	if err != nil {
@@ -72,23 +73,14 @@ func DeserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	if err != nil {
 		return nil, err
 	}
+	outpoint.TransactionID = *transactionID
 
-	indexBytes := make([]byte, uint32Size)
-	_, err = io.ReadFull(r, indexBytes)
+	err = readElement(r, &outpoint.Index)
 	if err != nil {
 		return nil, err
 	}
 
-	var index uint32
-	err = readElement(r, &index)
-	if err != nil {
-		return nil, err
-	}
-
-	return &externalapi.DomainOutpoint{
-		TransactionID: *transactionID,
-		Index:         index,
-	}, nil
+	return outpoint, nil
 }
 
 // SerializeUTXOEntry serializes the provided UTXO entry into the provided writer
@@ -120,12 +112,13 @@ func DeserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
 		return nil, err
 	}
 
-	count := uint64(len(entry.ScriptPublicKey))
-	err = readElement(r, &count)
+	var scriptPublicKeyLen uint64
+	err = readElement(r, &scriptPublicKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
+	entry.ScriptPublicKey = make([]byte, scriptPublicKeyLen)
 	_, err = r.Read(entry.ScriptPublicKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
