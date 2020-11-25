@@ -53,6 +53,7 @@ func (c *LRUCache) evictRandom() {
 	var keyToEvict externalapi.DomainHash
 	for key := range c.cache {
 		keyToEvict = key
+		break
 	}
 	c.Remove(&keyToEvict)
 }
