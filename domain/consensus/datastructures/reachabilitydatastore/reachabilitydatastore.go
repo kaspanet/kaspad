@@ -17,6 +17,7 @@ type reachabilityDataStore struct {
 	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
 	reachabilityReindexRootStaging *externalapi.DomainHash
 	reachabilityDataCache          *lrucache.LRUCache
+	reachabilityReindexRootCache   *externalapi.DomainHash
 }
 
 // New instantiates a new ReachabilityDataStore
@@ -59,11 +60,11 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(reachabilityReindexRootKey, reachabilityReindexRootBytes)
 		if err != nil {
 			return err
 		}
+		rds.reachabilityReindexRootCache = rds.reachabilityReindexRootStaging
 	}
 	for hash, reachabilityData := range rds.reachabilityDataStaging {
 		reachabilityDataBytes, err := rds.serializeReachabilityData(reachabilityData)
@@ -123,6 +124,11 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	if rds.reachabilityReindexRootStaging != nil {
 		return rds.reachabilityReindexRootStaging, nil
 	}
+
+	if rds.reachabilityReindexRootCache != nil {
+		return rds.reachabilityReindexRootCache, nil
+	}
+
 	reachabilityReindexRootBytes, err := dbContext.Get(reachabilityReindexRootKey)
 	if err != nil {
 		return nil, err
@@ -132,6 +138,7 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	if err != nil {
 		return nil, err
 	}
+	rds.reachabilityReindexRootCache = reachabilityReindexRoot
 	return reachabilityReindexRoot, nil
 }
 
