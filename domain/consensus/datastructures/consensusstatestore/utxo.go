@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 )
 
@@ -172,7 +173,12 @@ func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader)
 		return nil, err
 	}
 
-	return newUTXOSetIterator(cursor), nil
+	mainIterator := newCursorUTXOSetIterator(cursor)
+	if css.virtualUTXODiffStaging != nil {
+		return utxo.IteratorWithDiff(mainIterator, css.virtualUTXODiffStaging)
+	}
+
+	return mainIterator, nil
 }
 
 type utxoSetIterator struct {

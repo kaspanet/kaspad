@@ -4,13 +4,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 )
 
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
@@ -249,8 +250,16 @@ func (csm *consensusStateManager) checkTransactionMass(
 	return true, accumulatedMassAfter
 }
 
+// RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a model.UTXOSetIterator
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (
 	model.ReadOnlyUTXOSetIterator, error) {
+
+	blockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, blockHash)
+	if blockStatus != externalapi.StatusValid {
+		return nil, errors.Errorf(
+			"block %s, has status '%s', and therefore can't restore it's UTXO set. Only blocks with status '%s' can be restored.",
+			blockHash, blockStatus, externalapi.StatusValid)
+	}
 
 	log.Tracef("RestorePastUTXOSetIterator start for block %s", blockHash)
 	defer log.Tracef("RestorePastUTXOSetIterator end for block %s", blockHash)
@@ -284,38 +293,5 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, errors.New("blockUTXO.ToRemove is expected to be empty")
 	}
 
-	return newUTXOSetIterator(blockUTXO.ToAdd), nil
-}
-
-type utxoOutpointEntryPair struct {
-	outpoint externalapi.DomainOutpoint
-	entry    *externalapi.UTXOEntry
-}
-
-type utxoSetIterator struct {
-	index int
-	pairs []utxoOutpointEntryPair
-}
-
-func newUTXOSetIterator(collection model.UTXOCollection) *utxoSetIterator {
-	pairs := make([]utxoOutpointEntryPair, len(collection))
-	i := 0
-	for outpoint, entry := range collection {
-		pairs[i] = utxoOutpointEntryPair{
-			outpoint: outpoint,
-			entry:    entry,
-		}
-		i++
-	}
-	return &utxoSetIterator{index: -1, pairs: pairs}
-}
-
-func (u *utxoSetIterator) Next() bool {
-	u.index++
-	return u.index < len(u.pairs)
-}
-
-func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
-	pair := u.pairs[u.index]
-	return &pair.outpoint, pair.entry, nil
+	return utxo.CollectionIterator(blockUTXO.ToAdd), nil
 }
