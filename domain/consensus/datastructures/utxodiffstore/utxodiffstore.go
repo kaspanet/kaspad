@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/pkg/errors"
 )
 
@@ -17,14 +18,18 @@ type utxoDiffStore struct {
 	utxoDiffStaging      map[externalapi.DomainHash]*model.UTXODiff
 	utxoDiffChildStaging map[externalapi.DomainHash]*externalapi.DomainHash
 	toDelete             map[externalapi.DomainHash]struct{}
+	utxoDiffCache        *lrucache.LRUCache
+	utxoDiffChildCache   *lrucache.LRUCache
 }
 
 // New instantiates a new UTXODiffStore
-func New() model.UTXODiffStore {
+func New(cacheSize int) model.UTXODiffStore {
 	return &utxoDiffStore{
 		utxoDiffStaging:      make(map[externalapi.DomainHash]*model.UTXODiff),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete:             make(map[externalapi.DomainHash]struct{}),
+		utxoDiffCache:        lrucache.New(cacheSize),
+		utxoDiffChildCache:   lrucache.New(cacheSize),
 	}
 }
 
@@ -61,11 +66,11 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(uds.utxoDiffHashAsKey(&hash), utxoDiffBytes)
 		if err != nil {
 			return err
 		}
+		uds.utxoDiffCache.Add(&hash, utxoDiff)
 	}
 	for hash, utxoDiffChild := range uds.utxoDiffChildStaging {
 		if utxoDiffChild == nil {
@@ -80,6 +85,7 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		uds.utxoDiffChildCache.Add(&hash, utxoDiffChild)
 	}
 
 	for hash := range uds.toDelete {
@@ -87,11 +93,13 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		uds.utxoDiffCache.Remove(&hash)
 
 		err = dbTx.Delete(uds.utxoDiffChildHashAsKey(&hash))
 		if err != nil {
 			return err
 		}
+		uds.utxoDiffChildCache.Remove(&hash)
 	}
 
 	uds.Discard()
@@ -101,7 +109,11 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 // UTXODiff gets the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	if utxoDiff, ok := uds.utxoDiffStaging[*blockHash]; ok {
-		return utxoDiff, nil
+		return utxoDiff.Clone(), nil
+	}
+
+	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
+		return utxoDiff.(*model.UTXODiff).Clone(), nil
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
@@ -109,13 +121,22 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *external
 		return nil, err
 	}
 
-	return uds.deserializeUTXODiff(utxoDiffBytes)
+	utxoDiff, err := uds.deserializeUTXODiff(utxoDiffBytes)
+	if err != nil {
+		return nil, err
+	}
+	uds.utxoDiffCache.Add(blockHash, utxoDiff)
+	return utxoDiff.Clone(), nil
 }
 
 // UTXODiffChild gets the utxoDiff child associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	if utxoDiffChild, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
-		return utxoDiffChild, nil
+		return utxoDiffChild.Clone(), nil
+	}
+
+	if utxoDiffChild, ok := uds.utxoDiffChildCache.Get(blockHash); ok {
+		return utxoDiffChild.(*externalapi.DomainHash).Clone(), nil
 	}
 
 	utxoDiffChildBytes, err := dbContext.Get(uds.utxoDiffChildHashAsKey(blockHash))
@@ -127,12 +148,17 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, blockHash *ext
 	if err != nil {
 		return nil, err
 	}
-	return utxoDiffChild, nil
+	uds.utxoDiffChildCache.Add(blockHash, utxoDiffChild)
+	return utxoDiffChild.Clone(), nil
 }
 
 // HasUTXODiffChild returns true if the given blockHash has a UTXODiffChild
 func (uds *utxoDiffStore) HasUTXODiffChild(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := uds.utxoDiffChildStaging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if uds.utxoDiffChildCache.Has(blockHash) {
 		return true, nil
 	}
 

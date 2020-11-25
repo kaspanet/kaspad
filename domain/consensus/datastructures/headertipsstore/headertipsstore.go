@@ -12,50 +12,64 @@ var headerTipsKey = dbkeys.MakeBucket().Key([]byte("header-tips"))
 
 type headerTipsStore struct {
 	staging []*externalapi.DomainHash
+	cache   []*externalapi.DomainHash
 }
 
-func (h *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
-	if h.staging != nil {
-		return len(h.staging) > 0, nil
+// New instantiates a new HeaderTipsStore
+func New() model.HeaderTipsStore {
+	return &headerTipsStore{}
+}
+
+func (hts *headerTipsStore) HasTips(dbContext model.DBReader) (bool, error) {
+	if len(hts.staging) > 0 {
+		return true, nil
+	}
+
+	if len(hts.cache) > 0 {
+		return true, nil
 	}
 
 	return dbContext.Has(headerTipsKey)
 }
 
-func (h *headerTipsStore) Discard() {
-	h.staging = nil
+func (hts *headerTipsStore) Discard() {
+	hts.staging = nil
 }
 
-func (h *headerTipsStore) Commit(dbTx model.DBTransaction) error {
-	if h.staging == nil {
+func (hts *headerTipsStore) Commit(dbTx model.DBTransaction) error {
+	if hts.staging == nil {
 		return nil
 	}
 
-	tipsBytes, err := h.serializeTips(h.staging)
+	tipsBytes, err := hts.serializeTips(hts.staging)
 	if err != nil {
 		return err
 	}
-
 	err = dbTx.Put(headerTipsKey, tipsBytes)
 	if err != nil {
 		return err
 	}
+	hts.cache = hts.staging
 
-	h.Discard()
+	hts.Discard()
 	return nil
 }
 
-func (h *headerTipsStore) Stage(tips []*externalapi.DomainHash) {
-	h.staging = externalapi.CloneHashes(tips)
+func (hts *headerTipsStore) Stage(tips []*externalapi.DomainHash) {
+	hts.staging = externalapi.CloneHashes(tips)
 }
 
-func (h *headerTipsStore) IsStaged() bool {
-	return h.staging != nil
+func (hts *headerTipsStore) IsStaged() bool {
+	return hts.staging != nil
 }
 
-func (h *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if h.staging != nil {
-		return h.staging, nil
+func (hts *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	if hts.staging != nil {
+		return externalapi.CloneHashes(hts.staging), nil
+	}
+
+	if hts.cache != nil {
+		return externalapi.CloneHashes(hts.cache), nil
 	}
 
 	tipsBytes, err := dbContext.Get(headerTipsKey)
@@ -63,15 +77,20 @@ func (h *headerTipsStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainH
 		return nil, err
 	}
 
-	return h.deserializeTips(tipsBytes)
+	tips, err := hts.deserializeTips(tipsBytes)
+	if err != nil {
+		return nil, err
+	}
+	hts.cache = tips
+	return externalapi.CloneHashes(tips), nil
 }
 
-func (h *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
+func (hts *headerTipsStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
 	dbTips := serialization.HeaderTipsToDBHeaderTips(tips)
 	return proto.Marshal(dbTips)
 }
 
-func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
+func (hts *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash, error) {
 	dbTips := &serialization.DbHeaderTips{}
 	err := proto.Unmarshal(tipsBytes, dbTips)
 	if err != nil {
@@ -79,9 +98,4 @@ func (h *headerTipsStore) deserializeTips(tipsBytes []byte) ([]*externalapi.Doma
 	}
 
 	return serialization.DBHeaderTipsToHeaderTips(dbTips)
-}
-
-// New instantiates a new HeaderTipsStore
-func New() model.HeaderTipsStore {
-	return &headerTipsStore{}
 }

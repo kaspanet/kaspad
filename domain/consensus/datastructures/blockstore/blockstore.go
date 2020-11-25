@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("blocks"))
@@ -15,14 +16,16 @@ var countKey = dbkeys.MakeBucket().Key([]byte("blocks-count"))
 type blockStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlock
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    *lrucache.LRUCache
 	count    uint64
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader) (model.BlockStore, error) {
+func New(dbContext model.DBReader, cacheSize int) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -77,6 +80,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bs.cache.Add(&hash, block)
 	}
 
 	for hash := range bs.toDelete {
@@ -84,6 +88,7 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bs.cache.Remove(&hash)
 	}
 
 	err := bs.commitCount(dbTx)
@@ -98,7 +103,11 @@ func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
 // Block gets the block associated with the given blockHash
 func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	if block, ok := bs.staging[*blockHash]; ok {
-		return block, nil
+		return block.Clone(), nil
+	}
+
+	if block, ok := bs.cache.Get(blockHash); ok {
+		return block.(*externalapi.DomainBlock).Clone(), nil
 	}
 
 	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
@@ -106,12 +115,21 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	return bs.deserializeBlock(blockBytes)
+	block, err := bs.deserializeBlock(blockBytes)
+	if err != nil {
+		return nil, err
+	}
+	bs.cache.Add(blockHash, block)
+	return block.Clone(), nil
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.
 func (bs *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := bs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if bs.cache.Has(blockHash) {
 		return true, nil
 	}
 

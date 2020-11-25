@@ -62,23 +62,24 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	acceptanceDataStore := acceptancedatastore.New()
-	blockStore, err := blockstore.New(dbManager)
+	storeCacheSize := int(dagParams.FinalityDepth())
+	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
+	blockStore, err := blockstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New()
-	blockStatusStore := blockstatusstore.New()
-	multisetStore := multisetstore.New()
+	blockRelationStore := blockrelationstore.New(storeCacheSize)
+	blockStatusStore := blockstatusstore.New(storeCacheSize)
+	multisetStore := multisetstore.New(storeCacheSize)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New()
-	utxoDiffStore := utxodiffstore.New()
+	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
+	utxoDiffStore := utxodiffstore.New(storeCacheSize)
 	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New()
+	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
 	headerTipsStore := headertipsstore.New()
 
 	// Processes
