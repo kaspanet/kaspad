@@ -3,6 +3,7 @@ package externalapi
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
 // DomainTransaction represents a Kaspa transaction
@@ -60,7 +61,8 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal accordingly.
 var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
-	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0}
+	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0,
+	&DomainTransactionID{}}
 
 // Equal returns whether tx equals to other
 func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
@@ -110,6 +112,10 @@ func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
 
 	if tx.Mass != other.Mass {
 		return false
+	}
+
+	if tx.ID != nil && other.ID != nil && !tx.ID.Equal(other.ID) {
+		panic(errors.New("identical transactions should always have the same ID"))
 	}
 
 	return true
