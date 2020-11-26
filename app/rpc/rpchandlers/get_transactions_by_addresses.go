@@ -45,11 +45,19 @@ func HandleGetTransactionsByAddresses(context *rpccontext.Context, _ *router.Rou
 		return nil, err
 	}
 
+	lastBlockHash := blockHashes[len(blockHashes)-1]
+	if len(blockHashes) == 0 || lastBlockHash != model.VirtualBlockHash {
+		return &appmessage.GetBlockResponseMessage{
+			Error: appmessage.RPCErrorf("Unable to process input data"),
+		}, nil
+	}
+
+	// remove virtual block hash from the end
+	blockHashes = blockHashes[:len(blockHashes)-1]
 	if len(blockHashes) == 0 {
 		return appmessage.NewGetTransactionsByAddressesResponseMessage(startingBlockHash, nil), nil
 	}
-
-	lastBlockHash := blockHashes[len(blockHashes)-1]
+	lastBlockHash = blockHashes[len(blockHashes)-1]
 
 	var transactionsVerboseData []*appmessage.TransactionVerboseData
 	for _, blockHash := range blockHashes {

@@ -687,6 +687,14 @@ func (rt *reachabilityManager) reindexIntervalsAfterNode(rtn, node *externalapi.
 // of the other node. Note that we use the graph theory convention
 // here which defines that node is also an ancestor of itself.
 func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
+	if node == model.VirtualBlockHash {
+		return false, nil
+	}
+
+	if other == model.VirtualBlockHash {
+		return true, nil
+	}
+
 	nodeInterval, err := rt.interval(node)
 	if err != nil {
 		return false, err
