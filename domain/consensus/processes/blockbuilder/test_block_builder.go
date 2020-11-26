@@ -28,7 +28,7 @@ func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus test
 }
 
 // BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
-// and returns the block together with its past UTXO-set.
+// and returns the block together with its past UTXO-diff.
 func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
 	*externalapi.DomainBlock, *model.UTXODiff, error) {
