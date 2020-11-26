@@ -51,6 +51,10 @@ func (bad *BlockAcceptanceData) Equal(other *BlockAcceptanceData) bool {
 		return bad == other
 	}
 
+	if len(bad.TransactionAcceptanceData) != len(other.TransactionAcceptanceData) {
+		return false
+	}
+
 	for i, acceptanceData := range bad.TransactionAcceptanceData {
 		if !acceptanceData.Equal(other.TransactionAcceptanceData[i]) {
 			return false
