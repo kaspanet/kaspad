@@ -64,7 +64,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	storeCacheSize := int(dagParams.FinalityDepth())
+	storeCacheSize := 200
 	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
 	blockStore, err := blockstore.New(dbManager, storeCacheSize)
 	if err != nil {
