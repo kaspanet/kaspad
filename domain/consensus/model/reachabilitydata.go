@@ -93,9 +93,15 @@ func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
 
 // Clone returns a clone of ReachabilityTreeNode
 func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
+
+	var parentClone *externalapi.DomainHash
+	if rtn.Parent != nil {
+		parentClone = rtn.Parent.Clone()
+	}
+
 	return &ReachabilityTreeNode{
 		Children: externalapi.CloneHashes(rtn.Children),
-		Parent:   rtn.Parent.Clone(),
+		Parent:   parentClone,
 		Interval: rtn.Interval.Clone(),
 	}
 }

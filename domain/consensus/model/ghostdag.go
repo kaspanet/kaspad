@@ -18,9 +18,14 @@ func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
 		bluesAnticoneSizesClone[hash] = size
 	}
 
+	var selectedParentClone *externalapi.DomainHash
+	if bgd.SelectedParent != nil {
+		selectedParentClone = bgd.SelectedParent.Clone()
+	}
+
 	return &BlockGHOSTDAGData{
 		BlueScore:          bgd.BlueScore,
-		SelectedParent:     bgd.SelectedParent.Clone(),
+		SelectedParent:     selectedParentClone,
 		MergeSetBlues:      externalapi.CloneHashes(bgd.MergeSetBlues),
 		MergeSetReds:       externalapi.CloneHashes(bgd.MergeSetReds),
 		BluesAnticoneSizes: bluesAnticoneSizesClone,
