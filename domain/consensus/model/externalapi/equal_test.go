@@ -1,6 +1,7 @@
 package externalapi
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -196,6 +197,42 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 			if result2 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
 			}
+		}
+	}
+}
+
+func TestDomainBlockHeader_Clone(t *testing.T) {
+	headers := []*DomainBlockHeader{
+		{
+			0,
+			[]*DomainHash{{0}},
+			DomainHash{1},
+			DomainHash{2},
+			DomainHash{3},
+			4,
+			5,
+			6,
+		},
+		{
+			0,
+			[]*DomainHash{},
+			DomainHash{1},
+			DomainHash{2},
+			DomainHash{3},
+			4,
+			5,
+			6,
+		},
+	}
+
+	for i, header := range headers {
+		clone := header.Clone()
+		if !clone.Equal(header) {
+			t.Fatalf("Test #%d: clone should be equal to the original", i)
+		}
+
+		if !reflect.DeepEqual(header, clone) {
+			t.Fatalf("Test #%d: clone should be equal to the original", i)
 		}
 	}
 }
