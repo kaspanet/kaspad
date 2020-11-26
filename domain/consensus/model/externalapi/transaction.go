@@ -70,10 +70,18 @@ func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
 		return false
 	}
 
+	if len(tx.Inputs) != len(other.Inputs) {
+		return false
+	}
+
 	for i, input := range tx.Inputs {
 		if !input.Equal(other.Inputs[i]) {
 			return false
 		}
+	}
+
+	if len(tx.Outputs) != len(other.Outputs) {
+		return false
 	}
 
 	for i, output := range tx.Outputs {
