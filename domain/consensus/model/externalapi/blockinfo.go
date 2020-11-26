@@ -10,10 +10,6 @@ type BlockInfo struct {
 
 // Clone returns a clone of BlockInfo
 func (bi *BlockInfo) Clone() *BlockInfo {
-	if bi == nil {
-		return nil
-	}
-
 	return &BlockInfo{
 		Exists:                            bi.Exists,
 		BlockStatus:                       bi.BlockStatus.Clone(),

@@ -47,10 +47,6 @@ type SyncInfo struct {
 
 // Clone returns a clone of SyncInfo
 func (si *SyncInfo) Clone() *SyncInfo {
-	if si == nil {
-		return nil
-	}
-
 	return &SyncInfo{
 		State:                si.State.Clone(),
 		IBDRootUTXOBlockHash: si.IBDRootUTXOBlockHash.Clone(),
