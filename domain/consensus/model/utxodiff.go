@@ -12,7 +12,7 @@ import (
 type UTXOCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ UTXOCollection = map[externalapi.DomainOutpoint]*externalapi.UTXOEntry{}
 
 // Equal returns whether uc equals to other

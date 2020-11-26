@@ -9,7 +9,7 @@ func (bs BlockStatus) Clone() BlockStatus {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ BlockStatus = 0
 
 // Equal returns whether bs equals to other

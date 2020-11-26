@@ -38,7 +38,7 @@ func (s SyncState) Clone() SyncState {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ SyncState = 0
 
 // Equal returns whether si equals to other
@@ -65,7 +65,7 @@ func (si *SyncInfo) Clone() *SyncInfo {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = SyncInfo{SyncState(0), &DomainHash{}, 0, 0}
 
 // Equal returns whether si equals to other

@@ -28,7 +28,7 @@ func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &BlockGHOSTDAGData{0, &externalapi.DomainHash{}, []*externalapi.DomainHash{},
 	[]*externalapi.DomainHash{}, map[externalapi.DomainHash]KType{}}
 

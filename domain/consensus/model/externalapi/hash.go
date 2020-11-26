@@ -24,7 +24,7 @@ func (hash *DomainHash) Clone() *DomainHash {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ DomainHash = [DomainHashSize]byte{}
 
 // Equal returns whether hash equals to other

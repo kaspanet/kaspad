@@ -17,7 +17,7 @@ func (br *BlockRelations) Clone() *BlockRelations {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &BlockRelations{[]*externalapi.DomainHash{}, []*externalapi.DomainHash{}}
 
 // Equal returns whether br equals to other

@@ -13,7 +13,7 @@ type ReachabilityData struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &ReachabilityData{&ReachabilityTreeNode{}, FutureCoveringTreeNodeSet{}}
 
 // Equal returns whether rd equals to other
@@ -66,7 +66,7 @@ type ReachabilityTreeNode struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &ReachabilityTreeNode{[]*externalapi.DomainHash{}, &externalapi.DomainHash{},
 	&ReachabilityInterval{}}
 
@@ -109,7 +109,7 @@ type ReachabilityInterval struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &ReachabilityInterval{0, 0}
 
 // Equal returns whether ri equals to other
@@ -161,7 +161,7 @@ func (fctns FutureCoveringTreeNodeSet) Clone() FutureCoveringTreeNodeSet {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ FutureCoveringTreeNodeSet = []*externalapi.DomainHash{}
 
 // Equal returns whether fctns equals to other

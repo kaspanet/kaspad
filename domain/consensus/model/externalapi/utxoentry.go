@@ -27,7 +27,7 @@ func (entry *UTXOEntry) Clone() *UTXOEntry {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = UTXOEntry{0, []byte{}, 0, false}
 
 // Equal returns whether entry equals to other

@@ -55,7 +55,7 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
 	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0,
 	&DomainTransactionID{}}
@@ -135,7 +135,7 @@ type DomainTransactionInput struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &DomainTransactionInput{DomainOutpoint{}, []byte{}, 0,
 	&UTXOEntry{}}
 
@@ -189,7 +189,7 @@ type DomainOutpoint struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = DomainOutpoint{DomainTransactionID{}, 0}
 
 // Equal returns whether op equals to other
@@ -229,7 +229,7 @@ type DomainTransactionOutput struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = DomainTransactionOutput{0, []byte{}}
 
 // Equal returns whether output equals to other
@@ -275,7 +275,7 @@ func (id *DomainTransactionID) Clone() *DomainTransactionID {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ DomainTransactionID = [DomainHashSize]byte{}
 
 // Equal returns whether id equals to other

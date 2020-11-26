@@ -7,7 +7,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type AcceptanceData []*BlockAcceptanceData
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ AcceptanceData = []*BlockAcceptanceData{}
 
 // Equal returns whether ad equals to other
@@ -42,7 +42,7 @@ type BlockAcceptanceData struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &BlockAcceptanceData{[]*TransactionAcceptanceData{}}
 
 // Equal returns whether bad equals to other
@@ -79,7 +79,7 @@ type TransactionAcceptanceData struct {
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal accordingly.
+// an indication to update Equal and Clone accordingly.
 var _ = &TransactionAcceptanceData{&externalapi.DomainTransaction{}, 0, false}
 
 // Equal returns whether tad equals to other
