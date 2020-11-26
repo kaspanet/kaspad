@@ -12,7 +12,7 @@ type TestBlockBuilder interface {
 	BlockBuilder
 
 	// BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
-	// and returns the block together with its past UTXO-diff.
+	// and returns the block together with its past UTXO-diff from the virtual.
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *UTXODiff, error)
 }
