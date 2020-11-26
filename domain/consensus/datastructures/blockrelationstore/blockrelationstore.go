@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-relations"))
@@ -13,12 +14,14 @@ var bucket = dbkeys.MakeBucket([]byte("block-relations"))
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
 	staging map[externalapi.DomainHash]*model.BlockRelations
+	cache   *lrucache.LRUCache
 }
 
 // New instantiates a new BlockRelationStore
-func New() model.BlockRelationStore {
+func New(cacheSize int) model.BlockRelationStore {
 	return &blockRelationStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
+		cache:   lrucache.New(cacheSize),
 	}
 }
 
@@ -44,6 +47,7 @@ func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		brs.cache.Add(&hash, blockRelations)
 	}
 
 	brs.Discard()
@@ -52,7 +56,11 @@ func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
 
 func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
 	if blockRelations, ok := brs.staging[*blockHash]; ok {
-		return blockRelations, nil
+		return blockRelations.Clone(), nil
+	}
+
+	if blockRelations, ok := brs.cache.Get(blockHash); ok {
+		return blockRelations.(*model.BlockRelations).Clone(), nil
 	}
 
 	blockRelationsBytes, err := dbContext.Get(brs.hashAsKey(blockHash))
@@ -60,11 +68,20 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 		return nil, err
 	}
 
-	return brs.deserializeBlockRelations(blockRelationsBytes)
+	blockRelations, err := brs.deserializeBlockRelations(blockRelationsBytes)
+	if err != nil {
+		return nil, err
+	}
+	brs.cache.Add(blockHash, blockRelations)
+	return blockRelations.Clone(), nil
 }
 
 func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := brs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if brs.cache.Has(blockHash) {
 		return true, nil
 	}
 

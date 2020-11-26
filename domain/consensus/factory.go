@@ -48,6 +48,8 @@ import (
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
 	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
+	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+		tc testapi.TestConsensus, teardown func(), err error)
 }
 
 type factory struct{}
@@ -62,23 +64,24 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	acceptanceDataStore := acceptancedatastore.New()
-	blockStore, err := blockstore.New(dbManager)
+	storeCacheSize := int(dagParams.FinalityDepth())
+	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
+	blockStore, err := blockstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, storeCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New()
-	blockStatusStore := blockstatusstore.New()
-	multisetStore := multisetstore.New()
+	blockRelationStore := blockrelationstore.New(storeCacheSize)
+	blockStatusStore := blockstatusstore.New(storeCacheSize)
+	multisetStore := multisetstore.New(storeCacheSize)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New()
-	utxoDiffStore := utxodiffstore.New()
+	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
+	utxoDiffStore := utxodiffstore.New(storeCacheSize)
 	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New()
+	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
 	headerTipsStore := headertipsstore.New()
 
 	// Processes
@@ -311,11 +314,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
 	tc testapi.TestConsensus, teardown func(), err error) {
 
-	testDatabaseDir, err := ioutil.TempDir("", testName)
+	dataDir, err := ioutil.TempDir("", testName)
 	if err != nil {
 		return nil, nil, err
 	}
-	db, err := ldb.NewLevelDB(testDatabaseDir)
+
+	return f.NewTestConsensusWithDataDir(dagParams, dataDir)
+}
+
+func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+	tc testapi.TestConsensus, teardown func(), err error) {
+
+	db, err := ldb.NewLevelDB(dataDir)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -337,7 +347,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
 	teardown = func() {
 		db.Close()
-		os.RemoveAll(testDatabaseDir)
+		os.RemoveAll(dataDir)
 	}
 
 	return tstConsensus, teardown, nil

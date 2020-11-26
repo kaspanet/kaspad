@@ -17,6 +17,8 @@ import (
 
 func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.BlockCoinbaseMaturity = 0
+
 		factory := consensus.NewFactory()
 
 		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")

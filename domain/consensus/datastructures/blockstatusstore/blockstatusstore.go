@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
@@ -13,12 +14,14 @@ var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
 	staging map[externalapi.DomainHash]externalapi.BlockStatus
+	cache   *lrucache.LRUCache
 }
 
 // New instantiates a new BlockStatusStore
-func New() model.BlockStatusStore {
+func New(cacheSize int) model.BlockStatusStore {
 	return &blockStatusStore{
 		staging: make(map[externalapi.DomainHash]externalapi.BlockStatus),
+		cache:   lrucache.New(cacheSize),
 	}
 }
 
@@ -45,6 +48,7 @@ func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bss.cache.Add(&hash, status)
 	}
 
 	bss.Discard()
@@ -57,17 +61,30 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalap
 		return status, nil
 	}
 
+	if status, ok := bss.cache.Get(blockHash); ok {
+		return status.(externalapi.BlockStatus), nil
+	}
+
 	statusBytes, err := dbContext.Get(bss.hashAsKey(blockHash))
 	if err != nil {
 		return 0, err
 	}
 
-	return bss.deserializeBlockStatus(statusBytes)
+	status, err := bss.deserializeBlockStatus(statusBytes)
+	if err != nil {
+		return 0, err
+	}
+	bss.cache.Add(blockHash, status)
+	return status, nil
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists
 func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := bss.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if bss.cache.Has(blockHash) {
 		return true, nil
 	}
 

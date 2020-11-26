@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var bucket = dbkeys.MakeBucket([]byte("block-headers"))
@@ -15,14 +16,16 @@ var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
 type blockHeaderStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    *lrucache.LRUCache
 	count    uint64
 }
 
 // New instantiates a new BlockHeaderStore
-func New(dbContext model.DBReader) (model.BlockHeaderStore, error) {
+func New(dbContext model.DBReader, cacheSize int) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)
@@ -77,6 +80,7 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bhs.cache.Add(&hash, header)
 	}
 
 	for hash := range bhs.toDelete {
@@ -84,6 +88,7 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		bhs.cache.Remove(&hash)
 	}
 
 	err := bhs.commitCount(dbTx)
@@ -98,7 +103,11 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 // BlockHeader gets the block header associated with the given blockHash
 func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
 	if header, ok := bhs.staging[*blockHash]; ok {
-		return header, nil
+		return header.Clone(), nil
+	}
+
+	if header, ok := bhs.cache.Get(blockHash); ok {
+		return header.(*externalapi.DomainBlockHeader).Clone(), nil
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
@@ -106,12 +115,21 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *ex
 		return nil, err
 	}
 
-	return bhs.deserializeHeader(headerBytes)
+	header, err := bhs.deserializeHeader(headerBytes)
+	if err != nil {
+		return nil, err
+	}
+	bhs.cache.Add(blockHash, header)
+	return header.Clone(), nil
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.
 func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := bhs.staging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if bhs.cache.Has(blockHash) {
 		return true, nil
 	}
 
