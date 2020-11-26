@@ -10,10 +10,6 @@ type BlockRelations struct {
 
 // Clone returns a clone of BlockRelations
 func (br *BlockRelations) Clone() *BlockRelations {
-	if br == nil {
-		return nil
-	}
-
 	return &BlockRelations{
 		Parents:  externalapi.CloneHashes(br.Parents),
 		Children: externalapi.CloneHashes(br.Children),

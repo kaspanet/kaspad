@@ -15,10 +15,6 @@ type UTXOEntry struct {
 
 // Clone returns a clone of UTXOEntry
 func (entry *UTXOEntry) Clone() *UTXOEntry {
-	if entry == nil {
-		return nil
-	}
-
 	scriptPublicKeyClone := make([]byte, len(entry.ScriptPublicKey))
 	copy(scriptPublicKeyClone, entry.ScriptPublicKey)
 

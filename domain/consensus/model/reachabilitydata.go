@@ -35,10 +35,6 @@ func (rd *ReachabilityData) Equal(other *ReachabilityData) bool {
 
 // Clone returns a clone of ReachabilityData
 func (rd *ReachabilityData) Clone() *ReachabilityData {
-	if rd == nil {
-		return nil
-	}
-
 	return &ReachabilityData{
 		TreeNode:          rd.TreeNode.Clone(),
 		FutureCoveringSet: rd.FutureCoveringSet.Clone(),
@@ -97,10 +93,6 @@ func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
 
 // Clone returns a clone of ReachabilityTreeNode
 func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
-	if rtn == nil {
-		return nil
-	}
-
 	return &ReachabilityTreeNode{
 		Children: externalapi.CloneHashes(rtn.Children),
 		Parent:   rtn.Parent.Clone(),
@@ -139,10 +131,6 @@ func (ri *ReachabilityInterval) Equal(other *ReachabilityInterval) bool {
 
 // Clone returns a clone of ReachabilityInterval
 func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
-	if ri == nil {
-		return nil
-	}
-
 	return &ReachabilityInterval{
 		Start: ri.Start,
 		End:   ri.End,

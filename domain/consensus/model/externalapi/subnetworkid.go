@@ -18,10 +18,6 @@ func (id DomainSubnetworkID) String() string {
 
 // Clone returns a clone of DomainSubnetworkID
 func (id *DomainSubnetworkID) Clone() *DomainSubnetworkID {
-	if id == nil {
-		return nil
-	}
-
 	idClone := *id
 	return &idClone
 }

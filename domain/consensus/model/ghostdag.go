@@ -13,10 +13,6 @@ type BlockGHOSTDAGData struct {
 
 // Clone returns a clone of BlockGHOSTDAGData
 func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
-	if bgd == nil {
-		return nil
-	}
-
 	bluesAnticoneSizesClone := make(map[externalapi.DomainHash]KType, len(bgd.BluesAnticoneSizes))
 	for hash, size := range bgd.BluesAnticoneSizes {
 		bluesAnticoneSizesClone[hash] = size

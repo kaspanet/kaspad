@@ -8,10 +8,6 @@ type DomainBlock struct {
 
 // Clone returns a clone of DomainBlock
 func (block *DomainBlock) Clone() *DomainBlock {
-	if block == nil {
-		return nil
-	}
-
 	transactionClone := make([]*DomainTransaction, len(block.Transactions))
 	for i, tx := range block.Transactions {
 		transactionClone[i] = tx.Clone()
@@ -64,10 +60,6 @@ type DomainBlockHeader struct {
 
 // Clone returns a clone of DomainBlockHeader
 func (header *DomainBlockHeader) Clone() *DomainBlockHeader {
-	if header == nil {
-		return nil
-	}
-
 	return &DomainBlockHeader{
 		Version:              header.Version,
 		ParentHashes:         CloneHashes(header.ParentHashes),

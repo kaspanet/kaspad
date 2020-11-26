@@ -27,10 +27,6 @@ type DomainTransaction struct {
 
 // Clone returns a clone of DomainTransaction
 func (tx *DomainTransaction) Clone() *DomainTransaction {
-	if tx == nil {
-		return nil
-	}
-
 	payloadClone := make([]byte, len(tx.Payload))
 	copy(payloadClone, tx.Payload)
 
@@ -162,18 +158,19 @@ func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
 
 // Clone returns a clone of DomainTransactionInput
 func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
-	if input == nil {
-		return nil
-	}
-
 	signatureScriptClone := make([]byte, len(input.SignatureScript))
 	copy(signatureScriptClone, input.SignatureScript)
+
+	var entryClone *UTXOEntry
+	if input.UTXOEntry != nil {
+		entryClone = input.UTXOEntry.Clone()
+	}
 
 	return &DomainTransactionInput{
 		PreviousOutpoint: *input.PreviousOutpoint.Clone(),
 		SignatureScript:  signatureScriptClone,
 		Sequence:         input.Sequence,
-		UTXOEntry:        input.UTXOEntry.Clone(),
+		UTXOEntry:        entryClone,
 	}
 }
 
@@ -198,10 +195,6 @@ func (op *DomainOutpoint) Equal(other *DomainOutpoint) bool {
 
 // Clone returns a clone of DomainOutpoint
 func (op *DomainOutpoint) Clone() *DomainOutpoint {
-	if op == nil {
-		return nil
-	}
-
 	return &DomainOutpoint{
 		TransactionID: *op.TransactionID.Clone(),
 		Index:         op.Index,
@@ -250,10 +243,6 @@ func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) boo
 
 // Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
-	if output == nil {
-		return nil
-	}
-
 	scriptPublicKeyClone := make([]byte, len(output.ScriptPublicKey))
 	copy(scriptPublicKeyClone, output.ScriptPublicKey)
 
@@ -273,10 +262,6 @@ func (id DomainTransactionID) String() string {
 
 // Clone returns a clone of DomainTransactionID
 func (id *DomainTransactionID) Clone() *DomainTransactionID {
-	if id == nil {
-		return nil
-	}
-
 	idClone := *id
 	return &idClone
 }

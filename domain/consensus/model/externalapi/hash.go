@@ -19,10 +19,6 @@ func (hash DomainHash) String() string {
 
 // Clone clones the hash
 func (hash *DomainHash) Clone() *DomainHash {
-	if hash == nil {
-		return nil
-	}
-
 	hashClone := *hash
 	return &hashClone
 }

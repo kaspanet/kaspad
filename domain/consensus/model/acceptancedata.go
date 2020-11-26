@@ -27,9 +27,6 @@ func (ad AcceptanceData) Equal(other AcceptanceData) bool {
 
 // Clone clones the AcceptanceData
 func (ad AcceptanceData) Clone() AcceptanceData {
-	if ad == nil {
-		return nil
-	}
 	clone := make(AcceptanceData, len(ad))
 	for i, blockAcceptanceData := range ad {
 		clone[i] = blockAcceptanceData.Clone()
@@ -65,10 +62,6 @@ func (bad *BlockAcceptanceData) Equal(other *BlockAcceptanceData) bool {
 
 // Clone returns a clone of BlockAcceptanceData
 func (bad *BlockAcceptanceData) Clone() *BlockAcceptanceData {
-	if bad == nil {
-		return nil
-	}
-
 	clone := &BlockAcceptanceData{TransactionAcceptanceData: make([]*TransactionAcceptanceData, len(bad.TransactionAcceptanceData))}
 	for i, acceptanceData := range bad.TransactionAcceptanceData {
 		clone.TransactionAcceptanceData[i] = acceptanceData.Clone()
@@ -112,10 +105,6 @@ func (tad *TransactionAcceptanceData) Equal(other *TransactionAcceptanceData) bo
 
 // Clone returns a clone of TransactionAcceptanceData
 func (tad *TransactionAcceptanceData) Clone() *TransactionAcceptanceData {
-	if tad == nil {
-		return nil
-	}
-
 	return &TransactionAcceptanceData{
 		Transaction: tad.Transaction.Clone(),
 		Fee:         tad.Fee,

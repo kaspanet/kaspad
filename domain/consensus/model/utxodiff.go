@@ -37,10 +37,6 @@ func (uc UTXOCollection) Equal(other UTXOCollection) bool {
 
 // Clone returns a clone of UTXOCollection
 func (uc UTXOCollection) Clone() UTXOCollection {
-	if uc == nil {
-		return nil
-	}
-
 	clone := make(UTXOCollection, len(uc))
 	for outpoint, entry := range uc {
 		clone[outpoint] = entry.Clone()
@@ -73,10 +69,6 @@ type UTXODiff struct {
 
 // Clone returns a clone of UTXODiff
 func (d *UTXODiff) Clone() *UTXODiff {
-	if d == nil {
-		return nil
-	}
-
 	return &UTXODiff{
 		ToAdd:    d.ToAdd.Clone(),
 		ToRemove: d.ToRemove.Clone(),
