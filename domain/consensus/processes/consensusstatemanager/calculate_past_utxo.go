@@ -19,7 +19,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	log.Tracef("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
 	defer log.Tracef("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
 
-	if *blockHash == *csm.genesisHash {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Block %s is the genesis. By definition, "+
 			"it has an empty UTXO diff, empty acceptance data, and a blank multiset", blockHash)
 		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil

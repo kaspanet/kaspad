@@ -25,3 +25,16 @@ func (id *DomainSubnetworkID) Clone() *DomainSubnetworkID {
 	idClone := *id
 	return &idClone
 }
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = [DomainSubnetworkIDSize]byte{}
+
+// Equal returns whether id equals to other
+func (id *DomainSubnetworkID) Equal(other *DomainSubnetworkID) bool {
+	if id == nil || other == nil {
+		return id == other
+	}
+
+	return *id == *other
+}

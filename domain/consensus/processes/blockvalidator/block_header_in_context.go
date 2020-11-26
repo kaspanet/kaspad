@@ -68,7 +68,7 @@ func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (
 func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeader) error {
 	for _, parentA := range header.ParentHashes {
 		for _, parentB := range header.ParentHashes {
-			if *parentA == *parentB {
+			if parentA.Equal(parentB) {
 				continue
 			}
 

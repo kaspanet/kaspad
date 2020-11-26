@@ -11,7 +11,7 @@ func (csm *consensusStateManager) checkFinalityViolation(
 	log.Tracef("checkFinalityViolation start for block %s", blockHash)
 	defer log.Tracef("checkFinalityViolation end for block %s", blockHash)
 
-	if *blockHash == *csm.genesisHash {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Block %s is the genesis block, "+
 			"and does not violate finality by definition", blockHash)
 		return nil

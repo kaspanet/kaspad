@@ -54,7 +54,7 @@ func TestDoubleSpends(t *testing.T) {
 		spendingTransaction2.Outputs[0].Value-- // tweak the value to create a different ID
 		spendingTransaction1ID := consensusserialization.TransactionID(spendingTransaction1)
 		spendingTransaction2ID := consensusserialization.TransactionID(spendingTransaction2)
-		if *spendingTransaction1ID == *spendingTransaction2ID {
+		if spendingTransaction1ID.Equal(spendingTransaction2ID) {
 			t.Fatalf("spendingTransaction1 and spendingTransaction2 ids are equal")
 		}
 

@@ -29,7 +29,7 @@ func (csm *consensusStateManager) addToVirtualDiffParents(blockHash *externalapi
 	defer log.Tracef("addToVirtualDiffParents end for block %s", blockHash)
 
 	var oldVirtualDiffParents []*externalapi.DomainHash
-	if *blockHash != *csm.genesisHash {
+	if !blockHash.Equal(csm.genesisHash) {
 		var err error
 		oldVirtualDiffParents, err = csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 		if err != nil {
@@ -39,7 +39,7 @@ func (csm *consensusStateManager) addToVirtualDiffParents(blockHash *externalapi
 
 	isInVirtualDiffParents := false
 	for _, diffParent := range oldVirtualDiffParents {
-		if *diffParent == *blockHash {
+		if diffParent.Equal(blockHash) {
 			isInVirtualDiffParents = true
 			break
 		}
@@ -67,7 +67,7 @@ func (csm *consensusStateManager) removeFromVirtualDiffParents(blockHash *extern
 
 	newVirtualDiffParents := make([]*externalapi.DomainHash, 0, len(oldVirtualDiffParents)-1)
 	for _, diffParent := range oldVirtualDiffParents {
-		if *diffParent != *blockHash {
+		if !diffParent.Equal(blockHash) {
 			newVirtualDiffParents = append(newVirtualDiffParents, diffParent)
 		}
 	}

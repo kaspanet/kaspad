@@ -7,3 +7,16 @@ type BlockInfo struct {
 
 	IsBlockInHeaderPruningPointFuture bool
 }
+
+// Clone returns a clone of BlockInfo
+func (bi *BlockInfo) Clone() *BlockInfo {
+	if bi == nil {
+		return nil
+	}
+
+	return &BlockInfo{
+		Exists:                            bi.Exists,
+		BlockStatus:                       bi.BlockStatus.Clone(),
+		IsBlockInHeaderPruningPointFuture: bi.IsBlockInHeaderPruningPointFuture,
+	}
+}

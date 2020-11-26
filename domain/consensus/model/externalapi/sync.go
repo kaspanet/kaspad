@@ -32,10 +32,29 @@ func (s SyncState) String() string {
 	return fmt.Sprintf("<unknown state (%d)>", s)
 }
 
+// Clone returns a clone of SyncState
+func (s SyncState) Clone() SyncState {
+	return s
+}
+
 // SyncInfo holds info about the current sync state of the consensus
 type SyncInfo struct {
 	State                SyncState
 	IBDRootUTXOBlockHash *DomainHash
 	HeaderCount          uint64
 	BlockCount           uint64
+}
+
+// Clone returns a clone of SyncInfo
+func (si *SyncInfo) Clone() *SyncInfo {
+	if si == nil {
+		return nil
+	}
+
+	return &SyncInfo{
+		State:                si.State.Clone(),
+		IBDRootUTXOBlockHash: si.IBDRootUTXOBlockHash.Clone(),
+		HeaderCount:          si.HeaderCount,
+		BlockCount:           si.BlockCount,
+	}
 }

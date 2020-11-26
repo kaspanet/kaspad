@@ -102,7 +102,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		if *consensusserialization.BlockHash(selectedTip) != *sideChainTipHash {
+		if !consensusserialization.BlockHash(selectedTip).Equal(sideChainTipHash) {
 			t.Fatalf("Overtaking block in side-chain is not selectedTip")
 		}
 
@@ -120,7 +120,7 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}
 
-		if *virtualFinality == *params.GenesisHash {
+		if virtualFinality.Equal(params.GenesisHash) {
 			t.Fatalf("virtual's finalityPoint is still genesis after adding finalityInterval + 1 blocks to the main chain")
 		}
 

@@ -71,7 +71,7 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	defer log.Tracef("findSelectedParentStatus end")
 
 	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
-	if *lastUnverifiedBlock == *csm.genesisHash {
+	if lastUnverifiedBlock.Equal(csm.genesisHash) {
 		log.Tracef("the most recent unverified block is the genesis block, "+
 			"which by definition has status: %s", externalapi.StatusValid)
 		return externalapi.StatusValid, nil
@@ -174,7 +174,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
 
-	if *blockHash == *csm.genesisHash {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Genesis block doesn't have ancestors to remove from the virtual diff parents")
 		return nil
 	}
@@ -185,7 +185,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 	}
 
 	for _, virtualDiffParent := range virtualDiffParents {
-		if *virtualDiffParent == *blockHash {
+		if virtualDiffParent.Equal(blockHash) {
 			log.Tracef("Skipping updating virtual diff parent %s "+
 				"because it was updated before.", virtualDiffParent)
 			continue

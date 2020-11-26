@@ -38,7 +38,7 @@ func TestIntegrationBasicSync(t *testing.T) {
 	}
 
 	blockHash := consensusserialization.BlockHash(block)
-	if *header.BlockHash() != *blockHash {
+	if !header.BlockHash().Equal(blockHash) {
 		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
 	}
 
@@ -49,7 +49,7 @@ func TestIntegrationBasicSync(t *testing.T) {
 	}
 
 	blockHash = consensusserialization.BlockHash(block)
-	if *header.BlockHash() != *blockHash {
+	if !header.BlockHash().Equal(blockHash) {
 		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
 	}
 }

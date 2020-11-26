@@ -26,7 +26,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 
 func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
 	hash := consensusserialization.HeaderHash(header)
-	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
+	if len(header.ParentHashes) == 0 && !hash.Equal(v.genesisHash) {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 

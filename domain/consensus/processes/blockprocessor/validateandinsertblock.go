@@ -31,7 +31,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 				return err
 			}
 
-			if *hash != *headerTipsPruningPoint {
+			if !hash.Equal(headerTipsPruningPoint) {
 				return errors.Errorf("cannot insert blocks other than the header pruning point "+
 					"while in %s mode", syncInfo.State)
 			}
@@ -54,7 +54,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-		if *selectedHeaderTip == *hash {
+		if selectedHeaderTip.Equal(hash) {
 			syncInfo.State = externalapi.SyncStateRelay
 		}
 	}
@@ -168,7 +168,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 		return err
 	}
 
-	if *headersSelectedTip == *oldHeadersSelectedTip {
+	if headersSelectedTip.Equal(oldHeadersSelectedTip) {
 		return nil
 	}
 

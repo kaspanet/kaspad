@@ -177,7 +177,7 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID == nil
-	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || subnetworks.IsEqual(&tx.SubnetworkID, subnetworkID)
+	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || tx.SubnetworkID.Equal(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+

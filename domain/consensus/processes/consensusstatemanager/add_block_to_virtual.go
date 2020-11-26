@@ -68,7 +68,7 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 	log.Tracef("isNextVirtualSelectedParent start for block %s", blockHash)
 	defer log.Tracef("isNextVirtualSelectedParent end for block %s", blockHash)
 
-	if *blockHash == *csm.genesisHash {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Block %s is the genesis block, therefore it is "+
 			"the selected parent by definition", blockHash)
 		return true, nil
@@ -87,7 +87,7 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 	}
 	log.Tracef("The next selected parent is: %s", nextVirtualSelectedParent)
 
-	return *blockHash == *nextVirtualSelectedParent, nil
+	return blockHash.Equal(nextVirtualSelectedParent), nil
 }
 
 func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
@@ -111,7 +111,7 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 	log.Tracef("calculateNewTips start for new tip %s", newTipHash)
 	defer log.Tracef("calculateNewTips end for new tip %s", newTipHash)
 
-	if *newTipHash == *csm.genesisHash {
+	if newTipHash.Equal(csm.genesisHash) {
 		log.Tracef("The new tip is the genesis block, therefore it is the only tip by definition")
 		return []*externalapi.DomainHash{newTipHash}, nil
 	}
@@ -133,7 +133,7 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 	for _, currentTip := range currentTips {
 		isCurrentTipInNewTipParents := false
 		for _, newTipParent := range newTipParents {
-			if *currentTip == *newTipParent {
+			if currentTip.Equal(newTipParent) {
 				isCurrentTipInNewTipParents = true
 				break
 			}

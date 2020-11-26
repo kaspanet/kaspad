@@ -45,7 +45,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if *msg.SelectedTipHash != *selectedTipHash {
+	if !msg.SelectedTipHash.Equal(selectedTipHash) {
 		t.Errorf("NewMsgVersion: wrong selected tip hash - got %s, want %s",
 			msg.SelectedTipHash, selectedTipHash)
 	}

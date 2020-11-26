@@ -1,6 +1,7 @@
 package externalapi
 
 import (
+	"bytes"
 	"fmt"
 )
 
@@ -52,6 +53,64 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 	}
 }
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
+	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0}
+
+// Equal returns whether tx equals to other
+func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
+	if tx == nil || other == nil {
+		return tx == other
+	}
+
+	if tx.Version != other.Version {
+		return false
+	}
+
+	for i, input := range tx.Inputs {
+		if !input.Equal(other.Inputs[i]) {
+			return false
+		}
+	}
+
+	for i, output := range tx.Outputs {
+		if !output.Equal(other.Outputs[i]) {
+			return false
+		}
+	}
+
+	if tx.LockTime != other.LockTime {
+		return false
+	}
+
+	if !tx.SubnetworkID.Equal(&other.SubnetworkID) {
+		return false
+	}
+
+	if tx.Gas != other.Gas {
+		return false
+	}
+
+	if !tx.PayloadHash.Equal(&other.PayloadHash) {
+		return false
+	}
+
+	if !bytes.Equal(tx.Payload, other.Payload) {
+		return false
+	}
+
+	if tx.Fee != other.Fee {
+		return false
+	}
+
+	if tx.Mass != other.Mass {
+		return false
+	}
+
+	return true
+}
+
 // DomainTransactionInput represents a Kaspa transaction input
 type DomainTransactionInput struct {
 	PreviousOutpoint DomainOutpoint
@@ -59,6 +118,36 @@ type DomainTransactionInput struct {
 	Sequence         uint64
 
 	UTXOEntry *UTXOEntry
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = &DomainTransactionInput{DomainOutpoint{}, []byte{}, 0,
+	&UTXOEntry{}}
+
+// Equal returns whether input equals to other
+func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
+	if input == nil || other == nil {
+		return input == other
+	}
+
+	if !input.PreviousOutpoint.Equal(&other.PreviousOutpoint) {
+		return false
+	}
+
+	if !bytes.Equal(input.SignatureScript, other.SignatureScript) {
+		return false
+	}
+
+	if input.Sequence != other.Sequence {
+		return false
+	}
+
+	if !input.UTXOEntry.Equal(other.UTXOEntry) {
+		return false
+	}
+
+	return true
 }
 
 // Clone returns a clone of DomainTransactionInput
@@ -82,6 +171,19 @@ func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
 type DomainOutpoint struct {
 	TransactionID DomainTransactionID
 	Index         uint32
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = DomainOutpoint{DomainTransactionID{}, 0}
+
+// Equal returns whether op equals to other
+func (op *DomainOutpoint) Equal(other *DomainOutpoint) bool {
+	if op == nil || other == nil {
+		return op == other
+	}
+
+	return *op == *other
 }
 
 // Clone returns a clone of DomainOutpoint
@@ -115,6 +217,27 @@ type DomainTransactionOutput struct {
 	ScriptPublicKey []byte
 }
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = DomainTransactionOutput{0, []byte{}}
+
+// Equal returns whether output equals to other
+func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) bool {
+	if output == nil || other == nil {
+		return output == other
+	}
+
+	if output.Value != other.Value {
+		return false
+	}
+
+	if !bytes.Equal(output.ScriptPublicKey, other.ScriptPublicKey) {
+		return false
+	}
+
+	return true
+}
+
 // Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 	if output == nil {
@@ -146,4 +269,17 @@ func (id *DomainTransactionID) Clone() *DomainTransactionID {
 
 	idClone := *id
 	return &idClone
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ DomainTransactionID = [DomainHashSize]byte{}
+
+// Equal returns whether id equals to other
+func (id *DomainTransactionID) Equal(other *DomainTransactionID) bool {
+	if id == nil || other == nil {
+		return id == other
+	}
+
+	return *id == *other
 }

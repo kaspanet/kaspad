@@ -174,7 +174,7 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if *tx1ID != *wantTxID1 {
+	if !tx1ID.Equal(wantTxID1) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
@@ -231,14 +231,14 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
-	if *tx2Hash != *wantHash2 {
+	if !tx2Hash.Equal(wantHash2) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx2ID := tx2.TxID()
-	if *tx2ID != *wantID2 {
+	if !tx2ID.Equal(wantID2) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}

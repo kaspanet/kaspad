@@ -11,6 +11,30 @@ import (
 // UTXOCollection represents a set of UTXOs indexed by their outpoints
 type UTXOCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ UTXOCollection = map[externalapi.DomainOutpoint]*externalapi.UTXOEntry{}
+
+// Equal returns whether uc equals to other
+func (uc UTXOCollection) Equal(other UTXOCollection) bool {
+	if len(uc) != len(other) {
+		return false
+	}
+
+	for outpoint, entry := range uc {
+		otherEntry, exists := other[outpoint]
+		if !exists {
+			return false
+		}
+
+		if !entry.Equal(otherEntry) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Clone returns a clone of UTXOCollection
 func (uc UTXOCollection) Clone() UTXOCollection {
 	if uc == nil {

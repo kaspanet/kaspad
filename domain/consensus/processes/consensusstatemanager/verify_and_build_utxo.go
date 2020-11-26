@@ -173,7 +173,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s",
 		coinbaseTransactionHash, expectedCoinbaseTransactionHash)
 
-	if *coinbaseTransactionHash != *expectedCoinbaseTransactionHash {
+	if !coinbaseTransactionHash.Equal(expectedCoinbaseTransactionHash) {
 		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
 	}
 

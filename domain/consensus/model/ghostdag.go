@@ -31,5 +31,50 @@ func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
 	}
 }
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal accordingly.
+var _ = &BlockGHOSTDAGData{0, &externalapi.DomainHash{}, []*externalapi.DomainHash{},
+	[]*externalapi.DomainHash{}, map[externalapi.DomainHash]KType{}}
+
+// Equal returns whether bgd equals to other
+func (bgd *BlockGHOSTDAGData) Equal(other *BlockGHOSTDAGData) bool {
+	if bgd == nil || other == nil {
+		return bgd == other
+	}
+
+	if bgd.BlueScore != other.BlueScore {
+		return false
+	}
+
+	if !bgd.SelectedParent.Equal(other.SelectedParent) {
+		return false
+	}
+
+	if !externalapi.HashesEqual(bgd.MergeSetBlues, other.MergeSetBlues) {
+		return false
+	}
+
+	if !externalapi.HashesEqual(bgd.MergeSetReds, other.MergeSetReds) {
+		return false
+	}
+
+	if len(bgd.BluesAnticoneSizes) != len(other.BluesAnticoneSizes) {
+		return false
+	}
+
+	for hash, size := range bgd.BluesAnticoneSizes {
+		otherSize, exists := other.BluesAnticoneSizes[hash]
+		if !exists {
+			return false
+		}
+
+		if size != otherSize {
+			return false
+		}
+	}
+
+	return true
+}
+
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
 type KType byte

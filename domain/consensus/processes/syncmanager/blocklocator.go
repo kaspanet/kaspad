@@ -36,7 +36,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 
 		// Nothing more to add once the low node has been added.
 		if currentBlockBlueScore <= lowBlockBlueScore {
-			if *currentHash != *lowHash {
+			if !currentHash.Equal(lowHash) {
 				return nil, errors.Errorf("highHash and lowHash are " +
 					"not in the same selected parent chain.")
 			}

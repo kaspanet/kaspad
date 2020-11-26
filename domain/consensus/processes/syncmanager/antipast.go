@@ -188,7 +188,7 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 }
 
 func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
-	if *blockHash == *sm.genesisBlockHash {
+	if blockHash.Equal(sm.genesisBlockHash) {
 		return false, nil
 	}
 

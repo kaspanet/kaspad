@@ -110,7 +110,7 @@ func TestConvertToPartial(t *testing.T) {
 	for _, testTransaction := range transactions {
 		var subnetworkTx *MsgTx
 		for _, blockTransaction := range block.Transactions {
-			if blockTransaction.SubnetworkID == *testTransaction.subnetworkID {
+			if blockTransaction.SubnetworkID.Equal(testTransaction.subnetworkID) {
 				subnetworkTx = blockTransaction
 			}
 		}

@@ -144,7 +144,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies() error {
 
 			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
 			blockHash := consensusserialization.BlockHash(block)
-			if *expectedHash != *blockHash {
+			if !expectedHash.Equal(blockHash) {
 				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 			}
 

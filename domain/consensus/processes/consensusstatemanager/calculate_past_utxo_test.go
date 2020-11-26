@@ -154,7 +154,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		secondMultisetHash := secondMultiset.Hash()
 
 		// Make sure the multiset hasn't changed
-		if *firstMultisetHash != *secondMultisetHash {
+		if !firstMultisetHash.Equal(secondMultisetHash) {
 			t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed!")
 		}
 	})

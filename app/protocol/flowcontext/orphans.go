@@ -100,7 +100,7 @@ func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash)
 	var childOrphans []externalapi.DomainHash
 	for orphanHash, orphanBlock := range f.orphans {
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
-			if *orphanBlockParentHash == *blockHash {
+			if orphanBlockParentHash.Equal(blockHash) {
 				childOrphans = append(childOrphans, orphanHash)
 				break
 			}

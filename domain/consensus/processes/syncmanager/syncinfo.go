@@ -61,7 +61,7 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 	if err != nil {
 		return 0, err
 	}
-	if *virtualSelectedParentHash == *headerVirtualSelectedParentHash {
+	if virtualSelectedParentHash.Equal(headerVirtualSelectedParentHash) {
 		return externalapi.SyncStateRelay, nil
 	}
 
