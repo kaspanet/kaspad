@@ -71,7 +71,7 @@ is used for this project.
 
 ## Documentation
 
-The documentation is a work-in-progress. It is located in the [docs](https://github.com/kaspanet/kaspad/tree/master/docs) folder.
+The documentation is a work-in-progress.
 
 ## License
 
