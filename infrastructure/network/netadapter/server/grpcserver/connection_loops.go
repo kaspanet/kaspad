@@ -70,6 +70,14 @@ func (c *gRPCConnection) receiveLoop() error {
 			if c.onInvalidMessageHandler != nil {
 				c.onInvalidMessageHandler(err)
 			}
+			outgoingRoute := c.router.OutgoingRoute()
+			if message != nil && outgoingRoute != nil {
+				err := outgoingRoute.Enqueue(message)
+				if err != nil {
+					return err
+				}
+				continue
+			}
 			return err
 		}
 

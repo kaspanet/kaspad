@@ -17,7 +17,10 @@ func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
 	}
 	appMessage, err := payload.toAppMessage()
 	if err != nil {
-		return nil, err
+		// to be able to interact with the client side via RPC and notify if the error occurs,
+		// we need to create an appropriate response message from the given payload
+		// and the error received during the KaspadMessage-to-AppMessage effort
+		return createErrorResponseMessageFromPayload(x.Payload, err), err
 	}
 	return appMessage, nil
 }
@@ -665,5 +668,16 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	default:
 		return nil, nil
+	}
+}
+
+func createErrorResponseMessageFromPayload(payload isKaspadMessage_Payload, err error) appmessage.Message {
+	switch payload.(type) {
+	case *KaspadMessage_SubmitTransactionRequest:
+		return &appmessage.SubmitTransactionResponseMessage{
+			Error: &appmessage.RPCError{Message: err.Error()},
+		}
+	default:
+		return nil
 	}
 }
