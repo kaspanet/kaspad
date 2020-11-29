@@ -131,7 +131,8 @@ func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBl
 	if err != nil {
 		return err
 	}
-	//case of header = genesis.
+
+	//If hasPruningPoint has a false value, it means that its the genesis - so no violation can exist.
 	if !hasPruningPoint {
 		return nil
 	}
@@ -141,14 +142,12 @@ func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBl
 		return err
 	}
 
-	for _, parent := range header.ParentHashes {
-		isAnc, err := v.dagTopologyManager.IsAncestorOf(pruningPoint, parent)
-		if err != nil {
-			return err
-		}
-		if isAnc {
-			return nil
-		}
+	IsAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes)
+	if err != nil {
+		return err
+	}
+	if IsAncestorOfAny {
+		return nil
 	}
 	return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
 		"expected pruning point to be in block %d past.", header.Bits)
