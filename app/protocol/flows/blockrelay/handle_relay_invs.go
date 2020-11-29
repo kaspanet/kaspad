@@ -22,8 +22,6 @@ type RelayInvsContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	OnNewBlock(block *externalapi.DomainBlock) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
-	StartIBDIfRequired() error
-	IsInIBD() bool
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
@@ -76,14 +74,14 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		err = flow.StartIBDIfRequired()
-		if err != nil {
-			return err
-		}
-		if flow.IsInIBD() {
-			// Block relay is disabled during IBD
-			continue
-		}
+		//err = flow.StartIBDIfRequired()
+		//if err != nil {
+		//	return err
+		//}
+		//if flow.IsInIBD() {
+		//	// Block relay is disabled during IBD
+		//	continue
+		//}
 
 		requestQueue := newHashesQueueSet()
 		requestQueue.enqueueIfNotExists(inv.Hash)
@@ -256,10 +254,10 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 
 	log.Infof("Accepted block %s via relay", blockHash)
 
-	err = flow.StartIBDIfRequired()
-	if err != nil {
-		return err
-	}
+	//err = flow.StartIBDIfRequired()
+	//if err != nil {
+	//	return err
+	//}
 	err = flow.OnNewBlock(block)
 	if err != nil {
 		return err

@@ -19,7 +19,6 @@ type HandleIBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock) error
-	FinishIBD() error
 }
 
 type handleIBDFlow struct {
@@ -51,16 +50,7 @@ func (flow *handleIBDFlow) start() error {
 }
 
 func (flow *handleIBDFlow) runIBD() error {
-	flow.peer.WaitForIBDStart()
-	err := flow.ibdLoop()
-	if err != nil {
-		finishIBDErr := flow.FinishIBD()
-		if finishIBDErr != nil {
-			return finishIBDErr
-		}
-		return err
-	}
-	return flow.FinishIBD()
+	return nil
 }
 
 func (flow *handleIBDFlow) ibdLoop() error {
@@ -72,7 +62,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 
 		switch syncInfo.State {
 		case externalapi.SyncStateHeadersFirst:
-			err := flow.syncHeaders()
+			err := flow.syncHeaders(nil) // TODO
 			if err != nil {
 				return err
 			}
@@ -86,7 +76,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 				return nil
 			}
 		case externalapi.SyncStateMissingBlockBodies:
-			err := flow.syncMissingBlockBodies()
+			err := flow.syncMissingBlockBodies(nil) // TODO
 			if err != nil {
 				return err
 			}
@@ -98,8 +88,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 	}
 }
 
-func (flow *handleIBDFlow) syncHeaders() error {
-	peerSelectedTipHash := flow.peer.SelectedTipHash()
+func (flow *handleIBDFlow) syncHeaders(peerSelectedTipHash *externalapi.DomainHash) error {
 	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, peerSelectedTipHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
 	if err != nil {
@@ -111,8 +100,8 @@ func (flow *handleIBDFlow) syncHeaders() error {
 	return flow.downloadHeaders(highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func (flow *handleIBDFlow) syncMissingBlockBodies() error {
-	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(flow.peer.SelectedTipHash())
+func (flow *handleIBDFlow) syncMissingBlockBodies(peerSelectedTipHash *externalapi.DomainHash) error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(peerSelectedTipHash)
 	if err != nil {
 		return err
 	}

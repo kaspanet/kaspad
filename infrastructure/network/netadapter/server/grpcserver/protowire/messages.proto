@@ -394,8 +394,6 @@ message GetConnectedPeerInfoMessage{
   string id = 1;
   string address = 2;
   int64 lastPingDuration = 3;
-  string selectedTipHash = 4;
-  bool isSyncNode = 5;
   bool isOutbound = 6;
   int64 timeOffset = 7;
   string userAgent = 8;

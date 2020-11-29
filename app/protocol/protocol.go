@@ -106,7 +106,6 @@ func (m *Manager) registerFlows(router *routerpkg.Router, errChan chan error, is
 	flows = m.registerAddressFlows(router, isStopping, errChan)
 	flows = append(flows, m.registerBlockRelayFlows(router, isStopping, errChan)...)
 	flows = append(flows, m.registerPingFlows(router, isStopping, errChan)...)
-	flows = append(flows, m.registerIBDFlows(router, isStopping, errChan)...)
 	flows = append(flows, m.registerTransactionRelayFlow(router, isStopping, errChan)...)
 	flows = append(flows, m.registerRejectsFlow(router, isStopping, errChan)...)
 
@@ -147,31 +146,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 				return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
-	}
-}
 
-func (m *Manager) registerPingFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerFlow("ReceivePings", router, []appmessage.MessageCommand{appmessage.CmdPing}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping.ReceivePings(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("SendPings", router, []appmessage.MessageCommand{appmessage.CmdPong}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping.SendPings(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
 		m.registerFlow("HandleIBD", router, []appmessage.MessageCommand{appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
 			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdHeader},
 			isStopping, errChan,
@@ -205,6 +180,24 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+	}
+}
+
+func (m *Manager) registerPingFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
+	outgoingRoute := router.OutgoingRoute()
+
+	return []*flow{
+		m.registerFlow("ReceivePings", router, []appmessage.MessageCommand{appmessage.CmdPing}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return ping.ReceivePings(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.registerFlow("SendPings", router, []appmessage.MessageCommand{appmessage.CmdPong}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return ping.SendPings(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 	}

@@ -41,8 +41,6 @@ type GetConnectedPeerInfoMessage struct {
 	ID                        string
 	Address                   string
 	LastPingDuration          int64
-	SelectedTipHash           string
-	IsSyncNode                bool
 	IsOutbound                bool
 	TimeOffset                int64
 	UserAgent                 string
