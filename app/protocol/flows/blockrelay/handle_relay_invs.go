@@ -25,6 +25,7 @@ type RelayInvsContext interface {
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
+	IsInIBD() bool
 }
 
 type handleRelayInvsFlow struct {
@@ -74,14 +75,10 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		//err = flow.StartIBDIfRequired()
-		//if err != nil {
-		//	return err
-		//}
-		//if flow.IsInIBD() {
-		//	// Block relay is disabled during IBD
-		//	continue
-		//}
+		// Block relay is disabled during IBD
+		if flow.IsInIBD() {
+			continue
+		}
 
 		requestQueue := newHashesQueueSet()
 		requestQueue.enqueueIfNotExists(inv.Hash)
