@@ -246,8 +246,21 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 func (flow *handleRelayInvsFlow) processMissingParents(block *externalapi.DomainBlock,
 	missingParents []*externalapi.DomainHash) error {
 
+	if !flow.hasMissingParentsNotInOrphanPool(missingParents) {
+		return nil
+	}
+
 	if flow.IsInIBD() {
 		return nil
 	}
 	panic("unimplemented")
+}
+
+func (flow *handleRelayInvsFlow) hasMissingParentsNotInOrphanPool(missingParents []*externalapi.DomainHash) bool {
+	for _, missingParent := range missingParents {
+		if !flow.IsOrphan(missingParent) {
+			return true
+		}
+	}
+	return false
 }
