@@ -62,6 +62,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		Gas:          x.Gas,
 		PayloadHash:  *payloadHash,
 		Payload:      x.Payload,
+		Fee:          x.Fee,
 	}, nil
 }
 

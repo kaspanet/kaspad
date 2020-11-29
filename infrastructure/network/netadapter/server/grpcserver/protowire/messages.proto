@@ -132,6 +132,7 @@ message TransactionMessage{
   uint64 gas = 6;
   Hash payloadHash = 7;
   bytes payload = 8;
+  uint64 fee = 9;
 }
 
 message TransactionInput{

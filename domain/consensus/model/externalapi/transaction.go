@@ -1,6 +1,7 @@
 package externalapi
 
 import (
+	"encoding/hex"
 	"fmt"
 )
 
@@ -58,5 +59,5 @@ type DomainTransactionID DomainHash
 
 // String stringifies a transaction ID.
 func (id DomainTransactionID) String() string {
-	return DomainHash(id).String()
+	return hex.EncodeToString(id[:])
 }

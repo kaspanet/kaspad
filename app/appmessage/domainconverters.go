@@ -79,6 +79,7 @@ func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) 
 		Gas:          domainTransaction.Gas,
 		PayloadHash:  domainTransaction.PayloadHash,
 		Payload:      domainTransaction.Payload,
+		Fee:          domainTransaction.Fee,
 	}
 }
 
@@ -129,6 +130,7 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		Gas:          msgTx.Gas,
 		PayloadHash:  msgTx.PayloadHash,
 		Payload:      payload,
+		Fee:          msgTx.Fee,
 	}
 }
 

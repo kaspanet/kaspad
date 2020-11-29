@@ -138,6 +138,7 @@ type MsgTx struct {
 	Gas          uint64
 	PayloadHash  externalapi.DomainHash
 	Payload      []byte
+	Fee          uint64
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -183,6 +184,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		SubnetworkID: msg.SubnetworkID,
 		Gas:          msg.Gas,
 		PayloadHash:  msg.PayloadHash,
+		Fee:          msg.Fee,
 	}
 
 	if msg.Payload != nil {
@@ -297,6 +299,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 		PayloadHash:  payloadHash,
 		Payload:      payload,
 		LockTime:     lockTime,
+		Fee:          0,
 	}
 }
 
