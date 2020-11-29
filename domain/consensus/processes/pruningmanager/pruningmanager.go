@@ -79,6 +79,9 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 	}
 
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
 	currentP := pm.genesisHash
 	if hasPruningPoint {
 		currentP, err = pm.pruningStore.PruningPoint(pm.databaseContext)
