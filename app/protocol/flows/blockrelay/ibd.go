@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (flow *handleRelayInvsFlow) runIBD(highHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
 	for {
 		syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
 		if err != nil {

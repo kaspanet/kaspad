@@ -89,12 +89,12 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		missingParents, err := flow.processBlock(block)
+		hasMissingParents, err := flow.processBlock(block)
 		if err != nil {
 			return err
 		}
-		if len(missingParents) > 0 {
-			err := flow.processMissingParents(block, missingParents)
+		if hasMissingParents {
+			err := flow.processOrphan(block)
 			if err != nil {
 				return err
 			}
@@ -189,46 +189,46 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) (bool, error) {
 	blockHash := consensusserialization.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
+			return false, errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
 			blueScore, err := blocks.ExtractBlueScore(block)
 			if err != nil {
-				return nil, protocolerrors.Errorf(true, "received an orphan "+
+				return false, protocolerrors.Errorf(true, "received an orphan "+
 					"block %s with malformed blue score", blockHash)
 			}
 
 			const maxOrphanBlueScoreDiff = 10000
 			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 			if err != nil {
-				return nil, err
+				return false, err
 			}
 			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
 			if err != nil {
-				return nil, err
+				return false, err
 			}
 
 			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-				return nil, nil
+				return false, nil
 			}
 
-			return missingParentsError.MissingParentHashes, nil
+			return true, nil
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
-		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
+		return false, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
-	return nil, nil
+	return false, nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
@@ -243,24 +243,32 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 	return flow.OnNewBlock(block)
 }
 
-func (flow *handleRelayInvsFlow) processMissingParents(block *externalapi.DomainBlock,
-	missingParents []*externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) error {
+	blockHash := consensusserialization.BlockHash(block)
 
-	if !flow.hasMissingParentsNotInOrphanPool(missingParents) {
+	// Return if the block has been orphaned from elsewhere already
+	if flow.IsOrphan(blockHash) {
 		return nil
 	}
 
-	if flow.IsInIBD() {
-		return nil
+	// Add the block to the orphan set if it's within orphan resolution range
+	isBlockInOrphanResolutionRange, err := flow.isBlockInOrphanResolutionRange(blockHash)
+	if err != nil {
+		return err
 	}
-	panic("unimplemented")
+	if isBlockInOrphanResolutionRange {
+		flow.AddOrphan(block)
+		return flow.runOrphanResolution(blockHash)
+	}
+
+	// Start IBD unless we already are in IBD
+	return flow.runIBDIfNotRunning(blockHash)
 }
 
-func (flow *handleRelayInvsFlow) hasMissingParentsNotInOrphanPool(missingParents []*externalapi.DomainHash) bool {
-	for _, missingParent := range missingParents {
-		if !flow.IsOrphan(missingParent) {
-			return true
-		}
-	}
-	return false
+func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
+	return false, nil
+}
+
+func (flow *handleRelayInvsFlow) runOrphanResolution(blockHash *externalapi.DomainHash) error {
+	return nil
 }
