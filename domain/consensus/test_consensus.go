@@ -12,9 +12,12 @@ type testConsensus struct {
 	testBlockBuilder          model.TestBlockBuilder
 	testReachabilityManager   model.TestReachabilityManager
 	testConsensusStateManager model.TestConsensusStateManager
+	testTransactionValidator  model.TestTransactionValidator
 }
 
-func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *model.UTXODiff, error) {
+func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
+	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
+	*externalapi.DomainBlock, *model.UTXODiff, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()

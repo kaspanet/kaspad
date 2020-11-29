@@ -116,6 +116,6 @@ func (tc *testConsensus) SyncManager() model.SyncManager {
 	return tc.syncManager
 }
 
-func (tc *testConsensus) TransactionValidator() model.TransactionValidator {
-	return tc.transactionValidator
+func (tc *testConsensus) TransactionValidator() model.TestTransactionValidator {
+	return tc.testTransactionValidator
 }

@@ -338,11 +338,14 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
 
+	testTransactionValidator := transactionvalidator.NewTestTransactionValidator(consensusAsImplementation.transactionValidator)
+
 	tstConsensus := &testConsensus{
 		consensus:                 consensusAsImplementation,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
 			reachabilityManager),
+		testTransactionValidator: testTransactionValidator,
 	}
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
 	teardown = func() {
