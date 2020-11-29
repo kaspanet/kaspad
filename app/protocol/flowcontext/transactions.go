@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
+	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 )
@@ -54,9 +54,9 @@ func (f *FlowContext) txIDsToRebroadcast() []*externalapi.DomainTransactionID {
 	return txIDs
 }
 
-// SharedRequestedTransactions returns a *relaytransactions.SharedRequestedTransactions for sharing
+// SharedRequestedTransactions returns a *transactionrelay.SharedRequestedTransactions for sharing
 // data about requested transactions between different peers.
-func (f *FlowContext) SharedRequestedTransactions() *relaytransactions.SharedRequestedTransactions {
+func (f *FlowContext) SharedRequestedTransactions() *transactionrelay.SharedRequestedTransactions {
 	return f.sharedRequestedTransactions
 }
 

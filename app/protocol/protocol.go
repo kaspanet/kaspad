@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ibd"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
-	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
+	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -210,13 +210,13 @@ func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopp
 		m.registerFlow("HandleRelayedTransactions", router,
 			[]appmessage.MessageCommand{appmessage.CmdInvTransaction, appmessage.CmdTx, appmessage.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return relaytransactions.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
+				return transactionrelay.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 		m.registerFlow("HandleRequestTransactions", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestTransactions}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return relaytransactions.HandleRequestedTransactions(m.context, incomingRoute, outgoingRoute)
+				return transactionrelay.HandleRequestedTransactions(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 	}

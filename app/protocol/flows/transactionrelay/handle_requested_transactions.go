@@ -1,4 +1,4 @@
-package relaytransactions
+package transactionrelay
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
