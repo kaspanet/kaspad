@@ -126,9 +126,16 @@ func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader
 }
 func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
-	pruningPoint, err := v.pruningManager.PruningPoint()
+	pruningPoint := v.genesisHash
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
 	if err != nil {
 		return err
+	}
+	if hasPruningPoint {
+		pruningPoint, err = v.pruningStore.PruningPoint(v.databaseContext)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, parent := range header.ParentHashes {
