@@ -83,7 +83,6 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 		if err != nil {
 			return err
 		}
-		return nil
 	}
 
 	currentP, err := pm.pruningStore.PruningPoint(pm.databaseContext)
