@@ -1,10 +1,12 @@
 package blockprocessor
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -153,11 +155,25 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	log.Debugf("Block %s validated and inserted", hash)
-	virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return err
+
+	var logClosureErr error
+	log.Debugf("%s", logger.NewLogClosure(func() string {
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			logClosureErr = err
+			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
+		}
+		syncInfo, err := bp.syncManager.GetSyncInfo()
+		if err != nil {
+			logClosureErr = err
+			return fmt.Sprintf("Failed to get sync info: %s", err)
+		}
+		return fmt.Sprintf("New virtual's blue score: %d. Sync state: %s. Block count: %d. Header count: %d",
+			virtualGhostDAGData.BlueScore, syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
+	}))
+	if logClosureErr != nil {
+		return logClosureErr
 	}
-	log.Debugf("New virtual's blue score: %d", virtualGhostDAGData.BlueScore)
 
 	return nil
 }

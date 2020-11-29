@@ -9,7 +9,7 @@ import (
 // areHeaderTipsSyncedMaxTimeDifference is the number of blocks from
 // the header virtual selected parent (estimated by timestamps) for
 // kaspad to be considered not synced
-const areHeaderTipsSyncedMaxTimeDifference = 300_000 // 5 minutes
+const areHeaderTipsSyncedMaxTimeDifference = 300 // 5 minutes
 
 func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	syncState, err := sm.resolveSyncState()
