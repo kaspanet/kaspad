@@ -120,7 +120,6 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		Address:         nil,
 		ID:              ourID,
 		UserAgent:       "/net-adapter-mock/",
-		SelectedTipHash: versionMessage.SelectedTipHash,
 		DisableRelayTx:  true,
 		SubnetworkID:    nil,
 	})

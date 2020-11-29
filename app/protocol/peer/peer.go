@@ -22,9 +22,6 @@ const maxProtocolVersion = 1
 type Peer struct {
 	connection *netadapter.NetConnection
 
-	selectedTipHashMtx sync.RWMutex
-	selectedTipHash    *externalapi.DomainHash
-
 	userAgent                string
 	services                 appmessage.ServiceFlag
 	advertisedProtocolVerion uint32 // protocol version advertised by remote
@@ -60,20 +57,6 @@ func New(connection *netadapter.NetConnection) *Peer {
 // Connection returns the NetConnection associated with this peer
 func (p *Peer) Connection() *netadapter.NetConnection {
 	return p.connection
-}
-
-// SelectedTipHash returns the selected tip of the peer.
-func (p *Peer) SelectedTipHash() *externalapi.DomainHash {
-	p.selectedTipHashMtx.RLock()
-	defer p.selectedTipHashMtx.RUnlock()
-	return p.selectedTipHash
-}
-
-// SetSelectedTipHash sets the selected tip of the peer.
-func (p *Peer) SetSelectedTipHash(hash *externalapi.DomainHash) {
-	p.selectedTipHashMtx.Lock()
-	defer p.selectedTipHashMtx.Unlock()
-	p.selectedTipHash = hash
 }
 
 // SubnetworkID returns the subnetwork the peer is associated with.
@@ -128,7 +111,6 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion) {
 	p.userAgent = msg.UserAgent
 
 	p.disableRelayTx = msg.DisableRelayTx
-	p.selectedTipHash = msg.SelectedTipHash
 	p.subnetworkID = msg.SubnetworkID
 
 	p.timeOffset = mstime.Since(msg.Timestamp)

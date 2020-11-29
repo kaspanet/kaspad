@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ibd"
-	"github.com/kaspanet/kaspad/app/protocol/flows/ibd/selectedtip"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
 	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -178,20 +177,6 @@ func (m *Manager) registerIBDFlows(router *routerpkg.Router, isStopping *uint32,
 			isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return ibd.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("RequestSelectedTip", router,
-			[]appmessage.MessageCommand{appmessage.CmdSelectedTip}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return selectedtip.RequestSelectedTip(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleRequestSelectedTip", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestSelectedTip}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return selectedtip.HandleRequestSelectedTip(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
