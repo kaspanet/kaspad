@@ -31,26 +31,7 @@ type handleIBDFlow struct {
 func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
 	peer *peerpkg.Peer) error {
 
-	flow := &handleIBDFlow{
-		HandleIBDContext: context,
-		incomingRoute:    incomingRoute,
-		outgoingRoute:    outgoingRoute,
-		peer:             peer,
-	}
-	return flow.start()
-}
-
-func (flow *handleIBDFlow) start() error {
-	for {
-		err := flow.runIBD()
-		if err != nil {
-			return err
-		}
-	}
-}
-
-func (flow *handleIBDFlow) runIBD() error {
-	return nil
+	panic("unimplemented")
 }
 
 func (flow *handleIBDFlow) ibdLoop() error {
