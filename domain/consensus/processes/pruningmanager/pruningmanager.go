@@ -73,7 +73,6 @@ func New(
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
 func (pm *pruningManager) FindNextPruningPoint() error {
-	currentP := pm.genesisHash
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
@@ -87,7 +86,7 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 		return nil
 	}
 
-	currentP, err = pm.pruningStore.PruningPoint(pm.databaseContext)
+	currentP, err := pm.pruningStore.PruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
 	}
