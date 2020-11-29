@@ -89,12 +89,12 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		hasMissingParents, err := flow.processBlock(block)
+		missingParents, err := flow.processBlock(block)
 		if err != nil {
 			return err
 		}
-		if hasMissingParents {
-			err := flow.processOrphan(block)
+		if len(missingParents) > 0 {
+			err := flow.processOrphan(block, missingParents)
 			if err != nil {
 				return err
 			}
@@ -189,46 +189,46 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) (bool, error) {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
 	blockHash := consensusserialization.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return false, errors.Wrapf(err, "failed to process block %s", blockHash)
+			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
 			blueScore, err := blocks.ExtractBlueScore(block)
 			if err != nil {
-				return false, protocolerrors.Errorf(true, "received an orphan "+
+				return nil, protocolerrors.Errorf(true, "received an orphan "+
 					"block %s with malformed blue score", blockHash)
 			}
 
 			const maxOrphanBlueScoreDiff = 10000
 			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 			if err != nil {
-				return false, err
+				return nil, err
 			}
 			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
 
 			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-				return false, nil
+				return nil, nil
 			}
 
-			return true, nil
+			return missingParentsError.MissingParentHashes, nil
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
-		return false, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
+		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
-	return false, nil
+	return nil, nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
@@ -243,7 +243,7 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 	return flow.OnNewBlock(block)
 }
 
-func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) error {
+func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
 	blockHash := consensusserialization.BlockHash(block)
 
 	// Return if the block has been orphaned from elsewhere already
@@ -257,8 +257,8 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 		return err
 	}
 	if isBlockInOrphanResolutionRange {
-		flow.AddOrphan(block)
-		return flow.runOrphanResolution(blockHash)
+		flow.addToOrphanSetAndRequestMissingParents(block, missingParents)
+		return nil
 	}
 
 	// Start IBD unless we already are in IBD
@@ -269,6 +269,13 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 	return false, nil
 }
 
-func (flow *handleRelayInvsFlow) runOrphanResolution(blockHash *externalapi.DomainHash) error {
-	return nil
+func (flow *handleRelayInvsFlow) addToOrphanSetAndRequestMissingParents(
+	block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) {
+
+	flow.AddOrphan(block)
+	invMessages := make([]*appmessage.MsgInvRelayBlock, len(missingParents))
+	for i, missingParent := range missingParents {
+		invMessages[i] = appmessage.NewMsgInvBlock(missingParent)
+	}
+	flow.invsQueue = append(invMessages, flow.invsQueue...)
 }
