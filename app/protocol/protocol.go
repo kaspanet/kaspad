@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
-	"github.com/kaspanet/kaspad/app/protocol/flows/ibd"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -151,35 +150,35 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdHeader},
 			isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
+				return blockrelay.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 
 		m.registerFlow("HandleRequestBlockLocator", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleRequestBlockLocator(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestBlockLocator(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
 		m.registerFlow("HandleRequestHeaders", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestHeaders, appmessage.CmdRequestNextHeaders}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
 		m.registerFlow("HandleRequestIBDRootUTXOSetAndBlock", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDRootUTXOSetAndBlock}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleRequestIBDRootUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestIBDRootUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
 		m.registerFlow("HandleIBDBlockRequests", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ibd.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 	}

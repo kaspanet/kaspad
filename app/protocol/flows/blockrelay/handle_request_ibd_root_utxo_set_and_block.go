@@ -1,4 +1,4 @@
-package ibd
+package blockrelay
 
 import (
 	"errors"
