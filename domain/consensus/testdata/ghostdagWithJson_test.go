@@ -64,10 +64,6 @@ func TestGHOSTDAG(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed opening the json file %s: %v", item.Name(), err)
 			}
-			jsonFile, err = os.Open(dirName + "/dag2.json")
-			if err != nil {
-				t.Fatalf("Failed opening the json file %s: %v", item.Name(), err)
-			}
 			defer jsonFile.Close()
 			var test testDag
 			decoder := json.NewDecoder(jsonFile)
