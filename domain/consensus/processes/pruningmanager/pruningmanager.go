@@ -73,21 +73,28 @@ func New(
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
 func (pm *pruningManager) FindNextPruningPoint() error {
-	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return err
-	}
-
+	currentP := pm.genesisHash
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
 	}
-	currentP := pm.genesisHash
-	if hasPruningPoint {
-		currentP, err = pm.pruningStore.PruningPoint(pm.databaseContext)
+
+	if !hasPruningPoint {
+		err = pm.savePruningPoint(pm.genesisHash)
 		if err != nil {
 			return err
 		}
+		return nil
+	}
+
+	currentP, err = pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return err
 	}
 
 	currentPGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentP)
