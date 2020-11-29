@@ -9,7 +9,8 @@ type testTransactionValidator struct {
 	*transactionValidator
 }
 
-func NewTestTransactionValidator(baseTransactionValidator model.TransactionValidator) *testTransactionValidator {
+// NewTestTransactionValidator creates an instance of a TestTransactionValidator
+func NewTestTransactionValidator(baseTransactionValidator model.TransactionValidator) model.TestTransactionValidator {
 	return &testTransactionValidator{transactionValidator: baseTransactionValidator.(*transactionValidator)}
 }
 
@@ -17,6 +18,6 @@ func (tbv *testTransactionValidator) SigCache() *txscript.SigCache {
 	return tbv.sigCache
 }
 
-func (tbv testTransactionValidator) SetSigCache(sigCache *txscript.SigCache) {
+func (tbv *testTransactionValidator) SetSigCache(sigCache *txscript.SigCache) {
 	tbv.sigCache = sigCache
 }
