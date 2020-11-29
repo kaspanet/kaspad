@@ -233,6 +233,9 @@ var (
 	ErrMalformedUTXO = newRuleError("ErrMalformedUTXO")
 
 	ErrWrongPruningPointHash = newRuleError("ErrWrongPruningPointHash")
+
+	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
+	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
@@ -21,6 +21,11 @@ func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi
 	}
 
 	err = v.checkParentsIncest(header)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPruningPointViolation(header)
 	if err != nil {
 		return err
 	}
@@ -118,4 +123,24 @@ func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader
 	}
 
 	return nil
+}
+func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBlockHeader) error {
+	// check if the pruning point is on past of at least one parent of the header's parents.
+	pruningPoint, err := v.pruningManager.PruningPoint()
+	if err != nil {
+		return err
+	}
+
+	for _, parent := range header.ParentHashes {
+		isAnc, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+		if err != nil {
+			return err
+		}
+		if isAnc {
+			return nil
+		}
+	}
+
+	return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
+		"expected pruning point to be in block %d past.", header.Bits)
 }
