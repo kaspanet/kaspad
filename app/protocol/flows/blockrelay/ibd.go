@@ -3,38 +3,14 @@ package blockrelay
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
-	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
-// HandleIBDContext is the interface for the context needed for the HandleIBD flow.
-type HandleIBDContext interface {
-	Domain() domain.Domain
-	Config() *config.Config
-	OnNewBlock(block *externalapi.DomainBlock) error
-}
-
-type handleIBDFlow struct {
-	HandleIBDContext
-	incomingRoute, outgoingRoute *router.Route
-	peer                         *peerpkg.Peer
-}
-
-// HandleIBD waits for IBD start and handles it when IBD is triggered for this peer
-func HandleIBD(context HandleIBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer) error {
-
-	panic("unimplemented")
-}
-
-func (flow *handleIBDFlow) ibdLoop() error {
+func (flow *handleRelayInvsFlow) runIBD(highHash *externalapi.DomainHash) error {
 	for {
 		syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
 		if err != nil {
@@ -43,7 +19,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 
 		switch syncInfo.State {
 		case externalapi.SyncStateHeadersFirst:
-			err := flow.syncHeaders(nil) // TODO
+			err := flow.syncHeaders(highHash)
 			if err != nil {
 				return err
 			}
@@ -57,7 +33,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 				return nil
 			}
 		case externalapi.SyncStateMissingBlockBodies:
-			err := flow.syncMissingBlockBodies(nil) // TODO
+			err := flow.syncMissingBlockBodies(highHash)
 			if err != nil {
 				return err
 			}
@@ -69,7 +45,7 @@ func (flow *handleIBDFlow) ibdLoop() error {
 	}
 }
 
-func (flow *handleIBDFlow) syncHeaders(peerSelectedTipHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) syncHeaders(peerSelectedTipHash *externalapi.DomainHash) error {
 	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, peerSelectedTipHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
 	if err != nil {
@@ -81,7 +57,7 @@ func (flow *handleIBDFlow) syncHeaders(peerSelectedTipHash *externalapi.DomainHa
 	return flow.downloadHeaders(highestSharedBlockHash, peerSelectedTipHash)
 }
 
-func (flow *handleIBDFlow) syncMissingBlockBodies(peerSelectedTipHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) syncMissingBlockBodies(peerSelectedTipHash *externalapi.DomainHash) error {
 	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(peerSelectedTipHash)
 	if err != nil {
 		return err
@@ -132,7 +108,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(peerSelectedTipHash *externala
 	return nil
 }
 
-func (flow *handleIBDFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
+func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
 	if err != nil {
 		return false, err
@@ -161,7 +137,7 @@ func (flow *handleIBDFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHa
 	return true, nil
 }
 
-func (flow *handleIBDFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
+func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, nil, false, err
@@ -182,8 +158,8 @@ func (flow *handleIBDFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi
 	}
 }
 
-func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (lowHash *externalapi.DomainHash,
-	err error) {
+func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (
+	lowHash *externalapi.DomainHash, err error) {
 
 	lowHash = flow.Config().ActiveNetParams.GenesisHash
 	highHash := peerSelectedTipHash
@@ -218,13 +194,12 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(peerSelectedTipHash *exter
 	}
 }
 
-func (flow *handleIBDFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) error {
-
+func (flow *handleRelayInvsFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) error {
 	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, lowHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
-func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
+func (flow *handleRelayInvsFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
@@ -238,7 +213,7 @@ func (flow *handleIBDFlow) receiveBlockLocator() (blockLocatorHashes []*external
 	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
-func (flow *handleIBDFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	err := flow.sendRequestHeaders(highestSharedBlockHash, peerSelectedTipHash)
@@ -272,14 +247,14 @@ func (flow *handleIBDFlow) downloadHeaders(highestSharedBlockHash *externalapi.D
 	}
 }
 
-func (flow *handleIBDFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleIBDFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
+func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
@@ -296,7 +271,7 @@ func (flow *handleIBDFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHead
 	}
 }
 
-func (flow *handleIBDFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHeader) error {
+func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHeader) error {
 	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
 	block := &externalapi.DomainBlock{
 		Header:       header,

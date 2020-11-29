@@ -133,7 +133,10 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{appmessage.CmdInvRelayBlock, appmessage.CmdBlock}, isStopping, errChan,
+		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
+			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
+			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock,
+			appmessage.CmdHeader}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
 					outgoingRoute, peer)
@@ -143,14 +146,6 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 		m.registerFlow("HandleRelayBlockRequests", router, []appmessage.MessageCommand{appmessage.CmdRequestRelayBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleIBD", router, []appmessage.MessageCommand{appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
-			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdHeader},
-			isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleIBD(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 

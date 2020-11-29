@@ -10,15 +10,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	mathUtil "github.com/kaspanet/kaspad/util/math"
 	"github.com/pkg/errors"
 )
 
 // RelayInvsContext is the interface for the context needed for the HandleRelayInvs flow.
 type RelayInvsContext interface {
 	Domain() domain.Domain
+	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
 	OnNewBlock(block *externalapi.DomainBlock) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
@@ -80,14 +81,29 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		requestQueue := newHashesQueueSet()
-		requestQueue.enqueueIfNotExists(inv.Hash)
+		block, err := flow.requestBlock(inv.Hash)
+		if err != nil {
+			return err
+		}
+		if block == nil {
+			continue
+		}
 
-		for requestQueue.len() > 0 {
-			err := flow.requestBlocks(requestQueue)
+		missingParents, err := flow.processBlock(block)
+		if err != nil {
+			return err
+		}
+		if len(missingParents) > 0 {
+			err := flow.processMissingParents(block, missingParents)
 			if err != nil {
 				return err
 			}
+			continue
+		}
+
+		err = flow.relayBlock(block)
+		if err != nil {
+			return err
 		}
 	}
 }
@@ -112,68 +128,44 @@ func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error)
 	return inv, nil
 }
 
-func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
-	numHashesToRequest := mathUtil.MinInt(appmessage.MaxRequestRelayBlocksHashes, requestQueue.len())
-	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
-
-	pendingBlocks := map[externalapi.DomainHash]struct{}{}
-	var filteredHashesToRequest []*externalapi.DomainHash
-	for _, hash := range hashesToRequest {
-		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
-		if exists {
-			continue
-		}
-
-		// The block can become known from another peer in the process of orphan resolution
-		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(hash)
-		if err != nil {
-			return err
-		}
-		if blockInfo.Exists {
-			continue
-		}
-
-		pendingBlocks[*hash] = struct{}{}
-		filteredHashesToRequest = append(filteredHashesToRequest, hash)
-	}
-
-	// Exit early if we've filtered out all the hashes
-	if len(filteredHashesToRequest) == 0 {
-		return nil
+func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	exists := flow.SharedRequestedBlocks().addIfNotExists(requestHash)
+	if exists {
+		return nil, nil
 	}
 
 	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
 	// clean from any pending blocks.
-	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
+	defer flow.SharedRequestedBlocks().remove(requestHash)
 
-	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks(filteredHashesToRequest)
-	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
+	// The block can become known from another peer in the process of orphan resolution
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(requestHash)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if blockInfo.Exists {
+		return nil, nil
 	}
 
-	for len(pendingBlocks) > 0 {
-		msgBlock, err := flow.readMsgBlock()
-		if err != nil {
-			return err
-		}
-
-		block := appmessage.MsgBlockToDomainBlock(msgBlock)
-		blockHash := consensusserialization.BlockHash(block)
-
-		if _, ok := pendingBlocks[*blockHash]; !ok {
-			return protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
-		}
-
-		err = flow.processAndRelayBlock(requestQueue, block)
-		if err != nil {
-			return err
-		}
-
-		delete(pendingBlocks, *blockHash)
-		flow.SharedRequestedBlocks().remove(blockHash)
+	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks([]*externalapi.DomainHash{requestHash})
+	err = flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	msgBlock, err := flow.readMsgBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	block := appmessage.MsgBlockToDomainBlock(msgBlock)
+	blockHash := consensusserialization.BlockHash(block)
+
+	if *blockHash != *requestHash {
+		return nil, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
+	}
+
+	return block, nil
 }
 
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
@@ -197,68 +189,65 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
 	blockHash := consensusserialization.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process block %s", blockHash)
+			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
 			blueScore, err := blocks.ExtractBlueScore(block)
 			if err != nil {
-				return protocolerrors.Errorf(true, "received an orphan "+
+				return nil, protocolerrors.Errorf(true, "received an orphan "+
 					"block %s with malformed blue score", blockHash)
 			}
 
 			const maxOrphanBlueScoreDiff = 10000
 			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 			if err != nil {
-				return err
+				return nil, err
 			}
 			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
 				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
 					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
 					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-				return nil
+				return nil, nil
 			}
 
-			// Add the orphan to the orphan pool
-			flow.AddOrphan(block)
-
-			// Request the parents for the orphan block from the peer that sent it.
-			for _, missingAncestor := range missingParentsError.MissingParentHashes {
-				requestQueue.enqueueIfNotExists(missingAncestor)
-			}
-			return nil
+			return missingParentsError.MissingParentHashes, nil
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
+		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
+	return nil, nil
+}
 
-	err = flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
+func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
+	blockHash := consensusserialization.BlockHash(block)
+	err := flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Accepted block %s via relay", blockHash)
 
-	//err = flow.StartIBDIfRequired()
-	//if err != nil {
-	//	return err
-	//}
-	err = flow.OnNewBlock(block)
-	if err != nil {
-		return err
-	}
+	return flow.OnNewBlock(block)
+}
 
-	return nil
+func (flow *handleRelayInvsFlow) processMissingParents(block *externalapi.DomainBlock,
+	missingParents []*externalapi.DomainHash) error {
+
+	if flow.IsInIBD() {
+		return nil
+	}
+	panic("unimplemented")
 }
