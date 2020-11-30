@@ -16,6 +16,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+// orphanResolutionRange is the maximum amount of blockLocator hashes
+// to search for known blocks. See isBlockInOrphanResolutionRange for
+// further details
+var orphanResolutionRange = 5
+
 // RelayInvsContext is the interface for the context needed for the HandleRelayInvs flow.
 type RelayInvsContext interface {
 	Domain() domain.Domain
@@ -265,10 +270,14 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 	return flow.runIBDIfNotRunning(blockHash)
 }
 
+// isBlockInOrphanResolutionRange finds out whether the given blockHash should be
+// retrieved via the unorphaning mechanism or via IBD. This method sends a
+// getBlockLocator request to the peer with a limit of orphanResolutionRange.
+// In the response, if we know none of the hashes, we should retrieve the given
+// blockHash via IBD. Otherwise, via unorphaning.
 func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
-	const orphanResolutionRange = 5
 	lowHash := flow.Config().ActiveNetParams.GenesisHash
-	err := flow.sendGetBlockLocator(lowHash, blockHash, orphanResolutionRange)
+	err := flow.sendGetBlockLocator(lowHash, blockHash, &orphanResolutionRange)
 	if err != nil {
 		return false, err
 	}
