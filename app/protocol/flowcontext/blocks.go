@@ -100,3 +100,14 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 func (f *FlowContext) IsInIBD() bool {
 	return atomic.LoadUint32(&f.isInIBD) != 0
 }
+
+// TrySetIBDRunning attempts to set `isInIBD`. Returns false
+// if it is already set
+func (f *FlowContext) TrySetIBDRunning() bool {
+	return atomic.CompareAndSwapUint32(&f.isInIBD, 0, 1)
+}
+
+// SetIBDNotRunning unsets isInIBD
+func (f *FlowContext) UnsetIBDRunning() {
+	atomic.StoreUint32(&f.isInIBD, 0)
+}

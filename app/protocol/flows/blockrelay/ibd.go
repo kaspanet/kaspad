@@ -11,6 +11,12 @@ import (
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
+	wasIBDNotRunning := flow.TrySetIBDRunning()
+	if !wasIBDNotRunning {
+		return nil
+	}
+	defer flow.UnsetIBDRunning()
+
 	// Fetch all the headers if we don't already have them
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
 	if err != nil {

@@ -32,6 +32,8 @@ type RelayInvsContext interface {
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsInIBD() bool
+	TrySetIBDRunning() bool
+	UnsetIBDRunning()
 }
 
 type handleRelayInvsFlow struct {
