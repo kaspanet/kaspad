@@ -92,7 +92,7 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
-	err := binaryserializer.PutUint32(w, littleEndian, uint32(tx.Version))
+	err := binaryserializer.PutUint32(w, uint32(tx.Version))
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		}
 	}
 
-	err = binaryserializer.PutUint64(w, littleEndian, tx.LockTime)
+	err = binaryserializer.PutUint64(w, tx.LockTime)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	err = binaryserializer.PutUint64(w, littleEndian, tx.Gas)
+	err = binaryserializer.PutUint64(w, tx.Gas)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, 
 		return err
 	}
 
-	return binaryserializer.PutUint64(w, littleEndian, ti.Sequence)
+	return binaryserializer.PutUint64(w, ti.Sequence)
 }
 
 func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
@@ -184,7 +184,7 @@ func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 		return err
 	}
 
-	return binaryserializer.PutUint32(w, littleEndian, outpoint.Index)
+	return binaryserializer.PutUint32(w, outpoint.Index)
 }
 
 func writeVarBytes(w io.Writer, data []byte) error {
@@ -199,7 +199,7 @@ func writeVarBytes(w io.Writer, data []byte) error {
 }
 
 func writeTxOut(w io.Writer, to *externalapi.DomainTransactionOutput) error {
-	err := binaryserializer.PutUint64(w, littleEndian, to.Value)
+	err := binaryserializer.PutUint64(w, to.Value)
 	if err != nil {
 		return err
 	}
