@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type SyncManager interface {
 	GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error)
+	CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit *int) (externalapi.BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error)
 	IsBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error)
 	GetSyncInfo() (*externalapi.SyncInfo, error)
