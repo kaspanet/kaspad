@@ -1,24 +1,9 @@
 {
     "K": 4,
     "GenesisID": "0",
-    "ExpectedReds": [
-        "12",
-        "30",
-        "6",
-        "27",
-        "4",
-        "16",
-        "7",
-        "23",
-        "24",
-        "11",
-        "15",
-        "19",
-        "9"
-    ],
     "Blocks": [
         {
-            "ID": "1",
+            "ID": "1111",
             "ExpectedScore": 1,
             "ExpectedSelectedParent": "0",
             "ExpectedReds": [],
@@ -56,13 +41,13 @@
         {
             "ID": "4",
             "ExpectedScore": 2,
-            "ExpectedSelectedParent": "1",
+            "ExpectedSelectedParent": "1111",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "1"
+                "1111"
             ],
             "Parents": [
-                "1"
+                "1111"
             ]
         },
         {
@@ -106,14 +91,14 @@
         {
             "ID": "8",
             "ExpectedScore": 3,
-            "ExpectedSelectedParent": "1",
+            "ExpectedSelectedParent": "1111",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "1",
+                "1111",
                 "2"
             ],
             "Parents": [
-                "1",
+                "1111",
                 "2"
             ]
         },
@@ -213,7 +198,7 @@
             "ExpectedScore": 9,
             "ExpectedSelectedParent": "11",
             "ExpectedReds": [
-                "1",
+                "1111",
                 "8"
             ],
             "ExpectedBlues": [
@@ -361,7 +346,7 @@
             ]
         },
         {
-            "ID": "25",
+            "ID": "25555",
             "ExpectedScore": 13,
             "ExpectedSelectedParent": "21",
             "ExpectedReds": [],
@@ -375,20 +360,22 @@
         {
             "ID": "26",
             "ExpectedScore": 15,
-            "ExpectedSelectedParent": "22",
+            "ExpectedSelectedParent": "25555",
             "ExpectedReds": [
                 "12",
+                "15",
+                "19",
                 "23",
                 "24"
             ],
             "ExpectedBlues": [
-                "22",
-                "25"
+                "25555",
+                "22"
             ],
             "Parents": [
                 "22",
                 "24",
-                "25"
+                "25555"
             ]
         },
         {
@@ -406,17 +393,17 @@
         {
             "ID": "28",
             "ExpectedScore": 14,
-            "ExpectedSelectedParent": "25",
+            "ExpectedSelectedParent": "25555",
             "ExpectedReds": [
                 "12",
                 "23"
             ],
             "ExpectedBlues": [
-                "25"
+                "25555"
             ],
             "Parents": [
                 "23",
-                "25"
+                "25555"
             ]
         },
         {
