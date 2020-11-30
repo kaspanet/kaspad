@@ -13,5 +13,4 @@ type ReadOnlyUTXOSet interface {
 type ReadOnlyUTXOSetIterator interface {
 	Next() bool
 	Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error)
-	WithDiff(diff UTXODiff) (ReadOnlyUTXOSetIterator, error)
 }

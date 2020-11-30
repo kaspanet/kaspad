@@ -13,7 +13,7 @@ type utxoDiff struct {
 	toRemove utxoCollection
 }
 
-func newUTXODiff() *utxoDiff {
+func NewUTXODiff() *utxoDiff {
 	return &utxoDiff{
 		toAdd:    utxoCollection{},
 		toRemove: utxoCollection{},
@@ -81,7 +81,7 @@ func (d *utxoDiff) cloneMutable() *mutableUTXODiff {
 func (d *utxoDiff) addEntry(outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.BlockBlueScore) {
 		d.toRemove.remove(outpoint)
-	} else if d.toAdd.contains(outpoint) {
+	} else if d.toAdd.Contains(outpoint) {
 		return errors.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
 	} else {
 		d.toAdd.add(outpoint, entry)
@@ -92,7 +92,7 @@ func (d *utxoDiff) addEntry(outpoint *externalapi.DomainOutpoint, entry *externa
 func (d *utxoDiff) removeEntry(outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.BlockBlueScore) {
 		d.toAdd.remove(outpoint)
-	} else if d.toRemove.contains(outpoint) {
+	} else if d.toRemove.Contains(outpoint) {
 		return errors.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)
 	} else {
 		d.toRemove.add(outpoint, entry)

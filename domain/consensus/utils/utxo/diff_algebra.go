@@ -8,7 +8,7 @@ import (
 // checkIntersection checks if there is an intersection between two utxoCollections
 func checkIntersection(collection1 utxoCollection, collection2 utxoCollection) bool {
 	for outpoint := range collection1 {
-		if collection2.contains(&outpoint) {
+		if collection2.Contains(&outpoint) {
 			return true
 		}
 	}
@@ -24,7 +24,7 @@ func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoColle
 	*externalapi.DomainOutpoint, bool) {
 
 	for outpoint, utxoEntry := range collection1 {
-		if diffEntry, ok := collection2.get(&outpoint); ok {
+		if diffEntry, ok := collection2.Get(&outpoint); ok {
 			if extraRule(&outpoint, utxoEntry, diffEntry) {
 				return &outpoint, true
 			}

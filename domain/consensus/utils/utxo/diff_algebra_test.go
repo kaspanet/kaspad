@@ -86,7 +86,7 @@ func TestUTXODiff(t *testing.T) {
 	utxoEntry0 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
 	utxoEntry1 := externalapi.NewUTXOEntry(20, []byte{}, false, 1)
 
-	diff := newUTXODiff()
+	diff := NewUTXODiff()
 
 	if len(diff.toAdd) != 0 || len(diff.toRemove) != 0 {
 		t.Errorf("new diff is not empty")

@@ -4,6 +4,8 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type UTXOCollection interface {
 	Iterator() ReadOnlyUTXOSetIterator
+	Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool)
+	Contains(outpoint *externalapi.DomainOutpoint) bool
 }
 
 type UTXODiff interface {
@@ -16,6 +18,8 @@ type UTXODiff interface {
 }
 
 type MutableUTXODiff interface {
+	ToUnmutable() UTXODiff
+
 	WithDiff(other UTXODiff) (UTXODiff, error)
 	DiffFrom(other UTXODiff) (UTXODiff, error)
 	ToAdd() UTXOCollection

@@ -19,7 +19,7 @@ func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	return utxoSetBucket.Key(serializedOutpoint), nil
 }
 
-func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff *model.UTXODiff) error {
+func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXODiff) error {
 	if css.virtualUTXOSetStaging != nil {
 		return errors.New("cannot stage virtual UTXO diff while virtual UTXO set is staged")
 	}

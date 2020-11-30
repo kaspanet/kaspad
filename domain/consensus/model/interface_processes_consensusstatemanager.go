@@ -9,7 +9,7 @@ type ConsensusStateManager interface {
 	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
 	RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSetIterator, error)
 	HeaderTipsPruningPoint() (*externalapi.DomainHash, error)
-	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (*UTXODiff, AcceptanceData, Multiset, error)
+	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (UTXODiff, AcceptanceData, Multiset, error)
 }
 
 // TestConsensusStateManager  adds to the main ConsensusStateManager methods required by tests

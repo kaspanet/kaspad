@@ -10,6 +10,19 @@ import (
 
 type utxoCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
 
+// Get returns the model.UTXOEntry represented by provided outpoint,
+// and a boolean value indicating if said model.UTXOEntry is in the set or not
+func (uc utxoCollection) Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
+	entry, ok := uc[*outpoint]
+	return entry, ok
+}
+
+// Contains returns a boolean value indicating whether a UTXO entry is in the set
+func (uc utxoCollection) Contains(outpoint *externalapi.DomainOutpoint) bool {
+	_, ok := uc[*outpoint]
+	return ok
+}
+
 func (uc utxoCollection) Clone() utxoCollection {
 	if uc == nil {
 		return nil
@@ -63,22 +76,9 @@ func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
 	}
 }
 
-// get returns the model.UTXOEntry represented by provided outpoint,
-// and a boolean value indicating if said model.UTXOEntry is in the set or not
-func (uc utxoCollection) get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
-	entry, ok := uc[*outpoint]
-	return entry, ok
-}
-
-// contains returns a boolean value indicating whether a UTXO entry is in the set
-func (uc utxoCollection) contains(outpoint *externalapi.DomainOutpoint) bool {
-	_, ok := uc[*outpoint]
-	return ok
-}
-
 // containsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
 func (uc utxoCollection) containsWithBlueScore(outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
-	entry, ok := uc.get(outpoint)
+	entry, ok := uc.Get(outpoint)
 	return ok && entry.BlockBlueScore == blueScore
 }

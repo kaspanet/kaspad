@@ -12,6 +12,14 @@ type mutableUTXODiff struct {
 	*utxoDiff
 }
 
+func NewMutableUTXODiff() *mutableUTXODiff {
+	return &mutableUTXODiff{utxoDiff: NewUTXODiff()}
+}
+
+func (md *mutableUTXODiff) ToUnmutable() model.UTXODiff {
+	return md.utxoDiff
+}
+
 func (md *mutableUTXODiff) WithDiffInPlace(other model.UTXODiff) error {
 	o, ok := other.(*utxoDiff)
 	if !ok {

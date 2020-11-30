@@ -5,7 +5,7 @@ import (
 )
 
 // UTXODiffToDBUTXODiff converts UTXODiff to DbUtxoDiff
-func UTXODiffToDBUTXODiff(diff *model.UTXODiff) *DbUtxoDiff {
+func UTXODiffToDBUTXODiff(diff model.UTXODiff) *DbUtxoDiff {
 	return &DbUtxoDiff{
 		ToAdd:    utxoCollectionToDBUTXOCollection(diff.ToAdd),
 		ToRemove: utxoCollectionToDBUTXOCollection(diff.ToRemove),
@@ -13,7 +13,7 @@ func UTXODiffToDBUTXODiff(diff *model.UTXODiff) *DbUtxoDiff {
 }
 
 // DBUTXODiffToUTXODiff converts DbUtxoDiff to UTXODiff
-func DBUTXODiffToUTXODiff(diff *DbUtxoDiff) (*model.UTXODiff, error) {
+func DBUTXODiffToUTXODiff(diff *DbUtxoDiff) (model.UTXODiff, error) {
 	toAdd, err := dbUTXOCollectionToUTXOCollection(diff.ToAdd)
 	if err != nil {
 		return nil, err

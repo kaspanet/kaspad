@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 	"github.com/pkg/errors"
 )
 
@@ -169,7 +168,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 }
 
 func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
 
 	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
@@ -209,7 +208,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 		if err != nil {
 			return err
 		}
-		newDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, currentDiff)
+		newDiff, err := pastUTXODiff.DiffFrom(currentDiff)
 		if err != nil {
 			return err
 		}

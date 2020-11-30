@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -87,7 +88,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 	}
 
 	log.Tracef("Updating the header tips pruning point diff parents with an empty UTXO diff")
-	err = csm.updateVirtualDiffParents(model.NewUTXODiff())
+	err = csm.updateVirtualDiffParents(utxo.NewUTXODiff())
 	if err != nil {
 		return err
 	}

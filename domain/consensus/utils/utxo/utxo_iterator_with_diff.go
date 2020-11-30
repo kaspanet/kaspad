@@ -3,6 +3,7 @@ package utxo
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 type readOnlyUTXOIteratorWithDiff struct {
@@ -17,14 +18,26 @@ type readOnlyUTXOIteratorWithDiff struct {
 }
 
 // IteratorWithDiff applies a UTXODiff to given utxo iterator
-func (r *readOnlyUTXOIteratorWithDiff) WithDiff(diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
-	combinedDiff, err := r.diff.WithDiff(diff)
-	if err != nil {
-		return nil, err
+func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
+	d, ok := diff.(*utxoDiff)
+	if !ok {
+		return nil, errors.New("diff is not of type *utxoDiff")
 	}
 
-	return r.baseIterator.WithDiff(combinedDiff)
+	if iteratorWithDiff, ok := iterator.(*readOnlyUTXOIteratorWithDiff); ok {
+		combinedDiff, err := iteratorWithDiff.diff.WithDiff(d)
+		if err != nil {
+			return nil, err
+		}
 
+		return IteratorWithDiff(iteratorWithDiff.baseIterator, combinedDiff)
+	}
+
+	return &readOnlyUTXOIteratorWithDiff{
+		baseIterator:  iterator,
+		diff:          d,
+		toAddIterator: d.toAdd.Iterator(),
+	}, nil
 }
 
 func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
