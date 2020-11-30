@@ -18,7 +18,7 @@ func TestRequestBlockLocator(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(9)
-	msg := NewMsgRequestBlockLocator(highHash, &externalapi.DomainHash{})
+	msg := NewMsgRequestBlockLocator(highHash, &externalapi.DomainHash{}, 0)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgRequestBlockLocator: wrong command - got %v want %v",
 			cmd, wantCmd)

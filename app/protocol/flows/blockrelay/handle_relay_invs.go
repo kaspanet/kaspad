@@ -266,7 +266,27 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 }
 
 func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
-	return true, nil
+	const orphanResolutionRange = 5
+	lowHash := flow.Config().ActiveNetParams.GenesisHash
+	err := flow.sendGetBlockLocator(lowHash, blockHash, orphanResolutionRange)
+	if err != nil {
+		return false, err
+	}
+
+	blockLocatorHashes, err := flow.receiveBlockLocator()
+	if err != nil {
+		return false, err
+	}
+	for _, blockLocatorHash := range blockLocatorHashes {
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockLocatorHash)
+		if err != nil {
+			return false, err
+		}
+		if blockInfo.Exists {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (flow *handleRelayInvsFlow) addToOrphanSetAndRequestMissingParents(

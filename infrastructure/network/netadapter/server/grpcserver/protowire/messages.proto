@@ -169,6 +169,7 @@ message Hash{
 message RequestBlockLocatorMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
+  uint32 limit = 3;
 }
 // GetBlockLocatorMessage end
 

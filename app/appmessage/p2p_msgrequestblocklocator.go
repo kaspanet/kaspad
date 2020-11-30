@@ -12,6 +12,7 @@ type MsgRequestBlockLocator struct {
 	baseMessage
 	HighHash *externalapi.DomainHash
 	LowHash  *externalapi.DomainHash
+	Limit    uint32
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -23,9 +24,10 @@ func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 // NewMsgRequestBlockLocator returns a new RequestBlockLocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgRequestBlockLocator(highHash, lowHash *externalapi.DomainHash) *MsgRequestBlockLocator {
+func NewMsgRequestBlockLocator(highHash, lowHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
 	return &MsgRequestBlockLocator{
 		HighHash: highHash,
 		LowHash:  lowHash,
+		Limit:    limit,
 	}
 }

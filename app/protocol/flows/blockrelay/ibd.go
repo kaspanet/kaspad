@@ -165,7 +165,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash 
 	highHash := peerSelectedTipHash
 
 	for {
-		err := flow.sendGetBlockLocator(lowHash, highHash)
+		err := flow.sendGetBlockLocator(lowHash, highHash, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -192,25 +192,6 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash 
 			return nil, err
 		}
 	}
-}
-
-func (flow *handleRelayInvsFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) error {
-	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, lowHash)
-	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
-}
-
-func (flow *handleRelayInvsFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
-	if err != nil {
-		return nil, err
-	}
-	msgBlockLocator, ok := message.(*appmessage.MsgBlockLocator)
-	if !ok {
-		return nil,
-			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", appmessage.CmdBlockLocator, message.Command())
-	}
-	return msgBlockLocator.BlockLocatorHashes, nil
 }
 
 func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
