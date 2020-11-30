@@ -3,12 +3,11 @@ package utxo
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 )
 
 type readOnlyUTXOIteratorWithDiff struct {
 	baseIterator model.ReadOnlyUTXOSetIterator
-	diff         *model.UTXODiff
+	diff         *utxoDiff
 
 	currentOutpoint  *externalapi.DomainOutpoint
 	currentUTXOEntry *externalapi.UTXOEntry
@@ -18,27 +17,20 @@ type readOnlyUTXOIteratorWithDiff struct {
 }
 
 // IteratorWithDiff applies a UTXODiff to given utxo iterator
-func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff *model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
-	if iteratorWithDiff, ok := iterator.(*readOnlyUTXOIteratorWithDiff); ok {
-		combinedDiff, err := utxoalgebra.WithDiff(iteratorWithDiff.diff, diff)
-		if err != nil {
-			return nil, err
-		}
-
-		return IteratorWithDiff(iteratorWithDiff.baseIterator, combinedDiff)
+func (r *readOnlyUTXOIteratorWithDiff) WithDiff(diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
+	combinedDiff, err := r.diff.WithDiff(diff)
+	if err != nil {
+		return nil, err
 	}
 
-	return &readOnlyUTXOIteratorWithDiff{
-		baseIterator:  iterator,
-		diff:          diff,
-		toAddIterator: CollectionIterator(diff.ToAdd),
-	}, nil
+	return r.baseIterator.WithDiff(combinedDiff)
+
 }
 
 func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
-	for r.baseIterator.Next() { // keep looping until we reach an outpoint/entry pair that is not in r.diff.ToRemove
+	for r.baseIterator.Next() { // keep looping until we reach an outpoint/entry pair that is not in r.diff.toRemove
 		r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()
-		if !utxoalgebra.CollectionContainsWithBlueScore(r.diff.ToRemove, r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore) {
+		if !r.diff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore) {
 			return true
 		}
 	}

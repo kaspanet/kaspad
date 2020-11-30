@@ -35,7 +35,7 @@ func New(cacheSize int) model.UTXODiffStore {
 
 // Stage stages the given utxoDiff for the given blockHash
 func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
-	uds.utxoDiffStaging[*blockHash] = utxoDiff.Clone()
+	uds.utxoDiffStaging[*blockHash] = utxoDiff
 
 	if utxoDiffChild != nil {
 		uds.utxoDiffChildStaging[*blockHash] = utxoDiffChild.Clone()
@@ -109,11 +109,11 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 // UTXODiff gets the utxoDiff associated with the given blockHash
 func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
 	if utxoDiff, ok := uds.utxoDiffStaging[*blockHash]; ok {
-		return utxoDiff.Clone(), nil
+		return utxoDiff, nil
 	}
 
 	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
-		return utxoDiff.(*model.UTXODiff).Clone(), nil
+		return utxoDiff.(*model.UTXODiff), nil
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
@@ -126,7 +126,7 @@ func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *external
 		return nil, err
 	}
 	uds.utxoDiffCache.Add(blockHash, utxoDiff)
-	return utxoDiff.Clone(), nil
+	return utxoDiff, nil
 }
 
 // UTXODiffChild gets the utxoDiff child associated with the given blockHash
