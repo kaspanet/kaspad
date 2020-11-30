@@ -59,6 +59,8 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	var mergeSetReds = make([]*externalapi.DomainHash, 0)
 	var blueSet = make([]*externalapi.DomainHash, 0)
 
+	mergeSetBlues = append(mergeSetBlues, selectedParent)
+
 	mergeSetArr, err := gh.findMergeSet(blockParents, selectedParent)
 	if err != nil {
 		return err
@@ -352,8 +354,8 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 			err = error
 			return false
 		}
-		var isSmaller bool = false
-		if blockRight.BlueScore < blockLeft.BlueScore {
+		var isSmaller = false
+		if blockLeft.BlueScore < blockRight.BlueScore {
 			isSmaller = true
 		} else {
 			if blockRight.BlueScore == blockLeft.BlueScore {
