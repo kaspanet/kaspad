@@ -2,7 +2,6 @@ package random
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"io"
 
 	"github.com/kaspanet/kaspad/util/binaryserializer"
@@ -12,7 +11,7 @@ import (
 // unexported version takes a reader primarily to ensure the error paths
 // can be properly tested by passing a fake reader in the tests.
 func randomUint64(r io.Reader) (uint64, error) {
-	rv, err := binaryserializer.Uint64(r, binary.BigEndian)
+	rv, err := binaryserializer.Uint64(r)
 	if err != nil {
 		return 0, err
 	}

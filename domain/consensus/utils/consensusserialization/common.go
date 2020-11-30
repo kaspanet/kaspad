@@ -1,18 +1,11 @@
 package consensusserialization
 
 import (
-	"encoding/binary"
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/binaryserializer"
 	"github.com/pkg/errors"
-)
-
-var (
-	// littleEndian is a convenience variable since binary.LittleEndian is
-	// quite long.
-	littleEndian = binary.LittleEndian
 )
 
 // errNoEncodingForType signifies that there's no encoding for the given type.
@@ -26,28 +19,28 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// type assertions first.
 	switch e := element.(type) {
 	case int32:
-		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
+		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case uint32:
-		err := binaryserializer.PutUint32(w, littleEndian, e)
+		err := binaryserializer.PutUint32(w, e)
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case int64:
-		err := binaryserializer.PutUint64(w, littleEndian, uint64(e))
+		err := binaryserializer.PutUint64(w, uint64(e))
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case uint64:
-		err := binaryserializer.PutUint64(w, littleEndian, e)
+		err := binaryserializer.PutUint64(w, e)
 		if err != nil {
 			return err
 		}
@@ -123,7 +116,7 @@ func readElement(r io.Reader, element interface{}) error {
 	// type assertions first.
 	switch e := element.(type) {
 	case *int32:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -131,7 +124,7 @@ func readElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *uint32:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -139,7 +132,7 @@ func readElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *int64:
-		rv, err := binaryserializer.Uint64(r, littleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
@@ -147,7 +140,7 @@ func readElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *uint64:
-		rv, err := binaryserializer.Uint64(r, littleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
