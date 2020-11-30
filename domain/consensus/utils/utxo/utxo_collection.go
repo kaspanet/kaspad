@@ -5,10 +5,16 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type utxoCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
+
+func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]*externalapi.UTXOEntry) model.UTXOCollection {
+	return utxoCollection(utxoMap)
+}
 
 // Get returns the model.UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said model.UTXOEntry is in the set or not
@@ -21,6 +27,10 @@ func (uc utxoCollection) Get(outpoint *externalapi.DomainOutpoint) (*externalapi
 func (uc utxoCollection) Contains(outpoint *externalapi.DomainOutpoint) bool {
 	_, ok := uc[*outpoint]
 	return ok
+}
+
+func (uc utxoCollection) Len() int {
+	return len(uc)
 }
 
 func (uc utxoCollection) Clone() utxoCollection {

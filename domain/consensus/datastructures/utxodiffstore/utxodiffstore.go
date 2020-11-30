@@ -188,11 +188,16 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff model.UTXODiff) ([]byte, error) {
-	dbUtxoDiff := serialization.UTXODiffToDBUTXODiff(utxoDiff)
+	dbUtxoDiff, err := serialization.UTXODiffToDBUTXODiff(utxoDiff)
+	if err != nil {
+		return nil, err
+	}
+
 	bytes, err := proto.Marshal(dbUtxoDiff)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return bytes, nil
 }
 

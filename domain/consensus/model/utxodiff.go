@@ -6,6 +6,7 @@ type UTXOCollection interface {
 	Iterator() ReadOnlyUTXOSetIterator
 	Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool)
 	Contains(outpoint *externalapi.DomainOutpoint) bool
+	Len() int
 }
 
 type UTXODiff interface {

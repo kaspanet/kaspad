@@ -20,6 +20,21 @@ func NewUTXODiff() *utxoDiff {
 	}
 }
 
+func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTXODiff, error) {
+	add, ok := toAdd.(utxoCollection)
+	if !ok {
+		return nil, errors.New("toAdd is not of type utxoCollection")
+	}
+	remove, ok := toRemove.(utxoCollection)
+	if !ok {
+		return nil, errors.New("toRemove is not of type utxoCollection")
+	}
+	return &utxoDiff{
+		toAdd:    add,
+		toRemove: remove,
+	}, nil
+}
+
 func (d *utxoDiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s", d.toAdd, d.toRemove)
 }
