@@ -354,15 +354,14 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 			err = error
 			return false
 		}
-		var isSmaller = false
+
 		if blockLeft.BlueScore < blockRight.BlueScore {
-			isSmaller = true
-		} else {
-			if blockRight.BlueScore == blockLeft.BlueScore {
-				isSmaller = ismoreHash(arr[j], arr[i])
-			}
+			return true
 		}
-		return isSmaller
+		if blockLeft.BlueScore == blockRight.BlueScore {
+			return ismoreHash(arr[j], arr[i])
+		}
+		return false
 	})
 	return err
 }
