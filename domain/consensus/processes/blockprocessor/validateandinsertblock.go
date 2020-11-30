@@ -221,7 +221,7 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *e
 	return nil
 }
 
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
+func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, syncInfo *externalapi.SyncInfo) error {
 	blockHash := consensusserialization.HeaderHash(block.Header)
 	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
@@ -247,7 +247,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block, mode)
+	err = bp.validatePostProofOfWork(block, syncInfo)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
@@ -282,10 +282,10 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
+func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, syncInfo *externalapi.SyncInfo) error {
 	blockHash := consensusserialization.BlockHash(block)
 
-	if mode.State != externalapi.SyncStateHeadersFirst {
+	if syncInfo.State != externalapi.SyncStateHeadersFirst {
 		bp.blockStore.Stage(blockHash, block)
 
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
