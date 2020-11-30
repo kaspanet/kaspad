@@ -266,7 +266,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 }
 
 func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
-	return false, nil
+	return true, nil
 }
 
 func (flow *handleRelayInvsFlow) addToOrphanSetAndRequestMissingParents(
