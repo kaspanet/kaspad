@@ -163,32 +163,37 @@ func TestCheckPubKeyEncoding(t *testing.T) {
 		isValid bool
 	}{
 		{
-			name: "uncompressed ok",
+			name: "uncompressed - invalid",
 			key: hexToBytes("0411db93e1dcdb8a016b49840f8c53bc1eb68" +
 				"a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf" +
 				"9744464f82e160bfa9b8b64f9d4c03f999b8643f656b" +
 				"412a3"),
-			isValid: true,
+			isValid: false,
 		},
 		{
-			name: "compressed ok",
+			name: "compressed - invalid",
 			key: hexToBytes("02ce0b14fb842b1ba549fdd675c98075f12e9" +
 				"c510f8ef52bd021a9a1f4809d3b4d"),
-			isValid: true,
+			isValid: false,
 		},
 		{
-			name: "compressed ok",
+			name: "compressed - invalid",
 			key: hexToBytes("032689c7c2dab13309fb143e0e8fe39634252" +
 				"1887e976690b6b47f5b2a4b7d448e"),
-			isValid: true,
+			isValid: false,
 		},
 		{
-			name: "hybrid",
+			name: "hybrid - invalid",
 			key: hexToBytes("0679be667ef9dcbbac55a06295ce870b07029" +
 				"bfcdb2dce28d959f2815b16f81798483ada7726a3c46" +
 				"55da4fbfc0e1108a8fd17b448a68554199c47d08ffb1" +
 				"0d4b8"),
 			isValid: false,
+		},
+		{
+			name:    "32 bytes pubkey - Ok",
+			key:     hexToBytes("2689c7c2dab13309fb143e0e8fe396342521887e976690b6b47f5b2a4b7d448e"),
+			isValid: true,
 		},
 		{
 			name:    "empty",
