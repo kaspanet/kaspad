@@ -45,7 +45,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
-	if f.IsInIBD() {
+	if f.IsIBDRunning() {
 		return nil
 	}
 
@@ -96,8 +96,8 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	return f.Broadcast(appmessage.NewMsgInvBlock(consensusserialization.BlockHash(block)))
 }
 
-// IsInIBD is true if IBD is currently running
-func (f *FlowContext) IsInIBD() bool {
+// IsIBDRunning returns true if IBD is currently marked as running
+func (f *FlowContext) IsIBDRunning() bool {
 	return atomic.LoadUint32(&f.isInIBD) != 0
 }
 

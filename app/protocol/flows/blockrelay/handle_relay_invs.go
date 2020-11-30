@@ -31,7 +31,7 @@ type RelayInvsContext interface {
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
-	IsInIBD() bool
+	IsIBDRunning() bool
 	TrySetIBDRunning() bool
 	UnsetIBDRunning()
 }
@@ -84,7 +84,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		// Block relay is disabled during IBD
-		if flow.IsInIBD() {
+		if flow.IsIBDRunning() {
 			continue
 		}
 
