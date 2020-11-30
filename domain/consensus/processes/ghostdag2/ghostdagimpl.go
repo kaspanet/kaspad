@@ -341,13 +341,13 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 	var err error = nil
 	sort.Slice(arr, func(i, j int) bool {
 
-		blockRight, error := gh.dataStore.Get(gh.dbAccess, arr[i])
+		blockLeft, error := gh.dataStore.Get(gh.dbAccess, arr[i])
 		if error != nil {
 			err = error
 			return false
 		}
 
-		blockLeft, error := gh.dataStore.Get(gh.dbAccess, arr[j])
+		blockRight, error := gh.dataStore.Get(gh.dbAccess, arr[j])
 		if error != nil {
 			err = error
 			return false
