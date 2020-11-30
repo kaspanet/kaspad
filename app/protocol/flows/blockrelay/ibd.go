@@ -11,50 +11,47 @@ import (
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
-	for {
-		syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	// Fetch all the headers if we don't already have them
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
+	if err != nil {
+		return err
+	}
+	if !blockInfo.Exists {
+		err := flow.syncHeaders(highHash)
 		if err != nil {
 			return err
 		}
+	}
 
-		switch syncInfo.State {
-		case externalapi.SyncStateHeadersFirst:
-			err := flow.syncHeaders(highHash)
-			if err != nil {
-				return err
-			}
-		case externalapi.SyncStateMissingUTXOSet:
-			found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
-			if err != nil {
-				return err
-			}
-
-			if !found {
-				return nil
-			}
-		case externalapi.SyncStateMissingBlockBodies:
-			err := flow.syncMissingBlockBodies(highHash)
-			if err != nil {
-				return err
-			}
-		case externalapi.SyncStateRelay:
+	// Fetch the UTXO set if we don't already have it
+	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	if err != nil {
+		return err
+	}
+	if syncInfo.State == externalapi.SyncStateMissingUTXOSet {
+		found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
+		if err != nil {
+			return err
+		}
+		if !found {
 			return nil
-		default:
-			return errors.Errorf("unexpected state %s", syncInfo.State)
 		}
 	}
+
+	// Fetch the block bodies
+	return flow.syncMissingBlockBodies(highHash)
 }
 
-func (flow *handleRelayInvsFlow) syncHeaders(peerSelectedTipHash *externalapi.DomainHash) error {
-	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, peerSelectedTipHash)
-	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(peerSelectedTipHash)
+func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
+	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, highHash)
+	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	return flow.downloadHeaders(highestSharedBlockHash, peerSelectedTipHash)
+	return flow.downloadHeaders(highestSharedBlockHash, highHash)
 }
 
 func (flow *handleRelayInvsFlow) syncMissingBlockBodies(peerSelectedTipHash *externalapi.DomainHash) error {
@@ -158,14 +155,14 @@ func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *exter
 	}
 }
 
-func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash *externalapi.DomainHash) (
+func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalapi.DomainHash) (
 	lowHash *externalapi.DomainHash, err error) {
 
 	lowHash = flow.Config().ActiveNetParams.GenesisHash
-	highHash := peerSelectedTipHash
+	currentHighHash := highHash
 
 	for {
-		err := flow.sendGetBlockLocator(lowHash, highHash, nil)
+		err := flow.sendGetBlockLocator(lowHash, currentHighHash, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +184,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash 
 			return locatorHighHash, nil
 		}
 
-		highHash, lowHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		currentHighHash, lowHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
 		if err != nil {
 			return nil, err
 		}
@@ -195,9 +192,9 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(peerSelectedTipHash 
 }
 
 func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
-	peerSelectedTipHash *externalapi.DomainHash) error {
+	highHash *externalapi.DomainHash) error {
 
-	err := flow.sendRequestHeaders(highestSharedBlockHash, peerSelectedTipHash)
+	err := flow.sendRequestHeaders(highestSharedBlockHash, highHash)
 	if err != nil {
 		return err
 	}
