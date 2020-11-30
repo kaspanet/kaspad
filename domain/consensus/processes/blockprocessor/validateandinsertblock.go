@@ -240,7 +240,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 		return err
 	}
 
-	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
+	err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
 	}
