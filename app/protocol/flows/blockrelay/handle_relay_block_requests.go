@@ -5,6 +5,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -31,7 +32,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			if err != nil {
 				return err
 			}
-			if !blockInfo.Exists {
+			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				return protocolerrors.Errorf(true, "block %s not found", hash)
 			}
 			block, err := context.Domain().Consensus().GetBlock(hash)

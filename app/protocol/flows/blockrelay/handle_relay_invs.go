@@ -69,7 +69,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if blockInfo.Exists {
+		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
@@ -148,7 +148,7 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 	if err != nil {
 		return nil, err
 	}
-	if blockInfo.Exists {
+	if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 		return nil, nil
 	}
 
@@ -291,7 +291,7 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 		if err != nil {
 			return false, err
 		}
-		if blockInfo.Exists {
+		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			return true, nil
 		}
 	}

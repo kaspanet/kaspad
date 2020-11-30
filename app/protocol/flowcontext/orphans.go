@@ -52,7 +52,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			if err != nil {
 				return nil, err
 			}
-			if !orphanBlockParentInfo.Exists {
+			if !orphanBlockParentInfo.Exists || orphanBlockParentInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				log.Tracef("Cannot unorphan block %s. It's missing at "+
 					"least the following parent: %s", orphanHash, orphanBlockParentHash)
 
