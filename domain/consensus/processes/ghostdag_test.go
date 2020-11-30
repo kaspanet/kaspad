@@ -6,30 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"reflect"
 	"testing"
 )
-
-/*----------------contains-------------------------- */
-func contains(s *externalapi.DomainHash, g []*externalapi.DomainHash) bool {
-	for _, r := range g {
-		if *r == *s {
-			return true
-		}
-	}
-	return false
-}
-
-func DeepEqualHashArrays(runtime, expected []*externalapi.DomainHash) bool {
-	if len(runtime) != len(expected) {
-		return false
-	}
-	for _, hash := range runtime {
-		if !contains(hash, expected) {
-			return false
-		}
-	}
-	return true
-}
 
 func TestGHOSTDA(t *testing.T) {
 
@@ -443,34 +422,22 @@ func TestGHOSTDA(t *testing.T) {
 					t.Fatalf("Test #%d failed: expected selected parent %v but got %v.", testNum+1, testBlockData.expectedSelectedParent, ghostdagData.SelectedParent)
 				}
 
-				if !DeepEqualHashArrays(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
+				if !reflect.DeepEqual(testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues) {
 					t.Fatalf("Test #%d failed: expected merge set blues %v but got %v.", testNum+1, testBlockData.expectedMergeSetBlues, ghostdagData.MergeSetBlues)
 				}
 
-				if !DeepEqualHashArrays(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
+				if !reflect.DeepEqual(testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds) {
 					t.Fatalf("Test #%d failed: expected merge set reds %v but got %v.", testNum+1, testBlockData.expectedMergeSetReds, ghostdagData.MergeSetReds)
 				}
 
 			}
 			fmt.Printf("    Test success!\n\n")
 
-			//fmt.Printf("Test %d successfully finished. \n", testStruct.testNum+1)
-
-			dagTopology := &DAGTopologyManagerImpl{
-				parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
-			}
+			dagTopology.parentsMap = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 			dagTopology.parentsMap[*genesisHash] = nil
-
-			ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-				dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-			}
-			ghostdagDataStore.dagMap[*genesisHash] = &model.BlockGHOSTDAGData{
-				BlueScore:          1,
-				SelectedParent:     nil,
-				MergeSetBlues:      nil,
-				MergeSetReds:       nil,
-				BluesAnticoneSizes: nil,
-			}
+			blockGHOSTDAGDataGenesis := ghostdagDataStore.dagMap[*genesisHash]
+			ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
+			ghostdagDataStore.dagMap[*genesisHash] = blockGHOSTDAGDataGenesis
 		}
 	}
 
@@ -502,16 +469,14 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 //	return nil
 //}
 func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
-	v, ok := ds.dagMap[*blockHash]
-	if ok {
-		return v, nil
+	blockData, isExist := ds.dagMap[*blockHash]
+	if isExist {
+		return blockData, nil
 	}
 	return nil, nil
 }
 
-//candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]model.KType, gm.k)
 type DAGTopologyManagerImpl struct {
-	//dagMap map[*externalapi.DomainHash] *model.BlockGHOSTDAGData
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
 }
 
@@ -525,12 +490,11 @@ func (dt *DAGTopologyManagerImpl) AddTip(tipHash *externalapi.DomainHash) error 
 
 //Implemented//
 func (dt *DAGTopologyManagerImpl) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	v, ok := dt.parentsMap[*blockHash]
-	if !ok {
-		return make([]*externalapi.DomainHash, 0), nil
+	blockData, isExist := dt.parentsMap[*blockHash]
+	if !isExist {
+		return []*externalapi.DomainHash{}, nil
 	}
-
-	return v, nil
+	return blockData, nil
 }
 
 func (dt *DAGTopologyManagerImpl) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -546,22 +510,24 @@ func (dt *DAGTopologyManagerImpl) IsChildOf(blockHashA *externalapi.DomainHash, 
 }
 
 //Implemented//
-func (dt *DAGTopologyManagerImpl) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	bParents, ok := dt.parentsMap[*blockHashB]
-	if !ok {
+func (dt *DAGTopologyManagerImpl) IsAncestorOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
+	blockBParents, isOk := dt.parentsMap[*hashBlockB]
+	if !isOk {
 		return false, nil
 	}
-	for _, parent := range bParents {
-		if *parent == *blockHashA {
+
+	for _, parentOfB := range blockBParents {
+		if *parentOfB == *hashBlockA {
 			return true, nil
 		}
 	}
-	for _, y := range bParents {
-		isAnc, err := dt.IsAncestorOf(blockHashA, y)
+
+	for _, parentOfB := range blockBParents {
+		isAncestorOf, err := dt.IsAncestorOf(hashBlockA, parentOfB)
 		if err != nil {
 			return false, err
 		}
-		if isAnc {
+		if isAncestorOf {
 			return true, nil
 		}
 	}
