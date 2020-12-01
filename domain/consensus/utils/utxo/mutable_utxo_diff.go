@@ -12,8 +12,9 @@ type mutableUTXODiff struct {
 	*utxoDiff
 }
 
-func NewMutableUTXODiff() *mutableUTXODiff {
-	return &mutableUTXODiff{utxoDiff: NewUTXODiff()}
+// NewMutableUTXODiff creates an empty mutable UTXO-Diff
+func NewMutableUTXODiff() model.MutableUTXODiff {
+	return &mutableUTXODiff{utxoDiff: newUTXODiff()}
 }
 
 func (md *mutableUTXODiff) ToUnmutable() model.UTXODiff {

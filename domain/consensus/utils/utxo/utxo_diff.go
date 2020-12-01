@@ -13,13 +13,19 @@ type utxoDiff struct {
 	toRemove utxoCollection
 }
 
-func NewUTXODiff() *utxoDiff {
+// NewUTXODiff creates an empty UTXODiff
+func NewUTXODiff() model.UTXODiff {
+	return newUTXODiff()
+}
+
+func newUTXODiff() *utxoDiff {
 	return &utxoDiff{
 		toAdd:    utxoCollection{},
 		toRemove: utxoCollection{},
 	}
 }
 
+// NewUTXODiffFromCollections returns a new UTXODiff with the given toAdd and toRemove collections
 func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTXODiff, error) {
 	add, ok := toAdd.(utxoCollection)
 	if !ok {

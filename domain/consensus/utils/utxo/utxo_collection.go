@@ -12,6 +12,7 @@ import (
 
 type utxoCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
 
+// NewUTXOCollection creates a UTXO-Collection from the given map from outpoint to UTXOEntry
 func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]*externalapi.UTXOEntry) model.UTXOCollection {
 	return utxoCollection(utxoMap)
 }
