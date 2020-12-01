@@ -3,7 +3,6 @@ package syncmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // areHeaderTipsSyncedMaxTimeDifference is the number of blocks from
@@ -18,7 +17,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	}
 
 	var ibdRootUTXOBlockHash *externalapi.DomainHash
-	if syncState == externalapi.SyncStateMissingUTXOSet {
+	if syncState == externalapi.SyncStateAwaitingUTXOSet {
 		ibdRootUTXOBlockHash, err = sm.consensusStateManager.HeaderTipsPruningPoint()
 		if err != nil {
 			return nil, err
@@ -42,27 +41,19 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return 0, err
 	}
 	if !hasTips {
-		return externalapi.SyncStateMissingGenesis, nil
+		return externalapi.SyncStateAwaitingGenesis, nil
 	}
 
 	headerVirtualSelectedParentHash, err := sm.headerVirtualSelectedParentHash()
 	if err != nil {
 		return 0, err
 	}
-	isSynced, err := sm.areHeaderTipsSynced(headerVirtualSelectedParentHash)
-	if err != nil {
-		return 0, err
-	}
-	if !isSynced {
-		return externalapi.SyncStateHeadersFirst, nil
-	}
-
 	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
 	if err != nil {
 		return 0, err
 	}
 	if *virtualSelectedParentHash == *headerVirtualSelectedParentHash {
-		return externalapi.SyncStateRelay, nil
+		return externalapi.SyncStateSynced, nil
 	}
 
 	// Once the header tips are synced, check the status of
@@ -80,10 +71,10 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return 0, err
 	}
 	if headerTipsPruningPointStatus != externalapi.StatusValid {
-		return externalapi.SyncStateMissingUTXOSet, nil
+		return externalapi.SyncStateAwaitingUTXOSet, nil
 	}
 
-	return externalapi.SyncStateMissingBlockBodies, nil
+	return externalapi.SyncStateAwaitingBlockBodies, nil
 }
 
 func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, error) {
@@ -100,21 +91,6 @@ func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHas
 		return nil, err
 	}
 	return sm.ghostdagManager.ChooseSelectedParent(headerTips...)
-}
-
-func (sm *syncManager) areHeaderTipsSynced(headerVirtualSelectedParentHash *externalapi.DomainHash) (bool, error) {
-	virtualSelectedParentHeader, err := sm.blockHeaderStore.BlockHeader(sm.databaseContext, headerVirtualSelectedParentHash)
-	if err != nil {
-		return false, err
-	}
-	virtualSelectedParentTimeInMilliseconds := virtualSelectedParentHeader.TimeInMilliseconds
-
-	nowInMilliseconds := mstime.Now().UnixMilliseconds()
-	timeDifference := nowInMilliseconds - virtualSelectedParentTimeInMilliseconds
-
-	maxTimeDifference := areHeaderTipsSyncedMaxTimeDifference * sm.targetTimePerBlock
-
-	return timeDifference <= maxTimeDifference, nil
 }
 
 func (sm *syncManager) getHeaderCount() uint64 {

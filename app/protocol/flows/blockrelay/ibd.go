@@ -34,7 +34,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
-	if syncInfo.State == externalapi.SyncStateMissingUTXOSet {
+	if syncInfo.State == externalapi.SyncStateAwaitingUTXOSet {
 		found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
 		if err != nil {
 			return err
