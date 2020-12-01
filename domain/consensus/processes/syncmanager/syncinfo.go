@@ -1,7 +1,6 @@
 package syncmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -48,11 +47,11 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 	if err != nil {
 		return 0, err
 	}
-	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
+	headerVirtualSelectedParentStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerVirtualSelectedParentHash)
 	if err != nil {
 		return 0, err
 	}
-	if *virtualSelectedParentHash == *headerVirtualSelectedParentHash {
+	if headerVirtualSelectedParentStatus != externalapi.StatusHeaderOnly {
 		return externalapi.SyncStateSynced, nil
 	}
 
@@ -75,14 +74,6 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 	}
 
 	return externalapi.SyncStateAwaitingBlockBodies, nil
-}
-
-func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, error) {
-	virtualGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-	return virtualGHOSTDAGData.SelectedParent, nil
 }
 
 func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHash, error) {
