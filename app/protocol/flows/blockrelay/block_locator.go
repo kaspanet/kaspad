@@ -15,7 +15,7 @@ func (flow *handleRelayInvsFlow) sendGetBlockLocator(lowHash *externalapi.Domain
 		rawLimit = uint32(*limit)
 	}
 
-	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, lowHash, rawLimit)
+	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(lowHash, highHash, rawLimit)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 

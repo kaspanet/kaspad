@@ -5,13 +5,13 @@ import (
 )
 
 // MsgRequestBlockLocator implements the Message interface and represents a kaspa
-// RequestBlockLocator message. It is used to request a block locator between high
-// and low hash.
+// RequestBlockLocator message. It is used to request a block locator between low
+// and high hash.
 // The locator is returned via a locator message (MsgBlockLocator).
 type MsgRequestBlockLocator struct {
 	baseMessage
-	HighHash *externalapi.DomainHash
 	LowHash  *externalapi.DomainHash
+	HighHash *externalapi.DomainHash
 	Limit    uint32
 }
 
@@ -24,10 +24,10 @@ func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 // NewMsgRequestBlockLocator returns a new RequestBlockLocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgRequestBlockLocator(highHash, lowHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
+func NewMsgRequestBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
 	return &MsgRequestBlockLocator{
-		HighHash: highHash,
 		LowHash:  lowHash,
+		HighHash: highHash,
 		Limit:    limit,
 	}
 }

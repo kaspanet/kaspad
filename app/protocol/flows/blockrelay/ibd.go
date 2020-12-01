@@ -191,7 +191,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalap
 			return locatorHighHash, nil
 		}
 
-		currentHighHash, lowHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
+		lowHash, currentHighHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
 		if err != nil {
 			return nil, err
 		}
