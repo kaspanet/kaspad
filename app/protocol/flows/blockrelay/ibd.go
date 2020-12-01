@@ -50,7 +50,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
-	log.Debugf("Trying to find highest shared chain block with peer %s with selected tip %s", flow.peer, highHash)
+	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
