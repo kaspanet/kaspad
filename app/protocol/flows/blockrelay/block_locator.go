@@ -20,7 +20,7 @@ func (flow *handleRelayInvsFlow) sendGetBlockLocator(lowHash *externalapi.Domain
 }
 
 func (flow *handleRelayInvsFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}

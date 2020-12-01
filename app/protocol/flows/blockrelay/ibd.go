@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/pkg/errors"
+	"time"
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
@@ -80,7 +81,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(peerSelectedTipHash *ext
 		}
 
 		for _, expectedHash := range hashesToRequest {
-			message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+			message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 			if err != nil {
 				return err
 			}
@@ -141,7 +142,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 }
 
 func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -211,9 +212,11 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 		if err != nil {
 			return err
 		}
-
 		if doneIBD {
 			return nil
+		}
+		if msgBlockHeader == nil {
+			continue
 		}
 
 		err = flow.processHeader(msgBlockHeader)
@@ -239,7 +242,7 @@ func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *exte
 }
 
 func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
@@ -252,6 +255,21 @@ func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlo
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s", appmessage.CmdHeader, appmessage.CmdDoneHeaders, message.Command())
+	}
+}
+
+// dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
+// IBD. Inv messages are expected to arrive at any given moment, but should be
+// ignored while we're in IBD
+func (flow *handleRelayInvsFlow) dequeueIncomingMessageAndSkipInvs(timeout time.Duration) (appmessage.Message, error) {
+	for {
+		message, err := flow.incomingRoute.DequeueWithTimeout(timeout)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := message.(*appmessage.MsgInvRelayBlock); !ok {
+			return message, nil
+		}
 	}
 }
 
