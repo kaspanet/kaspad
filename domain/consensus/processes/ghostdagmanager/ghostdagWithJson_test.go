@@ -175,9 +175,8 @@ type GHOSTDAGDataStoreImpl struct {
 	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) error {
+func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
-	return nil
 }
 
 func (ds *GHOSTDAGDataStoreImpl) IsStaged() bool {
