@@ -42,19 +42,9 @@ func CollectionContains(collection model.UTXOCollection, outpoint *externalapi.D
 	return ok
 }
 
-// containsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
+// CollectionContainsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
-func collectionContainsWithBlueScore(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
+func CollectionContainsWithBlueScore(collection model.UTXOCollection, outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
 	entry, ok := CollectionGet(collection, outpoint)
 	return ok && entry.BlockBlueScore == blueScore
-}
-
-// clone returns a clone of this collection
-func collectionClone(collection model.UTXOCollection) model.UTXOCollection {
-	clone := make(model.UTXOCollection, len(collection))
-	for outpoint, entry := range collection {
-		collectionAdd(clone, &outpoint, entry)
-	}
-
-	return clone
 }

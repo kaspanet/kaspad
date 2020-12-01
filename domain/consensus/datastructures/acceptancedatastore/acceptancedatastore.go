@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -14,25 +15,21 @@ var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
 type acceptanceDataStore struct {
 	staging  map[externalapi.DomainHash]model.AcceptanceData
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    *lrucache.LRUCache
 }
 
 // New instantiates a new AcceptanceDataStore
-func New() model.AcceptanceDataStore {
+func New(cacheSize int) model.AcceptanceDataStore {
 	return &acceptanceDataStore{
 		staging:  make(map[externalapi.DomainHash]model.AcceptanceData),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize),
 	}
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
-	clone, err := ads.cloneAcceptanceData(acceptanceData)
-	if err != nil {
-		return err
-	}
-
-	ads.staging[*blockHash] = clone
-	return nil
+func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) {
+	ads.staging[*blockHash] = acceptanceData.Clone()
 }
 
 func (ads *acceptanceDataStore) IsStaged() bool {
@@ -54,6 +51,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ads.cache.Add(&hash, acceptanceData)
 	}
 
 	for hash := range ads.toDelete {
@@ -61,6 +59,7 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ads.cache.Remove(&hash)
 	}
 
 	ads.Discard()
@@ -70,7 +69,11 @@ func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the acceptanceData associated with the given blockHash
 func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.AcceptanceData, error) {
 	if acceptanceData, ok := ads.staging[*blockHash]; ok {
-		return acceptanceData, nil
+		return acceptanceData.Clone(), nil
+	}
+
+	if acceptanceData, ok := ads.cache.Get(blockHash); ok {
+		return acceptanceData.(model.AcceptanceData).Clone(), nil
 	}
 
 	acceptanceDataBytes, err := dbContext.Get(ads.hashAsKey(blockHash))
@@ -78,7 +81,12 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 		return nil, err
 	}
 
-	return ads.deserializeAcceptanceData(acceptanceDataBytes)
+	acceptanceData, err := ads.deserializeAcceptanceData(acceptanceDataBytes)
+	if err != nil {
+		return nil, err
+	}
+	ads.cache.Add(blockHash, acceptanceData)
+	return acceptanceData.Clone(), nil
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
@@ -106,13 +114,4 @@ func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []
 
 func (ads *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash[:])
-}
-
-func (ads *acceptanceDataStore) cloneAcceptanceData(acceptanceData model.AcceptanceData) (model.AcceptanceData, error) {
-	serialized, err := ads.serializeAcceptanceData(acceptanceData)
-	if err != nil {
-		return nil, err
-	}
-
-	return ads.deserializeAcceptanceData(serialized)
 }

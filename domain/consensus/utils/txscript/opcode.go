@@ -2249,7 +2249,6 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		secpHash := secp256k1.Hash(*sigHash)
 		var valid bool
 		if vm.sigCache != nil {
-
 			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)
 			if !valid && parsedPubKey.SchnorrVerify(&secpHash, parsedSig) {
 				vm.sigCache.Add(secpHash, parsedSig, parsedPubKey)

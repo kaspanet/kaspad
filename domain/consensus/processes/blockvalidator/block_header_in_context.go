@@ -16,11 +16,6 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	err = v.checkParentsIncest(header)
-	if err != nil {
-		return err
-	}
-
 	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
 	if err != nil {
 		return err

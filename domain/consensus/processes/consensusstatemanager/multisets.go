@@ -11,7 +11,12 @@ import (
 func (csm *consensusStateManager) calculateMultiset(
 	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
+	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent)
+	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent)
+
 	if blockGHOSTDAGData.SelectedParent == nil {
+		log.Tracef("Selected parent is nil, which could only happen for the genesis. " +
+			"The genesis, by definition, has an empty multiset")
 		return multiset.New(), nil
 	}
 
@@ -19,21 +24,26 @@ func (csm *consensusStateManager) calculateMultiset(
 	if err != nil {
 		return nil, err
 	}
+	log.Tracef("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent, ms.Hash())
 
 	for _, blockAcceptanceData := range acceptanceData {
 		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			transaction := transactionAcceptanceData.Transaction
+			transactionID := consensusserialization.TransactionID(transaction)
 			if !transactionAcceptanceData.IsAccepted {
+				log.Tracef("Skipping transaction %s because it was not accepted", transactionID)
 				continue
 			}
 
-			transaction := transactionAcceptanceData.Transaction
-
 			isCoinbase := i == 0
+			log.Tracef("Is transaction %s a coinbase transaction: %t", transactionID, isCoinbase)
+
 			var err error
 			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
 			if err != nil {
 				return nil, err
 			}
+			log.Tracef("Added transaction %s to the multiset", transactionID)
 		}
 	}
 
@@ -43,7 +53,13 @@ func (csm *consensusStateManager) calculateMultiset(
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
 	blockBlueScore uint64, isCoinbase bool) error {
 
+	transactionID := consensusserialization.TransactionID(transaction)
+	log.Tracef("addTransactionToMultiset start for transaction %s", transactionID)
+	defer log.Tracef("addTransactionToMultiset end for transaction %s", transactionID)
+
 	for _, input := range transaction.Inputs {
+		log.Tracef("Removing input %s at index %d from the multiset",
+			input.PreviousOutpoint.TransactionID, input.PreviousOutpoint.Index)
 		err := removeUTXOFromMultiset(multiset, input.UTXOEntry, &input.PreviousOutpoint)
 		if err != nil {
 			return err
@@ -52,7 +68,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
-			TransactionID: *consensusserialization.TransactionID(transaction),
+			TransactionID: *transactionID,
 			Index:         uint32(i),
 		}
 		utxoEntry := &externalapi.UTXOEntry{
@@ -61,6 +77,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 			BlockBlueScore:  blockBlueScore,
 			IsCoinbase:      isCoinbase,
 		}
+		log.Tracef("Adding input %s at index %d from the multiset", transactionID, i)
 		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)
 		if err != nil {
 			return err

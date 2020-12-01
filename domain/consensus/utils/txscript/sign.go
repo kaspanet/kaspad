@@ -16,7 +16,7 @@ import (
 // RawTxInSignature returns the serialized Schnorr signature for the input idx of
 // the given transaction, with hashType appended to it.
 func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script []byte,
-	hashType SigHashType, key *secp256k1.PrivateKey) ([]byte, error) {
+	hashType SigHashType, key *secp256k1.SchnorrKeyPair) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(script, hashType, tx, idx)
 	if err != nil {
@@ -39,7 +39,7 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script []byte,
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *externalapi.DomainTransaction, idx int, script []byte, hashType SigHashType, privKey *secp256k1.PrivateKey, compress bool) ([]byte, error) {
+func SignatureScript(tx *externalapi.DomainTransaction, idx int, script []byte, hashType SigHashType, privKey *secp256k1.SchnorrKeyPair) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
 	if err != nil {
 		return nil, err
@@ -49,17 +49,12 @@ func SignatureScript(tx *externalapi.DomainTransaction, idx int, script []byte, 
 	if err != nil {
 		return nil, err
 	}
-	var pkData []byte
-	if compress {
-		pkData, err = pk.SerializeCompressed()
-	} else {
-		pkData, err = pk.SerializeUncompressed()
-	}
+	pkData, err := pk.Serialize()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
+	return NewScriptBuilder().AddData(sig).AddData(pkData[:]).Script()
 }
 
 func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
@@ -75,13 +70,12 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 	switch class {
 	case PubKeyHashTy:
 		// look up key for address
-		key, compressed, err := kdb.GetKey(address)
+		key, err := kdb.GetKey(address)
 		if err != nil {
 			return nil, class, nil, err
 		}
 
-		signedScript, err := SignatureScript(tx, idx, script, hashType,
-			key, compressed)
+		signedScript, err := SignatureScript(tx, idx, script, hashType, key)
 		if err != nil {
 			return nil, class, nil, err
 		}
@@ -162,15 +156,14 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(util.Address) (*secp256k1.PrivateKey, bool, error)
+	GetKey(util.Address) (*secp256k1.SchnorrKeyPair, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(util.Address) (*secp256k1.PrivateKey, bool, error)
+type KeyClosure func(util.Address) (*secp256k1.SchnorrKeyPair, error)
 
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address util.Address) (*secp256k1.PrivateKey,
-	bool, error) {
+func (kc KeyClosure) GetKey(address util.Address) (*secp256k1.SchnorrKeyPair, error) {
 	return kc(address)
 }
 

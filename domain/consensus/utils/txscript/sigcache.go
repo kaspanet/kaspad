@@ -6,7 +6,6 @@ package txscript
 
 import (
 	"github.com/kaspanet/go-secp256k1"
-	"sync"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the
@@ -31,7 +30,6 @@ type sigCacheEntry struct {
 // optimization which speeds up the validation of transactions within a block,
 // if they've already been seen and verified within the mempool.
 type SigCache struct {
-	sync.RWMutex
 	validSigs  map[secp256k1.Hash]sigCacheEntry
 	maxEntries uint
 }
@@ -54,8 +52,6 @@ func NewSigCache(maxEntries uint) *SigCache {
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
 func (s *SigCache) Exists(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) bool {
-	s.RLock()
-	defer s.RUnlock()
 	entry, ok := s.validSigs[sigHash]
 
 	return ok && entry.pubKey.IsEqual(pubKey) && entry.sig.IsEqual(sig)
@@ -69,9 +65,6 @@ func (s *SigCache) Exists(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignatur
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
 func (s *SigCache) Add(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) {
-	s.Lock()
-	defer s.Unlock()
-
 	if s.maxEntries == 0 {
 		return
 	}

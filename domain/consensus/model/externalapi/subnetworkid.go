@@ -15,3 +15,13 @@ func (id DomainSubnetworkID) String() string {
 	}
 	return hex.EncodeToString(id[:])
 }
+
+// Clone returns a clone of DomainSubnetworkID
+func (id *DomainSubnetworkID) Clone() *DomainSubnetworkID {
+	if id == nil {
+		return nil
+	}
+
+	idClone := *id
+	return &idClone
+}

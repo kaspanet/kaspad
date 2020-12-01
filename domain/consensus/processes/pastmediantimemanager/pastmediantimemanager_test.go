@@ -1,12 +1,13 @@
 package pastmediantimemanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestPastMedianTime(t *testing.T) {
@@ -24,7 +25,7 @@ func TestPastMedianTime(t *testing.T) {
 		blockTime := params.GenesisBlock.Header.TimeInMilliseconds
 		for i := uint32(1); i < numBlocks; i++ {
 			blockTime += 1000
-			block, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{blockHashes[i-1]}, nil, nil)
+			block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{blockHashes[i-1]}, nil, nil)
 			if err != nil {
 				t.Fatalf("BuildBlockWithParents: %s", err)
 			}

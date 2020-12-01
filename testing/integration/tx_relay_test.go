@@ -6,15 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -116,7 +113,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	}
 
 	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
-		fromScript, txscript.SigHashAll, privateKey, true)
+		fromScript, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

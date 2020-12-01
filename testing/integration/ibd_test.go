@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/locks"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
@@ -33,7 +31,7 @@ func TestIBD(t *testing.T) {
 	select {
 	case <-time.After(defaultTimeout):
 		t.Fatalf("Timeout waiting for IBD to finish. Received %d blocks out of %d", receivedBlocks, numBlocks)
-	case <-locks.ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
+	case <-ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
 	}
 
 	tip1Hash, err := syncer.rpcClient.GetSelectedTipHash()

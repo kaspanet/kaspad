@@ -17,6 +17,8 @@ import (
 
 func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.BlockCoinbaseMaturity = 0
+
 		factory := consensus.NewFactory()
 
 		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
@@ -145,6 +147,92 @@ func TestDoubleSpends(t *testing.T) {
 		}
 		if goodBlock2Status != externalapi.StatusValid {
 			t.Fatalf("GoodBlock2 status expected to be '%s', but is '%s'", externalapi.StatusValid, goodBlock2Status)
+		}
+	})
+}
+
+func TestResolveBlockStatusSanity(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, "TestResolveBlockStatusSanity")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown()
+
+		genesisHash := params.GenesisHash
+		allHashes := []*externalapi.DomainHash{genesisHash}
+
+		// Make sure that the status of genesisHash is valid
+		genesisStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), genesisHash)
+		if err != nil {
+			t.Fatalf("error getting genesis status: %s", err)
+		}
+		if genesisStatus != externalapi.StatusValid {
+			t.Fatalf("genesis is unexpectedly non-valid. Its status is: %s", genesisStatus)
+		}
+
+		chainLength := int(params.K) + 1
+
+		// Add a chain of blocks over the genesis and make sure all their
+		// statuses are valid
+		currentHash := genesisHash
+		for i := 0; i < chainLength; i++ {
+			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("error adding block %d: %s", i, err)
+			}
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			if err != nil {
+				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
+			}
+			if blockStatus != externalapi.StatusValid {
+				t.Fatalf("block %d (%s) is unexpectedly non-valid. Its status is: %s", i, addedBlockHash, blockStatus)
+			}
+			currentHash = addedBlockHash
+			allHashes = append(allHashes, addedBlockHash)
+		}
+
+		// Add another chain of blocks over the genesis that's shorter than
+		// the original chain by 1. Here we expect all the statuses to be
+		// StatusUTXOPendingVerification
+		currentHash = genesisHash
+		for i := 0; i < chainLength-1; i++ {
+			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("error adding block %d: %s", i, err)
+			}
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			if err != nil {
+				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
+			}
+			if blockStatus != externalapi.StatusUTXOPendingVerification {
+				t.Fatalf("block %d (%s) has unexpected status. "+
+					"Want: %s, got: %s", i, addedBlockHash, externalapi.StatusUTXOPendingVerification, blockStatus)
+			}
+			currentHash = addedBlockHash
+			allHashes = append(allHashes, addedBlockHash)
+		}
+
+		// Add another two blocks to the second chain. This should trigger
+		// resolving the entire chain
+		for i := 0; i < 2; i++ {
+			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("error adding block %d: %s", i, err)
+			}
+			currentHash = addedBlockHash
+			allHashes = append(allHashes, addedBlockHash)
+		}
+
+		// Make sure that all the blocks in the DAG now have StatusValid
+		for _, hash := range allHashes {
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), hash)
+			if err != nil {
+				t.Fatalf("error getting block %s status: %s", hash, err)
+			}
+			if blockStatus != externalapi.StatusValid {
+				t.Fatalf("block %s is unexpectedly non-valid. Its status is: %s", hash, blockStatus)
+			}
 		}
 	})
 }
