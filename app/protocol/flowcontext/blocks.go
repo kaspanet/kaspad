@@ -104,10 +104,18 @@ func (f *FlowContext) IsIBDRunning() bool {
 // TrySetIBDRunning attempts to set `isInIBD`. Returns false
 // if it is already set
 func (f *FlowContext) TrySetIBDRunning() bool {
-	return atomic.CompareAndSwapUint32(&f.isInIBD, 0, 1)
+	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 0, 1)
+	if succeeded {
+		log.Infof("IBD started")
+	}
+	return succeeded
 }
 
 // SetIBDNotRunning unsets isInIBD
 func (f *FlowContext) UnsetIBDRunning() {
-	atomic.StoreUint32(&f.isInIBD, 0)
+	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 1, 0)
+	if !succeeded {
+		panic("attempted to unset isInIBD when it was not set to begin with")
+	}
+	log.Infof("IBD finished")
 }
