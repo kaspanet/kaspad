@@ -182,7 +182,7 @@
             ]
         },
         {
-            "ID": "P",
+            "ID": "2",
             "ExpectedScore": 11,
             "ExpectedSelectedParent": "M",
             "ExpectedReds": [],
@@ -236,14 +236,14 @@
             "ExpectedReds": ["Q"],
             "ExpectedBlues": [
                 "S",
-                "P",
+                "2",
                 "N",
                 "O"
             ],
             "Parents": [
                 "N",
                 "O",
-                "P",
+                "2",
                 "Q",
                 "S"
             ]
