@@ -155,7 +155,7 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the sidechain tip: %v", err)
 		}
 
-		if selectedTipGhostDagData.BlueScore() > sideChainTipGhostDagData.BlueScore() {
+		if selectedTipGhostDagData.BlueWork().Cmp(sideChainTipGhostDagData.BlueWork()) == 1 {
 			t.Fatalf("sideChainTip is not the bluest tip when it is expected to be")
 		}
 
