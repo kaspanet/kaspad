@@ -53,6 +53,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 
 func (flow *handleRelayInvsFlow) start() error {
 	for {
+		log.Debugf("Waiting for inv")
 		inv, err := flow.readInv()
 		if err != nil {
 			return err
@@ -69,10 +70,12 @@ func (flow *handleRelayInvsFlow) start() error {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
+			log.Debugf("Block %s already exists. continuing...", inv.Hash)
 			continue
 		}
 
 		if flow.IsOrphan(inv.Hash) {
+			log.Debugf("Block %s is a known orphan. continuing...", inv.Hash)
 			continue
 		}
 
@@ -81,6 +84,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if flow.IsInIBD() {
+			log.Debugf("Got block %s while in IBD. continuing...", inv.Hash)
 			// Block relay is disabled during IBD
 			continue
 		}
@@ -118,10 +122,13 @@ func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error)
 }
 
 func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) error {
+	log.Tracef("requestBlocks start")
+	defer log.Tracef("requestBlocks end")
+
 	numHashesToRequest := mathUtil.MinInt(appmessage.MaxRequestRelayBlocksHashes, requestQueue.len())
 	hashesToRequest := requestQueue.dequeue(numHashesToRequest)
 
-	pendingBlocks := map[externalapi.DomainHash]struct{}{}
+	requestedBlocksSet := map[externalapi.DomainHash]struct{}{}
 	var filteredHashesToRequest []*externalapi.DomainHash
 	for _, hash := range hashesToRequest {
 		exists := flow.SharedRequestedBlocks().addIfNotExists(hash)
@@ -138,18 +145,19 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 			continue
 		}
 
-		pendingBlocks[*hash] = struct{}{}
+		requestedBlocksSet[*hash] = struct{}{}
 		filteredHashesToRequest = append(filteredHashesToRequest, hash)
 	}
 
 	// Exit early if we've filtered out all the hashes
 	if len(filteredHashesToRequest) == 0 {
+		log.Debugf("requestBlocks - no hashes to request. Returning..")
 		return nil
 	}
 
-	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
+	// In case the function returns earlier than expected, we want to make sure flow.SharedRequestedBlocks() is
 	// clean from any pending blocks.
-	defer flow.SharedRequestedBlocks().removeSet(pendingBlocks)
+	defer flow.SharedRequestedBlocks().removeSet(requestedBlocksSet)
 
 	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks(filteredHashesToRequest)
 	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
@@ -157,7 +165,8 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		return err
 	}
 
-	for len(pendingBlocks) > 0 {
+	for _, expectedHash := range filteredHashesToRequest {
+		log.Debugf("Waiting for block %s", expectedHash)
 		msgBlock, err := flow.readMsgBlock()
 		if err != nil {
 			return err
@@ -165,17 +174,17 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 
 		block := appmessage.MsgBlockToDomainBlock(msgBlock)
 		blockHash := consensusserialization.BlockHash(block)
+		log.Criticalf("got block %s", blockHash)
 
-		if _, ok := pendingBlocks[*blockHash]; !ok {
-			return protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
+		if *blockHash != *expectedHash {
+			return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 		}
 
-		err = flow.processAndRelayBlock(requestQueue, block)
+		err = flow.processAndRelayBlock(requestQueue, requestedBlocksSet, block)
 		if err != nil {
 			return err
 		}
 
-		delete(pendingBlocks, *blockHash)
 		flow.SharedRequestedBlocks().remove(blockHash)
 	}
 	return nil
@@ -202,8 +211,11 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, block *externalapi.DomainBlock) error {
+func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, requestedBlocksSet map[externalapi.DomainHash]struct{}, block *externalapi.DomainBlock) error {
 	blockHash := consensusserialization.BlockHash(block)
+	log.Debugf("processAndRelayBlock start for block %s", blockHash)
+	defer log.Debugf("processAndRelayBlock end for block %s", blockHash)
+
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
@@ -240,6 +252,10 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 
 			// Request the parents for the orphan block from the peer that sent it.
 			for _, missingAncestor := range missingParentsError.MissingParentHashes {
+				if _, ok := requestedBlocksSet[*missingAncestor]; ok {
+					log.Debugf("ancestor %s already exists in requestedBlocksSet", missingAncestor)
+					continue
+				}
 				requestQueue.enqueueIfNotExists(missingAncestor)
 			}
 			return nil
@@ -254,7 +270,7 @@ func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueS
 		return err
 	}
 
-	log.Infof("Accepted block %s via relay", blockHash)
+	log.Debugf("Accepted block %s via relay", blockHash)
 
 	err = flow.StartIBDIfRequired()
 	if err != nil {

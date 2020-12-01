@@ -27,7 +27,6 @@ type gRPCConnection struct {
 	streamLock sync.RWMutex
 
 	stopChan                chan struct{}
-	clientConn              grpc.ClientConn
 	onDisconnectedHandler   server.OnDisconnectedHandler
 	onInvalidMessageHandler server.OnInvalidMessageHandler
 

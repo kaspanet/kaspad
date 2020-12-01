@@ -41,10 +41,15 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
+	log.Debugf("receiveVersionFlow.start() start")
+	defer log.Debugf("receiveVersionFlow.start() end")
+
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("Got version message")
 
 	msgVersion, ok := message.(*appmessage.MsgVersion)
 	if !ok {

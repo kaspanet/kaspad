@@ -48,6 +48,9 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *sendVersionFlow) start() error {
+	log.Debugf("sendVersionFlow.start() start")
+	defer log.Debugf("sendVersionFlow.start() end")
+
 	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return err
@@ -76,9 +79,11 @@ func (flow *sendVersionFlow) start() error {
 	}
 
 	// Wait for verack
+	log.Debugf("Waiting for verack")
 	_, err = flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
 	}
+	log.Debugf("Got verack")
 	return nil
 }
