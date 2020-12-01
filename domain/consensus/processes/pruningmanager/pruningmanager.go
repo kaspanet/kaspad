@@ -73,15 +73,28 @@ func New(
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
 func (pm *pruningManager) FindNextPruningPoint() error {
+	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	if !hasPruningPoint {
+		err = pm.savePruningPoint(pm.genesisHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	currentP, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
 	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	currentP, err := pm.PruningPoint()
-	if err != nil {
-		return err
-	}
 	currentPGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentP)
 	if err != nil {
 		return err
@@ -116,26 +129,6 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 		return pm.deletePastBlocks(candidatePHash)
 	}
 	return pm.deletePastBlocks(currentP)
-}
-
-// PruningPoint returns the hash of the current pruning point
-func (pm *pruningManager) PruningPoint() (*externalapi.DomainHash, error) {
-	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	if hasPruningPoint {
-		return pm.pruningStore.PruningPoint(pm.databaseContext)
-	}
-
-	// If there's no pruning point yet, set genesis as the pruning point.
-	// This is the genesis because it means `FindNextPruningPoint()` has never been called before,
-	// if this is part of the first `FindNextPruningPoint()` call, then it might move the pruning point forward.
-	err = pm.savePruningPoint(pm.genesisHash)
-	if err != nil {
-		return nil, err
-	}
-	return pm.genesisHash, nil
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {

@@ -26,7 +26,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 	for _, newBlock := range newBlocks {
 		blocklogger.LogBlock(block)
 
-		f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+		_ = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 
 		if f.onBlockAddedToDAGHandler != nil {
 			err := f.onBlockAddedToDAGHandler(newBlock)

@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/locks"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
@@ -56,6 +54,16 @@ func Test64IncomingConnections(t *testing.T) {
 	select {
 	case <-time.After(defaultTimeout):
 		t.Fatalf("Timeout waiting for block added notification from the bullies")
-	case <-locks.ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
+	case <-ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
 	}
+}
+
+// ReceiveFromChanWhenDone takes a blocking function and returns a channel that sends an empty struct when the function is done.
+func ReceiveFromChanWhenDone(callback func()) <-chan struct{} {
+	ch := make(chan struct{})
+	spawn("ReceiveFromChanWhenDone", func() {
+		callback()
+		close(ch)
+	})
+	return ch
 }

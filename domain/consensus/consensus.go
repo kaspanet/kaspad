@@ -124,6 +124,11 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 	blockInfo.BlockStatus = blockStatus
 
+	// If the status is invalid, then we don't have the necessary reachability data to check if it's in PruningPoint.Future.
+	if blockStatus == externalapi.StatusInvalid {
+		return blockInfo, nil
+	}
+
 	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
 	if err != nil {
 		return nil, err

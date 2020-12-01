@@ -3,6 +3,11 @@ package externalapi
 // BlockStatus represents the validation state of the block.
 type BlockStatus byte
 
+// Clone returns a clone of BlockStatus
+func (bs BlockStatus) Clone() BlockStatus {
+	return bs
+}
+
 const (
 	// StatusInvalid indicates that the block is invalid.
 	StatusInvalid BlockStatus = iota

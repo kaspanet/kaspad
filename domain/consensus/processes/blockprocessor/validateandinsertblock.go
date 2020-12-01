@@ -1,10 +1,12 @@
 package blockprocessor
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -129,10 +131,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		if err != nil {
 			return err
 		}
-		err = bp.headerTipsStore.Stage(tips)
-		if err != nil {
-			return err
-		}
+		bp.headerTipsStore.Stage(tips)
 	}
 
 	if syncInfo.State != externalapi.SyncStateMissingGenesis {
@@ -156,11 +155,25 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	}
 
 	log.Debugf("Block %s validated and inserted", hash)
-	virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return err
+
+	var logClosureErr error
+	log.Debugf("%s", logger.NewLogClosure(func() string {
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			logClosureErr = err
+			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
+		}
+		syncInfo, err := bp.syncManager.GetSyncInfo()
+		if err != nil {
+			logClosureErr = err
+			return fmt.Sprintf("Failed to get sync info: %s", err)
+		}
+		return fmt.Sprintf("New virtual's blue score: %d. Sync state: %s. Block count: %d. Header count: %d",
+			virtualGhostDAGData.BlueScore, syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
+	}))
+	if logClosureErr != nil {
+		return logClosureErr
 	}
-	log.Debugf("New virtual's blue score: %d", virtualGhostDAGData.BlueScore)
 
 	return nil
 }
@@ -216,10 +229,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 	}
 
 	if !hasHeader {
-		err = bp.blockHeaderStore.Stage(blockHash, block.Header)
-		if err != nil {
-			return err
-		}
+		bp.blockHeaderStore.Stage(blockHash, block.Header)
 	}
 
 	// If any validation until (included) proof-of-work fails, simply
@@ -230,7 +240,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *ex
 		return err
 	}
 
-	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
+	err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
 	if err != nil {
 		return err
 	}
@@ -276,12 +286,9 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 	blockHash := consensusserialization.BlockHash(block)
 
 	if mode.State != externalapi.SyncStateHeadersFirst {
-		err := bp.blockStore.Stage(blockHash, block)
-		if err != nil {
-			return err
-		}
+		bp.blockStore.Stage(blockHash, block)
 
-		err = bp.blockValidator.ValidateBodyInIsolation(blockHash)
+		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err
 		}

@@ -12,15 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DiffClone returns a new UTXODiff which is identical to the given diff
-func DiffClone(diff *model.UTXODiff) *model.UTXODiff {
-	clone := &model.UTXODiff{
-		ToAdd:    collectionClone(diff.ToAdd),
-		ToRemove: collectionClone(diff.ToRemove),
-	}
-	return clone
-}
-
 // DiffAddTransaction modifies the provided utxoDiff with provided transaction.
 func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
 	for _, input := range transaction.Inputs {
@@ -54,7 +45,7 @@ func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.Domai
 }
 
 func diffAddEntry(diff *model.UTXODiff, outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
-	if collectionContainsWithBlueScore(diff.ToRemove, outpoint, entry.BlockBlueScore) {
+	if CollectionContainsWithBlueScore(diff.ToRemove, outpoint, entry.BlockBlueScore) {
 		collectionRemove(diff.ToRemove, outpoint)
 	} else if _, exists := diff.ToAdd[*outpoint]; exists {
 		return errors.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
@@ -65,7 +56,7 @@ func diffAddEntry(diff *model.UTXODiff, outpoint *externalapi.DomainOutpoint, en
 }
 
 func diffRemoveEntry(diff *model.UTXODiff, outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
-	if collectionContainsWithBlueScore(diff.ToAdd, outpoint, entry.BlockBlueScore) {
+	if CollectionContainsWithBlueScore(diff.ToAdd, outpoint, entry.BlockBlueScore) {
 		collectionRemove(diff.ToAdd, outpoint)
 	} else if _, exists := diff.ToRemove[*outpoint]; exists {
 		return errors.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)

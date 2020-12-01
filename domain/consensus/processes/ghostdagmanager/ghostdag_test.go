@@ -57,6 +57,7 @@ func TestGHOSTDAG(t *testing.T) {
 		BluesAnticoneSizes: nil,
 	}
 
+	var testsCounter int
 	err := filepath.Walk("../../testdata/dags", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -136,10 +137,14 @@ func TestGHOSTDAG(t *testing.T) {
 			ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
 		}
 
+		testsCounter++
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if testsCounter != 3 {
+		t.Fatalf("Expected 3 test files, ran %d instead", testsCounter)
 	}
 }
 
@@ -170,9 +175,8 @@ type GHOSTDAGDataStoreImpl struct {
 	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) error {
+func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
-	return nil
 }
 
 func (ds *GHOSTDAGDataStoreImpl) IsStaged() bool {

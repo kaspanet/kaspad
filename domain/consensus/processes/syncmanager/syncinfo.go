@@ -9,7 +9,7 @@ import (
 // areHeaderTipsSyncedMaxTimeDifference is the number of blocks from
 // the header virtual selected parent (estimated by timestamps) for
 // kaspad to be considered not synced
-const areHeaderTipsSyncedMaxTimeDifference = 300_000 // 5 minutes
+const areHeaderTipsSyncedMaxTimeDifference = 300 // 5 minutes
 
 func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 	syncState, err := sm.resolveSyncState()
@@ -57,6 +57,14 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateHeadersFirst, nil
 	}
 
+	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
+	if err != nil {
+		return 0, err
+	}
+	if *virtualSelectedParentHash == *headerVirtualSelectedParentHash {
+		return externalapi.SyncStateRelay, nil
+	}
+
 	// Once the header tips are synced, check the status of
 	// the pruning point from the point of view of the header
 	// tips. We check it against StatusValid (rather than
@@ -75,15 +83,7 @@ func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
 		return externalapi.SyncStateMissingUTXOSet, nil
 	}
 
-	virtualSelectedParentHash, err := sm.virtualSelectedParentHash()
-	if err != nil {
-		return 0, err
-	}
-	if *virtualSelectedParentHash != *headerVirtualSelectedParentHash {
-		return externalapi.SyncStateMissingBlockBodies, nil
-	}
-
-	return externalapi.SyncStateRelay, nil
+	return externalapi.SyncStateMissingBlockBodies, nil
 }
 
 func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, error) {

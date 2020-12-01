@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
 var reachabilityDataBucket = dbkeys.MakeBucket([]byte("reachability-data"))
@@ -15,26 +16,22 @@ var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-re
 type reachabilityDataStore struct {
 	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
 	reachabilityReindexRootStaging *externalapi.DomainHash
+	reachabilityDataCache          *lrucache.LRUCache
+	reachabilityReindexRootCache   *externalapi.DomainHash
 }
 
 // New instantiates a new ReachabilityDataStore
-func New() model.ReachabilityDataStore {
+func New(cacheSize int) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]*model.ReachabilityData),
-		reachabilityReindexRootStaging: nil,
+		reachabilityDataStaging: make(map[externalapi.DomainHash]*model.ReachabilityData),
+		reachabilityDataCache:   lrucache.New(cacheSize),
 	}
 }
 
 // StageReachabilityData stages the given reachabilityData for the given blockHash
 func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
-	reachabilityData *model.ReachabilityData) error {
-	clone, err := rds.cloneReachabilityData(reachabilityData)
-	if err != nil {
-		return err
-	}
-
-	rds.reachabilityDataStaging[*blockHash] = clone
-	return nil
+	reachabilityData *model.ReachabilityData) {
+	rds.reachabilityDataStaging[*blockHash] = reachabilityData.Clone()
 }
 
 // StageReachabilityReindexRoot stages the given reachabilityReindexRoot
@@ -57,22 +54,22 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(reachabilityReindexRootKey, reachabilityReindexRootBytes)
 		if err != nil {
 			return err
 		}
+		rds.reachabilityReindexRootCache = rds.reachabilityReindexRootStaging
 	}
 	for hash, reachabilityData := range rds.reachabilityDataStaging {
 		reachabilityDataBytes, err := rds.serializeReachabilityData(reachabilityData)
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(rds.reachabilityDataBlockHashAsKey(&hash), reachabilityDataBytes)
 		if err != nil {
 			return err
 		}
+		rds.reachabilityDataCache.Add(&hash, reachabilityData)
 	}
 
 	rds.Discard()
@@ -84,7 +81,11 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 
 	if reachabilityData, ok := rds.reachabilityDataStaging[*blockHash]; ok {
-		return reachabilityData, nil
+		return reachabilityData.Clone(), nil
+	}
+
+	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
+		return reachabilityData.(*model.ReachabilityData).Clone(), nil
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
@@ -92,11 +93,20 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 		return nil, err
 	}
 
-	return rds.deserializeReachabilityData(reachabilityDataBytes)
+	reachabilityData, err := rds.deserializeReachabilityData(reachabilityDataBytes)
+	if err != nil {
+		return nil, err
+	}
+	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
+	return reachabilityData.Clone(), nil
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
 	if _, ok := rds.reachabilityDataStaging[*blockHash]; ok {
+		return true, nil
+	}
+
+	if rds.reachabilityDataCache.Has(blockHash) {
 		return true, nil
 	}
 
@@ -108,6 +118,11 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	if rds.reachabilityReindexRootStaging != nil {
 		return rds.reachabilityReindexRootStaging, nil
 	}
+
+	if rds.reachabilityReindexRootCache != nil {
+		return rds.reachabilityReindexRootCache, nil
+	}
+
 	reachabilityReindexRootBytes, err := dbContext.Get(reachabilityReindexRootKey)
 	if err != nil {
 		return nil, err
@@ -117,6 +132,7 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	if err != nil {
 		return nil, err
 	}
+	rds.reachabilityReindexRootCache = reachabilityReindexRoot
 	return reachabilityReindexRoot, nil
 }
 
@@ -150,13 +166,4 @@ func (rds *reachabilityDataStore) deserializeReachabilityReindexRoot(reachabilit
 	}
 
 	return serialization.DbHashToDomainHash(dbHash)
-}
-
-func (rds *reachabilityDataStore) cloneReachabilityData(reachabilityData *model.ReachabilityData) (*model.ReachabilityData, error) {
-	serialized, err := rds.serializeReachabilityData(reachabilityData)
-	if err != nil {
-		return nil, err
-	}
-
-	return rds.deserializeReachabilityData(serialized)
 }

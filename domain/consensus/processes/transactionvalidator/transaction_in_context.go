@@ -18,24 +18,24 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 
 	err := v.checkTransactionCoinbaseMaturity(povBlockHash, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	totalSompiIn, err := v.checkTransactionInputAmounts(tx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	totalSompiOut, err := v.checkTransactionOutputAmounts(tx, totalSompiIn)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
 	err = v.checkTransactionSequenceLock(povBlockHash, tx, selectedParentMedianTime)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = v.validateTransactionScripts(tx)
@@ -189,7 +189,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 
 		scriptPubKey := utxoEntry.ScriptPublicKey
 		vm, err := txscript.NewEngine(scriptPubKey, tx,
-			i, txscript.ScriptNoFlags, nil)
+			i, txscript.ScriptNoFlags, v.sigCache)
 		if err != nil {
 			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
 				"%d which references output %s - "+
