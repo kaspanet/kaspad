@@ -28,12 +28,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	err = bp.checkBlockStatus(blockHash, block)
+	err = bp.checkBlockStatus(blockHash, insertMode)
 	if err != nil {
 		return err
 	}
 
-	err = bp.validateBlock(block)
+	err = bp.validateBlock(block, insertMode)
 	if err != nil {
 		bp.discardAllChanges()
 		return err
@@ -51,7 +51,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if isHeaderOnlyBlock(block) {
+	if insertMode == insertModeHeader {
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	} else {
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
@@ -73,7 +73,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
-	if isHeaderOnlyBlock(block) {
+	if insertMode == insertModeHeader {
 		err = bp.headerTipsManager.AddHeaderTip(blockHash)
 		if err != nil {
 			return err
@@ -188,6 +188,10 @@ func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *ex
 	return insertModeBlock, nil
 }
 
+func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
+	return len(block.Transactions) == 0
+}
+
 func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
 	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
 	if err != nil {
@@ -201,11 +205,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
 }
 
-func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
-	return len(block.Transactions) == 0
-}
-
-func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode insertMode) error {
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, hash)
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, block *
 		return errors.Wrapf(ruleerrors.ErrKnownInvalid, "block %s is a known invalid block", hash)
 	}
 
-	isBlockBodyAfterBlockHeader := status == externalapi.StatusHeaderOnly && !isHeaderOnlyBlock(block)
+	isBlockBodyAfterBlockHeader := mode != insertModeHeader && status == externalapi.StatusHeaderOnly
 	if !isBlockBodyAfterBlockHeader {
 		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 	}
@@ -231,7 +231,7 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, block *
 	return nil
 }
 
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode insertMode) error {
 	blockHash := consensusserialization.HeaderHash(block.Header)
 	hasHeader, err := bp.hasHeader(blockHash)
 	if err != nil {
@@ -257,7 +257,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block)
+	err = bp.validatePostProofOfWork(block, mode)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
@@ -292,10 +292,10 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode insertMode) error {
 	blockHash := consensusserialization.BlockHash(block)
 
-	if !isHeaderOnlyBlock(block) {
+	if mode != insertModeHeader {
 		bp.blockStore.Stage(blockHash, block)
 
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
