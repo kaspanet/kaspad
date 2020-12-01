@@ -95,6 +95,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
+		blockHeaderStore,
 		dagParams.K)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
