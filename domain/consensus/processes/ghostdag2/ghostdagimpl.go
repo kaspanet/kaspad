@@ -13,6 +13,7 @@ type ghostdagHelper struct {
 	dagTopologyManager model.DAGTopologyManager
 }
 
+// New creates a new instance of this alternative ghostdag impl
 func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
