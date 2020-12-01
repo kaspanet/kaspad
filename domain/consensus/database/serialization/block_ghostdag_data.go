@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"math/big"
 )
 
 // BlockGHOSTDAGDataToDBBlockGHOSTDAGData converts BlockGHOSTDAGData to DbBlockGhostdagData
@@ -15,6 +16,7 @@ func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData model.BlockGHOSTDA
 
 	return &DbBlockGhostdagData{
 		BlueScore:          blockGHOSTDAGData.BlueScore(),
+		BlueWork:           blockGHOSTDAGData.BlueWork().Bytes(),
 		SelectedParent:     selectedParent,
 		MergeSetBlues:      DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetBlues()),
 		MergeSetReds:       DomainHashesToDbHashes(blockGHOSTDAGData.MergeSetReds()),
@@ -50,6 +52,7 @@ func DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData *DbBlockGhostdag
 
 	return ghostdagmanager.NewBlockGHOSTDAGData(
 		dbBlockGHOSTDAGData.BlueScore,
+		new(big.Int).SetBytes(dbBlockGHOSTDAGData.BlueWork),
 		selectedParent,
 		mergetSetBlues,
 		mergetSetReds,
