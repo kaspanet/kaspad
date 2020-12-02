@@ -145,7 +145,7 @@ func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *ex
 	syncState := syncInfo.State
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
-	blockHash := consensusserialization.HeaderHash(block.Header)
+	blockHash := consensushashing.HeaderHash(block.Header)
 	if syncState == externalapi.SyncStateAwaitingGenesis {
 		if isHeaderOnlyBlock {
 			return 0, errors.Errorf("Got a header-only block while awaiting genesis")

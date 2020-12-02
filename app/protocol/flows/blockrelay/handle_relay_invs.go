@@ -8,10 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -173,7 +170,7 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
-		log.Criticalf("got block %s", blockHash)
+	log.Criticalf("got block %s", blockHash)
 
 	if *blockHash != *requestHash {
 		return nil, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
@@ -204,7 +201,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 }
 
 func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 	err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
@@ -223,7 +220,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 	err := flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 	if err != nil {
 		return err
@@ -235,7 +232,7 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 }
 
 func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 
 	// Return if the block has been orphaned from elsewhere already
 	if flow.IsOrphan(blockHash) {
