@@ -61,8 +61,8 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	return flow.downloadHeaders(highestSharedBlockHash, highHash)
 }
 
-func (flow *handleRelayInvsFlow) syncMissingBlockBodies(peerSelectedTipHash *externalapi.DomainHash) error {
-	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(peerSelectedTipHash)
+func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
 	if err != nil {
 		return err
 	}
