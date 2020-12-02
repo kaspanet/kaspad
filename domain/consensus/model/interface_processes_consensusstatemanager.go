@@ -11,12 +11,3 @@ type ConsensusStateManager interface {
 	HeaderTipsPruningPoint() (*externalapi.DomainHash, error)
 	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (*UTXODiff, AcceptanceData, Multiset, error)
 }
-
-// TestConsensusStateManager  adds to the main ConsensusStateManager methods required by tests
-type TestConsensusStateManager interface {
-	ConsensusStateManager
-	AddUTXOToMultiset(multiset Multiset, entry *externalapi.UTXOEntry,
-		outpoint *externalapi.DomainOutpoint) error
-	ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error)
-	VirtualFinalityPoint() (*externalapi.DomainHash, error)
-}
