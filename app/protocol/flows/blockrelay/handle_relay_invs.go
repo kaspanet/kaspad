@@ -238,7 +238,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 
 	// Return if the block has been orphaned from elsewhere already
 	if flow.IsOrphan(blockHash) {
-		log.Debugf("Skipping orphan processing for block %s because it is already an orphan")
+		log.Debugf("Skipping orphan processing for block %s because it is already an orphan", blockHash)
 		return nil
 	}
 
@@ -248,15 +248,15 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 		return err
 	}
 	if isBlockInOrphanResolutionRange {
-		log.Debugf("Block %s is within orphan resolution range. " +
-			"Adding it to the orphan set and requesting its missing parents")
+		log.Debugf("Block %s is within orphan resolution range. "+
+			"Adding it to the orphan set and requesting its missing parents", blockHash)
 		flow.addToOrphanSetAndRequestMissingParents(block, missingParents)
 		return nil
 	}
 
 	// Start IBD unless we already are in IBD
-	log.Debugf("Block %s is out of orphan resolution range. " +
-		"Attempting to start IBD against it.")
+	log.Debugf("Block %s is out of orphan resolution range. "+
+		"Attempting to start IBD against it.", blockHash)
 	return flow.runIBDIfNotRunning(blockHash)
 }
 

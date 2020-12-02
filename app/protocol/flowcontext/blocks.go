@@ -119,7 +119,7 @@ func (f *FlowContext) TrySetIBDRunning() bool {
 	return succeeded
 }
 
-// SetIBDNotRunning unsets isInIBD
+// UnsetIBDRunning unsets isInIBD
 func (f *FlowContext) UnsetIBDRunning() {
 	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 1, 0)
 	if !succeeded {
