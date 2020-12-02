@@ -136,42 +136,15 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		return nil, err
 	}
 
-	lowHashAnticone, err := sm.dagTraversalManager.AnticoneFromContext(highHash, lowHash)
-	if err != nil {
-		return nil, err
-	}
-
-	blocksToRemoveFromHashesBetween := hashset.New()
-	for _, blockHash := range lowHashAnticone {
-		isHeaderOnlyBlock, err := sm.isHeaderOnlyBlock(blockHash)
+	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween))
+	for _, blockHash := range hashesBetween {
+		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, blockHash)
 		if err != nil {
 			return nil, err
 		}
-
-		if !isHeaderOnlyBlock {
-			blocksToRemoveFromHashesBetween.Add(blockHash)
+		if blockStatus == externalapi.StatusHeaderOnly {
+			missingBlocks = append(missingBlocks, blockHash)
 		}
-	}
-
-	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween)-len(lowHashAnticone))
-	for i, blockHash := range hashesBetween {
-		// If blocksToRemoveFromHashesBetween is empty, no more blocks should be
-		// filtered, so we can copy the rest of hashesBetween into missingBlocks
-		if blocksToRemoveFromHashesBetween.Length() == 0 {
-			missingBlocks = append(missingBlocks, hashesBetween[i:]...)
-			break
-		}
-
-		if blocksToRemoveFromHashesBetween.Contains(blockHash) {
-			blocksToRemoveFromHashesBetween.Remove(blockHash)
-			continue
-		}
-
-		missingBlocks = append(missingBlocks, blockHash)
-	}
-
-	if blocksToRemoveFromHashesBetween.Length() != 0 {
-		return nil, errors.Errorf("blocksToRemoveFromHashesBetween.Length() is expected to be 0")
 	}
 
 	return missingBlocks, nil
