@@ -67,10 +67,10 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 		return err
 	}
 
-	for offset := 0; offset < len(hashes); offset += appmessage.MaxRequestIBDBlocksHashes {
+	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
-		if offset+appmessage.MaxRequestIBDBlocksHashes < len(hashes) {
-			hashesToRequest = hashes[offset : offset+appmessage.MaxRequestIBDBlocksHashes]
+		if offset+ibdBatchSize < len(hashes) {
+			hashesToRequest = hashes[offset : offset+ibdBatchSize]
 		} else {
 			hashesToRequest = hashes[offset:]
 		}
