@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -206,29 +205,6 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
-			blueScore, err := blocks.ExtractBlueScore(block)
-			if err != nil {
-				return nil, protocolerrors.Errorf(true, "received an orphan "+
-					"block %s with malformed blue score", blockHash)
-			}
-
-			const maxOrphanBlueScoreDiff = 10000
-			virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
-			if err != nil {
-				return nil, err
-			}
-			selectedTipBlueScore, err := blocks.ExtractBlueScore(virtualSelectedParent)
-			if err != nil {
-				return nil, err
-			}
-
-			if blueScore > selectedTipBlueScore+maxOrphanBlueScoreDiff {
-				log.Infof("Orphan block %s has blue score %d and the selected tip blue score is "+
-					"%d. Ignoring orphans with a blue score difference from the selected tip greater than %d",
-					blockHash, blueScore, selectedTipBlueScore, maxOrphanBlueScoreDiff)
-				return nil, nil
-			}
-
 			return missingParentsError.MissingParentHashes, nil
 		}
 		log.Infof("Rejected block %s from %s: %s", blockHash, flow.peer, err)
