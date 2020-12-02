@@ -11,9 +11,11 @@ type utxoEntry struct {
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
 func NewUTXOEntry(amount uint64, scriptPubKey []byte, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
+	scriptPubKeyClone := make([]byte, len(scriptPubKey))
+	copy(scriptPubKeyClone, scriptPubKey)
 	return &utxoEntry{
 		amount:          amount,
-		scriptPublicKey: scriptPubKey,
+		scriptPublicKey: scriptPubKeyClone,
 		blockBlueScore:  blockBlueScore,
 		isCoinbase:      isCoinbase,
 	}
