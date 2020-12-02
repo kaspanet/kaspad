@@ -5,7 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -130,9 +131,9 @@ func (p protoUTXOSetIterator) Next() bool {
 }
 
 func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
-	entry, outpoint, err := consensusserialization.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
+	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
 	if err != nil {
-		if consensusserialization.IsMalformedError(err) {
+		if serialization.IsMalformedError(err) {
 			return nil, nil, errors.Wrap(ruleerrors.ErrMalformedUTXO, "malformed utxo")
 		}
 		return nil, nil, err

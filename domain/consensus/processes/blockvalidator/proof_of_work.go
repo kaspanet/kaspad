@@ -3,13 +3,13 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
@@ -21,6 +21,11 @@ func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi
 	}
 
 	err = v.checkParentsIncest(header)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPruningPointViolation(header)
 	if err != nil {
 		return err
 	}
@@ -88,7 +93,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	// to avoid proof of work checks is set.
 	if !v.skipPoW {
 		// The block hash must be less than the claimed target.
-		hash := consensusserialization.HeaderHash(header)
+		hash := consensushashing.HeaderHash(header)
 		hashNum := hashes.ToBig(hash)
 		if hashNum.Cmp(target) > 0 {
 			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
@@ -118,4 +123,32 @@ func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader
 	}
 
 	return nil
+}
+func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBlockHeader) error {
+	// check if the pruning point is on past of at least one parent of the header's parents.
+
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	//If hasPruningPoint has a false value, it means that it's the genesis - so no violation can exist.
+	if !hasPruningPoint {
+		return nil
+	}
+
+	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes)
+	if err != nil {
+		return err
+	}
+	if isAncestorOfAny {
+		return nil
+	}
+	return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
+		"expected pruning point to be in block %d past.", header.Bits)
 }

@@ -3,16 +3,17 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 type testConsensus struct {
 	*consensus
 
-	testBlockBuilder          model.TestBlockBuilder
-	testReachabilityManager   model.TestReachabilityManager
-	testConsensusStateManager model.TestConsensusStateManager
-	testTransactionValidator  model.TestTransactionValidator
+	testBlockBuilder          testapi.TestBlockBuilder
+	testReachabilityManager   testapi.TestReachabilityManager
+	testConsensusStateManager testapi.TestConsensusStateManager
+	testTransactionValidator  testapi.TestTransactionValidator
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
@@ -43,7 +44,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, err
 	}
 
-	return consensusserialization.BlockHash(block), nil
+	return consensushashing.BlockHash(block), nil
 }
 
 func (tc *testConsensus) DiscardAllStores() {

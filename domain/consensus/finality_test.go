@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -49,7 +49,7 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process Block #%d: %v", i, err)
 			}
-			mainChainTipHash = consensusserialization.BlockHash(mainChainTip)
+			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 
 			blockInfo, err := consensus.GetBlockInfo(mainChainTipHash)
 			if err != nil {
@@ -69,7 +69,7 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
-			sideChainTipHash = consensusserialization.BlockHash(sideChainTip)
+			sideChainTipHash = consensushashing.BlockHash(sideChainTip)
 
 			blockInfo, err := consensus.GetBlockInfo(sideChainTipHash)
 			if err != nil {
@@ -89,7 +89,7 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
-			sideChainTipHash = consensusserialization.BlockHash(sideChainTip)
+			sideChainTipHash = consensushashing.BlockHash(sideChainTip)
 		}
 
 		// Make sure that now the sideChainTip is valid and selectedTip
@@ -107,7 +107,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		if *consensusserialization.BlockHash(selectedTip) != *sideChainTipHash {
+		if *consensushashing.BlockHash(selectedTip) != *sideChainTipHash {
 			t.Fatalf("Overtaking block in side-chain is not selectedTip")
 		}
 
@@ -117,7 +117,7 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
-			mainChainTipHash = consensusserialization.BlockHash(mainChainTip)
+			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 		}
 
 		virtualFinality, err := consensus.ConsensusStateManager().VirtualFinalityPoint()
@@ -137,7 +137,7 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
 			}
-			sideChainTipHash = consensusserialization.BlockHash(sideChainTip)
+			sideChainTipHash = consensushashing.BlockHash(sideChainTip)
 		}
 
 		// Check that sideChainTip hash higher blue score than the selected parent
@@ -145,7 +145,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), consensusserialization.BlockHash(selectedTip))
+		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), consensushashing.BlockHash(selectedTip))
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
@@ -222,7 +222,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		getStatus := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock) externalapi.BlockStatus {
-			blockInfo, err := consensus.GetBlockInfo(consensusserialization.BlockHash(block))
+			blockInfo, err := consensus.GetBlockInfo(consensushashing.BlockHash(block))
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed to get block info: %v", err)
 			} else if !blockInfo.Exists {
@@ -248,21 +248,21 @@ func TestBoundedMergeDepth(t *testing.T) {
 
 		// Create a chain
 		selectedChain := make([]*externalapi.DomainBlock, 0, finalityInterval+1)
-		parent := consensusserialization.BlockHash(block1)
+		parent := consensushashing.BlockHash(block1)
 		// Make sure this is always bigger than `blocksChain2` so it will stay the selected chain
 		for i := 0; i < finalityInterval+2; i++ {
 			block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
 			selectedChain = append(selectedChain, block)
-			parent = consensusserialization.BlockHash(block)
+			parent = consensushashing.BlockHash(block)
 		}
 
 		// Create another chain
 		blocksChain2 := make([]*externalapi.DomainBlock, 0, finalityInterval+1)
-		parent = consensusserialization.BlockHash(block1)
+		parent = consensushashing.BlockHash(block1)
 		for i := 0; i < finalityInterval+1; i++ {
 			block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
 			blocksChain2 = append(blocksChain2, block)
-			parent = consensusserialization.BlockHash(block)
+			parent = consensushashing.BlockHash(block)
 		}
 
 		// Teardown and assign nil to make sure we use the right DAG from here on.
@@ -284,20 +284,20 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// submit a block pointing at tip(chain1) and on first block in chain2 directly
-		mergeDepthViolatingBlockBottom, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensusserialization.BlockHash(blocksChain2[0]), consensusserialization.BlockHash(selectedChain[len(selectedChain)-1])})
+		mergeDepthViolatingBlockBottom, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[0]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
 		if !isViolatingMergeDepth {
 			t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingBlockBottom to violate merge depth")
 		}
 
 		// submit a block pointing at tip(chain1) and tip(chain2) should also obviously violate merge depth (this points at first block in chain2 indirectly)
-		mergeDepthViolatingTop, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensusserialization.BlockHash(blocksChain2[len(blocksChain2)-1]), consensusserialization.BlockHash(selectedChain[len(selectedChain)-1])})
+		mergeDepthViolatingTop, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-1]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
 		if !isViolatingMergeDepth {
 			t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingTop to violate merge depth")
 		}
 
 		// the location of the parents in the slices need to be both `-X` so the `selectedChain` one will have higher blueScore (it's a chain longer by 1)
-		kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensusserialization.BlockHash(blocksChain2[len(blocksChain2)-3]), consensusserialization.BlockHash(selectedChain[len(selectedChain)-3])})
-		kosherizingBlockHash := consensusserialization.BlockHash(kosherizingBlock)
+		kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-3]), consensushashing.BlockHash(selectedChain[len(selectedChain)-3])})
+		kosherizingBlockHash := consensushashing.BlockHash(kosherizingBlock)
 		if isViolatingMergeDepth {
 			t.Fatalf("TestBoundedMergeDepth: Expected blueKosherizingBlock to not violate merge depth")
 		}
@@ -318,7 +318,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Expected kosherizingBlock to be blue by the virtual")
 		}
 
-		pointAtBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, consensusserialization.BlockHash(selectedChain[len(selectedChain)-1])})
+		pointAtBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
 		if isViolatingMergeDepth {
 
 			t.Fatalf("TestBoundedMergeDepth: Expected selectedTip to not violate merge depth")
@@ -329,16 +329,16 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensusserialization.BlockHash(virtualSelectedParent) != *consensusserialization.BlockHash(pointAtBlueKosherizing) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensusserialization.BlockHash(pointAtBlueKosherizing), consensusserialization.BlockHash(virtualSelectedParent))
+		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(pointAtBlueKosherizing) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
 		}
 
 		// Now let's make the kosherizing block red and try to merge again
-		tip := consensusserialization.BlockHash(selectedChain[len(selectedChain)-1])
+		tip := consensushashing.BlockHash(selectedChain[len(selectedChain)-1])
 		// we use k-1 because `kosherizingBlock` points at tip-2, so 2+k-1 = k+1 anticone.
 		for i := 0; i < int(params.K)-1; i++ {
 			block := buildAndInsertBlock(consensusReal, []*externalapi.DomainHash{tip})
-			tip = consensusserialization.BlockHash(block)
+			tip = consensushashing.BlockHash(block)
 		}
 
 		virtualSelectedParent, err = consensusReal.GetVirtualSelectedParent()
@@ -346,8 +346,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensusserialization.BlockHash(virtualSelectedParent) != *tip {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, consensusserialization.BlockHash(virtualSelectedParent))
+		if *consensushashing.BlockHash(virtualSelectedParent) != *tip {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, consensushashing.BlockHash(virtualSelectedParent))
 		}
 
 		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(), model.VirtualBlockHash)
@@ -372,7 +372,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// Now `pointAtBlueKosherizing` itself is actually still blue, so we can still point at that even though we can't point at kosherizing directly anymore
-		transitiveBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensusserialization.BlockHash(pointAtBlueKosherizing), tip})
+		transitiveBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(pointAtBlueKosherizing), tip})
 		if isViolatingMergeDepth {
 			t.Fatalf("TestBoundedMergeDepth: Expected transitiveBlueKosherizing to not violate merge depth")
 		}
@@ -382,8 +382,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensusserialization.BlockHash(virtualSelectedParent) != *consensusserialization.BlockHash(transitiveBlueKosherizing) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensusserialization.BlockHash(transitiveBlueKosherizing), consensusserialization.BlockHash(virtualSelectedParent))
+		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(transitiveBlueKosherizing) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
 		}
 
 		// Lets validate the status of all the interesting blocks

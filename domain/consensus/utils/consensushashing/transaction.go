@@ -1,7 +1,9 @@
-package consensusserialization
+package consensushashing
 
 import (
 	"io"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -39,7 +41,7 @@ func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint3
 		panic(errors.Wrap(err, "TransactionHashForSigning() failed. this should never fail for structurally-valid transactions"))
 	}
 
-	err = WriteElement(writer, hashType)
+	err = serialization.WriteElement(writer, hashType)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
@@ -65,7 +67,6 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 
 // TransactionID generates the Hash for the transaction without the signature script and payload field.
 func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransactionID {
-
 	// If transaction ID is already cached, return it
 	if tx.ID != nil {
 		return tx.ID
@@ -92,13 +93,13 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
-	err := binaryserializer.PutUint32(w, littleEndian, uint32(tx.Version))
+	err := binaryserializer.PutUint32(w, uint32(tx.Version))
 	if err != nil {
 		return err
 	}
 
 	count := uint64(len(tx.Inputs))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 	}
 
 	count = uint64(len(tx.Outputs))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		}
 	}
 
-	err = binaryserializer.PutUint64(w, littleEndian, tx.LockTime)
+	err = binaryserializer.PutUint64(w, tx.LockTime)
 	if err != nil {
 		return err
 	}
@@ -133,12 +134,12 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	err = binaryserializer.PutUint64(w, littleEndian, tx.Gas)
+	err = binaryserializer.PutUint64(w, tx.Gas)
 	if err != nil {
 		return err
 	}
 
-	err = WriteElement(w, &tx.PayloadHash)
+	err = serialization.WriteElement(w, &tx.PayloadHash)
 	if err != nil {
 		return err
 	}
@@ -175,7 +176,7 @@ func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, 
 		return err
 	}
 
-	return binaryserializer.PutUint64(w, littleEndian, ti.Sequence)
+	return binaryserializer.PutUint64(w, ti.Sequence)
 }
 
 func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
@@ -184,12 +185,12 @@ func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 		return err
 	}
 
-	return binaryserializer.PutUint32(w, littleEndian, outpoint.Index)
+	return binaryserializer.PutUint32(w, outpoint.Index)
 }
 
 func writeVarBytes(w io.Writer, data []byte) error {
 	dataLength := uint64(len(data))
-	err := WriteElement(w, dataLength)
+	err := serialization.WriteElement(w, dataLength)
 	if err != nil {
 		return err
 	}
@@ -199,7 +200,7 @@ func writeVarBytes(w io.Writer, data []byte) error {
 }
 
 func writeTxOut(w io.Writer, to *externalapi.DomainTransactionOutput) error {
-	err := binaryserializer.PutUint64(w, littleEndian, to.Value)
+	err := binaryserializer.PutUint64(w, to.Value)
 	if err != nil {
 		return err
 	}

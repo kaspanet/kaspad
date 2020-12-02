@@ -153,6 +153,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		coinbaseManager,
 		mergeDepthManager,
+		pruningStore,
 
 		blockStore,
 		ghostdagDataStore,

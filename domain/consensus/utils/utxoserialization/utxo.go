@@ -2,7 +2,7 @@ package utxoserialization
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
 // ReadOnlyUTXOSetToProtoUTXOSet converts ReadOnlyUTXOSetIterator to ProtoUTXOSet
@@ -17,7 +17,7 @@ func ReadOnlyUTXOSetToProtoUTXOSet(iter model.ReadOnlyUTXOSetIterator) (*ProtoUT
 			return nil, err
 		}
 
-		serializedUTXOBytes, err := consensusserialization.SerializeUTXO(entry, outpoint)
+		serializedUTXOBytes, err := utxo.SerializeUTXO(entry, outpoint)
 		if err != nil {
 			return nil, err
 		}

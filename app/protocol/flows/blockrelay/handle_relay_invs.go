@@ -8,6 +8,9 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -59,6 +62,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 
 func (flow *handleRelayInvsFlow) start() error {
 	for {
+		log.Debugf("Waiting for inv")
 		inv, err := flow.readInv()
 		if err != nil {
 			return err
@@ -75,15 +79,18 @@ func (flow *handleRelayInvsFlow) start() error {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
+			log.Debugf("Block %s already exists. continuing...", inv.Hash)
 			continue
 		}
 
 		if flow.IsOrphan(inv.Hash) {
+			log.Debugf("Block %s is a known orphan. continuing...", inv.Hash)
 			continue
 		}
 
 		// Block relay is disabled during IBD
 		if flow.IsIBDRunning() {
+			log.Debugf("Got block %s while in IBD. continuing...", inv.Hash)
 			continue
 		}
 
@@ -140,7 +147,7 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 		return nil, nil
 	}
 
-	// In case the function returns earlier than expected, we want to make sure requestedBlocks is
+	// In case the function returns earlier than expected, we want to make sure flow.SharedRequestedBlocks() is
 	// clean from any pending blocks.
 	defer flow.SharedRequestedBlocks().remove(requestHash)
 
@@ -165,7 +172,8 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 	}
 
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
+		log.Criticalf("got block %s", blockHash)
 
 	if *blockHash != *requestHash {
 		return nil, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)

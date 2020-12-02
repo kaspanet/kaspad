@@ -1,7 +1,9 @@
-package consensusserialization
+package consensushashing
 
 import (
 	"io"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -33,14 +35,14 @@ func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
 	timestamp := header.TimeInMilliseconds
 
 	numParents := len(header.ParentHashes)
-	if err := writeElements(w, header.Version, uint64(numParents)); err != nil {
+	if err := serialization.WriteElements(w, header.Version, uint64(numParents)); err != nil {
 		return err
 	}
 	for _, hash := range header.ParentHashes {
-		if err := WriteElement(w, hash); err != nil {
+		if err := serialization.WriteElement(w, hash); err != nil {
 			return err
 		}
 	}
-	return writeElements(w, &header.HashMerkleRoot, &header.AcceptedIDMerkleRoot, &header.UTXOCommitment, timestamp,
+	return serialization.WriteElements(w, &header.HashMerkleRoot, &header.AcceptedIDMerkleRoot, &header.UTXOCommitment, timestamp,
 		header.Bits, header.Nonce)
 }

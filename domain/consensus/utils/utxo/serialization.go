@@ -1,9 +1,12 @@
-package consensusserialization
+package utxo
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"io"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
 	"github.com/pkg/errors"
 
@@ -51,7 +54,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 		return err
 	}
 
-	err = WriteElement(w, outpoint.Index)
+	err = serialization.WriteElement(w, outpoint.Index)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -78,7 +81,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	}
 
 	var index uint32
-	err = readElement(r, &index)
+	err = serialization.ReadElement(r, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +93,13 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 }
 
 func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
-	err := writeElements(w, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
+	err := serialization.WriteElements(w, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
 	if err != nil {
 		return err
 	}
 
 	count := uint64(len(entry.ScriptPublicKey))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -111,13 +114,13 @@ func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 
 func deserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
 	entry := &externalapi.UTXOEntry{}
-	err := readElements(r, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
+	err := serialization.ReadElements(r, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
 	count := uint64(len(entry.ScriptPublicKey))
-	err = readElement(r, count)
+	err = serialization.ReadElement(r, count)
 	if err != nil {
 		return nil, err
 	}

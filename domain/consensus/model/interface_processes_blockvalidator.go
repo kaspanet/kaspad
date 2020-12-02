@@ -11,5 +11,5 @@ type BlockValidator interface {
 	ValidateBodyInIsolation(blockHash *externalapi.DomainHash) error
 	ValidateHeaderInContext(blockHash *externalapi.DomainHash) error
 	ValidateBodyInContext(blockHash *externalapi.DomainHash) error
-	ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error
+	ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error
 }
