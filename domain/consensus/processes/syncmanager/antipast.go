@@ -133,7 +133,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		return nil, err
 	}
 
-	blockToRemoveFromHashesBetween := hashset.New()
+	blocksToRemoveFromHashesBetween := hashset.New()
 	for _, blockHash := range lowHashAnticone {
 		isHeaderOnlyBlock, err := sm.isHeaderOnlyBlock(blockHash)
 		if err != nil {
@@ -141,29 +141,29 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		}
 
 		if !isHeaderOnlyBlock {
-			blockToRemoveFromHashesBetween.Add(blockHash)
+			blocksToRemoveFromHashesBetween.Add(blockHash)
 		}
 	}
 
 	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween)-len(lowHashAnticone))
 	for i, blockHash := range hashesBetween {
-		// If blockToRemoveFromHashesBetween is empty, no more blocks should be
+		// If blocksToRemoveFromHashesBetween is empty, no more blocks should be
 		// filtered, so we can copy the rest of hashesBetween into missingBlocks
-		if blockToRemoveFromHashesBetween.Length() == 0 {
+		if blocksToRemoveFromHashesBetween.Length() == 0 {
 			missingBlocks = append(missingBlocks, hashesBetween[i:]...)
 			break
 		}
 
-		if blockToRemoveFromHashesBetween.Contains(blockHash) {
-			blockToRemoveFromHashesBetween.Remove(blockHash)
+		if blocksToRemoveFromHashesBetween.Contains(blockHash) {
+			blocksToRemoveFromHashesBetween.Remove(blockHash)
 			continue
 		}
 
 		missingBlocks = append(missingBlocks, blockHash)
 	}
 
-	if blockToRemoveFromHashesBetween.Length() != 0 {
-		return nil, errors.Errorf("blockToRemoveFromHashesBetween.Length() is expected to be 0")
+	if blocksToRemoveFromHashesBetween.Length() != 0 {
+		return nil, errors.Errorf("blocksToRemoveFromHashesBetween.Length() is expected to be 0")
 	}
 
 	return missingBlocks, nil
