@@ -1,16 +1,13 @@
-package consensusserialization
+package utxo
 
 import (
 	"bytes"
 	"io"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
-
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
+	"github.com/pkg/errors"
 )
 
 const uint32Size = 4
@@ -54,7 +51,7 @@ func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error 
 		return err
 	}
 
-	err = WriteElement(w, outpoint.Index)
+	err = serialization.WriteElement(w, outpoint.Index)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -81,7 +78,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	}
 
 	var index uint32
-	err = readElement(r, &index)
+	err = serialization.ReadElement(r, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -93,13 +90,13 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 }
 
 func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
-	err := writeElements(w, entry.BlockBlueScore(), entry.Amount(), entry.IsCoinbase())
+	err := serialization.WriteElements(w, entry.BlockBlueScore(), entry.Amount(), entry.IsCoinbase())
 	if err != nil {
 		return err
 	}
 
 	count := uint64(len(entry.ScriptPublicKey()))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -116,22 +113,22 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	var blockBlueScore uint64
 	var amount uint64
 	var isCoinbase bool
-	err := readElements(r, blockBlueScore, amount, isCoinbase)
+	err := serialization.ReadElements(r, blockBlueScore, amount, isCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
 	var scriptPubKeyLen int
-	err = readElement(r, scriptPubKeyLen)
+	err = serialization.ReadElement(r, scriptPubKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
 	scriptPubKey := make([]byte, scriptPubKeyLen)
-	_, err = r.Read(scriptPubKeyLen)
+	_, err = r.Read(scriptPubKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return utxo.NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
+	return NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
 }

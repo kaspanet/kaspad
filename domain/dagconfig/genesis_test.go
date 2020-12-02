@@ -7,14 +7,14 @@ package dagconfig
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 // TestGenesisBlock tests the genesis block of the main network for validity by
 // checking the encoded hash.
 func TestGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(MainnetParams.GenesisBlock)
+	hash := consensushashing.BlockHash(MainnetParams.GenesisBlock)
 	if *MainnetParams.GenesisHash != *hash {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash, MainnetParams.GenesisHash)
@@ -25,7 +25,7 @@ func TestGenesisBlock(t *testing.T) {
 // validity by checking the hash.
 func TestTestnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(TestnetParams.GenesisBlock)
+	hash := consensushashing.BlockHash(TestnetParams.GenesisBlock)
 	if *TestnetParams.GenesisHash != *hash {
 		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
@@ -37,7 +37,7 @@ func TestTestnetGenesisBlock(t *testing.T) {
 // for validity by checking the hash.
 func TestSimnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(SimnetParams.GenesisBlock)
+	hash := consensushashing.BlockHash(SimnetParams.GenesisBlock)
 	if *SimnetParams.GenesisHash != *hash {
 		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
@@ -49,7 +49,7 @@ func TestSimnetGenesisBlock(t *testing.T) {
 // for validity by checking the encoded hash.
 func TestDevnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
-	hash := consensusserialization.BlockHash(DevnetParams.GenesisBlock)
+	hash := consensushashing.BlockHash(DevnetParams.GenesisBlock)
 	if *DevnetParams.GenesisHash != *hash {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,

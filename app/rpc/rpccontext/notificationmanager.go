@@ -65,7 +65,9 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 	for router, listener := range nm.listeners {
 		if listener.propagateBlockAddedNotifications {
 			err := router.OutgoingRoute().Enqueue(notification)
-			if err != nil {
+			if errors.Is(err, routerpkg.ErrRouteClosed) {
+				log.Warnf("Couldn't send notification: %s", err)
+			} else if err != nil {
 				return err
 			}
 		}

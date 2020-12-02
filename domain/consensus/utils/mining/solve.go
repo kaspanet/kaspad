@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	utilsMath "github.com/kaspanet/kaspad/domain/consensus/utils/math"
 	"github.com/pkg/errors"
@@ -17,7 +17,7 @@ func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
 
 	for i := rd.Uint64(); i < math.MaxUint64; i++ {
 		block.Header.Nonce = i
-		hash := consensusserialization.BlockHash(block)
+		hash := consensushashing.BlockHash(block)
 		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
 			return
 		}

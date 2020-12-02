@@ -1,7 +1,9 @@
-package consensusserialization
+package consensushashing
 
 import (
 	"io"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -39,7 +41,7 @@ func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint3
 		panic(errors.Wrap(err, "TransactionHashForSigning() failed. this should never fail for structurally-valid transactions"))
 	}
 
-	err = WriteElement(writer, hashType)
+	err = serialization.WriteElement(writer, hashType)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
 	}
@@ -65,7 +67,6 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 
 // TransactionID generates the Hash for the transaction without the signature script and payload field.
 func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransactionID {
-
 	// If transaction ID is already cached, return it
 	if tx.ID != nil {
 		return tx.ID
@@ -98,7 +99,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 	}
 
 	count := uint64(len(tx.Inputs))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 	}
 
 	count = uint64(len(tx.Outputs))
-	err = WriteElement(w, count)
+	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
@@ -138,7 +139,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	err = WriteElement(w, &tx.PayloadHash)
+	err = serialization.WriteElement(w, &tx.PayloadHash)
 	if err != nil {
 		return err
 	}
@@ -189,7 +190,7 @@ func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
 
 func writeVarBytes(w io.Writer, data []byte) error {
 	dataLength := uint64(len(data))
-	err := WriteElement(w, dataLength)
+	err := serialization.WriteElement(w, dataLength)
 	if err != nil {
 		return err
 	}

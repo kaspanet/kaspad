@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 type testConsensus struct {
@@ -44,7 +44,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, err
 	}
 
-	return consensusserialization.BlockHash(block), nil
+	return consensushashing.BlockHash(block), nil
 }
 
 func (tc *testConsensus) DiscardAllStores() {

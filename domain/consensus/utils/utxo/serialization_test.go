@@ -1,4 +1,4 @@
-package consensusserialization
+package utxo
 
 import (
 	"encoding/hex"

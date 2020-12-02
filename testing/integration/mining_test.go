@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/util"
@@ -18,7 +18,7 @@ func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
 	initialNonce := rand.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
 		block.Header.Nonce = i
-		hash := consensusserialization.BlockHash(block)
+		hash := consensushashing.BlockHash(block)
 		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
 			return block
 		}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
@@ -162,12 +162,12 @@ func (msg *MsgTx) IsCoinBase() bool {
 
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() *externalapi.DomainHash {
-	return consensusserialization.TransactionHash(MsgTxToDomainTransaction(msg))
+	return consensushashing.TransactionHash(MsgTxToDomainTransaction(msg))
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
 func (msg *MsgTx) TxID() *externalapi.DomainTransactionID {
-	return consensusserialization.TransactionID(MsgTxToDomainTransaction(msg))
+	return consensushashing.TransactionID(MsgTxToDomainTransaction(msg))
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get

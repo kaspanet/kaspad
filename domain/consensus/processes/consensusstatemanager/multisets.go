@@ -3,8 +3,9 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 )
 
@@ -29,7 +30,7 @@ func (csm *consensusStateManager) calculateMultiset(
 	for _, blockAcceptanceData := range acceptanceData {
 		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 			transaction := transactionAcceptanceData.Transaction
-			transactionID := consensusserialization.TransactionID(transaction)
+			transactionID := consensushashing.TransactionID(transaction)
 			if !transactionAcceptanceData.IsAccepted {
 				log.Tracef("Skipping transaction %s because it was not accepted", transactionID)
 				continue
@@ -53,7 +54,7 @@ func (csm *consensusStateManager) calculateMultiset(
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
 	blockBlueScore uint64, isCoinbase bool) error {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("addTransactionToMultiset start for transaction %s", transactionID)
 	defer log.Tracef("addTransactionToMultiset end for transaction %s", transactionID)
 
@@ -90,7 +91,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 func addUTXOToMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,7 @@ func addUTXOToMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 func removeUTXOFromMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
-	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
+	serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -36,7 +36,7 @@ func TestPastMedianTime(t *testing.T) {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
 
-			blockHashes[i] = consensusserialization.BlockHash(block)
+			blockHashes[i] = consensushashing.BlockHash(block)
 		}
 
 		tests := []struct {

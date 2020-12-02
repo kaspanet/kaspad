@@ -3,7 +3,7 @@ package utxo
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
 )
@@ -38,7 +38,7 @@ func (md *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransac
 	}
 
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
-	transactionID := *consensusserialization.TransactionID(transaction)
+	transactionID := *consensushashing.TransactionID(transaction)
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
 			TransactionID: transactionID,
