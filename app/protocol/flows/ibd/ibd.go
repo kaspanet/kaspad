@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -143,7 +143,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies() error {
 			}
 
 			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
-			blockHash := consensusserialization.BlockHash(block)
+			blockHash := consensushashing.BlockHash(block)
 			if *expectedHash != *blockHash {
 				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 			}
@@ -179,7 +179,7 @@ func (flow *handleIBDFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHa
 
 	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
-		blockHash := consensusserialization.BlockHash(block)
+		blockHash := consensushashing.BlockHash(block)
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
 	}
 
@@ -333,7 +333,7 @@ func (flow *handleIBDFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHead
 		Transactions: nil,
 	}
 
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err

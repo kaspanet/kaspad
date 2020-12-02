@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 )
 
@@ -19,7 +19,7 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
 	transaction *externalapi.DomainTransaction, utxoDiff *model.UTXODiff) error {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionID)
 	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionID)
 

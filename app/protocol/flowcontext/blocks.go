@@ -1,13 +1,14 @@
 package flowcontext
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
-	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
@@ -17,7 +18,7 @@ import (
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
-	hash := consensusserialization.BlockHash(block)
+	hash := consensushashing.BlockHash(block)
 	log.Debugf("OnNewBlock start for block %s", hash)
 	defer log.Debugf("OnNewBlock end for block %s", hash)
 	unorphanedBlocks, err := f.UnorphanBlocks(block)
@@ -63,7 +64,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 
 	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
 	for i, tx := range transactionsAcceptedToMempool {
-		txIDsToBroadcast[i] = consensusserialization.TransactionID(tx)
+		txIDsToBroadcast[i] = consensushashing.TransactionID(tx)
 	}
 	offset := len(transactionsAcceptedToMempool)
 	for i, txID := range txIDsToRebroadcast {
@@ -91,7 +92,7 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Infof("Validation failed for block %s: %s", consensusserialization.BlockHash(block), err)
+			log.Infof("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
 			return nil
 		}
 		return err
@@ -100,5 +101,5 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	return f.Broadcast(appmessage.NewMsgInvBlock(consensusserialization.BlockHash(block)))
+	return f.Broadcast(appmessage.NewMsgInvBlock(consensushashing.BlockHash(block)))
 }

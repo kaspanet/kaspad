@@ -15,7 +15,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -231,7 +231,7 @@ func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransac
 	}
 
 	outpoint = externalapi.DomainOutpoint{
-		TransactionID: *consensusserialization.TransactionID(coinbaseTx),
+		TransactionID: *consensushashing.TransactionID(coinbaseTx),
 		Index:         0,
 	}
 	input = &externalapi.DomainTransactionInput{

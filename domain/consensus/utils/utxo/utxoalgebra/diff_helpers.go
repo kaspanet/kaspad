@@ -3,7 +3,7 @@ package utxoalgebra
 import (
 	"reflect"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
@@ -22,7 +22,7 @@ func DiffAddTransaction(utxoDiff *model.UTXODiff, transaction *externalapi.Domai
 	}
 
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
-	transactionID := *consensusserialization.TransactionID(transaction)
+	transactionID := *consensushashing.TransactionID(transaction)
 	for i, output := range transaction.Outputs {
 		outpoint := &externalapi.DomainOutpoint{
 			TransactionID: transactionID,

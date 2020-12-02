@@ -3,7 +3,7 @@ package flowcontext
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 )
 
@@ -12,7 +12,7 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
 
-	orphanHash := consensusserialization.BlockHash(orphanBlock)
+	orphanHash := consensushashing.BlockHash(orphanBlock)
 	f.orphans[*orphanHash] = orphanBlock
 
 	log.Infof("Received a block with missing parents, adding to orphan pool: %s", orphanHash)
@@ -34,7 +34,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 
 	// Find all the children of rootBlock among the orphans
 	// and add them to the process queue
-	rootBlockHash := consensusserialization.BlockHash(rootBlock)
+	rootBlockHash := consensushashing.BlockHash(rootBlock)
 	processQueue := f.addChildOrphansToProcessQueue(rootBlockHash, []externalapi.DomainHash{})
 
 	var unorphanedBlocks []*externalapi.DomainBlock

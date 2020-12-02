@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 )
 
@@ -311,7 +311,7 @@ type InvalidTransaction struct {
 }
 
 func (invalid InvalidTransaction) String() string {
-	return fmt.Sprintf("(%v: %s)", consensusserialization.TransactionID(invalid.Transaction), invalid.err)
+	return fmt.Sprintf("(%v: %s)", consensushashing.TransactionID(invalid.Transaction), invalid.err)
 }
 
 // ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid
