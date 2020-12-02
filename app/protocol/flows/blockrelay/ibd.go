@@ -14,11 +14,15 @@ import (
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
 	wasIBDNotRunning := flow.TrySetIBDRunning()
 	if !wasIBDNotRunning {
+		log.Debugf("IBD is already running")
 		return nil
 	}
 	defer flow.UnsetIBDRunning()
 
+	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
+
 	// Fetch all the headers if we don't already have them
+	log.Debugf("Downloading headers up to %s", highHash)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
 	if err != nil {
 		return err
@@ -29,8 +33,10 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 	}
+	log.Debugf("Finished downloading headers up to %s", highHash)
 
 	// Fetch the UTXO set if we don't already have it
+	log.Debugf("Downloading the UTXO set for %s", highHash)
 	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
 	if err != nil {
 		return err
@@ -44,9 +50,17 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return nil
 		}
 	}
+	log.Debugf("Finished downloading the UTXO set for %s", highHash)
 
 	// Fetch the block bodies
-	return flow.syncMissingBlockBodies(highHash)
+	log.Debugf("Downloading block bodies up to %s", highHash)
+	err = flow.syncMissingBlockBodies(highHash)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Finished downloading block bodies up to %s", highHash)
+
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
@@ -55,111 +69,9 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	if err != nil {
 		return err
 	}
-
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
 	return flow.downloadHeaders(highestSharedBlockHash, highHash)
-}
-
-func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
-	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
-	if err != nil {
-		return err
-	}
-
-	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
-		var hashesToRequest []*externalapi.DomainHash
-		if offset+ibdBatchSize < len(hashes) {
-			hashesToRequest = hashes[offset : offset+ibdBatchSize]
-		} else {
-			hashesToRequest = hashes[offset:]
-		}
-
-		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
-		if err != nil {
-			return err
-		}
-
-		for _, expectedHash := range hashesToRequest {
-			message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-			if err != nil {
-				return err
-			}
-
-			msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
-			if !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
-			}
-
-			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
-			blockHash := consensushashing.BlockHash(block)
-			if *expectedHash != *blockHash {
-				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
-			}
-
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
-			if err != nil {
-				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
-			}
-			err = flow.OnNewBlock(block)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
-	if err != nil {
-		return false, err
-	}
-
-	utxoSet, block, found, err := flow.receiveIBDRootUTXOSetAndBlock()
-	if err != nil {
-		return false, err
-	}
-
-	if !found {
-		return false, nil
-	}
-
-	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
-	if err != nil {
-		blockHash := consensushashing.BlockHash(block)
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
-	}
-
-	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
-	if err != nil {
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
-	}
-
-	return true, nil
-}
-
-func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return nil, nil, false, err
-	}
-
-	switch message := message.(type) {
-	case *appmessage.MsgIBDRootUTXOSetAndBlock:
-		return message.UTXOSet,
-			appmessage.MsgBlockToDomainBlock(message.Block), true, nil
-	case *appmessage.MsgIBDRootNotFound:
-		return nil, nil, false, nil
-	default:
-		return nil, nil, false,
-			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s or %s, got: %s",
-				appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdIBDRootNotFound, message.Command(),
-			)
-	}
 }
 
 func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalapi.DomainHash) (
@@ -258,21 +170,6 @@ func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlo
 	}
 }
 
-// dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
-// IBD. Inv messages are expected to arrive at any given moment, but should be
-// ignored while we're in IBD
-func (flow *handleRelayInvsFlow) dequeueIncomingMessageAndSkipInvs(timeout time.Duration) (appmessage.Message, error) {
-	for {
-		message, err := flow.incomingRoute.DequeueWithTimeout(timeout)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := message.(*appmessage.MsgInvRelayBlock); !ok {
-			return message, nil
-		}
-	}
-}
-
 func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHeader) error {
 	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
 	block := &externalapi.DomainBlock{
@@ -299,4 +196,120 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
 	return nil
+}
+
+func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
+	if err != nil {
+		return false, err
+	}
+
+	utxoSet, block, found, err := flow.receiveIBDRootUTXOSetAndBlock()
+	if err != nil {
+		return false, err
+	}
+
+	if !found {
+		return false, nil
+	}
+
+	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	if err != nil {
+		blockHash := consensushashing.BlockHash(block)
+		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
+	}
+
+	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
+	if err != nil {
+		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
+	}
+
+	return true, nil
+}
+
+func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	switch message := message.(type) {
+	case *appmessage.MsgIBDRootUTXOSetAndBlock:
+		return message.UTXOSet,
+			appmessage.MsgBlockToDomainBlock(message.Block), true, nil
+	case *appmessage.MsgIBDRootNotFound:
+		return nil, nil, false, nil
+	default:
+		return nil, nil, false,
+			protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: %s or %s, got: %s",
+				appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdIBDRootNotFound, message.Command(),
+			)
+	}
+}
+
+func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
+	if err != nil {
+		return err
+	}
+
+	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
+		var hashesToRequest []*externalapi.DomainHash
+		if offset+ibdBatchSize < len(hashes) {
+			hashesToRequest = hashes[offset : offset+ibdBatchSize]
+		} else {
+			hashesToRequest = hashes[offset:]
+		}
+
+		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
+		if err != nil {
+			return err
+		}
+
+		for _, expectedHash := range hashesToRequest {
+			message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+			if err != nil {
+				return err
+			}
+
+			msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
+			if !ok {
+				return protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
+			}
+
+			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+			blockHash := consensushashing.BlockHash(block)
+			if *expectedHash != *blockHash {
+				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
+			}
+
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+			if err != nil {
+				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+			}
+			err = flow.OnNewBlock(block)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
+// IBD. Inv messages are expected to arrive at any given moment, but should be
+// ignored while we're in IBD
+func (flow *handleRelayInvsFlow) dequeueIncomingMessageAndSkipInvs(timeout time.Duration) (appmessage.Message, error) {
+	for {
+		message, err := flow.incomingRoute.DequeueWithTimeout(timeout)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := message.(*appmessage.MsgInvRelayBlock); !ok {
+			return message, nil
+		}
+	}
 }

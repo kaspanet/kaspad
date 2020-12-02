@@ -91,6 +91,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
+		log.Debugf("Requesting block %s", inv.Hash)
 		block, err := flow.requestBlock(inv.Hash)
 		if err != nil {
 			return err
@@ -99,11 +100,13 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
+		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, err := flow.processBlock(block)
 		if err != nil {
 			return err
 		}
 		if len(missingParents) > 0 {
+			log.Debugf("Block %s contains orphans: %s", inv.Hash, missingParents)
 			err := flow.processOrphan(block, missingParents)
 			if err != nil {
 				return err
@@ -111,6 +114,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
+		log.Debugf("Relaying block %s", inv.Hash)
 		err = flow.relayBlock(block)
 		if err != nil {
 			return err
@@ -234,6 +238,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 
 	// Return if the block has been orphaned from elsewhere already
 	if flow.IsOrphan(blockHash) {
+		log.Debugf("Skipping orphan processing for block %s because it is already an orphan")
 		return nil
 	}
 
@@ -243,11 +248,15 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 		return err
 	}
 	if isBlockInOrphanResolutionRange {
+		log.Debugf("Block %s is within orphan resolution range. " +
+			"Adding it to the orphan set and requesting its missing parents")
 		flow.addToOrphanSetAndRequestMissingParents(block, missingParents)
 		return nil
 	}
 
 	// Start IBD unless we already are in IBD
+	log.Debugf("Block %s is out of orphan resolution range. " +
+		"Attempting to start IBD against it.")
 	return flow.runIBDIfNotRunning(blockHash)
 }
 
