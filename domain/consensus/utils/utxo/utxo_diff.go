@@ -99,7 +99,7 @@ func (d *utxoDiff) cloneMutable() *mutableUTXODiff {
 	return &mutableUTXODiff{utxoDiff: d.clone()}
 }
 
-func (d *utxoDiff) addEntry(outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
+func (d *utxoDiff) addEntry(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) error {
 	if d.toRemove.containsWithBlueScore(outpoint, entry.BlockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if d.toAdd.Contains(outpoint) {
@@ -110,7 +110,7 @@ func (d *utxoDiff) addEntry(outpoint *externalapi.DomainOutpoint, entry *externa
 	return nil
 }
 
-func (d *utxoDiff) removeEntry(outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) error {
+func (d *utxoDiff) removeEntry(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) error {
 	if d.toAdd.containsWithBlueScore(outpoint, entry.BlockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if d.toRemove.Contains(outpoint) {

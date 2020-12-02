@@ -28,7 +28,7 @@ func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) ([]*D
 }
 
 func dbUTXOCollectionToUTXOCollection(items []*DbUtxoCollectionItem) (model.UTXOCollection, error) {
-	utxoMap := make(map[externalapi.DomainOutpoint]*externalapi.UTXOEntry, len(items))
+	utxoMap := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, len(items))
 	for _, item := range items {
 		outpoint, err := DbOutpointToDomainOutpoint(item.Outpoint)
 		if err != nil {

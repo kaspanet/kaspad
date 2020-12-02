@@ -2,8 +2,11 @@ package consensusserialization
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"io"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +16,7 @@ import (
 const uint32Size = 4
 
 // SerializeUTXO returns the byte-slice representation for given UTXOEntry-outpoint pair
-func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
+func SerializeUTXO(entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
 
 	err := serializeOutpoint(w, outpoint)
@@ -30,7 +33,7 @@ func SerializeUTXO(entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOut
 }
 
 // DeserializeUTXO deserializes the given byte slice to UTXOEntry-outpoint pair
-func DeserializeUTXO(utxoBytes []byte) (entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint, err error) {
+func DeserializeUTXO(utxoBytes []byte) (entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint, err error) {
 	r := bytes.NewReader(utxoBytes)
 	outpoint, err = deserializeOutpoint(r)
 	if err != nil {
@@ -89,19 +92,19 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 	}, nil
 }
 
-func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
-	err := writeElements(w, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
+func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
+	err := writeElements(w, entry.BlockBlueScore(), entry.Amount(), entry.IsCoinbase())
 	if err != nil {
 		return err
 	}
 
-	count := uint64(len(entry.ScriptPublicKey))
+	count := uint64(len(entry.ScriptPublicKey()))
 	err = WriteElement(w, count)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.Write(entry.ScriptPublicKey)
+	_, err = w.Write(entry.ScriptPublicKey())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -109,23 +112,26 @@ func serializeUTXOEntry(w io.Writer, entry *externalapi.UTXOEntry) error {
 	return nil
 }
 
-func deserializeUTXOEntry(r io.Reader) (*externalapi.UTXOEntry, error) {
-	entry := &externalapi.UTXOEntry{}
-	err := readElements(r, entry.BlockBlueScore, entry.Amount, entry.IsCoinbase)
+func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
+	var blockBlueScore uint64
+	var amount uint64
+	var isCoinbase bool
+	err := readElements(r, blockBlueScore, amount, isCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
-	count := uint64(len(entry.ScriptPublicKey))
-	err = readElement(r, count)
+	var scriptPubKeyLen int
+	err = readElement(r, scriptPubKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = r.Read(entry.ScriptPublicKey)
+	scriptPubKey := make([]byte, scriptPubKeyLen)
+	_, err = r.Read(scriptPubKeyLen)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return entry, nil
+	return utxo.NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
 }

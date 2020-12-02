@@ -130,7 +130,7 @@ func (p protoUTXOSetIterator) Next() bool {
 	return p.index < len(p.utxoSet.Utxos)
 }
 
-func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	entry, outpoint, err := consensusserialization.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
 	if err != nil {
 		if consensusserialization.IsMalformedError(err) {

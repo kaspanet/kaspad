@@ -87,7 +87,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 	return nil
 }
 
-func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+func addUTXOToMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
 	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)
@@ -99,7 +99,7 @@ func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	return nil
 }
 
-func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+func removeUTXOFromMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
 	serializedUTXO, err := consensusserialization.SerializeUTXO(entry, outpoint)

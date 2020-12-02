@@ -11,7 +11,8 @@ type TestConsensus interface {
 
 	DatabaseContext() model.DBReader
 
-	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
+	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
 
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block
@@ -33,11 +34,11 @@ type TestConsensus interface {
 	ReachabilityDataStore() model.ReachabilityDataStore
 	UTXODiffStore() model.UTXODiffStore
 
-	BlockBuilder() model.TestBlockBuilder
+	BlockBuilder() TestBlockBuilder
 	BlockProcessor() model.BlockProcessor
 	BlockValidator() model.BlockValidator
 	CoinbaseManager() model.CoinbaseManager
-	ConsensusStateManager() model.TestConsensusStateManager
+	ConsensusStateManager() TestConsensusStateManager
 	DAGTopologyManager() model.DAGTopologyManager
 	DAGTraversalManager() model.DAGTraversalManager
 	DifficultyManager() model.DifficultyManager
@@ -46,7 +47,7 @@ type TestConsensus interface {
 	MergeDepthManager() model.MergeDepthManager
 	PastMedianTimeManager() model.PastMedianTimeManager
 	PruningManager() model.PruningManager
-	ReachabilityManager() model.TestReachabilityManager
+	ReachabilityManager() TestReachabilityManager
 	SyncManager() model.SyncManager
-	TransactionValidator() model.TestTransactionValidator
+	TransactionValidator() TestTransactionValidator
 }

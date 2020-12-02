@@ -5,7 +5,7 @@ import (
 )
 
 // UTXOEntryToDBUTXOEntry converts UTXOEntry to DbUtxoEntry
-func UTXOEntryToDBUTXOEntry(utxoEntry *externalapi.UTXOEntry) *DbUtxoEntry {
+func UTXOEntryToDBUTXOEntry(utxoEntry externalapi.UTXOEntry) *DbUtxoEntry {
 	return &DbUtxoEntry{
 		Amount:          utxoEntry.Amount,
 		ScriptPublicKey: utxoEntry.ScriptPublicKey,
@@ -15,7 +15,7 @@ func UTXOEntryToDBUTXOEntry(utxoEntry *externalapi.UTXOEntry) *DbUtxoEntry {
 }
 
 // DBUTXOEntryToUTXOEntry convert DbUtxoEntry ro UTXOEntry
-func DBUTXOEntryToUTXOEntry(dbUtxoEntry *DbUtxoEntry) *externalapi.UTXOEntry {
+func DBUTXOEntryToUTXOEntry(dbUtxoEntry *DbUtxoEntry) externalapi.UTXOEntry {
 	return &externalapi.UTXOEntry{
 		Amount:          dbUtxoEntry.Amount,
 		ScriptPublicKey: dbUtxoEntry.ScriptPublicKey,

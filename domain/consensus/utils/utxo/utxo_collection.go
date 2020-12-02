@@ -10,16 +10,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-type utxoCollection map[externalapi.DomainOutpoint]*externalapi.UTXOEntry
+type utxoCollection map[externalapi.DomainOutpoint]externalapi.UTXOEntry
 
 // NewUTXOCollection creates a UTXO-Collection from the given map from outpoint to UTXOEntry
-func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]*externalapi.UTXOEntry) model.UTXOCollection {
+func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry) model.UTXOCollection {
 	return utxoCollection(utxoMap)
 }
 
 // Get returns the model.UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said model.UTXOEntry is in the set or not
-func (uc utxoCollection) Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool) {
+func (uc utxoCollection) Get(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool) {
 	entry, ok := uc[*outpoint]
 	return entry, ok
 }
@@ -64,7 +64,7 @@ func (uc utxoCollection) String() string {
 }
 
 // add adds a new UTXO entry to this collection
-func (uc utxoCollection) add(outpoint *externalapi.DomainOutpoint, entry *externalapi.UTXOEntry) {
+func (uc utxoCollection) add(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) {
 	uc[*outpoint] = entry
 }
 

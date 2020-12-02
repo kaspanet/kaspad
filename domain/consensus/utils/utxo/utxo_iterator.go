@@ -8,7 +8,7 @@ import (
 
 type utxoOutpointEntryPair struct {
 	outpoint externalapi.DomainOutpoint
-	entry    *externalapi.UTXOEntry
+	entry    externalapi.UTXOEntry
 }
 
 type utxoCollectionIterator struct {
@@ -34,7 +34,7 @@ func (uci *utxoCollectionIterator) Next() bool {
 	return uci.index < len(uci.pairs)
 }
 
-func (uci *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+func (uci *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	pair := uci.pairs[uci.index]
 	return &pair.outpoint, pair.entry, nil
 }

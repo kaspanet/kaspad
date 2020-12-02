@@ -5,7 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // UTXOCollection represents a collection of UTXO entries, indexed by their outpoint
 type UTXOCollection interface {
 	Iterator() ReadOnlyUTXOSetIterator
-	Get(outpoint *externalapi.DomainOutpoint) (*externalapi.UTXOEntry, bool)
+	Get(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool)
 	Contains(outpoint *externalapi.DomainOutpoint) bool
 	Len() int
 }

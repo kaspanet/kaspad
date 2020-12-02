@@ -20,7 +20,7 @@ var tempBlockHash = &externalapi.DomainHash{
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 
 // NewTestBlockBuilder creates an instance of a TestBlockBuilder
-func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus testapi.TestConsensus) model.TestBlockBuilder {
+func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus testapi.TestConsensus) testapi.TestBlockBuilder {
 	return &testBlockBuilder{
 		blockBuilder:  baseBlockBuilder.(*blockBuilder),
 		testConsensus: testConsensus,

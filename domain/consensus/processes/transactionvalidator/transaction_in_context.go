@@ -116,7 +116,7 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 	return totalSompiIn, nil
 }
 
-func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *transactionValidator) checkEntryAmounts(entry externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.

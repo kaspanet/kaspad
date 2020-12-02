@@ -11,7 +11,7 @@ type readOnlyUTXOIteratorWithDiff struct {
 	diff         *utxoDiff
 
 	currentOutpoint  *externalapi.DomainOutpoint
-	currentUTXOEntry *externalapi.UTXOEntry
+	currentUTXOEntry externalapi.UTXOEntry
 	currentErr       error
 
 	toAddIterator model.ReadOnlyUTXOSetIterator
@@ -56,6 +56,6 @@ func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
 	return false
 }
 
-func (r *readOnlyUTXOIteratorWithDiff) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+func (r *readOnlyUTXOIteratorWithDiff) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	return r.currentOutpoint, r.currentUTXOEntry, r.currentErr
 }
