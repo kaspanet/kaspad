@@ -79,7 +79,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				1,
 				1,
 				subnetworks.SubnetworkIDNative,
-				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, constants.MaxCoinbasePayloadLength+1)},
+				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, params.MaxCoinbasePayloadLength+1)},
 				nil,
 				ruleerrors.ErrBadCoinbasePayloadLen},
 			{"non-zero gas in Kaspa", 1, 1, 0,

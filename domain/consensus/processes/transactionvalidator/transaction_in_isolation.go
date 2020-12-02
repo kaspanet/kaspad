@@ -116,10 +116,10 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 
 	// Coinbase payload length must not exceed the max length.
 	payloadLen := len(tx.Payload)
-	if payloadLen > constants.MaxCoinbasePayloadLength {
+	if uint64(payloadLen) > v.maxCoinbasePayloadLength {
 		return errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase transaction payload length "+
 			"of %d is out of range (max: %d)",
-			payloadLen, constants.MaxCoinbasePayloadLength)
+			payloadLen, v.maxCoinbasePayloadLength)
 	}
 
 	return nil

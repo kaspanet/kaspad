@@ -22,7 +22,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
@@ -97,7 +96,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
-		model.KType(dagParams.K))
+		dagParams.K)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -111,6 +110,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
+		dagParams.MassPerTxByte,
+		dagParams.MassPerScriptPubKeyByte,
+		dagParams.MassPerSigOp,
+		dagParams.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
@@ -123,9 +126,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		dagParams.PowMax,
 		dagParams.DifficultyAdjustmentWindowSize,
-		dagParams.TargetTimePerBlock)
+		dagParams.TargetTimePerBlock,
+		dagParams.GenesisHash)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
+		dagParams.SubsidyReductionInterval,
+		dagParams.BaseSubsidy,
+		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
@@ -143,6 +150,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.MaxBlockSize,
+		dagParams.MergeSetSizeLimit,
+		uint64(dagParams.MaxBlockParents),
 
 		dbManager,
 		difficultyManager,
@@ -164,7 +174,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
+		dagParams.MaxMassAcceptedByBlock,
+		uint64(dagParams.MaxBlockParents),
+		dagParams.MergeSetSizeLimit,
 		genesisHash,
+
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,

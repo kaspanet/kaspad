@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 )
 
@@ -118,9 +117,9 @@ func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error
 
 	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
 
-	if mergeSetSize > constants.MergeSetSizeLimit {
+	if uint64(mergeSetSize) > v.mergeSetSizeLimit {
 		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,
-			"The block merges %d blocks > %d merge set size limit", mergeSetSize, constants.MergeSetSizeLimit)
+			"The block merges %d blocks > %d merge set size limit", mergeSetSize, v.mergeSetSizeLimit)
 	}
 
 	return nil

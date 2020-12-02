@@ -16,39 +16,6 @@ const (
 	// MaxSompi is the maximum transaction amount allowed in sompi.
 	MaxSompi = 21_000_000 * SompiPerKaspa
 
-	// MaxCoinbasePayloadLength is the maximum length in bites allowed for a block's coinbase's payload
-	MaxCoinbasePayloadLength = 150
-
-	// MaxBlockSize is the maximum size in bytes a block is allowed
-	MaxBlockSize = 1_000_000
-
-	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
-	MaxBlockParents = 10
-
-	// MassPerTxByte is the number of grams that any byte
-	// adds to a transaction.
-	MassPerTxByte = 1
-
-	// MassPerScriptPubKeyByte is the number of grams that any
-	// scriptPubKey byte adds to a transaction.
-	MassPerScriptPubKeyByte = 10
-
-	// MassPerSigOp is the number of grams that any
-	// signature operation adds to a transaction.
-	MassPerSigOp = 10000
-
-	// MergeSetSizeLimit is the maximum number of blocks in a block's merge set
-	MergeSetSizeLimit = 1000
-
-	// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
-	MaxMassAcceptedByBlock = 10000000
-
-	// BaseSubsidy is the starting subsidy amount for mined blocks.
-	BaseSubsidy = 50 * SompiPerKaspa
-
-	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
-	CoinbasePayloadScriptPublicKeyMaxLength = 150
-
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.
 	MaxTxInSequenceNum uint64 = math.MaxUint64

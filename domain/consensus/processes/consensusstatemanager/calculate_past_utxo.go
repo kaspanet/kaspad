@@ -2,7 +2,6 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
@@ -243,7 +242,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
-	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > constants.MaxMassAcceptedByBlock {
+	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > csm.maxMassAcceptedByBlock {
 		return false, 0
 	}
 

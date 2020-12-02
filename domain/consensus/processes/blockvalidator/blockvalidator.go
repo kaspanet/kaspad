@@ -18,6 +18,9 @@ type blockValidator struct {
 	disableDifficultyAdjustment    bool
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
+	maxBlockSize                   uint64
+	mergeSetSizeLimit              uint64
+	maxBlockParents                uint64
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -43,6 +46,10 @@ func New(powMax *big.Int,
 	enableNonNativeSubnetworks bool,
 	disableDifficultyAdjustment bool,
 	difficultyAdjustmentWindowSize uint64,
+	maxBlockSize uint64,
+	mergeSetSizeLimit uint64,
+	maxBlockParents uint64,
+
 	databaseContext model.DBReader,
 
 	difficultyManager model.DifficultyManager,
@@ -68,16 +75,20 @@ func New(powMax *big.Int,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		powMaxBits:                     util.BigToCompact(powMax),
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-		databaseContext:                databaseContext,
-		difficultyManager:              difficultyManager,
-		pastMedianTimeManager:          pastMedianTimeManager,
-		transactionValidator:           transactionValidator,
-		ghostdagManager:                ghostdagManager,
-		dagTopologyManager:             dagTopologyManager,
-		dagTraversalManager:            dagTraversalManager,
-		coinbaseManager:                coinbaseManager,
-		mergeDepthManager:              mergeDepthManager,
-		pruningStore:                   pruningStore,
+		maxBlockSize:                   maxBlockSize,
+		mergeSetSizeLimit:              mergeSetSizeLimit,
+		maxBlockParents:                maxBlockParents,
+
+		databaseContext:       databaseContext,
+		difficultyManager:     difficultyManager,
+		pastMedianTimeManager: pastMedianTimeManager,
+		transactionValidator:  transactionValidator,
+		ghostdagManager:       ghostdagManager,
+		dagTopologyManager:    dagTopologyManager,
+		dagTraversalManager:   dagTraversalManager,
+		coinbaseManager:       coinbaseManager,
+		mergeDepthManager:     mergeDepthManager,
+		pruningStore:          pruningStore,
 
 		blockStore:        blockStore,
 		ghostdagDataStore: ghostdagDataStore,

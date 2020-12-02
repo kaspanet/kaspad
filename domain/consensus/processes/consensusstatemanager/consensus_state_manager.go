@@ -7,10 +7,13 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	finalityDepth   uint64
-	pruningDepth    uint64
-	genesisHash     *externalapi.DomainHash
-	databaseContext model.DBManager
+	finalityDepth          uint64
+	pruningDepth           uint64
+	maxMassAcceptedByBlock uint64
+	maxBlockParents        uint64
+	mergeSetSizeLimit      uint64
+	genesisHash            *externalapi.DomainHash
+	databaseContext        model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
@@ -41,7 +44,11 @@ func New(
 	databaseContext model.DBManager,
 	finalityDepth uint64,
 	pruningDepth uint64,
+	maxMassAcceptedByBlock uint64,
+	maxBlockParents uint64,
+	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
+
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
@@ -64,10 +71,13 @@ func New(
 	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		finalityDepth:   finalityDepth,
-		pruningDepth:    pruningDepth,
-		genesisHash:     genesisHash,
-		databaseContext: databaseContext,
+		finalityDepth:          finalityDepth,
+		pruningDepth:           pruningDepth,
+		maxMassAcceptedByBlock: maxMassAcceptedByBlock,
+		maxBlockParents:        maxBlockParents,
+		mergeSetSizeLimit:      mergeSetSizeLimit,
+		genesisHash:            genesisHash,
+		databaseContext:        databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,
