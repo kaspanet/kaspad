@@ -110,6 +110,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	}
 
 	lowHash := headerTipsPruningPoint
+	foundHeaderOnlyBlock := false
 	for selectedChildIterator.Next() {
 		selectedChild := selectedChildIterator.Get()
 		selectedChildStatus, err := sm.blockStatusStore.Get(sm.databaseContext, selectedChild)
@@ -118,9 +119,16 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		}
 
 		if selectedChildStatus == externalapi.StatusHeaderOnly {
+			foundHeaderOnlyBlock = true
 			break
 		}
 		lowHash = selectedChild
+	}
+	if !foundHeaderOnlyBlock {
+		// TODO: Once block children are fixed, this error
+		// should be returned instead of simply logged
+		log.Errorf("no header-only blocks between %s and %s",
+			lowHash, highHash)
 	}
 
 	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)
