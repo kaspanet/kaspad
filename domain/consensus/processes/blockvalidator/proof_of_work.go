@@ -15,7 +15,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentsExist(header)
+	err = v.checkParentsExist(blockHash, header)
 	if err != nil {
 		return err
 	}
@@ -104,17 +104,32 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 
+	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
 	for _, parent := range header.ParentHashes {
-		exists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
 			return err
 		}
-
-		if !exists {
+		if !parentHeaderExists {
 			missingParentHashes = append(missingParentHashes, parent)
+			continue
+		}
+
+		if isFullBlock {
+			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+			if err != nil {
+				return err
+			}
+			if parentStatus == externalapi.StatusHeaderOnly {
+				missingParentHashes = append(missingParentHashes, parent)
+			}
 		}
 	}
 

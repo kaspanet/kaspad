@@ -251,7 +251,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode ins
 		return err
 	}
 
-	err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
+	err = bp.validatePruningPointViolationAndProofOfWorkAndDifficulty(block, mode)
 	if err != nil {
 		return err
 	}
@@ -293,12 +293,18 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	return nil
 }
 
+func (bp *blockProcessor) validatePruningPointViolationAndProofOfWorkAndDifficulty(block *externalapi.DomainBlock, mode insertMode) error {
+	blockHash := consensushashing.HeaderHash(block.Header)
+	if mode != insertModeHeader {
+		bp.blockStore.Stage(blockHash, block)
+	}
+	return bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
+}
+
 func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode insertMode) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	if mode != insertModeHeader {
-		bp.blockStore.Stage(blockHash, block)
-
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err
