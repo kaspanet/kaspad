@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -34,7 +34,7 @@ func TestValidateMedianTime(t *testing.T) {
 				t.Fatalf("expected error %s but got %+v", expectedErr, err)
 			}
 
-			return block, consensusserialization.BlockHash(block)
+			return block, consensushashing.BlockHash(block)
 		}
 
 		pastMedianTime := func(parents ...*externalapi.DomainHash) int64 {

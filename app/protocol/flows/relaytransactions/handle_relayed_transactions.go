@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -167,7 +167,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 			continue
 		}
 		tx := appmessage.MsgTxToDomainTransaction(msgTx)
-		txID := consensusserialization.TransactionID(tx)
+		txID := consensushashing.TransactionID(tx)
 		if txID != expectedID {
 			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 				expectedID, txID)

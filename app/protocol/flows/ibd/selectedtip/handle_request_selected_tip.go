@@ -3,7 +3,7 @@ package selectedtip
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -61,6 +61,6 @@ func (flow *handleRequestSelectedTipFlow) sendSelectedTipHash() error {
 	if err != nil {
 		return err
 	}
-	msgSelectedTip := appmessage.NewMsgSelectedTip(consensusserialization.BlockHash(virtualSelectedParent))
+	msgSelectedTip := appmessage.NewMsgSelectedTip(consensushashing.BlockHash(virtualSelectedParent))
 	return flow.outgoingRoute.Enqueue(msgSelectedTip)
 }

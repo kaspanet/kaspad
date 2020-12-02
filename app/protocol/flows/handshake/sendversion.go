@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
@@ -56,7 +56,7 @@ func (flow *sendVersionFlow) start() error {
 	if err != nil {
 		return err
 	}
-	selectedTipHash := consensusserialization.BlockHash(virtualSelectedParent)
+	selectedTipHash := consensushashing.BlockHash(virtualSelectedParent)
 	subnetworkID := flow.Config().SubnetworkID
 
 	// Version message.

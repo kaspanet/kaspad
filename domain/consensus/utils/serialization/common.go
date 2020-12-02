@@ -1,4 +1,4 @@
-package consensusserialization
+package serialization
 
 import (
 	"io"
@@ -97,9 +97,9 @@ func WriteElement(w io.Writer, element interface{}) error {
 	return errors.Wrapf(errNoEncodingForType, "couldn't find a way to write type %T", element)
 }
 
-// writeElements writes multiple items to w. It is equivalent to multiple
+// WriteElements writes multiple items to w. It is equivalent to multiple
 // calls to writeElement.
-func writeElements(w io.Writer, elements ...interface{}) error {
+func WriteElements(w io.Writer, elements ...interface{}) error {
 	for _, element := range elements {
 		err := WriteElement(w, element)
 		if err != nil {
@@ -109,9 +109,9 @@ func writeElements(w io.Writer, elements ...interface{}) error {
 	return nil
 }
 
-// readElement reads the next sequence of bytes from r using little endian
+// ReadElement reads the next sequence of bytes from r using little endian
 // depending on the concrete type of element pointed to.
-func readElement(r io.Reader, element interface{}) error {
+func ReadElement(r io.Reader, element interface{}) error {
 	// Attempt to read the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
@@ -174,11 +174,11 @@ func readElement(r io.Reader, element interface{}) error {
 	return errors.Wrapf(errNoEncodingForType, "couldn't find a way to read type %T", element)
 }
 
-// readElements reads multiple items from r. It is equivalent to multiple
-// calls to readElement.
-func readElements(r io.Reader, elements ...interface{}) error {
+// ReadElements reads multiple items from r. It is equivalent to multiple
+// calls to ReadElement.
+func ReadElements(r io.Reader, elements ...interface{}) error {
 	for _, element := range elements {
-		err := readElement(r, element)
+		err := ReadElement(r, element)
 		if err != nil {
 			return err
 		}

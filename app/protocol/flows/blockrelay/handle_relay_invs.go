@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -174,7 +174,7 @@ func (flow *handleRelayInvsFlow) requestBlocks(requestQueue *hashesQueueSet) err
 		}
 
 		block := appmessage.MsgBlockToDomainBlock(msgBlock)
-		blockHash := consensusserialization.BlockHash(block)
+		blockHash := consensushashing.BlockHash(block)
 		log.Criticalf("got block %s", blockHash)
 
 		if *blockHash != *expectedHash {
@@ -213,7 +213,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 }
 
 func (flow *handleRelayInvsFlow) processAndRelayBlock(requestQueue *hashesQueueSet, requestedBlocksSet map[externalapi.DomainHash]struct{}, block *externalapi.DomainBlock) error {
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 	log.Debugf("processAndRelayBlock start for block %s", blockHash)
 	defer log.Debugf("processAndRelayBlock end for block %s", blockHash)
 

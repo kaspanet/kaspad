@@ -1,7 +1,7 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -132,7 +132,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
-		blueBlockHash := consensusserialization.BlockHash(blueBlock)
+		blueBlockHash := consensushashing.BlockHash(blueBlock)
 		log.Tracef("Applying blue block %s", blueBlockHash)
 		blockAcceptanceData := &model.BlockAcceptanceData{
 			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
@@ -143,7 +143,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		for j, transaction := range blueBlock.Transactions {
 			var isAccepted bool
 
-			transactionID := consensusserialization.TransactionID(transaction)
+			transactionID := consensushashing.TransactionID(transaction)
 			log.Tracef("Attempting to accept transaction %s in block %s",
 				transactionID, blueBlockHash)
 
@@ -172,7 +172,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64, err error) {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("maybeAcceptTransaction start for transaction %s in block %s", transactionID, blockHash)
 	defer log.Tracef("maybeAcceptTransaction end for transaction %s in block %s", transactionID, blockHash)
 
@@ -232,7 +232,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 	transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64) {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("checkTransactionMass start for transaction %s", transactionID)
 	defer log.Tracef("checkTransactionMass end for transaction %s", transactionID)
 

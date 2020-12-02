@@ -1,16 +1,17 @@
 package blockvalidator_test
 
 import (
+	"math"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"math"
-	"testing"
 )
 
 func TestChainedTransactions(t *testing.T) {
@@ -86,7 +87,7 @@ func TestCheckBlockSanity(t *testing.T) {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown()
-		blockHash := consensusserialization.BlockHash(&exampleValidBlock)
+		blockHash := consensushashing.BlockHash(&exampleValidBlock)
 		if len(exampleValidBlock.Transactions) < 3 {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
 		}
@@ -99,7 +100,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		}
 
 		// Test with block with wrong transactions sorting order
-		blockHash = consensusserialization.BlockHash(&blockWithWrongTxOrder)
+		blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
 		consensus.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
@@ -108,7 +109,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 		// Test a block with invalid parents order
 		// We no longer require blocks to have ordered parents
-		blockHash = consensusserialization.BlockHash(&unOrderedParentsBlock)
+		blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
 		consensus.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
