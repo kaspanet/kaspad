@@ -24,8 +24,8 @@ func TestUTXOCollection(t *testing.T) {
 	txID1, _ := transactionid.FromString("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
 	outpoint1 := externalapi.NewDomainOutpoint(txID1, 0)
-	utxoEntry0 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
-	utxoEntry1 := externalapi.NewUTXOEntry(20, []byte{}, false, 1)
+	utxoEntry0 := NewUTXOEntry(10, []byte{}, true, 0)
+	utxoEntry1 := NewUTXOEntry(20, []byte{}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedStringWithMultiset
@@ -83,8 +83,8 @@ func TestUTXODiff(t *testing.T) {
 	txID1, _ := transactionid.FromString("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
 	outpoint1 := externalapi.NewDomainOutpoint(txID1, 0)
-	utxoEntry0 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
-	utxoEntry1 := externalapi.NewUTXOEntry(20, []byte{}, false, 1)
+	utxoEntry0 := NewUTXOEntry(10, []byte{}, true, 0)
+	utxoEntry1 := NewUTXOEntry(20, []byte{}, false, 1)
 
 	diff := newUTXODiff()
 
@@ -126,8 +126,8 @@ func TestUTXODiff(t *testing.T) {
 func TestUTXODiffRules(t *testing.T) {
 	txID0, _ := transactionid.FromString("0000000000000000000000000000000000000000000000000000000000000000")
 	outpoint0 := externalapi.NewDomainOutpoint(txID0, 0)
-	utxoEntry1 := externalapi.NewUTXOEntry(10, []byte{}, true, 0)
-	utxoEntry2 := externalapi.NewUTXOEntry(20, []byte{}, true, 1)
+	utxoEntry1 := NewUTXOEntry(10, []byte{}, true, 0)
+	utxoEntry2 := NewUTXOEntry(20, []byte{}, true, 1)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult

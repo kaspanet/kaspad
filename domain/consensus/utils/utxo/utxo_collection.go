@@ -41,7 +41,7 @@ func (uc utxoCollection) Clone() utxoCollection {
 
 	clone := make(utxoCollection, len(uc))
 	for outpoint, entry := range uc {
-		clone[outpoint] = entry.Clone()
+		clone[outpoint] = entry
 	}
 
 	return clone
@@ -53,7 +53,7 @@ func (uc utxoCollection) String() string {
 	i := 0
 	for outpoint, utxoEntry := range uc {
 		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, blueScore: %d",
-			outpoint.TransactionID, outpoint.Index, utxoEntry.Amount, utxoEntry.BlockBlueScore)
+			outpoint.TransactionID, outpoint.Index, utxoEntry.Amount(), utxoEntry.BlockBlueScore())
 		i++
 	}
 
@@ -91,5 +91,5 @@ func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
 // is in the set and its blue score is equal to the given blue score.
 func (uc utxoCollection) containsWithBlueScore(outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
 	entry, ok := uc.Get(outpoint)
-	return ok && entry.BlockBlueScore == blueScore
+	return ok && entry.BlockBlueScore() == blueScore
 }

@@ -37,8 +37,8 @@ func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := input.SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey)
-		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey, isP2SH))
+		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
+		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH))
 	}
 	if len(missingOutpoints) > 0 {
 		return 0, ruleerrors.NewErrMissingTxOut(missingOutpoints)

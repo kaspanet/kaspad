@@ -44,12 +44,7 @@ func (md *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransac
 			TransactionID: transactionID,
 			Index:         uint32(i),
 		}
-		entry := &externalapi.UTXOEntry{
-			Amount:          output.Value,
-			ScriptPublicKey: output.ScriptPublicKey,
-			BlockBlueScore:  blockBlueScore,
-			IsCoinbase:      isCoinbase,
-		}
+		entry := NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockBlueScore)
 
 		err := md.addEntry(outpoint, entry)
 		if err != nil {

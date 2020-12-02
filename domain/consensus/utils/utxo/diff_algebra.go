@@ -55,7 +55,7 @@ func intersectionWithRemainderHavingBlueScore(collection1, collection2 utxoColle
 // having same blue score, puts it into result and into remainder from collection1
 func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore) {
+		if collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
 		} else {
 			remainder.add(&outpoint, utxoEntry)
@@ -76,7 +76,7 @@ func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result
 // having same blue score, puts it into result
 func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore) {
+		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
 		}
 	}
@@ -96,7 +96,7 @@ func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollec
 // having same blue score, puts it into result and into remainder from collection1
 func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore) {
+		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
 		} else {
 			remainder.add(&outpoint, utxoEntry)
@@ -140,9 +140,9 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 
 	// check that NOT (entries with unequal blue scores AND utxoEntry is in this.toAdd and/or other.toRemove) -> Error
 	isNotAddedOutputRemovedWithBlueScore := func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
-		return !(diffEntry.BlockBlueScore != utxoEntry.BlockBlueScore &&
-			(this.toAdd.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore) ||
-				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore)))
+		return !(diffEntry.BlockBlueScore() != utxoEntry.BlockBlueScore() &&
+			(this.toAdd.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore()) ||
+				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore())))
 	}
 
 	if offendingOutpoint, ok :=
@@ -154,9 +154,9 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 	isNotRemovedOutputAddedWithBlueScore :=
 		func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
 
-			return !(diffEntry.BlockBlueScore != utxoEntry.BlockBlueScore &&
-				(this.toRemove.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore) ||
-					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore)))
+			return !(diffEntry.BlockBlueScore() != utxoEntry.BlockBlueScore() &&
+				(this.toRemove.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore()) ||
+					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore())))
 		}
 
 	if offendingOutpoint, ok :=
@@ -168,7 +168,7 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 	// and existing entry is with different blue score, in this case - this is an error
 	if offendingOutpoint, ok := checkIntersectionWithRule(this.toRemove, other.toRemove,
 		func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
-			return utxoEntry.BlockBlueScore != diffEntry.BlockBlueScore
+			return utxoEntry.BlockBlueScore() != diffEntry.BlockBlueScore()
 		}); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.toRemove and other.toRemove with different "+
 			"blue scores, with no corresponding entry in this.toAdd", offendingOutpoint)
@@ -209,7 +209,7 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 func withDiffInPlace(this *mutableUTXODiff, other *utxoDiff) error {
 	if offendingOutpoint, ok := checkIntersectionWithRule(other.toRemove, this.toRemove,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry externalapi.UTXOEntry) bool {
-			return !this.toAdd.containsWithBlueScore(outpoint, entryToAdd.BlockBlueScore)
+			return !this.toAdd.containsWithBlueScore(outpoint, entryToAdd.BlockBlueScore())
 		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.toRemove and in other.toRemove", offendingOutpoint)
@@ -217,7 +217,7 @@ func withDiffInPlace(this *mutableUTXODiff, other *utxoDiff) error {
 
 	if offendingOutpoint, ok := checkIntersectionWithRule(other.toAdd, this.toAdd,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry externalapi.UTXOEntry) bool {
-			return !other.toRemove.containsWithBlueScore(outpoint, existingEntry.BlockBlueScore)
+			return !other.toRemove.containsWithBlueScore(outpoint, existingEntry.BlockBlueScore())
 		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.toAdd and in other.toAdd", offendingOutpoint)

@@ -12,12 +12,7 @@ func Benchmark_serializeUTXO(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Error decoding scriptPublicKey string: %s", err)
 	}
-	entry := &externalapi.UTXOEntry{
-		Amount:          5000000000,
-		ScriptPublicKey: scriptPublicKey, // p2pkh
-		BlockBlueScore:  1432432,
-		IsCoinbase:      false,
-	}
+	entry := NewUTXOEntry(5000000000, scriptPublicKey, false, 1432432)
 	outpoint := &externalapi.DomainOutpoint{
 		TransactionID: externalapi.DomainTransactionID{
 			0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
