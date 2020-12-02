@@ -117,10 +117,10 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 			return nil, err
 		}
 
-		if selectedChildStatus != externalapi.StatusHeaderOnly {
-			lowHash = selectedChild
+		if selectedChildStatus == externalapi.StatusHeaderOnly {
 			break
 		}
+		lowHash = selectedChild
 	}
 
 	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)
