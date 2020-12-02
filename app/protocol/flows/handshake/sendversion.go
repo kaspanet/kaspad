@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
 )
@@ -48,6 +49,9 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *sendVersionFlow) start() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "sendVersionFlow.start")
+	defer onEnd()
+
 	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return err
@@ -76,9 +80,11 @@ func (flow *sendVersionFlow) start() error {
 	}
 
 	// Wait for verack
+	log.Debugf("Waiting for verack")
 	_, err = flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
 	}
+	log.Debugf("Got verack")
 	return nil
 }
