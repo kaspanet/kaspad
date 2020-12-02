@@ -24,7 +24,7 @@ func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXOD
 		return errors.New("cannot stage virtual UTXO diff while virtual UTXO set is staged")
 	}
 
-	css.virtualUTXODiffStaging = virtualUTXODiff.Clone()
+	css.virtualUTXODiffStaging = virtualUTXODiff
 	return nil
 }
 

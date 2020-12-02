@@ -40,9 +40,9 @@ func (uci *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, 
 }
 
 func (uci *utxoCollectionIterator) WithDiff(diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
-	d, ok := diff.(*utxoDiff)
+	d, ok := diff.(*immutableUTXODiff)
 	if !ok {
-		return nil, errors.New("diff is not of type *utxoDiff")
+		return nil, errors.New("diff is not of type *immutableUTXODiff")
 	}
 
 	return &readOnlyUTXOIteratorWithDiff{

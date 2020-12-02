@@ -8,7 +8,7 @@ import (
 
 type readOnlyUTXOIteratorWithDiff struct {
 	baseIterator model.ReadOnlyUTXOSetIterator
-	diff         *utxoDiff
+	diff         *immutableUTXODiff
 
 	currentOutpoint  *externalapi.DomainOutpoint
 	currentUTXOEntry externalapi.UTXOEntry
@@ -19,9 +19,9 @@ type readOnlyUTXOIteratorWithDiff struct {
 
 // IteratorWithDiff applies a UTXODiff to given utxo iterator
 func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
-	d, ok := diff.(*utxoDiff)
+	d, ok := diff.(*immutableUTXODiff)
 	if !ok {
-		return nil, errors.New("diff is not of type *utxoDiff")
+		return nil, errors.New("diff is not of type *immutableUTXODiff")
 	}
 
 	if iteratorWithDiff, ok := iterator.(*readOnlyUTXOIteratorWithDiff); ok {
@@ -36,14 +36,14 @@ func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODif
 	return &readOnlyUTXOIteratorWithDiff{
 		baseIterator:  iterator,
 		diff:          d,
-		toAddIterator: d.toAdd.Iterator(),
+		toAddIterator: d.mutableUTXODiff.toAdd.Iterator(),
 	}, nil
 }
 
 func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
 	for r.baseIterator.Next() { // keep looping until we reach an outpoint/entry pair that is not in r.diff.toRemove
 		r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()
-		if !r.diff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore()) {
+		if !r.diff.mutableUTXODiff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore()) {
 			return true
 		}
 	}

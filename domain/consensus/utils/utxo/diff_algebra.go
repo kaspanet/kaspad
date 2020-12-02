@@ -104,10 +104,10 @@ func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, re
 	}
 }
 
-// DiffFrom returns a new utxoDiff with the difference between this utxoDiff and another
+// DiffFrom returns a new mutableUTXODiff with the difference between this mutableUTXODiff and another
 // Assumes that:
-// Both utxoDiffs are from the same base
-// If a txOut exists in both utxoDiffs, its underlying values would be the same
+// Both mutableUTXODiffs are from the same base
+// If a txOut exists in both mutableUTXODiffs, its underlying values would be the same
 //
 // diffFrom follows a set of rules represented by the following 3 by 3 table:
 //
@@ -132,7 +132,7 @@ func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, re
 //    diffFrom results in an error
 // 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
 //    diffFrom results in the UTXO being added to toAdd
-func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
+func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
 	// - if utxoEntry is in this.toAdd and other.toRemove
@@ -174,7 +174,7 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 			"blue scores, with no corresponding entry in this.toAdd", offendingOutpoint)
 	}
 
-	result := &utxoDiff{
+	result := &mutableUTXODiff{
 		toAdd:    make(utxoCollection, len(this.toRemove)+len(other.toAdd)),
 		toRemove: make(utxoCollection, len(this.toAdd)+len(other.toRemove)),
 	}
@@ -206,7 +206,7 @@ func diffFrom(this, other *utxoDiff) (*utxoDiff, error) {
 
 // WithDiffInPlace applies provided diff to this diff in-place, that would be the result if
 // first d, and than diff were applied to the same base
-func withDiffInPlace(this *mutableUTXODiff, other *utxoDiff) error {
+func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 	if offendingOutpoint, ok := checkIntersectionWithRule(other.toRemove, this.toRemove,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry externalapi.UTXOEntry) bool {
 			return !this.toAdd.containsWithBlueScore(outpoint, entryToAdd.BlockBlueScore())
@@ -238,15 +238,15 @@ func withDiffInPlace(this *mutableUTXODiff, other *utxoDiff) error {
 	return nil
 }
 
-// WithDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
+// WithDiff applies provided diff to this diff, creating a new mutableUTXODiff, that would be the result if
 // first d, and than diff were applied to some base
-func withDiff(this *utxoDiff, diff *utxoDiff) (*utxoDiff, error) {
-	clone := this.cloneMutable()
+func withDiff(this *mutableUTXODiff, diff *mutableUTXODiff) (*mutableUTXODiff, error) {
+	clone := this.clone()
 
 	err := withDiffInPlace(clone, diff)
 	if err != nil {
 		return nil, err
 	}
 
-	return clone.utxoDiff, nil
+	return clone, nil
 }
