@@ -50,7 +50,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	}
 	log.Tracef("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
 
-	return utxoDiff.ToUnmutable(), acceptanceData, multiset, nil
+	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
 
 func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.UTXODiff, error) {
@@ -105,7 +105,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	}
 	log.Tracef("The accumulated diff for block %s is: %s", blockHash, accumulatedDiff)
 
-	return accumulatedDiff.ToUnmutable(), nil
+	return accumulatedDiff.ToImmutable(), nil
 }
 
 func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
@@ -176,7 +176,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 	defer log.Tracef("maybeAcceptTransaction end for transaction %s in block %s", transactionID, blockHash)
 
 	log.Tracef("Populating transaction %s with UTXO entries", transactionID)
-	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff.ToUnmutable())
+	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff.ToImmutable())
 	if err != nil {
 		if !errors.As(err, &(ruleerrors.RuleError{})) {
 			return false, 0, err

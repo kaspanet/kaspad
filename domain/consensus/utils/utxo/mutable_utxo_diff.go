@@ -17,7 +17,7 @@ func NewMutableUTXODiff() model.MutableUTXODiff {
 	return &mutableUTXODiff{utxoDiff: newUTXODiff()}
 }
 
-func (md *mutableUTXODiff) ToUnmutable() model.UTXODiff {
+func (md *mutableUTXODiff) ToImmutable() model.UTXODiff {
 	return md.utxoDiff
 }
 

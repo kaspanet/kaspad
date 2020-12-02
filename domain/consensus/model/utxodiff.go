@@ -22,7 +22,7 @@ type UTXODiff interface {
 
 // MutableUTXODiff represents a UTXO-Diff that can be mutated
 type MutableUTXODiff interface {
-	ToUnmutable() UTXODiff
+	ToImmutable() UTXODiff
 
 	WithDiff(other UTXODiff) (UTXODiff, error)
 	DiffFrom(other UTXODiff) (UTXODiff, error)
