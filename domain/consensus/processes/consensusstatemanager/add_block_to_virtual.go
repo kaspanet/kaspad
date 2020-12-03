@@ -80,8 +80,8 @@ func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externa
 	}
 
 	log.Tracef("Selecting the next selected parent between "+
-		"the block %s the current selected parent %s", blockHash, virtualGhostdagData.SelectedParent)
-	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(virtualGhostdagData.SelectedParent, blockHash)
+		"the block %s the current selected parent %s", blockHash, virtualGhostdagData.SelectedParent())
+	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(virtualGhostdagData.SelectedParent(), blockHash)
 	if err != nil {
 		return false, err
 	}

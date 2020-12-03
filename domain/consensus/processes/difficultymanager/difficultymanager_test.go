@@ -1,14 +1,16 @@
 package difficultymanager_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
-	"testing"
 )
 
 func TestDifficulty(t *testing.T) {
@@ -38,7 +40,7 @@ func TestDifficulty(t *testing.T) {
 				blockTime = header.TimeInMilliseconds + params.TargetTimePerBlock.Milliseconds()
 			}
 
-			block, err := tc.BuildBlockWithParents(parents, nil, nil)
+			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
 			if err != nil {
 				t.Fatalf("BuildBlockWithParents: %+v", err)
 			}
@@ -49,18 +51,15 @@ func TestDifficulty(t *testing.T) {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
 
-			return block, consensusserialization.BlockHash(block)
+			return block, consensushashing.BlockHash(block)
 		}
 
 		minimumTime := func(parents ...*externalapi.DomainHash) int64 {
 			var tempHash externalapi.DomainHash
-			err := tc.BlockRelationStore().StageBlockRelation(&tempHash, &model.BlockRelations{
+			tc.BlockRelationStore().StageBlockRelation(&tempHash, &model.BlockRelations{
 				Parents:  parents,
 				Children: nil,
 			})
-			if err != nil {
-				t.Fatalf("StageBlockRelation: %+v", err)
-			}
 			defer tc.BlockRelationStore().Discard()
 
 			err = tc.GHOSTDAGManager().GHOSTDAG(&tempHash)
@@ -136,7 +135,7 @@ func TestDifficulty(t *testing.T) {
 			}
 
 			selectedParentHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(),
-				tipGHOSTDAGData.SelectedParent)
+				tipGHOSTDAGData.SelectedParent())
 			if err != nil {
 				t.Fatalf("BlockHeader: %+v", err)
 			}

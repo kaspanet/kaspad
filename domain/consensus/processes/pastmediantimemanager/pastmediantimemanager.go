@@ -1,10 +1,11 @@
 package pastmediantimemanager
 
 import (
+	"sort"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"sort"
 )
 
 // pastMedianTimeManager provides a method to resolve the
@@ -44,7 +45,7 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainH
 	if err != nil {
 		return 0, err
 	}
-	selectedParentHash := blockGHOSTDAGData.SelectedParent
+	selectedParentHash := blockGHOSTDAGData.SelectedParent()
 
 	// Genesis block
 	if selectedParentHash == nil {

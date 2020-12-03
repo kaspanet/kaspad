@@ -9,7 +9,7 @@ import (
 
 type blockHeapNode struct {
 	hash         *externalapi.DomainHash
-	ghostdagData *model.BlockGHOSTDAGData
+	ghostdagData model.BlockGHOSTDAGData
 }
 
 // baseHeap  is an implementation for heap.Interface that sorts blocks by their height

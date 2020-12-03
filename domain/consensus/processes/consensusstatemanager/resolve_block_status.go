@@ -79,7 +79,7 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	if err != nil {
 		return 0, err
 	}
-	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent)
+	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocks(
@@ -110,13 +110,13 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 			return nil, err
 		}
 
-		if currentBlockGHOSTDAGData.SelectedParent == nil {
+		if currentBlockGHOSTDAGData.SelectedParent() == nil {
 			log.Tracef("Genesis block reached. Returning all the "+
 				"unverified blocks prior to it: %s", unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
 
-		currentHash = currentBlockGHOSTDAGData.SelectedParent
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 	}
 }
 

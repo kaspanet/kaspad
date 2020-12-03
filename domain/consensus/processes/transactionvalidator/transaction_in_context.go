@@ -59,7 +59,7 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 		return err
 	}
 
-	txBlueScore := ghostdagData.BlueScore
+	txBlueScore := ghostdagData.BlueScore()
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
@@ -166,7 +166,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 		return err
 	}
 
-	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore, medianTime) {
+	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore(), medianTime) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -270,16 +270,16 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 
 			for {
 				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
-					baseGHOSTDAGData.SelectedParent)
+					baseGHOSTDAGData.SelectedParent())
 				if err != nil {
 					return nil, err
 				}
 
-				if selectedParentGHOSTDAGData.BlueScore <= inputBlueScore {
+				if selectedParentGHOSTDAGData.BlueScore() <= inputBlueScore {
 					break
 				}
 
-				baseHash = baseGHOSTDAGData.SelectedParent
+				baseHash = baseGHOSTDAGData.SelectedParent()
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 

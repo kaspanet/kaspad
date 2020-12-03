@@ -15,15 +15,15 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 		return nil, err
 	}
 
-	for uint64(len(window)) < windowSize && currentGHOSTDAGData.SelectedParent != nil {
-		for _, blue := range currentGHOSTDAGData.MergeSetBlues {
+	for uint64(len(window)) < windowSize && currentGHOSTDAGData.SelectedParent() != nil {
+		for _, blue := range currentGHOSTDAGData.MergeSetBlues() {
 			window = append(window, blue)
 			if uint64(len(window)) == windowSize {
 				break
 			}
 		}
 
-		currentHash = currentGHOSTDAGData.SelectedParent
+		currentHash = currentGHOSTDAGData.SelectedParent()
 		currentGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
 		if err != nil {
 			return nil, err
