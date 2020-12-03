@@ -21,18 +21,20 @@ func NewUTXOEntry(amount uint64, scriptPubKey []byte, isCoinbase bool, blockBlue
 	}
 }
 
-func (u utxoEntry) Amount() uint64 {
+func (u *utxoEntry) Amount() uint64 {
 	return u.amount
 }
 
-func (u utxoEntry) ScriptPublicKey() []byte {
-	return u.scriptPublicKey
+func (u *utxoEntry) ScriptPublicKey() []byte {
+	clone := make([]byte, len(u.scriptPublicKey))
+	copy(clone, u.scriptPublicKey)
+	return clone
 }
 
-func (u utxoEntry) BlockBlueScore() uint64 {
+func (u *utxoEntry) BlockBlueScore() uint64 {
 	return u.blockBlueScore
 }
 
-func (u utxoEntry) IsCoinbase() bool {
+func (u *utxoEntry) IsCoinbase() bool {
 	return u.isCoinbase
 }
