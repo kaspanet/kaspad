@@ -315,7 +315,7 @@ func TestBlueBlockWindow(t *testing.T) {
 		}
 		defer tearDown()
 
-		windowSize := uint64(10)
+		windowSize := 10
 		blockByIDMap := make(map[string]*externalapi.DomainHash)
 		idByBlockMap := make(map[externalapi.DomainHash]string)
 		blockByIDMap["A"] = params.GenesisHash

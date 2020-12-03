@@ -39,8 +39,8 @@ type overrideDAGParamsConfig struct {
 	SubsidyReductionInterval                *uint64      `json:"subsidyReductionInterval"`
 	TargetTimePerBlockInMilliSeconds        *int64       `json:"targetTimePerBlockInMilliSeconds"`
 	FinalityDuration                        *int64       `json:"finalityDuration"`
-	TimestampDeviationTolerance             *uint64      `json:"timestampDeviationTolerance"`
-	DifficultyAdjustmentWindowSize          *uint64      `json:"difficultyAdjustmentWindowSize"`
+	TimestampDeviationTolerance             *int         `json:"timestampDeviationTolerance"`
+	DifficultyAdjustmentWindowSize          *int         `json:"difficultyAdjustmentWindowSize"`
 	RelayNonStdTxs                          *bool        `json:"relayNonStdTxs"`
 	AcceptUnroutable                        *bool        `json:"acceptUnroutable"`
 	EnableNonNativeSubnetworks              *bool        `json:"enableNonNativeSubnetworks"`

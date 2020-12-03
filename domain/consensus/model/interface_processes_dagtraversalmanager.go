@@ -10,7 +10,7 @@ type DAGTraversalManager interface {
 	SelectedParentIterator(highHash *externalapi.DomainHash) BlockIterator
 	SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (BlockIterator, error)
 	AnticoneFromContext(context, lowHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	BlueWindow(highHash *externalapi.DomainHash, windowSize uint64) ([]*externalapi.DomainHash, error)
+	BlueWindow(highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error)
 	NewDownHeap() BlockHeap
 	NewUpHeap() BlockHeap
 }

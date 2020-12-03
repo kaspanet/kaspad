@@ -11,7 +11,7 @@ import (
 // pastMedianTimeManager provides a method to resolve the
 // past median time of a block
 type pastMedianTimeManager struct {
-	timestampDeviationTolerance uint64
+	timestampDeviationTolerance int
 
 	databaseContext model.DBReader
 
@@ -22,7 +22,7 @@ type pastMedianTimeManager struct {
 }
 
 // New instantiates a new PastMedianTimeManager
-func New(timestampDeviationTolerance uint64,
+func New(timestampDeviationTolerance int,
 	databaseContext model.DBReader,
 	dagTraversalManager model.DAGTraversalManager,
 	blockHeaderStore model.BlockHeaderStore,

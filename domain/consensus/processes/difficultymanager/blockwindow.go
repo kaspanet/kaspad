@@ -32,7 +32,7 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 // blues in the past of startindNode, sorted by GHOSTDAG order.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHash, windowSize uint64) (blockWindow, error) {
+func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
 	window := make(blockWindow, 0, windowSize)
 	windowHashes, err := dm.dagTraversalManager.BlueWindow(startingNode, windowSize)
 	if err != nil {

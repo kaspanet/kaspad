@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // blues in the past of startindNode, sorted by GHOSTDAG order.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash, windowSize uint64) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
 	window := make([]*externalapi.DomainHash, 0, windowSize)
 
 	currentHash := startingBlock
@@ -15,10 +15,10 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 		return nil, err
 	}
 
-	for uint64(len(window)) < windowSize && currentGHOSTDAGData.SelectedParent() != nil {
+	for len(window) < windowSize && currentGHOSTDAGData.SelectedParent() != nil {
 		for _, blue := range currentGHOSTDAGData.MergeSetBlues() {
 			window = append(window, blue)
-			if uint64(len(window)) == windowSize {
+			if len(window) == windowSize {
 				break
 			}
 		}
@@ -30,9 +30,9 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 		}
 	}
 
-	if uint64(len(window)) < windowSize {
+	if len(window) < windowSize {
 		genesis := currentHash
-		for uint64(len(window)) < windowSize {
+		for len(window) < windowSize {
 			window = append(window, genesis)
 		}
 	}

@@ -21,7 +21,7 @@ type difficultyManager struct {
 	dagTraversalManager            model.DAGTraversalManager
 	genesisHash                    *externalapi.DomainHash
 	powMax                         *big.Int
-	difficultyAdjustmentWindowSize uint64
+	difficultyAdjustmentWindowSize int
 	disableDifficultyAdjustment    bool
 	targetTimePerBlock             time.Duration
 }
@@ -34,7 +34,7 @@ func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	powMax *big.Int,
-	difficultyAdjustmentWindowSize uint64,
+	difficultyAdjustmentWindowSize int,
 	disableDifficultyAdjustment bool,
 	targetTimePerBlock time.Duration,
 	genesisHash *externalapi.DomainHash) model.DifficultyManager {
@@ -95,7 +95,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// Not enough blocks for building a difficulty window.
-	if bluestGhostDAG.BlueScore() < dm.difficultyAdjustmentWindowSize+1 {
+	if bluestGhostDAG.BlueScore() < uint64(dm.difficultyAdjustmentWindowSize)+1 {
 		return dm.genesisBits()
 	}
 
