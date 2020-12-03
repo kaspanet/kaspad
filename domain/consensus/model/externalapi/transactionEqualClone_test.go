@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-type transactionToCompare struct {
+type TransactionToCompare struct {
 	tx             *DomainTransaction
 	expectedResult bool
 }
 
 type TestDomainTransactionStruct struct {
 	baseTx                 *DomainTransaction
-	transactionToCompareTo []*transactionToCompare
+	transactionToCompareTo []*TransactionToCompare
 }
 
 func InitTestBaseTransaction() *DomainTransaction {
@@ -39,9 +39,9 @@ func InitTestBaseTransaction() *DomainTransaction {
 	return testTx
 }
 
-func InitTestTransactionToCompare() []*transactionToCompare {
+func InitTestTransactionToCompare() []*TransactionToCompare {
 
-	testTx := []*transactionToCompare{{
+	testTx := []*TransactionToCompare{{
 		tx: &DomainTransaction{
 			Version:      1,
 			Inputs:       []*DomainTransactionInput{},
