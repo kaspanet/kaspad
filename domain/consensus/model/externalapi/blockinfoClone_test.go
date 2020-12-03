@@ -8,29 +8,23 @@ import (
 func InitTestBlockInfoStructsForClone() []*BlockInfo {
 
 	tests := []*BlockInfo{
-
 		{
 			true,
 			BlockStatus(0x01),
 			true,
-		},
-
-		{
+		}, {
 			true,
 			BlockStatus(0x02),
 			false,
-		},
-		{
+		}, {
 			true,
 			'a',
 			false,
-		},
-		{
+		}, {
 			true,
 			255,
 			false,
-		},
-		{
+		}, {
 			true,
 			0,
 			false,
@@ -41,12 +35,11 @@ func InitTestBlockInfoStructsForClone() []*BlockInfo {
 
 func TestBlockInfo_Clone(t *testing.T) {
 
-	blockinfos := InitTestBlockInfoStructsForClone()
+	blockInfos := InitTestBlockInfoStructsForClone()
+	for i, blockInfo := range blockInfos {
+		blockInfoClone := blockInfo.Clone()
 
-	for i, blockinfo := range blockinfos {
-		clone := blockinfo.Clone()
-
-		if !reflect.DeepEqual(blockinfo, clone) {
+		if !reflect.DeepEqual(blockInfo, blockInfoClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}

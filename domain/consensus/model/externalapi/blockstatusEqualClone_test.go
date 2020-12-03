@@ -36,8 +36,7 @@ func InitTestBlockStatusForEqual() []TestBlockStatusStruct {
 					expectedResult: true,
 				},
 			},
-		},
-		{
+		}, {
 			baseBlockStatus: 255,
 			blockStatusesToCompareTo: []TestBlockStatusToCompare{
 				{
@@ -76,13 +75,12 @@ func TestBlockStatus_Equal(t *testing.T) {
 func TestBlockStatus_Clone(t *testing.T) {
 
 	testBlockStatus := InitTestBlockStatusForClone()
-
 	for i, blockStatus := range testBlockStatus {
-		clone := blockStatus.Clone()
-		if !clone.Equal(blockStatus) {
+		blockStatusClone := blockStatus.Clone()
+		if !blockStatusClone.Equal(blockStatus) {
 			t.Fatalf("Test #%d:[Equal] clone should be equal to the original", i)
 		}
-		if !reflect.DeepEqual(blockStatus, clone) {
+		if !reflect.DeepEqual(blockStatus, blockStatusClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}

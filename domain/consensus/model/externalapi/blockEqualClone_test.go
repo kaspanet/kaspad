@@ -36,9 +36,7 @@ func InitTestBaseTransactions() []*DomainTransaction {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 	}}
-
 	return testTx
-
 }
 
 func InitTestAnotherTransactions() []*DomainTransaction {
@@ -62,15 +60,12 @@ func InitTestAnotherTransactions() []*DomainTransaction {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 	}}
-
 	return testTx
-
 }
 
 func InitTestBlockStructsForClone() []*DomainBlock {
 
 	tests := []*DomainBlock{
-
 		{
 			&DomainBlockHeader{
 
@@ -84,8 +79,7 @@ func InitTestBlockStructsForClone() []*DomainBlock {
 				6,
 			},
 			InitTestBaseTransactions(),
-		},
-		{
+		}, {
 			&DomainBlockHeader{
 
 				0,
@@ -130,8 +124,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 					expectedResult: false,
 				},
 			},
-		},
-		{
+		}, {
 			baseBlock: &DomainBlock{
 				&DomainBlockHeader{
 					0,
@@ -145,7 +138,6 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 				},
 				InitTestBaseTransactions(),
 			},
-
 			blocksToCompareTo: []blockToCompare{
 				{
 					block:          nil,
@@ -166,8 +158,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestAnotherTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -182,8 +173,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: true,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -198,8 +188,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -214,8 +203,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -230,8 +218,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -246,8 +233,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -262,8 +248,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -278,8 +263,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -294,8 +278,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 						InitTestBaseTransactions(),
 					},
 					expectedResult: false,
-				},
-				{
+				}, {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
@@ -321,14 +304,12 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 func TestDomainBlock_Equal(t *testing.T) {
 
 	blockTests := InitTestBlockStructsForEqual()
-
 	for i, test := range *blockTests {
 		for j, subTest := range test.blocksToCompareTo {
 			result1 := test.baseBlock.Equal(subTest.block)
 			if result1 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
 			}
-
 			result2 := subTest.block.Equal(test.baseBlock)
 			if result2 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
@@ -341,14 +322,12 @@ func TestDomainBlock_Equal(t *testing.T) {
 func TestDomainBlock_Clone(t *testing.T) {
 
 	blocks := InitTestBlockStructsForClone()
-
 	for i, block := range blocks {
-		clone := block.Clone()
-		if !clone.Equal(block) {
+		blockClone := block.Clone()
+		if !blockClone.Equal(block) {
 			t.Fatalf("Test #%d:[Equal] clone should be equal to the original", i)
 		}
-
-		if !reflect.DeepEqual(block, clone) {
+		if !reflect.DeepEqual(block, blockClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}

@@ -36,12 +36,10 @@ func InitTestBaseTransaction() *DomainTransaction {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 	}
-
 	return testTx
-
 }
 
-func InitTesttransactionToCompare() []*transactionToCompare {
+func InitTestTransactionToCompare() []*transactionToCompare {
 
 	testTx := []*transactionToCompare{{
 		tx: &DomainTransaction{
@@ -64,40 +62,8 @@ func InitTesttransactionToCompare() []*transactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 		},
 		expectedResult: false,
-	},
-		{
-			tx: &DomainTransaction{
-				Version:      1,
-				Inputs:       nil,
-				Outputs:      []*DomainTransactionOutput{},
-				LockTime:     1,
-				SubnetworkID: DomainSubnetworkID{0x01},
-				Gas:          1,
-				PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				Payload: []byte{0x01},
-				Fee:     0,
-				Mass:    1,
-				ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			expectedResult: true,
-		},
-	}
-
-	return testTx
-
-}
-
-func InitTestDomainTransactionForClone() []*DomainTransaction {
-
-	tests := []*DomainTransaction{
-
-		{
+	}, {
+		tx: &DomainTransaction{
 			Version:      1,
 			Inputs:       nil,
 			Outputs:      []*DomainTransactionOutput{},
@@ -116,7 +82,36 @@ func InitTestDomainTransactionForClone() []*DomainTransaction {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 		},
+		expectedResult: true,
+	},
+	}
+
+	return testTx
+
+}
+
+func InitTestDomainTransactionForClone() []*DomainTransaction {
+
+	tests := []*DomainTransaction{
 		{
+			Version:      1,
+			Inputs:       nil,
+			Outputs:      []*DomainTransactionOutput{},
+			LockTime:     1,
+			SubnetworkID: DomainSubnetworkID{0x01},
+			Gas:          1,
+			PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			Payload: []byte{0x01},
+			Fee:     0,
+			Mass:    1,
+			ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+		}, {
 			Version:      1,
 			Inputs:       []*DomainTransactionInput{},
 			Outputs:      nil,
@@ -136,7 +131,6 @@ func InitTestDomainTransactionForClone() []*DomainTransaction {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
 		},
 	}
-
 	return tests
 }
 
@@ -145,7 +139,7 @@ func initTestDomainTransactionForEqual() []TestDomainTransactionStruct {
 	tests := []TestDomainTransactionStruct{
 		{
 			baseTx:                 InitTestBaseTransaction(),
-			transactionToCompareTo: InitTesttransactionToCompare(),
+			transactionToCompareTo: InitTestTransactionToCompare(),
 		},
 	}
 	return tests
@@ -154,36 +148,30 @@ func initTestDomainTransactionForEqual() []TestDomainTransactionStruct {
 func TestDomainTransaction_Equal(t *testing.T) {
 
 	txTests := initTestDomainTransactionForEqual()
-
 	for i, test := range txTests {
 		for j, subTest := range test.transactionToCompareTo {
 			result1 := test.baseTx.Equal(subTest.tx)
 			if result1 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
 			}
-
 			result2 := subTest.tx.Equal(test.baseTx)
 			if result2 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
 			}
 		}
 	}
-
 }
 
 func TestDomainTransaction_Clone(t *testing.T) {
 
 	txs := InitTestDomainTransactionForClone()
-
 	for i, tx := range txs {
-		clone := tx.Clone()
-		if !clone.Equal(tx) {
+		txClone := tx.Clone()
+		if !txClone.Equal(tx) {
 			t.Fatalf("Test #%d:[Equal] clone should be equal to the original", i)
 		}
-
-		if !reflect.DeepEqual(tx, clone) {
+		if !reflect.DeepEqual(tx, txClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}
-
 }

@@ -8,12 +8,10 @@ import (
 func InitTestCoinbaseStructsForClone() []*DomainCoinbaseData {
 
 	tests := []*DomainCoinbaseData{
-
 		{
 			[]byte{'a', 'b', 'c', 'd'},
 			[]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-		},
-		{
+		}, {
 			[]byte{0, 0, 0, 0, 55},
 			[]byte{0xFF, 0xFF, 0xFF, 0xFF,
 				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -52,11 +50,9 @@ func InitTestCoinbaseStructsForClone() []*DomainCoinbaseData {
 func TestCoinbase_Clone(t *testing.T) {
 
 	coinbases := InitTestCoinbaseStructsForClone()
-
 	for i, coinbase := range coinbases {
-		clone := coinbase.Clone()
-
-		if !reflect.DeepEqual(coinbase, clone) {
+		coinbaseClone := coinbase.Clone()
+		if !reflect.DeepEqual(coinbase, coinbaseClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}
