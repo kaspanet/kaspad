@@ -53,7 +53,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
 
-func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.UTXODiff, error) {
+func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.MutableUTXODiff, error) {
 	log.Tracef("restorePastUTXO start for block %s", blockHash)
 	defer log.Tracef("restorePastUTXO end for block %s", blockHash)
 
@@ -105,11 +105,11 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	}
 	log.Tracef("The accumulated diff for block %s is: %s", blockHash, accumulatedDiff)
 
-	return accumulatedDiff.ToImmutable(), nil
+	return accumulatedDiff, nil
 }
 
 func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
 	model.AcceptanceData, model.MutableUTXODiff, error) {
 
 	log.Tracef("applyBlueBlocks start for block %s", blockHash)
@@ -127,7 +127,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	log.Tracef("The past median time for block %s is: %d", blockHash, selectedParentMedianTime)
 
 	multiblockAcceptanceData := make(model.AcceptanceData, len(blueBlocks))
-	accumulatedUTXODiff := selectedParentPastUTXODiff.CloneMutable()
+	accumulatedUTXODiff := selectedParentPastUTXODiff
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
@@ -277,5 +277,5 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, err
 	}
 
-	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff)
+	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff.ToImmutable())
 }
