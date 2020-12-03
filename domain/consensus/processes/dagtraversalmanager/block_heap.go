@@ -113,3 +113,53 @@ func (bh blockHeap) Push(blockHash *externalapi.DomainHash) error {
 func (bh blockHeap) Len() int {
 	return bh.impl.Len()
 }
+
+// sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their height, capped by a specific size.
+type sizedUpBlockHeap struct {
+	impl          upHeap
+	ghostdagStore model.GHOSTDAGDataStore
+	dbContext     model.DBReader
+}
+
+// newSizedUpHeap initializes and returns a new sizedUpBlockHeap
+func (dtm dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
+	h := sizedUpBlockHeap{
+		impl:          upHeap{baseHeap{slice: make([]*blockHeapNode, 0, cap), ghostdagManager: dtm.ghostdagManager}},
+		ghostdagStore: dtm.ghostdagDataStore,
+		dbContext:     dtm.databaseContext,
+	}
+	heap.Init(&h.impl)
+	return &h
+}
+
+// len returns the length of this heap
+func (sbh *sizedUpBlockHeap) len() int {
+	return sbh.impl.Len()
+}
+
+// pop removes the block with lowest height from this heap and returns it
+func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
+	return heap.Pop(&sbh.impl).(*blockHeapNode).hash
+}
+
+// tryPush tries to pushe the block onto the heap, if the heap is full and it's less than the minimum it rejects it
+func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
+	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+	node := &blockHeapNode{
+		hash:         blockHash,
+		ghostdagData: ghostdagData,
+	}
+	if len(sbh.impl.slice) == cap(sbh.impl.slice) {
+		min := sbh.impl.peek()
+		// if the heap is full, and the new block is less than the minimum, return false
+		if node.less(min, sbh.impl.ghostdagManager) {
+			return false, nil
+		}
+		sbh.pop()
+	}
+	heap.Push(&sbh.impl, node)
+	return true, nil
+}
