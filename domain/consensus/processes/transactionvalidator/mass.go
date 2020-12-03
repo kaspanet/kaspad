@@ -3,7 +3,6 @@ package transactionvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -17,7 +16,7 @@ func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.Dom
 		totalScriptPubKeySize += uint64(len(output.ScriptPublicKey))
 	}
 
-	return size*constants.MassPerTxByte + totalScriptPubKeySize*constants.MassPerScriptPubKeyByte
+	return size*v.massPerTxByte + totalScriptPubKeySize*v.massPerScriptPubKeyByte
 }
 
 func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) (uint64, error) {
@@ -44,5 +43,5 @@ func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction
 		return 0, ruleerrors.NewErrMissingTxOut(missingOutpoints)
 	}
 
-	return standaloneMass + sigOpsCount*constants.MassPerSigOp, nil
+	return standaloneMass + sigOpsCount*v.massPerSigOp, nil
 }

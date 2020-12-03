@@ -18,6 +18,7 @@ type difficultyManager struct {
 	headerStore                    model.BlockHeaderStore
 	dagTopologyManager             model.DAGTopologyManager
 	dagTraversalManager            model.DAGTraversalManager
+	genesisHash                    *externalapi.DomainHash
 	powMax                         *big.Int
 	difficultyAdjustmentWindowSize uint64
 	targetTimePerBlock             time.Duration
@@ -34,6 +35,7 @@ func New(
 	powMax *big.Int,
 	difficultyAdjustmentWindowSize uint64,
 	targetTimePerBlock time.Duration,
+	genesisHash *externalapi.DomainHash,
 ) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
@@ -45,7 +47,17 @@ func New(
 		powMax:                         powMax,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 		targetTimePerBlock:             targetTimePerBlock,
+		genesisHash:                    genesisHash,
 	}
+}
+
+func (dm *difficultyManager) genesisBits() (uint32, error) {
+	header, err := dm.headerStore.BlockHeader(dm.databaseContext, dm.genesisHash)
+	if err != nil {
+		return 0, err
+	}
+
+	return header.Bits, nil
 }
 
 // RequiredDifficulty returns the difficulty required for some block
@@ -57,7 +69,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 	// Genesis block
 	if len(parents) == 0 {
-		return util.BigToCompact(dm.powMax), nil
+		return dm.genesisBits()
 	}
 
 	// find bluestParent
@@ -83,7 +95,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 
 	// Not enough blocks for building a difficulty window.
 	if bluestGhostDAG.BlueScore < dm.difficultyAdjustmentWindowSize+1 {
-		return util.BigToCompact(dm.powMax), nil
+		return dm.genesisBits()
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals

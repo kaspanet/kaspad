@@ -15,18 +15,30 @@ type transactionValidator struct {
 	pastMedianTimeManager      model.PastMedianTimeManager
 	ghostdagDataStore          model.GHOSTDAGDataStore
 	enableNonNativeSubnetworks bool
+	massPerTxByte              uint64
+	massPerScriptPubKeyByte    uint64
+	massPerSigOp               uint64
+	maxCoinbasePayloadLength   uint64
 	sigCache                   *txscript.SigCache
 }
 
 // New instantiates a new TransactionValidator
 func New(blockCoinbaseMaturity uint64,
 	enableNonNativeSubnetworks bool,
+	massPerTxByte uint64,
+	massPerScriptPubKeyByte uint64,
+	massPerSigOp uint64,
+	maxCoinbasePayloadLength uint64,
 	databaseContext model.DBReader,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagDataStore model.GHOSTDAGDataStore) model.TransactionValidator {
 	return &transactionValidator{
 		blockCoinbaseMaturity:      blockCoinbaseMaturity,
 		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
+		massPerTxByte:              massPerTxByte,
+		massPerScriptPubKeyByte:    massPerScriptPubKeyByte,
+		massPerSigOp:               massPerSigOp,
+		maxCoinbasePayloadLength:   maxCoinbasePayloadLength,
 		databaseContext:            databaseContext,
 		pastMedianTimeManager:      pastMedianTimeManager,
 		ghostdagDataStore:          ghostdagDataStore,

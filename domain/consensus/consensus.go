@@ -129,6 +129,13 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	blockInfo.BlueScore = ghostdagData.BlueScore
+
 	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
 	if err != nil {
 		return nil, err

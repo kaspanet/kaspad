@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -157,7 +156,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 
 	log.Tracef("Extracting coinbase data for coinbase transaction %s in block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
 	if err != nil {
 		return err
 	}
