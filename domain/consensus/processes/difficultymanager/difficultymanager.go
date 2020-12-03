@@ -1,12 +1,13 @@
 package difficultymanager
 
 import (
+	"math/big"
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/bigintpool"
-	"math/big"
-	"time"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -82,7 +83,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// Not enough blocks for building a difficulty window.
-	if bluestGhostDAG.BlueScore < dm.difficultyAdjustmentWindowSize+1 {
+	if bluestGhostDAG.BlueScore() < dm.difficultyAdjustmentWindowSize+1 {
 		return util.BigToCompact(dm.powMax), nil
 	}
 

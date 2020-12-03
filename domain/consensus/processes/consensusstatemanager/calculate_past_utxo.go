@@ -31,8 +31,8 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	}
 
 	log.Tracef("Restoring the past UTXO of block %s with selectedParent %s",
-		blockHash, blockGHOSTDAGData.SelectedParent)
-	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
+		blockHash, blockGHOSTDAGData.SelectedParent())
+	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -109,13 +109,13 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData model.BlockGHOSTDAGData) (
 	model.AcceptanceData, model.MutableUTXODiff, error) {
 
 	log.Tracef("applyBlueBlocks start for block %s", blockHash)
 	defer log.Tracef("applyBlueBlocks end for block %s", blockHash)
 
-	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
+	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -147,7 +147,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				transactionID, blueBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
-				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore)
+				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore())
 			if err != nil {
 				return nil, nil, err
 			}

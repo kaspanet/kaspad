@@ -116,7 +116,7 @@ func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error
 		return err
 	}
 
-	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
+	mergeSetSize := len(ghostdagData.MergeSetReds()) + len(ghostdagData.MergeSetBlues())
 
 	if mergeSetSize > constants.MergeSetSizeLimit {
 		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,

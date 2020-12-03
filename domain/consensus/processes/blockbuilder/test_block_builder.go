@@ -96,13 +96,13 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent)
+	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(ghostdagData.SelectedParent())
 	if err != nil {
 		return nil, nil, err
 	}
 	if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 		return nil, nil, errors.Errorf("Error building block with selectedParent %s with status DisqualifiedFromChain",
-			ghostdagData.SelectedParent)
+			ghostdagData.SelectedParent())
 	}
 
 	pastUTXO, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)

@@ -64,24 +64,25 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	storeCacheSize := 200
-	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
-	blockStore, err := blockstore.New(dbManager, storeCacheSize)
+	shallowStoreCacheSize := 200
+	deepStoreCacheSize := 10_000
+	acceptanceDataStore := acceptancedatastore.New(shallowStoreCacheSize)
+	blockStore, err := blockstore.New(dbManager, shallowStoreCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, storeCacheSize)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, deepStoreCacheSize)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(storeCacheSize)
-	blockStatusStore := blockstatusstore.New(storeCacheSize)
-	multisetStore := multisetstore.New(storeCacheSize)
+	blockRelationStore := blockrelationstore.New(shallowStoreCacheSize)
+	blockStatusStore := blockstatusstore.New(shallowStoreCacheSize)
+	multisetStore := multisetstore.New(shallowStoreCacheSize)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
-	utxoDiffStore := utxodiffstore.New(storeCacheSize)
+	reachabilityDataStore := reachabilitydatastore.New(shallowStoreCacheSize)
+	utxoDiffStore := utxodiffstore.New(shallowStoreCacheSize)
 	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
+	ghostdagDataStore := ghostdagdatastore.New(deepStoreCacheSize)
 	headerTipsStore := headertipsstore.New()
 
 	// Processes

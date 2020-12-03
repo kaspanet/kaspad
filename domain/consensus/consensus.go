@@ -189,7 +189,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	if err != nil {
 		return nil, err
 	}
-	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent)
+	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
 }
 
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {

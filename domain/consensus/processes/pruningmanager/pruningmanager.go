@@ -99,14 +99,14 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 	if err != nil {
 		return err
 	}
-	currentPBlueScore := currentPGhost.BlueScore
+	currentPBlueScore := currentPGhost.BlueScore()
 	// Because the pruning point changes only once per finality, then there's no need to even check for that if a finality interval hasn't passed.
-	if virtual.BlueScore <= currentPBlueScore+pm.finalityInterval {
+	if virtual.BlueScore() <= currentPBlueScore+pm.finalityInterval {
 		return nil
 	}
 
 	// This means the pruning point is still genesis.
-	if virtual.BlueScore <= pm.pruningDepth+pm.finalityInterval {
+	if virtual.BlueScore() <= pm.pruningDepth+pm.finalityInterval {
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 	}
 
 	// Actually check if the pruning point changed
-	if (currentPBlueScore / pm.finalityInterval) < (candidatePGhost.BlueScore / pm.finalityInterval) {
+	if (currentPBlueScore / pm.finalityInterval) < (candidatePGhost.BlueScore() / pm.finalityInterval) {
 		err = pm.savePruningPoint(candidatePHash)
 		if err != nil {
 			return err

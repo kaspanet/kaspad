@@ -30,8 +30,8 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		return nil, err
 	}
 
-	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues))
-	for i, blue := range ghostdagData.MergeSetBlues {
+	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
+	for i, blue := range ghostdagData.MergeSetBlues() {
 		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i])
 		if err != nil {
 			return nil, err
@@ -42,7 +42,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		}
 	}
 
-	payload, err := coinbase.SerializeCoinbasePayload(ghostdagData.BlueScore, coinbaseData)
+	payload, err := coinbase.SerializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (ui
 	}
 
 	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
-	return constants.BaseSubsidy >> uint(ghostdagData.BlueScore/c.subsidyReductionInterval), nil
+	return constants.BaseSubsidy >> uint(ghostdagData.BlueScore()/c.subsidyReductionInterval), nil
 }
 
 // New instantiates a new CoinbaseManager
