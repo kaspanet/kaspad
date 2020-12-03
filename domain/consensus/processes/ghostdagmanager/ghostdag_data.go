@@ -13,6 +13,7 @@ type blockGHOSTDAGData struct {
 	bluesAnticoneSizes map[externalapi.DomainHash]model.KType
 }
 
+// NewBlockGHOSTDAGData creates a new instance of model.BlockGHOSTDAGData
 func NewBlockGHOSTDAGData(
 	blueScore uint64,
 	selectedParent *externalapi.DomainHash,
