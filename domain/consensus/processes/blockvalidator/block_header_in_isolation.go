@@ -29,7 +29,7 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.ParentHashes)) > v.maxBlockParents {
+	if uint64(len(header.ParentHashes)) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.ParentHashes), v.maxBlockParents)
 	}

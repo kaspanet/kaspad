@@ -20,7 +20,7 @@ type blockValidator struct {
 	difficultyAdjustmentWindowSize uint64
 	maxBlockSize                   uint64
 	mergeSetSizeLimit              uint64
-	maxBlockParents                uint64
+	maxBlockParents                model.KType
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -48,7 +48,7 @@ func New(powMax *big.Int,
 	difficultyAdjustmentWindowSize uint64,
 	maxBlockSize uint64,
 	mergeSetSizeLimit uint64,
-	maxBlockParents uint64,
+	maxBlockParents model.KType,
 
 	databaseContext model.DBReader,
 

@@ -152,7 +152,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.DifficultyAdjustmentWindowSize,
 		dagParams.MaxBlockSize,
 		dagParams.MergeSetSizeLimit,
-		uint64(dagParams.MaxBlockParents),
+		dagParams.MaxBlockParents,
 
 		dbManager,
 		difficultyManager,
@@ -175,7 +175,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
 		dagParams.MaxMassAcceptedByBlock,
-		uint64(dagParams.MaxBlockParents),
+		dagParams.MaxBlockParents,
 		dagParams.MergeSetSizeLimit,
 		genesisHash,
 
