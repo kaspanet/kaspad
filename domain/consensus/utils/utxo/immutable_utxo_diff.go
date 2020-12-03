@@ -73,14 +73,6 @@ func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTX
 	}, nil
 }
 
-// Clone returns a clone of immutableUTXODiff
-func (iud *immutableUTXODiff) Clone() model.UTXODiff {
-	return &immutableUTXODiff{
-		mutableUTXODiff: iud.mutableUTXODiff.clone(),
-		isInvalidated:   false,
-	}
-}
-
 func (iud *immutableUTXODiff) CloneMutable() model.MutableUTXODiff {
 	return iud.cloneMutable()
 }

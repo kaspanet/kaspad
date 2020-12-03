@@ -16,9 +16,8 @@ func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) ([]*D
 			return nil, err
 		}
 
-		outpointCopy := outpoint
 		items[i] = &DbUtxoCollectionItem{
-			Outpoint:  DomainOutpointToDbOutpoint(outpointCopy),
+			Outpoint:  DomainOutpointToDbOutpoint(outpoint),
 			UtxoEntry: UTXOEntryToDBUTXOEntry(entry),
 		}
 		i++

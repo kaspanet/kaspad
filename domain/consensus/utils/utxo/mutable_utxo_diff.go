@@ -122,10 +122,6 @@ func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransa
 	return nil
 }
 
-func (mud *mutableUTXODiff) Clone() model.MutableUTXODiff {
-	return mud.clone()
-}
-
 func (mud *mutableUTXODiff) addEntry(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) error {
 	if mud.toRemove.containsWithBlueScore(outpoint, entry.BlockBlueScore()) {
 		mud.toRemove.remove(outpoint)

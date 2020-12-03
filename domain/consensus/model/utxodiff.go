@@ -16,7 +16,6 @@ type UTXODiff interface {
 	ToRemove() UTXOCollection
 	WithDiff(other UTXODiff) (UTXODiff, error)
 	DiffFrom(other UTXODiff) (UTXODiff, error)
-	Clone() UTXODiff
 	CloneMutable() MutableUTXODiff
 }
 
@@ -31,5 +30,4 @@ type MutableUTXODiff interface {
 
 	WithDiffInPlace(other UTXODiff) error
 	AddTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error
-	Clone() MutableUTXODiff
 }
