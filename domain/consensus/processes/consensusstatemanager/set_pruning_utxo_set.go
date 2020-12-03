@@ -88,7 +88,7 @@ func (csm *consensusStateManager) setPruningPointUTXOSet(serializedUTXOSet []byt
 	}
 
 	log.Tracef("Updating the header tips pruning point diff parents with an empty UTXO diff")
-	err = csm.updateVirtualDiffParents(model.NewUTXODiff())
+	err = csm.updateVirtualDiffParents(utxo.NewUTXODiff())
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (p protoUTXOSetIterator) Next() bool {
 	return p.index < len(p.utxoSet.Utxos)
 }
 
-func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
+func (p protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
 	if err != nil {
 		if serialization.IsMalformedError(err) {

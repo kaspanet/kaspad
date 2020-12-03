@@ -3,6 +3,8 @@ package mempool
 import (
 	"math"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
@@ -13,13 +15,13 @@ const unacceptedBlueScore = math.MaxUint64
 func newMempoolUTXOSet() *mempoolUTXOSet {
 	return &mempoolUTXOSet{
 		transactionByPreviousOutpoint: make(map[consensusexternalapi.DomainOutpoint]*consensusexternalapi.DomainTransaction),
-		poolUnspentOutputs:            make(map[consensusexternalapi.DomainOutpoint]*consensusexternalapi.UTXOEntry),
+		poolUnspentOutputs:            make(map[consensusexternalapi.DomainOutpoint]consensusexternalapi.UTXOEntry),
 	}
 }
 
 type mempoolUTXOSet struct {
 	transactionByPreviousOutpoint map[consensusexternalapi.DomainOutpoint]*consensusexternalapi.DomainTransaction
-	poolUnspentOutputs            map[consensusexternalapi.DomainOutpoint]*consensusexternalapi.UTXOEntry
+	poolUnspentOutputs            map[consensusexternalapi.DomainOutpoint]consensusexternalapi.UTXOEntry
 }
 
 // Populate UTXO Entries in the transaction, to allow chained txs.
@@ -67,12 +69,8 @@ func (mpus *mempoolUTXOSet) addTx(tx *consensusexternalapi.DomainTransaction) er
 		if _, exists := mpus.poolUnspentOutputs[outpoint]; exists {
 			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
-		mpus.poolUnspentOutputs[outpoint] = &consensusexternalapi.UTXOEntry{
-			Amount:          txOut.Value,
-			ScriptPublicKey: txOut.ScriptPublicKey,
-			BlockBlueScore:  unacceptedBlueScore,
-			IsCoinbase:      false,
-		}
+		mpus.poolUnspentOutputs[outpoint] =
+			utxo.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, false, unacceptedBlueScore)
 	}
 	return nil
 }

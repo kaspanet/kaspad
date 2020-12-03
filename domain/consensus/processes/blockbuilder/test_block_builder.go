@@ -31,7 +31,7 @@ func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus test
 // and returns the block together with its past UTXO-diff from the virtual.
 func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
-	*externalapi.DomainBlock, *model.UTXODiff, error) {
+	*externalapi.DomainBlock, model.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
 	defer onEnd()
@@ -72,7 +72,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	}, nil
 }
 
-func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *model.UTXODiff, error) {
+func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error) {
 
 	defer bb.testConsensus.DiscardAllStores()
 

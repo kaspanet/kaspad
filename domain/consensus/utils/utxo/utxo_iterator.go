@@ -3,11 +3,12 @@ package utxo
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 type utxoOutpointEntryPair struct {
 	outpoint externalapi.DomainOutpoint
-	entry    *externalapi.UTXOEntry
+	entry    externalapi.UTXOEntry
 }
 
 type utxoCollectionIterator struct {
@@ -15,11 +16,10 @@ type utxoCollectionIterator struct {
 	pairs []utxoOutpointEntryPair
 }
 
-// CollectionIterator creates a utxo iterator from give UTXO collection
-func CollectionIterator(collection model.UTXOCollection) model.ReadOnlyUTXOSetIterator {
-	pairs := make([]utxoOutpointEntryPair, len(collection))
+func (uc utxoCollection) Iterator() model.ReadOnlyUTXOSetIterator {
+	pairs := make([]utxoOutpointEntryPair, len(uc))
 	i := 0
-	for outpoint, entry := range collection {
+	for outpoint, entry := range uc {
 		pairs[i] = utxoOutpointEntryPair{
 			outpoint: outpoint,
 			entry:    entry,
@@ -29,12 +29,25 @@ func CollectionIterator(collection model.UTXOCollection) model.ReadOnlyUTXOSetIt
 	return &utxoCollectionIterator{index: -1, pairs: pairs}
 }
 
-func (u *utxoCollectionIterator) Next() bool {
-	u.index++
-	return u.index < len(u.pairs)
+func (uci *utxoCollectionIterator) Next() bool {
+	uci.index++
+	return uci.index < len(uci.pairs)
 }
 
-func (u *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry, err error) {
-	pair := u.pairs[u.index]
+func (uci *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+	pair := uci.pairs[uci.index]
 	return &pair.outpoint, pair.entry, nil
+}
+
+func (uci *utxoCollectionIterator) WithDiff(diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
+	d, ok := diff.(*immutableUTXODiff)
+	if !ok {
+		return nil, errors.New("diff is not of type *immutableUTXODiff")
+	}
+
+	return &readOnlyUTXOIteratorWithDiff{
+		baseIterator:  uci,
+		diff:          d,
+		toAddIterator: diff.ToAdd().Iterator(),
+	}, nil
 }

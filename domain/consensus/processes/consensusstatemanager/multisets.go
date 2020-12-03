@@ -72,12 +72,8 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 			TransactionID: *transactionID,
 			Index:         uint32(i),
 		}
-		utxoEntry := &externalapi.UTXOEntry{
-			Amount:          output.Value,
-			ScriptPublicKey: output.ScriptPublicKey,
-			BlockBlueScore:  blockBlueScore,
-			IsCoinbase:      isCoinbase,
-		}
+		utxoEntry := utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockBlueScore)
+
 		log.Tracef("Adding input %s at index %d from the multiset", transactionID, i)
 		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)
 		if err != nil {
@@ -88,7 +84,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 	return nil
 }
 
-func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+func addUTXOToMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
 	serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)
@@ -100,7 +96,7 @@ func addUTXOToMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
 	return nil
 }
 
-func removeUTXOFromMultiset(multiset model.Multiset, entry *externalapi.UTXOEntry,
+func removeUTXOFromMultiset(multiset model.Multiset, entry externalapi.UTXOEntry,
 	outpoint *externalapi.DomainOutpoint) error {
 
 	serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)

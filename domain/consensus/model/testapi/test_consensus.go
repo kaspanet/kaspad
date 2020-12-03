@@ -11,7 +11,8 @@ type TestConsensus interface {
 
 	DatabaseContext() model.DBReader
 
-	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *model.UTXODiff, error)
+	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
 
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block

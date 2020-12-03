@@ -18,7 +18,7 @@ type testConsensus struct {
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
-	*externalapi.DomainBlock, *model.UTXODiff, error) {
+	*externalapi.DomainBlock, model.UTXODiff, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
