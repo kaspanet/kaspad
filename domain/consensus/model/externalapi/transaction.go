@@ -40,6 +40,11 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		outputsClone[i] = output.Clone()
 	}
 
+	var idClone *DomainTransactionID
+	if tx.ID != nil {
+		idClone = tx.ID.Clone()
+	}
+
 	return &DomainTransaction{
 		Version:      tx.Version,
 		Inputs:       inputsClone,
@@ -51,6 +56,7 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		Payload:      payloadClone,
 		Fee:          tx.Fee,
 		Mass:         tx.Mass,
+		ID:           idClone,
 	}
 }
 
