@@ -3,7 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -15,7 +15,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentsExist(header)
+	err = v.checkParentsExist(blockHash, header)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	// to avoid proof of work checks is set.
 	if !v.skipPoW {
 		// The block hash must be less than the claimed target.
-		hash := consensusserialization.HeaderHash(header)
+		hash := consensushashing.HeaderHash(header)
 		hashNum := hashes.ToBig(hash)
 		if hashNum.Cmp(target) > 0 {
 			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
@@ -104,17 +104,32 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 
+	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
 	for _, parent := range header.ParentHashes {
-		exists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
 			return err
 		}
-
-		if !exists {
+		if !parentHeaderExists {
 			missingParentHashes = append(missingParentHashes, parent)
+			continue
+		}
+
+		if isFullBlock {
+			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+			if err != nil {
+				return err
+			}
+			if parentStatus == externalapi.StatusHeaderOnly {
+				missingParentHashes = append(missingParentHashes, parent)
+			}
 		}
 	}
 

@@ -4,8 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.
@@ -17,9 +16,9 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 // from the virtual's UTXO set combined with the provided utxoDiff.
 // If utxoDiff == nil UTXO entries are taken from the virtual's UTXO set only
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
-	transaction *externalapi.DomainTransaction, utxoDiff *model.UTXODiff) error {
+	transaction *externalapi.DomainTransaction, utxoDiff model.UTXODiff) error {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionID)
 	defer log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff end for transaction %s", transactionID)
 
@@ -34,14 +33,14 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 		// check if utxoDiff says anything about the input's outpoint
 		if utxoDiff != nil {
-			if utxoEntry, ok := utxoalgebra.CollectionGet(utxoDiff.ToAdd, &transactionInput.PreviousOutpoint); ok {
+			if utxoEntry, ok := utxoDiff.ToAdd().Get(&transactionInput.PreviousOutpoint); ok {
 				log.Tracef("Populating outpoint %s:%d from the given utxoDiff",
 					transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
 				transactionInput.UTXOEntry = utxoEntry
 				continue
 			}
 
-			if utxoalgebra.CollectionContains(utxoDiff.ToRemove, &transactionInput.PreviousOutpoint) {
+			if utxoDiff.ToRemove().Contains(&transactionInput.PreviousOutpoint) {
 				log.Tracef("Outpoint %s:%d is missing in the given utxoDiff",
 					transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
 				missingOutpoints = append(missingOutpoints, &transactionInput.PreviousOutpoint)

@@ -114,13 +114,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestSelectedTip:
-		payload := new(KaspadMessage_RequestSelectedTip)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.MsgRequestTransactions:
 		payload := new(KaspadMessage_RequestTransactions)
 		err := payload.fromAppMessage(message)
@@ -165,13 +158,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.MsgPong:
 		payload := new(KaspadMessage_Pong)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.MsgSelectedTip:
-		payload := new(KaspadMessage_SelectedTip)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

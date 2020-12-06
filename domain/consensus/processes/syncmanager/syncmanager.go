@@ -78,11 +78,11 @@ func (sm *syncManager) IsBlockInHeaderPruningPointFuture(blockHash *externalapi.
 	return sm.isBlockInHeaderPruningPointFuture(blockHash)
 }
 
-func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
 	defer onEnd()
 
-	return sm.createBlockLocator(lowHash, highHash)
+	return sm.createBlockLocator(lowHash, highHash, limit)
 }
 
 func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {

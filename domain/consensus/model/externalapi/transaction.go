@@ -19,7 +19,7 @@ type DomainTransaction struct {
 	Mass uint64
 
 	// ID is a field that is used to cache the transaction ID.
-	// Always use consensusserialization.TransactionID instead of accessing this field directly
+	// Always use consensushashing.TransactionID instead of accessing this field directly
 	ID *DomainTransactionID
 }
 
@@ -62,7 +62,7 @@ type DomainTransactionInput struct {
 	SignatureScript  []byte
 	Sequence         uint64
 
-	UTXOEntry *UTXOEntry
+	UTXOEntry UTXOEntry
 }
 
 // Clone returns a clone of DomainTransactionInput
@@ -78,7 +78,7 @@ func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
 		PreviousOutpoint: *input.PreviousOutpoint.Clone(),
 		SignatureScript:  signatureScriptClone,
 		Sequence:         input.Sequence,
-		UTXOEntry:        input.UTXOEntry.Clone(),
+		UTXOEntry:        input.UTXOEntry,
 	}
 }
 

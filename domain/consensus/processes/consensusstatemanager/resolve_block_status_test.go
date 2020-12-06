@@ -6,7 +6,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -54,8 +54,8 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error creating spendingTransaction2: %+v", err)
 		}
 		spendingTransaction2.Outputs[0].Value-- // tweak the value to create a different ID
-		spendingTransaction1ID := consensusserialization.TransactionID(spendingTransaction1)
-		spendingTransaction2ID := consensusserialization.TransactionID(spendingTransaction2)
+		spendingTransaction1ID := consensushashing.TransactionID(spendingTransaction1)
+		spendingTransaction2ID := consensushashing.TransactionID(spendingTransaction2)
 		if *spendingTransaction1ID == *spendingTransaction2ID {
 			t.Fatalf("spendingTransaction1 and spendingTransaction2 ids are equal")
 		}

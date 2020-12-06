@@ -3,14 +3,15 @@ package coinbasemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
 
 type coinbaseManager struct {
-	subsidyReductionInterval uint64
+	subsidyReductionInterval                uint64
+	baseSubsidy                             uint64
+	coinbasePayloadScriptPublicKeyMaxLength uint64
 
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -30,8 +31,8 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		return nil, err
 	}
 
-	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues))
-	for i, blue := range ghostdagData.MergeSetBlues {
+	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
+	for i, blue := range ghostdagData.MergeSetBlues() {
 		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i])
 		if err != nil {
 			return nil, err
@@ -42,7 +43,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 		}
 	}
 
-	payload, err := coinbase.SerializeCoinbasePayload(ghostdagData.BlueScore, coinbaseData)
+	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 	}
 
 	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
-	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
+	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err
 	}
@@ -110,7 +111,7 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 // approximately every 4 years.
 func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
 	if c.subsidyReductionInterval == 0 {
-		return constants.BaseSubsidy, nil
+		return c.baseSubsidy, nil
 	}
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
@@ -119,17 +120,27 @@ func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (ui
 	}
 
 	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
-	return constants.BaseSubsidy >> uint(ghostdagData.BlueScore/c.subsidyReductionInterval), nil
+	return c.baseSubsidy >> uint(ghostdagData.BlueScore()/c.subsidyReductionInterval), nil
 }
 
 // New instantiates a new CoinbaseManager
 func New(
 	databaseContext model.DBReader,
+
+	subsidyReductionInterval uint64,
+	baseSubsidy uint64,
+	coinbasePayloadScriptPublicKeyMaxLength uint64,
+
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
-		databaseContext:     databaseContext,
+		databaseContext: databaseContext,
+
+		subsidyReductionInterval:                subsidyReductionInterval,
+		baseSubsidy:                             baseSubsidy,
+		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
+
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 	}

@@ -15,14 +15,12 @@ message KaspadMessage {
     RequestNextHeadersMessage requestNextHeaders = 8;
     DoneHeadersMessage DoneHeaders = 9;
     RequestRelayBlocksMessage requestRelayBlocks = 10;
-    RequestSelectedTipMessage requestSelectedTip = 11;
     RequestTransactionsMessage requestTransactions = 12;
     BlockMessage ibdBlock = 13;
     InvRelayBlockMessage invRelayBlock = 14;
     InvTransactionsMessage invTransactions = 15;
     PingMessage ping = 16;
     PongMessage pong = 17;
-    SelectedTipMessage selectedTip = 18;
     VerackMessage verack = 19;
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
@@ -171,6 +169,7 @@ message Hash{
 message RequestBlockLocatorMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
+  uint32 limit = 3;
 }
 // GetBlockLocatorMessage end
 
@@ -202,11 +201,6 @@ message RequestRelayBlocksMessage{
   repeated Hash hashes = 1;
 }
 // RequestRelayBlocksMessage end
-
-// GetSelectedTipMessage start
-message RequestSelectedTipMessage{
-}
-// GetSelectedTipMessage end
 
 // RequestTransactionsMessage start
 message RequestTransactionsMessage {
@@ -244,12 +238,6 @@ message PongMessage{
 }
 // PongMessage end
 
-// SelectedTipMessage start
-message SelectedTipMessage{
-  Hash selectedTipHash = 1;
-}
-// SelectedTipMessage end
-
 // VerackMessage start
 message VerackMessage{
 }
@@ -263,7 +251,6 @@ message VersionMessage{
   NetAddress address = 4;
   bytes id = 5;
   string userAgent = 6;
-  Hash selectedTipHash = 7;
   bool disableRelayTx = 8;
   SubnetworkId subnetworkId = 9;
   string network = 10;
@@ -408,8 +395,6 @@ message GetConnectedPeerInfoMessage{
   string id = 1;
   string address = 2;
   int64 lastPingDuration = 3;
-  string selectedTipHash = 4;
-  bool isSyncNode = 5;
   bool isOutbound = 6;
   int64 timeOffset = 7;
   string userAgent = 8;

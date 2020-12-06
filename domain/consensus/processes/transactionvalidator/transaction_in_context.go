@@ -59,14 +59,14 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 		return err
 	}
 
-	txBlueScore := ghostdagData.BlueScore
+	txBlueScore := ghostdagData.BlueScore()
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
-		} else if utxoEntry.IsCoinbase {
-			originBlueScore := utxoEntry.BlockBlueScore
+		} else if utxoEntry.IsCoinbase() {
+			originBlueScore := utxoEntry.BlockBlueScore()
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
@@ -116,11 +116,11 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 	return totalSompiIn, nil
 }
 
-func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *transactionValidator) checkEntryAmounts(entry externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
-	originTxSompi := entry.Amount
+	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInAfter < totalSompiInBefore ||
 		totalSompiInAfter > constants.MaxSompi {
@@ -166,7 +166,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 		return err
 	}
 
-	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore, medianTime) {
+	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore(), medianTime) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -187,7 +187,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 			continue
 		}
 
-		scriptPubKey := utxoEntry.ScriptPublicKey
+		scriptPubKey := utxoEntry.ScriptPublicKey()
 		vm, err := txscript.NewEngine(scriptPubKey, tx,
 			i, txscript.ScriptNoFlags, v.sigCache)
 		if err != nil {
@@ -241,7 +241,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputBlueScore := utxoEntry.BlockBlueScore
+		inputBlueScore := utxoEntry.BlockBlueScore()
 
 		// Given a sequence number, we apply the relative time lock
 		// mask in order to obtain the time lock delta required before
@@ -270,16 +270,16 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 
 			for {
 				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
-					baseGHOSTDAGData.SelectedParent)
+					baseGHOSTDAGData.SelectedParent())
 				if err != nil {
 					return nil, err
 				}
 
-				if selectedParentGHOSTDAGData.BlueScore <= inputBlueScore {
+				if selectedParentGHOSTDAGData.BlueScore() <= inputBlueScore {
 					break
 				}
 
-				baseHash = baseGHOSTDAGData.SelectedParent
+				baseHash = baseGHOSTDAGData.SelectedParent()
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 

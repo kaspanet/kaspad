@@ -3,14 +3,13 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 // blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
 type blockProcessor struct {
-	dagParams       *dagconfig.Params
+	genesisHash     *externalapi.DomainHash
 	databaseContext model.DBManager
 
 	consensusStateManager model.ConsensusStateManager
@@ -43,7 +42,7 @@ type blockProcessor struct {
 
 // New instantiates a new BlockProcessor
 func New(
-	dagParams *dagconfig.Params,
+	genesisHash *externalapi.DomainHash,
 	databaseContext model.DBManager,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
@@ -71,7 +70,7 @@ func New(
 	headerTipsStore model.HeaderTipsStore) model.BlockProcessor {
 
 	return &blockProcessor{
-		dagParams:             dagParams,
+		genesisHash:           genesisHash,
 		databaseContext:       databaseContext,
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,

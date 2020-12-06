@@ -1,12 +1,13 @@
 package blockvalidator
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
-	"math"
 )
 
 // ValidateBodyInContext validates block bodies in the context of the current
@@ -38,8 +39,8 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions {
-		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore, blockTime) {
-			txID := consensusserialization.TransactionID(tx)
+		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore(), blockTime) {
+			txID := consensushashing.TransactionID(tx)
 			return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
 				"transaction %s", txID)
 		}

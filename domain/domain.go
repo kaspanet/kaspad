@@ -3,7 +3,6 @@ package domain
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -37,7 +36,8 @@ func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Domai
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, constants.MaxMassAcceptedByBlock)
+	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, dagParams.MaxMassAcceptedByBlock,
+		dagParams.RelayNonStdTxs)
 
 	return &domain{
 		consensus:     consensusInstance,

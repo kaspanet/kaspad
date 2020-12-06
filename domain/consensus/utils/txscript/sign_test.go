@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 
@@ -16,25 +15,18 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-type addressToKey struct {
-	key        *secp256k1.PrivateKey
-	compressed bool
-}
-
-func mkGetKey(keys map[string]addressToKey) KeyDB {
+func mkGetKey(keys map[string]*secp256k1.SchnorrKeyPair) KeyDB {
 	if keys == nil {
-		return KeyClosure(func(addr util.Address) (*secp256k1.PrivateKey,
-			bool, error) {
-			return nil, false, errors.New("nope")
+		return KeyClosure(func(addr util.Address) (*secp256k1.SchnorrKeyPair, error) {
+			return nil, errors.New("nope")
 		})
 	}
-	return KeyClosure(func(addr util.Address) (*secp256k1.PrivateKey,
-		bool, error) {
-		a2k, ok := keys[addr.EncodeAddress()]
+	return KeyClosure(func(addr util.Address) (*secp256k1.SchnorrKeyPair, error) {
+		key, ok := keys[addr.EncodeAddress()]
 		if !ok {
-			return nil, false, errors.New("nope")
+			return nil, errors.New("nope")
 		}
-		return a2k.key, a2k.compressed, nil
+		return key, nil
 	})
 }
 
@@ -139,7 +131,7 @@ func TestSignTxOutput(t *testing.T) {
 		Outputs: outputs,
 	}
 
-	// Pay to Pubkey Hash (uncompressed)
+	// Pay to Pubkey Hash (merging with correct)
 	for _, hashType := range hashTypes {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
@@ -157,63 +149,14 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			uncompressedPubKey, err := pubKey.SerializeUncompressed()
-			if err != nil {
-				t.Errorf("failed to make a pubkey for %s: %s",
-					key, err)
-				break
-			}
-
-			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make address for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptPubKey, err := PayToAddrScript(address)
-			if err != nil {
-				t.Errorf("failed to make scriptPubKey "+
-					"for %s: %v", msg, err)
-			}
-
-			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
-				}), mkGetScript(nil), nil); err != nil {
-				t.Error(err)
-				break
-			}
-		}
-	}
-
-	// Pay to Pubkey Hash (uncompressed) (merging with correct)
-	for _, hashType := range hashTypes {
-		for i := range tx.Inputs {
-			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := secp256k1.GeneratePrivateKey()
-			if err != nil {
-				t.Errorf("failed to make privKey for %s: %s",
-					msg, err)
-				break
-			}
-
-			pubKey, err := key.SchnorrPublicKey()
-			if err != nil {
-				t.Errorf("failed to make a publickey for %s: %s",
-					key, err)
-				break
-			}
-
-			uncompressedPubKey, err := pubKey.SerializeUncompressed()
+			serializedPubKey, err := pubKey.Serialize()
 			if err != nil {
 				t.Errorf("failed to make a pubkey for %s: %s",
 					key, err)
 				break
 			}
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
+				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -228,8 +171,8 @@ func TestSignTxOutput(t *testing.T) {
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(nil), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
@@ -241,8 +184,8 @@ func TestSignTxOutput(t *testing.T) {
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(nil), sigScript)
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
@@ -278,7 +221,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			compressedPubKey, err := pubKey.SerializeCompressed()
+			serializedPubKey, err := pubKey.Serialize()
 			if err != nil {
 				t.Errorf("failed to make a pubkey for %s: %s",
 					key, err)
@@ -286,7 +229,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
+				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -300,8 +243,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(nil), nil); err != nil {
 				t.Error(err)
 				break
@@ -309,7 +252,7 @@ func TestSignTxOutput(t *testing.T) {
 		}
 	}
 
-	// Pay to Pubkey Hash (compressed) with duplicate merge
+	// Pay to Pubkey Hash with duplicate merge
 	for _, hashType := range hashTypes {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
@@ -328,7 +271,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			compressedPubKey, err := pubKey.SerializeCompressed()
+			serializedPubKey, err := pubKey.Serialize()
 			if err != nil {
 				t.Errorf("failed to make a pubkey for %s: %s",
 					key, err)
@@ -336,7 +279,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
+				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -351,8 +294,8 @@ func TestSignTxOutput(t *testing.T) {
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(nil), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
@@ -364,8 +307,8 @@ func TestSignTxOutput(t *testing.T) {
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(nil), sigScript)
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
@@ -383,168 +326,8 @@ func TestSignTxOutput(t *testing.T) {
 	}
 
 	// As before, but with p2sh now.
-	// Pay to Pubkey Hash (uncompressed)
-	for _, hashType := range hashTypes {
-		for i := range tx.Inputs {
-			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := secp256k1.GeneratePrivateKey()
-			if err != nil {
-				t.Errorf("failed to make privKey for %s: %s",
-					msg, err)
-				break
-			}
 
-			pubKey, err := key.SchnorrPublicKey()
-			if err != nil {
-				t.Errorf("failed to make a publickey for %s: %s",
-					key, err)
-				break
-			}
-
-			uncompressedPubKey, err := pubKey.SerializeUncompressed()
-			if err != nil {
-				t.Errorf("failed to make a pubkey for %s: %s",
-					key, err)
-				break
-			}
-
-			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make address for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptPubKey, err := PayToAddrScript(address)
-			if err != nil {
-				t.Errorf("failed to make scriptPubKey "+
-					"for %s: %v", msg, err)
-				break
-			}
-
-			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make p2sh addr for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
-			if err != nil {
-				t.Errorf("failed to make script scriptPubKey for "+
-					"%s: %v", msg, err)
-				break
-			}
-
-			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
-				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
-				}), nil); err != nil {
-				t.Error(err)
-				break
-			}
-		}
-	}
-
-	// Pay to Pubkey Hash (uncompressed) with duplicate merge
-	for _, hashType := range hashTypes {
-		for i := range tx.Inputs {
-			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := secp256k1.GeneratePrivateKey()
-			if err != nil {
-				t.Errorf("failed to make privKey for %s: %s",
-					msg, err)
-				break
-			}
-
-			pubKey, err := key.SchnorrPublicKey()
-			if err != nil {
-				t.Errorf("failed to make a publickey for %s: %s",
-					key, err)
-				break
-			}
-
-			uncompressedPubKey, err := pubKey.SerializeUncompressed()
-			if err != nil {
-				t.Errorf("failed to make a pubkey for %s: %s",
-					key, err)
-				break
-			}
-
-			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(uncompressedPubKey), util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make address for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptPubKey, err := PayToAddrScript(address)
-			if err != nil {
-				t.Errorf("failed to make scriptPubKey "+
-					"for %s: %v", msg, err)
-				break
-			}
-
-			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make p2sh addr for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
-			if err != nil {
-				t.Errorf("failed to make script scriptPubKey for "+
-					"%s: %v", msg, err)
-				break
-			}
-
-			_, err = SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
-				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
-				}), nil)
-			if err != nil {
-				t.Errorf("failed to sign output %s: %v", msg,
-					err)
-				break
-			}
-
-			// by the above loop, this should be valid, now sign
-			// again and merge.
-			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, false},
-				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
-				}), nil)
-			if err != nil {
-				t.Errorf("failed to sign output %s a "+
-					"second time: %v", msg, err)
-				break
-			}
-
-			err = checkScripts(msg, tx, i, sigScript, scriptScriptPubKey)
-			if err != nil {
-				t.Errorf("twice signed script invalid for "+
-					"%s: %v", msg, err)
-				break
-			}
-		}
-	}
-
-	// Pay to Pubkey Hash (compressed)
+	// Pay to Pubkey Hash
 	for _, hashType := range hashTypes {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
@@ -563,7 +346,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			compressedPubKey, err := pubKey.SerializeCompressed()
+			serializedPubKey, err := pubKey.Serialize()
 			if err != nil {
 				t.Errorf("failed to make a pubkey for %s: %s",
 					key, err)
@@ -571,7 +354,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
+				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -601,8 +384,8 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
 					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil); err != nil {
@@ -631,7 +414,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			compressedPubKey, err := pubKey.SerializeCompressed()
+			serializedPubKey, err := pubKey.Serialize()
 			if err != nil {
 				t.Errorf("failed to make a pubkey for %s: %s",
 					key, err)
@@ -639,7 +422,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(compressedPubKey), util.Bech32PrefixKaspaTest)
+				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -670,8 +453,8 @@ func TestSignTxOutput(t *testing.T) {
 
 			_, err = SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
 					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
@@ -685,8 +468,8 @@ func TestSignTxOutput(t *testing.T) {
 			// again and merge.
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]addressToKey{
-					address.EncodeAddress(): {key, true},
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
 					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
@@ -717,7 +500,6 @@ type tstSigScript struct {
 	name               string
 	inputs             []tstInput
 	hashType           SigHashType
-	compress           bool
 	scriptAtWrongIndex bool
 }
 
@@ -732,12 +514,15 @@ var (
 		0xb4, 0xfc, 0x4e, 0x55, 0xd4, 0x88, 0x42, 0xb3, 0xa1, 0x65,
 		0xac, 0x70, 0x7f, 0x3d, 0xa4, 0x39, 0x5e, 0xcb, 0x3b, 0xb0,
 		0xd6, 0x0e, 0x06, 0x92}
-	uncompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+	oldUncompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
 		0x53, 0x90, 0x0e, 0x0a, 0x86, 0xc9, 0xfa, 0x88, 0xac}
-	compressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
+	oldCompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
 		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}
+	p2pkhScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x7e, 0x01, 0x76, 0xb6,
+		0x72, 0x08, 0xc0, 0x08, 0x98, 0x85, 0x97, 0x00, 0x4e, 0x1a, 0x8d,
+		0x60, 0x89, 0xfe, 0x42, 0x6f, 0x88, 0xac}
 	shortScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
 		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}
@@ -749,12 +534,94 @@ const fee = 5000000
 
 var sigScriptTests = []tstSigScript{
 	{
-		name: "one input uncompressed",
+		name: "one input old uncompressed",
 		inputs: []tstInput{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: oldUncompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
+		hashType:           SigHashAll,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "two inputs old uncompressed",
+		inputs: []tstInput{
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: oldUncompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: oldUncompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
+		hashType:           SigHashAll,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "one input old compressed",
+		inputs: []tstInput{
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: oldCompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
+		hashType:           SigHashAll,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "two inputs old compressed",
+		inputs: []tstInput{
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: oldCompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal + fee,
+					ScriptPublicKey: oldCompressedScriptPubKey,
+				},
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
+		hashType:           SigHashAll,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "one input 32byte pubkey",
+		inputs: []tstInput{
+			{
+				txout: &externalapi.DomainTransactionOutput{
+					Value:           coinbaseVal,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -762,16 +629,15 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "two inputs uncompressed",
+		name: "two inputs 32byte pubkey",
 		inputs: []tstInput{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -780,7 +646,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -788,50 +654,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll,
-		compress:           false,
-		scriptAtWrongIndex: false,
-	},
-	{
-		name: "one input compressed",
-		inputs: []tstInput{
-			{
-				txout: &externalapi.DomainTransactionOutput{
-					Value:           coinbaseVal,
-					ScriptPublicKey: compressedScriptPubKey,
-				},
-				sigscriptGenerates: true,
-				inputValidates:     true,
-				indexOutOfRange:    false,
-			},
-		},
-		hashType:           SigHashAll,
-		compress:           true,
-		scriptAtWrongIndex: false,
-	},
-	{
-		name: "two inputs compressed",
-		inputs: []tstInput{
-			{
-				txout: &externalapi.DomainTransactionOutput{
-					Value:           coinbaseVal,
-					ScriptPublicKey: compressedScriptPubKey,
-				},
-				sigscriptGenerates: true,
-				inputValidates:     true,
-				indexOutOfRange:    false,
-			},
-			{
-				txout: &externalapi.DomainTransactionOutput{
-					Value:           coinbaseVal + fee,
-					ScriptPublicKey: compressedScriptPubKey,
-				},
-				sigscriptGenerates: true,
-				inputValidates:     true,
-				indexOutOfRange:    false,
-			},
-		},
-		hashType:           SigHashAll,
-		compress:           true,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -840,7 +662,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -848,7 +670,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashNone,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -857,7 +678,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -865,7 +686,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashSingle,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -874,7 +694,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -882,7 +702,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll | SigHashAnyOneCanPay,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -891,7 +710,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     false,
@@ -899,7 +718,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAnyOneCanPay,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -908,7 +726,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     false,
@@ -916,24 +734,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           0x04,
-		compress:           false,
-		scriptAtWrongIndex: false,
-	},
-	{
-		name: "invalid compression",
-		inputs: []tstInput{
-			{
-				txout: &externalapi.DomainTransactionOutput{
-					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
-				},
-				sigscriptGenerates: true,
-				inputValidates:     false,
-				indexOutOfRange:    false,
-			},
-		},
-		hashType:           SigHashAll,
-		compress:           true,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -949,7 +749,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll,
-		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -958,7 +757,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -967,7 +766,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -975,7 +774,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll,
-		compress:           false,
 		scriptAtWrongIndex: true,
 	},
 	{
@@ -984,7 +782,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -993,7 +791,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: uncompressedScriptPubKey,
+					ScriptPublicKey: p2pkhScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -1001,7 +799,6 @@ var sigScriptTests = []tstSigScript{
 			},
 		},
 		hashType:           SigHashAll,
-		compress:           false,
 		scriptAtWrongIndex: true,
 	},
 }
@@ -1046,8 +843,7 @@ nexttest:
 			}
 			script, err = SignatureScript(tx, idx,
 				sigScriptTests[i].inputs[j].txout.ScriptPublicKey,
-				sigScriptTests[i].hashType, privKey,
-				sigScriptTests[i].compress)
+				sigScriptTests[i].hashType, privKey)
 
 			if (err == nil) != sigScriptTests[i].inputs[j].sigscriptGenerates {
 				if err == nil {

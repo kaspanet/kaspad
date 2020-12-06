@@ -6,7 +6,6 @@ package txscript
 
 import (
 	"crypto/rand"
-	"github.com/kaspanet/go-secp256k1"
 	"testing"
 )
 
@@ -53,8 +52,8 @@ func TestSigCacheAddExists(t *testing.T) {
 
 	// The previously added triplet should now be found within the sigcache.
 	sig1Copy := secp256k1.DeserializeSchnorrSignature(sig1.Serialize())
-	key1Serialized, _ := key1.SerializeCompressed()
-	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized)
+	key1Serialized, _ := key1.Serialize()
+	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized[:])
 	if !sigCache.Exists(*msg1, sig1Copy, key1Copy) {
 		t.Errorf("previously added item not found in signature cache")
 	}
@@ -78,8 +77,8 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 		sigCache.Add(*msg, sig, key)
 
 		sigCopy := secp256k1.DeserializeSchnorrSignature(sig.Serialize())
-		keySerialized, _ := key.SerializeCompressed()
-		keyCopy, _ := secp256k1.DeserializeSchnorrPubKey(keySerialized)
+		keySerialized, _ := key.Serialize()
+		keyCopy, _ := secp256k1.DeserializeSchnorrPubKey(keySerialized[:])
 		if !sigCache.Exists(*msg, sigCopy, keyCopy) {
 			t.Errorf("previously added item not found in signature" +
 				"cache")
@@ -108,8 +107,8 @@ func TestSigCacheAddEvictEntry(t *testing.T) {
 
 	// The entry added above should be found within the sigcache.
 	sigNewCopy := secp256k1.DeserializeSchnorrSignature(sigNew.Serialize())
-	keyNewSerialized, _ := keyNew.SerializeCompressed()
-	keyNewCopy, _ := secp256k1.DeserializeSchnorrPubKey(keyNewSerialized)
+	keyNewSerialized, _ := keyNew.Serialize()
+	keyNewCopy, _ := secp256k1.DeserializeSchnorrPubKey(keyNewSerialized[:])
 	if !sigCache.Exists(*msgNew, sigNewCopy, keyNewCopy) {
 		t.Fatalf("previously added item not found in signature cache")
 	}
@@ -132,8 +131,8 @@ func TestSigCacheAddMaxEntriesZeroOrNegative(t *testing.T) {
 
 	// The generated triplet should not be found.
 	sig1Copy := secp256k1.DeserializeSchnorrSignature(sig1.Serialize())
-	key1Serialized, _ := key1.SerializeCompressed()
-	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized)
+	key1Serialized, _ := key1.Serialize()
+	key1Copy, _ := secp256k1.DeserializeSchnorrPubKey(key1Serialized[:])
 	if sigCache.Exists(*msg1, sig1Copy, key1Copy) {
 		t.Errorf("previously added signature found in sigcache, but" +
 			"shouldn't have been")

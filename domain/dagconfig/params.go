@@ -5,10 +5,9 @@
 package dagconfig
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"math/big"
 	"time"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -45,14 +44,6 @@ var (
 	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
-const (
-	ghostdagK                      = 18
-	difficultyAdjustmentWindowSize = 2640
-	timestampDeviationTolerance    = 132
-	finalityDuration               = 24 * time.Hour
-	targetTimePerBlock             = 1 * time.Second
-)
-
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
 type KType uint8
 
@@ -62,7 +53,7 @@ type KType uint8
 type Params struct {
 	// K defines the K parameter for GHOSTDAG consensus algorithm.
 	// See ghostdag.go for further details.
-	K KType
+	K model.KType
 
 	// Name defines a human-readable identifier for the network.
 	Name string
@@ -150,6 +141,39 @@ type Params struct {
 
 	// SkipProofOfWork indicates whether proof of work should be checked.
 	SkipProofOfWork bool
+
+	// MaxCoinbasePayloadLength is the maximum length in bytes allowed for a block's coinbase's payload
+	MaxCoinbasePayloadLength uint64
+
+	// MaxBlockSize is the maximum size in bytes a block is allowed
+	MaxBlockSize uint64
+
+	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
+	MaxBlockParents model.KType
+
+	// MassPerTxByte is the number of grams that any byte
+	// adds to a transaction.
+	MassPerTxByte uint64
+
+	// MassPerScriptPubKeyByte is the number of grams that any
+	// scriptPubKey byte adds to a transaction.
+	MassPerScriptPubKeyByte uint64
+
+	// MassPerSigOp is the number of grams that any
+	// signature operation adds to a transaction.
+	MassPerSigOp uint64
+
+	// MergeSetSizeLimit is the maximum number of blocks in a block's merge set
+	MergeSetSizeLimit uint64
+
+	// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
+	MaxMassAcceptedByBlock uint64
+
+	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
+	CoinbasePayloadScriptPublicKeyMaxLength uint64
+
+	// BaseSubsidy is the starting subsidy amount for mined blocks.
+	BaseSubsidy uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -165,12 +189,12 @@ func (p *Params) FinalityDepth() uint64 {
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	return 2*p.FinalityDepth() + 4*constants.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
+	return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-mainnet",
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
@@ -183,10 +207,10 @@ var MainnetParams = Params{
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -212,11 +236,22 @@ var MainnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-testnet",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
@@ -229,10 +264,10 @@ var TestnetParams = Params{
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -258,6 +293,17 @@ var TestnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -268,7 +314,7 @@ var TestnetParams = Params{
 // following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
 var SimnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-simnet",
 	Net:         appmessage.Simnet,
 	RPCPort:     "16510",
@@ -283,8 +329,8 @@ var SimnetParams = Params{
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Millisecond,
 	FinalityDuration:               time.Minute,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -308,11 +354,22 @@ var SimnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: true,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
 var DevnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-devnet",
 	Net:         appmessage.Devnet,
 	RPCPort:     "16610",
@@ -325,10 +382,10 @@ var DevnetParams = Params{
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -354,6 +411,17 @@ var DevnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 var (

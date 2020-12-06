@@ -3,8 +3,7 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
@@ -31,14 +30,14 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 }
 
 func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
-	hash := consensusserialization.HeaderHash(header)
+	hash := consensushashing.HeaderHash(header)
 	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if len(header.ParentHashes) > constants.MaxBlockParents {
+	if uint64(len(header.ParentHashes)) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(header.ParentHashes), constants.MaxBlockParents)
+			"is %d", len(header.ParentHashes), v.maxBlockParents)
 	}
 	return nil
 }
