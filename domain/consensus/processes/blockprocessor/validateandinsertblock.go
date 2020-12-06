@@ -128,7 +128,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			return fmt.Sprintf("Failed to get sync info: %s", err)
 		}
 		return fmt.Sprintf("New virtual's blue score: %d. Sync state: %s. Block count: %d. Header count: %d",
-			virtualGhostDAGData.BlueScore, syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
+			virtualGhostDAGData.BlueScore(), syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
 	}))
 	if logClosureErr != nil {
 		return logClosureErr

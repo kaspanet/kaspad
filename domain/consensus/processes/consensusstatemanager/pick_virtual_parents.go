@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
@@ -34,9 +33,9 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 
 	selectedVirtualParents := hashset.NewFromSlice(virtualSelectedParent)
 
-	mergeSetSize := 1 // starts counting from 1 because selectedParent is already in the mergeSet
+	mergeSetSize := uint64(1) // starts counting from 1 because selectedParent is already in the mergeSet
 
-	for candidatesHeap.Len() > 0 && len(selectedVirtualParents) < constants.MaxBlockParents {
+	for candidatesHeap.Len() > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
 		candidate := candidatesHeap.Pop()
 
 		log.Tracef("Attempting to add %s to the virtual parents", candidate)
@@ -48,7 +47,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 		}
 		log.Tracef("The merge set would increase by %d with block %s", mergeSetIncrease, candidate)
 
-		if mergeSetSize+mergeSetIncrease > constants.MergeSetSizeLimit {
+		if mergeSetSize+mergeSetIncrease > csm.mergeSetSizeLimit {
 			log.Tracef("Cannot add block %s since that would violate the merge set size limit", candidate)
 			continue
 		}
@@ -130,7 +129,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 }
 
 func (csm *consensusStateManager) mergeSetIncrease(
-	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet) (int, error) {
+	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet) (uint64, error) {
 
 	log.Tracef("mergeSetIncrease start")
 	defer log.Tracef("mergeSetIncrease end")
@@ -141,7 +140,7 @@ func (csm *consensusStateManager) mergeSetIncrease(
 	if err != nil {
 		return 0, err
 	}
-	mergeSetIncrease := 1 // starts with 1 for the candidate itself
+	mergeSetIncrease := uint64(1) // starts with 1 for the candidate itself
 
 	for queue.Len() > 0 {
 		current := queue.Pop()
@@ -215,7 +214,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 	if err != nil {
 		return nil, err
 	}
-	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds {
+	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds() {
 		log.Tracef("Check whether red block %s is kosherized", redBlock)
 		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, redBlock)
 		if err != nil {

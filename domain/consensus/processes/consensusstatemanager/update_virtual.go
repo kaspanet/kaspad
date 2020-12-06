@@ -3,7 +3,6 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 )
 
 func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash, tips []*externalapi.DomainHash) error {
@@ -55,7 +54,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	return nil
 }
 
-func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff *model.UTXODiff) error {
+func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff model.UTXODiff) error {
 	log.Tracef("updateVirtualDiffParents start")
 	defer log.Tracef("updateVirtualDiffParents end")
 
@@ -70,7 +69,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff *mode
 		if err != nil {
 			return err
 		}
-		newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
+		newDiff, err := virtualUTXODiff.DiffFrom(virtualDiffParentUTXODiff)
 		if err != nil {
 			return err
 		}

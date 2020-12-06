@@ -814,7 +814,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return nil, false, err
 	}
 
-	if newTreeNodeGHOSTDAGData.BlueScore-reindexRootChosenChildGHOSTDAGData.BlueScore < rt.reindexWindow {
+	if newTreeNodeGHOSTDAGData.BlueScore()-reindexRootChosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
 		return nil, false, nil
 	}
 

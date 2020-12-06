@@ -22,7 +22,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/utxodiffstore"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockbuilder"
@@ -64,24 +63,23 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dbManager := consensusdatabase.New(db)
 
 	// Data Structures
-	storeCacheSize := 200000
-	acceptanceDataStore := acceptancedatastore.New(storeCacheSize)
-	blockStore, err := blockstore.New(dbManager, storeCacheSize)
+	acceptanceDataStore := acceptancedatastore.New(200)
+	blockStore, err := blockstore.New(dbManager, 200)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, storeCacheSize)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, 10_000)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(storeCacheSize)
-	blockStatusStore := blockstatusstore.New(storeCacheSize)
-	multisetStore := multisetstore.New(storeCacheSize)
+	blockRelationStore := blockrelationstore.New(200)
+	blockStatusStore := blockstatusstore.New(200)
+	multisetStore := multisetstore.New(200)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(storeCacheSize)
-	utxoDiffStore := utxodiffstore.New(storeCacheSize)
+	reachabilityDataStore := reachabilitydatastore.New(200)
+	utxoDiffStore := utxodiffstore.New(200)
 	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New(storeCacheSize)
+	ghostdagDataStore := ghostdagdatastore.New(10_000)
 	headerTipsStore := headertipsstore.New()
 
 	// Processes
@@ -97,7 +95,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
-		model.KType(dagParams.K))
+		blockHeaderStore,
+		dagParams.K)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -111,6 +110,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
+		dagParams.MassPerTxByte,
+		dagParams.MassPerScriptPubKeyByte,
+		dagParams.MassPerSigOp,
+		dagParams.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
@@ -123,9 +126,13 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		dagParams.PowMax,
 		dagParams.DifficultyAdjustmentWindowSize,
-		dagParams.TargetTimePerBlock)
+		dagParams.TargetTimePerBlock,
+		dagParams.GenesisHash)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
+		dagParams.SubsidyReductionInterval,
+		dagParams.BaseSubsidy,
+		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
@@ -143,6 +150,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.DisableDifficultyAdjustment,
 		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.MaxBlockSize,
+		dagParams.MergeSetSizeLimit,
+		dagParams.MaxBlockParents,
 
 		dbManager,
 		difficultyManager,
@@ -164,7 +174,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
+		dagParams.MaxMassAcceptedByBlock,
+		dagParams.MaxBlockParents,
+		dagParams.MergeSetSizeLimit,
 		genesisHash,
+
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,

@@ -90,10 +90,10 @@ type mempool struct {
 
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
-func New(consensus consensusexternalapi.Consensus) miningmanagermodel.Mempool {
+func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmanagermodel.Mempool {
 	policy := policy{
 		MaxTxVersion:    constants.TransactionVersion,
-		AcceptNonStd:    false,
+		AcceptNonStd:    acceptNonStd,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,
 		MinRelayTxFee:   1000, // 1 sompi per byte

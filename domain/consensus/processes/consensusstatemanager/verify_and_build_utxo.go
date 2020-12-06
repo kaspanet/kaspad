@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -19,7 +18,7 @@ import (
 )
 
 func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff *model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
 
 	log.Tracef("verifyUTXO start for block %s", blockHash)
 	defer log.Tracef("verifyUTXO end for block %s", blockHash)
@@ -58,7 +57,7 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 }
 
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
 
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
@@ -157,7 +156,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 
 	log.Tracef("Extracting coinbase data for coinbase transaction %s in block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
 	if err != nil {
 		return err
 	}

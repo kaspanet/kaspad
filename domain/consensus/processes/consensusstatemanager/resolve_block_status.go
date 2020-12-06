@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 	"github.com/pkg/errors"
 )
 
@@ -80,7 +79,7 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	if err != nil {
 		return 0, err
 	}
-	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent)
+	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocks(
@@ -111,13 +110,13 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 			return nil, err
 		}
 
-		if currentBlockGHOSTDAGData.SelectedParent == nil {
+		if currentBlockGHOSTDAGData.SelectedParent() == nil {
 			log.Tracef("Genesis block reached. Returning all the "+
 				"unverified blocks prior to it: %s", unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
 
-		currentHash = currentBlockGHOSTDAGData.SelectedParent
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 	}
 }
 
@@ -169,7 +168,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 }
 
 func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
 
 	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
@@ -209,7 +208,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 		if err != nil {
 			return err
 		}
-		newDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, currentDiff)
+		newDiff, err := pastUTXODiff.DiffFrom(currentDiff)
 		if err != nil {
 			return err
 		}

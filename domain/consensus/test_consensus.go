@@ -5,10 +5,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 type testConsensus struct {
 	*consensus
+	dagParams *dagconfig.Params
 
 	testBlockBuilder          testapi.TestBlockBuilder
 	testReachabilityManager   testapi.TestReachabilityManager
@@ -16,9 +18,13 @@ type testConsensus struct {
 	testTransactionValidator  testapi.TestTransactionValidator
 }
 
+func (tc *testConsensus) DAGParams() *dagconfig.Params {
+	return tc.dagParams
+}
+
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
-	*externalapi.DomainBlock, *model.UTXODiff, error) {
+	*externalapi.DomainBlock, model.UTXODiff, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()

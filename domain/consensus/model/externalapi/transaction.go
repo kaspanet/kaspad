@@ -62,7 +62,7 @@ type DomainTransactionInput struct {
 	SignatureScript  []byte
 	Sequence         uint64
 
-	UTXOEntry *UTXOEntry
+	UTXOEntry UTXOEntry
 }
 
 // Clone returns a clone of DomainTransactionInput
@@ -78,7 +78,7 @@ func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
 		PreviousOutpoint: *input.PreviousOutpoint.Clone(),
 		SignatureScript:  signatureScriptClone,
 		Sequence:         input.Sequence,
-		UTXOEntry:        input.UTXOEntry.Clone(),
+		UTXOEntry:        input.UTXOEntry,
 	}
 }
 

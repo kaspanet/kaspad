@@ -14,13 +14,13 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 	if err != nil {
 		return nil, err
 	}
-	highHash = highBlockGHOSTDAGData.SelectedParent
+	highHash = highBlockGHOSTDAGData.SelectedParent()
 
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
 		return nil, err
 	}
-	lowBlockBlueScore := lowBlockGHOSTDAGData.BlueScore
+	lowBlockBlueScore := lowBlockGHOSTDAGData.BlueScore()
 
 	currentHash := highHash
 	step := uint64(1)
@@ -37,7 +37,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 		if err != nil {
 			return nil, err
 		}
-		currentBlockBlueScore := currentBlockGHOSTDAGData.BlueScore
+		currentBlockBlueScore := currentBlockGHOSTDAGData.BlueScore()
 
 		// Nothing more to add once the low node has been added.
 		if currentBlockBlueScore <= lowBlockBlueScore {
@@ -56,7 +56,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 		// final node is lowNode.
 		nextBlueScore := currentBlockBlueScore - step
 		if currentBlockBlueScore < step {
-			nextBlueScore = lowBlockGHOSTDAGData.BlueScore
+			nextBlueScore = lowBlockGHOSTDAGData.BlueScore()
 		}
 
 		// Walk down currentHash's selected parent chain to the appropriate ancestor

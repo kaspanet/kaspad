@@ -129,6 +129,13 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	blockInfo.BlueScore = ghostdagData.BlueScore()
+
 	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
 	if err != nil {
 		return nil, err
@@ -189,7 +196,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	if err != nil {
 		return nil, err
 	}
-	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent)
+	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
 }
 
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {

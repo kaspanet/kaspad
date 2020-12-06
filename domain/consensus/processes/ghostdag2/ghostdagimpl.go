@@ -1,9 +1,14 @@
 package ghostdag2
 
 import (
+	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"sort"
+	"github.com/kaspanet/kaspad/util"
+	"math/big"
 )
 
 type ghostdagHelper struct {
@@ -11,6 +16,7 @@ type ghostdagHelper struct {
 	dataStore          model.GHOSTDAGDataStore
 	dbAccess           model.DBReader
 	dagTopologyManager model.DAGTopologyManager
+	headerStore        model.BlockHeaderStore
 }
 
 // New creates a new instance of this alternative ghostdag impl
@@ -18,12 +24,14 @@ func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	headerStore model.BlockHeaderStore,
 	k model.KType) model.GHOSTDAGManager {
 
 	return &ghostdagHelper{
 		dbAccess:           databaseContext,
 		dagTopologyManager: dagTopologyManager,
 		dataStore:          ghostdagDataStore,
+		headerStore:        headerStore,
 		k:                  k,
 	}
 }
@@ -31,8 +39,10 @@ func New(
 /* --------------------------------------------- */
 
 func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error {
-	var maxNum uint64 = 0
-	var myScore uint64 = 0
+	myWork := new(big.Int)
+	maxWork := new(big.Int)
+	var myScore uint64
+	var spScore uint64
 	/* find the selectedParent */
 	blockParents, err := gh.dagTopologyManager.Parents(blockCandidate)
 	if err != nil {
@@ -44,16 +54,21 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if err != nil {
 			return err
 		}
-		blockScore := blockData.BlueScore
-		if blockScore > maxNum {
+		blockWork := blockData.BlueWork()
+		blockScore := blockData.BlueScore()
+		if blockWork.Cmp(maxWork) == 1 {
 			selectedParent = parent
-			maxNum = blockScore
+			maxWork = blockWork
+			spScore = blockScore
 		}
-		if blockScore == maxNum && ismoreHash(parent, selectedParent) {
+		if blockWork.Cmp(maxWork) == 0 && ismoreHash(parent, selectedParent) {
 			selectedParent = parent
+			maxWork = blockWork
+			spScore = blockScore
 		}
 	}
-	myScore = maxNum
+	myWork.Set(maxWork)
+	myScore = spScore
 
 	/* Goal: iterate blockCandidate's mergeSet and divide it to : blue, blues, reds. */
 	var mergeSetBlues = make([]*externalapi.DomainHash, 0)
@@ -67,7 +82,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		return err
 	}
 
-	err = gh.sortByBlueScore(mergeSetArr)
+	err = gh.sortByBlueWork(mergeSetArr)
 	if err != nil {
 		return err
 	}
@@ -91,13 +106,17 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 	myScore += uint64(len(mergeSetBlues))
 
-	e := model.BlockGHOSTDAGData{
-		BlueScore:      myScore,
-		SelectedParent: selectedParent,
-		MergeSetBlues:  mergeSetBlues,
-		MergeSetReds:   mergeSetReds,
+	// We add up all the *work*(not blueWork) that all our blues and selected parent did
+	for _, blue := range mergeSetBlues {
+		header, err := gh.headerStore.BlockHeader(gh.dbAccess, blue)
+		if err != nil {
+			return err
+		}
+		myWork.Add(myWork, util.CalcWork(header.Bits))
 	}
-	gh.dataStore.Stage(blockCandidate, &e)
+
+	e := ghostdagmanager.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
+	gh.dataStore.Stage(blockCandidate, e)
 	return nil
 }
 
@@ -220,7 +239,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 		if err != nil {
 			return false, err
 		}
-		if mergeSetReds := dataStore.MergeSetReds; contains(checkedBlock, mergeSetReds) {
+		if mergeSetReds := dataStore.MergeSetReds(); contains(checkedBlock, mergeSetReds) {
 			return false, nil
 		}
 	} else {
@@ -326,20 +345,20 @@ func (gh *ghostdagHelper) findBlueSet(blueSet *[]*externalapi.DomainHash, select
 		if err != nil {
 			return err
 		}
-		mergeSetBlue := blockData.MergeSetBlues
+		mergeSetBlue := blockData.MergeSetBlues()
 		for _, blue := range mergeSetBlue {
 			if contains(blue, *blueSet) {
 				continue
 			}
 			*blueSet = append(*blueSet, blue)
 		}
-		selectedParent = blockData.SelectedParent
+		selectedParent = blockData.SelectedParent()
 	}
 	return nil
 }
 
 /* ----------------sortByBlueScore------------------- */
-func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
+func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 
 	var err error = nil
 	sort.Slice(arr, func(i, j int) bool {
@@ -356,10 +375,10 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 			return false
 		}
 
-		if blockLeft.BlueScore < blockRight.BlueScore {
+		if blockLeft.BlueWork().Cmp(blockRight.BlueWork()) == -1 {
 			return true
 		}
-		if blockLeft.BlueScore == blockRight.BlueScore {
+		if blockLeft.BlueWork().Cmp(blockRight.BlueWork()) == 0 {
 			return ismoreHash(arr[j], arr[i])
 		}
 		return false
@@ -369,13 +388,13 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }

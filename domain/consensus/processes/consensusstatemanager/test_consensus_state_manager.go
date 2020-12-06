@@ -16,7 +16,7 @@ func NewTestConsensusStateManager(baseConsensusStateManager model.ConsensusState
 }
 
 func (csm testConsensusStateManager) AddUTXOToMultiset(
-	multiset model.Multiset, entry *externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) error {
+	multiset model.Multiset, entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) error {
 
 	return addUTXOToMultiset(multiset, entry, outpoint)
 }

@@ -6,8 +6,6 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
@@ -27,7 +25,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	hash := consensushashing.BlockHash(block)
 	blockHeader := block.Header
 
-	blueScore, err := blocks.ExtractBlueScore(block)
+	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +42,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
-		BlueScore:            blueScore,
+		BlueScore:            blockInfo.BlueScore,
 	}
 
 	txIDs := make([]string, len(block.Transactions))
