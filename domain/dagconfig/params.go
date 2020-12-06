@@ -98,11 +98,11 @@ type Params struct {
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
-	TimestampDeviationTolerance uint64
+	TimestampDeviationTolerance int
 
 	// DifficultyAdjustmentWindowSize is the size of window that is inspected
 	// to calculate the required difficulty of each block.
-	DifficultyAdjustmentWindowSize uint64
+	DifficultyAdjustmentWindowSize int
 
 	// These fields are related to voting on consensus rule changes as
 	// defined by BIP0009.

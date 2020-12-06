@@ -86,14 +86,14 @@ func TestDifficulty(t *testing.T) {
 
 		tipHash := params.GenesisHash
 		tip := params.GenesisBlock
-		for i := uint64(0); i < params.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits != params.GenesisBlock.Header.Bits {
 				t.Fatalf("As long as the bluest parent's blue score is less then the difficulty adjustment " +
 					"window size, the difficulty should be the same as genesis'")
 			}
 		}
-		for i := uint64(0); i < params.DifficultyAdjustmentWindowSize+100; i++ {
+		for i := 0; i < params.DifficultyAdjustmentWindowSize+100; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits != params.GenesisBlock.Header.Bits {
 				t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -130,7 +130,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		// Increase block rate to increase difficulty
-		for i := uint64(0); i < params.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
 			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), tipHash)
 			if err != nil {
@@ -150,7 +150,7 @@ func TestDifficulty(t *testing.T) {
 
 		// Add blocks until difficulty stabilizes
 		lastBits := tip.Header.Bits
-		sameBitsCount := uint64(0)
+		sameBitsCount := 0
 		for sameBitsCount < params.DifficultyAdjustmentWindowSize+1 {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits == lastBits {
