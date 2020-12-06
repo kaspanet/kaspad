@@ -97,7 +97,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if exists {
-			log.Debugf("Aborting requesting block %s because it already exists")
+			log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
 			continue
 		}
 
