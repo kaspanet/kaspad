@@ -50,7 +50,7 @@ func (v *blockValidator) checkDelayedBlock(header *externalapi.DomainBlockHeader
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
 	if blockTimeStamp > maxCurrentTime {
 		return errors.Wrapf(
-			ruleerrors.ErrDelayedBlock, "The block timestamp is in the future.")
+			ruleerrors.ErrBlockIsTooMuchInTheFuture, "The block timestamp is in the future.")
 	}
 	return nil
 }
