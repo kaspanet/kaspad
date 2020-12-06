@@ -7,7 +7,6 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	finalityDepth          uint64
 	pruningDepth           uint64
 	maxMassAcceptedByBlock uint64
 	maxBlockParents        model.KType
@@ -24,8 +23,9 @@ type consensusStateManager struct {
 	reachabilityManager   model.ReachabilityManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
-	headerTipsStore       model.HeaderTipsStore
+	finalityManager       model.FinalityManager
 
+	headerTipsStore     model.HeaderTipsStore
 	blockStatusStore    model.BlockStatusStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	consensusStateStore model.ConsensusStateStore
@@ -42,7 +42,6 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	finalityDepth uint64,
 	pruningDepth uint64,
 	maxMassAcceptedByBlock uint64,
 	maxBlockParents model.KType,
@@ -58,6 +57,7 @@ func New(
 	reachabilityManager model.ReachabilityManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
+	finalityManager model.FinalityManager,
 
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -71,7 +71,6 @@ func New(
 	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		finalityDepth:          finalityDepth,
 		pruningDepth:           pruningDepth,
 		maxMassAcceptedByBlock: maxMassAcceptedByBlock,
 		maxBlockParents:        maxBlockParents,
@@ -88,6 +87,7 @@ func New(
 		reachabilityManager:   reachabilityManager,
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
+		finalityManager:       finalityManager,
 
 		multisetStore:       multisetStore,
 		blockStore:          blockStore,

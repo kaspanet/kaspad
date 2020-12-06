@@ -120,7 +120,7 @@ func TestFinality(t *testing.T) {
 			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 		}
 
-		virtualFinality, err := consensus.ConsensusStateManager().VirtualFinalityPoint()
+		virtualFinality, err := consensus.FinalityManager().VirtualFinalityPoint()
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}

@@ -1,12 +1,12 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
 	"os"
 	"sync"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/finalitymanager"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -40,6 +40,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
 // Factory instantiates new Consensuses
@@ -137,11 +138,16 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
 	genesisHash := dagParams.GenesisHash
+	finalityManager := finalitymanager.New(
+		dagTopologyManager,
+		dagTraversalManager,
+		genesisHash,
+		dagParams.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(
-		dagParams.FinalityDepth(),
 		dbManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		finalityManager,
 		ghostdagDataStore)
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
@@ -172,7 +178,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
 		dagParams.MaxMassAcceptedByBlock,
 		dagParams.MaxBlockParents,
@@ -188,6 +193,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager,
 		coinbaseManager,
 		mergeDepthManager,
+		finalityManager,
 
 		blockStatusStore,
 		ghostdagDataStore,
@@ -296,6 +302,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		mergeDepthManager:     mergeDepthManager,
 		pruningManager:        pruningManager,
 		reachabilityManager:   reachabilityManager,
+		finalityManager:       finalityManager,
 
 		acceptanceDataStore:   acceptanceDataStore,
 		blockStore:            blockStore,

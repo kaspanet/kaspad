@@ -29,6 +29,7 @@ type consensus struct {
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
+	finalityManager       model.FinalityManager
 
 	acceptanceDataStore   model.AcceptanceDataStore
 	blockStore            model.BlockStore

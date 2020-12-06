@@ -202,7 +202,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 	}
 	log.Tracef("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
 
-	virtualFinalityPoint, err := csm.virtualFinalityPoint()
+	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint()
 	if err != nil {
 		return nil, err
 	}
