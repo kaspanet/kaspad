@@ -23,15 +23,9 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 
 	// Fetch all the headers if we don't already have them
 	log.Debugf("Downloading headers up to %s", highHash)
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
+	err := flow.syncHeaders(highHash)
 	if err != nil {
 		return err
-	}
-	if !blockInfo.Exists {
-		err := flow.syncHeaders(highHash)
-		if err != nil {
-			return err
-		}
 	}
 	log.Debugf("Finished downloading headers up to %s", highHash)
 
