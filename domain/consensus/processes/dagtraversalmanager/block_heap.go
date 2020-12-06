@@ -16,7 +16,7 @@ func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) 
 	return gm.Less(left.hash, left.ghostdagData, right.hash, right.ghostdagData)
 }
 
-// baseHeap  is an implementation for heap.Interface that sorts blocks by their height
+// baseHeap  is an implementation for heap.Interface that sorts blocks by their blueWork+hash
 type baseHeap struct {
 	slice           []*blockHeapNode
 	ghostdagManager model.GHOSTDAGManager
@@ -37,7 +37,7 @@ func (h *baseHeap) Pop() interface{} {
 	return popped
 }
 
-// peek returns the block with lowest height from this heap without removing it
+// peek returns the block with lowest blueWork+hash from this heap without removing it
 func (h *baseHeap) peek() *blockHeapNode {
 	return h.slice[0]
 }
@@ -60,7 +60,7 @@ func (h downHeap) Less(i, j int) bool {
 	return !heapNodeI.less(heapNodeJ, h.ghostdagManager)
 }
 
-// blockHeap represents a mutable heap of Blocks, sorted by their height
+// blockHeap represents a mutable heap of blocks, sorted by their blueWork+hash
 type blockHeap struct {
 	impl          heap.Interface
 	ghostdagStore model.GHOSTDAGDataStore
@@ -89,7 +89,7 @@ func (dtm dagTraversalManager) NewUpHeap() model.BlockHeap {
 	return h
 }
 
-// Pop removes the block with lowest height from this heap and returns it
+// Pop removes the block with lowest blueWork+hash from this heap and returns it
 func (bh blockHeap) Pop() *externalapi.DomainHash {
 	return heap.Pop(bh.impl).(*blockHeapNode).hash
 }
@@ -114,7 +114,7 @@ func (bh blockHeap) Len() int {
 	return bh.impl.Len()
 }
 
-// sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their height, capped by a specific size.
+// sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their blueWork+hash, capped by a specific size.
 type sizedUpBlockHeap struct {
 	impl          upHeap
 	ghostdagStore model.GHOSTDAGDataStore
@@ -137,12 +137,12 @@ func (sbh *sizedUpBlockHeap) len() int {
 	return sbh.impl.Len()
 }
 
-// pop removes the block with lowest height from this heap and returns it
+// pop removes the block with lowest blueWork+hash from this heap and returns it
 func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 	return heap.Pop(&sbh.impl).(*blockHeapNode).hash
 }
 
-// tryPush tries to pushe the block onto the heap, if the heap is full and it's less than the minimum it rejects it
+// tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
 func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
 	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
 	if err != nil {

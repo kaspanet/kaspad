@@ -45,8 +45,9 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 				break
 			}
 		}
-		for i := len(currentGHOSTDAGData.MergeSetReds()) - 1; i >= 0; i-- {
-			added, err := windowHeap.tryPush(currentGHOSTDAGData.MergeSetReds()[i])
+		mergeSetReds := currentGHOSTDAGData.MergeSetReds()
+		for i := len(mergeSetReds) - 1; i >= 0; i-- {
+			added, err := windowHeap.tryPush(mergeSetReds[i])
 			if err != nil {
 				return nil, err
 			}
