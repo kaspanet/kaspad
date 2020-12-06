@@ -1,6 +1,11 @@
 name: Go
 
-on: [ push, pull_request ]
+on:
+  push:
+  pull_request:
+    # edtited - "title, body, or the base branch of the PR is modified"
+    # synchronize - "commit(s) pushed to the pull request"
+    types: [opened, synchronize, edited, reopened]
 
 jobs:
   build:
