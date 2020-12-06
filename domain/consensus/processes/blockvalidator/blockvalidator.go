@@ -2,6 +2,7 @@ package blockvalidator
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -18,6 +19,8 @@ type blockValidator struct {
 	disableDifficultyAdjustment    bool
 	powMaxBits                     uint32
 	difficultyAdjustmentWindowSize uint64
+	timestampDeviationTolerance    uint64
+	targetTimePerBlock             time.Duration
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -43,6 +46,8 @@ func New(powMax *big.Int,
 	enableNonNativeSubnetworks bool,
 	disableDifficultyAdjustment bool,
 	difficultyAdjustmentWindowSize uint64,
+	timestampDeviationTolerance uint64,
+	targetTimePerBlock time.Duration,
 	databaseContext model.DBReader,
 
 	difficultyManager model.DifficultyManager,
@@ -68,6 +73,8 @@ func New(powMax *big.Int,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		powMaxBits:                     util.BigToCompact(powMax),
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+		timestampDeviationTolerance:    timestampDeviationTolerance,
+		targetTimePerBlock:             targetTimePerBlock,
 		databaseContext:                databaseContext,
 		difficultyManager:              difficultyManager,
 		pastMedianTimeManager:          pastMedianTimeManager,

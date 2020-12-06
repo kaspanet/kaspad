@@ -236,6 +236,9 @@ var (
 
 	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
+
+	//ErrDelayedBlock indicates that timeStamp is in the future.
+	ErrDelayedBlock = newRuleError("ErrDelayedBlock")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
