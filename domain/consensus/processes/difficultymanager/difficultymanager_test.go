@@ -15,6 +15,9 @@ import (
 
 func TestDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		if params.DisableDifficultyAdjustment {
+			return
+		}
 		params.K = 1
 		params.DifficultyAdjustmentWindowSize = 264
 
@@ -118,7 +121,7 @@ func TestDifficulty(t *testing.T) {
 		switch params.Name {
 		case "kaspa-testnet", "kaspa-devnet":
 			expectedBits = uint32(0x1e7f83df)
-		case "kaspa-mainnet", "kaspa-simnet":
+		case "kaspa-mainnet":
 			expectedBits = uint32(0x207f83df)
 		}
 

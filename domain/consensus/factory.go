@@ -126,6 +126,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		dagParams.PowMax,
 		dagParams.DifficultyAdjustmentWindowSize,
+		dagParams.DisableDifficultyAdjustment,
 		dagParams.TargetTimePerBlock,
 		dagParams.GenesisHash)
 	coinbaseManager := coinbasemanager.New(
@@ -148,8 +149,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.SkipProofOfWork,
 		genesisHash,
 		dagParams.EnableNonNativeSubnetworks,
-		dagParams.DisableDifficultyAdjustment,
-		dagParams.DifficultyAdjustmentWindowSize,
 		dagParams.MaxBlockSize,
 		dagParams.MergeSetSizeLimit,
 		dagParams.MaxBlockParents,

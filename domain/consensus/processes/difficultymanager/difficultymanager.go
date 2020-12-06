@@ -22,12 +22,12 @@ type difficultyManager struct {
 	genesisHash                    *externalapi.DomainHash
 	powMax                         *big.Int
 	difficultyAdjustmentWindowSize uint64
+	disableDifficultyAdjustment    bool
 	targetTimePerBlock             time.Duration
 }
 
 // New instantiates a new DifficultyManager
-func New(
-	databaseContext model.DBReader,
+func New(databaseContext model.DBReader,
 	ghostdagManager model.GHOSTDAGManager,
 	ghostdagStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
@@ -35,9 +35,9 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	powMax *big.Int,
 	difficultyAdjustmentWindowSize uint64,
+	disableDifficultyAdjustment bool,
 	targetTimePerBlock time.Duration,
-	genesisHash *externalapi.DomainHash,
-) model.DifficultyManager {
+	genesisHash *externalapi.DomainHash) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
 		ghostdagManager:                ghostdagManager,
@@ -47,6 +47,7 @@ func New(
 		dagTraversalManager:            dagTraversalManager,
 		powMax:                         powMax,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		targetTimePerBlock:             targetTimePerBlock,
 		genesisHash:                    genesisHash,
 	}
@@ -63,13 +64,12 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-
 	parents, err := dm.dagTopologyManager.Parents(blockHash)
 	if err != nil {
 		return 0, err
 	}
-	// Genesis block
-	if len(parents) == 0 {
+	// Genesis block or network that doesn't have difficulty adjustment (such as simnet)
+	if len(parents) == 0 || dm.disableDifficultyAdjustment {
 		return dm.genesisBits()
 	}
 
