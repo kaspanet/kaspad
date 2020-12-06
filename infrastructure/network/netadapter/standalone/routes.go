@@ -62,3 +62,8 @@ func (r *Routes) WaitForDisconnect(timeout time.Duration) error {
 		}
 	}
 }
+
+// Disconnect closes the connection behind the routes, thus closing all routes
+func (r *Routes) Disconnect() {
+	r.netConnection.Disconnect()
+}
