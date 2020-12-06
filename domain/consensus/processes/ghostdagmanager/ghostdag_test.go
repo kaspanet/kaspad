@@ -3,6 +3,7 @@ package ghostdagmanager_test
 import (
 	"encoding/json"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/util"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -69,6 +70,7 @@ func TestGHOSTDAG(t *testing.T) {
 
 		blockGHOSTDAGDataGenesis := ghostdagmanager.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 		genesisHeader := params.GenesisBlock.Header
+		genesisWork := util.CalcWork(genesisHeader.Bits)
 
 		var testsCounter int
 		err := filepath.Walk("../../testdata/dags", func(path string, info os.FileInfo, err error) error {
@@ -123,6 +125,12 @@ func TestGHOSTDAG(t *testing.T) {
 							factory.implName, info.Name(), testBlockData.ID, err)
 					}
 
+					// because the difficulty is constant and equal to genesis the work should be blueScore*genesisWork.
+					expectedWork := new(big.Int).Mul(genesisWork, new(big.Int).SetUint64(testBlockData.Score))
+					if expectedWork.Cmp(ghostdagData.BlueWork()) != 0 {
+						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected blue work %d but got %d.",
+							factory.implName, info.Name(), testBlockData.ID, expectedWork, ghostdagData.BlueWork())
+					}
 					if testBlockData.Score != (ghostdagData.BlueScore()) {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected blue score %d but got %d.",
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.Score, ghostdagData.BlueScore())
@@ -142,7 +150,6 @@ func TestGHOSTDAG(t *testing.T) {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected merge set reds %v but got %v.",
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetReds, hashesToStrings(ghostdagData.MergeSetReds()))
 					}
-
 				}
 				dagTopology.parentsMap = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 				dagTopology.parentsMap[genesisHash] = nil
