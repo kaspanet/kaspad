@@ -41,8 +41,6 @@ const (
 	CmdPong
 	CmdRequestBlockLocator
 	CmdBlockLocator
-	CmdSelectedTip
-	CmdRequestSelectedTip
 	CmdInvRelayBlock
 	CmdRequestRelayBlocks
 	CmdInvTransaction
@@ -123,8 +121,6 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdPong:                          "Pong",
 	CmdRequestBlockLocator:           "RequestBlockLocator",
 	CmdBlockLocator:                  "BlockLocator",
-	CmdSelectedTip:                   "SelectedTip",
-	CmdRequestSelectedTip:            "RequestSelectedTip",
 	CmdInvRelayBlock:                 "InvRelayBlock",
 	CmdRequestRelayBlocks:            "RequestRelayBlocks",
 	CmdInvTransaction:                "InvTransaction",

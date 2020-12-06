@@ -1,4 +1,4 @@
-package ibd
+package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"

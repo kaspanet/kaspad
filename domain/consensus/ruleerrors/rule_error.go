@@ -228,8 +228,6 @@ var (
 	ErrSubnetworksDisabled    = newRuleError("ErrSubnetworksDisabled")
 	ErrBadPruningPointUTXOSet = newRuleError("ErrBadPruningPointUTXOSet")
 
-	ErrMissingBlockHeaderInIBD = newRuleError("ErrMissingBlockHeaderInIBD")
-
 	ErrMalformedUTXO = newRuleError("ErrMalformedUTXO")
 
 	ErrWrongPruningPointHash = newRuleError("ErrWrongPruningPointHash")

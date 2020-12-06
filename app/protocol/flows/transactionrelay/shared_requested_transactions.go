@@ -1,4 +1,4 @@
-package relaytransactions
+package transactionrelay
 
 import (
 	"sync"

@@ -53,7 +53,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
-	if atomic.LoadUint32(&f.isInIBD) != 0 {
+	if f.IsIBDRunning() {
 		return nil
 	}
 
@@ -102,4 +102,28 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 	return f.Broadcast(appmessage.NewMsgInvBlock(consensushashing.BlockHash(block)))
+}
+
+// IsIBDRunning returns true if IBD is currently marked as running
+func (f *FlowContext) IsIBDRunning() bool {
+	return atomic.LoadUint32(&f.isInIBD) != 0
+}
+
+// TrySetIBDRunning attempts to set `isInIBD`. Returns false
+// if it is already set
+func (f *FlowContext) TrySetIBDRunning() bool {
+	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 0, 1)
+	if succeeded {
+		log.Infof("IBD started")
+	}
+	return succeeded
+}
+
+// UnsetIBDRunning unsets isInIBD
+func (f *FlowContext) UnsetIBDRunning() {
+	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 1, 0)
+	if !succeeded {
+		panic("attempted to unset isInIBD when it was not set to begin with")
+	}
+	log.Infof("IBD finished")
 }

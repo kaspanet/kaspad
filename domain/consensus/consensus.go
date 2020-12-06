@@ -199,11 +199,11 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.syncManager.CreateBlockLocator(lowHash, highHash)
+	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {

@@ -103,7 +103,6 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 }
 
 func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-
 	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, blockHash)
 	if err != nil {
 		return err
@@ -128,7 +127,6 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 				if *parentChild == *blockHash {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
 					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
-
 					break
 				}
 			}

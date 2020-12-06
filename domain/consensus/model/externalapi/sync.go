@@ -5,11 +5,10 @@ import "fmt"
 // Each of the following represent one of the possible sync
 // states of the consensus
 const (
-	SyncStateRelay SyncState = iota
-	SyncStateMissingGenesis
-	SyncStateHeadersFirst
-	SyncStateMissingUTXOSet
-	SyncStateMissingBlockBodies
+	SyncStateSynced SyncState = iota
+	SyncStateAwaitingGenesis
+	SyncStateAwaitingUTXOSet
+	SyncStateAwaitingBlockBodies
 )
 
 // SyncState represents the current sync state of the consensus
@@ -17,16 +16,14 @@ type SyncState uint8
 
 func (s SyncState) String() string {
 	switch s {
-	case SyncStateRelay:
-		return "SyncStateRelay"
-	case SyncStateMissingGenesis:
-		return "SyncStateMissingGenesis"
-	case SyncStateHeadersFirst:
-		return "SyncStateHeadersFirst"
-	case SyncStateMissingUTXOSet:
-		return "SyncStateMissingUTXOSet"
-	case SyncStateMissingBlockBodies:
-		return "SyncStateMissingBlockBodies"
+	case SyncStateSynced:
+		return "SyncStateSynced"
+	case SyncStateAwaitingGenesis:
+		return "SyncStateAwaitingGenesis"
+	case SyncStateAwaitingUTXOSet:
+		return "SyncStateAwaitingUTXOSet"
+	case SyncStateAwaitingBlockBodies:
+		return "SyncStateAwaitingBlockBodies"
 	}
 
 	return fmt.Sprintf("<unknown state (%d)>", s)

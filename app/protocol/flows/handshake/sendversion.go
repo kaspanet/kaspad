@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
@@ -52,17 +51,11 @@ func (flow *sendVersionFlow) start() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "sendVersionFlow.start")
 	defer onEnd()
 
-	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
-	if err != nil {
-		return err
-	}
-	selectedTipHash := consensushashing.BlockHash(virtualSelectedParent)
-	subnetworkID := flow.Config().SubnetworkID
-
 	// Version message.
 	localAddress := flow.AddressManager().BestLocalAddress(flow.peer.Connection().NetAddress())
+	subnetworkID := flow.Config().SubnetworkID
 	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
-		flow.Config().ActiveNetParams.Name, selectedTipHash, subnetworkID)
+		flow.Config().ActiveNetParams.Name, subnetworkID)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag
@@ -74,7 +67,7 @@ func (flow *sendVersionFlow) start() error {
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly
 
-	err = flow.outgoingRoute.Enqueue(msg)
+	err := flow.outgoingRoute.Enqueue(msg)
 	if err != nil {
 		return err
 	}

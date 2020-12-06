@@ -53,9 +53,6 @@ type MsgVersion struct {
 	// on the appmessage. This has a max length of MaxUserAgentLen.
 	UserAgent string
 
-	// The selected tip hash of the generator of the version message.
-	SelectedTipHash *externalapi.DomainHash
-
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
 
@@ -85,7 +82,7 @@ func (msg *MsgVersion) Command() MessageCommand {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
-	selectedTipHash *externalapi.DomainHash, subnetworkID *externalapi.DomainSubnetworkID) *MsgVersion {
+	subnetworkID *externalapi.DomainSubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
@@ -97,7 +94,6 @@ func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
 		Address:         addr,
 		ID:              id,
 		UserAgent:       DefaultUserAgent,
-		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,
 		SubnetworkID:    subnetworkID,
 	}
