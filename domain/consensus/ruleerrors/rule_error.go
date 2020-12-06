@@ -238,7 +238,7 @@ var (
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
 
 	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
-	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrDelayedBlock")
+	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

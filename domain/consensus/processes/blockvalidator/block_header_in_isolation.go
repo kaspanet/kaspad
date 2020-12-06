@@ -17,7 +17,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 		return err
 	}
 
-	err = v.checkBlockTimeStampInIsolation(header)
+	err = v.checkBlockTimestampInIsolation(header)
 	if err != nil {
 		return err
 	}
@@ -43,12 +43,12 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 	return nil
 }
 
-func (v *blockValidator) checkBlockTimeStampInIsolation(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.DomainBlockHeader) error {
 
-	blockTimeStamp := header.TimeInMilliseconds
+	blockTimestamp := header.TimeInMilliseconds
 	now := mstime.Now().UnixMilliseconds()
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
-	if blockTimeStamp > maxCurrentTime {
+	if blockTimestamp > maxCurrentTime {
 		return errors.Wrapf(
 			ruleerrors.ErrBlockIsTooMuchInTheFuture, "The block timestamp is in the future.")
 	}
