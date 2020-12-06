@@ -153,17 +153,8 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 	// clean from any pending blocks.
 	defer flow.SharedRequestedBlocks().remove(requestHash)
 
-	// The block can become known from another peer in the process of orphan resolution
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(requestHash)
-	if err != nil {
-		return nil, false, err
-	}
-	if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		return nil, false, nil
-	}
-
 	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks([]*externalapi.DomainHash{requestHash})
-	err = flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
+	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
 		return nil, false, err
 	}
