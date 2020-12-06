@@ -7,7 +7,7 @@ import (
 
 func initTestBlockStatusForClone() []BlockStatus {
 
-	tests := []BlockStatus{'a', 'b', 0xFF, 0}
+	tests := []BlockStatus{1, 2, 0xFF, 0}
 
 	return tests
 }

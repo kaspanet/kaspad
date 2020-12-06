@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func initTestCoinbaseStructsForClone() []*DomainCoinbaseData {
+func initTestCoinbaseDataStructsForClone() []*DomainCoinbaseData {
 
 	tests := []*DomainCoinbaseData{
 		{
@@ -47,10 +47,10 @@ func initTestCoinbaseStructsForClone() []*DomainCoinbaseData {
 	return tests
 }
 
-func TestCoinbase_Clone(t *testing.T) {
+func TestDomainCoinbaseData_Clone(t *testing.T) {
 
-	coinbases := initTestCoinbaseStructsForClone()
-	for i, coinbase := range coinbases {
+	coinbaseData := initTestCoinbaseDataStructsForClone()
+	for i, coinbase := range coinbaseData {
 		coinbaseClone := coinbase.Clone()
 		if !reflect.DeepEqual(coinbase, coinbaseClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
