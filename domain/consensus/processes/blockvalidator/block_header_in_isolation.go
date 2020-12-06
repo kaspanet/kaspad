@@ -17,7 +17,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 		return err
 	}
 
-	err = v.checkDelayedBlock(header)
+	err = v.checkBlockTimeStampInIsolation(header)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 	return nil
 }
 
-func (v *blockValidator) checkDelayedBlock(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkBlockTimeStampInIsolation(header *externalapi.DomainBlockHeader) error {
 
 	blockTimeStamp := header.TimeInMilliseconds
 	now := mstime.Now().UnixMilliseconds()
