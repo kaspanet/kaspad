@@ -2,6 +2,7 @@ package blockvalidator
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -11,14 +12,16 @@ import (
 // blockValidator exposes a set of validation classes, after which
 // it's possible to determine whether either a block is valid
 type blockValidator struct {
-	powMax                     *big.Int
-	skipPoW                    bool
-	genesisHash                *externalapi.DomainHash
-	enableNonNativeSubnetworks bool
-	powMaxBits                 uint32
-	maxBlockSize               uint64
-	mergeSetSizeLimit          uint64
-	maxBlockParents            model.KType
+	powMax                      *big.Int
+	skipPoW                     bool
+	genesisHash                 *externalapi.DomainHash
+	enableNonNativeSubnetworks  bool
+	powMaxBits                  uint32
+	maxBlockSize                uint64
+	mergeSetSizeLimit           uint64
+	maxBlockParents             model.KType
+	timestampDeviationTolerance uint64
+	targetTimePerBlock          time.Duration
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -45,6 +48,8 @@ func New(powMax *big.Int,
 	maxBlockSize uint64,
 	mergeSetSizeLimit uint64,
 	maxBlockParents model.KType,
+	timestampDeviationTolerance uint64,
+	targetTimePerBlock time.Duration,
 
 	databaseContext model.DBReader,
 
@@ -64,25 +69,26 @@ func New(powMax *big.Int,
 	blockStatusStore model.BlockStatusStore) model.BlockValidator {
 
 	return &blockValidator{
-		powMax:                     powMax,
-		skipPoW:                    skipPoW,
-		genesisHash:                genesisHash,
-		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
-		powMaxBits:                 util.BigToCompact(powMax),
-		maxBlockSize:               maxBlockSize,
-		mergeSetSizeLimit:          mergeSetSizeLimit,
-		maxBlockParents:            maxBlockParents,
-
-		databaseContext:       databaseContext,
-		difficultyManager:     difficultyManager,
-		pastMedianTimeManager: pastMedianTimeManager,
-		transactionValidator:  transactionValidator,
-		ghostdagManager:       ghostdagManager,
-		dagTopologyManager:    dagTopologyManager,
-		dagTraversalManager:   dagTraversalManager,
-		coinbaseManager:       coinbaseManager,
-		mergeDepthManager:     mergeDepthManager,
-		pruningStore:          pruningStore,
+		powMax:                      powMax,
+		skipPoW:                     skipPoW,
+		genesisHash:                 genesisHash,
+		enableNonNativeSubnetworks:  enableNonNativeSubnetworks,
+		powMaxBits:                  util.BigToCompact(powMax),
+		maxBlockSize:                maxBlockSize,
+		mergeSetSizeLimit:           mergeSetSizeLimit,
+		maxBlockParents:             maxBlockParents,
+		timestampDeviationTolerance: timestampDeviationTolerance,
+		targetTimePerBlock:          targetTimePerBlock,
+		databaseContext:             databaseContext,
+		difficultyManager:           difficultyManager,
+		pastMedianTimeManager:       pastMedianTimeManager,
+		transactionValidator:        transactionValidator,
+		ghostdagManager:             ghostdagManager,
+		dagTopologyManager:          dagTopologyManager,
+		dagTraversalManager:         dagTraversalManager,
+		coinbaseManager:             coinbaseManager,
+		mergeDepthManager:           mergeDepthManager,
+		pruningStore:                pruningStore,
 
 		blockStore:        blockStore,
 		ghostdagDataStore: ghostdagDataStore,

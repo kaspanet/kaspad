@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
 
@@ -11,6 +12,11 @@ import (
 // consensus state
 func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.DomainHash) error {
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkBlockTimestampInIsolation(header)
 	if err != nil {
 		return err
 	}
@@ -32,6 +38,18 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 	if uint64(len(header.ParentHashes)) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(header.ParentHashes), v.maxBlockParents)
+	}
+	return nil
+}
+
+func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.DomainBlockHeader) error {
+
+	blockTimestamp := header.TimeInMilliseconds
+	now := mstime.Now().UnixMilliseconds()
+	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
+	if blockTimestamp > maxCurrentTime {
+		return errors.Wrapf(
+			ruleerrors.ErrBlockIsTooMuchInTheFuture, "The block timestamp is in the future.")
 	}
 	return nil
 }

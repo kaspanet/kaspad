@@ -1,11 +1,10 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
 	"os"
 	"sync"
-
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
@@ -152,6 +151,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.MaxBlockSize,
 		dagParams.MergeSetSizeLimit,
 		dagParams.MaxBlockParents,
+		dagParams.TimestampDeviationTolerance,
+		dagParams.TargetTimePerBlock,
 
 		dbManager,
 		difficultyManager,
