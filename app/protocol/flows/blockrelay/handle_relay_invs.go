@@ -71,7 +71,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+		if blockInfo.Exists {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
