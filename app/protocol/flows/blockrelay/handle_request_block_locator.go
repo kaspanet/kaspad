@@ -32,15 +32,9 @@ func HandleRequestBlockLocator(context RequestBlockLocatorContext, incomingRoute
 
 func (flow *handleRequestBlockLocatorFlow) start() error {
 	for {
-		lowHash, highHash, rawLimit, err := flow.receiveGetBlockLocator()
+		lowHash, highHash, limit, err := flow.receiveGetBlockLocator()
 		if err != nil {
 			return err
-		}
-
-		var limit *int
-		if rawLimit > 0 {
-			intLimit := int(rawLimit)
-			limit = &intLimit
 		}
 
 		locator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, limit)

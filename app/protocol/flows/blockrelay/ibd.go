@@ -81,7 +81,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalap
 	currentHighHash := highHash
 
 	for {
-		err := flow.sendGetBlockLocator(lowHash, currentHighHash, nil)
+		err := flow.sendGetBlockLocator(lowHash, currentHighHash, 0)
 		if err != nil {
 			return nil, err
 		}
