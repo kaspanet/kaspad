@@ -16,7 +16,7 @@ type insertMode uint8
 const (
 	insertModeGenesis insertMode = iota
 	insertModeHeader
-	insertModeBlockWithoutUpdatingVirtual
+	insertModeBlockBody
 	insertModeBlock
 )
 
@@ -182,7 +182,7 @@ func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *ex
 			return 0, err
 		}
 		if *selectedHeaderTip != *blockHash {
-			return insertModeBlockWithoutUpdatingVirtual, nil
+			return insertModeBlockBody, nil
 		}
 	}
 
