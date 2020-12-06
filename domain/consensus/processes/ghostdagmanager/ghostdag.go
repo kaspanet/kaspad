@@ -3,7 +3,9 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 // GHOSTDAG runs the GHOSTDAG protocol and calculates the block BlockGHOSTDAGData by the given parents.
@@ -26,6 +28,7 @@ import (
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	newBlockData := &blockGHOSTDAGData{
+		blueWork:           new(big.Int),
 		mergeSetBlues:      make([]*externalapi.DomainHash, 0),
 		mergeSetReds:       make([]*externalapi.DomainHash, 0),
 		bluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
@@ -77,9 +80,20 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 			return err
 		}
 		newBlockData.blueScore = selectedParentGHOSTDAGData.BlueScore() + uint64(len(newBlockData.mergeSetBlues))
+		// We inherit the bluework from the selected parent
+		newBlockData.blueWork.Set(selectedParentGHOSTDAGData.BlueWork())
+		// Then we add up all the *work*(not blueWork) that all of newBlock merge set blues and selected parent did
+		for _, blue := range newBlockData.mergeSetBlues {
+			header, err := gm.headerStore.BlockHeader(gm.databaseContext, blue)
+			if err != nil {
+				return err
+			}
+			newBlockData.blueWork.Add(newBlockData.blueWork, util.CalcWork(header.Bits))
+		}
 	} else {
 		// Genesis's blue score is defined to be 0.
 		newBlockData.blueScore = 0
+		newBlockData.blueWork.SetUint64(0)
 	}
 
 	gm.ghostdagDataStore.Stage(blockHash, newBlockData)

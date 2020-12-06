@@ -9,6 +9,7 @@ type ghostdagManager struct {
 	databaseContext    model.DBReader
 	dagTopologyManager model.DAGTopologyManager
 	ghostdagDataStore  model.GHOSTDAGDataStore
+	headerStore        model.BlockHeaderStore
 	k                  model.KType
 }
 
@@ -17,12 +18,14 @@ func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	headerStore model.BlockHeaderStore,
 	k model.KType) model.GHOSTDAGManager {
 
 	return &ghostdagManager{
 		databaseContext:    databaseContext,
 		dagTopologyManager: dagTopologyManager,
 		ghostdagDataStore:  ghostdagDataStore,
+		headerStore:        headerStore,
 		k:                  k,
 	}
 }

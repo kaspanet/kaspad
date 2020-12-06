@@ -3,10 +3,12 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"math/big"
 )
 
 type blockGHOSTDAGData struct {
 	blueScore          uint64
+	blueWork           *big.Int
 	selectedParent     *externalapi.DomainHash
 	mergeSetBlues      []*externalapi.DomainHash
 	mergeSetReds       []*externalapi.DomainHash
@@ -16,6 +18,7 @@ type blockGHOSTDAGData struct {
 // NewBlockGHOSTDAGData creates a new instance of model.BlockGHOSTDAGData
 func NewBlockGHOSTDAGData(
 	blueScore uint64,
+	blueWork *big.Int,
 	selectedParent *externalapi.DomainHash,
 	mergeSetBlues []*externalapi.DomainHash,
 	mergeSetReds []*externalapi.DomainHash,
@@ -23,6 +26,7 @@ func NewBlockGHOSTDAGData(
 
 	return &blockGHOSTDAGData{
 		blueScore:          blueScore,
+		blueWork:           blueWork,
 		selectedParent:     selectedParent,
 		mergeSetBlues:      mergeSetBlues,
 		mergeSetReds:       mergeSetReds,
@@ -32,6 +36,10 @@ func NewBlockGHOSTDAGData(
 
 func (bgd *blockGHOSTDAGData) BlueScore() uint64 {
 	return bgd.blueScore
+}
+
+func (bgd *blockGHOSTDAGData) BlueWork() *big.Int {
+	return bgd.blueWork
 }
 
 func (bgd *blockGHOSTDAGData) SelectedParent() *externalapi.DomainHash {
