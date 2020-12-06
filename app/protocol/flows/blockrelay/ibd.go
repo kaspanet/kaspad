@@ -121,9 +121,6 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 		if doneIBD {
 			return nil
 		}
-		if msgBlockHeader == nil {
-			continue
-		}
 
 		err = flow.processHeader(msgBlockHeader)
 		if err != nil {
