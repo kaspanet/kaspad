@@ -30,7 +30,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	log.Debugf("Finished downloading headers up to %s", highHash)
 
 	// Fetch the UTXO set if we don't already have it
-	log.Debugf("Downloading the UTXO set for %s", highHash)
+	log.Debugf("Downloading the IBD root UTXO set under highHash %s", highHash)
 	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
 	if err != nil {
 		return err
@@ -41,11 +41,11 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 		if !found {
-			log.Infof("Cannot download the UTXO set for %s", highHash)
+			log.Infof("Cannot download the IBD root UTXO set under highHash %s", highHash)
 			return nil
 		}
 	}
-	log.Debugf("Finished downloading the UTXO set for %s", highHash)
+	log.Debugf("Finished downloading the IBD root UTXO set under highHash %s", highHash)
 
 	// Fetch the block bodies
 	log.Debugf("Downloading block bodies up to %s", highHash)
