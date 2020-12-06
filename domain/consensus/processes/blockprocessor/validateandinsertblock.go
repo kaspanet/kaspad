@@ -301,6 +301,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 func (bp *blockProcessor) validatePruningPointViolationAndProofOfWorkAndDifficulty(block *externalapi.DomainBlock, mode insertMode) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	if mode != insertModeHeader {
+		// We stage the block here since we need it for parent validation
 		bp.blockStore.Stage(blockHash, block)
 	}
 	return bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
