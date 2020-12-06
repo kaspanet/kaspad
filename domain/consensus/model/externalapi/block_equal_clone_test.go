@@ -15,11 +15,11 @@ type TestBlockStruct struct {
 	blocksToCompareTo []blockToCompare
 }
 
-func InitTestBaseTransactions() []*DomainTransaction {
+func initTestBaseTransactions() []*DomainTransaction {
 
 	testTx := []*DomainTransaction{{
 		Version:      1,
-		Inputs:       nil,
+		Inputs:       []*DomainTransactionInput{},
 		Outputs:      []*DomainTransactionOutput{},
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
@@ -39,12 +39,12 @@ func InitTestBaseTransactions() []*DomainTransaction {
 	return testTx
 }
 
-func InitTestAnotherTransactions() []*DomainTransaction {
+func initTestAnotherTransactions() []*DomainTransaction {
 
 	testTx := []*DomainTransaction{{
 		Version:      1,
 		Inputs:       []*DomainTransactionInput{},
-		Outputs:      nil,
+		Outputs:      []*DomainTransactionOutput{},
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
 		Gas:          1,
@@ -63,7 +63,7 @@ func InitTestAnotherTransactions() []*DomainTransaction {
 	return testTx
 }
 
-func InitTestBlockStructsForClone() []*DomainBlock {
+func initTestBlockStructsForClone() []*DomainBlock {
 
 	tests := []*DomainBlock{
 		{
@@ -78,7 +78,7 @@ func InitTestBlockStructsForClone() []*DomainBlock {
 				5,
 				6,
 			},
-			InitTestBaseTransactions(),
+			initTestBaseTransactions(),
 		}, {
 			&DomainBlockHeader{
 
@@ -91,14 +91,14 @@ func InitTestBlockStructsForClone() []*DomainBlock {
 				5,
 				6,
 			},
-			InitTestBaseTransactions(),
+			initTestBaseTransactions(),
 		},
 	}
 
 	return tests
 }
 
-func InitTestBlockStructsForEqual() *[]TestBlockStruct {
+func initTestBlockStructsForEqual() *[]TestBlockStruct {
 
 	tests := []TestBlockStruct{
 		{
@@ -120,7 +120,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							5,
 							6,
 						},
-						InitTestBaseTransactions()},
+						initTestBaseTransactions()},
 					expectedResult: false,
 				},
 			},
@@ -136,7 +136,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 					6,
 					7,
 				},
-				InitTestBaseTransactions(),
+				initTestBaseTransactions(),
 			},
 			blocksToCompareTo: []blockToCompare{
 				{
@@ -155,7 +155,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestAnotherTransactions(),
+						initTestAnotherTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -170,7 +170,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: true,
 				}, {
@@ -185,7 +185,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -200,7 +200,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -215,7 +215,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -230,7 +230,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -245,7 +245,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -260,7 +260,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -275,7 +275,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							100,
 							7,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
@@ -290,7 +290,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 							6,
 							100,
 						},
-						InitTestBaseTransactions(),
+						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				},
@@ -303,7 +303,7 @@ func InitTestBlockStructsForEqual() *[]TestBlockStruct {
 
 func TestDomainBlock_Equal(t *testing.T) {
 
-	blockTests := InitTestBlockStructsForEqual()
+	blockTests := initTestBlockStructsForEqual()
 	for i, test := range *blockTests {
 		for j, subTest := range test.blocksToCompareTo {
 			result1 := test.baseBlock.Equal(subTest.block)
@@ -321,7 +321,7 @@ func TestDomainBlock_Equal(t *testing.T) {
 
 func TestDomainBlock_Clone(t *testing.T) {
 
-	blocks := InitTestBlockStructsForClone()
+	blocks := initTestBlockStructsForClone()
 	for i, block := range blocks {
 		blockClone := block.Clone()
 		if !blockClone.Equal(block) {

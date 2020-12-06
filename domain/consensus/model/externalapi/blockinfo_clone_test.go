@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func InitTestBlockInfoStructsForClone() []*BlockInfo {
+func initTestBlockInfoStructsForClone() []*BlockInfo {
 
 	tests := []*BlockInfo{
 		{
@@ -18,7 +18,7 @@ func InitTestBlockInfoStructsForClone() []*BlockInfo {
 			false,
 		}, {
 			true,
-			'a',
+			1,
 			false,
 		}, {
 			true,
@@ -35,10 +35,9 @@ func InitTestBlockInfoStructsForClone() []*BlockInfo {
 
 func TestBlockInfo_Clone(t *testing.T) {
 
-	blockInfos := InitTestBlockInfoStructsForClone()
+	blockInfos := initTestBlockInfoStructsForClone()
 	for i, blockInfo := range blockInfos {
 		blockInfoClone := blockInfo.Clone()
-
 		if !reflect.DeepEqual(blockInfo, blockInfoClone) {
 			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}

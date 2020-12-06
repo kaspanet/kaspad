@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func InitTestDomainHashForClone() []*DomainHash {
+func initTestDomainHashForClone() []*DomainHash {
 
 	tests := []*DomainHash{
 
@@ -43,7 +43,7 @@ type TestHashStruct struct {
 	hashesToCompareTo []TestHashToCompare
 }
 
-func InitTestDomainHashForEqual() []*TestHashStruct {
+func initTestDomainHashForEqual() []*TestHashStruct {
 	tests := []*TestHashStruct{
 		{
 			baseHash: nil,
@@ -89,7 +89,7 @@ func InitTestDomainHashForEqual() []*TestHashStruct {
 
 func TestDomainHash_Equal(t *testing.T) {
 
-	hashTests := InitTestDomainHashForEqual()
+	hashTests := initTestDomainHashForEqual()
 	for i, test := range hashTests {
 		for j, subTest := range test.hashesToCompareTo {
 			result1 := test.baseHash.Equal(subTest.hash)
@@ -106,7 +106,7 @@ func TestDomainHash_Equal(t *testing.T) {
 
 func TestDomainHash_Clone(t *testing.T) {
 
-	hashes := InitTestDomainHashForClone()
+	hashes := initTestDomainHashForClone()
 	for i, hash := range hashes {
 		hashClone := hash.Clone()
 		if !hashClone.Equal(hash) {

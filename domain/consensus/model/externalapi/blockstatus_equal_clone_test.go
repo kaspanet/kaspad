@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func InitTestBlockStatusForClone() []BlockStatus {
+func initTestBlockStatusForClone() []BlockStatus {
 
 	tests := []BlockStatus{'a', 'b', 0xFF, 0}
 
@@ -22,13 +22,13 @@ type TestBlockStatusStruct struct {
 	blockStatusesToCompareTo []TestBlockStatusToCompare
 }
 
-func InitTestBlockStatusForEqual() []TestBlockStatusStruct {
+func initTestBlockStatusForEqual() []TestBlockStatusStruct {
 	tests := []TestBlockStatusStruct{
 		{
 			baseBlockStatus: 0,
 			blockStatusesToCompareTo: []TestBlockStatusToCompare{
 				{
-					blockStatus:    'a',
+					blockStatus:    1,
 					expectedResult: false,
 				},
 				{
@@ -40,7 +40,7 @@ func InitTestBlockStatusForEqual() []TestBlockStatusStruct {
 			baseBlockStatus: 255,
 			blockStatusesToCompareTo: []TestBlockStatusToCompare{
 				{
-					blockStatus:    'a',
+					blockStatus:    1,
 					expectedResult: false,
 				},
 				{
@@ -55,7 +55,7 @@ func InitTestBlockStatusForEqual() []TestBlockStatusStruct {
 
 func TestBlockStatus_Equal(t *testing.T) {
 
-	testBlockStatus := InitTestBlockStatusForEqual()
+	testBlockStatus := initTestBlockStatusForEqual()
 
 	for i, test := range testBlockStatus {
 		for j, subTest := range test.blockStatusesToCompareTo {
@@ -74,7 +74,7 @@ func TestBlockStatus_Equal(t *testing.T) {
 
 func TestBlockStatus_Clone(t *testing.T) {
 
-	testBlockStatus := InitTestBlockStatusForClone()
+	testBlockStatus := initTestBlockStatusForClone()
 	for i, blockStatus := range testBlockStatus {
 		blockStatusClone := blockStatus.Clone()
 		if !blockStatusClone.Equal(blockStatus) {
