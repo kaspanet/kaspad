@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 
