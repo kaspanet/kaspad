@@ -91,7 +91,7 @@ func (sm *syncManager) virtualSelectedParentHash() (*externalapi.DomainHash, err
 	if err != nil {
 		return nil, err
 	}
-	return virtualGHOSTDAGData.SelectedParent, nil
+	return virtualGHOSTDAGData.SelectedParent(), nil
 }
 
 func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHash, error) {

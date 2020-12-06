@@ -214,7 +214,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 	if err != nil {
 		return nil, err
 	}
-	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds {
+	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds() {
 		log.Tracef("Check whether red block %s is kosherized", redBlock)
 		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, redBlock)
 		if err != nil {

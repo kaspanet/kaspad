@@ -1,14 +1,17 @@
-package ghostdagmanager
+package ghostdagmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 )
 
 // TestGHOSTDAG iterates over several dag simulations, and checks
@@ -47,15 +50,9 @@ func TestGHOSTDAG(t *testing.T) {
 	}
 
 	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-		dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
+		dagMap: make(map[externalapi.DomainHash]model.BlockGHOSTDAGData),
 	}
-	var blockGHOSTDAGDataGenesis = &model.BlockGHOSTDAGData{
-		BlueScore:          0,
-		SelectedParent:     nil,
-		MergeSetBlues:      nil,
-		MergeSetReds:       nil,
-		BluesAnticoneSizes: nil,
-	}
+	blockGHOSTDAGDataGenesis := ghostdagmanager.NewBlockGHOSTDAGData(0, nil, nil, nil, nil)
 
 	var testsCounter int
 	err := filepath.Walk("../../testdata/dags", func(path string, info os.FileInfo, err error) error {
@@ -87,7 +84,7 @@ func TestGHOSTDAG(t *testing.T) {
 
 		//NOTE: FOR ADDING/REMOVING AN IMPLEMENTATION CHANGE BELOW:
 		implementationFactories := []implManager{
-			{New, "Original"},
+			{ghostdagmanager.New, "Original"},
 			{ghostdag2.New, "Tal's impl"},
 		}
 
@@ -110,30 +107,30 @@ func TestGHOSTDAG(t *testing.T) {
 						factory.implName, info.Name(), testBlockData.ID, err)
 				}
 
-				if testBlockData.Score != (ghostdagData.BlueScore) {
+				if testBlockData.Score != (ghostdagData.BlueScore()) {
 					t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected blue score %d but got %d.",
-						factory.implName, info.Name(), testBlockData.ID, testBlockData.Score, ghostdagData.BlueScore)
+						factory.implName, info.Name(), testBlockData.ID, testBlockData.Score, ghostdagData.BlueScore())
 				}
 
-				if *StringToByte(testBlockData.SelectedParent) != *ghostdagData.SelectedParent {
+				if *StringToByte(testBlockData.SelectedParent) != *ghostdagData.SelectedParent() {
 					t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected selected parent %v but got %v.",
-						factory.implName, info.Name(), testBlockData.ID, testBlockData.SelectedParent, string(ghostdagData.SelectedParent[:]))
+						factory.implName, info.Name(), testBlockData.ID, testBlockData.SelectedParent, ghostdagData.SelectedParent())
 				}
 
-				if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues) {
+				if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues()) {
 					t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected merge set blues %v but got %v.",
-						factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetBlues, hashesToStrings(ghostdagData.MergeSetBlues))
+						factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetBlues, hashesToStrings(ghostdagData.MergeSetBlues()))
 				}
 
-				if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds) {
+				if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds()) {
 					t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected merge set reds %v but got %v.",
-						factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetReds, hashesToStrings(ghostdagData.MergeSetReds))
+						factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetReds, hashesToStrings(ghostdagData.MergeSetReds()))
 				}
 
 			}
 			dagTopology.parentsMap = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 			dagTopology.parentsMap[genesisHash] = nil
-			ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
+			ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]model.BlockGHOSTDAGData)
 			ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
 		}
 
@@ -172,10 +169,10 @@ func StringToByteArray(stringIDArr []string) []*externalapi.DomainHash {
 
 /* ---------------------- */
 type GHOSTDAGDataStoreImpl struct {
-	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
+	dagMap map[externalapi.DomainHash]model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
 }
 
@@ -191,7 +188,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil

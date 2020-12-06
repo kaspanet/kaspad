@@ -1,9 +1,12 @@
 package ghostdag2
 
 import (
+	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"sort"
 )
 
 type ghostdagHelper struct {
@@ -44,7 +47,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if err != nil {
 			return err
 		}
-		blockScore := blockData.BlueScore
+		blockScore := blockData.BlueScore()
 		if blockScore > maxNum {
 			selectedParent = parent
 			maxNum = blockScore
@@ -91,13 +94,8 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 	myScore += uint64(len(mergeSetBlues))
 
-	e := model.BlockGHOSTDAGData{
-		BlueScore:      myScore,
-		SelectedParent: selectedParent,
-		MergeSetBlues:  mergeSetBlues,
-		MergeSetReds:   mergeSetReds,
-	}
-	gh.dataStore.Stage(blockCandidate, &e)
+	e := ghostdagmanager.NewBlockGHOSTDAGData(myScore, selectedParent, mergeSetBlues, mergeSetReds, nil)
+	gh.dataStore.Stage(blockCandidate, e)
 	return nil
 }
 
@@ -220,7 +218,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 		if err != nil {
 			return false, err
 		}
-		if mergeSetReds := dataStore.MergeSetReds; contains(checkedBlock, mergeSetReds) {
+		if mergeSetReds := dataStore.MergeSetReds(); contains(checkedBlock, mergeSetReds) {
 			return false, nil
 		}
 	} else {
@@ -326,14 +324,14 @@ func (gh *ghostdagHelper) findBlueSet(blueSet *[]*externalapi.DomainHash, select
 		if err != nil {
 			return err
 		}
-		mergeSetBlue := blockData.MergeSetBlues
+		mergeSetBlue := blockData.MergeSetBlues()
 		for _, blue := range mergeSetBlue {
 			if contains(blue, *blueSet) {
 				continue
 			}
 			*blueSet = append(*blueSet, blue)
 		}
-		selectedParent = blockData.SelectedParent
+		selectedParent = blockData.SelectedParent()
 	}
 	return nil
 }
@@ -356,10 +354,10 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 			return false
 		}
 
-		if blockLeft.BlueScore < blockRight.BlueScore {
+		if blockLeft.BlueScore() < blockRight.BlueScore() {
 			return true
 		}
-		if blockLeft.BlueScore == blockRight.BlueScore {
+		if blockLeft.BlueScore() == blockRight.BlueScore() {
 			return ismoreHash(arr[j], arr[i])
 		}
 		return false
@@ -369,13 +367,13 @@ func (gh *ghostdagHelper) sortByBlueScore(arr []*externalapi.DomainHash) error {
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }

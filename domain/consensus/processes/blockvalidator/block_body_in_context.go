@@ -39,7 +39,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions {
-		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore, blockTime) {
+		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore(), blockTime) {
 			txID := consensushashing.TransactionID(tx)
 			return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
 				"transaction %s", txID)

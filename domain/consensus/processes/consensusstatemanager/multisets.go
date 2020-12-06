@@ -10,22 +10,22 @@ import (
 )
 
 func (csm *consensusStateManager) calculateMultiset(
-	acceptanceData model.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
+	acceptanceData model.AcceptanceData, blockGHOSTDAGData model.BlockGHOSTDAGData) (model.Multiset, error) {
 
-	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent)
-	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent)
+	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 
-	if blockGHOSTDAGData.SelectedParent == nil {
+	if blockGHOSTDAGData.SelectedParent() == nil {
 		log.Tracef("Selected parent is nil, which could only happen for the genesis. " +
 			"The genesis, by definition, has an empty multiset")
 		return multiset.New(), nil
 	}
 
-	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent)
+	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent, ms.Hash())
+	log.Tracef("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent(), ms.Hash())
 
 	for _, blockAcceptanceData := range acceptanceData {
 		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -40,7 +40,7 @@ func (csm *consensusStateManager) calculateMultiset(
 			log.Tracef("Is transaction %s a coinbase transaction: %t", transactionID, isCoinbase)
 
 			var err error
-			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore, isCoinbase)
+			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
 			if err != nil {
 				return nil, err
 			}
