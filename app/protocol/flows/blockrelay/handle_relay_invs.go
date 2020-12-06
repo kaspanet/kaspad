@@ -120,8 +120,10 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-
-		return flow.OnNewBlock(block)
+		err = flow.OnNewBlock(block)
+		if err != nil {
+			return err
+		}
 	}
 }
 
