@@ -41,8 +41,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 		if !found {
-			log.Infof("Cannot download the UTXO set for %s "+
-				"because the peer does not have its IBD root UTXO block", highHash)
+			log.Infof("Cannot download the UTXO set for %s", highHash)
 			return nil
 		}
 	}
