@@ -29,7 +29,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 		locator = append(locator, currentHash)
 
 		// Stop if we've reached the limit (if it's set)
-		if limit > 0 && uint32(len(locator)) >= limit {
+		if limit > 0 && uint32(len(locator)) == limit {
 			break
 		}
 
