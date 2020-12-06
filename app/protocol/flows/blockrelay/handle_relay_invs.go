@@ -120,6 +120,8 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
+
+		return flow.OnNewBlock(block)
 	}
 }
 
@@ -221,8 +223,7 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 	}
 
 	log.Infof("Accepted block %s via relay", blockHash)
-
-	return flow.OnNewBlock(block)
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
