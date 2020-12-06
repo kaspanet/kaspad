@@ -68,7 +68,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	if err != nil {
 		return 0, err
 	}
-	// Genesis block
+	// Genesis block or network that doesn't have difficulty adjustment (such as simnet)
 	if len(parents) == 0 || dm.disableDifficultyAdjustment {
 		return dm.genesisBits()
 	}
