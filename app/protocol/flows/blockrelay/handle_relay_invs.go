@@ -120,6 +120,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
+		log.Infof("Accepted block %s via relay", inv.Hash)
 		err = flow.OnNewBlock(block)
 		if err != nil {
 			return err
@@ -219,13 +220,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	err := flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Accepted block %s via relay", blockHash)
-	return nil
+	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
 
 func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
