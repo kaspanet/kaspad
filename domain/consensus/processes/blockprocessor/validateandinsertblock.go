@@ -229,6 +229,11 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode in
 		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 	}
 
+	isDuplicateHeader := mode == insertModeHeader && status == externalapi.StatusHeaderOnly
+	if isDuplicateHeader {
+		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
+	}
+
 	return nil
 }
 
