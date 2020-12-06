@@ -92,11 +92,12 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Debugf("Requesting block %s", inv.Hash)
-		block, err := flow.requestBlock(inv.Hash)
+		block, exists, err := flow.requestBlock(inv.Hash)
 		if err != nil {
 			return err
 		}
-		if block == nil {
+		if exists {
+			log.Debugf("Aborting requesting block %s because it already exists")
 			continue
 		}
 
@@ -142,10 +143,10 @@ func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error)
 	return inv, nil
 }
 
-func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
 	exists := flow.SharedRequestedBlocks().addIfNotExists(requestHash)
 	if exists {
-		return nil, nil
+		return nil, true, nil
 	}
 
 	// In case the function returns earlier than expected, we want to make sure flow.SharedRequestedBlocks() is
@@ -155,30 +156,30 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 	// The block can become known from another peer in the process of orphan resolution
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(requestHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks([]*externalapi.DomainHash{requestHash})
 	err = flow.outgoingRoute.Enqueue(getRelayBlocksMsg)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	msgBlock, err := flow.readMsgBlock()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
 	if *blockHash != *requestHash {
-		return nil, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
+		return nil, false, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
 	}
 
-	return block, nil
+	return block, false, nil
 }
 
 // readMsgBlock returns the next msgBlock in msgChan, and populates invsQueue with any inv messages that meanwhile arrive.
