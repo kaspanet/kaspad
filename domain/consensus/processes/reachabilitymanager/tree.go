@@ -163,7 +163,7 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 	// Temporarily set the child's interval to be empty, at
 	// the start of node's remaining interval. This is done
 	// so that child-of-node checks (e.g.
-	// findAncestorOfThisAmongChildrenOfOther) will not fail for node.
+	// FindAncestorOfThisAmongChildrenOfOther) will not fail for node.
 	err = rt.stageInterval(child, newReachabilityInterval(remaining.Start, remaining.Start-1))
 	if err != nil {
 		return err
@@ -411,7 +411,7 @@ func (rt *reachabilityManager) reindexIntervalsEarlierThanReindexRoot(node,
 	// The chosen child is:
 	// a. A reachability tree child of `commonAncestor`
 	// b. A reachability tree ancestor of `reindexRoot`
-	commonAncestorChosenChild, err := rt.findAncestorOfThisAmongChildrenOfOther(reindexRoot, commonAncestor)
+	commonAncestorChosenChild, err := rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, commonAncestor)
 	if err != nil {
 		return err
 	}
@@ -465,7 +465,7 @@ func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAnces
 				break
 			}
 
-			current, err = rt.findAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
+			current, err = rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
 			if err != nil {
 				return err
 			}
@@ -587,7 +587,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 				break
 			}
 
-			current, err = rt.findAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
+			current, err = rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
 			if err != nil {
 				return err
 			}
@@ -799,7 +799,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return commonAncestor, true, nil
 	}
 
-	reindexRootChosenChild, err := rt.findAncestorOfThisAmongChildrenOfOther(newTreeNode, reindexRoot)
+	reindexRootChosenChild, err := rt.FindAncestorOfThisAmongChildrenOfOther(newTreeNode, reindexRoot)
 	if err != nil {
 		return nil, false, err
 	}
@@ -826,9 +826,9 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 	return reindexRootChosenChild, true, nil
 }
 
-// findAncestorOfThisAmongChildrenOfOther finds the reachability tree child
+// FindAncestorOfThisAmongChildrenOfOther finds the reachability tree child
 // of node that is the ancestor of node.
-func (rt *reachabilityManager) findAncestorOfThisAmongChildrenOfOther(this, other *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) FindAncestorOfThisAmongChildrenOfOther(this, other *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	otherChildren, err := rt.children(other)
 	if err != nil {
 		return nil, err

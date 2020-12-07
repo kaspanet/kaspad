@@ -1,30 +1,36 @@
 package finalitymanager
 
 import (
+	"errors"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 type finalityManager struct {
-	dagTopologyManager  model.DAGTopologyManager
-	dagTraversalManager model.DAGTraversalManager
-	finalityStore       model.FinalityStore
-	genesisHash         *externalapi.DomainHash
-	finalityDepth       uint64
+	databaseContext    model.DBReader
+	dagTopologyManager model.DAGTopologyManager
+	finalityStore      model.FinalityStore
+	ghostdagDataStore  model.GHOSTDAGDataStore
+	genesisHash        *externalapi.DomainHash
+	finalityDepth      uint64
 }
 
-func New(dagTopologyManager model.DAGTopologyManager,
-	dagTraversalManager model.DAGTraversalManager,
+func New(databaseContext model.DBReader,
+	dagTopologyManager model.DAGTopologyManager,
 	finalityStore model.FinalityStore,
+	ghostdagDataStore model.GHOSTDAGDataStore,
 	genesisHash *externalapi.DomainHash,
 	finalityDepth uint64) model.FinalityManager {
 
 	return &finalityManager{
-		genesisHash:         genesisHash,
-		dagTopologyManager:  dagTopologyManager,
-		finalityStore:       finalityStore,
-		dagTraversalManager: dagTraversalManager,
-		finalityDepth:       finalityDepth,
+		databaseContext:    databaseContext,
+		genesisHash:        genesisHash,
+		dagTopologyManager: dagTopologyManager,
+		finalityStore:      finalityStore,
+		ghostdagDataStore:  ghostdagDataStore,
+		finalityDepth:      finalityDepth,
 	}
 }
 
@@ -57,8 +63,7 @@ func (fm *finalityManager) VirtualFinalityPoint() (*externalapi.DomainHash, erro
 	log.Tracef("virtualFinalityPoint start")
 	defer log.Tracef("virtualFinalityPoint end")
 
-	virtualFinalityPoint, err := fm.dagTraversalManager.BlockAtDepth(
-		model.VirtualBlockHash, fm.finalityDepth)
+	virtualFinalityPoint, err := fm.calculateFinalityPoint(model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -68,5 +73,63 @@ func (fm *finalityManager) VirtualFinalityPoint() (*externalapi.DomainHash, erro
 }
 
 func (fm *finalityManager) FinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	return fm.dagTraversalManager.BlockAtDepth(blockHash, fm.finalityDepth)
+	if *blockHash == *model.VirtualBlockHash {
+		return fm.VirtualFinalityPoint()
+	}
+	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return fm.calculateAndStageFinalityPoint(blockHash)
+		}
+		return nil, err
+	}
+	return finalityPoint, nil
+}
+
+func (fm *finalityManager) calculateAndStageFinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	finalityPoint, err := fm.calculateFinalityPoint(blockHash)
+	if err != nil {
+		return nil, err
+	}
+	fm.finalityStore.StageFinalityPoint(blockHash, finalityPoint)
+	return finalityPoint, nil
+}
+
+func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if ghostdagData.BlueScore() < fm.finalityDepth {
+		return fm.genesisHash, nil
+	}
+
+	selectedParent := ghostdagData.SelectedParent()
+	if *selectedParent == *fm.genesisHash {
+		return fm.genesisHash, nil
+	}
+
+	current, err := fm.finalityStore.FinalityPoint(fm.databaseContext, ghostdagData.SelectedParent())
+	if err != nil {
+		return nil, err
+	}
+	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
+
+	var next *externalapi.DomainHash
+	for {
+		next, err = fm.dagTopologyManager.ChildInSelectedParentChainOf(current, blockHash)
+		if err != nil {
+			return nil, err
+		}
+		nextGHOSTDAGData, err := fm.ghostdagDataStore.Get(fm.databaseContext, next)
+		if err != nil {
+			return nil, err
+		}
+		if nextGHOSTDAGData.BlueScore() >= requiredBlueScore {
+			return current, nil
+		}
+
+		current = next
+	}
 }

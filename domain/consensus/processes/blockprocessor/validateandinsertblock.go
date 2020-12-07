@@ -40,18 +40,6 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return err
 	}
 
-	hasHeader, err := bp.hasHeader(blockHash)
-	if err != nil {
-		return err
-	}
-
-	if !hasHeader {
-		err = bp.reachabilityManager.AddBlock(blockHash)
-		if err != nil {
-			return err
-		}
-	}
-
 	if insertMode == insertModeHeader {
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	} else {

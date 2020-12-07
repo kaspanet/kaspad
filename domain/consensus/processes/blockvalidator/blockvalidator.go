@@ -33,11 +33,13 @@ type blockValidator struct {
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningStore          model.PruningStore
+	reachabilityManager   model.ReachabilityManager
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockHeaderStore  model.BlockHeaderStore
 	blockStatusStore  model.BlockStatusStore
+	reachabilityStore model.ReachabilityDataStore
 }
 
 // New instantiates a new BlockValidator
@@ -61,22 +63,27 @@ func New(powMax *big.Int,
 	dagTraversalManager model.DAGTraversalManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
+	reachabilityManager model.ReachabilityManager,
+
 	pruningStore model.PruningStore,
 
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockHeaderStore model.BlockHeaderStore,
-	blockStatusStore model.BlockStatusStore) model.BlockValidator {
+	blockStatusStore model.BlockStatusStore,
+	reachabilityStore model.ReachabilityDataStore,
+) model.BlockValidator {
 
 	return &blockValidator{
-		powMax:                      powMax,
-		skipPoW:                     skipPoW,
-		genesisHash:                 genesisHash,
-		enableNonNativeSubnetworks:  enableNonNativeSubnetworks,
-		powMaxBits:                  util.BigToCompact(powMax),
-		maxBlockSize:                maxBlockSize,
-		mergeSetSizeLimit:           mergeSetSizeLimit,
-		maxBlockParents:             maxBlockParents,
+		powMax:                     powMax,
+		skipPoW:                    skipPoW,
+		genesisHash:                genesisHash,
+		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
+		powMaxBits:                 util.BigToCompact(powMax),
+		maxBlockSize:               maxBlockSize,
+		mergeSetSizeLimit:          mergeSetSizeLimit,
+		maxBlockParents:            maxBlockParents,
+
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,
 		databaseContext:             databaseContext,
@@ -88,11 +95,13 @@ func New(powMax *big.Int,
 		dagTraversalManager:         dagTraversalManager,
 		coinbaseManager:             coinbaseManager,
 		mergeDepthManager:           mergeDepthManager,
-		pruningStore:                pruningStore,
+		reachabilityManager:         reachabilityManager,
 
+		pruningStore:      pruningStore,
 		blockStore:        blockStore,
 		ghostdagDataStore: ghostdagDataStore,
 		blockHeaderStore:  blockHeaderStore,
 		blockStatusStore:  blockStatusStore,
+		reachabilityStore: reachabilityStore,
 	}
 }

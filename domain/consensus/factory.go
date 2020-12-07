@@ -92,7 +92,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dagTopologyManager := dagtopologymanager.New(
 		dbManager,
 		reachabilityManager,
-		blockRelationStore)
+		blockRelationStore,
+		ghostdagDataStore)
 	ghostdagManager := ghostdagmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -141,9 +142,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
 	genesisHash := dagParams.GenesisHash
 	finalityManager := finalitymanager.New(
+		dbManager,
 		dagTopologyManager,
-		dagTraversalManager,
 		finalityStore,
+		ghostdagDataStore,
 		genesisHash,
 		dagParams.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(
@@ -172,12 +174,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		coinbaseManager,
 		mergeDepthManager,
-		pruningStore,
+		reachabilityManager,
 
+		pruningStore,
 		blockStore,
 		ghostdagDataStore,
 		blockHeaderStore,
 		blockStatusStore,
+		reachabilityDataStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
@@ -283,7 +287,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityDataStore,
 		utxoDiffStore,
 		blockHeaderStore,
-		headerTipsStore)
+		headerTipsStore,
+		finalityStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
