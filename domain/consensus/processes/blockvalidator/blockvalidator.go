@@ -20,7 +20,7 @@ type blockValidator struct {
 	maxBlockSize                uint64
 	mergeSetSizeLimit           uint64
 	maxBlockParents             model.KType
-	timestampDeviationTolerance uint64
+	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
 
 	databaseContext       model.DBReader
@@ -48,7 +48,7 @@ func New(powMax *big.Int,
 	maxBlockSize uint64,
 	mergeSetSizeLimit uint64,
 	maxBlockParents model.KType,
-	timestampDeviationTolerance uint64,
+	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
 
 	databaseContext model.DBReader,
