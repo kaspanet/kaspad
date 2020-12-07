@@ -16,6 +16,7 @@ type finalityStore struct {
 	cache    *lrucache.LRUCache
 }
 
+// New instantiates a new FinalityStore
 func New(cacheSize int) model.FinalityStore {
 	return &finalityStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainHash),

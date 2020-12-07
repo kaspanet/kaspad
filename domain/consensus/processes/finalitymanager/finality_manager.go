@@ -17,6 +17,7 @@ type finalityManager struct {
 	finalityDepth      uint64
 }
 
+// New instantiates a new FinalityManager
 func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	finalityStore model.FinalityStore,

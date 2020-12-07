@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
+// FinalityStore represents a store for finality data
 type FinalityStore interface {
 	Store
 	IsStaged() bool
