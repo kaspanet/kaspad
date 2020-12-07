@@ -105,6 +105,20 @@ type TestSyncInfoStruct struct {
 func initTestSyncInfoForEqual() []*TestSyncInfoStruct {
 	tests := []*TestSyncInfoStruct{
 		{
+			baseSyncInfo: nil,
+			syncInfoToCompareTo: []TestSyncInfoToCompare{
+				{
+					syncInfo: &SyncInfo{
+						SyncState(1),
+						&DomainHash{1, 2},
+						0xF,
+						0xF},
+					expectedResult: false,
+				}, {
+					syncInfo:       nil,
+					expectedResult: true,
+				},
+			}}, {
 			baseSyncInfo: &SyncInfo{
 				SyncState(1),
 				&DomainHash{1, 2},
@@ -141,7 +155,16 @@ func initTestSyncInfoForEqual() []*TestSyncInfoStruct {
 						0xF1,
 						0xF},
 					expectedResult: false,
-				},
+				}, {
+					syncInfo:       nil,
+					expectedResult: false,
+				}, {
+					syncInfo: &SyncInfo{
+						SyncState(1),
+						&DomainHash{1, 2},
+						0xF,
+						0xF1},
+					expectedResult: false},
 			},
 		},
 	}
