@@ -15,6 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headertipsstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
@@ -81,6 +82,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New(10_000)
 	headerTipsStore := headertipsstore.New()
+	finalityStore := finalitystore.New(200)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -141,6 +143,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	finalityManager := finalitymanager.New(
 		dagTopologyManager,
 		dagTraversalManager,
+		finalityStore,
 		genesisHash,
 		dagParams.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(

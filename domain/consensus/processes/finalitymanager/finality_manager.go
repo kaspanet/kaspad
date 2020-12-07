@@ -8,19 +8,21 @@ import (
 type finalityManager struct {
 	dagTopologyManager  model.DAGTopologyManager
 	dagTraversalManager model.DAGTraversalManager
+	finalityStore       model.FinalityStore
 	genesisHash         *externalapi.DomainHash
 	finalityDepth       uint64
 }
 
-func New(
-	dagTopologyManager model.DAGTopologyManager,
+func New(dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
+	finalityStore model.FinalityStore,
 	genesisHash *externalapi.DomainHash,
-	finalityDepth uint64,
-) model.FinalityManager {
+	finalityDepth uint64) model.FinalityManager {
+
 	return &finalityManager{
 		genesisHash:         genesisHash,
 		dagTopologyManager:  dagTopologyManager,
+		finalityStore:       finalityStore,
 		dagTraversalManager: dagTraversalManager,
 		finalityDepth:       finalityDepth,
 	}
