@@ -461,7 +461,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 			Mass:    1,
 			ID:      nil,
 		}, //11
-		expectedResult: false, //should be false
+		expectedResult: true,
 	}, {
 		tx: &DomainTransaction{
 			Version: 1,
@@ -622,7 +622,7 @@ func initTestDomainTransactionForEqual() []TestDomainTransactionStruct {
 					Mass:    1,
 					ID:      nil,
 				},
-				expectedResult: false, //should be false
+				expectedResult: true,
 			}},
 		},
 	}
