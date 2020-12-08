@@ -2,9 +2,8 @@ package blockvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -89,18 +88,13 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 			"higher than max of %064x", target, v.powMax)
 	}
 
-	// The block hash must be less than the claimed target unless the flag
-	// to avoid proof of work checks is set.
+	// The block pow must be valid unless the flag to avoid proof of work checks is set.
 	if !v.skipPoW {
-		// The block hash must be less than the claimed target.
-		hash := consensushashing.HeaderHash(header)
-		hashNum := hashes.ToBig(hash)
-		if hashNum.Cmp(target) > 0 {
-			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
-				"expected max of %064x", hashNum, target)
+		valid := pow.CheckProofOfWorkWithTarget(header, target)
+		if !valid {
+			return errors.Wrap(ruleerrors.ErrUnexpectedDifficulty, "block has invalid difficulty")
 		}
 	}
-
 	return nil
 }
 
