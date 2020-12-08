@@ -169,7 +169,7 @@ func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *ex
 			return 0, errors.Errorf("cannot insert blocks other than the header pruning point " +
 				"while awaiting the UTXO set")
 		}
-		return insertModeBlock, nil
+		return insertModeBlockBody, nil
 	}
 
 	if syncState == externalapi.SyncStateAwaitingBlockBodies {

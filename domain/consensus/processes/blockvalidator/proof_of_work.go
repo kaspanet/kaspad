@@ -127,9 +127,26 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			if err != nil {
 				return err
 			}
-			if parentStatus == externalapi.StatusHeaderOnly {
-				missingParentHashes = append(missingParentHashes, parent)
+
+			if parentStatus != externalapi.StatusHeaderOnly {
+				continue
 			}
+
+			headerTipsPruningPoint, err := v.consensusStateManager.HeaderTipsPruningPoint()
+			if err != nil {
+				return err
+			}
+
+			isParentInPastOfHeaderTipsPruningPoint, err := v.dagTopologyManager.IsAncestorOf(headerTipsPruningPoint, parent)
+			if err != nil {
+				return err
+			}
+
+			if isParentInPastOfHeaderTipsPruningPoint {
+				continue
+			}
+
+			missingParentHashes = append(missingParentHashes, parent)
 		}
 	}
 

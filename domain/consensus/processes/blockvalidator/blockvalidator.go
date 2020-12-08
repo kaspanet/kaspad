@@ -33,6 +33,7 @@ type blockValidator struct {
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningStore          model.PruningStore
+	consensusStateManager model.ConsensusStateManager
 
 	blockStore        model.BlockStore
 	ghostdagDataStore model.GHOSTDAGDataStore
