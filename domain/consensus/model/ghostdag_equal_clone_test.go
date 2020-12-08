@@ -91,7 +91,7 @@ func initTestBlockGHOSTDAGDataForEqual() []TestBlockGHOSTDAGDataStruct {
 		test5Map,
 	}
 
-	var test6Map = map[externalapi.DomainHash]KType{}//map_size == 2
+	var test6Map = map[externalapi.DomainHash]KType{} //map_size == 2
 	test6Map[externalapi.DomainHash{1}] = 0x01
 	test6Map[externalapi.DomainHash{2}] = 0x02
 	var testBlockGHOSTDAGData6 = BlockGHOSTDAGData{
