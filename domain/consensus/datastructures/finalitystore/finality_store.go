@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("finalityPoints"))
+var bucket = dbkeys.MakeBucket([]byte("finality-points"))
 
 type finalityStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainHash

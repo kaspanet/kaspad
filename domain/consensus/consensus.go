@@ -43,6 +43,7 @@ type consensus struct {
 	multisetStore         model.MultisetStore
 	reachabilityDataStore model.ReachabilityDataStore
 	utxoDiffStore         model.UTXODiffStore
+	finalityStore         model.FinalityStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions

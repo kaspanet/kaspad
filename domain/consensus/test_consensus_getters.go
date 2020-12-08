@@ -124,3 +124,7 @@ func (tc *testConsensus) TransactionValidator() testapi.TestTransactionValidator
 func (tc *testConsensus) FinalityManager() model.FinalityManager {
 	return tc.finalityManager
 }
+
+func (tc *testConsensus) FinalityStore() model.FinalityStore {
+	return tc.finalityStore
+}
