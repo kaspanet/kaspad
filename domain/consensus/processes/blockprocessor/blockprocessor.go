@@ -36,6 +36,7 @@ type blockProcessor struct {
 	utxoDiffStore         model.UTXODiffStore
 	blockHeaderStore      model.BlockHeaderStore
 	headerTipsStore       model.HeaderTipsStore
+	finalityStore         model.FinalityStore
 
 	stores []model.Store
 }
@@ -67,7 +68,9 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	utxoDiffStore model.UTXODiffStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore) model.BlockProcessor {
+	headerTipsStore model.HeaderTipsStore,
+	finalityStore model.FinalityStore,
+) model.BlockProcessor {
 
 	return &blockProcessor{
 		genesisHash:           genesisHash,
@@ -96,6 +99,7 @@ func New(
 		utxoDiffStore:         utxoDiffStore,
 		blockHeaderStore:      blockHeaderStore,
 		headerTipsStore:       headerTipsStore,
+		finalityStore:         finalityStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -111,6 +115,7 @@ func New(
 			utxoDiffStore,
 			blockHeaderStore,
 			headerTipsStore,
+			finalityStore,
 		},
 	}
 }

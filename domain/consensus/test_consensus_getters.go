@@ -120,3 +120,11 @@ func (tc *testConsensus) SyncManager() model.SyncManager {
 func (tc *testConsensus) TransactionValidator() testapi.TestTransactionValidator {
 	return tc.testTransactionValidator
 }
+
+func (tc *testConsensus) FinalityManager() model.FinalityManager {
+	return tc.finalityManager
+}
+
+func (tc *testConsensus) FinalityStore() model.FinalityStore {
+	return tc.finalityStore
+}

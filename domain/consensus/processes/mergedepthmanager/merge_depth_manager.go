@@ -8,27 +8,27 @@ import (
 )
 
 type mergeDepthManager struct {
-	finalityDepth uint64
-
 	databaseContext     model.DBReader
 	dagTopologyManager  model.DAGTopologyManager
 	dagTraversalManager model.DAGTraversalManager
+	finalityManager     model.FinalityManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 }
 
 // New instantiates a new MergeDepthManager
-func New(finalityDepth uint64,
+func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
+	finalityManager model.FinalityManager,
 	ghostdagDataStore model.GHOSTDAGDataStore) model.MergeDepthManager {
 
 	return &mergeDepthManager{
-		finalityDepth:       finalityDepth,
 		databaseContext:     databaseContext,
 		dagTopologyManager:  dagTopologyManager,
 		dagTraversalManager: dagTraversalManager,
+		finalityManager:     finalityManager,
 		ghostdagDataStore:   ghostdagDataStore,
 	}
 
@@ -50,7 +50,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 		return nil
 	}
 
-	finalityPoint, err := mdm.finalityPoint(blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
 	if err != nil {
 		return err
 	}
@@ -102,14 +102,10 @@ func (mdm mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *exter
 }
 
 func (mdm *mergeDepthManager) hasFinalityPointInOthersSelectedChain(this, other *externalapi.DomainHash) (bool, error) {
-	finalityPoint, err := mdm.finalityPoint(this)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(this)
 	if err != nil {
 		return false, err
 	}
 
 	return mdm.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, other)
-}
-
-func (mdm *mergeDepthManager) finalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	return mdm.dagTraversalManager.BlockAtDepth(blockHash, mdm.finalityDepth)
 }

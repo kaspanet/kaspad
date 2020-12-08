@@ -41,6 +41,7 @@ type TestConsensus interface {
 	BlockValidator() model.BlockValidator
 	CoinbaseManager() model.CoinbaseManager
 	ConsensusStateManager() TestConsensusStateManager
+	FinalityManager() model.FinalityManager
 	DAGTopologyManager() model.DAGTopologyManager
 	DAGTraversalManager() model.DAGTraversalManager
 	DifficultyManager() model.DifficultyManager
