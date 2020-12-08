@@ -47,13 +47,13 @@ func TestFinality(t *testing.T) {
 		for i := uint64(0); i < finalityInterval-1; i++ {
 			mainChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{mainChainTipHash})
 			if err != nil {
-				t.Fatalf("TestFinality: Failed to process Block #%d: %v", i, err)
+				t.Fatalf("TestFinality: Failed to process Block #%d: %+v", i, err)
 			}
 			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 
 			blockInfo, err := consensus.GetBlockInfo(mainChainTipHash)
 			if err != nil {
-				t.Fatalf("TestFinality: Block #%d failed to get info: %v", i, err)
+				t.Fatalf("TestFinality: Block #%d failed to get info: %+v", i, err)
 			}
 			if blockInfo.BlockStatus != externalapi.StatusValid {
 				t.Fatalf("Block #%d in main chain expected to have status '%s', but got '%s'",
@@ -120,7 +120,7 @@ func TestFinality(t *testing.T) {
 			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 		}
 
-		virtualFinality, err := consensus.ConsensusStateManager().VirtualFinalityPoint()
+		virtualFinality, err := consensus.FinalityManager().VirtualFinalityPoint()
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}

@@ -2,13 +2,14 @@ package ghostdagmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-	"github.com/kaspanet/kaspad/util"
 	"math/big"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -224,6 +225,10 @@ func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *extern
 
 type DAGTopologyManagerImpl struct {
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
+}
+
+func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	panic("implement me")
 }
 
 func (dt *DAGTopologyManagerImpl) Tips() ([]*externalapi.DomainHash, error) {

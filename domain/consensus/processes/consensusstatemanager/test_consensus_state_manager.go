@@ -24,7 +24,3 @@ func (csm testConsensusStateManager) AddUTXOToMultiset(
 func (csm testConsensusStateManager) ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	return csm.resolveBlockStatus(blockHash)
 }
-
-func (csm testConsensusStateManager) VirtualFinalityPoint() (*externalapi.DomainHash, error) {
-	return csm.virtualFinalityPoint()
-}

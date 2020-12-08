@@ -1,12 +1,12 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"io/ioutil"
 	"os"
 	"sync"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/finalitymanager"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -15,6 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headertipsstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
@@ -40,6 +41,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
 // Factory instantiates new Consensuses
@@ -80,6 +82,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New(10_000)
 	headerTipsStore := headertipsstore.New()
+	finalityStore := finalitystore.New(200)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -89,7 +92,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	dagTopologyManager := dagtopologymanager.New(
 		dbManager,
 		reachabilityManager,
-		blockRelationStore)
+		blockRelationStore,
+		ghostdagDataStore)
 	ghostdagManager := ghostdagmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -137,11 +141,18 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore)
 	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
 	genesisHash := dagParams.GenesisHash
+	finalityManager := finalitymanager.New(
+		dbManager,
+		dagTopologyManager,
+		finalityStore,
+		ghostdagDataStore,
+		genesisHash,
+		dagParams.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(
-		dagParams.FinalityDepth(),
 		dbManager,
 		dagTopologyManager,
 		dagTraversalManager,
+		finalityManager,
 		ghostdagDataStore)
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
@@ -163,16 +174,17 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		coinbaseManager,
 		mergeDepthManager,
-		pruningStore,
+		reachabilityManager,
 
+		pruningStore,
 		blockStore,
 		ghostdagDataStore,
 		blockHeaderStore,
 		blockStatusStore,
+		reachabilityDataStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams.FinalityDepth(),
 		dagParams.PruningDepth(),
 		dagParams.MaxMassAcceptedByBlock,
 		dagParams.MaxBlockParents,
@@ -188,6 +200,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager,
 		coinbaseManager,
 		mergeDepthManager,
+		finalityManager,
 
 		blockStatusStore,
 		ghostdagDataStore,
@@ -274,7 +287,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityDataStore,
 		utxoDiffStore,
 		blockHeaderStore,
-		headerTipsStore)
+		headerTipsStore,
+		finalityStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
@@ -296,6 +310,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		mergeDepthManager:     mergeDepthManager,
 		pruningManager:        pruningManager,
 		reachabilityManager:   reachabilityManager,
+		finalityManager:       finalityManager,
 
 		acceptanceDataStore:   acceptanceDataStore,
 		blockStore:            blockStore,
@@ -309,6 +324,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		multisetStore:         multisetStore,
 		reachabilityDataStore: reachabilityDataStore,
 		utxoDiffStore:         utxoDiffStore,
+		finalityStore:         finalityStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
