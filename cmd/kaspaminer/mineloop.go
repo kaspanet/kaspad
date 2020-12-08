@@ -2,12 +2,11 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -114,9 +113,8 @@ func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlo
 			return
 		default:
 			block.Header.Nonce = i
-			hash := consensushashing.BlockHash(block)
 			atomic.AddUint64(&hashesTried, 1)
-			if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
+			if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
 				foundBlock <- block
 				return
 			}
