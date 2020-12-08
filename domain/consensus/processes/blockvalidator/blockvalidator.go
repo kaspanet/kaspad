@@ -65,6 +65,7 @@ func New(powMax *big.Int,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
 	reachabilityManager model.ReachabilityManager,
+	consensusStateManager model.ConsensusStateManager,
 
 	pruningStore model.PruningStore,
 
@@ -97,6 +98,7 @@ func New(powMax *big.Int,
 		coinbaseManager:             coinbaseManager,
 		mergeDepthManager:           mergeDepthManager,
 		reachabilityManager:         reachabilityManager,
+		consensusStateManager:       consensusStateManager,
 
 		pruningStore:      pruningStore,
 		blockStore:        blockStore,

@@ -154,6 +154,35 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		finalityManager,
 		ghostdagDataStore)
+	consensusStateManager, err := consensusstatemanager.New(
+		dbManager,
+		dagParams.PruningDepth(),
+		dagParams.MaxMassAcceptedByBlock,
+		dagParams.MaxBlockParents,
+		dagParams.MergeSetSizeLimit,
+		genesisHash,
+
+		ghostdagManager,
+		dagTopologyManager,
+		dagTraversalManager,
+		pastMedianTimeManager,
+		transactionValidator,
+		reachabilityManager,
+		coinbaseManager,
+		mergeDepthManager,
+		finalityManager,
+
+		blockStatusStore,
+		ghostdagDataStore,
+		consensusStateStore,
+		multisetStore,
+		blockStore,
+		utxoDiffStore,
+		blockRelationStore,
+		acceptanceDataStore,
+		blockHeaderStore,
+		headerTipsStore)
+
 	blockValidator := blockvalidator.New(
 		dagParams.PowMax,
 		dagParams.SkipProofOfWork,
@@ -175,6 +204,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		mergeDepthManager,
 		reachabilityManager,
+		consensusStateManager,
 
 		pruningStore,
 		blockStore,
@@ -183,35 +213,6 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStatusStore,
 		reachabilityDataStore,
 	)
-	consensusStateManager, err := consensusstatemanager.New(
-		dbManager,
-		dagParams.PruningDepth(),
-		dagParams.MaxMassAcceptedByBlock,
-		dagParams.MaxBlockParents,
-		dagParams.MergeSetSizeLimit,
-		genesisHash,
-
-		ghostdagManager,
-		dagTopologyManager,
-		dagTraversalManager,
-		pastMedianTimeManager,
-		transactionValidator,
-		blockValidator,
-		reachabilityManager,
-		coinbaseManager,
-		mergeDepthManager,
-		finalityManager,
-
-		blockStatusStore,
-		ghostdagDataStore,
-		consensusStateStore,
-		multisetStore,
-		blockStore,
-		utxoDiffStore,
-		blockRelationStore,
-		acceptanceDataStore,
-		blockHeaderStore,
-		headerTipsStore)
 	if err != nil {
 		return nil, err
 	}
