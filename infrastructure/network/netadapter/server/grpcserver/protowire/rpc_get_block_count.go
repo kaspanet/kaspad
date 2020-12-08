@@ -17,8 +17,9 @@ func (x *KaspadMessage_GetBlockCountResponse) toAppMessage() (appmessage.Message
 		err = &appmessage.RPCError{Message: x.GetBlockCountResponse.Error.Message}
 	}
 	return &appmessage.GetBlockCountResponseMessage{
-		BlockCount: x.GetBlockCountResponse.BlockCount,
-		Error:      err,
+		BlockCount:  x.GetBlockCountResponse.BlockCount,
+		HeaderCount: x.GetBlockCountResponse.HeaderCount,
+		Error:       err,
 	}, nil
 }
 
@@ -28,8 +29,9 @@ func (x *KaspadMessage_GetBlockCountResponse) fromAppMessage(message *appmessage
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetBlockCountResponse = &GetBlockCountResponseMessage{
-		BlockCount: message.BlockCount,
-		Error:      err,
+		BlockCount:  message.BlockCount,
+		HeaderCount: message.HeaderCount,
+		Error:       err,
 	}
 	return nil
 }

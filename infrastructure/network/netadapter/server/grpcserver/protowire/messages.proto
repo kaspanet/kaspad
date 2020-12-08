@@ -553,6 +553,7 @@ message GetBlockCountRequestMessage{
 
 message GetBlockCountResponseMessage{
   uint64 blockCount = 1;
+  uint64 headerCount = 2;
   RPCError error = 1000;
 }
 
