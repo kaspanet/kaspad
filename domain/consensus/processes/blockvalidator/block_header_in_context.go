@@ -37,8 +37,10 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	// If needed - calculate reachability data right before calling CheckBoundedMergeDepth, since it's used
-	// to find a block's finality point
+	// If needed - calculate reachability data right before calling CheckBoundedMergeDepth,
+	// since it's used to find a block's finality point.
+	// This might not be required if this block's header has previously been received during
+	// headers-first synchronization.
 	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, blockHash)
 	if err != nil {
 		return err

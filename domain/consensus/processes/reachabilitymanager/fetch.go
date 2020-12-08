@@ -45,10 +45,6 @@ func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*mod
 		return nil, err
 	}
 
-	if treeNode == nil {
-		log.Infof("AAAAAA")
-	}
-
 	return treeNode.Interval, nil
 }
 
