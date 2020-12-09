@@ -1,9 +1,13 @@
 package externalapi
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
+
+// Changed fields of a test struct compared to a base test struct marked as "changed" and
+// pointing in some cases name changed struct field
 
 type TransactionToCompare struct {
 	tx             *DomainTransaction
@@ -112,7 +116,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 			DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}, //Changed
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},               //Changed
 			[]byte{0x01},
 			0,
 			1,
@@ -134,7 +138,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					2,
 					true}}},
 			[]*DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 3}}, //Changed
+				[]byte{1, 3}},                                     //Changed
 				{uint64(0xFFFF),
 					[]byte{1, 3}}},
 			1,
@@ -169,7 +173,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				{uint64(0xFFFF),
 					[]byte{1, 3}}},
 			1,
-			DomainSubnetworkID{0x01, 0x02}, //Changed
+			DomainSubnetworkID{0x01, 0x02},                          //Changed
 			1,
 			DomainHash{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -206,7 +210,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-			[]byte{0x01, 0x02}, //Changed
+			[]byte{0x01, 0x02},                                            //Changed
 			0,
 			1,
 			&DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -215,7 +219,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 		}, //3
 		expectedResult: false,
-	}, {
+	},{
 		tx: &DomainTransaction{
 			1,
 			[]*DomainTransactionInput{{DomainOutpoint{
@@ -268,7 +272,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			[]byte{0x01},
-			1000000000, //Changed
+			1000000000,                                                       //Changed
 			1,
 			&DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -278,7 +282,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 		expectedResult: false,
 	}, {
 		tx: &DomainTransaction{
-			2, //Changed
+			2,                                                              //Changed
 			[]*DomainTransactionInput{{DomainOutpoint{
 				DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
@@ -329,7 +333,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 			[]byte{0x01},
 			0,
-			2, //Changed
+			2,                                                              //Changed
 			&DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -350,7 +354,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 			[]*DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}}, {uint64(0xFFFF),
 				[]byte{1, 3}}},
-			2, //Changed
+			2,                                                            //Changed
 			DomainSubnetworkID{0x01},
 			1,
 			DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -366,7 +370,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 		}, //8
 		expectedResult: false,
-	}, {
+	},{
 		tx: &DomainTransaction{
 			1,
 			[]*DomainTransactionInput{{DomainOutpoint{
@@ -382,7 +386,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
 					&UTXOEntry{1,
-						[]byte{0, 2, 2, 3},
+						[]byte{0, 2, 2, 3},                               //changed PreviousOutpoint
 						1,
 						false}}},
 			[]*DomainTransactionOutput{{uint64(0xFFFF),
@@ -404,7 +408,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 		}, //9
 		expectedResult: false,
-	}, {
+	},{
 		tx: &DomainTransaction{
 			1,
 			[]*DomainTransactionInput{{DomainOutpoint{
@@ -418,7 +422,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 			[]*DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}}, {uint64(0xFFFF),
 				[]byte{1, 3}}, {uint64(0xFFFFF),
-				[]byte{1, 2, 3}}},
+				[]byte{1, 2, 3}}},                               //changed Outputs
 			1,
 			DomainSubnetworkID{0x01},
 			1,
@@ -459,7 +463,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 			[]byte{0x01},
 			0,
 			1,
-			nil, //changed
+			nil,                                                                 //changed
 		}, //11
 		expectedResult: true,
 	}, {
@@ -470,7 +474,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
 				&UTXOEntry{1,
-					[]byte{0, 1, 2, 3, 4}, //changed
+					[]byte{0, 1, 2, 3, 4},                            //changed Inputs
 					2,
 					true}}},
 			[]*DomainTransactionOutput{{uint64(0xFFFF),
@@ -893,6 +897,103 @@ func TestDomainTransaction_Equal(t *testing.T) {
 			if result2 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
 			}
+		}
+	}
+}
+
+func initTestDomainTxDiffIDForEqual() []TestDomainTransactionStruct {
+
+	tests := []TestDomainTransactionStruct{
+		{
+			 &DomainTransaction{
+				1,
+				[]*DomainTransactionInput{},
+				[]*DomainTransactionOutput{},
+				1,
+				DomainSubnetworkID{0x01},
+				1,
+				DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				[]byte{0x01},
+				0,
+				1,
+				&DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+			},// test for ID field if txs are equal but IDs are different
+			 []*TransactionToCompare{{
+				tx: &DomainTransaction{
+					      1,
+					       []*DomainTransactionInput{},
+					      []*DomainTransactionOutput{},
+					     1,
+					 DomainSubnetworkID{0x01},
+					          1,
+					 DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					 []byte{0x01},
+					     0,
+					    1,
+					 &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03},
+				},
+				expectedResult: false,
+			}},
+		},
+	}
+	return tests
+}
+
+func recoverFunc(error *string) {
+	if r := recover(); r != nil {
+		*error = fmt.Sprint(r)
+
+	}
+}
+
+func recoverForEqual(test TestDomainTransactionStruct,subTest TransactionToCompare, error *string){
+	defer recoverFunc(error)
+	subTest.tx.Equal(test.baseTx)
+}
+
+func recoverForEqual2(test TestDomainTransactionStruct,subTest TransactionToCompare, error *string){
+	defer recoverFunc(error)
+	test.baseTx.Equal(subTest.tx)
+}
+
+func TestDomainTransactionDiffTxID_Equal(t *testing.T) {
+
+	var error = ""
+	txTests := initTestDomainTxDiffIDForEqual()
+	for i, test := range txTests {
+		for j, subTest := range test.transactionToCompareTo {
+			var result1,result2 bool
+			recoverForEqual(test,*subTest,&error)
+			if "" != error {
+				result1 = false
+			} else {
+				result1 = true
+			}
+			if result1 != subTest.expectedResult {
+				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
+			}
+			error = ""
+			recoverForEqual(test,*subTest,&error)
+			if "" != error {
+				result2 = false
+			} else {
+				result2 = true
+			}
+				if result2 != subTest.expectedResult {
+					t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
+				}
 		}
 	}
 }

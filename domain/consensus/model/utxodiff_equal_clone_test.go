@@ -53,6 +53,7 @@ func initTestUTXOCollectionForEqual() []TestUTXOCollectionStruct {
 		true}
 
 	var testUTXOCollection2 UTXOCollection = map[externalapi.DomainOutpoint]*externalapi.UTXOEntry{}
+
 	testUTXOCollection2[externalapi.DomainOutpoint{
 		externalapi.DomainTransactionID{0x01}, 0xFFFF}] = &externalapi.UTXOEntry{0xFFFF,
 		[]byte{0xA1, 0xA2, 0xA3},
