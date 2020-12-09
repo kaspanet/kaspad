@@ -1,12 +1,11 @@
 package mining
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"math"
 	"math/rand"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	utilsMath "github.com/kaspanet/kaspad/domain/consensus/utils/math"
 	"github.com/pkg/errors"
 )
@@ -17,8 +16,7 @@ func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
 
 	for i := rd.Uint64(); i < math.MaxUint64; i++ {
 		block.Header.Nonce = i
-		hash := consensushashing.BlockHash(block)
-		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
+		if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
 			return
 		}
 	}
