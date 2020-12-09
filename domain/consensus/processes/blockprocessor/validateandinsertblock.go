@@ -20,7 +20,7 @@ const (
 	insertModeBlock
 )
 
-func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.InsertBlockResult, error) {
+func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 

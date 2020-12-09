@@ -1,4 +1,4 @@
 package externalapi
 
-type InsertBlockResult struct {
+type BlockInsertionResult struct {
 }
