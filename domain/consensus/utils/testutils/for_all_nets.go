@@ -18,8 +18,11 @@ func ForAllNets(t *testing.T, skipPow bool, testFunc func(*testing.T, *dagconfig
 
 	for _, params := range allParams {
 		paramsCopy := params
-		paramsCopy.SkipProofOfWork = skipPow
-		t.Logf("Running test for %s", params.Name)
-		testFunc(t, &paramsCopy)
+		t.Run(paramsCopy.Name, func(t *testing.T) {
+			t.Parallel()
+			paramsCopy.SkipProofOfWork = skipPow
+			t.Logf("Running test for %s", paramsCopy.Name)
+			testFunc(t, &paramsCopy)
+		})
 	}
 }
