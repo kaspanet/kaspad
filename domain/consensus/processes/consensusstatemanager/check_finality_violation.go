@@ -2,8 +2,7 @@ package consensusstatemanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-func (csm *consensusStateManager) checkFinalityViolation(
-	blockHash *externalapi.DomainHash) error {
+func (csm *consensusStateManager) checkFinalityViolation(blockHash *externalapi.DomainHash) error {
 
 	log.Tracef("checkFinalityViolation start for block %s", blockHash)
 	defer log.Tracef("checkFinalityViolation end for block %s", blockHash)

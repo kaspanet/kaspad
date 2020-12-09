@@ -57,7 +57,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	} else {
 		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlockToVirtual(blockHash)
+		err = bp.consensusStateManager.AddBlock(blockHash)
 		if err != nil {
 			return err
 		}

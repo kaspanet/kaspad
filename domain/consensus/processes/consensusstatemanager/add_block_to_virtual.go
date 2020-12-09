@@ -8,9 +8,9 @@ import (
 // AddBlockToVirtual submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
-func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.DomainHash) error {
-	log.Tracef("AddBlockToVirtual start for block %s", blockHash)
-	defer log.Tracef("AddBlockToVirtual end for block %s", blockHash)
+func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) error {
+	log.Tracef("AddBlock start for block %s", blockHash)
+	defer log.Tracef("AddBlock end for block %s", blockHash)
 
 	log.Tracef("Resolving whether the block %s is the next virtual selected parent", blockHash)
 	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
