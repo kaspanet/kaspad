@@ -62,6 +62,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	}
 
+	selectedParentChainChanges := &externalapi.SelectedParentChainChanges{}
 	if insertMode == insertModeHeader {
 		err = bp.headerTipsManager.AddHeaderTip(blockHash)
 		if err != nil {
@@ -69,7 +70,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		}
 	} else if insertMode == insertModeBlock || insertMode == insertModeGenesis {
 		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlockToVirtual(blockHash)
+		selectedParentChainChanges, err = bp.consensusStateManager.AddBlockToVirtual(blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +123,9 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return nil, logClosureErr
 	}
 
-	return nil, nil
+	return &externalapi.BlockInsertionResult{
+		SelectedParentChainChanges: selectedParentChainChanges,
+	}, nil
 }
 
 func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *externalapi.DomainBlock) (insertMode, error) {
