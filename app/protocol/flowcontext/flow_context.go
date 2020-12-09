@@ -20,7 +20,7 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
