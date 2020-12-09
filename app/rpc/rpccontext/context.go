@@ -45,7 +45,7 @@ func NewContext(cfg *config.Config,
 	context.NotificationManager = NewNotificationManager()
 
 	if cfg.UTXOIndex {
-		context.UTXOIndex = utxoindex.New()
+		context.UTXOIndex = utxoindex.New(domain.Consensus())
 	}
 
 	return context

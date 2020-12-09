@@ -3,13 +3,15 @@ package utxoindex
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type UTXOIndex struct {
-	store *utxoIndexStore
+	consensus externalapi.Consensus
+	store     *utxoIndexStore
 }
 
-func New() *UTXOIndex {
+func New(consensus externalapi.Consensus) *UTXOIndex {
 	store := newUTXOIndexStore()
 	return &UTXOIndex{
-		store: store,
+		consensus: consensus,
+		store:     store,
 	}
 }
 
