@@ -121,6 +121,50 @@ func TestReachabilityData_Equal(t *testing.T) {
 				{
 					data: &ReachabilityData{
 						&ReachabilityTreeNode{
+							[]*externalapi.DomainHash{{1}, {2}, {3}},
+							&externalapi.DomainHash{1},
+							&ReachabilityInterval{100, 200},
+						},
+						FutureCoveringTreeNodeSet{},
+					},
+					expectedResult: false,
+				},
+				{
+					data: &ReachabilityData{
+						&ReachabilityTreeNode{
+							[]*externalapi.DomainHash{{1}, {2}, {3}},
+							&externalapi.DomainHash{1},
+							&ReachabilityInterval{200, 200},
+						},
+						FutureCoveringTreeNodeSet{{1}, {2}},
+					},
+					expectedResult: false,
+				},
+				{
+					data: &ReachabilityData{
+						&ReachabilityTreeNode{
+							[]*externalapi.DomainHash{{1}, {2}, {3}},
+							&externalapi.DomainHash{1},
+							nil,
+						},
+						FutureCoveringTreeNodeSet{{1}, {2}},
+					},
+					expectedResult: false,
+				},
+				{
+					data: &ReachabilityData{
+						&ReachabilityTreeNode{
+							[]*externalapi.DomainHash{{1}, {2}, {3}},
+							&externalapi.DomainHash{1},
+							&ReachabilityInterval{100, 100},
+						},
+						FutureCoveringTreeNodeSet{{1}, {2}},
+					},
+					expectedResult: false,
+				},
+				{
+					data: &ReachabilityData{
+						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							&externalapi.DomainHash{1},
 							&ReachabilityInterval{100, 200},
@@ -160,6 +204,17 @@ func TestReachabilityData_Equal(t *testing.T) {
 						},
 						FutureCoveringTreeNodeSet{},
 					},
+					expectedResult: false,
+				},
+				{
+					data: &ReachabilityData{
+						nil,
+						FutureCoveringTreeNodeSet{},
+					},
+					expectedResult: false,
+				},
+				{
+					data:           nil,
 					expectedResult: false,
 				},
 			},
