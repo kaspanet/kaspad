@@ -34,7 +34,7 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error) {
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -42,15 +42,15 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 
 	block, _, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	_, err = tc.blockProcessor.ValidateAndInsertBlock(block)
+	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return consensushashing.BlockHash(block), nil
+	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
 func (tc *testConsensus) DiscardAllStores() {

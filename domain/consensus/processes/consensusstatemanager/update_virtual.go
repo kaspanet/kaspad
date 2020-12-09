@@ -11,6 +11,16 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	log.Tracef("updateVirtual start for block %s", newBlockHash)
 	defer log.Tracef("updateVirtual end for block %s", newBlockHash)
 
+	log.Tracef("Saving a reference to the GHOSTDAG data of the old virtual")
+	var oldVirtualSelectedParent *externalapi.DomainHash
+	if *newBlockHash != *csm.genesisHash {
+		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		oldVirtualSelectedParent = oldVirtualGHOSTDAGData.SelectedParent()
+	}
+
 	log.Tracef("Picking virtual parents from the tips: %s", tips)
 	virtualParents, err := csm.pickVirtualParents(tips)
 	if err != nil {
@@ -24,22 +34,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	}
 	log.Tracef("Set new parents for the virtual block hash")
 
-	oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-	newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Tracef("Calculating selected parent chain changes")
-	selectedParentChainChanges, err := csm.findSelectedParentChainChanges(
-		oldVirtualGHOSTDAGData.SelectedParent(), newVirtualGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}
@@ -68,58 +63,21 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return nil, err
 	}
 
+	log.Tracef("Calculating selected parent chain changes")
+	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
+	if *newBlockHash != *csm.genesisHash {
+		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
+		selectedParentChainChanges, err = csm.findSelectedParentChainChanges(oldVirtualSelectedParent, newVirtualSelectedParent)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return selectedParentChainChanges, nil
-}
-
-func (csm *consensusStateManager) findSelectedParentChainChanges(
-	oldVirtualSelectedParent, newVirtualSelectedParent *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
-
-	// Walk down from the old virtual until we reach the common selected
-	// parent chain ancestor of oldVirtualSelectedParent and
-	// newVirtualSelectedParent. Note that this slice will be empty if
-	// oldVirtualSelectedParent is the selected parent of
-	// newVirtualSelectedParent
-	var removed []*externalapi.DomainHash
-	current := oldVirtualSelectedParent
-	for {
-		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := csm.dagTopologyManager.IsInSelectedParentChainOf(current, newVirtualSelectedParent)
-		if err != nil {
-			return nil, err
-		}
-		if isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent {
-			break
-		}
-		removed = append(removed, current)
-
-		currentGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, current)
-		if err != nil {
-			return nil, err
-		}
-		current = currentGHOSTDAGData.SelectedParent()
-	}
-	commonAncestor := current
-
-	// Walk down from the new virtual down to the common ancestor
-	var added []*externalapi.DomainHash
-	current = newVirtualSelectedParent
-	for *current != *commonAncestor {
-		added = append(added, current)
-		currentGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, current)
-		if err != nil {
-			return nil, err
-		}
-		current = currentGHOSTDAGData.SelectedParent()
-	}
-
-	// Reverse the order of `added` so that it's sorted from low hash to high hash
-	for i, j := 0, len(added)-1; i < j; i, j = i+1, j-1 {
-		added[i], added[j] = added[j], added[i]
-	}
-
-	return &externalapi.SelectedParentChainChanges{
-		Added:   added,
-		Removed: removed,
-	}, nil
 }
 
 func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff model.UTXODiff) error {

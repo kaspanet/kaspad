@@ -28,11 +28,11 @@ func TestDoubleSpends(t *testing.T) {
 		defer teardown()
 
 		// Mine chain of two blocks to fund our double spend
-		firstBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		firstBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating firstBlock: %+v", err)
 		}
-		fundingBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{firstBlockHash}, nil, nil)
+		fundingBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{firstBlockHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock: %+v", err)
 		}
@@ -61,7 +61,7 @@ func TestDoubleSpends(t *testing.T) {
 		}
 
 		// Mine a block with spendingTransaction1 and make sure that it's valid
-		goodBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
+		goodBlock1Hash, _, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1})
 		if err != nil {
 			t.Fatalf("Error adding goodBlock1: %+v", err)
@@ -76,7 +76,7 @@ func TestDoubleSpends(t *testing.T) {
 
 		// To check that a block containing the same transaction already in it's past is disqualified:
 		// Add a block on top of goodBlock, containing spendingTransaction1, and make sure it's disqualified
-		doubleSpendingBlock1Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+		doubleSpendingBlock1Hash, _, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1})
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock1: %+v", err)
@@ -93,7 +93,7 @@ func TestDoubleSpends(t *testing.T) {
 		// To check that a block containing a transaction that double-spends a transaction that
 		// is in it's past is disqualified:
 		// Add a block on top of goodBlock, containing spendingTransaction2, and make sure it's disqualified
-		doubleSpendingBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+		doubleSpendingBlock2Hash, _, err := consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction2})
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock2: %+v", err)
@@ -110,7 +110,7 @@ func TestDoubleSpends(t *testing.T) {
 		// To make sure that a block double-spending itself is rejected:
 		// Add a block on top of goodBlock, containing both spendingTransaction1 and spendingTransaction2, and make
 		// sure AddBlock returns a RuleError
-		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+		_, _, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
 		if err == nil {
 			t.Fatalf("No error when adding a self-double-spending block")
@@ -123,7 +123,7 @@ func TestDoubleSpends(t *testing.T) {
 		// To make sure that a block containing the same transaction twice is rejected:
 		// Add a block on top of goodBlock, containing spendingTransaction1 twice, and make
 		// sure AddBlock returns a RuleError
-		_, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
+		_, _, err = consensus.AddBlock([]*externalapi.DomainHash{goodBlock1Hash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction1})
 		if err == nil {
 			t.Fatalf("No error when adding a block containing the same transactin twice")
@@ -135,7 +135,7 @@ func TestDoubleSpends(t *testing.T) {
 
 		// Check that a block will not get disqualified if it has a transaction that double spends
 		// a transaction from its anticone.
-		goodBlock2Hash, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
+		goodBlock2Hash, _, err := consensus.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction2})
 		if err != nil {
 			t.Fatalf("Error adding goodBlock: %+v", err)
@@ -177,7 +177,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		// statuses are valid
 		currentHash := genesisHash
 		for i := 0; i < chainLength; i++ {
-			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			addedBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
@@ -197,7 +197,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		// StatusUTXOPendingVerification
 		currentHash = genesisHash
 		for i := 0; i < chainLength-1; i++ {
-			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			addedBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
@@ -216,7 +216,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		// Add another two blocks to the second chain. This should trigger
 		// resolving the entire chain
 		for i := 0; i < 2; i++ {
-			addedBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			addedBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
