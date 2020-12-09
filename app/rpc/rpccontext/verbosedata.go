@@ -79,7 +79,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
 	diff, _ := difficulty.Float64()
 
-	roundingPrecision := float64(100_000_000)
+	roundingPrecision := float64(100)
 	diff = math.Round(diff*roundingPrecision) / roundingPrecision
 
 	return diff
