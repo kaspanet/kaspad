@@ -20,24 +20,24 @@ const (
 	insertModeBlock
 )
 
-func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.InsertBlockResult, error) {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
 	insertMode, err := bp.validateAgainstSyncStateAndResolveInsertMode(block)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = bp.checkBlockStatus(blockHash, insertMode)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = bp.validateBlock(block, insertMode)
 	if err != nil {
 		bp.discardAllChanges()
-		return err
+		return nil, err
 	}
 
 	if insertMode == insertModeHeader {
@@ -50,7 +50,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	// collected so far
 	err = bp.commitAllChanges()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
@@ -58,25 +58,25 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		var err error
 		oldHeadersSelectedTip, err = bp.headerTipsManager.SelectedTip()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if insertMode == insertModeHeader {
 		err = bp.headerTipsManager.AddHeaderTip(blockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if insertMode == insertModeBlock || insertMode == insertModeGenesis {
 		// Attempt to add the block to the virtual
 		err = bp.consensusStateManager.AddBlockToVirtual(blockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		tips, err := bp.consensusStateStore.Tips(bp.databaseContext)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		bp.headerTipsStore.Stage(tips)
 	}
@@ -84,7 +84,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	if insertMode != insertModeGenesis {
 		err := bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -92,13 +92,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.FindNextPruningPoint()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	err = bp.commitAllChanges()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Debugf("Block %s validated and inserted", blockHash)
@@ -119,10 +119,10 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			virtualGhostDAGData.BlueScore(), syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
 	}))
 	if logClosureErr != nil {
-		return logClosureErr
+		return nil, logClosureErr
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (bp *blockProcessor) validateAgainstSyncStateAndResolveInsertMode(block *externalapi.DomainBlock) (insertMode, error) {

@@ -122,7 +122,7 @@ func New(
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.InsertBlockResult, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 

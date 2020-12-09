@@ -49,7 +49,7 @@ func TestDifficulty(t *testing.T) {
 			}
 
 			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
+			_, err = tc.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}

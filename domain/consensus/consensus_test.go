@@ -26,7 +26,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatal(err)
 		}
 		invalidBlock.Header.TimeInMilliseconds = 0
-		err = consensus.ValidateAndInsertBlock(invalidBlock)
+		_, err = consensus.ValidateAndInsertBlock(invalidBlock)
 		if !errors.Is(err, ruleerrors.ErrTimeTooOld) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrTimeTooOld, err)
 		}
@@ -52,7 +52,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("consensus.BuildBlock with an empty coinbase shouldn't fail: %v", err)
 		}
 
-		err = consensus.ValidateAndInsertBlock(validBlock)
+		_, err = consensus.ValidateAndInsertBlock(validBlock)
 		if err != nil {
 			t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should not fail: %v", err)
 		}

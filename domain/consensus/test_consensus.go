@@ -45,7 +45,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, err
 	}
 
-	err = tc.blockProcessor.ValidateAndInsertBlock(block)
+	_, err = tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
 		return nil, err
 	}
