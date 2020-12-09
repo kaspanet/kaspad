@@ -29,7 +29,10 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	if err != nil {
 		return nil, err
 	}
-
+	difficulty, err := ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams)
+	if err != nil {
+		return nil, err
+	}
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -41,7 +44,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
+		Difficulty:           difficulty,
 		BlueScore:            blockInfo.BlueScore,
 	}
 
@@ -69,7 +72,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 
 // GetDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
-func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
+func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) (float64, error) {
 	// The minimum difficulty is the max possible proof-of-work limit bits
 	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
@@ -80,10 +83,9 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	outString := difficulty.FloatString(8)
 	diff, err := strconv.ParseFloat(outString, 64)
 	if err != nil {
-		log.Errorf("Cannot get difficulty: %s", err)
-		return 0
+		return 0, err
 	}
-	return diff
+	return diff, nil
 }
 
 // BuildTransactionVerboseData builds a TransactionVerboseData from
