@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -29,10 +30,6 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	if err != nil {
 		return nil, err
 	}
-	difficulty, err := ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams)
-	if err != nil {
-		return nil, err
-	}
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -44,7 +41,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           difficulty,
+		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
 		BlueScore:            blockInfo.BlueScore,
 	}
 
@@ -72,7 +69,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 
 // GetDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
-func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) (float64, error) {
+func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// The minimum difficulty is the max possible proof-of-work limit bits
 	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
@@ -80,12 +77,12 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) (f
 	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
-	outString := difficulty.FloatString(8)
-	diff, err := strconv.ParseFloat(outString, 64)
-	if err != nil {
-		return 0, err
-	}
-	return diff, nil
+	diff, _ := difficulty.Float64()
+
+	roundingPrecision := float64(100_000_000)
+	diff = math.Round(diff*roundingPrecision) / roundingPrecision
+
+	return diff
 }
 
 // BuildTransactionVerboseData builds a TransactionVerboseData from

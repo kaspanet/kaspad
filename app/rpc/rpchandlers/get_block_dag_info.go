@@ -32,11 +32,8 @@ func HandleGetBlockDAGInfo(context *rpccontext.Context, _ *router.Router, _ appm
 	if err != nil {
 		return nil, err
 	}
-	response.Difficulty, err = context.GetDifficultyRatio(virtualInfo.Bits, context.Config.ActiveNetParams)
-	if err != nil {
-		return nil, err
-	}
 	response.VirtualParentHashes = hashes.ToStrings(virtualInfo.ParentHashes)
+	response.Difficulty = context.GetDifficultyRatio(virtualInfo.Bits, context.Config.ActiveNetParams)
 	response.PastMedianTime = virtualInfo.PastMedianTime
 
 	return response, nil
