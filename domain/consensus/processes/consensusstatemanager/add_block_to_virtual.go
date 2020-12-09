@@ -56,12 +56,12 @@ func (csm *consensusStateManager) AddBlockToVirtual(blockHash *externalapi.Domai
 	log.Tracef("After adding %s, the new tips are %s", blockHash, newTips)
 
 	log.Tracef("Updating the virtual with the new tips")
-	err = csm.updateVirtual(blockHash, newTips)
+	selectedParentChainChanges, err := csm.updateVirtual(blockHash, newTips)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalapi.SelectedParentChainChanges{}, nil
+	return selectedParentChainChanges, nil
 }
 
 func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
