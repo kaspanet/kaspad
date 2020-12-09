@@ -89,17 +89,17 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 		defer teardown()
 
-		a, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		a, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		b, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
+		b, _, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		c, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		c, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -143,7 +143,7 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 
 		// Try to add block with unrelated parents
-		_, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}

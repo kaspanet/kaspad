@@ -330,7 +330,7 @@ func TestBlueBlockWindow(t *testing.T) {
 				parents.Add(parent)
 			}
 
-			block, err := tc.AddBlock(parents.ToSlice(), nil, nil)
+			block, _, err := tc.AddBlock(parents.ToSlice(), nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
