@@ -563,10 +563,11 @@ message GetBlockDagInfoRequestMessage{
 message GetBlockDagInfoResponseMessage{
   string networkName = 1;
   uint64 blockCount = 2;
-  repeated string tipHashes = 3;
-  double difficulty = 4;
-  int64 pastMedianTime = 5;
-  repeated string virtualParentHashes = 6;
+  uint64 headerCount = 3;
+  repeated string tipHashes = 4;
+  double difficulty = 5;
+  int64 pastMedianTime = 6;
+  repeated string virtualParentHashes = 7;
   RPCError error = 1000;
 }
 

@@ -22,6 +22,7 @@ type GetBlockDAGInfoResponseMessage struct {
 	baseMessage
 	NetworkName         string
 	BlockCount          uint64
+	HeaderCount         uint64
 	TipHashes           []string
 	VirtualParentHashes []string
 	Difficulty          float64
