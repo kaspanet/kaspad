@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -29,7 +30,6 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	if err != nil {
 		return nil, err
 	}
-
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -77,12 +77,11 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
-	outString := difficulty.FloatString(8)
-	diff, err := strconv.ParseFloat(outString, 64)
-	if err != nil {
-		log.Errorf("Cannot get difficulty: %s", err)
-		return 0
-	}
+	diff, _ := difficulty.Float64()
+
+	roundingPrecision := float64(100)
+	diff = math.Round(diff*roundingPrecision) / roundingPrecision
+
 	return diff
 }
 
