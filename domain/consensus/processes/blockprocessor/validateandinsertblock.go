@@ -13,7 +13,7 @@ import (
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(block)
+	err := bp.ValidateBlock(block)
 	if err != nil {
 		bp.discardAllChanges()
 		return err
@@ -153,58 +153,6 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 	}
 
-	return nil
-}
-
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
-
-	blockHash := consensushashing.HeaderHash(block.Header)
-	log.Debugf("Validating block %s", blockHash)
-
-	err := bp.checkBlockStatus(block)
-	if err != nil {
-		return err
-	}
-
-	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
-	if err != nil {
-		return err
-	}
-
-	if !hasValidatedHeader {
-		bp.blockHeaderStore.Stage(blockHash, block.Header)
-	}
-
-	// If any validation until (included) proof-of-work fails, simply
-	// return an error without writing anything in the database.
-	// This is to prevent spamming attacks.
-	err = bp.validatePreProofOfWork(block)
-	if err != nil {
-		return err
-	}
-
-	if !hasValidatedHeader {
-		err = bp.validatePruningPointViolationAndProofOfWorkAndDifficulty(block)
-		if err != nil {
-			return err
-		}
-	}
-
-	// If in-context validations fail, discard all changes and store the
-	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block)
-	if err != nil {
-		if errors.As(err, &ruleerrors.RuleError{}) {
-			bp.discardAllChanges()
-			hash := consensushashing.BlockHash(block)
-			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
-			commitErr := bp.commitAllChanges()
-			if commitErr != nil {
-				return commitErr
-			}
-		}
-		return err
-	}
 	return nil
 }
 
