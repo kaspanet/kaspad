@@ -211,7 +211,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockRelationStore,
 		acceptanceDataStore,
 		blockHeaderStore,
-		headersSelectedTipStore)
+		headersSelectedTipStore,
+		pruningStore)
 	if err != nil {
 		return nil, err
 	}

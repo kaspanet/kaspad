@@ -69,7 +69,8 @@ func New(
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headersSelectedTipStore model.HeaderSelectedTipStore) (model.ConsensusStateManager, error) {
+	headersSelectedTipStore model.HeaderSelectedTipStore,
+	pruningStore model.PruningStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
 		pruningDepth:           pruningDepth,
@@ -100,6 +101,7 @@ func New(
 		acceptanceDataStore:     acceptanceDataStore,
 		blockHeaderStore:        blockHeaderStore,
 		headersSelectedTipStore: headersSelectedTipStore,
+		pruningStore:            pruningStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -113,6 +115,7 @@ func New(
 			utxoDiffStore,
 			blockHeaderStore,
 			headersSelectedTipStore,
+			pruningStore,
 		},
 	}
 
