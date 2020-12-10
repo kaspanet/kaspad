@@ -13,14 +13,7 @@ import (
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
-	log.Debugf("Validating block %s", blockHash)
-
-	err := bp.checkBlockStatus(block)
-	if err != nil {
-		return err
-	}
-
-	err = bp.validateBlock(block)
+	err := bp.validateBlock(block)
 	if err != nil {
 		bp.discardAllChanges()
 		return err
@@ -164,7 +157,15 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 }
 
 func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
+
 	blockHash := consensushashing.HeaderHash(block.Header)
+	log.Debugf("Validating block %s", blockHash)
+
+	err := bp.checkBlockStatus(block)
+	if err != nil {
+		return err
+	}
+
 	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
