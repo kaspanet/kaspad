@@ -77,8 +77,11 @@ message KaspadMessage {
     GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
     ShutDownRequestMessage shutDownRequest = 1045;
     ShutDownResponseMessage shutDownResponse = 1046;
-    GetHeadersRequestMessage getHeadersRequest = 10347;
+    GetHeadersRequestMessage getHeadersRequest = 1047;
     GetHeadersResponseMessage getHeadersResponse = 1048;
+    NotifyUTXOsChangedRequestMessage notifyUtxosChangedRequest = 1049;
+    NotifyUTXOsChangedResponseMessage notifyUtxosChangedResponse = 1050;
+    UTXOsChangedNotificationMessage utxosChangedNotification = 1051;
   }
 }
 
@@ -610,6 +613,37 @@ message GetHeadersRequestMessage{
 message GetHeadersResponseMessage{
   repeated string headers = 1;
   RPCError error = 1000;
+}
+
+message NotifyUTXOsChangedRequestMessage {
+  repeated string addresses = 1;
+}
+
+message NotifyUTXOsChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+message UTXOsChangedNotificationMessage {
+  repeated UTXOsByAddressesEntry added = 1;
+  repeated RPCOutpoint removed = 2;
+}
+
+message UTXOsByAddressesEntry {
+  string address = 1;
+  RPCOutpoint outpoint = 2;
+  RPCUTXOEntry utxoEntry = 3;
+}
+
+message RPCOutpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message RPCUTXOEntry {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
 }
 
 service RPC {
