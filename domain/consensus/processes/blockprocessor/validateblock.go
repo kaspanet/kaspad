@@ -39,7 +39,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 	}
 
 	if !hasValidatedHeader {
-		err = bp.validatePruningPointViolationAndProofOfWorkAndDifficulty(block)
+		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
 		if err != nil {
 			return err
 		}

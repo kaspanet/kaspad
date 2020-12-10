@@ -15,12 +15,12 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
-	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
+	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if !isHeadersOnlyBlock {
+	if !hasValidatedHeader {
 		err = v.ghostdagManager.GHOSTDAG(blockHash)
 		if err != nil {
 			return err
@@ -60,7 +60,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	return nil
 }
 
-func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
 	if err != nil {
 		return false, err

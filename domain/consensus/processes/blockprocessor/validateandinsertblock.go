@@ -137,7 +137,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 		return errors.Wrapf(ruleerrors.ErrKnownInvalid, "block %s is a known invalid block", hash)
 	}
 
-	isBlockBodyAfterBlockHeader := isHeaderOnlyBlock && status == externalapi.StatusHeaderOnly
+	isBlockBodyAfterBlockHeader := !isHeaderOnlyBlock && status == externalapi.StatusHeaderOnly
 	if !isBlockBodyAfterBlockHeader {
 		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 	}
@@ -169,31 +169,24 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	return nil
 }
 
-func (bp *blockProcessor) validatePruningPointViolationAndProofOfWorkAndDifficulty(block *externalapi.DomainBlock) error {
-	blockHash := consensushashing.HeaderHash(block.Header)
-	if !isHeaderOnlyBlock(block) {
-		// We stage the block here since we need it for parent validation
-		bp.blockStore.Stage(blockHash, block)
-	}
-	return bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
-}
-
 func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	if !isHeaderOnlyBlock(block) {
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if !isHeaderOnlyBlock {
+		bp.blockStore.Stage(blockHash, block)
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
-	hasHeader, err := bp.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if !hasHeader {
+	if !hasValidatedHeader {
 		err = bp.blockValidator.ValidateHeaderInContext(blockHash)
 		if err != nil {
 			return err
