@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -25,25 +26,25 @@ type consensus struct {
 	dagTraversalManager   model.DAGTraversalManager
 	difficultyManager     model.DifficultyManager
 	ghostdagManager       model.GHOSTDAGManager
-	headerTipsManager     model.HeaderTipsManager
+	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
-	acceptanceDataStore   model.AcceptanceDataStore
-	blockStore            model.BlockStore
-	blockHeaderStore      model.BlockHeaderStore
-	pruningStore          model.PruningStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	blockRelationStore    model.BlockRelationStore
-	blockStatusStore      model.BlockStatusStore
-	consensusStateStore   model.ConsensusStateStore
-	headerTipsStore       model.HeaderTipsStore
-	multisetStore         model.MultisetStore
-	reachabilityDataStore model.ReachabilityDataStore
-	utxoDiffStore         model.UTXODiffStore
-	finalityStore         model.FinalityStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockStore              model.BlockStore
+	blockHeaderStore        model.BlockHeaderStore
+	pruningStore            model.PruningStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	blockRelationStore      model.BlockRelationStore
+	blockStatusStore        model.BlockStatusStore
+	consensusStateStore     model.ConsensusStateStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	multisetStore           model.MultisetStore
+	reachabilityDataStore   model.ReachabilityDataStore
+	utxoDiffStore           model.UTXODiffStore
+	finalityStore           model.FinalityStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -183,11 +184,38 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
-func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {
+func (s *consensus) SetPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.consensusStateManager.SetPruningPointUTXOSet(serializedUTXOSet)
+	selectedTip, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	expectedNewPruningPointHash, err := s.pruningManager.CalculateIndependentPruningPoint(selectedTip)
+	if err != nil {
+		return err
+	}
+
+	err = s.blockProcessor.ValidateBlock(newPruningPoint)
+	if err != nil {
+		return err
+	}
+
+	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
+
+	if *expectedNewPruningPointHash != *newPruningPointHash {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "expected pruning point %s but got %s",
+			expectedNewPruningPointHash, newPruningPointHash)
+	}
+
+	err = s.consensusStateManager.SetPruningPoint(expectedNewPruningPointHash, serializedUTXOSet)
+	if err != nil {
+		return err
+	}
+
+	return s.ValidateAndInsertBlock(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {

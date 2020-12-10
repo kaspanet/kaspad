@@ -13,7 +13,7 @@ import (
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.ValidateBlock(block)
+	err := bp.validateBlock(block)
 	if err != nil {
 		bp.discardAllChanges()
 		return err
@@ -37,29 +37,23 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	isGenesis := *blockHash != *bp.genesisHash
 	if isGenesis {
 		var err error
-		oldHeadersSelectedTip, err = bp.headerTipsManager.SelectedTip()
+		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 		if err != nil {
 			return err
 		}
 	}
 
-	if isHeaderOnlyBlock {
-		err = bp.headerTipsManager.AddHeaderTip(blockHash)
-		if err != nil {
-			return err
-		}
-	} else {
+	err = bp.headerTipsManager.AddHeaderTip(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if !isHeaderOnlyBlock {
 		// Attempt to add the block to the virtual
 		err = bp.consensusStateManager.AddBlock(blockHash)
 		if err != nil {
 			return err
 		}
-
-		tips, err := bp.consensusStateStore.Tips(bp.databaseContext)
-		if err != nil {
-			return err
-		}
-		bp.headerTipsStore.Stage(tips)
 	}
 
 	if isGenesis {
@@ -96,8 +90,8 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get sync info: %s", err)
 		}
-		return fmt.Sprintf("New virtual's blue score: %d. Sync state: %s. Block count: %d. Header count: %d",
-			virtualGhostDAGData.BlueScore(), syncInfo.State, syncInfo.BlockCount, syncInfo.HeaderCount)
+		return fmt.Sprintf("New virtual's blue score: %d. Is awaiting UTXO set: %s. Block count: %d. Header count: %d",
+			virtualGhostDAGData.BlueScore(), syncInfo.IsAwaitingUTXOSet, syncInfo.BlockCount, syncInfo.HeaderCount)
 	}))
 	if logClosureErr != nil {
 		return logClosureErr
@@ -111,7 +105,7 @@ func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
 }
 
 func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 	if err != nil {
 		return err
 	}

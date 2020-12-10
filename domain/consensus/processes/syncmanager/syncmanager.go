@@ -7,53 +7,47 @@ import (
 )
 
 type syncManager struct {
-	databaseContext    model.DBReader
-	genesisBlockHash   *externalapi.DomainHash
-	targetTimePerBlock int64
+	databaseContext  model.DBReader
+	genesisBlockHash *externalapi.DomainHash
 
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManager    model.DAGTopologyManager
-	ghostdagManager       model.GHOSTDAGManager
-	consensusStateManager model.ConsensusStateManager
+	dagTraversalManager model.DAGTraversalManager
+	dagTopologyManager  model.DAGTopologyManager
+	ghostdagManager     model.GHOSTDAGManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore
 	blockHeaderStore  model.BlockHeaderStore
-	headerTipsStore   model.HeaderTipsStore
 	blockStore        model.BlockStore
+	pruningStore      model.PruningStore
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
-	targetTimePerBlock int64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
-	consensusStateManager model.ConsensusStateManager,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore,
-	blockStore model.BlockStore) model.SyncManager {
+	blockStore model.BlockStore,
+	pruningStore model.PruningStore) model.SyncManager {
 
 	return &syncManager{
-		databaseContext:    databaseContext,
-		genesisBlockHash:   genesisBlockHash,
-		targetTimePerBlock: targetTimePerBlock,
+		databaseContext:  databaseContext,
+		genesisBlockHash: genesisBlockHash,
 
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManager:    dagTopologyManager,
-		ghostdagManager:       ghostdagManager,
-		consensusStateManager: consensusStateManager,
+		dagTraversalManager: dagTraversalManager,
+		dagTopologyManager:  dagTopologyManager,
+		ghostdagManager:     ghostdagManager,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
 		blockHeaderStore:  blockHeaderStore,
-		headerTipsStore:   headerTipsStore,
 		blockStore:        blockStore,
+		pruningStore:      pruningStore,
 	}
 }
 
@@ -75,7 +69,7 @@ func (sm *syncManager) IsBlockInHeaderPruningPointFuture(blockHash *externalapi.
 	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFuture")
 	defer onEnd()
 
-	return sm.isBlockInHeaderPruningPointFuture(blockHash)
+	return sm.isBlockInPruningPointFuture(blockHash)
 }
 
 func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {

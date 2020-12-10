@@ -17,7 +17,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headertipsstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedtipstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
@@ -32,7 +32,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/headertipsmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/headersselectedtipmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
@@ -81,7 +81,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	utxoDiffStore := utxodiffstore.New(200)
 	consensusStateStore := consensusstatestore.New()
 	ghostdagDataStore := ghostdagdatastore.New(10_000)
-	headerTipsStore := headertipsstore.New()
+	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200)
 
 	// Processes
@@ -139,7 +139,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
+	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, ghostdagManager, headersSelectedTipStore)
 	genesisHash := dagParams.GenesisHash
 	finalityManager := finalitymanager.New(
 		dbManager,
@@ -211,7 +211,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockRelationStore,
 		acceptanceDataStore,
 		blockHeaderStore,
-		headerTipsStore)
+		headersSelectedTipStore)
 	if err != nil {
 		return nil, err
 	}
@@ -236,17 +236,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	syncManager := syncmanager.New(
 		dbManager,
 		genesisHash,
-		dagParams.TargetTimePerBlock.Milliseconds(),
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagManager,
-		consensusStateManager,
 
 		ghostdagDataStore,
 		blockStatusStore,
 		blockHeaderStore,
-		headerTipsStore,
-		blockStore)
+		blockStore,
+		pruningStore)
 
 	blockBuilder := blockbuilder.New(
 		dbManager,
@@ -287,7 +285,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityDataStore,
 		utxoDiffStore,
 		blockHeaderStore,
-		headerTipsStore,
+		headersSelectedTipStore,
 		finalityStore)
 
 	c := &consensus{
@@ -312,19 +310,19 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager:   reachabilityManager,
 		finalityManager:       finalityManager,
 
-		acceptanceDataStore:   acceptanceDataStore,
-		blockStore:            blockStore,
-		blockHeaderStore:      blockHeaderStore,
-		pruningStore:          pruningStore,
-		ghostdagDataStore:     ghostdagDataStore,
-		blockStatusStore:      blockStatusStore,
-		blockRelationStore:    blockRelationStore,
-		consensusStateStore:   consensusStateStore,
-		headerTipsStore:       headerTipsStore,
-		multisetStore:         multisetStore,
-		reachabilityDataStore: reachabilityDataStore,
-		utxoDiffStore:         utxoDiffStore,
-		finalityStore:         finalityStore,
+		acceptanceDataStore:     acceptanceDataStore,
+		blockStore:              blockStore,
+		blockHeaderStore:        blockHeaderStore,
+		pruningStore:            pruningStore,
+		ghostdagDataStore:       ghostdagDataStore,
+		blockStatusStore:        blockStatusStore,
+		blockRelationStore:      blockRelationStore,
+		consensusStateStore:     consensusStateStore,
+		headersSelectedTipStore: headersSelectedTipStore,
+		multisetStore:           multisetStore,
+		reachabilityDataStore:   reachabilityDataStore,
+		utxoDiffStore:           utxoDiffStore,
+		finalityStore:           finalityStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)

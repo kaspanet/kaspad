@@ -122,7 +122,7 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 		}
 
 		if parentStatus == externalapi.StatusInvalid {
-			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid")
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 
 		if hashBlockBody {

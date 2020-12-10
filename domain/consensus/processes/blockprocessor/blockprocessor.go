@@ -21,22 +21,22 @@ type blockProcessor struct {
 	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
-	headerTipsManager     model.HeaderTipsManager
+	headerTipsManager     model.HeadersSelectedTipManager
 	syncManager           model.SyncManager
 
-	acceptanceDataStore   model.AcceptanceDataStore
-	blockStore            model.BlockStore
-	blockStatusStore      model.BlockStatusStore
-	blockRelationStore    model.BlockRelationStore
-	multisetStore         model.MultisetStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	consensusStateStore   model.ConsensusStateStore
-	pruningStore          model.PruningStore
-	reachabilityDataStore model.ReachabilityDataStore
-	utxoDiffStore         model.UTXODiffStore
-	blockHeaderStore      model.BlockHeaderStore
-	headerTipsStore       model.HeaderTipsStore
-	finalityStore         model.FinalityStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockStore              model.BlockStore
+	blockStatusStore        model.BlockStatusStore
+	blockRelationStore      model.BlockRelationStore
+	multisetStore           model.MultisetStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	consensusStateStore     model.ConsensusStateStore
+	pruningStore            model.PruningStore
+	reachabilityDataStore   model.ReachabilityDataStore
+	utxoDiffStore           model.UTXODiffStore
+	blockHeaderStore        model.BlockHeaderStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	finalityStore           model.FinalityStore
 
 	stores []model.Store
 }
@@ -54,7 +54,7 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagManager model.GHOSTDAGManager,
 	coinbaseManager model.CoinbaseManager,
-	headerTipsManager model.HeaderTipsManager,
+	headerTipsManager model.HeadersSelectedTipManager,
 	syncManager model.SyncManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
@@ -68,7 +68,7 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	utxoDiffStore model.UTXODiffStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore,
+	headersSelectedTipStore model.HeaderSelectedTipStore,
 	finalityStore model.FinalityStore,
 ) model.BlockProcessor {
 
@@ -86,20 +86,20 @@ func New(
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
 
-		consensusStateManager: consensusStateManager,
-		acceptanceDataStore:   acceptanceDataStore,
-		blockStore:            blockStore,
-		blockStatusStore:      blockStatusStore,
-		blockRelationStore:    blockRelationStore,
-		multisetStore:         multisetStore,
-		ghostdagDataStore:     ghostdagDataStore,
-		consensusStateStore:   consensusStateStore,
-		pruningStore:          pruningStore,
-		reachabilityDataStore: reachabilityDataStore,
-		utxoDiffStore:         utxoDiffStore,
-		blockHeaderStore:      blockHeaderStore,
-		headerTipsStore:       headerTipsStore,
-		finalityStore:         finalityStore,
+		consensusStateManager:   consensusStateManager,
+		acceptanceDataStore:     acceptanceDataStore,
+		blockStore:              blockStore,
+		blockStatusStore:        blockStatusStore,
+		blockRelationStore:      blockRelationStore,
+		multisetStore:           multisetStore,
+		ghostdagDataStore:       ghostdagDataStore,
+		consensusStateStore:     consensusStateStore,
+		pruningStore:            pruningStore,
+		reachabilityDataStore:   reachabilityDataStore,
+		utxoDiffStore:           utxoDiffStore,
+		blockHeaderStore:        blockHeaderStore,
+		headersSelectedTipStore: headersSelectedTipStore,
+		finalityStore:           finalityStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -114,7 +114,7 @@ func New(
 			reachabilityDataStore,
 			utxoDiffStore,
 			blockHeaderStore,
-			headerTipsStore,
+			headersSelectedTipStore,
 			finalityStore,
 		},
 	}

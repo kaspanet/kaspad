@@ -25,17 +25,17 @@ type consensusStateManager struct {
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
 
-	headerTipsStore     model.HeaderTipsStore
-	blockStatusStore    model.BlockStatusStore
-	ghostdagDataStore   model.GHOSTDAGDataStore
-	consensusStateStore model.ConsensusStateStore
-	multisetStore       model.MultisetStore
-	blockStore          model.BlockStore
-	utxoDiffStore       model.UTXODiffStore
-	blockRelationStore  model.BlockRelationStore
-	acceptanceDataStore model.AcceptanceDataStore
-	blockHeaderStore    model.BlockHeaderStore
-	pruningStore        model.PruningStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	blockStatusStore        model.BlockStatusStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	consensusStateStore     model.ConsensusStateStore
+	multisetStore           model.MultisetStore
+	blockStore              model.BlockStore
+	utxoDiffStore           model.UTXODiffStore
+	blockRelationStore      model.BlockRelationStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockHeaderStore        model.BlockHeaderStore
+	pruningStore            model.PruningStore
 
 	stores []model.Store
 }
@@ -69,7 +69,7 @@ func New(
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
+	headersSelectedTipStore model.HeaderSelectedTipStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
 		pruningDepth:           pruningDepth,
@@ -90,16 +90,16 @@ func New(
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,
 
-		multisetStore:       multisetStore,
-		blockStore:          blockStore,
-		blockStatusStore:    blockStatusStore,
-		ghostdagDataStore:   ghostdagDataStore,
-		consensusStateStore: consensusStateStore,
-		utxoDiffStore:       utxoDiffStore,
-		blockRelationStore:  blockRelationStore,
-		acceptanceDataStore: acceptanceDataStore,
-		blockHeaderStore:    blockHeaderStore,
-		headerTipsStore:     headerTipsStore,
+		multisetStore:           multisetStore,
+		blockStore:              blockStore,
+		blockStatusStore:        blockStatusStore,
+		ghostdagDataStore:       ghostdagDataStore,
+		consensusStateStore:     consensusStateStore,
+		utxoDiffStore:           utxoDiffStore,
+		blockRelationStore:      blockRelationStore,
+		acceptanceDataStore:     acceptanceDataStore,
+		blockHeaderStore:        blockHeaderStore,
+		headersSelectedTipStore: headersSelectedTipStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -112,7 +112,7 @@ func New(
 			consensusStateStore,
 			utxoDiffStore,
 			blockHeaderStore,
-			headerTipsStore,
+			headersSelectedTipStore,
 		},
 	}
 

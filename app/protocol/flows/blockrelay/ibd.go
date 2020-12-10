@@ -35,7 +35,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
-	if syncInfo.State == externalapi.SyncStateAwaitingUTXOSet {
+	if syncInfo.IsAwaitingUTXOSet {
 		found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
 		if err != nil {
 			return err
@@ -205,15 +205,21 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, nil
 	}
 
-	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
-	if err != nil {
-		blockHash := consensushashing.BlockHash(block)
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
-	}
-
-	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
+	err = flow.Domain().Consensus().SetPruningPoint(block, utxoSet)
 	if err != nil {
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
+	}
+
+	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	if err != nil {
+		return false, err
+	}
+
+	// TODO: Find a better way to deal with finality conflicts.
+	if syncInfo.IsAwaitingUTXOSet {
+		log.Warnf("Still awaiting for UTXO set. This can happen only because the given pruning point violates " +
+			"finality")
+		return false, nil
 	}
 
 	return true, nil

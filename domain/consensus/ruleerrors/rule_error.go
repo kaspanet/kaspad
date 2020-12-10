@@ -239,6 +239,8 @@ var (
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 
 	ErrMissingParentBody = newRuleError("ErrMissingParentBody")
+
+	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

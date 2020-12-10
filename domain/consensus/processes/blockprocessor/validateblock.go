@@ -8,6 +8,11 @@ import (
 )
 
 func (bp *blockProcessor) ValidateBlock(block *externalapi.DomainBlock) error {
+	defer bp.discardAllChanges()
+	return bp.validateBlock(block)
+}
+
+func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 

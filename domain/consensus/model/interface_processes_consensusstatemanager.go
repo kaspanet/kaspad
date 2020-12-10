@@ -6,8 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type ConsensusStateManager interface {
 	AddBlock(blockHash *externalapi.DomainHash) error
 	PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error
-	SetPruningPointUTXOSet(serializedUTXOSet []byte) error
+	SetPruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error
 	RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSetIterator, error)
-	HeaderTipsPruningPoint() (*externalapi.DomainHash, error)
 	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (UTXODiff, AcceptanceData, Multiset, error)
 }
