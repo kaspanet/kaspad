@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+// UTXOIndex maintains an index between transaction scriptPublicKeys
+// and UTXOs
 type UTXOIndex struct {
 	consensus externalapi.Consensus
 	store     *utxoIndexStore
@@ -15,6 +17,7 @@ type UTXOIndex struct {
 	mutex sync.Mutex
 }
 
+// New creates a new UTXO index
 func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex {
 	store := newUTXOIndexStore(database)
 	return &UTXOIndex{
@@ -23,23 +26,35 @@ func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex
 	}
 }
 
-func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges) error {
+// Update updates the UTXO index with the given DAG selected parent chain changes
+func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges) (*UTXOChanges, error) {
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
 	for _, removedBlockHash := range chainChanges.Removed {
 		err := ui.removeBlock(removedBlockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	for _, addedBlockHash := range chainChanges.Added {
 		err := ui.addBlock(addedBlockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return ui.store.commit()
+
+	added, removed := ui.store.stagedData()
+	utxoIndexChanges := &UTXOChanges{
+		Added:   added,
+		Removed: removed,
+	}
+
+	err := ui.store.commit()
+	if err != nil {
+		return nil, err
+	}
+	return utxoIndexChanges, nil
 }
 
 func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {

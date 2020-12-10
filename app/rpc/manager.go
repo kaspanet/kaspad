@@ -49,10 +49,11 @@ func NewManager(
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
 func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error {
 	if m.context.Config.UTXOIndex {
-		err := m.context.UTXOIndex.Update(blockInsertionResult.SelectedParentChainChanges)
+		utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.SelectedParentChainChanges)
 		if err != nil {
 			return err
 		}
+		log.Tracef("utxoIndexChanges: %v", utxoIndexChanges)
 	}
 
 	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))

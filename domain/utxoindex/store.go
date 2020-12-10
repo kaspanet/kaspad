@@ -11,21 +11,17 @@ import (
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
 
-type scriptPublicKeyHexString string
-type toAddUTXOOutpointEntryPairs map[externalapi.DomainOutpoint]externalapi.UTXOEntry
-type toRemoveUTXOOutpoints map[externalapi.DomainOutpoint]interface{}
-
 type utxoIndexStore struct {
 	database database.Database
-	toAdd    map[scriptPublicKeyHexString]toAddUTXOOutpointEntryPairs
-	toRemove map[scriptPublicKeyHexString]toRemoveUTXOOutpoints
+	toAdd    map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs
+	toRemove map[ScriptPublicKeyHexString]UTXOOutpoints
 }
 
 func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	return &utxoIndexStore{
 		database: database,
-		toAdd:    make(map[scriptPublicKeyHexString]toAddUTXOOutpointEntryPairs),
-		toRemove: make(map[scriptPublicKeyHexString]toRemoveUTXOOutpoints),
+		toAdd:    make(map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs),
+		toRemove: make(map[ScriptPublicKeyHexString]UTXOOutpoints),
 	}
 }
 
@@ -40,9 +36,9 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 		}
 	}
 
-	// Create a toAddUTXOOutpointEntryPairs entry in `toAdd` if it doesn't exist
+	// Create a UTXOOutpointEntryPairs entry in `toAdd` if it doesn't exist
 	if _, ok := uis.toAdd[key]; !ok {
-		uis.toAdd[key] = make(toAddUTXOOutpointEntryPairs)
+		uis.toAdd[key] = make(UTXOOutpointEntryPairs)
 	}
 
 	// Return an error if the outpoint already exists in `toAdd`
@@ -66,9 +62,9 @@ func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.
 		}
 	}
 
-	// Create a toRemoveUTXOOutpoints entry in `toRemove` if it doesn't exist
+	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
-		uis.toRemove[key] = make(toRemoveUTXOOutpoints)
+		uis.toRemove[key] = make(UTXOOutpoints)
 	}
 
 	// Return an error if the outpoint already exists in `toRemove`
@@ -82,8 +78,8 @@ func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.
 }
 
 func (uis *utxoIndexStore) discard() {
-	uis.toAdd = make(map[scriptPublicKeyHexString]toAddUTXOOutpointEntryPairs)
-	uis.toRemove = make(map[scriptPublicKeyHexString]toRemoveUTXOOutpoints)
+	uis.toAdd = make(map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs)
+	uis.toRemove = make(map[ScriptPublicKeyHexString]UTXOOutpoints)
 }
 
 func (uis *utxoIndexStore) commit() error {
@@ -142,11 +138,11 @@ func (uis *utxoIndexStore) commit() error {
 	return nil
 }
 
-func (uis *utxoIndexStore) convertScriptPublicKeyToHexString(scriptPublicKey []byte) scriptPublicKeyHexString {
-	return scriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
+func (uis *utxoIndexStore) convertScriptPublicKeyToHexString(scriptPublicKey []byte) ScriptPublicKeyHexString {
+	return ScriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
 }
 
-func (uis *utxoIndexStore) convertHexStringToScriptPublicKey(hexString scriptPublicKeyHexString) ([]byte, error) {
+func (uis *utxoIndexStore) convertHexStringToScriptPublicKey(hexString ScriptPublicKeyHexString) ([]byte, error) {
 	return hex.DecodeString(string(hexString))
 }
 
@@ -170,4 +166,29 @@ func (uis *utxoIndexStore) serializeOutpoint(outpoint *externalapi.DomainOutpoin
 func (uis *utxoIndexStore) serializeUTXOEntry(utxoEntry *externalapi.UTXOEntry) ([]byte, error) {
 	dbUTXOEntry := serialization.UTXOEntryToDBUTXOEntry(*utxoEntry)
 	return proto.Marshal(dbUTXOEntry)
+}
+
+func (uis *utxoIndexStore) stagedData() (
+	toAdd map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs,
+	toRemove map[ScriptPublicKeyHexString]UTXOOutpoints) {
+
+	toAddClone := make(map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs, len(uis.toAdd))
+	for scriptPublicKeyHexString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
+		toAddUTXOOutpointEntryPairsClone := make(UTXOOutpointEntryPairs, len(toAddUTXOOutpointEntryPairs))
+		for outpoint, utxoEntry := range toAddUTXOOutpointEntryPairs {
+			toAddUTXOOutpointEntryPairsClone[outpoint] = utxoEntry
+		}
+		toAddClone[scriptPublicKeyHexString] = toAddUTXOOutpointEntryPairsClone
+	}
+
+	toRemoveClone := make(map[ScriptPublicKeyHexString]UTXOOutpoints, len(uis.toRemove))
+	for scriptPublicKeyHexString, toRemoveOutpoints := range uis.toRemove {
+		toRemoveOutpointsClone := make(UTXOOutpoints, len(toRemoveOutpoints))
+		for outpoint := range toRemoveOutpoints {
+			toRemoveOutpointsClone[outpoint] = struct{}{}
+		}
+		toRemoveClone[scriptPublicKeyHexString] = toRemoveOutpointsClone
+	}
+
+	return toAddClone, toRemoveClone
 }
