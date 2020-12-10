@@ -5,11 +5,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"sync"
 )
 
 type UTXOIndex struct {
 	consensus externalapi.Consensus
 	store     *utxoIndexStore
+
+	mutex sync.Mutex
 }
 
 func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex {
@@ -21,6 +24,9 @@ func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex
 }
 
 func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges) error {
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
 	for _, removedBlockHash := range chainChanges.Removed {
 		err := ui.removeBlock(removedBlockHash)
 		if err != nil {
