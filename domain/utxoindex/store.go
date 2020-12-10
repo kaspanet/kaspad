@@ -27,10 +27,21 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 
 func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) error {
 	key := uis.convertScriptPublicKeyToHexString(scriptPublicKey)
+
+	// If the outpoint exists in `toRemove` simply remove it from there and return
+	if toRemoveOutpointsOfKey, ok := uis.toRemove[key]; ok {
+		if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
+			delete(toRemoveOutpointsOfKey, *outpoint)
+			return nil
+		}
+	}
+
+	// Create a toAddUTXOOutpointEntryPairs entry in `toAdd` if it doesn't exist
 	if _, ok := uis.toAdd[key]; !ok {
 		uis.toAdd[key] = make(toAddUTXOOutpointEntryPairs)
 	}
 
+	// Return an error if the outpoint already exists in `toAdd`
 	toAddPairsOfKey := uis.toAdd[key]
 	if _, ok := toAddPairsOfKey[*outpoint]; ok {
 		return errors.Errorf("cannot add outpoint %s because it's being added already", outpoint)
@@ -42,10 +53,21 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 
 func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint) error {
 	key := uis.convertScriptPublicKeyToHexString(scriptPublicKey)
+
+	// If the outpoint exists in `toAdd` simply remove it from there and return
+	if toAddPairsOfKey, ok := uis.toAdd[key]; ok {
+		if _, ok := toAddPairsOfKey[*outpoint]; ok {
+			delete(toAddPairsOfKey, *outpoint)
+			return nil
+		}
+	}
+
+	// Create a toRemoveUTXOOutpoints entry in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
 		uis.toRemove[key] = make(toRemoveUTXOOutpoints)
 	}
 
+	// Return an error if the outpoint already exists in `toRemove`
 	toRemoveOutpointsOfKey := uis.toRemove[key]
 	if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
 		return errors.Errorf("cannot remove outpoint %s because it's being removed already", outpoint)
