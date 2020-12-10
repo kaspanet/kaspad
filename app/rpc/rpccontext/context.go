@@ -31,6 +31,7 @@ func NewContext(cfg *config.Config,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{}) *Context {
 
 	context := &Context{
@@ -40,13 +41,10 @@ func NewContext(cfg *config.Config,
 		ProtocolManager:   protocolManager,
 		ConnectionManager: connectionManager,
 		AddressManager:    addressManager,
+		UTXOIndex:         utxoIndex,
 		ShutDownChan:      shutDownChan,
 	}
 	context.NotificationManager = NewNotificationManager()
-
-	if cfg.UTXOIndex {
-		context.UTXOIndex = utxoindex.New(domain.Consensus())
-	}
 
 	return context
 }

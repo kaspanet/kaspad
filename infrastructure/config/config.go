@@ -123,7 +123,7 @@ type Flags struct {
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
-	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXOs-by-addresses index"`
+	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
