@@ -7,4 +7,10 @@ type BlockInfo struct {
 	BlueScore   uint64
 
 	IsBlockInHeaderPruningPointFuture bool
+
+	AcceptanceData AcceptanceData
+}
+
+type BlockInfoOptions struct {
+	IncludeAcceptanceData bool
 }

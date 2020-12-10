@@ -51,7 +51,7 @@ func TestFinality(t *testing.T) {
 			}
 			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 
-			blockInfo, err := consensus.GetBlockInfo(mainChainTipHash)
+			blockInfo, err := consensus.GetBlockInfo(mainChainTipHash, nil)
 			if err != nil {
 				t.Fatalf("TestFinality: Block #%d failed to get info: %+v", i, err)
 			}
@@ -71,7 +71,7 @@ func TestFinality(t *testing.T) {
 			}
 			sideChainTipHash = consensushashing.BlockHash(sideChainTip)
 
-			blockInfo, err := consensus.GetBlockInfo(sideChainTipHash)
+			blockInfo, err := consensus.GetBlockInfo(sideChainTipHash, nil)
 			if err != nil {
 				t.Fatalf("TestFinality: Block #%d failed to get info: %v", i, err)
 			} else if !blockInfo.Exists {
@@ -93,7 +93,7 @@ func TestFinality(t *testing.T) {
 		}
 
 		// Make sure that now the sideChainTip is valid and selectedTip
-		blockInfo, err := consensus.GetBlockInfo(sideChainTipHash)
+		blockInfo, err := consensus.GetBlockInfo(sideChainTipHash, nil)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed to get block info: %v", err)
 		} else if !blockInfo.Exists {
@@ -160,7 +160,7 @@ func TestFinality(t *testing.T) {
 		}
 
 		// Blocks violating finality should have a UTXOPendingVerification status
-		blockInfo, err = consensus.GetBlockInfo(sideChainTipHash)
+		blockInfo, err = consensus.GetBlockInfo(sideChainTipHash, nil)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed to get block info: %v", err)
 		} else if !blockInfo.Exists {
@@ -222,7 +222,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		getStatus := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock) externalapi.BlockStatus {
-			blockInfo, err := consensus.GetBlockInfo(consensushashing.BlockHash(block))
+			blockInfo, err := consensus.GetBlockInfo(consensushashing.BlockHash(block), nil)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed to get block info: %v", err)
 			} else if !blockInfo.Exists {

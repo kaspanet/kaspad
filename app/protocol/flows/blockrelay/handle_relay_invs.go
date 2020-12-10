@@ -67,7 +67,7 @@ func (flow *handleRelayInvsFlow) start() error {
 
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 
-		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash, nil)
 		if err != nil {
 			return err
 		}
@@ -267,7 +267,7 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 		return false, err
 	}
 	for _, blockLocatorHash := range blockLocatorHashes {
-		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockLocatorHash)
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockLocatorHash, nil)
 		if err != nil {
 			return false, err
 		}

@@ -10,7 +10,7 @@ import (
 )
 
 func (csm *consensusStateManager) calculateMultiset(
-	acceptanceData model.AcceptanceData, blockGHOSTDAGData model.BlockGHOSTDAGData) (model.Multiset, error) {
+	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData model.BlockGHOSTDAGData) (model.Multiset, error) {
 
 	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())

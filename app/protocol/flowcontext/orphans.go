@@ -48,7 +48,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 
 		canBeUnorphaned := true
 		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
-			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash)
+			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash, nil)
 			if err != nil {
 				return nil, err
 			}

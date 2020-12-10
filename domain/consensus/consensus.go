@@ -105,7 +105,7 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*external
 	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
 }
 
-func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
+func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash, options *externalapi.BlockInfoOptions) (*externalapi.BlockInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -143,6 +143,14 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return nil, err
 	}
 	blockInfo.IsBlockInHeaderPruningPointFuture = isBlockInHeaderPruningPointFuture
+
+	if options != nil && options.IncludeAcceptanceData {
+		acceptanceData, err := s.acceptanceDataStore.Get(s.databaseContext, blockHash)
+		if err != nil {
+			return nil, err
+		}
+		blockInfo.AcceptanceData = acceptanceData
+	}
 
 	return blockInfo, nil
 }

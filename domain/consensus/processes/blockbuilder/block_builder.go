@@ -182,7 +182,7 @@ func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash,
 	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
 }
 
-func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {

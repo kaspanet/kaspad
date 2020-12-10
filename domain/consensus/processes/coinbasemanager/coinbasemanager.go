@@ -65,7 +65,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
 func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
-	blockAcceptanceData *model.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
+	blockAcceptanceData *externalapi.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
 
 	totalFees := uint64(0)
 	for _, txAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {

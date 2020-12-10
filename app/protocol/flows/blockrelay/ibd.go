@@ -90,7 +90,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalap
 		// If it is, return it. If it isn't, we need to narrow our
 		// getBlockLocator request and try again.
 		locatorHighHash := blockLocatorHashes[0]
-		locatorHighHashInfo, err := flow.Domain().Consensus().GetBlockInfo(locatorHighHash)
+		locatorHighHashInfo, err := flow.Domain().Consensus().GetBlockInfo(locatorHighHash, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +170,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 	}
 
 	blockHash := consensushashing.BlockHash(block)
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash, nil)
 	if err != nil {
 		return err
 	}

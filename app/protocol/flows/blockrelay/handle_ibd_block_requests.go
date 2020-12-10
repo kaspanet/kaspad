@@ -27,7 +27,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 		msgRequestIBDBlocks := message.(*appmessage.MsgRequestIBDBlocks)
 		for _, hash := range msgRequestIBDBlocks.Hashes {
 			// Fetch the block from the database.
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
+			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash, nil)
 			if err != nil {
 				return err
 			}
