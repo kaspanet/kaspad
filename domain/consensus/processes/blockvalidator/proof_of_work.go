@@ -101,7 +101,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 
-	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
+	hashBlockBody, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -116,13 +116,33 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			continue
 		}
 
-		if isFullBlock {
-			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-			if err != nil {
-				return err
-			}
+		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if parentStatus == externalapi.StatusInvalid {
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid")
+		}
+
+		if hashBlockBody {
 			if parentStatus == externalapi.StatusHeaderOnly {
-				missingParentHashes = append(missingParentHashes, parent)
+				pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+				if err != nil {
+					return err
+				}
+
+				isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+				if err != nil {
+					return err
+				}
+
+				if !isInPastOfPruningPoint {
+					return errors.Wrapf(ruleerrors.ErrMissingParentBody, "parent %s is missing a body. blocks "+
+						"with body are not allowed to be "+
+						"validated before we have their parents bodies, unless their parents are in the past of the "+
+						"pruning point", parent)
+				}
 			}
 		}
 	}
