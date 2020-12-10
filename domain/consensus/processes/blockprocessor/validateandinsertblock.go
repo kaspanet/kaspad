@@ -193,6 +193,13 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 		}
 	}
 
+	if !isHeaderOnlyBlock {
+		err = bp.blockValidator.ValidateBodyInContext(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
