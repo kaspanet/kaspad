@@ -35,6 +35,7 @@ type consensusStateManager struct {
 	blockRelationStore  model.BlockRelationStore
 	acceptanceDataStore model.AcceptanceDataStore
 	blockHeaderStore    model.BlockHeaderStore
+	pruningStore        model.PruningStore
 
 	stores []model.Store
 }
