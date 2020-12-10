@@ -13,36 +13,33 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 	defer log.Tracef("AddBlock end for block %s", blockHash)
 
 	log.Tracef("Resolving whether the block %s is the next virtual selected parent", blockHash)
-	isNextVirtualSelectedParent, err := csm.isNextVirtualSelectedParent(blockHash)
+	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if isNextVirtualSelectedParent {
-		log.Tracef("Block %s is the new virtual. Resolving its block status", blockHash)
-		blockStatus, err := csm.resolveBlockStatus(blockHash)
+	if isCandidateToBeNextVirtualSelectedParent {
+		log.Tracef("Block %s is candidate to be the next virtual selected parent. Resolving whether it violates "+
+			"finality", blockHash)
+		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(blockHash)
 		if err != nil {
 			return err
 		}
 
-		if blockStatus == externalapi.StatusValid {
-			log.Tracef("Block %s is tentatively valid. Resolving whether it violates finality", blockHash)
-			err = csm.checkFinalityViolation(blockHash)
-			if err != nil {
-				return err
-			}
-
-			// Re-fetch the block status for logging purposes
-			// because it could've been changed in
-			// checkFinalityViolation
-			blockStatus, err = csm.blockStatusStore.Get(csm.databaseContext, blockHash)
-			if err != nil {
-				return err
-			}
+		if shouldNotify {
+			//TODO: Send finality conflict notification
+			log.Warnf("Finality Violation Detected! Block %s violates finality!", blockHash)
 		}
 
-		log.Debugf("Block %s is the next virtual selected parent. "+
-			"Its resolved status is `%s`", blockHash, blockStatus)
+		if !isViolatingFinality {
+			log.Tracef("Block %s doesn't violate finality. Resolving its block status", blockHash)
+			blockStatus, err := csm.resolveBlockStatus(blockHash)
+			if err != nil {
+				return err
+			}
+
+			log.Debugf("Block %s resolved to status `%s`", blockHash, blockStatus)
+		}
 	} else {
 		log.Debugf("Block %s is not the next virtual selected parent, "+
 			"therefore its status remains `%s`", blockHash, externalapi.StatusUTXOPendingVerification)
@@ -64,9 +61,9 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 	return nil
 }
 
-func (csm *consensusStateManager) isNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
-	log.Tracef("isNextVirtualSelectedParent start for block %s", blockHash)
-	defer log.Tracef("isNextVirtualSelectedParent end for block %s", blockHash)
+func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
+	log.Tracef("isCandidateToBeNextVirtualSelectedParent start for block %s", blockHash)
+	defer log.Tracef("isCandidateToBeNextVirtualSelectedParent end for block %s", blockHash)
 
 	if *blockHash == *csm.genesisHash {
 		log.Tracef("Block %s is the genesis block, therefore it is "+
