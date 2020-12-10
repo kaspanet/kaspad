@@ -72,7 +72,7 @@ func New(
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
-func (pm *pruningManager) FindNextPruningPoint() error {
+func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
@@ -111,24 +111,20 @@ func (pm *pruningManager) FindNextPruningPoint() error {
 	}
 
 	// get Virtual(pruningDepth)
-	candidatePHash, err := pm.dagTraversalManager.BlockAtDepth(model.VirtualBlockHash, pm.pruningDepth)
-	if err != nil {
-		return err
-	}
-	candidatePGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, candidatePHash)
+	newPruningPoint, err := pm.CalculateIndependentPruningPoint(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	// Actually check if the pruning point changed
-	if (currentPBlueScore / pm.finalityInterval) < (candidatePGhost.BlueScore() / pm.finalityInterval) {
-		err = pm.savePruningPoint(candidatePHash)
+	if *newPruningPoint != *currentP {
+		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err
 		}
-		return pm.deletePastBlocks(candidatePHash)
+		return pm.deletePastBlocks(newPruningPoint)
 	}
-	return pm.deletePastBlocks(currentP)
+
+	return nil
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
@@ -231,6 +227,19 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 
 	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
+}
+
+func (pm *pruningManager) CalculateIndependentPruningPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	targetBlueScore := uint64(0)
+	if ghostdagData.BlueScore() > pm.pruningDepth {
+		targetBlueScore = ((ghostdagData.BlueScore() - pm.pruningDepth) / pm.finalityInterval) * pm.finalityInterval
+	}
+	return pm.dagTraversalManager.LowestChainBlockAboveOrEqualToBlueScore(blockHash, targetBlueScore)
 }
 
 func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error) {

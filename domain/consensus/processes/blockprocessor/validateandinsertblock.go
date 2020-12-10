@@ -78,7 +78,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 
 	if !isHeaderOnlyBlock {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-		err = bp.pruningManager.FindNextPruningPoint()
+		err = bp.pruningManager.UpdatePruningPointByVirtual()
 		if err != nil {
 			return err
 		}
