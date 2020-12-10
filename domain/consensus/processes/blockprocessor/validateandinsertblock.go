@@ -90,7 +90,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get sync info: %s", err)
 		}
-		return fmt.Sprintf("New virtual's blue score: %d. Is awaiting UTXO set: %s. Block count: %d. Header count: %d",
+		return fmt.Sprintf("New virtual's blue score: %d. Is awaiting UTXO set: %t. Block count: %d. Header count: %d",
 			virtualGhostDAGData.BlueScore(), syncInfo.IsAwaitingUTXOSet, syncInfo.BlockCount, syncInfo.HeaderCount)
 	}))
 	if logClosureErr != nil {

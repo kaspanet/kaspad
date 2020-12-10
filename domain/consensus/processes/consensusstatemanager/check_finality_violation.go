@@ -35,7 +35,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	if !isFinalityPointInPastOfPruningPoint {
 		finalityPoint = virtualFinalityPoint
 	} else {
-		log.Tracef("The virtual finality point is in the past of the pruning point, so finality is validated "+
+		log.Tracef("The virtual finality point is %s in the past of the pruning point, so finality is validated "+
 			"using the pruning point", virtualFinalityPoint)
 		finalityPoint = pruningPoint
 	}

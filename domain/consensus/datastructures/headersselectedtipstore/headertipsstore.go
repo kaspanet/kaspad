@@ -21,11 +21,11 @@ func New() model.HeaderSelectedTipStore {
 }
 
 func (hts *headerSelectedTipStore) Has(dbContext model.DBReader) (bool, error) {
-	if len(hts.staging) > 0 {
+	if hts.staging != nil {
 		return true, nil
 	}
 
-	if len(hts.cache) > 0 {
+	if hts.cache != nil {
 		return true, nil
 	}
 
@@ -41,11 +41,11 @@ func (hts *headerSelectedTipStore) Commit(dbTx model.DBTransaction) error {
 		return nil
 	}
 
-	tipsBytes, err := hts.serializeHeadersSelectedTip(hts.staging)
+	selectedTipBytes, err := hts.serializeHeadersSelectedTip(hts.staging)
 	if err != nil {
 		return err
 	}
-	err = dbTx.Put(headerSelectedTipKey, tipsBytes)
+	err = dbTx.Put(headerSelectedTipKey, selectedTipBytes)
 	if err != nil {
 		return err
 	}
@@ -72,16 +72,16 @@ func (hts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader) 
 		return hts.cache.Clone(), nil
 	}
 
-	tipsBytes, err := dbContext.Get(headerSelectedTipKey)
+	selectedTipBytes, err := dbContext.Get(headerSelectedTipKey)
 	if err != nil {
 		return nil, err
 	}
 
-	tips, err := hts.deserializeHeadersSelectedTip(tipsBytes)
+	selectedTip, err := hts.deserializeHeadersSelectedTip(selectedTipBytes)
 	if err != nil {
 		return nil, err
 	}
-	hts.cache = tips
+	hts.cache = selectedTip
 	return hts.cache.Clone(), nil
 }
 
