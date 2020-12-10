@@ -32,7 +32,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 		return err
 	}
 
-	if hasSelectedTip {
+	if !hasSelectedTip {
 		h.headersSelectedTipStore.Stage(hash)
 	} else {
 		headersSelectedTip, err := h.headersSelectedTipStore.HeadersSelectedTip(h.databaseContext)
