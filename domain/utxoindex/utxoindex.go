@@ -43,7 +43,10 @@ func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
 	}
 	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-			ui.addTransaction(transactionAcceptanceData.Transaction, blockInfo.BlueScore)
+			err := ui.addTransaction(transactionAcceptanceData.Transaction, blockInfo.BlueScore)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -56,30 +59,47 @@ func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
 	}
 	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-			ui.removeTransaction(transactionAcceptanceData.Transaction)
+			err := ui.removeTransaction(transactionAcceptanceData.Transaction)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) {
+func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
 	for _, transactionInput := range transaction.Inputs {
-		ui.store.remove(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint)
+		err := ui.store.remove(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint)
+		if err != nil {
+			return err
+		}
 	}
 	for index, transactionOutput := range transaction.Outputs {
 		outpoint := externalapi.NewDomainOutpoint(transaction.ID, uint32(index))
 		utxoEntry := utxo.NewUTXOEntry(transactionOutput.Value, transactionOutput.ScriptPublicKey, isCoinbase, blockBlueScore)
-		ui.store.add(transactionOutput.ScriptPublicKey, outpoint, &utxoEntry)
+		err := ui.store.add(transactionOutput.ScriptPublicKey, outpoint, &utxoEntry)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction) {
+func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction) error {
 	for index, transactionOutput := range transaction.Outputs {
 		outpoint := externalapi.NewDomainOutpoint(transaction.ID, uint32(index))
-		ui.store.remove(transactionOutput.ScriptPublicKey, outpoint)
+		err := ui.store.remove(transactionOutput.ScriptPublicKey, outpoint)
+		if err != nil {
+			return err
+		}
 	}
 	for _, transactionInput := range transaction.Inputs {
-		ui.store.add(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, &transactionInput.UTXOEntry)
+		err := ui.store.add(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, &transactionInput.UTXOEntry)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
