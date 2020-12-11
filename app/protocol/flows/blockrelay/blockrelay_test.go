@@ -165,29 +165,26 @@ func initTestBaseTransactions() []*externalapi.DomainTransaction {
 
 func TestHandleRelayBlockRequests(t *testing.T) {
 	peer := peerpkg.New(nil)
-	block := &externalapi.DomainBlock{
-		&externalapi.DomainBlockHeader{
-			0,
-			[]*externalapi.DomainHash{{1}},
-			externalapi.DomainHash{100},
-			externalapi.DomainHash{3},
-			externalapi.DomainHash{4},
-			5,
-			6,
-			7,
-		},
-		initTestBaseTransactions(),
-	}
-
-	msgRequestRelayBlocks := appmessage.MsgRequestRelayBlocks{
-		Hashes: []*externalapi.DomainHash{consensushashing.BlockHash(block)},
-	}
 
 	context, teardown, err := newMocRelayBlockRequestsContext(t.Name())
 	if err != nil {
 		t.Fatalf("Failed to setup new MocRelayBlockRequestsContext instance: %v", err)
 	}
 	defer teardown()
+
+	block, err := context.Domain().Consensus().BuildBlock(&externalapi.DomainCoinbaseData{}, nil)
+	if err != nil {
+		t.Fatalf("consensus.BuildBlock with an empty coinbase shouldn't fail: %v", err)
+	}
+
+	err = context.Domain().Consensus().ValidateAndInsertBlock(block)
+	if err != nil {
+		t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should not fail: %v", err)
+	}
+
+	msgRequestRelayBlocks := appmessage.MsgRequestRelayBlocks{
+		Hashes: []*externalapi.DomainHash{consensushashing.BlockHash(block)},
+	}
 
 	t.Run("Simple call test", func(t *testing.T) {
 		incomingRoute := router.NewRoute()
@@ -250,7 +247,7 @@ func TestHandleRelayBlockRequests(t *testing.T) {
 
 		incomingRoute.Enqueue(&msgRequestRelayBlocks)
 		err := HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
-		if err.Error() != routerpkg.ErrRouteClosed.Error() {
+		if !errors.Is(err, routerpkg.ErrRouteClosed) {
 			t.Fatalf("HandleRelayBlockRequests: expected ErrRouteClosed, got %s", err)
 		}
 	})
@@ -264,8 +261,7 @@ func TestHandleRelayInvs(t *testing.T) {
 	}
 	defer teardown()
 
-	emptyCoinbase := externalapi.DomainCoinbaseData{}
-	block, err := context.Domain().Consensus().BuildBlock(&emptyCoinbase, nil)
+	block, err := context.Domain().Consensus().BuildBlock(&externalapi.DomainCoinbaseData{}, nil)
 	blockHash := consensushashing.BlockHash(block)
 	if err != nil {
 		t.Fatalf("consensus.BuildBlock with an empty coinbase shouldn't fail: %v", err)
@@ -304,17 +300,16 @@ func TestHandleRelayInvs(t *testing.T) {
 
 	t.Run("Test handle invalid block", func(t *testing.T) {
 		invalidBlock := &externalapi.DomainBlock{
-			&externalapi.DomainBlockHeader{
-				0,
-				[]*externalapi.DomainHash{{1}},
-				externalapi.DomainHash{100},
-				externalapi.DomainHash{3},
-				externalapi.DomainHash{4},
-				5,
-				6,
-				7,
+			Header: &externalapi.DomainBlockHeader{
+				ParentHashes:         []*externalapi.DomainHash{{1}},
+				HashMerkleRoot:       externalapi.DomainHash{100},
+				AcceptedIDMerkleRoot: externalapi.DomainHash{3},
+				UTXOCommitment:       externalapi.DomainHash{4},
+				TimeInMilliseconds:   5,
+				Bits:                 6,
+				Nonce:                7,
 			},
-			initTestBaseTransactions(),
+			Transactions: initTestBaseTransactions(),
 		}
 
 		incomingRoute := router.NewRoute()
