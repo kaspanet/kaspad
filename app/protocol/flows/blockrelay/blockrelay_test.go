@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -187,8 +186,8 @@ func TestHandleRelayBlockRequests(t *testing.T) {
 	}
 
 	t.Run("Simple call test", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 
 		go func() {
 			outgoingRoute.Dequeue()
@@ -200,15 +199,15 @@ func TestHandleRelayBlockRequests(t *testing.T) {
 	})
 
 	t.Run("Test on wrong message type", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 		HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
 	})
 
 	t.Run("Test on closed route", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Close()
 		HandleRelayBlockRequests(context, incomingRoute, outgoingRoute, peer)
 
@@ -219,8 +218,8 @@ func TestHandleRelayBlockRequests(t *testing.T) {
 	})
 
 	t.Run("Test block requesting", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 
 		go func() {
 			for _, hash := range msgRequestRelayBlocks.Hashes {
@@ -272,24 +271,24 @@ func TestHandleRelayInvs(t *testing.T) {
 	}
 
 	t.Run("Test on wrong message type 1", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Enqueue(&msgInvRelayBlock)
 		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 		HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
 	})
 
 	t.Run("Test on wrong message type 2", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 		incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 		HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
 	})
 
 	t.Run("Test on closed route", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Close()
 
 		err := HandleRelayInvs(context, incomingRoute, outgoingRoute, peer)
@@ -312,8 +311,8 @@ func TestHandleRelayInvs(t *testing.T) {
 			Transactions: initTestBaseTransactions(),
 		}
 
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Enqueue(&msgInvRelayBlock)
 		incomingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(invalidBlock))
 
@@ -324,8 +323,8 @@ func TestHandleRelayInvs(t *testing.T) {
 	})
 
 	t.Run("Test handle valid block", func(t *testing.T) {
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := routerpkg.NewRoute()
+		outgoingRoute := routerpkg.NewRoute()
 		incomingRoute.Enqueue(&msgInvRelayBlock)
 
 		go func() {
