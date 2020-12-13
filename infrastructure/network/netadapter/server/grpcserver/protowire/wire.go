@@ -596,6 +596,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetUTXOsByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

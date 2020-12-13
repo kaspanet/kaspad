@@ -82,6 +82,8 @@ message KaspadMessage {
     NotifyUtxosChangedRequestMessage notifyUtxosChangedRequest = 1049;
     NotifyUtxosChangedResponseMessage notifyUtxosChangedResponse = 1050;
     UtxosChangedNotificationMessage utxosChangedNotification = 1051;
+    GetUtxosByAddressesRequestMessage getUtxosByAddressesRequest = 1052;
+    GetUtxosByAddressesResponseMessage getUtxosByAddressesResponse = 1053;
   }
 }
 
@@ -644,6 +646,16 @@ message RpcUtxoEntry {
   string scriptPubKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
+}
+
+message GetUtxosByAddressesRequestMessage {
+  repeated string addresses = 1;
+}
+
+message GetUtxosByAddressesResponseMessage {
+  repeated UtxosByAddressesEntry entries = 1;
+
+  RPCError error = 1000;
 }
 
 service RPC {

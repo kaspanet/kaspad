@@ -109,6 +109,8 @@ const (
 	CmdNotifyUTXOsChangedRequestMessage
 	CmdNotifyUTXOsChangedResponseMessage
 	CmdUTXOsChangedNotificationMessage
+	CmdGetUTXOsByAddressesRequestMessage
+	CmdGetUTXOsByAddressesResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -185,13 +187,15 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdNotifyFinalityConflictsResponseMessage:      "NotifyFinalityConflictsResponse",
 	CmdFinalityConflictNotificationMessage:         "FinalityConflictNotification",
 	CmdFinalityConflictResolvedNotificationMessage: "FinalityConflictResolvedNotification",
-	CmdGetMempoolEntriesRequestMessage:             "GetMempoolEntriesRequestMessage",
-	CmdGetMempoolEntriesResponseMessage:            "GetMempoolEntriesResponseMessage",
+	CmdGetMempoolEntriesRequestMessage:             "GetMempoolEntriesRequest",
+	CmdGetMempoolEntriesResponseMessage:            "GetMempoolEntriesResponse",
 	CmdGetHeadersRequestMessage:                    "GetHeadersRequest",
 	CmdGetHeadersResponseMessage:                   "GetHeadersResponse",
 	CmdNotifyUTXOsChangedRequestMessage:            "NotifyUTXOsChangedRequest",
 	CmdNotifyUTXOsChangedResponseMessage:           "NotifyUTXOsChangedResponse",
 	CmdUTXOsChangedNotificationMessage:             "UTXOsChangedNotification",
+	CmdGetUTXOsByAddressesRequestMessage:           "GetUTXOsByAddressesRequest",
+	CmdGetUTXOsByAddressesResponseMessage:          "GetUTXOsByAddressesResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
