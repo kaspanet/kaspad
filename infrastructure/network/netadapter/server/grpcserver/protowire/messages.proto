@@ -136,10 +136,14 @@ message Outpoint{
 message TransactionId{
   bytes bytes = 1;
 }
+message DbScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
 
 message TransactionOutput{
   uint64 value = 1;
-  bytes scriptPubKey = 2;
+  DbScriptPublicKey scriptPubKey = 2;
 }
 // TransactionMessage end
 

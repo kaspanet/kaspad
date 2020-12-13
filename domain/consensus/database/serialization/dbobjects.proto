@@ -51,7 +51,7 @@ message DbTransactionId {
 
 message DbTransactionOutput {
   uint64 value = 1;
-  bytes scriptPublicKey = 2;
+  DbScriptPublicKey scriptPublicKey = 2;
 }
 
 message DbSubnetworkId {
@@ -108,9 +108,14 @@ message DbUtxoCollectionItem {
   DbUtxoEntry utxoEntry = 2;
 }
 
+message DbScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
+
 message DbUtxoEntry {
   uint64 amount = 1;
-  bytes scriptPublicKey = 2;
+  DbScriptPublicKey scriptPublicKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
 }

@@ -56,8 +56,8 @@ func isScriptHash(pops []parsedOpcode) bool {
 
 // IsPayToScriptHash returns true if the script is in the standard
 // pay-to-script-hash (P2SH) format, false otherwise.
-func IsPayToScriptHash(script []byte) bool {
-	pops, err := parseScript(script)
+func IsPayToScriptHash(script *externalapi.ScriptPublicKey) bool {
+	pops, err := parseScript(script.Script)
 	if err != nil {
 		return false
 	}
@@ -335,7 +335,8 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *external
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
 			txCopy.Outputs[i].Value = 0
-			txCopy.Outputs[i].ScriptPublicKey = nil
+			txCopy.Outputs[i].ScriptPublicKey.Script = nil
+			txCopy.Outputs[i].ScriptPublicKey.Version = 0
 		}
 
 		// Sequence on all other inputs is 0, too.
@@ -424,10 +425,10 @@ func GetSigOpCount(script []byte) int {
 // Pay-To-Script-Hash script in order to find the precise number of signature
 // operations in the transaction. If the script fails to parse, then the count
 // up to the point of failure is returned.
-func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
+func GetPreciseSigOpCount(scriptSig []byte, scriptPubKey *externalapi.ScriptPublicKey, isP2SH bool) int {
 	// Don't check error since parseScript returns the parsed-up-to-error
 	// list of pops.
-	pops, _ := parseScript(scriptPubKey)
+	pops, _ := parseScript(scriptPubKey.Script)
 
 	// Treat non P2SH transactions as normal.
 	if !(isP2SH && isScriptHash(pops)) {

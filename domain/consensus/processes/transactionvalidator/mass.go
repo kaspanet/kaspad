@@ -13,7 +13,8 @@ func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.Dom
 
 	totalScriptPubKeySize := uint64(0)
 	for _, output := range tx.Outputs {
-		totalScriptPubKeySize += uint64(len(output.ScriptPublicKey))
+		totalScriptPubKeySize += 4 //output.ScriptPublicKey.Version (uint32)
+		totalScriptPubKeySize += uint64(len(output.ScriptPublicKey.Script))
 	}
 
 	return size*v.massPerTxByte + totalScriptPubKeySize*v.massPerScriptPubKeyByte

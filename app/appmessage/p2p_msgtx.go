@@ -110,12 +110,12 @@ func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
 // TxOut defines a kaspa transaction output.
 type TxOut struct {
 	Value        uint64
-	ScriptPubKey []byte
+	ScriptPubKey *externalapi.ScriptPublicKey
 }
 
 // NewTxOut returns a new kaspa transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
+func NewTxOut(value uint64, scriptPubKey *externalapi.ScriptPublicKey) *TxOut {
 	return &TxOut{
 		Value:        value,
 		ScriptPubKey: scriptPubKey,
@@ -221,19 +221,19 @@ func (msg *MsgTx) Copy() *MsgTx {
 	// Deep copy the old TxOut data.
 	for _, oldTxOut := range msg.TxOut {
 		// Deep copy the old ScriptPubKey
-		var newScript []byte
+		var newScript externalapi.ScriptPublicKey
 		oldScript := oldTxOut.ScriptPubKey
-		oldScriptLen := len(oldScript)
+		oldScriptLen := len(oldScript.Script)
 		if oldScriptLen > 0 {
-			newScript = make([]byte, oldScriptLen)
-			copy(newScript, oldScript[:oldScriptLen])
+			newScript = externalapi.ScriptPublicKey{make([]byte, oldScriptLen), oldScript.Version}
+			copy(newScript.Script, oldScript.Script[:oldScriptLen])
 		}
 
 		// Create new txOut with the deep copied data and append it to
 		// new Tx.
 		newTxOut := TxOut{
 			Value:        oldTxOut.Value,
-			ScriptPubKey: newScript,
+			ScriptPubKey: &newScript,
 		}
 		newTx.TxOut = append(newTx.TxOut, &newTxOut)
 	}
