@@ -218,7 +218,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 	// TODO: Find a better way to deal with finality conflicts.
 	if syncInfo.IsAwaitingUTXOSet {
 		log.Warnf("Still awaiting for UTXO set. This can happen only because the given pruning point violates " +
-			"finality")
+			"finality. If this keeps happening delete the data directory and restart your node.")
 		return false, nil
 	}
 
