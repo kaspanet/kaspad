@@ -153,7 +153,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	hasHeader, err := bp.hasValidatedHeader(blockHash)
+	hasHeader, err := bp.hasValidatedOnlyHeader(blockHash)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 		}
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedOnlyHeader(blockHash)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 	return nil
 }
 
-func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
+func (bp *blockProcessor) hasValidatedOnlyHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
 	if err != nil {
 		return false, err
