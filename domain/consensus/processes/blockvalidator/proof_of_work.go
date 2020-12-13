@@ -101,7 +101,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 
-	hashBlockBody, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
+	hasBlockBody, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 
-		if hashBlockBody {
+		if hasBlockBody {
 			if parentStatus == externalapi.StatusHeaderOnly {
 				pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
 				if err != nil {
