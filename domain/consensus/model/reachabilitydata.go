@@ -76,7 +76,7 @@ func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
 		return rtn == other
 	}
 
-	if externalapi.HashesEqual(rtn.Children, other.Children) {
+	if !externalapi.HashesEqual(rtn.Children, other.Children) {
 		return false
 	}
 
