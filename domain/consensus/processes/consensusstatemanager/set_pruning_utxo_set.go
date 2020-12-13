@@ -19,8 +19,8 @@ var virtualHeaderHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
 }
 
-func (csm *consensusStateManager) SetPruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "SetPruningPoint")
+func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertPruningPoint")
 	defer onEnd()
 
 	err := csm.setPruningPoint(newPruningPoint, serializedUTXOSet)

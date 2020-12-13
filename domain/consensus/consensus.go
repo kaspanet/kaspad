@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -184,38 +183,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
-func (s *consensus) SetPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	selectedTip, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
-	if err != nil {
-		return err
-	}
-
-	expectedNewPruningPointHash, err := s.pruningManager.CalculateIndependentPruningPoint(selectedTip)
-	if err != nil {
-		return err
-	}
-
-	err = s.blockProcessor.ValidateBlock(newPruningPoint)
-	if err != nil {
-		return err
-	}
-
-	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
-
-	if *expectedNewPruningPointHash != *newPruningPointHash {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "expected pruning point %s but got %s",
-			expectedNewPruningPointHash, newPruningPointHash)
-	}
-
-	err = s.consensusStateManager.SetPruningPoint(expectedNewPruningPointHash, serializedUTXOSet)
-	if err != nil {
-		return err
-	}
-
-	return s.ValidateAndInsertBlock(newPruningPoint)
+	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
@@ -248,29 +220,4 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	defer s.lock.Unlock()
 
 	return s.syncManager.GetSyncInfo()
-}
-
-func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
-	return s.consensusStateStore.Tips(s.databaseContext)
-}
-
-func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
-	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-	bits, err := s.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return &externalapi.VirtualInfo{
-		ParentHashes:   blockRelations.Parents,
-		Bits:           bits,
-		PastMedianTime: pastMedianTime,
-	}, nil
 }

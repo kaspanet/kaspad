@@ -128,3 +128,10 @@ func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock)
 
 	return bp.validateAndInsertBlock(block)
 }
+
+func (bp *blockProcessor) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertPruningPoint")
+	defer onEnd()
+
+	return bp.validateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
+}

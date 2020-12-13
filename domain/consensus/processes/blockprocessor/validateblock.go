@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) ValidateBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock) error {
 	defer bp.discardAllChanges()
 	return bp.validateBlock(block)
 }
