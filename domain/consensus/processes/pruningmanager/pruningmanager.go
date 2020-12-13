@@ -237,6 +237,8 @@ func (pm *pruningManager) CalculateIndependentPruningPoint(blockHash *externalap
 
 	targetBlueScore := uint64(0)
 	if ghostdagData.BlueScore() > pm.pruningDepth {
+		// The target blue is calculated by calculating ghostdagData.BlueScore() - pm.pruningDepth and rounding
+		// down with the precision of finality interval.
 		targetBlueScore = ((ghostdagData.BlueScore() - pm.pruningDepth) / pm.finalityInterval) * pm.finalityInterval
 	}
 	return pm.dagTraversalManager.LowestChainBlockAboveOrEqualToBlueScore(blockHash, targetBlueScore)
