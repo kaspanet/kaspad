@@ -22,7 +22,7 @@ func (x *KaspadMessage_NotifyUtxosChangedResponse) toAppMessage() (appmessage.Me
 	if x.NotifyUtxosChangedResponse.Error != nil {
 		err = &appmessage.RPCError{Message: x.NotifyUtxosChangedResponse.Error.Message}
 	}
-	return &appmessage.NotifyBlockAddedResponseMessage{
+	return &appmessage.NotifyUTXOsChangedResponseMessage{
 		Error: err,
 	}, nil
 }
