@@ -22,25 +22,38 @@ func TestUTXOIndex(t *testing.T) {
 	mineNextBlock(t, kaspad)
 
 	// Register for UTXO changes
+	onUTXOsChangedChan := make(chan *appmessage.UTXOsChangedNotificationMessage, 1000)
 	err := kaspad.rpcClient.RegisterForUTXOsChangedNotifications([]string{miningAddress1}, func(
 		notification *appmessage.UTXOsChangedNotificationMessage) {
 
-		for _, removed := range notification.Removed {
-			t.Logf("REMOVED! Address: %s, outpoint: %s:%d", removed.Address,
-				removed.Outpoint.TransactionID, removed.Outpoint.Index)
-		}
-		for _, added := range notification.Added {
-			t.Logf("ADDED! Address: %s, outpoint: %s:%d, utxoEntry: %d:%s:%d:%t", added.Address,
-				added.Outpoint.TransactionID, added.Outpoint.Index,
-				added.UTXOEntry.Amount, added.UTXOEntry.ScriptPubKey, added.UTXOEntry.BlockBlueScore, added.UTXOEntry.IsCoinbase)
-		}
+		onUTXOsChangedChan <- notification
 	})
 	if err != nil {
 		t.Fatalf("Failed to register for UTXO change notifications: %s", err)
 	}
 
 	// Mine some blocks
-	for i := 0; i < 100; i++ {
+	const blockAmountToMine = 100
+	for i := 0; i < blockAmountToMine; i++ {
 		mineNextBlock(t, kaspad)
+	}
+
+	// Collect the UTXO and make sure there's nothing in Removed
+	// Note that we expect blockAmountToMine-1 messages because
+	// the last block won't be accepted until the next block is
+	// mined
+	var outpoints []*appmessage.RPCOutpoint
+	for i := 0; i < blockAmountToMine-1; i++ {
+		notification := <-onUTXOsChangedChan
+		if len(notification.Removed) > 0 {
+			t.Fatalf("Unexpectedly received that a UTXO has been removed")
+		}
+
+		for _, added := range notification.Added {
+			outpoints = append(outpoints, added.Outpoint)
+		}
+	}
+	for _, outpoint := range outpoints {
+		t.Logf("outpoint: %s:%d", outpoint.TransactionID, outpoint.Index)
 	}
 }
