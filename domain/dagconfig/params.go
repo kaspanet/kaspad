@@ -5,9 +5,10 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -70,6 +71,10 @@ type Params struct {
 	// DNSSeeds defines a list of DNS seeds for the network that are used
 	// as one method to discover peers.
 	DNSSeeds []string
+
+	// GRPCSeeds defines a list of GRPC seeds for the network that are used
+	// as one method to discover peers.
+	GRPCSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
 	GenesisBlock *externalapi.DomainBlock
@@ -256,7 +261,7 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
+	GRPCSeeds:   []string{"testnet-dnsseed.kas.pa:17100"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
