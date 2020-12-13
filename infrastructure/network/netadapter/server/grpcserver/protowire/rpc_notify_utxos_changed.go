@@ -11,7 +11,7 @@ func (x *KaspadMessage_NotifyUtxosChangedRequest) toAppMessage() (appmessage.Mes
 }
 
 func (x *KaspadMessage_NotifyUtxosChangedRequest) fromAppMessage(message *appmessage.NotifyUTXOsChangedRequestMessage) error {
-	x.NotifyUtxosChangedRequest = &NotifyUTXOsChangedRequestMessage{
+	x.NotifyUtxosChangedRequest = &NotifyUtxosChangedRequestMessage{
 		Addresses: message.Addresses,
 	}
 	return nil
@@ -32,7 +32,7 @@ func (x *KaspadMessage_NotifyUtxosChangedResponse) fromAppMessage(message *appme
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	x.NotifyUtxosChangedResponse = &NotifyUTXOsChangedResponseMessage{
+	x.NotifyUtxosChangedResponse = &NotifyUtxosChangedResponseMessage{
 		Error: err,
 	}
 	return nil
@@ -78,39 +78,39 @@ func (x *KaspadMessage_UtxosChangedNotification) toAppMessage() (appmessage.Mess
 }
 
 func (x *KaspadMessage_UtxosChangedNotification) fromAppMessage(message *appmessage.UTXOsChangedNotificationMessage) error {
-	added := make([]*UTXOsByAddressesEntry, len(message.Added))
+	added := make([]*UtxosByAddressesEntry, len(message.Added))
 	for i, entry := range message.Added {
-		outpoint := &RPCOutpoint{
+		outpoint := &RpcOutpoint{
 			TransactionId: entry.Outpoint.TransactionID,
 			Index:         entry.Outpoint.Index,
 		}
-		utxoEntry := &RPCUTXOEntry{
+		utxoEntry := &RpcUtxoEntry{
 			Amount:         entry.UTXOEntry.Amount,
 			ScriptPubKey:   entry.UTXOEntry.ScriptPubKey,
 			BlockBlueScore: entry.UTXOEntry.BlockBlueScore,
 			IsCoinbase:     entry.UTXOEntry.IsCoinbase,
 		}
-		added[i] = &UTXOsByAddressesEntry{
+		added[i] = &UtxosByAddressesEntry{
 			Address:   entry.Address,
 			Outpoint:  outpoint,
 			UtxoEntry: utxoEntry,
 		}
 	}
 
-	removed := make([]*UTXOsByAddressesEntry, len(message.Removed))
+	removed := make([]*UtxosByAddressesEntry, len(message.Removed))
 	for i, entry := range message.Removed {
-		outpoint := &RPCOutpoint{
+		outpoint := &RpcOutpoint{
 			TransactionId: entry.Outpoint.TransactionID,
 			Index:         entry.Outpoint.Index,
 		}
-		removed[i] = &UTXOsByAddressesEntry{
+		removed[i] = &UtxosByAddressesEntry{
 			Address:   entry.Address,
 			Outpoint:  outpoint,
 			UtxoEntry: nil,
 		}
 	}
 
-	x.UtxosChangedNotification = &UTXOsChangedNotificationMessage{
+	x.UtxosChangedNotification = &UtxosChangedNotificationMessage{
 		Added:   added,
 		Removed: removed,
 	}

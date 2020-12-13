@@ -660,21 +660,21 @@ func (x *KaspadMessage) GetGetHeadersResponse() *GetHeadersResponseMessage {
 	return nil
 }
 
-func (x *KaspadMessage) GetNotifyUtxosChangedRequest() *NotifyUTXOsChangedRequestMessage {
+func (x *KaspadMessage) GetNotifyUtxosChangedRequest() *NotifyUtxosChangedRequestMessage {
 	if x, ok := x.GetPayload().(*KaspadMessage_NotifyUtxosChangedRequest); ok {
 		return x.NotifyUtxosChangedRequest
 	}
 	return nil
 }
 
-func (x *KaspadMessage) GetNotifyUtxosChangedResponse() *NotifyUTXOsChangedResponseMessage {
+func (x *KaspadMessage) GetNotifyUtxosChangedResponse() *NotifyUtxosChangedResponseMessage {
 	if x, ok := x.GetPayload().(*KaspadMessage_NotifyUtxosChangedResponse); ok {
 		return x.NotifyUtxosChangedResponse
 	}
 	return nil
 }
 
-func (x *KaspadMessage) GetUtxosChangedNotification() *UTXOsChangedNotificationMessage {
+func (x *KaspadMessage) GetUtxosChangedNotification() *UtxosChangedNotificationMessage {
 	if x, ok := x.GetPayload().(*KaspadMessage_UtxosChangedNotification); ok {
 		return x.UtxosChangedNotification
 	}
@@ -978,15 +978,15 @@ type KaspadMessage_GetHeadersResponse struct {
 }
 
 type KaspadMessage_NotifyUtxosChangedRequest struct {
-	NotifyUtxosChangedRequest *NotifyUTXOsChangedRequestMessage `protobuf:"bytes,1049,opt,name=notifyUtxosChangedRequest,proto3,oneof"`
+	NotifyUtxosChangedRequest *NotifyUtxosChangedRequestMessage `protobuf:"bytes,1049,opt,name=notifyUtxosChangedRequest,proto3,oneof"`
 }
 
 type KaspadMessage_NotifyUtxosChangedResponse struct {
-	NotifyUtxosChangedResponse *NotifyUTXOsChangedResponseMessage `protobuf:"bytes,1050,opt,name=notifyUtxosChangedResponse,proto3,oneof"`
+	NotifyUtxosChangedResponse *NotifyUtxosChangedResponseMessage `protobuf:"bytes,1050,opt,name=notifyUtxosChangedResponse,proto3,oneof"`
 }
 
 type KaspadMessage_UtxosChangedNotification struct {
-	UtxosChangedNotification *UTXOsChangedNotificationMessage `protobuf:"bytes,1051,opt,name=utxosChangedNotification,proto3,oneof"`
+	UtxosChangedNotification *UtxosChangedNotificationMessage `protobuf:"bytes,1051,opt,name=utxosChangedNotification,proto3,oneof"`
 }
 
 func (*KaspadMessage_Addresses) isKaspadMessage_Payload() {}
@@ -6251,7 +6251,7 @@ func (x *GetHeadersResponseMessage) GetError() *RPCError {
 	return nil
 }
 
-type NotifyUTXOsChangedRequestMessage struct {
+type NotifyUtxosChangedRequestMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -6259,8 +6259,8 @@ type NotifyUTXOsChangedRequestMessage struct {
 	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
 
-func (x *NotifyUTXOsChangedRequestMessage) Reset() {
-	*x = NotifyUTXOsChangedRequestMessage{}
+func (x *NotifyUtxosChangedRequestMessage) Reset() {
+	*x = NotifyUtxosChangedRequestMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[92]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6268,13 +6268,13 @@ func (x *NotifyUTXOsChangedRequestMessage) Reset() {
 	}
 }
 
-func (x *NotifyUTXOsChangedRequestMessage) String() string {
+func (x *NotifyUtxosChangedRequestMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NotifyUTXOsChangedRequestMessage) ProtoMessage() {}
+func (*NotifyUtxosChangedRequestMessage) ProtoMessage() {}
 
-func (x *NotifyUTXOsChangedRequestMessage) ProtoReflect() protoreflect.Message {
+func (x *NotifyUtxosChangedRequestMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[92]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6286,19 +6286,19 @@ func (x *NotifyUTXOsChangedRequestMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NotifyUTXOsChangedRequestMessage.ProtoReflect.Descriptor instead.
-func (*NotifyUTXOsChangedRequestMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use NotifyUtxosChangedRequestMessage.ProtoReflect.Descriptor instead.
+func (*NotifyUtxosChangedRequestMessage) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{92}
 }
 
-func (x *NotifyUTXOsChangedRequestMessage) GetAddresses() []string {
+func (x *NotifyUtxosChangedRequestMessage) GetAddresses() []string {
 	if x != nil {
 		return x.Addresses
 	}
 	return nil
 }
 
-type NotifyUTXOsChangedResponseMessage struct {
+type NotifyUtxosChangedResponseMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -6306,8 +6306,8 @@ type NotifyUTXOsChangedResponseMessage struct {
 	Error *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *NotifyUTXOsChangedResponseMessage) Reset() {
-	*x = NotifyUTXOsChangedResponseMessage{}
+func (x *NotifyUtxosChangedResponseMessage) Reset() {
+	*x = NotifyUtxosChangedResponseMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[93]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6315,13 +6315,13 @@ func (x *NotifyUTXOsChangedResponseMessage) Reset() {
 	}
 }
 
-func (x *NotifyUTXOsChangedResponseMessage) String() string {
+func (x *NotifyUtxosChangedResponseMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NotifyUTXOsChangedResponseMessage) ProtoMessage() {}
+func (*NotifyUtxosChangedResponseMessage) ProtoMessage() {}
 
-func (x *NotifyUTXOsChangedResponseMessage) ProtoReflect() protoreflect.Message {
+func (x *NotifyUtxosChangedResponseMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[93]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6333,29 +6333,29 @@ func (x *NotifyUTXOsChangedResponseMessage) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NotifyUTXOsChangedResponseMessage.ProtoReflect.Descriptor instead.
-func (*NotifyUTXOsChangedResponseMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use NotifyUtxosChangedResponseMessage.ProtoReflect.Descriptor instead.
+func (*NotifyUtxosChangedResponseMessage) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{93}
 }
 
-func (x *NotifyUTXOsChangedResponseMessage) GetError() *RPCError {
+func (x *NotifyUtxosChangedResponseMessage) GetError() *RPCError {
 	if x != nil {
 		return x.Error
 	}
 	return nil
 }
 
-type UTXOsChangedNotificationMessage struct {
+type UtxosChangedNotificationMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Added   []*UTXOsByAddressesEntry `protobuf:"bytes,1,rep,name=added,proto3" json:"added,omitempty"`
-	Removed []*UTXOsByAddressesEntry `protobuf:"bytes,2,rep,name=removed,proto3" json:"removed,omitempty"`
+	Added   []*UtxosByAddressesEntry `protobuf:"bytes,1,rep,name=added,proto3" json:"added,omitempty"`
+	Removed []*UtxosByAddressesEntry `protobuf:"bytes,2,rep,name=removed,proto3" json:"removed,omitempty"`
 }
 
-func (x *UTXOsChangedNotificationMessage) Reset() {
-	*x = UTXOsChangedNotificationMessage{}
+func (x *UtxosChangedNotificationMessage) Reset() {
+	*x = UtxosChangedNotificationMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[94]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6363,13 +6363,13 @@ func (x *UTXOsChangedNotificationMessage) Reset() {
 	}
 }
 
-func (x *UTXOsChangedNotificationMessage) String() string {
+func (x *UtxosChangedNotificationMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UTXOsChangedNotificationMessage) ProtoMessage() {}
+func (*UtxosChangedNotificationMessage) ProtoMessage() {}
 
-func (x *UTXOsChangedNotificationMessage) ProtoReflect() protoreflect.Message {
+func (x *UtxosChangedNotificationMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[94]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6381,37 +6381,37 @@ func (x *UTXOsChangedNotificationMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UTXOsChangedNotificationMessage.ProtoReflect.Descriptor instead.
-func (*UTXOsChangedNotificationMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use UtxosChangedNotificationMessage.ProtoReflect.Descriptor instead.
+func (*UtxosChangedNotificationMessage) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{94}
 }
 
-func (x *UTXOsChangedNotificationMessage) GetAdded() []*UTXOsByAddressesEntry {
+func (x *UtxosChangedNotificationMessage) GetAdded() []*UtxosByAddressesEntry {
 	if x != nil {
 		return x.Added
 	}
 	return nil
 }
 
-func (x *UTXOsChangedNotificationMessage) GetRemoved() []*UTXOsByAddressesEntry {
+func (x *UtxosChangedNotificationMessage) GetRemoved() []*UtxosByAddressesEntry {
 	if x != nil {
 		return x.Removed
 	}
 	return nil
 }
 
-type UTXOsByAddressesEntry struct {
+type UtxosByAddressesEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Address   string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Outpoint  *RPCOutpoint  `protobuf:"bytes,2,opt,name=outpoint,proto3" json:"outpoint,omitempty"`
-	UtxoEntry *RPCUTXOEntry `protobuf:"bytes,3,opt,name=utxoEntry,proto3" json:"utxoEntry,omitempty"`
+	Outpoint  *RpcOutpoint  `protobuf:"bytes,2,opt,name=outpoint,proto3" json:"outpoint,omitempty"`
+	UtxoEntry *RpcUtxoEntry `protobuf:"bytes,3,opt,name=utxoEntry,proto3" json:"utxoEntry,omitempty"`
 }
 
-func (x *UTXOsByAddressesEntry) Reset() {
-	*x = UTXOsByAddressesEntry{}
+func (x *UtxosByAddressesEntry) Reset() {
+	*x = UtxosByAddressesEntry{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[95]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6419,13 +6419,13 @@ func (x *UTXOsByAddressesEntry) Reset() {
 	}
 }
 
-func (x *UTXOsByAddressesEntry) String() string {
+func (x *UtxosByAddressesEntry) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UTXOsByAddressesEntry) ProtoMessage() {}
+func (*UtxosByAddressesEntry) ProtoMessage() {}
 
-func (x *UTXOsByAddressesEntry) ProtoReflect() protoreflect.Message {
+func (x *UtxosByAddressesEntry) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[95]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6437,33 +6437,33 @@ func (x *UTXOsByAddressesEntry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UTXOsByAddressesEntry.ProtoReflect.Descriptor instead.
-func (*UTXOsByAddressesEntry) Descriptor() ([]byte, []int) {
+// Deprecated: Use UtxosByAddressesEntry.ProtoReflect.Descriptor instead.
+func (*UtxosByAddressesEntry) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{95}
 }
 
-func (x *UTXOsByAddressesEntry) GetAddress() string {
+func (x *UtxosByAddressesEntry) GetAddress() string {
 	if x != nil {
 		return x.Address
 	}
 	return ""
 }
 
-func (x *UTXOsByAddressesEntry) GetOutpoint() *RPCOutpoint {
+func (x *UtxosByAddressesEntry) GetOutpoint() *RpcOutpoint {
 	if x != nil {
 		return x.Outpoint
 	}
 	return nil
 }
 
-func (x *UTXOsByAddressesEntry) GetUtxoEntry() *RPCUTXOEntry {
+func (x *UtxosByAddressesEntry) GetUtxoEntry() *RpcUtxoEntry {
 	if x != nil {
 		return x.UtxoEntry
 	}
 	return nil
 }
 
-type RPCOutpoint struct {
+type RpcOutpoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -6472,8 +6472,8 @@ type RPCOutpoint struct {
 	Index         uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
 }
 
-func (x *RPCOutpoint) Reset() {
-	*x = RPCOutpoint{}
+func (x *RpcOutpoint) Reset() {
+	*x = RpcOutpoint{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[96]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6481,13 +6481,13 @@ func (x *RPCOutpoint) Reset() {
 	}
 }
 
-func (x *RPCOutpoint) String() string {
+func (x *RpcOutpoint) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RPCOutpoint) ProtoMessage() {}
+func (*RpcOutpoint) ProtoMessage() {}
 
-func (x *RPCOutpoint) ProtoReflect() protoreflect.Message {
+func (x *RpcOutpoint) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[96]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6499,26 +6499,26 @@ func (x *RPCOutpoint) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RPCOutpoint.ProtoReflect.Descriptor instead.
-func (*RPCOutpoint) Descriptor() ([]byte, []int) {
+// Deprecated: Use RpcOutpoint.ProtoReflect.Descriptor instead.
+func (*RpcOutpoint) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{96}
 }
 
-func (x *RPCOutpoint) GetTransactionId() string {
+func (x *RpcOutpoint) GetTransactionId() string {
 	if x != nil {
 		return x.TransactionId
 	}
 	return ""
 }
 
-func (x *RPCOutpoint) GetIndex() uint32 {
+func (x *RpcOutpoint) GetIndex() uint32 {
 	if x != nil {
 		return x.Index
 	}
 	return 0
 }
 
-type RPCUTXOEntry struct {
+type RpcUtxoEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -6529,8 +6529,8 @@ type RPCUTXOEntry struct {
 	IsCoinbase     bool   `protobuf:"varint,4,opt,name=isCoinbase,proto3" json:"isCoinbase,omitempty"`
 }
 
-func (x *RPCUTXOEntry) Reset() {
-	*x = RPCUTXOEntry{}
+func (x *RpcUtxoEntry) Reset() {
+	*x = RpcUtxoEntry{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_messages_proto_msgTypes[97]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6538,13 +6538,13 @@ func (x *RPCUTXOEntry) Reset() {
 	}
 }
 
-func (x *RPCUTXOEntry) String() string {
+func (x *RpcUtxoEntry) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RPCUTXOEntry) ProtoMessage() {}
+func (*RpcUtxoEntry) ProtoMessage() {}
 
-func (x *RPCUTXOEntry) ProtoReflect() protoreflect.Message {
+func (x *RpcUtxoEntry) ProtoReflect() protoreflect.Message {
 	mi := &file_messages_proto_msgTypes[97]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6556,33 +6556,33 @@ func (x *RPCUTXOEntry) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RPCUTXOEntry.ProtoReflect.Descriptor instead.
-func (*RPCUTXOEntry) Descriptor() ([]byte, []int) {
+// Deprecated: Use RpcUtxoEntry.ProtoReflect.Descriptor instead.
+func (*RpcUtxoEntry) Descriptor() ([]byte, []int) {
 	return file_messages_proto_rawDescGZIP(), []int{97}
 }
 
-func (x *RPCUTXOEntry) GetAmount() uint64 {
+func (x *RpcUtxoEntry) GetAmount() uint64 {
 	if x != nil {
 		return x.Amount
 	}
 	return 0
 }
 
-func (x *RPCUTXOEntry) GetScriptPubKey() string {
+func (x *RpcUtxoEntry) GetScriptPubKey() string {
 	if x != nil {
 		return x.ScriptPubKey
 	}
 	return ""
 }
 
-func (x *RPCUTXOEntry) GetBlockBlueScore() uint64 {
+func (x *RpcUtxoEntry) GetBlockBlueScore() uint64 {
 	if x != nil {
 		return x.BlockBlueScore
 	}
 	return 0
 }
 
-func (x *RPCUTXOEntry) GetIsCoinbase() bool {
+func (x *RpcUtxoEntry) GetIsCoinbase() bool {
 	if x != nil {
 		return x.IsCoinbase
 	}
@@ -7022,21 +7022,21 @@ var file_messages_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6c, 0x0a, 0x19, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74,
 	0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x18, 0x99, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x77, 0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x54, 0x58, 0x4f, 0x73,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74, 0x78, 0x6f, 0x73,
 	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65,
 	0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x19, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55,
 	0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x12, 0x6f, 0x0a, 0x1a, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74, 0x78, 0x6f,
 	0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x18, 0x9a, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
-	0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x43,
+	0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43,
 	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65,
 	0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x1a, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55,
 	0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f,
 	0x6e, 0x73, 0x65, 0x12, 0x69, 0x0a, 0x18, 0x75, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e,
 	0x67, 0x65, 0x64, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
 	0x9b, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
-	0x72, 0x65, 0x2e, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x4e,
+	0x72, 0x65, 0x2e, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x4e,
 	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61,
 	0x67, 0x65, 0x48, 0x00, 0x52, 0x18, 0x75, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67,
 	0x65, 0x64, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x09,
@@ -7685,40 +7685,40 @@ var file_messages_proto_rawDesc = []byte{
 	0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43,
 	0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x40, 0x0a, 0x20,
-	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67,
 	0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
 	0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20,
 	0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x22, 0x4f,
-	0x0a, 0x21, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x43, 0x68, 0x61,
+	0x0a, 0x21, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61,
 	0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
 	0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22,
-	0x95, 0x01, 0x0a, 0x1f, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x95, 0x01, 0x0a, 0x1f, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
 	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x12, 0x36, 0x0a, 0x05, 0x61, 0x64, 0x64, 0x65, 0x64, 0x18, 0x01, 0x20, 0x03,
 	0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x55,
-	0x54, 0x58, 0x4f, 0x73, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x45,
+	0x74, 0x78, 0x6f, 0x73, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x45,
 	0x6e, 0x74, 0x72, 0x79, 0x52, 0x05, 0x61, 0x64, 0x64, 0x65, 0x64, 0x12, 0x3a, 0x0a, 0x07, 0x72,
 	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x55, 0x54, 0x58, 0x4f, 0x73, 0x42, 0x79,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x42, 0x79,
 	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x07,
-	0x72, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x22, 0x9c, 0x01, 0x0a, 0x15, 0x55, 0x54, 0x58, 0x4f,
+	0x72, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x64, 0x22, 0x9c, 0x01, 0x0a, 0x15, 0x55, 0x74, 0x78, 0x6f,
 	0x73, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72,
 	0x79, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x32, 0x0a, 0x08, 0x6f,
 	0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x4f, 0x75, 0x74,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x4f, 0x75, 0x74,
 	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x08, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12,
 	0x35, 0x0a, 0x09, 0x75, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x18, 0x03, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52,
-	0x50, 0x43, 0x55, 0x54, 0x58, 0x4f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x09, 0x75, 0x74, 0x78,
-	0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x22, 0x49, 0x0a, 0x0b, 0x52, 0x50, 0x43, 0x4f, 0x75, 0x74,
+	0x70, 0x63, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x09, 0x75, 0x74, 0x78,
+	0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x22, 0x49, 0x0a, 0x0b, 0x52, 0x70, 0x63, 0x4f, 0x75, 0x74,
 	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x24, 0x0a, 0x0d, 0x74, 0x72, 0x61, 0x6e, 0x73, 0x61, 0x63,
 	0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x74, 0x72,
 	0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x69,
 	0x6e, 0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x69, 0x6e, 0x64, 0x65,
-	0x78, 0x22, 0x92, 0x01, 0x0a, 0x0c, 0x52, 0x50, 0x43, 0x55, 0x54, 0x58, 0x4f, 0x45, 0x6e, 0x74,
+	0x78, 0x22, 0x92, 0x01, 0x0a, 0x0c, 0x52, 0x70, 0x63, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74,
 	0x72, 0x79, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x04, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x22, 0x0a, 0x0c, 0x73, 0x63,
 	0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x4b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
@@ -7849,12 +7849,12 @@ var file_messages_proto_goTypes = []interface{}{
 	(*ShutDownResponseMessage)(nil),                     // 89: protowire.ShutDownResponseMessage
 	(*GetHeadersRequestMessage)(nil),                    // 90: protowire.GetHeadersRequestMessage
 	(*GetHeadersResponseMessage)(nil),                   // 91: protowire.GetHeadersResponseMessage
-	(*NotifyUTXOsChangedRequestMessage)(nil),            // 92: protowire.NotifyUTXOsChangedRequestMessage
-	(*NotifyUTXOsChangedResponseMessage)(nil),           // 93: protowire.NotifyUTXOsChangedResponseMessage
-	(*UTXOsChangedNotificationMessage)(nil),             // 94: protowire.UTXOsChangedNotificationMessage
-	(*UTXOsByAddressesEntry)(nil),                       // 95: protowire.UTXOsByAddressesEntry
-	(*RPCOutpoint)(nil),                                 // 96: protowire.RPCOutpoint
-	(*RPCUTXOEntry)(nil),                                // 97: protowire.RPCUTXOEntry
+	(*NotifyUtxosChangedRequestMessage)(nil),            // 92: protowire.NotifyUtxosChangedRequestMessage
+	(*NotifyUtxosChangedResponseMessage)(nil),           // 93: protowire.NotifyUtxosChangedResponseMessage
+	(*UtxosChangedNotificationMessage)(nil),             // 94: protowire.UtxosChangedNotificationMessage
+	(*UtxosByAddressesEntry)(nil),                       // 95: protowire.UtxosByAddressesEntry
+	(*RpcOutpoint)(nil),                                 // 96: protowire.RpcOutpoint
+	(*RpcUtxoEntry)(nil),                                // 97: protowire.RpcUtxoEntry
 }
 var file_messages_proto_depIdxs = []int32{
 	2,   // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
@@ -7930,9 +7930,9 @@ var file_messages_proto_depIdxs = []int32{
 	89,  // 70: protowire.KaspadMessage.shutDownResponse:type_name -> protowire.ShutDownResponseMessage
 	90,  // 71: protowire.KaspadMessage.getHeadersRequest:type_name -> protowire.GetHeadersRequestMessage
 	91,  // 72: protowire.KaspadMessage.getHeadersResponse:type_name -> protowire.GetHeadersResponseMessage
-	92,  // 73: protowire.KaspadMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUTXOsChangedRequestMessage
-	93,  // 74: protowire.KaspadMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUTXOsChangedResponseMessage
-	94,  // 75: protowire.KaspadMessage.utxosChangedNotification:type_name -> protowire.UTXOsChangedNotificationMessage
+	92,  // 73: protowire.KaspadMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUtxosChangedRequestMessage
+	93,  // 74: protowire.KaspadMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUtxosChangedResponseMessage
+	94,  // 75: protowire.KaspadMessage.utxosChangedNotification:type_name -> protowire.UtxosChangedNotificationMessage
 	4,   // 76: protowire.RequestAddressesMessage.subnetworkId:type_name -> protowire.SubnetworkId
 	3,   // 77: protowire.AddressesMessage.addressList:type_name -> protowire.NetAddress
 	6,   // 78: protowire.TransactionMessage.inputs:type_name -> protowire.TransactionInput
@@ -8005,11 +8005,11 @@ var file_messages_proto_depIdxs = []int32{
 	32,  // 145: protowire.NotifyFinalityConflictsResponseMessage.error:type_name -> protowire.RPCError
 	32,  // 146: protowire.ShutDownResponseMessage.error:type_name -> protowire.RPCError
 	32,  // 147: protowire.GetHeadersResponseMessage.error:type_name -> protowire.RPCError
-	32,  // 148: protowire.NotifyUTXOsChangedResponseMessage.error:type_name -> protowire.RPCError
-	95,  // 149: protowire.UTXOsChangedNotificationMessage.added:type_name -> protowire.UTXOsByAddressesEntry
-	95,  // 150: protowire.UTXOsChangedNotificationMessage.removed:type_name -> protowire.UTXOsByAddressesEntry
-	96,  // 151: protowire.UTXOsByAddressesEntry.outpoint:type_name -> protowire.RPCOutpoint
-	97,  // 152: protowire.UTXOsByAddressesEntry.utxoEntry:type_name -> protowire.RPCUTXOEntry
+	32,  // 148: protowire.NotifyUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
+	95,  // 149: protowire.UtxosChangedNotificationMessage.added:type_name -> protowire.UtxosByAddressesEntry
+	95,  // 150: protowire.UtxosChangedNotificationMessage.removed:type_name -> protowire.UtxosByAddressesEntry
+	96,  // 151: protowire.UtxosByAddressesEntry.outpoint:type_name -> protowire.RpcOutpoint
+	97,  // 152: protowire.UtxosByAddressesEntry.utxoEntry:type_name -> protowire.RpcUtxoEntry
 	0,   // 153: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
 	0,   // 154: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
 	0,   // 155: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
@@ -9132,7 +9132,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[92].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NotifyUTXOsChangedRequestMessage); i {
+			switch v := v.(*NotifyUtxosChangedRequestMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9144,7 +9144,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[93].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NotifyUTXOsChangedResponseMessage); i {
+			switch v := v.(*NotifyUtxosChangedResponseMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9156,7 +9156,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[94].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UTXOsChangedNotificationMessage); i {
+			switch v := v.(*UtxosChangedNotificationMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9168,7 +9168,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[95].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UTXOsByAddressesEntry); i {
+			switch v := v.(*UtxosByAddressesEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9180,7 +9180,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[96].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RPCOutpoint); i {
+			switch v := v.(*RpcOutpoint); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9192,7 +9192,7 @@ func file_messages_proto_init() {
 			}
 		}
 		file_messages_proto_msgTypes[97].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RPCUTXOEntry); i {
+			switch v := v.(*RpcUtxoEntry); i {
 			case 0:
 				return &v.state
 			case 1:
