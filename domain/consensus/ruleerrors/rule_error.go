@@ -238,8 +238,6 @@ var (
 	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 
-	ErrMissingParentBody = newRuleError("ErrMissingParentBody")
-
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 )
 

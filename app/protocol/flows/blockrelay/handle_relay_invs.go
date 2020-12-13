@@ -212,12 +212,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 			return missingParentsError.MissingParentHashes, nil
 		}
 		log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
-
-		// If we got in relay a block where one of its parents is missing a body it means that the peer that sent
-		// it is a little behind, so we want to disconnect from it and connect to a better peer, but there's no
-		// need to ban it.
-		shouldBan := !errors.Is(err, ruleerrors.ErrMissingParentBody)
-		return nil, protocolerrors.Wrapf(shouldBan, err, "got invalid block %s from relay", blockHash)
+		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 	return nil, nil
 }

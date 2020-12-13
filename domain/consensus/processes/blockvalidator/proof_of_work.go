@@ -137,12 +137,11 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 					return err
 				}
 
-				if !isInPastOfPruningPoint {
-					return errors.Wrapf(ruleerrors.ErrMissingParentBody, "parent %s is missing a body. blocks "+
-						"with body are not allowed to be "+
-						"validated before we have their parents bodies, unless their parents are in the past of the "+
-						"pruning point", parent)
+				if isInPastOfPruningPoint {
+					continue
 				}
+
+				missingParentHashes = append(missingParentHashes, parent)
 			}
 		}
 	}
