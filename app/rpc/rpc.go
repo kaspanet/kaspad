@@ -34,6 +34,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetMempoolEntriesRequestMessage:       rpchandlers.HandleGetMempoolEntries,
 	appmessage.CmdShutDownRequestMessage:                rpchandlers.HandleShutDown,
 	appmessage.CmdGetHeadersRequestMessage:              rpchandlers.HandleGetHeaders,
+	appmessage.CmdNotifyUTXOsChangedRequestMessage:      rpchandlers.HandleNotifyUTXOsChanged,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

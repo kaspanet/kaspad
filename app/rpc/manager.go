@@ -53,7 +53,10 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		if err != nil {
 			return err
 		}
-		log.Tracef("utxoIndexChanges: %v", utxoIndexChanges)
+		err = m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
+		if err != nil {
+			return err
+		}
 	}
 
 	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))

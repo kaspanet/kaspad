@@ -2,6 +2,7 @@ package rpccontext
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 	"sync"
@@ -19,6 +20,9 @@ type NotificationListener struct {
 	propagateChainChangedNotifications             bool
 	propagateFinalityConflictNotifications         bool
 	propagateFinalityConflictResolvedNotifications bool
+	propagateUTXOsChangedNotifications             bool
+
+	propagateUTXOsChangedNotificationScriptPublicKeys [][]byte
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -123,12 +127,32 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 	return nil
 }
 
+// NotifyFinalityConflictResolved notifies the notification manager that a finality conflict in the DAG has been resolved
+func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOChanges) error {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagateUTXOsChangedNotifications {
+			// Filter utxoChanges and create a notification, if required
+			notification := &appmessage.UTXOsChangedNotificationMessage{}
+
+			err := router.OutgoingRoute().Enqueue(notification)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		propagateBlockAddedNotifications:               false,
 		propagateChainChangedNotifications:             false,
 		propagateFinalityConflictNotifications:         false,
 		propagateFinalityConflictResolvedNotifications: false,
+		propagateUTXOsChangedNotifications:             false,
 	}
 }
 
@@ -154,4 +178,11 @@ func (nl *NotificationListener) PropagateFinalityConflictNotifications() {
 // to the remote listener
 func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications() {
 	nl.propagateFinalityConflictResolvedNotifications = true
+}
+
+// PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
+// to the remote listener
+func (nl *NotificationListener) PropagateUTXOsChangedNotifications(scriptPublicKeys [][]byte) {
+	nl.propagateUTXOsChangedNotifications = true
+	nl.propagateUTXOsChangedNotificationScriptPublicKeys = scriptPublicKeys
 }
