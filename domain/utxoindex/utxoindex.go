@@ -2,6 +2,7 @@ package utxoindex
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -97,8 +98,10 @@ func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, 
 			return err
 		}
 	}
+
+	transactionID := consensushashing.TransactionID(transaction)
 	for index, transactionOutput := range transaction.Outputs {
-		outpoint := externalapi.NewDomainOutpoint(transaction.ID, uint32(index))
+		outpoint := externalapi.NewDomainOutpoint(transactionID, uint32(index))
 		utxoEntry := utxo.NewUTXOEntry(transactionOutput.Value, transactionOutput.ScriptPublicKey, isCoinbase, blockBlueScore)
 		err := ui.store.add(transactionOutput.ScriptPublicKey, outpoint, &utxoEntry)
 		if err != nil {
@@ -109,8 +112,9 @@ func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, 
 }
 
 func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction) error {
+	transactionID := consensushashing.TransactionID(transaction)
 	for index, transactionOutput := range transaction.Outputs {
-		outpoint := externalapi.NewDomainOutpoint(transaction.ID, uint32(index))
+		outpoint := externalapi.NewDomainOutpoint(transactionID, uint32(index))
 		err := ui.store.remove(transactionOutput.ScriptPublicKey, outpoint)
 		if err != nil {
 			return err

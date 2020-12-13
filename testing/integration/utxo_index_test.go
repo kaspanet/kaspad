@@ -6,6 +6,7 @@ import (
 )
 
 func TestUTXOIndex(t *testing.T) {
+	// Setup a single kaspad instance
 	harnessParams := &harnessParams{
 		p2pAddress:              p2pAddress1,
 		rpcAddress:              rpcAddress1,
@@ -16,6 +17,11 @@ func TestUTXOIndex(t *testing.T) {
 	kaspad, teardown := setupHarness(t, harnessParams)
 	defer teardown()
 
+	// skip the first block because it's paying to genesis script,
+	// which contains no outputs
+	mineNextBlock(t, kaspad)
+
+	// Register for UTXO changes
 	err := kaspad.rpcClient.RegisterForUTXOsChangedNotifications([]string{miningAddress1}, func(
 		notification *appmessage.UTXOsChangedNotificationMessage) {
 
@@ -26,5 +32,8 @@ func TestUTXOIndex(t *testing.T) {
 		t.Fatalf("Failed to register for UTXO change notifications: %s", err)
 	}
 
-	mineNextBlock(t, kaspad)
+	// Mine some blocks
+	for i := 0; i < 100; i++ {
+		mineNextBlock(t, kaspad)
+	}
 }
