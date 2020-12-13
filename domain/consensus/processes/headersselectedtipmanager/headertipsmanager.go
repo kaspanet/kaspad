@@ -18,6 +18,7 @@ func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
 	headersSelectedTipStore model.HeaderSelectedTipStore) model.HeadersSelectedTipManager {
+
 	return &headerTipsManager{
 		databaseContext:         databaseContext,
 		dagTopologyManager:      dagTopologyManager,
