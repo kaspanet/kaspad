@@ -625,7 +625,7 @@ message NotifyUTXOsChangedResponseMessage {
 
 message UTXOsChangedNotificationMessage {
   repeated UTXOsByAddressesEntry added = 1;
-  repeated RPCOutpoint removed = 2;
+  repeated UTXOsByAddressesEntry removed = 2;
 }
 
 message UTXOsByAddressesEntry {

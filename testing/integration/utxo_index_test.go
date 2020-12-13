@@ -26,7 +26,8 @@ func TestUTXOIndex(t *testing.T) {
 		notification *appmessage.UTXOsChangedNotificationMessage) {
 
 		for _, removed := range notification.Removed {
-			t.Logf("REMOVED! %+v", removed)
+			t.Logf("REMOVED! Address: %s, outpoint: %s:%d", removed.Address,
+				removed.Outpoint.TransactionID, removed.Outpoint.Index)
 		}
 		for _, added := range notification.Added {
 			t.Logf("ADDED! Address: %s, outpoint: %s:%d, utxoEntry: %d:%s:%d:%t", added.Address,

@@ -58,11 +58,16 @@ func (x *KaspadMessage_UtxosChangedNotification) toAppMessage() (appmessage.Mess
 		}
 	}
 
-	removed := make([]*appmessage.RPCOutpoint, len(x.UtxosChangedNotification.Removed))
-	for i, outpoint := range x.UtxosChangedNotification.Removed {
-		removed[i] = &appmessage.RPCOutpoint{
-			TransactionID: outpoint.TransactionId,
-			Index:         outpoint.Index,
+	removed := make([]*appmessage.UTXOsByAddressesEntry, len(x.UtxosChangedNotification.Removed))
+	for i, entry := range x.UtxosChangedNotification.Removed {
+		outpoint := &appmessage.RPCOutpoint{
+			TransactionID: entry.Outpoint.TransactionId,
+			Index:         entry.Outpoint.Index,
+		}
+		removed[i] = &appmessage.UTXOsByAddressesEntry{
+			Address:   entry.Address,
+			Outpoint:  outpoint,
+			UTXOEntry: nil,
 		}
 	}
 
@@ -92,11 +97,16 @@ func (x *KaspadMessage_UtxosChangedNotification) fromAppMessage(message *appmess
 		}
 	}
 
-	removed := make([]*RPCOutpoint, len(message.Removed))
-	for i, outpoint := range message.Removed {
-		removed[i] = &RPCOutpoint{
-			TransactionId: outpoint.TransactionID,
-			Index:         outpoint.Index,
+	removed := make([]*UTXOsByAddressesEntry, len(message.Removed))
+	for i, entry := range message.Removed {
+		outpoint := &RPCOutpoint{
+			TransactionId: entry.Outpoint.TransactionID,
+			Index:         entry.Outpoint.Index,
+		}
+		removed[i] = &UTXOsByAddressesEntry{
+			Address:   entry.Address,
+			Outpoint:  outpoint,
+			UtxoEntry: nil,
 		}
 	}
 

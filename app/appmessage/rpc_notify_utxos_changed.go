@@ -41,7 +41,7 @@ func NewNotifyUTXOsChangedResponseMessage() *NotifyUTXOsChangedResponseMessage {
 type UTXOsChangedNotificationMessage struct {
 	baseMessage
 	Added   []*UTXOsByAddressesEntry
-	Removed []*RPCOutpoint
+	Removed []*UTXOsByAddressesEntry
 }
 
 type UTXOsByAddressesEntry struct {

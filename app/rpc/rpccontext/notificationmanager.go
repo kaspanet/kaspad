@@ -224,9 +224,12 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 		}
 		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyHexString]; ok {
 			for outpoint := range removedOutpoints {
-				notification.Removed = append(notification.Removed, &appmessage.RPCOutpoint{
-					TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
-					Index:         outpoint.Index,
+				notification.Removed = append(notification.Removed, &appmessage.UTXOsByAddressesEntry{
+					Address: listenerAddress.Address,
+					Outpoint: &appmessage.RPCOutpoint{
+						TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
+						Index:         outpoint.Index,
+					},
 				})
 			}
 		}
