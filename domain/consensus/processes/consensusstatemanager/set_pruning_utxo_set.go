@@ -20,10 +20,10 @@ var virtualHeaderHash = &externalapi.DomainHash{
 }
 
 func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertPruningPoint")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
-	err := csm.setPruningPoint(newPruningPoint, serializedUTXOSet)
+	err := csm.updatePruningPoint(newPruningPoint, serializedUTXOSet)
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
@@ -32,9 +32,9 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	return csm.commitSetPruningPointUTXOSetAll()
 }
 
-func (csm *consensusStateManager) setPruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
-	log.Tracef("setPruningPoint start")
-	defer log.Tracef("setPruningPoint end")
+func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+	log.Tracef("updatePruningPoint start")
+	defer log.Tracef("updatePruningPoint end")
 
 	// We ignore the shouldSendNotification return value because we always want to send finality conflict notificaiton
 	// in case the new pruning point violates finality
@@ -71,7 +71,7 @@ func (csm *consensusStateManager) setPruningPoint(newPruningPoint *externalapi.D
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
 			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment, *utxoSetMultiSet.Hash())
 	}
-	log.Tracef("The new pruning point multiset validation passed")
+	log.Tracef("The new pruning point UTXO commitment validation passed")
 
 	log.Tracef("Staging the parent hashes for pruning point as the DAG tips")
 	csm.consensusStateStore.StageTips(newPruningPointHeader.ParentHashes)

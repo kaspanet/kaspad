@@ -21,6 +21,11 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	}
 	log.Tracef("The virtual finality point is: %s", virtualFinalityPoint)
 
+	// There can be a situation where the virtual points close to the pruning point (or even in the past
+	// of the pruning point before calling validateAndInsertBlock for the pruning point block) and the
+	// finality point from the virtual point-of-view is in the past of the pruning point.
+	// In such situation we override the finality point to be the pruning point to avoid situations where
+	// the virtual selected parent chain don't include the pruning point.
 	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext)
 	if err != nil {
 		return false, false, err
@@ -50,6 +55,9 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 		if !isFinalityPointInPastOfPruningPoint {
 			return true, true, nil
 		}
+		// On IBD it's pretty normal to get blocks in the anticone of the pruning
+		// point, so we don't notify on cases when the pruning point is in the future
+		// of the finality point.
 		return true, false, nil
 	}
 	log.Tracef("Block %s does not violate finality", blockHash)

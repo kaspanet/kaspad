@@ -8,6 +8,7 @@ import (
 )
 
 func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+	log.Info("Checking that the given pruning point is the expected pruning point")
 	selectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 	if err != nil {
 		return err
@@ -25,6 +26,8 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 			expectedNewPruningPointHash, newPruningPointHash)
 	}
 
+	// We have to validate the pruning point block before we set the new pruning point in consensusStateManager.
+	log.Infof("Validating the new pruning point %s", newPruningPointHash)
 	err = bp.validateBlockAndDiscardChanges(newPruningPoint)
 	if err != nil {
 		return err
@@ -35,5 +38,5 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 		return err
 	}
 
-	return bp.validateAndInsertBlock(newPruningPoint)
+	return bp.ValidateAndInsertBlock(newPruningPoint)
 }

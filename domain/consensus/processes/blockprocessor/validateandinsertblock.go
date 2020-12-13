@@ -153,12 +153,13 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	hasHeader, err := bp.hasValidatedOnlyHeader(blockHash)
+	hasValidatedOnlyHeader, err := bp.hasValidatedOnlyHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if hasHeader {
+	if hasValidatedOnlyHeader {
+		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork")
 		return nil
 	}
 
@@ -198,6 +199,8 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Tracef("Skipping ValidateBodyInContext for block %s because it's header only")
 	}
 
 	return nil

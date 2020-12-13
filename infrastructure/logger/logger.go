@@ -55,6 +55,7 @@ var (
 	wsvcLog = BackendLog.Logger("WSVC")
 	reacLog = BackendLog.Logger("REAC")
 	prnmLog = BackendLog.Logger("PRNM")
+	blvlLog = BackendLog.Logger("BLVL")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -87,7 +88,8 @@ var SubsystemTags = struct {
 	SNVR,
 	WSVC,
 	REAC,
-	PRNM string
+	PRNM,
+	BLVL string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -118,6 +120,7 @@ var SubsystemTags = struct {
 	WSVC: "WSVC",
 	REAC: "REAC",
 	PRNM: "PRNM",
+	BLVL: "BLVL",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -151,6 +154,7 @@ var subsystemLoggers = map[string]*Logger{
 	SubsystemTags.WSVC: wsvcLog,
 	SubsystemTags.REAC: reacLog,
 	SubsystemTags.PRNM: prnmLog,
+	SubsystemTags.BLVL: blvlLog,
 }
 
 // InitLog attaches log file and error log file to the backend log.

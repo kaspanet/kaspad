@@ -4,12 +4,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
 func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err

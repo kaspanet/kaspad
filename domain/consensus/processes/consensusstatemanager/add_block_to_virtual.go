@@ -19,6 +19,9 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 	}
 
 	if isCandidateToBeNextVirtualSelectedParent {
+		// It's important to check for finality violation before resolving the block status, because the status of
+		// blocks with a selected chain that doesn't contain the pruning point cannot be resolved because they will
+		// eventually try to fetch UTXO diffs from the past of the pruning point.
 		log.Tracef("Block %s is candidate to be the next virtual selected parent. Resolving whether it violates "+
 			"finality", blockHash)
 		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(blockHash)
