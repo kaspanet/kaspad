@@ -1,6 +1,9 @@
 package utxoindex
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"encoding/hex"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 // ScriptPublicKeyHexString is a script public key represented in hex
 type ScriptPublicKeyHexString string
@@ -16,4 +19,12 @@ type UTXOOutpoints map[externalapi.DomainOutpoint]interface{}
 type UTXOChanges struct {
 	Added   map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs
 	Removed map[ScriptPublicKeyHexString]UTXOOutpoints
+}
+
+func ConvertScriptPublicKeyToHexString(scriptPublicKey []byte) ScriptPublicKeyHexString {
+	return ScriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
+}
+
+func ConvertHexStringToScriptPublicKey(hexString ScriptPublicKeyHexString) ([]byte, error) {
+	return hex.DecodeString(string(hexString))
 }

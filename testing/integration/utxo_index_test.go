@@ -25,8 +25,14 @@ func TestUTXOIndex(t *testing.T) {
 	err := kaspad.rpcClient.RegisterForUTXOsChangedNotifications([]string{miningAddress1}, func(
 		notification *appmessage.UTXOsChangedNotificationMessage) {
 
-		t.Logf("REMOVED! %v", notification.Removed)
-		t.Logf("ADDED! %v", notification.Added)
+		for _, removed := range notification.Removed {
+			t.Logf("REMOVED! %+v", removed)
+		}
+		for _, added := range notification.Added {
+			t.Logf("ADDED! Address: %s, outpoint: %s:%d, utxoEntry: %d:%s:%d:%t", added.Address,
+				added.Outpoint.TransactionID, added.Outpoint.Index,
+				added.UTXOEntry.Amount, added.UTXOEntry.ScriptPubKey, added.UTXOEntry.BlockBlueScore, added.UTXOEntry.IsCoinbase)
+		}
 	})
 	if err != nil {
 		t.Fatalf("Failed to register for UTXO change notifications: %s", err)

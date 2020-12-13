@@ -1,6 +1,7 @@
 package rpccontext
 
 import (
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -14,6 +15,11 @@ type NotificationManager struct {
 	listeners map[*routerpkg.Router]*NotificationListener
 }
 
+type UTXOsChangedNotificationAddress struct {
+	Address         string
+	ScriptPublicKey []byte
+}
+
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
 	propagateBlockAddedNotifications               bool
@@ -22,7 +28,7 @@ type NotificationListener struct {
 	propagateFinalityConflictResolvedNotifications bool
 	propagateUTXOsChangedNotifications             bool
 
-	propagateUTXOsChangedNotificationScriptPublicKeys [][]byte
+	propagateUTXOsChangedNotificationAddresses []*UTXOsChangedNotificationAddress
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -134,9 +140,15 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
-			// Filter utxoChanges and create a notification, if required
-			notification := &appmessage.UTXOsChangedNotificationMessage{}
+			// Filter utxoChanges and create a notification
+			notification := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
 
+			// Don't send the notification if it's empty
+			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
+				continue
+			}
+
+			// Enqueue the notification
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -182,7 +194,42 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 
 // PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateUTXOsChangedNotifications(scriptPublicKeys [][]byte) {
+func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
 	nl.propagateUTXOsChangedNotifications = true
-	nl.propagateUTXOsChangedNotificationScriptPublicKeys = scriptPublicKeys
+	nl.propagateUTXOsChangedNotificationAddresses = addresses
+}
+
+func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
+	utxoChanges *utxoindex.UTXOChanges) *appmessage.UTXOsChangedNotificationMessage {
+
+	notification := &appmessage.UTXOsChangedNotificationMessage{}
+	for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
+		listenerScriptPublicKeyHexString := utxoindex.ConvertScriptPublicKeyToHexString(listenerAddress.ScriptPublicKey)
+		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyHexString]; ok {
+			for outpoint, utxoEntry := range addedPairs {
+				notification.Added = append(notification.Added, &appmessage.UTXOsByAddressesEntry{
+					Address: listenerAddress.Address,
+					Outpoint: &appmessage.RPCOutpoint{
+						TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
+						Index:         outpoint.Index,
+					},
+					UTXOEntry: &appmessage.RPCUTXOEntry{
+						Amount:         utxoEntry.Amount(),
+						ScriptPubKey:   hex.EncodeToString(utxoEntry.ScriptPublicKey()),
+						BlockBlueScore: utxoEntry.BlockBlueScore(),
+						IsCoinbase:     utxoEntry.IsCoinbase(),
+					},
+				})
+			}
+		}
+		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyHexString]; ok {
+			for outpoint := range removedOutpoints {
+				notification.Removed = append(notification.Removed, &appmessage.RPCOutpoint{
+					TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
+					Index:         outpoint.Index,
+				})
+			}
+		}
+	}
+	return notification
 }

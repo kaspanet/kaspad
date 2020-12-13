@@ -1,7 +1,6 @@
 package utxoindex
 
 import (
-	"encoding/hex"
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -26,7 +25,7 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 }
 
 func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) error {
-	key := uis.convertScriptPublicKeyToHexString(scriptPublicKey)
+	key := ConvertScriptPublicKeyToHexString(scriptPublicKey)
 
 	// If the outpoint exists in `toRemove` simply remove it from there and return
 	if toRemoveOutpointsOfKey, ok := uis.toRemove[key]; ok {
@@ -52,7 +51,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 }
 
 func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint) error {
-	key := uis.convertScriptPublicKeyToHexString(scriptPublicKey)
+	key := ConvertScriptPublicKeyToHexString(scriptPublicKey)
 
 	// If the outpoint exists in `toAdd` simply remove it from there and return
 	if toAddPairsOfKey, ok := uis.toAdd[key]; ok {
@@ -90,7 +89,7 @@ func (uis *utxoIndexStore) commit() error {
 	defer dbTransaction.RollbackUnlessClosed()
 
 	for scriptPublicKeyHexString, toRemoveOutpointsOfKey := range uis.toRemove {
-		scriptPublicKey, err := uis.convertHexStringToScriptPublicKey(scriptPublicKeyHexString)
+		scriptPublicKey, err := ConvertHexStringToScriptPublicKey(scriptPublicKeyHexString)
 		if err != nil {
 			return err
 		}
@@ -108,7 +107,7 @@ func (uis *utxoIndexStore) commit() error {
 	}
 
 	for scriptPublicKeyHexString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
-		scriptPublicKey, err := uis.convertHexStringToScriptPublicKey(scriptPublicKeyHexString)
+		scriptPublicKey, err := ConvertHexStringToScriptPublicKey(scriptPublicKeyHexString)
 		if err != nil {
 			return err
 		}
@@ -136,14 +135,6 @@ func (uis *utxoIndexStore) commit() error {
 
 	uis.discard()
 	return nil
-}
-
-func (uis *utxoIndexStore) convertScriptPublicKeyToHexString(scriptPublicKey []byte) ScriptPublicKeyHexString {
-	return ScriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
-}
-
-func (uis *utxoIndexStore) convertHexStringToScriptPublicKey(hexString ScriptPublicKeyHexString) ([]byte, error) {
-	return hex.DecodeString(string(hexString))
 }
 
 func (uis *utxoIndexStore) bucketForScriptPublicKey(scriptPublicKey []byte) *database.Bucket {

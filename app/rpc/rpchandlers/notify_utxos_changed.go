@@ -12,7 +12,7 @@ import (
 func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
 
-	scriptPublicKeys := make([][]byte, len(notifyUTXOsChangedRequest.Addresses))
+	addresses := make([]*rpccontext.UTXOsChangedNotificationAddress, len(notifyUTXOsChangedRequest.Addresses))
 	for i, addressString := range notifyUTXOsChangedRequest.Addresses {
 		address, err := util.DecodeAddress(addressString, context.Config.ActiveNetParams.Prefix)
 		if err != nil {
@@ -26,14 +26,17 @@ func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router
 			errorMessage.Error = appmessage.RPCErrorf("Could not create a scriptPublicKey for address '%s': %s", addressString, err)
 			return errorMessage, nil
 		}
-		scriptPublicKeys[i] = scriptPublicKey
+		addresses[i] = &rpccontext.UTXOsChangedNotificationAddress{
+			Address:         addressString,
+			ScriptPublicKey: scriptPublicKey,
+		}
 	}
 
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateUTXOsChangedNotifications(scriptPublicKeys)
+	listener.PropagateUTXOsChangedNotifications(addresses)
 
 	response := appmessage.NewNotifyUTXOsChangedResponseMessage()
 	return response, nil
