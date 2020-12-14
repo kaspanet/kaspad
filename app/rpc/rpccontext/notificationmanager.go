@@ -22,11 +22,12 @@ type UTXOsChangedNotificationAddress struct {
 
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
-	propagateBlockAddedNotifications               bool
-	propagateChainChangedNotifications             bool
-	propagateFinalityConflictNotifications         bool
-	propagateFinalityConflictResolvedNotifications bool
-	propagateUTXOsChangedNotifications             bool
+	propagateBlockAddedNotifications                            bool
+	propagateChainChangedNotifications                          bool
+	propagateFinalityConflictNotifications                      bool
+	propagateFinalityConflictResolvedNotifications              bool
+	propagateUTXOsChangedNotifications                          bool
+	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
 
 	propagateUTXOsChangedNotificationAddresses []*UTXOsChangedNotificationAddress
 }
@@ -158,13 +159,33 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 	return nil
 }
 
+// NotifyVirtualSelectedParentBlueScoreChanged notifies the notification manager that the DAG's
+// virtual selected parent blue score has changed
+func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
+	notification *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage) error {
+
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
+			err := router.OutgoingRoute().Enqueue(notification)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
-		propagateBlockAddedNotifications:               false,
-		propagateChainChangedNotifications:             false,
-		propagateFinalityConflictNotifications:         false,
-		propagateFinalityConflictResolvedNotifications: false,
-		propagateUTXOsChangedNotifications:             false,
+		propagateBlockAddedNotifications:                            false,
+		propagateChainChangedNotifications:                          false,
+		propagateFinalityConflictNotifications:                      false,
+		propagateFinalityConflictResolvedNotifications:              false,
+		propagateUTXOsChangedNotifications:                          false,
+		propagateVirtualSelectedParentBlueScoreChangedNotifications: false,
 	}
 }
 
@@ -221,4 +242,10 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 		}
 	}
 	return notification
+}
+
+// PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
+// virtual selected parent blue score notifications to the remote listener
+func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications() {
+	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
