@@ -42,26 +42,47 @@ func TestUTXOIndex(t *testing.T) {
 	// Note that we expect blockAmountToMine-1 messages because
 	// the last block won't be accepted until the next block is
 	// mined
-	var outpoints []*appmessage.RPCOutpoint
+	var notificationEntries []*appmessage.UTXOsByAddressesEntry
 	for i := 0; i < blockAmountToMine-1; i++ {
 		notification := <-onUTXOsChangedChan
 		if len(notification.Removed) > 0 {
 			t.Fatalf("Unexpectedly received that a UTXO has been removed")
 		}
-
 		for _, added := range notification.Added {
-			outpoints = append(outpoints, added.Outpoint)
+			notificationEntries = append(notificationEntries, added)
 		}
 	}
-	for _, outpoint := range outpoints {
-		t.Logf("outpoint: %s:%d", outpoint.TransactionID, outpoint.Index)
+	for _, notificationEntry := range notificationEntries {
+		t.Logf("outpoint: %s:%d",
+			notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index)
 	}
 
+	// Get all the UTXOs and make sure the response is equivalent
+	// to the data collected via notifications
 	utxosByAddressesResponse, err := kaspad.rpcClient.GetUTXOsByAddresses([]string{miningAddress1})
 	if err != nil {
 		t.Fatalf("Failed to get UTXOs: %s", err)
 	}
-	if len(outpoints) != len(utxosByAddressesResponse.Entries) {
-		t.Fatalf("Unexpected amount of UTXOs. Want: %d, got: %d", len(outpoints), len(utxosByAddressesResponse.Entries))
+	if len(notificationEntries) != len(utxosByAddressesResponse.Entries) {
+		t.Fatalf("Unexpected amount of UTXOs. Want: %d, got: %d",
+			len(notificationEntries), len(utxosByAddressesResponse.Entries))
+	}
+	for _, notificationEntry := range notificationEntries {
+		var foundResponseEntry *appmessage.UTXOsByAddressesEntry
+		for _, responseEntry := range utxosByAddressesResponse.Entries {
+			if *notificationEntry.Outpoint == *responseEntry.Outpoint {
+				foundResponseEntry = responseEntry
+				break
+			}
+		}
+		if foundResponseEntry == nil {
+			t.Fatalf("Missing entry in UTXOs response: %s:%d",
+				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index)
+		}
+		if *notificationEntry.UTXOEntry != *foundResponseEntry.UTXOEntry {
+			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
+				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
+				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
+		}
 	}
 }
