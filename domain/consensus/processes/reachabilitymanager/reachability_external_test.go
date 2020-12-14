@@ -159,7 +159,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
 		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
+			t.Fatalf("NewTestConsensus: %+v", err)
 		}
 		defer tearDown()
 

@@ -83,6 +83,11 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 		return errors.Errorf("Mainnet has not launched yet, use --testnet to run in testnet mode")
 	}
 
+	err := networkFlags.overrideDAGParams()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

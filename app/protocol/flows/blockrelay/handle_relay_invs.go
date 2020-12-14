@@ -212,7 +212,6 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 			return missingParentsError.MissingParentHashes, nil
 		}
 		log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
-
 		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 	return nil, nil

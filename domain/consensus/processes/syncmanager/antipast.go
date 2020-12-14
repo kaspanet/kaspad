@@ -99,26 +99,26 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
+	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
 
-	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, headerTipsPruningPoint)
+	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
 
-	lowHash := headerTipsPruningPoint
+	lowHash := pruningPoint
 	foundHeaderOnlyBlock := false
 	for selectedChildIterator.Next() {
 		selectedChild := selectedChildIterator.Get()
-		selectedChildStatus, err := sm.blockStatusStore.Get(sm.databaseContext, selectedChild)
+		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, selectedChild)
 		if err != nil {
 			return nil, err
 		}
 
-		if selectedChildStatus == externalapi.StatusHeaderOnly {
+		if !hasBlock {
 			foundHeaderOnlyBlock = true
 			break
 		}
@@ -166,25 +166,4 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 	}
 
 	return status == externalapi.StatusHeaderOnly, nil
-}
-
-func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
-	if *blockHash == *sm.genesisBlockHash {
-		return false, nil
-	}
-
-	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
-	if err != nil {
-		return false, err
-	}
-	if !exists {
-		return false, nil
-	}
-
-	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
-	if err != nil {
-		return false, err
-	}
-
-	return sm.dagTopologyManager.IsAncestorOf(headerTipsPruningPoint, blockHash)
 }

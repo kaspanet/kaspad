@@ -42,9 +42,6 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if info.BlockStatus != externalapi.StatusInvalid {
 			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusInvalid, info.BlockStatus)
 		}
-		if info.IsBlockInHeaderPruningPointFuture != false {
-			t.Fatalf("Expected IsBlockInHeaderPruningPointFuture=false, instead found: %t", info.IsBlockInHeaderPruningPointFuture)
-		}
 
 		emptyCoinbase := externalapi.DomainCoinbaseData{}
 		validBlock, err := consensus.BuildBlock(&emptyCoinbase, nil)
@@ -67,9 +64,6 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		}
 		if info.BlockStatus != externalapi.StatusValid {
 			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusValid, info.BlockStatus)
-		}
-		if info.IsBlockInHeaderPruningPointFuture != true {
-			t.Fatalf("Expected IsBlockInHeaderPruningPointFuture=true, instead found: %t", info.IsBlockInHeaderPruningPointFuture)
 		}
 
 	})

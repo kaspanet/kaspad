@@ -2,9 +2,9 @@ package dagtraversalmanager
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // dagTraversalManager exposes methods for travering blocks
@@ -100,6 +100,11 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 		return nil, err
 	}
 
+	if highBlockGHOSTDAGData.BlueScore() < blueScore {
+		return nil, errors.Errorf("the given blue score %d is higher than block %s blue score of %d",
+			blueScore, highHash, highBlockGHOSTDAGData.BlueScore())
+	}
+
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	iterator := dtm.SelectedParentIterator(highHash)
@@ -112,7 +117,7 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 		if selectedParentBlockGHOSTDAGData.BlueScore() < blueScore {
 			break
 		}
-		currentHash = selectedParentBlockGHOSTDAGData.SelectedParent()
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 		currentBlockGHOSTDAGData = selectedParentBlockGHOSTDAGData
 	}
 

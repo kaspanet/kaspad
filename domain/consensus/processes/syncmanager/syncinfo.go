@@ -4,84 +4,43 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// areHeaderTipsSyncedMaxTimeDifference is the number of blocks from
-// the header virtual selected parent (estimated by timestamps) for
-// kaspad to be considered not synced
-const areHeaderTipsSyncedMaxTimeDifference = 300 // 5 minutes
-
 func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
-	syncState, err := sm.resolveSyncState()
+	isAwaitingUTXOSet, ibdRootUTXOBlockHash, err := sm.isAwaitingUTXOSet()
 	if err != nil {
 		return nil, err
-	}
-
-	var ibdRootUTXOBlockHash *externalapi.DomainHash
-	if syncState == externalapi.SyncStateAwaitingUTXOSet {
-		ibdRootUTXOBlockHash, err = sm.consensusStateManager.HeaderTipsPruningPoint()
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	headerCount := sm.getHeaderCount()
 	blockCount := sm.getBlockCount()
 
 	return &externalapi.SyncInfo{
-		State:                syncState,
+		IsAwaitingUTXOSet:    isAwaitingUTXOSet,
 		IBDRootUTXOBlockHash: ibdRootUTXOBlockHash,
 		HeaderCount:          headerCount,
 		BlockCount:           blockCount,
 	}, nil
 }
 
-func (sm *syncManager) resolveSyncState() (externalapi.SyncState, error) {
-	hasTips, err := sm.headerTipsStore.HasTips(sm.databaseContext)
+func (sm *syncManager) isAwaitingUTXOSet() (isAwaitingUTXOSet bool, ibdRootUTXOBlockHash *externalapi.DomainHash,
+	err error) {
+
+	pruningPointByHeaders, err := sm.pruningManager.CalculatePruningPointByHeaderSelectedTip()
 	if err != nil {
-		return 0, err
-	}
-	if !hasTips {
-		return externalapi.SyncStateAwaitingGenesis, nil
+		return false, nil, err
 	}
 
-	headerVirtualSelectedParentHash, err := sm.headerVirtualSelectedParentHash()
+	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
 	if err != nil {
-		return 0, err
-	}
-	headerVirtualSelectedParentStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerVirtualSelectedParentHash)
-	if err != nil {
-		return 0, err
-	}
-	if headerVirtualSelectedParentStatus != externalapi.StatusHeaderOnly {
-		return externalapi.SyncStateSynced, nil
+		return false, nil, err
 	}
 
-	// Once the header tips are synced, check the status of
-	// the pruning point from the point of view of the header
-	// tips. We check it against StatusValid (rather than
-	// StatusHeaderOnly) because once we do receive the
-	// UTXO set of said pruning point, the state is explicitly
-	// set to StatusValid.
-	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
-	if err != nil {
-		return 0, err
-	}
-	headerTipsPruningPointStatus, err := sm.blockStatusStore.Get(sm.databaseContext, headerTipsPruningPoint)
-	if err != nil {
-		return 0, err
-	}
-	if headerTipsPruningPointStatus != externalapi.StatusValid {
-		return externalapi.SyncStateAwaitingUTXOSet, nil
+	// If the pruning point by headers is different from the current point
+	// it means we need to request the new pruning point UTXO set.
+	if *pruningPoint != *pruningPointByHeaders {
+		return true, pruningPointByHeaders, nil
 	}
 
-	return externalapi.SyncStateAwaitingBlockBodies, nil
-}
-
-func (sm *syncManager) headerVirtualSelectedParentHash() (*externalapi.DomainHash, error) {
-	headerTips, err := sm.headerTipsStore.Tips(sm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	return sm.ghostdagManager.ChooseSelectedParent(headerTips...)
+	return false, nil, nil
 }
 
 func (sm *syncManager) getHeaderCount() uint64 {
