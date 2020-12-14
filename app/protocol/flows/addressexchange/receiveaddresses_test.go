@@ -2,22 +2,16 @@ package addressexchange
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 func TestReceiveAddresses(t *testing.T) {
@@ -33,48 +27,28 @@ func TestReceiveAddresses(t *testing.T) {
 	cfgA.Listeners = []string{addressA}
 	cfgB.Listeners = []string{addressB}
 
-	tempDir := os.TempDir()
-	dbPath := filepath.Join(tempDir, "TestNew")
-	_ = os.RemoveAll(dbPath)
-	databaseContext, err := dbaccess.New(dbPath)
+	testDomain, teardown, err := setupTestDomain(t.Name())
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
 	}
-
-	defer func() {
-		databaseContext.Close()
-		os.RemoveAll(dbPath)
-	}()
-
-	dagCfg.DatabaseContext = databaseContext
-	dag, err := blockdag.New(dagCfg)
-	if err != nil {
-		t.Fatalf("SendAddresses: %s", err)
-	}
+	defer teardown()
 
 	defaultCfg.ActiveNetParams.AcceptUnroutable = true
-	addressManager, err := addressmanager.New(defaultCfg, databaseContext)
-	if err != nil {
-		t.Fatalf("SendAddresses: %s", err)
-	}
-	err = addressManager.Start()
+	addressManager, err := addressmanager.New(addressmanager.NewConfig(defaultCfg))
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
 	}
 
-	sourceAddress := generateAddressesForTest(1)[0]
 	addresses := generateAddressesForTest(5)
-	addressManager.AddAddresses(addresses, sourceAddress, subnetworkid.SubnetworkIDNative)
-
-	memPoolCfg.DAG = dag
-	txPool := mempool.New(memPoolCfg)
+	addressManager.AddAddresses(addresses...)
 
 	netAdapterA, err := netadapter.NewNetAdapter(cfgA)
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
 	}
 
-	netAdapterA.SetRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
+	netAdapterA.SetP2PRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
+	netAdapterA.SetRPCRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
 	err = netAdapterA.Start()
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
@@ -86,13 +60,14 @@ func TestReceiveAddresses(t *testing.T) {
 		t.Fatalf("SendAddresses: %s", err)
 	}
 
-	netAdapterB.SetRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
+	netAdapterB.SetP2PRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
+	netAdapterB.SetRPCRouterInitializer(func(router *router.Router, connection *netadapter.NetConnection) {})
 	err = netAdapterB.Start()
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
 	}
 
-	err = netAdapterA.Connect(addressB)
+	err = netAdapterA.P2PConnect(addressB)
 	if err != nil {
 		t.Fatalf("SendAddresses: %s", err)
 	}
@@ -102,12 +77,12 @@ func TestReceiveAddresses(t *testing.T) {
 		t.Fatalf("SendAddresses: %s", err)
 	}
 
-	peer := peerpkg.New(netAdapterA.Connections()[0])
+	peer := peerpkg.New(netAdapterA.P2PConnections()[0])
 
-	ctx := flowcontext.New(defaultCfg, dag, addressManager, txPool, netAdapterA, connManager)
+	ctx := flowcontext.New(defaultCfg, testDomain, addressManager, netAdapterA, connManager)
 	incomingRoute := router.NewRoute()
 	outgoingRoute := router.NewRoute()
-	err = incomingRoute.Enqueue(appmessage.NewMsgAddresses(false, nil))
+	err = incomingRoute.Enqueue(appmessage.NewMsgAddresses(nil))
 	if err != nil {
 		t.Fatalf("ReceiveAddresses: %s", err)
 	}
