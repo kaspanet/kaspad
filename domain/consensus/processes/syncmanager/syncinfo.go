@@ -24,22 +24,23 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 func (sm *syncManager) isAwaitingUTXOSet() (isAwaitingUTXOSet bool, ibdRootUTXOBlockHash *externalapi.DomainHash,
 	err error) {
 
-	pruningPoint, err := sm.pruningManager.CalculatePruningPointByHeaderSelectedTip()
+	pruningPointByHeaders, err := sm.pruningManager.CalculatePruningPointByHeaderSelectedTip()
 	if err != nil {
 		return false, nil, err
 	}
 
-	pruningPointStatus, err := sm.blockStatusStore.Get(sm.databaseContext, pruningPoint)
+	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
 	if err != nil {
 		return false, nil, err
 	}
 
-	isAwaitingUTXOSet = pruningPointStatus != externalapi.StatusValid
-	if isAwaitingUTXOSet {
-		ibdRootUTXOBlockHash = pruningPoint
+	// If the pruning point by headers is different from the current point
+	// it means we need to request the new pruning point UTXO set.
+	if *pruningPoint != *pruningPointByHeaders {
+		return true, pruningPointByHeaders, nil
 	}
 
-	return isAwaitingUTXOSet, ibdRootUTXOBlockHash, nil
+	return false, nil, nil
 }
 
 func (sm *syncManager) getHeaderCount() uint64 {
