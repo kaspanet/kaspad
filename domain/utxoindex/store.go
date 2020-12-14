@@ -117,7 +117,7 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
-			serializedUTXOEntry, err := uis.serializeUTXOEntry(&utxoEntryToAdd)
+			serializedUTXOEntry, err := uis.serializeUTXOEntry(utxoEntryToAdd)
 			if err != nil {
 				return err
 			}
@@ -149,14 +149,37 @@ func (uis *utxoIndexStore) convertOutpointToKey(bucket *database.Bucket, outpoin
 	return bucket.Key(serializedOutpoint), nil
 }
 
+func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi.DomainOutpoint, error) {
+	serializedOutpoint := key.Suffix()
+	return uis.deserializeOutpoint(serializedOutpoint)
+}
+
 func (uis *utxoIndexStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	dbOutpoint := serialization.DomainOutpointToDbOutpoint(outpoint)
 	return proto.Marshal(dbOutpoint)
 }
 
-func (uis *utxoIndexStore) serializeUTXOEntry(utxoEntry *externalapi.UTXOEntry) ([]byte, error) {
-	dbUTXOEntry := serialization.UTXOEntryToDBUTXOEntry(*utxoEntry)
+func (uis *utxoIndexStore) deserializeOutpoint(serializedOutpoint []byte) (*externalapi.DomainOutpoint, error) {
+	var dbOutpoint serialization.DbOutpoint
+	err := proto.Unmarshal(serializedOutpoint, &dbOutpoint)
+	if err != nil {
+		return nil, err
+	}
+	return serialization.DbOutpointToDomainOutpoint(&dbOutpoint)
+}
+
+func (uis *utxoIndexStore) serializeUTXOEntry(utxoEntry externalapi.UTXOEntry) ([]byte, error) {
+	dbUTXOEntry := serialization.UTXOEntryToDBUTXOEntry(utxoEntry)
 	return proto.Marshal(dbUTXOEntry)
+}
+
+func (uis *utxoIndexStore) deserializeUTXOEntry(serializedUTXOEntry []byte) (externalapi.UTXOEntry, error) {
+	var dbUTXOEntry serialization.DbUtxoEntry
+	err := proto.Unmarshal(serializedUTXOEntry, &dbUTXOEntry)
+	if err != nil {
+		return nil, err
+	}
+	return serialization.DBUTXOEntryToUTXOEntry(&dbUTXOEntry), nil
 }
 
 func (uis *utxoIndexStore) stagedData() (
@@ -184,6 +207,31 @@ func (uis *utxoIndexStore) stagedData() (
 	return toAddClone, toRemoveClone
 }
 
-func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(ScriptPublicKeyHexString) (UTXOOutpointEntryPairs, error) {
-	return nil, nil
+func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
+	bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
+	cursor, err := uis.database.Cursor(bucket)
+	if err != nil {
+		return nil, err
+	}
+	utxoOutpointEntryPairs := make(UTXOOutpointEntryPairs)
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return nil, err
+		}
+		outpoint, err := uis.convertKeyToOutpoint(key)
+		if err != nil {
+			return nil, err
+		}
+		serializedUTXOEntry, err := cursor.Value()
+		if err != nil {
+			return nil, err
+		}
+		utxoEntry, err := uis.deserializeUTXOEntry(serializedUTXOEntry)
+		if err != nil {
+			return nil, err
+		}
+		utxoOutpointEntryPairs[*outpoint] = utxoEntry
+	}
+	return utxoOutpointEntryPairs, nil
 }
