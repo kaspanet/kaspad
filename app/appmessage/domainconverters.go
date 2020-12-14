@@ -158,6 +158,7 @@ func outpointToDomainOutpoint(outpoint *Outpoint) *externalapi.DomainOutpoint {
 	}
 }
 
+// RPCTransactionToDomainTransaction converts RPCTransactions to DomainTransactions
 func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externalapi.DomainTransaction, error) {
 	inputs := make([]*externalapi.DomainTransactionInput, len(rpcTransaction.Inputs))
 	for i, input := range rpcTransaction.Inputs {
@@ -228,6 +229,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	}, nil
 }
 
+// DomainTransactionToRPCTransaction converts DomainTransactions to RPCTransactions
 func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransaction) *RPCTransaction {
 	inputs := make([]*RPCTransactionInput, len(transaction.Inputs))
 	for i, input := range transaction.Inputs {

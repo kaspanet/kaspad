@@ -11,6 +11,7 @@ type BlockInfo struct {
 	AcceptanceData AcceptanceData
 }
 
+// BlockInfoOptions are a set of options passed to GetBlockInfo
 type BlockInfoOptions struct {
 	IncludeAcceptanceData bool
 }

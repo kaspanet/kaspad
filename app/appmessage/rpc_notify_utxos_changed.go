@@ -44,6 +44,7 @@ type UTXOsChangedNotificationMessage struct {
 	Removed []*UTXOsByAddressesEntry
 }
 
+// UTXOsByAddressesEntry represents a UTXO of some address
 type UTXOsByAddressesEntry struct {
 	Address   string
 	Outpoint  *RPCOutpoint

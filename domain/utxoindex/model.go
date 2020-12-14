@@ -21,10 +21,12 @@ type UTXOChanges struct {
 	Removed map[ScriptPublicKeyHexString]UTXOOutpoints
 }
 
+// ConvertScriptPublicKeyToHexString converts the given scriptPublicKey to a hex string
 func ConvertScriptPublicKeyToHexString(scriptPublicKey []byte) ScriptPublicKeyHexString {
 	return ScriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
 }
 
+// ConvertHexStringToScriptPublicKey converts the given hex string to a scriptPublicKey byte slice
 func ConvertHexStringToScriptPublicKey(hexString ScriptPublicKeyHexString) ([]byte, error) {
 	return hex.DecodeString(string(hexString))
 }

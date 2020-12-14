@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// HandleNotifyChainChanged handles the respectively named RPC command
+// HandleNotifyUTXOsChanged handles the respectively named RPC command
 func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
 

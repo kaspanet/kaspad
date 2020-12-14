@@ -15,6 +15,8 @@ type NotificationManager struct {
 	listeners map[*routerpkg.Router]*NotificationListener
 }
 
+// UTXOsChangedNotificationAddress represents a kaspad address.
+// This type is meant to be used in UTXOsChanged notifications
 type UTXOsChangedNotificationAddress struct {
 	Address         string
 	ScriptPublicKey []byte
@@ -134,7 +136,7 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 	return nil
 }
 
-// NotifyFinalityConflictResolved notifies the notification manager that a finality conflict in the DAG has been resolved
+// NotifyUTXOsChanged notifies the notification manager that UTXOs have been changed
 func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOChanges) error {
 	nm.RLock()
 	defer nm.RUnlock()
@@ -213,7 +215,7 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 	nl.propagateFinalityConflictResolvedNotifications = true
 }
 
-// PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
+// PropagateUTXOsChangedNotifications instructs the listener to send UTXOs changed notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
 	nl.propagateUTXOsChangedNotifications = true

@@ -129,6 +129,7 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 	return nil
 }
 
+// UTXOs returns all the UTXOs for the given scriptPublicKey
 func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 )
 
+// ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries converts
+// UTXOOutpointEntryPairs to a slice of UTXOsByAddressesEntry
 func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pairs utxoindex.UTXOOutpointEntryPairs) []*appmessage.UTXOsByAddressesEntry {
 	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(pairs))
 	for outpoint, utxoEntry := range pairs {
