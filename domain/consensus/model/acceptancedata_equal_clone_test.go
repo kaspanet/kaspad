@@ -46,17 +46,17 @@ func initTestTransactionAcceptanceDataForClone() []*TransactionAcceptanceData {
 	return tests
 }
 
-type TestTransactionAcceptanceDataToCompare struct {
+type testTransactionAcceptanceDataToCompare struct {
 	transactionAcceptanceData *TransactionAcceptanceData
 	expectedResult            bool
 }
 
-type TestTransactionAcceptanceDataStruct struct {
+type testTransactionAcceptanceDataStruct struct {
 	baseTransactionAcceptanceData        *TransactionAcceptanceData
-	transactionAcceptanceDataToCompareTo []TestTransactionAcceptanceDataToCompare
+	transactionAcceptanceDataToCompareTo []testTransactionAcceptanceDataToCompare
 }
 
-func iniTransactionAcceptanceDataForEqual() []TestTransactionAcceptanceDataStruct {
+func iniTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStruct {
 
 	var testTransactionAcceptanceDataBase = TransactionAcceptanceData{
 
@@ -229,10 +229,10 @@ func iniTransactionAcceptanceDataForEqual() []TestTransactionAcceptanceDataStruc
 		false,
 	}
 
-	tests := []TestTransactionAcceptanceDataStruct{
+	tests := []testTransactionAcceptanceDataStruct{
 		{
 			baseTransactionAcceptanceData: &testTransactionAcceptanceDataBase,
-			transactionAcceptanceDataToCompareTo: []TestTransactionAcceptanceDataToCompare{
+			transactionAcceptanceDataToCompareTo: []testTransactionAcceptanceDataToCompare{
 				{
 					transactionAcceptanceData: &testTransactionAcceptanceData1,
 					expectedResult:            true,
@@ -252,7 +252,7 @@ func iniTransactionAcceptanceDataForEqual() []TestTransactionAcceptanceDataStruc
 			},
 		}, {
 			baseTransactionAcceptanceData: nil,
-			transactionAcceptanceDataToCompareTo: []TestTransactionAcceptanceDataToCompare{
+			transactionAcceptanceDataToCompareTo: []testTransactionAcceptanceDataToCompare{
 				{
 					transactionAcceptanceData: &testTransactionAcceptanceData1,
 					expectedResult:            false,
@@ -267,9 +267,8 @@ func iniTransactionAcceptanceDataForEqual() []TestTransactionAcceptanceDataStruc
 }
 
 func TestTransactionAcceptanceData_Equal(t *testing.T) {
-
-	blockGHOSTDAGDatas := iniTransactionAcceptanceDataForEqual()
-	for i, test := range blockGHOSTDAGDatas {
+	acceptanceData := iniTransactionAcceptanceDataForEqual()
+	for i, test := range acceptanceData {
 		for j, subTest := range test.transactionAcceptanceDataToCompareTo {
 			result1 := test.baseTransactionAcceptanceData.Equal(subTest.transactionAcceptanceData)
 			if result1 != subTest.expectedResult {
@@ -338,18 +337,17 @@ func initTestBlockAcceptanceDataForClone() []*BlockAcceptanceData {
 	return tests
 }
 
-type TestBlockAcceptanceDataToCompare struct {
+type testBlockAcceptanceDataToCompare struct {
 	blockAcceptanceData *BlockAcceptanceData
 	expectedResult      bool
 }
 
-type TestBlockAcceptanceDataStruct struct {
+type testBlockAcceptanceDataStruct struct {
 	baseBlockAcceptanceData        *BlockAcceptanceData
-	blockAcceptanceDataToCompareTo []TestBlockAcceptanceDataToCompare
+	blockAcceptanceDataToCompareTo []testBlockAcceptanceDataToCompare
 }
 
-func iniBlockAcceptanceDataForEqual() []TestBlockAcceptanceDataStruct {
-
+func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 	var testBlockAcceptanceDataBase = BlockAcceptanceData{
 		[]*TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
@@ -494,10 +492,10 @@ func iniBlockAcceptanceDataForEqual() []TestBlockAcceptanceDataStruct {
 			false,
 		}}}
 
-	tests := []TestBlockAcceptanceDataStruct{
+	tests := []testBlockAcceptanceDataStruct{
 		{
 			baseBlockAcceptanceData: &testBlockAcceptanceDataBase,
-			blockAcceptanceDataToCompareTo: []TestBlockAcceptanceDataToCompare{
+			blockAcceptanceDataToCompareTo: []testBlockAcceptanceDataToCompare{
 				{
 					blockAcceptanceData: &testBlockAcceptanceData1,
 					expectedResult:      true,
@@ -514,7 +512,7 @@ func iniBlockAcceptanceDataForEqual() []TestBlockAcceptanceDataStruct {
 			},
 		}, {
 			baseBlockAcceptanceData: nil,
-			blockAcceptanceDataToCompareTo: []TestBlockAcceptanceDataToCompare{
+			blockAcceptanceDataToCompareTo: []testBlockAcceptanceDataToCompare{
 				{
 					blockAcceptanceData: &testBlockAcceptanceData1,
 					expectedResult:      false,

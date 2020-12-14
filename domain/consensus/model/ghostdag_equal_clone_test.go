@@ -22,18 +22,17 @@ func initTestBlockGHOSTDAGDataForClone() []*BlockGHOSTDAGData {
 	return tests
 }
 
-type TestBlockGHOSTDAGDataToCompare struct {
+type testBlockGHOSTDAGDataToCompare struct {
 	blockGHOSTDAGData *BlockGHOSTDAGData
 	expectedResult    bool
 }
 
-type TestBlockGHOSTDAGDataStruct struct {
+type testBlockGHOSTDAGDataStruct struct {
 	baseBlockGHOSTDAGData        *BlockGHOSTDAGData
-	blockGHOSTDAGDataToCompareTo []TestBlockGHOSTDAGDataToCompare
+	blockGHOSTDAGDataToCompareTo []testBlockGHOSTDAGDataToCompare
 }
 
-func initTestBlockGHOSTDAGDataForEqual() []TestBlockGHOSTDAGDataStruct {
-
+func initTestBlockGHOSTDAGDataForEqual() []testBlockGHOSTDAGDataStruct {
 	var testMapBase = map[externalapi.DomainHash]KType{}
 	testMapBase[externalapi.DomainHash{1}] = 0x01
 	var testBlockGHOSTDAGDataBase = BlockGHOSTDAGData{
@@ -122,10 +121,10 @@ func initTestBlockGHOSTDAGDataForEqual() []TestBlockGHOSTDAGDataStruct {
 		test8Map,
 	}
 
-	tests := []TestBlockGHOSTDAGDataStruct{
+	tests := []testBlockGHOSTDAGDataStruct{
 		{
 			baseBlockGHOSTDAGData: &testBlockGHOSTDAGDataBase,
-			blockGHOSTDAGDataToCompareTo: []TestBlockGHOSTDAGDataToCompare{
+			blockGHOSTDAGDataToCompareTo: []testBlockGHOSTDAGDataToCompare{
 				{
 					blockGHOSTDAGData: &testBlockGHOSTDAGData1,
 					expectedResult:    true,
@@ -157,7 +156,7 @@ func initTestBlockGHOSTDAGDataForEqual() []TestBlockGHOSTDAGDataStruct {
 			},
 		}, {
 			baseBlockGHOSTDAGData: nil,
-			blockGHOSTDAGDataToCompareTo: []TestBlockGHOSTDAGDataToCompare{
+			blockGHOSTDAGDataToCompareTo: []testBlockGHOSTDAGDataToCompare{
 				{
 					blockGHOSTDAGData: &testBlockGHOSTDAGData1,
 					expectedResult:    false,
