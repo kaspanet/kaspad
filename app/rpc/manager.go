@@ -49,18 +49,19 @@ func NewManager(
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
 func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error {
 	if m.context.Config.UTXOIndex {
-		utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.SelectedParentChainChanges)
-		if err != nil {
-			return err
-		}
-		err = m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
+		err := m.notifyUTXOsChanged(blockInsertionResult)
 		if err != nil {
 			return err
 		}
 	}
 
-	notification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
-	return m.context.NotificationManager.NotifyBlockAdded(notification)
+	err := m.notifyVirtualSelectedParentBlueScoreChanged()
+	if err != nil {
+		return err
+	}
+
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
+	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 
 // NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
@@ -73,4 +74,21 @@ func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
 	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
+}
+
+func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.SelectedParentChainChanges)
+	if err != nil {
+		return err
+	}
+	return m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
+}
+
+func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
+	virtualInfo, err := m.context.Domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return err
+	}
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualInfo.BlueScore)
+	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }

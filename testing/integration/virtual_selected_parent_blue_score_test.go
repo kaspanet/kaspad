@@ -44,9 +44,9 @@ func TestVirtualSelectedParentBlueScore(t *testing.T) {
 	for i := 0; i < blockAmountToMine; i++ {
 		mineNextBlock(t, kaspad)
 		notification := <-onVirtualSelectedParentBlueScoreChangedChan
-		if notification.VirtualSelectedParentBlueScore != 1+uint64(i) {
+		if notification.VirtualSelectedParentBlueScore != 2+uint64(i) {
 			t.Fatalf("Unexpected virtual selected parent blue score. Want: %d, got: %d",
-				1+i, response.BlueScore)
+				2+uint64(i), notification.VirtualSelectedParentBlueScore)
 		}
 	}
 
