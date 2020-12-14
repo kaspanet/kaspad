@@ -56,4 +56,12 @@ func TestUTXOIndex(t *testing.T) {
 	for _, outpoint := range outpoints {
 		t.Logf("outpoint: %s:%d", outpoint.TransactionID, outpoint.Index)
 	}
+
+	utxosByAddressesResponse, err := kaspad.rpcClient.GetUTXOsByAddresses([]string{miningAddress1})
+	if err != nil {
+		t.Fatalf("Failed to get UTXOs: %s", err)
+	}
+	if len(outpoints) != len(utxosByAddressesResponse.Entries) {
+		t.Fatalf("Unexpected amount of UTXOs. Want: %d, got: %d", len(outpoints), len(utxosByAddressesResponse.Entries))
+	}
 }
