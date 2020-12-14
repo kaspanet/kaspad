@@ -201,6 +201,31 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
 }
 
+func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
+	return s.consensusStateStore.Tips(s.databaseContext)
+}
+
+func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	bits, err := s.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.VirtualInfo{
+		ParentHashes:   blockRelations.Parents,
+		Bits:           bits,
+		PastMedianTime: pastMedianTime,
+	}, nil
+}
+
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
