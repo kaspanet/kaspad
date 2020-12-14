@@ -13,6 +13,7 @@ type syncManager struct {
 	dagTraversalManager model.DAGTraversalManager
 	dagTopologyManager  model.DAGTopologyManager
 	ghostdagManager     model.GHOSTDAGManager
+	pruningManager      model.PruningManager
 
 	ghostdagDataStore model.GHOSTDAGDataStore
 	blockStatusStore  model.BlockStatusStore

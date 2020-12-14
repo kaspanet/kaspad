@@ -24,7 +24,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 func (sm *syncManager) isAwaitingUTXOSet() (isAwaitingUTXOSet bool, ibdRootUTXOBlockHash *externalapi.DomainHash,
 	err error) {
 
-	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
+	pruningPoint, err := sm.pruningManager.CalculatePruningPointByHeaderSelectedTip()
 	if err != nil {
 		return false, nil, err
 	}
