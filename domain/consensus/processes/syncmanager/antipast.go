@@ -113,12 +113,12 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	foundHeaderOnlyBlock := false
 	for selectedChildIterator.Next() {
 		selectedChild := selectedChildIterator.Get()
-		selectedChildStatus, err := sm.blockStatusStore.Get(sm.databaseContext, selectedChild)
+		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, selectedChild)
 		if err != nil {
 			return nil, err
 		}
 
-		if selectedChildStatus == externalapi.StatusHeaderOnly {
+		if !hasBlock {
 			foundHeaderOnlyBlock = true
 			break
 		}
