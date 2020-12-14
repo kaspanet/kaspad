@@ -11,13 +11,14 @@ import (
 type pruningManager struct {
 	databaseContext model.DBReader
 
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManager    model.DAGTopologyManager
-	consensusStateManager model.ConsensusStateManager
-	consensusStateStore   model.ConsensusStateStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	pruningStore          model.PruningStore
-	blockStatusStore      model.BlockStatusStore
+	dagTraversalManager    model.DAGTraversalManager
+	dagTopologyManager     model.DAGTopologyManager
+	consensusStateManager  model.ConsensusStateManager
+	consensusStateStore    model.ConsensusStateStore
+	ghostdagDataStore      model.GHOSTDAGDataStore
+	pruningStore           model.PruningStore
+	blockStatusStore       model.BlockStatusStore
+	headerSelectedTipStore model.HeaderSelectedTipStore
 
 	multiSetStore       model.MultisetStore
 	acceptanceDataStore model.AcceptanceDataStore
@@ -40,6 +41,7 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
+	headerSelectedTipStore model.HeaderSelectedTipStore,
 
 	multiSetStore model.MultisetStore,
 	acceptanceDataStore model.AcceptanceDataStore,
@@ -52,21 +54,22 @@ func New(
 ) model.PruningManager {
 
 	return &pruningManager{
-		databaseContext:       databaseContext,
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManager:    dagTopologyManager,
-		consensusStateManager: consensusStateManager,
-		consensusStateStore:   consensusStateStore,
-		ghostdagDataStore:     ghostdagDataStore,
-		pruningStore:          pruningStore,
-		blockStatusStore:      blockStatusStore,
-		multiSetStore:         multiSetStore,
-		acceptanceDataStore:   acceptanceDataStore,
-		blocksStore:           blocksStore,
-		utxoDiffStore:         utxoDiffStore,
-		genesisHash:           genesisHash,
-		pruningDepth:          pruningDepth,
-		finalityInterval:      finalityInterval,
+		databaseContext:        databaseContext,
+		dagTraversalManager:    dagTraversalManager,
+		dagTopologyManager:     dagTopologyManager,
+		consensusStateManager:  consensusStateManager,
+		consensusStateStore:    consensusStateStore,
+		ghostdagDataStore:      ghostdagDataStore,
+		pruningStore:           pruningStore,
+		blockStatusStore:       blockStatusStore,
+		multiSetStore:          multiSetStore,
+		acceptanceDataStore:    acceptanceDataStore,
+		blocksStore:            blocksStore,
+		utxoDiffStore:          utxoDiffStore,
+		headerSelectedTipStore: headerSelectedTipStore,
+		genesisHash:            genesisHash,
+		pruningDepth:           pruningDepth,
+		finalityInterval:       finalityInterval,
 	}
 }
 

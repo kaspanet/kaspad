@@ -9,12 +9,8 @@ import (
 
 func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
-	selectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
-	if err != nil {
-		return err
-	}
 
-	expectedNewPruningPointHash, err := bp.pruningManager.CalculateIndependentPruningPoint(selectedTip)
+	expectedNewPruningPointHash, err := bp.pruningManager.CalculatePruningPointByHeaderSelectedTip()
 	if err != nil {
 		return err
 	}

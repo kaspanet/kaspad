@@ -226,6 +226,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		pruningStore,
 		blockStatusStore,
+		headersSelectedTipStore,
 		multisetStore,
 		acceptanceDataStore,
 		blockStore,
