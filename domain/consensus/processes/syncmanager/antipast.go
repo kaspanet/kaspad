@@ -167,24 +167,3 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 
 	return status == externalapi.StatusHeaderOnly, nil
 }
-
-func (sm *syncManager) isBlockInPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
-	if *blockHash == *sm.genesisBlockHash {
-		return false, nil
-	}
-
-	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
-	if err != nil {
-		return false, err
-	}
-	if !exists {
-		return false, nil
-	}
-
-	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
-	if err != nil {
-		return false, err
-	}
-
-	return sm.dagTopologyManager.IsAncestorOf(pruningPoint, blockHash)
-}

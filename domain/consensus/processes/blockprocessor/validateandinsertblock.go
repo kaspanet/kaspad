@@ -159,7 +159,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	}
 
 	if hasValidatedOnlyHeader {
-		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork")
+		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork", blockHash)
 		return nil
 	}
 
@@ -200,7 +200,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 			return err
 		}
 	} else {
-		log.Tracef("Skipping ValidateBodyInContext for block %s because it's header only")
+		log.Tracef("Skipping ValidateBodyInContext for block %s because it's header only", blockHash)
 	}
 
 	return nil

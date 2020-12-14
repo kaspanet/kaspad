@@ -138,12 +138,6 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
 
-	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
-	if err != nil {
-		return nil, err
-	}
-	blockInfo.IsBlockInHeaderPruningPointFuture = isBlockInHeaderPruningPointFuture
-
 	return blockInfo, nil
 }
 
