@@ -93,7 +93,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
-	err = csm.validateNewPruningAgainstPastUTXO(newPruningPoint)
+	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPoint, utxo.NewUTXODiff())
 	if err != nil {
 		return err
 	}
@@ -115,19 +115,6 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	log.Tracef("Staging the new pruning point as %s", externalapi.StatusValid)
 	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusValid)
 	return nil
-}
-
-func (csm *consensusStateManager) validateNewPruningAgainstPastUTXO(newPruningPoint *externalapi.DomainBlock) error {
-	headersSelectedTip, err := csm.headersSelectedTipStore.HeadersSelectedTip(csm.databaseContext)
-	if err != nil {
-		return err
-	}
-
-	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
-	pruningPointSelectedChild, err := csm.dagTopologyManager.ChildInSelectedParentChainOf(newPruningPointHash,
-		headersSelectedTip)
-
-	return csm.validateBlockTransactionsAgainstPastUTXO(newPruningPoint, pruningPointSelectedChild, utxo.NewUTXODiff())
 }
 
 func (csm *consensusStateManager) discardSetPruningPointUTXOSetChanges() {
