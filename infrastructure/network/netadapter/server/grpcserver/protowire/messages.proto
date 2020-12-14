@@ -84,6 +84,8 @@ message KaspadMessage {
     UtxosChangedNotificationMessage utxosChangedNotification = 1051;
     GetUtxosByAddressesRequestMessage getUtxosByAddressesRequest = 1052;
     GetUtxosByAddressesResponseMessage getUtxosByAddressesResponse = 1053;
+    GetVirtualSelectedParentBlueScoreRequestMessage getVirtualSelectedParentBlueScoreRequest = 1054;
+    GetVirtualSelectedParentBlueScoreResponseMessage getVirtualSelectedParentBlueScoreResponse = 1055;
   }
 }
 
@@ -677,6 +679,15 @@ message GetUtxosByAddressesRequestMessage {
 
 message GetUtxosByAddressesResponseMessage {
   repeated UtxosByAddressesEntry entries = 1;
+
+  RPCError error = 1000;
+}
+
+message GetVirtualSelectedParentBlueScoreRequestMessage {
+}
+
+message GetVirtualSelectedParentBlueScoreResponseMessage {
+  uint64 blueScore = 1;
 
   RPCError error = 1000;
 }
