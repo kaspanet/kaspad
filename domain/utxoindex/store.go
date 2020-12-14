@@ -183,3 +183,7 @@ func (uis *utxoIndexStore) stagedData() (
 
 	return toAddClone, toRemoveClone
 }
+
+func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(ScriptPublicKeyHexString) (UTXOOutpointEntryPairs, error) {
+	return nil, nil
+}

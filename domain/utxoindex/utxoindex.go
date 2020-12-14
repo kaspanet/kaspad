@@ -130,5 +130,6 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 }
 
 func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
-	return nil, nil
+	scriptPublicKeyHexString := ConvertScriptPublicKeyToHexString(scriptPublicKey)
+	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKeyHexString)
 }
