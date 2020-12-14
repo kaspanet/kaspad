@@ -95,23 +95,28 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
+	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, virtual.SelectedParent())
+	if err != nil {
+		return err
+	}
+
 	currentPGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentP)
 	if err != nil {
 		return err
 	}
 	currentPBlueScore := currentPGhost.BlueScore()
 	// Because the pruning point changes only once per finality, then there's no need to even check for that if a finality interval hasn't passed.
-	if virtual.BlueScore() <= currentPBlueScore+pm.finalityInterval {
+	if virtualSelectedParent.BlueScore() <= currentPBlueScore+pm.finalityInterval {
 		return nil
 	}
 
 	// This means the pruning point is still genesis.
-	if virtual.BlueScore() <= pm.pruningDepth+pm.finalityInterval {
+	if virtualSelectedParent.BlueScore() <= pm.pruningDepth+pm.finalityInterval {
 		return nil
 	}
 
 	// get Virtual(pruningDepth)
-	newPruningPoint, err := pm.CalculateIndependentPruningPoint(model.VirtualBlockHash)
+	newPruningPoint, err := pm.calculatePruningPointFromBlock(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -229,7 +234,16 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	return false, nil
 }
 
-func (pm *pruningManager) CalculateIndependentPruningPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (pm *pruningManager) CalculatePruningPointByHeaderSelectedTip() (*externalapi.DomainHash, error) {
+	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return pm.calculatePruningPointFromBlock(headersSelectedTip)
+}
+
+func (pm *pruningManager) calculatePruningPointFromBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
