@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
@@ -19,7 +20,7 @@ var virtualHeaderHash = &externalapi.DomainHash{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
 }
 
-func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
@@ -32,19 +33,21 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	return csm.commitSetPruningPointUTXOSetAll()
 }
 
-func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainHash, serializedUTXOSet []byte) error {
+func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	log.Tracef("updatePruningPoint start")
 	defer log.Tracef("updatePruningPoint end")
 
+	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
+
 	// We ignore the shouldSendNotification return value because we always want to send finality conflict notificaiton
 	// in case the new pruning point violates finality
-	isViolatingFinality, _, err := csm.isViolatingFinality(newPruningPoint)
+	isViolatingFinality, _, err := csm.isViolatingFinality(newPruningPointHash)
 	if err != nil {
 		return err
 	}
 
 	if isViolatingFinality {
-		log.Warnf("Finality Violation Detected! The suggest pruning point %s violates finality!", newPruningPoint)
+		log.Warnf("Finality Violation Detected! The suggest pruning point %s violates finality!", newPruningPointHash)
 		return nil
 	}
 
@@ -60,7 +63,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	}
 	log.Tracef("Calculated multiset for given UTXO set: %s", utxoSetMultiSet.Hash())
 
-	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, newPruningPoint)
+	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, newPruningPointHash)
 	if err != nil {
 		return err
 	}
@@ -88,6 +91,13 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
+	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
+	// against the provided UTXO set.
+	err = csm.validateNewPruningPointTransactions(newPruningPoint)
+	if err != nil {
+		return err
+	}
+
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
 		return err
@@ -100,10 +110,36 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	}
 
 	log.Tracef("Staging the new pruning point and its UTXO set")
-	csm.pruningStore.Stage(newPruningPoint, serializedUTXOSet)
+	csm.pruningStore.Stage(newPruningPointHash, serializedUTXOSet)
 
 	log.Tracef("Staging the new pruning point as %s", externalapi.StatusValid)
-	csm.blockStatusStore.Stage(newPruningPoint, externalapi.StatusValid)
+	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusValid)
+	return nil
+}
+
+func (csm *consensusStateManager) validateNewPruningPointTransactions(newPruningPoint *externalapi.DomainBlock) error {
+	headersSelectedTip, err := csm.headersSelectedTipStore.HeadersSelectedTip(csm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
+	pruningPointSelectedChild, err := csm.dagTopologyManager.ChildInSelectedParentChainOf(newPruningPointHash,
+		headersSelectedTip)
+
+	selectedChildPastMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(pruningPointSelectedChild)
+	if err != nil {
+		return err
+	}
+
+	for _, tx := range newPruningPoint.Transactions {
+		err := csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(tx, pruningPointSelectedChild,
+			selectedChildPastMedianTime)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
