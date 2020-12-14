@@ -29,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 		return err
 	}
 
-	err = bp.consensusStateManager.UpdatePruningPoint(expectedNewPruningPointHash, serializedUTXOSet)
+	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint, serializedUTXOSet)
 	if err != nil {
 		return err
 	}
