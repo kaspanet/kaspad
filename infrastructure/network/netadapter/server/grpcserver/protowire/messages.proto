@@ -417,11 +417,12 @@ message AddPeerResponseMessage{
 }
 
 message SubmitTransactionRequestMessage{
-  TransactionMessage transaction = 1;
+  RpcTransaction transaction = 1;
 }
 
 message SubmitTransactionResponseMessage{
-  string txId = 1;
+  string transactionId = 1;
+
   RPCError error = 1000;
 }
 
@@ -634,6 +635,28 @@ message UtxosByAddressesEntry {
   string address = 1;
   RpcOutpoint outpoint = 2;
   RpcUtxoEntry utxoEntry = 3;
+}
+
+message RpcTransaction {
+  int32 version = 1;
+  repeated RpcTransactionInput inputs = 2;
+  repeated RpcTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payloadHash = 7;
+  string payload = 8;
+}
+
+message RpcTransactionInput {
+  RpcOutpoint previousOutpoint = 1;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
 }
 
 message RpcOutpoint {

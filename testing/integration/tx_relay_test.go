@@ -42,12 +42,14 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
-	tx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
-	response, err := payer.rpcClient.SubmitTransaction(tx)
+	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
-	txID := response.TxID
+	txID := response.TransactionID
 
 	txAddedToMempoolChan := make(chan struct{})
 

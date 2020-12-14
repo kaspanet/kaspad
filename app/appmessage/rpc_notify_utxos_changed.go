@@ -50,18 +50,6 @@ type UTXOsByAddressesEntry struct {
 	UTXOEntry *RPCUTXOEntry
 }
 
-type RPCOutpoint struct {
-	TransactionID string
-	Index         uint32
-}
-
-type RPCUTXOEntry struct {
-	Amount         uint64
-	ScriptPubKey   string
-	BlockBlueScore uint64
-	IsCoinbase     bool
-}
-
 // Command returns the protocol command string for the message
 func (msg *UTXOsChangedNotificationMessage) Command() MessageCommand {
 	return CmdUTXOsChangedNotificationMessage
