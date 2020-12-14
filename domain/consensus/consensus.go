@@ -231,10 +231,16 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.consensusStateStore.Tips(s.databaseContext)
 }
 
 func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -247,10 +253,15 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
 
 	return &externalapi.VirtualInfo{
 		ParentHashes:   blockRelations.Parents,
 		Bits:           bits,
 		PastMedianTime: pastMedianTime,
+		BlueScore:      virtualGHOSTDAGData.BlueScore(),
 	}, nil
 }
