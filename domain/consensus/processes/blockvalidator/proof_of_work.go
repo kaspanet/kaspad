@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -178,9 +179,9 @@ func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBl
 	if err != nil {
 		return err
 	}
-	if isAncestorOfAny {
-		return nil
+	if !isAncestorOfAny {
+		return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
+			"expected pruning point %s to be in block %s past.", pruningPoint, consensushashing.HeaderHash(header))
 	}
-	return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
-		"expected pruning point to be in block %d past.", header.Bits)
+	return nil
 }
