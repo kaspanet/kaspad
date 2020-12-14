@@ -206,21 +206,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
 		listenerScriptPublicKeyHexString := utxoindex.ConvertScriptPublicKeyToHexString(listenerAddress.ScriptPublicKey)
 		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyHexString]; ok {
-			for outpoint, utxoEntry := range addedPairs {
-				notification.Added = append(notification.Added, &appmessage.UTXOsByAddressesEntry{
-					Address: listenerAddress.Address,
-					Outpoint: &appmessage.RPCOutpoint{
-						TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
-						Index:         outpoint.Index,
-					},
-					UTXOEntry: &appmessage.RPCUTXOEntry{
-						Amount:         utxoEntry.Amount(),
-						ScriptPubKey:   hex.EncodeToString(utxoEntry.ScriptPublicKey()),
-						BlockBlueScore: utxoEntry.BlockBlueScore(),
-						IsCoinbase:     utxoEntry.IsCoinbase(),
-					},
-				})
-			}
+			notification.Added = ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
 		}
 		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyHexString]; ok {
 			for outpoint := range removedOutpoints {

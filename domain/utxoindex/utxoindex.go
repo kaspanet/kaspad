@@ -128,3 +128,7 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 	}
 	return nil
 }
+
+func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
+	return nil, nil
+}
