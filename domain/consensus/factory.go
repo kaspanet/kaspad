@@ -241,6 +241,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagManager,
+		pruningManager,
 
 		ghostdagDataStore,
 		blockStatusStore,

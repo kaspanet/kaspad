@@ -29,6 +29,7 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
+	pruningManager model.PruningManager,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
@@ -43,6 +44,7 @@ func New(
 		dagTraversalManager: dagTraversalManager,
 		dagTopologyManager:  dagTopologyManager,
 		ghostdagManager:     ghostdagManager,
+		pruningManager:      pruningManager,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
