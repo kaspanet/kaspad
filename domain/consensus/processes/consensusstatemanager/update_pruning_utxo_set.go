@@ -32,7 +32,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 
-	// We ignore the shouldSendNotification return value because we always want to send finality conflict notificaiton
+	// We ignore the shouldSendNotification return value because we always want to send finality conflict notification
 	// in case the new pruning point violates finality
 	isViolatingFinality, _, err := csm.isViolatingFinality(newPruningPointHash)
 	if err != nil {
