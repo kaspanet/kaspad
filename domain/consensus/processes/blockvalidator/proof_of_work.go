@@ -4,11 +4,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
@@ -101,7 +106,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 
-	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
+	hasBlockBody, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
@@ -116,12 +121,31 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			continue
 		}
 
-		if isFullBlock {
-			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-			if err != nil {
-				return err
-			}
+		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if parentStatus == externalapi.StatusInvalid {
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
+		}
+
+		if hasBlockBody {
 			if parentStatus == externalapi.StatusHeaderOnly {
+				pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+				if err != nil {
+					return err
+				}
+
+				isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+				if err != nil {
+					return err
+				}
+
+				if isInPastOfPruningPoint {
+					continue
+				}
+
 				missingParentHashes = append(missingParentHashes, parent)
 			}
 		}
@@ -155,9 +179,9 @@ func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBl
 	if err != nil {
 		return err
 	}
-	if isAncestorOfAny {
-		return nil
+	if !isAncestorOfAny {
+		return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
+			"expected pruning point %s to be in block %s past.", pruningPoint, consensushashing.HeaderHash(header))
 	}
-	return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
-		"expected pruning point to be in block %d past.", header.Bits)
+	return nil
 }

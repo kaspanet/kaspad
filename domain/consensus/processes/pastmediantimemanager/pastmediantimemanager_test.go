@@ -17,7 +17,7 @@ func TestPastMedianTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		numBlocks := uint32(300)
 		blockHashes := make([]*externalapi.DomainHash, numBlocks)

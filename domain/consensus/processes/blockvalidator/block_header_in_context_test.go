@@ -20,7 +20,7 @@ func TestValidateMedianTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		addBlock := func(blockTime int64, parents []*externalapi.DomainHash, expectedErr error) (*externalapi.DomainBlock, *externalapi.DomainHash) {
 			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
@@ -87,7 +87,7 @@ func TestCheckParentsIncest(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		a, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {

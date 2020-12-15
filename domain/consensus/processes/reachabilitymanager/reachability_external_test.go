@@ -1,11 +1,12 @@
 package reachabilitymanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
@@ -16,7 +17,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -71,7 +72,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -159,9 +160,9 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
 		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
+			t.Fatalf("NewTestConsensus: %+v", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -295,7 +296,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 

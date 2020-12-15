@@ -140,9 +140,7 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				// source. So we'll take first returned address as source.
 				a.addressManager.AddAddresses(addresses...)
 			})
-	}
 
-	if a.cfg.GRPCSeed != "" {
 		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 			func(addresses []*appmessage.NetAddress) {
 				a.addressManager.AddAddresses(addresses...)

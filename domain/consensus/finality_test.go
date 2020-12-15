@@ -24,7 +24,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		buildAndInsertBlock := func(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 			block, _, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
@@ -241,7 +241,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
-		defer teardownFunc2()
+		defer teardownFunc2(false)
 
 		// Create a block on top on genesis
 		block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{params.GenesisHash})
@@ -266,7 +266,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// Teardown and assign nil to make sure we use the right DAG from here on.
-		teardownFunc1()
+		teardownFunc1(false)
 		consensusBuild = nil
 
 		// Now test against the real DAG

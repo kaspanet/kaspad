@@ -8,12 +8,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
 func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
+	defer onEnd()
+
 	block, err := v.blockStore.Block(v.databaseContext, blockHash)
 	if err != nil {
 		return err

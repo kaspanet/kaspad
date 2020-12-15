@@ -11,7 +11,7 @@ import (
 
 type consensus struct {
 	lock            *sync.Mutex
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -25,25 +25,25 @@ type consensus struct {
 	dagTraversalManager   model.DAGTraversalManager
 	difficultyManager     model.DifficultyManager
 	ghostdagManager       model.GHOSTDAGManager
-	headerTipsManager     model.HeaderTipsManager
+	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
-	acceptanceDataStore   model.AcceptanceDataStore
-	blockStore            model.BlockStore
-	blockHeaderStore      model.BlockHeaderStore
-	pruningStore          model.PruningStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	blockRelationStore    model.BlockRelationStore
-	blockStatusStore      model.BlockStatusStore
-	consensusStateStore   model.ConsensusStateStore
-	headerTipsStore       model.HeaderTipsStore
-	multisetStore         model.MultisetStore
-	reachabilityDataStore model.ReachabilityDataStore
-	utxoDiffStore         model.UTXODiffStore
-	finalityStore         model.FinalityStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockStore              model.BlockStore
+	blockHeaderStore        model.BlockHeaderStore
+	pruningStore            model.PruningStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	blockRelationStore      model.BlockRelationStore
+	blockStatusStore        model.BlockStatusStore
+	consensusStateStore     model.ConsensusStateStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	multisetStore           model.MultisetStore
+	reachabilityDataStore   model.ReachabilityDataStore
+	utxoDiffStore           model.UTXODiffStore
+	finalityStore           model.FinalityStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -138,12 +138,6 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
 
-	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
-	if err != nil {
-		return nil, err
-	}
-	blockInfo.IsBlockInHeaderPruningPointFuture = isBlockInHeaderPruningPointFuture
-
 	return blockInfo, nil
 }
 
@@ -183,11 +177,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
-func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {
+func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.consensusStateManager.SetPruningPointUTXOSet(serializedUTXOSet)
+	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
@@ -199,27 +193,6 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 		return nil, err
 	}
 	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
-}
-
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
-}
-
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
-}
-
-func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.syncManager.GetSyncInfo()
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
@@ -245,4 +218,25 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		Bits:           bits,
 		PastMedianTime: pastMedianTime,
 	}, nil
+}
+
+func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
+}
+
+func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
+}
+
+func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.GetSyncInfo()
 }

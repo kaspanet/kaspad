@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -13,6 +14,9 @@ import (
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
 func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
+	defer onEnd()
+
 	return v.checkBlockTransactionsFinalized(blockHash)
 }
 

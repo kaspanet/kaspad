@@ -23,7 +23,7 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Build the following DAG:
 		// G <- A <- B <- C <- E
@@ -119,7 +119,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Build a short chain
 		currentHash := params.GenesisHash
