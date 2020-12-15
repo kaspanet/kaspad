@@ -11,7 +11,7 @@ import (
 
 type consensus struct {
 	lock            *sync.Mutex
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder

@@ -24,7 +24,7 @@ func TestChainedTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		block1Hash, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
@@ -86,7 +86,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 		blockHash := consensushashing.BlockHash(&exampleValidBlock)
 		if len(exampleValidBlock.Transactions) < 3 {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
