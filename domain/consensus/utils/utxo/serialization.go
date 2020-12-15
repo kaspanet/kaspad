@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const uint32Size = 4
-
 // SerializeUTXO returns the byte-slice representation for given UTXOEntry-outpoint pair
 func SerializeUTXO(entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
@@ -71,12 +69,6 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 		return nil, err
 	}
 
-	indexBytes := make([]byte, uint32Size)
-	_, err = io.ReadFull(r, indexBytes)
-	if err != nil {
-		return nil, err
-	}
-
 	var index uint32
 	err = serialization.ReadElement(r, &index)
 	if err != nil {
@@ -113,19 +105,19 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	var blockBlueScore uint64
 	var amount uint64
 	var isCoinbase bool
-	err := serialization.ReadElements(r, blockBlueScore, amount, isCoinbase)
+	err := serialization.ReadElements(r, &blockBlueScore, &amount, &isCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
-	var scriptPubKeyLen int
-	err = serialization.ReadElement(r, scriptPubKeyLen)
+	var scriptPubKeyLen uint64
+	err = serialization.ReadElement(r, &scriptPubKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
 	scriptPubKey := make([]byte, scriptPubKeyLen)
-	_, err = r.Read(scriptPubKey)
+	_, err = io.ReadFull(r, scriptPubKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
