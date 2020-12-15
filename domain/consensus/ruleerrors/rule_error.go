@@ -44,6 +44,8 @@ var (
 	// range.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
+	ErrInvalidPoW = newRuleError("ErrInvalidPoW")
+
 	// ErrHighHash indicates the block does not hash to a value which is
 	// lower than the required target difficultly.
 	ErrHighHash = newRuleError("ErrHighHash")

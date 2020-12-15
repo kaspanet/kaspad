@@ -97,7 +97,7 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	if !v.skipPoW {
 		valid := pow.CheckProofOfWorkWithTarget(header, target)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrUnexpectedDifficulty, "block has invalid difficulty")
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
 	return nil
