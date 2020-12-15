@@ -48,9 +48,10 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		return nil, err
 	}
 
+	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
 	if !isHeaderOnlyBlock {
 		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlock(blockHash)
+		selectedParentChainChanges, err = bp.consensusStateManager.AddBlock(blockHash)
 		if err != nil {
 			return nil, err
 		}

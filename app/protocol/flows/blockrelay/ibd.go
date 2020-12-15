@@ -205,7 +205,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, nil
 	}
 
-	_, err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, utxoSet)
+	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, utxoSet)
 	if err != nil {
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
 	}
