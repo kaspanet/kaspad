@@ -38,6 +38,11 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	// blue.
 	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInAntiPastHashesBetween {
 		highHash = highBlockGHOSTDAGData.SelectedParent()
+		var err error
+		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Collect every node in highHash's past (including itself) but
