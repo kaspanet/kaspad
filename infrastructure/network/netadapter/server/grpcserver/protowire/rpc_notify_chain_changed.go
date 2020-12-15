@@ -68,8 +68,8 @@ func (x *ChainBlock) toAppMessage() (*appmessage.ChainBlock, error) {
 	acceptedBlocks := make([]*appmessage.AcceptedBlock, len(x.AcceptedBlocks))
 	for j, acceptedBlock := range x.AcceptedBlocks {
 		acceptedBlocks[j] = &appmessage.AcceptedBlock{
-			Hash:          acceptedBlock.Hash,
-			AcceptedTxIDs: acceptedBlock.AcceptedTxIds,
+			Hash:                   acceptedBlock.Hash,
+			AcceptedTransactionIDs: acceptedBlock.AcceptedTransactionIds,
 		}
 	}
 	return &appmessage.ChainBlock{
@@ -82,8 +82,8 @@ func (x *ChainBlock) fromAppMessage(message *appmessage.ChainBlock) error {
 	acceptedBlocks := make([]*AcceptedBlock, len(message.AcceptedBlocks))
 	for j, acceptedBlock := range message.AcceptedBlocks {
 		acceptedBlocks[j] = &AcceptedBlock{
-			Hash:          acceptedBlock.Hash,
-			AcceptedTxIds: acceptedBlock.AcceptedTxIDs,
+			Hash:                   acceptedBlock.Hash,
+			AcceptedTransactionIds: acceptedBlock.AcceptedTransactionIDs,
 		}
 	}
 	*x = ChainBlock{

@@ -34,5 +34,6 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 		return err
 	}
 
-	return bp.ValidateAndInsertBlock(newPruningPoint)
+	_, err = bp.ValidateAndInsertBlock(newPruningPoint)
+	return err
 }

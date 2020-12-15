@@ -19,7 +19,7 @@ type TestConsensus interface {
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block
 	AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error)
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
 
 	DiscardAllStores()
 

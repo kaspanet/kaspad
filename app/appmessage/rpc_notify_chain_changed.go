@@ -49,8 +49,8 @@ type ChainBlock struct {
 
 // AcceptedBlock represents a block accepted into the DAG
 type AcceptedBlock struct {
-	Hash          string
-	AcceptedTxIDs []string
+	Hash                   string
+	AcceptedTransactionIDs []string
 }
 
 // Command returns the protocol command string for the message

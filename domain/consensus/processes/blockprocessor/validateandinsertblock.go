@@ -11,12 +11,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(block)
 	if err != nil {
 		bp.discardAllChanges()
-		return err
+		return nil, err
 	}
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
@@ -30,7 +30,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 	// collected so far
 	err = bp.commitAllChanges()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
@@ -39,27 +39,28 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		var err error
 		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	err = bp.headerTipsManager.AddHeaderTip(blockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
 	if !isHeaderOnlyBlock {
 		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlock(blockHash)
+		selectedParentChainChanges, err = bp.consensusStateManager.AddBlock(blockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if isGenesis {
 		err := bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -67,13 +68,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.UpdatePruningPointByVirtual()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	err = bp.commitAllChanges()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Debugf("Block %s validated and inserted", blockHash)
@@ -94,10 +95,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			virtualGhostDAGData.BlueScore(), syncInfo.IsAwaitingUTXOSet, syncInfo.BlockCount, syncInfo.HeaderCount)
 	}))
 	if logClosureErr != nil {
-		return logClosureErr
+		return nil, logClosureErr
 	}
 
-	return nil
+	return &externalapi.BlockInsertionResult{
+		SelectedParentChainChanges: selectedParentChainChanges,
+	}, nil
 }
 
 func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {

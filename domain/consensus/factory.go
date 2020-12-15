@@ -335,7 +335,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	}
 
 	if !genesisInfo.Exists {
-		err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
+		_, err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
 		if err != nil {
 			return nil, err
 		}

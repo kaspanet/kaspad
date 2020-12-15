@@ -3,7 +3,7 @@ package externalapi
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	ValidateAndInsertBlock(block *DomainBlock) error
+	ValidateAndInsertBlock(block *DomainBlock) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)

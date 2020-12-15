@@ -29,7 +29,7 @@ func TestValidateMedianTime(t *testing.T) {
 			}
 
 			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
+			_, err = tc.ValidateAndInsertBlock(block)
 			if !errors.Is(err, expectedErr) {
 				t.Fatalf("expected error %s but got %+v", expectedErr, err)
 			}
@@ -89,17 +89,17 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 		defer teardown(false)
 
-		a, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		a, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		b, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
+		b, _, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		c, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		c, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -118,7 +118,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			Transactions: nil,
 		}
 
-		err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
+		_, err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}
@@ -137,13 +137,13 @@ func TestCheckParentsIncest(t *testing.T) {
 			Transactions: nil,
 		}
 
-		err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
+		_, err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
 		// Try to add block with unrelated parents
-		_, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}

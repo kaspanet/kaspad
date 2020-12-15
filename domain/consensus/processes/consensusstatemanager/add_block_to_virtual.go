@@ -8,14 +8,14 @@ import (
 // AddBlockToVirtual submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
-func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) error {
+func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
 	log.Tracef("AddBlock start for block %s", blockHash)
 	defer log.Tracef("AddBlock end for block %s", blockHash)
 
 	log.Tracef("Resolving whether the block %s is the next virtual selected parent", blockHash)
 	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(blockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if isCandidateToBeNextVirtualSelectedParent {
@@ -26,7 +26,7 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 			"finality", blockHash)
 		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(blockHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if shouldNotify {
@@ -38,7 +38,7 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 			log.Tracef("Block %s doesn't violate finality. Resolving its block status", blockHash)
 			blockStatus, err := csm.resolveBlockStatus(blockHash)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			log.Debugf("Block %s resolved to status `%s`", blockHash, blockStatus)
@@ -51,17 +51,17 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) er
 	log.Tracef("Adding block %s to the DAG tips", blockHash)
 	newTips, err := csm.addTip(blockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Tracef("After adding %s, the new tips are %s", blockHash, newTips)
 
 	log.Tracef("Updating the virtual with the new tips")
-	err = csm.updateVirtual(blockHash, newTips)
+	selectedParentChainChanges, err := csm.updateVirtual(blockHash, newTips)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return selectedParentChainChanges, nil
 }
 
 func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
