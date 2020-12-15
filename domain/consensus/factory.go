@@ -47,9 +47,10 @@ import (
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
+	NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
-		tc testapi.TestConsensus, teardown func(), err error)
+		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 }
 
 type factory struct{}
@@ -343,7 +344,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 }
 
 func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
-	tc testapi.TestConsensus, teardown func(), err error) {
+	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	dataDir, err := ioutil.TempDir("", testName)
 	if err != nil {
@@ -354,7 +355,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 }
 
 func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
-	tc testapi.TestConsensus, teardown func(), err error) {
+	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	db, err := ldb.NewLevelDB(dataDir)
 	if err != nil {
@@ -379,9 +380,14 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 		testTransactionValidator: testTransactionValidator,
 	}
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
-	teardown = func() {
+	teardown = func(keepDataDir bool) {
 		db.Close()
-		os.RemoveAll(dataDir)
+		if !keepDataDir {
+			err := os.RemoveAll(dataDir)
+			if err != nil {
+				log.Errorf("Error removing data directory for test consensus: %s", err)
+			}
+		}
 	}
 
 	return tstConsensus, teardown, nil

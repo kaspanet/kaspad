@@ -19,7 +19,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		invalidBlock, _, err := consensus.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {

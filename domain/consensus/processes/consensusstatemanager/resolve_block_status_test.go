@@ -25,7 +25,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Mine chain of two blocks to fund our double spend
 		firstBlockHash, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
@@ -157,7 +157,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		genesisHash := params.GenesisHash
 		allHashes := []*externalapi.DomainHash{genesisHash}

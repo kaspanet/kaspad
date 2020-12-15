@@ -16,7 +16,7 @@ func TestIsAncestorOf(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		// Add a chain of two blocks above the genesis. This will be the
 		// selected parent chain.
