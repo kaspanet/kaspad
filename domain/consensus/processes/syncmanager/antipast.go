@@ -16,19 +16,17 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	if err != nil {
 		return nil, err
 	}
-	lowBlockBlueScore := lowBlockGHOSTDAGData.BlueScore()
 	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
 	if err != nil {
 		return nil, err
 	}
-	highBlockBlueScore := highBlockGHOSTDAGData.BlueScore()
-	if lowBlockBlueScore >= highBlockBlueScore {
+	if lowBlockGHOSTDAGData.BlueScore() >= highBlockGHOSTDAGData.BlueScore() {
 		return nil, errors.Errorf("low hash blueScore >= high hash blueScore (%d >= %d)",
-			lowBlockBlueScore, highBlockBlueScore)
+			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
 	}
 
 	// In order to get no more then maxHashesInAntiPastHashesBetween
-	// blocks from th future of the lowHash (including itself),
+	// blocks from the future of the lowHash (including itself),
 	// we iterate the selected parent chain of the highNode and
 	// stop once we reach
 	// highBlockBlueScore-lowBlockBlueScore+1 <= maxHashesInAntiPastHashesBetween.
@@ -36,8 +34,13 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	// Using blueScore as an approximation is considered to be
 	// fairly accurate because we presume that most DAG blocks are
 	// blue.
-	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInAntiPastHashesBetween {
+	for highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxHashesInAntiPastHashesBetween {
 		highHash = highBlockGHOSTDAGData.SelectedParent()
+		var err error
+		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Collect every node in highHash's past (including itself) but
