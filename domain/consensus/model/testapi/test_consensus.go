@@ -11,7 +11,7 @@ type TestConsensus interface {
 	externalapi.Consensus
 
 	DAGParams() *dagconfig.Params
-	DatabaseContext() model.DBReader
+	DatabaseContext() model.DBManager
 
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)

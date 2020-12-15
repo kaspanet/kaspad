@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 )
 
-func (tc *testConsensus) DatabaseContext() model.DBReader {
+func (tc *testConsensus) DatabaseContext() model.DBManager {
 	return tc.databaseContext
 }
 
