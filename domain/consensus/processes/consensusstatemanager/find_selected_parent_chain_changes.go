@@ -2,7 +2,7 @@ package consensusstatemanager
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-func (csm *consensusStateManager) findSelectedParentChainChanges(
+func (csm *consensusStateManager) calculateSelectedParentChainChanges(
 	oldVirtualSelectedParent, newVirtualSelectedParent *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
 
 	// Walk down from the old virtual until we reach the common selected

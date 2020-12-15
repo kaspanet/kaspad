@@ -9,10 +9,10 @@ import (
 	"testing"
 )
 
-func TestFindSelectedParentChainChanges(t *testing.T) {
+func TestCalculateSelectedParentChainChanges(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestFindSelectedParentChainChanges")
+		consensus, teardown, err := factory.NewTestConsensus(params, "TestCalculateSelectedParentChainChanges")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
