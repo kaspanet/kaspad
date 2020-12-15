@@ -90,5 +90,20 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 			t.Fatalf("The `added` slice contains an unexpected hash as the second item. "+
 				"Want: %s, got: %s", blockCHash, blockCSelectedParentChainChanges.Added[1])
 		}
+
+		// Add block D over the genesis
+		_, blockDInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error adding block D: %+v", err)
+		}
+		blockDSelectedParentChainChanges := blockDInsertionResult.SelectedParentChainChanges
+
+		// Make sure that both the added and the removed slices are empty
+		if len(blockDSelectedParentChainChanges.Added) > 0 {
+			t.Fatalf("The `added` slice is not empty after inserting block D")
+		}
+		if len(blockDSelectedParentChainChanges.Removed) > 0 {
+			t.Fatalf("The `removed` slice is not empty after inserting block D")
+		}
 	})
 }
