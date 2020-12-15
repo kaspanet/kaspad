@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -26,10 +27,14 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 
 func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) error {
 	key := ConvertScriptPublicKeyToHexString(scriptPublicKey)
+	log.Tracef("Adding outpoint %s:%d to scriptPublicKey %s",
+		outpoint.TransactionID, outpoint.Index, key)
 
 	// If the outpoint exists in `toRemove` simply remove it from there and return
 	if toRemoveOutpointsOfKey, ok := uis.toRemove[key]; ok {
 		if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
+			log.Tracef("Outpoint %s:%d exists in `toRemove`. Deleting it from there",
+				outpoint.TransactionID, outpoint.Index)
 			delete(toRemoveOutpointsOfKey, *outpoint)
 			return nil
 		}
@@ -37,6 +42,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 
 	// Create a UTXOOutpointEntryPairs entry in `toAdd` if it doesn't exist
 	if _, ok := uis.toAdd[key]; !ok {
+		log.Tracef("Creating key %s in `toAdd`", key)
 		uis.toAdd[key] = make(UTXOOutpointEntryPairs)
 	}
 
@@ -47,15 +53,22 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 	}
 
 	toAddPairsOfKey[*outpoint] = *utxoEntry
+
+	log.Tracef("Added outpoint %s:%d to scriptPublicKey %s",
+		outpoint.TransactionID, outpoint.Index, key)
 	return nil
 }
 
 func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint) error {
 	key := ConvertScriptPublicKeyToHexString(scriptPublicKey)
+	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
+		outpoint.TransactionID, outpoint.Index, key)
 
 	// If the outpoint exists in `toAdd` simply remove it from there and return
 	if toAddPairsOfKey, ok := uis.toAdd[key]; ok {
 		if _, ok := toAddPairsOfKey[*outpoint]; ok {
+			log.Tracef("Outpoint %s:%d exists in `toAdd`. Deleting it from there",
+				outpoint.TransactionID, outpoint.Index)
 			delete(toAddPairsOfKey, *outpoint)
 			return nil
 		}
@@ -63,6 +76,7 @@ func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.
 
 	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
+		log.Tracef("Creating key %s in `toRemove`", key)
 		uis.toRemove[key] = make(UTXOOutpoints)
 	}
 
@@ -73,6 +87,9 @@ func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.
 	}
 
 	toRemoveOutpointsOfKey[*outpoint] = struct{}{}
+
+	log.Tracef("Removed outpoint %s:%d from scriptPublicKey %s",
+		outpoint.TransactionID, outpoint.Index, key)
 	return nil
 }
 
@@ -82,6 +99,9 @@ func (uis *utxoIndexStore) discard() {
 }
 
 func (uis *utxoIndexStore) commit() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.commit")
+	defer onEnd()
+
 	dbTransaction, err := uis.database.Begin()
 	if err != nil {
 		return err
