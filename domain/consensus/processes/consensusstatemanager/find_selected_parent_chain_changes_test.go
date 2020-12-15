@@ -9,14 +9,14 @@ import (
 	"testing"
 )
 
-func TestFindSelectedParentChainChanges(t *testing.T) {
+func TestCalculateSelectedParentChainChanges(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestFindSelectedParentChainChanges")
+		consensus, teardown, err := factory.NewTestConsensus(params, "TestCalculateSelectedParentChainChanges")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Add block A over the genesis
 		blockAHash, blockAInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
@@ -89,6 +89,21 @@ func TestFindSelectedParentChainChanges(t *testing.T) {
 		if *blockCSelectedParentChainChanges.Added[1] != *blockCHash {
 			t.Fatalf("The `added` slice contains an unexpected hash as the second item. "+
 				"Want: %s, got: %s", blockCHash, blockCSelectedParentChainChanges.Added[1])
+		}
+
+		// Add block D over the genesis
+		_, blockDInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error adding block D: %+v", err)
+		}
+		blockDSelectedParentChainChanges := blockDInsertionResult.SelectedParentChainChanges
+
+		// Make sure that both the added and the removed slices are empty
+		if len(blockDSelectedParentChainChanges.Added) > 0 {
+			t.Fatalf("The `added` slice is not empty after inserting block D")
+		}
+		if len(blockDSelectedParentChainChanges.Removed) > 0 {
+			t.Fatalf("The `removed` slice is not empty after inserting block D")
 		}
 	})
 }

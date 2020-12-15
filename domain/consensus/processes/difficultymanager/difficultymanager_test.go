@@ -26,7 +26,7 @@ func TestDifficulty(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		addBlock := func(blockTime int64, parents ...*externalapi.DomainHash) (*externalapi.DomainBlock, *externalapi.DomainHash) {
 			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(parents...)

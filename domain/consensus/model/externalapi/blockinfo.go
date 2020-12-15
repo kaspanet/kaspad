@@ -6,8 +6,6 @@ type BlockInfo struct {
 	BlockStatus BlockStatus
 	BlueScore   uint64
 
-	IsBlockInHeaderPruningPointFuture bool
-
 	AcceptanceData AcceptanceData
 }
 
