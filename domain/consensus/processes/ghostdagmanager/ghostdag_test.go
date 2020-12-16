@@ -343,6 +343,6 @@ func (b *blockHeadersStore) Delete(blockHash *externalapi.DomainHash) {
 	delete(b.dagMap, *blockHash)
 }
 
-func (b blockHeadersStore) Count() uint64 {
+func (b *blockHeadersStore) Count() uint64 {
 	return uint64(len(b.dagMap))
 }
