@@ -37,7 +37,7 @@ func (s *selectedChildIterator) Next() bool {
 	return false
 }
 
-func (s selectedChildIterator) Get() *externalapi.DomainHash {
+func (s *selectedChildIterator) Get() *externalapi.DomainHash {
 	return s.current
 }
 

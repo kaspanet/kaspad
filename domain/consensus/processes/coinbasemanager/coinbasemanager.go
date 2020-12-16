@@ -18,7 +18,7 @@ type coinbaseManager struct {
 	acceptanceDataStore model.AcceptanceDataStore
 }
 
-func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
+func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
@@ -64,7 +64,7 @@ func (c coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Doma
 
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
-func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
+func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
 	blockAcceptanceData *model.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
 
 	totalFees := uint64(0)
@@ -109,7 +109,7 @@ func (c coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Domai
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func (c coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
 	if c.subsidyReductionInterval == 0 {
 		return c.baseSubsidy, nil
 	}
