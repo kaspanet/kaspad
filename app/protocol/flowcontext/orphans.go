@@ -9,8 +9,8 @@ import (
 
 // maxOrphans is the maximum amount of orphans allowed in the
 // orphans collection. This number is an approximation of how
-// many orphans there can possibly be in an average case. It
-// is based on: 2^orphanResolutionRange * PHANTOM K.
+// many orphans there can possibly be on average. It is based
+// on: 2^orphanResolutionRange * PHANTOM K.
 const maxOrphans = 600
 
 // AddOrphan adds the block to the orphan set
@@ -23,19 +23,20 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 
 	if len(f.orphans) > maxOrphans {
 		log.Debugf("Orphan collection size exceeded. Evicting a random orphan")
-		f.removeRandomOrphan()
+		f.evictRandomOrphan()
 	}
 
 	log.Infof("Received a block with missing parents, adding to orphan pool: %s", orphanHash)
 }
 
-func (f *FlowContext) removeRandomOrphan() {
-	var toRemove externalapi.DomainHash
+func (f *FlowContext) evictRandomOrphan() {
+	var toEvict externalapi.DomainHash
 	for hash := range f.orphans {
-		toRemove = hash
+		toEvict = hash
 		break
 	}
-	delete(f.orphans, toRemove)
+	delete(f.orphans, toEvict)
+	log.Debugf("Evicted %s from the orphan collection")
 }
 
 // IsOrphan returns whether the given blockHash belongs to an orphan block
