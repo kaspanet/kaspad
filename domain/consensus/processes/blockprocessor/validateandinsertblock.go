@@ -86,13 +86,10 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock)
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
 		}
-		syncInfo, err := bp.syncManager.GetSyncInfo()
-		if err != nil {
-			logClosureErr = err
-			return fmt.Sprintf("Failed to get sync info: %s", err)
-		}
-		return fmt.Sprintf("New virtual's blue score: %d. Is awaiting UTXO set: %t. Block count: %d. Header count: %d",
-			virtualGhostDAGData.BlueScore(), syncInfo.IsAwaitingUTXOSet, syncInfo.BlockCount, syncInfo.HeaderCount)
+		headerCount := bp.blockHeaderStore.Count()
+		blockCount := bp.blockStore.Count()
+		return fmt.Sprintf("New virtual's blue score: %d. Block count: %d. Header count: %d",
+			virtualGhostDAGData.BlueScore(), blockCount, headerCount)
 	}))
 	if logClosureErr != nil {
 		return nil, logClosureErr
