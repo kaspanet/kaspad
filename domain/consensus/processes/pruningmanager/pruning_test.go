@@ -93,7 +93,7 @@ func TestPruning(t *testing.T) {
 					parentHashes = append(parentHashes, parentHash)
 				}
 
-				blockHash, err := tc.AddBlock(parentHashes, nil, nil)
+				blockHash, _, err := tc.AddBlock(parentHashes, nil, nil)
 				if err != nil {
 					t.Fatalf("AddBlock: %+v", err)
 				}
