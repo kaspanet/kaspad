@@ -68,7 +68,7 @@ type blockHeap struct {
 }
 
 // NewDownHeap initializes and returns a new blockHeap
-func (dtm dagTraversalManager) NewDownHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewDownHeap() model.BlockHeap {
 	h := blockHeap{
 		impl:          &downHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
@@ -79,7 +79,7 @@ func (dtm dagTraversalManager) NewDownHeap() model.BlockHeap {
 }
 
 // NewUpHeap initializes and returns a new blockHeap
-func (dtm dagTraversalManager) NewUpHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewUpHeap() model.BlockHeap {
 	h := blockHeap{
 		impl:          &upHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
@@ -122,7 +122,7 @@ type sizedUpBlockHeap struct {
 }
 
 // newSizedUpHeap initializes and returns a new sizedUpBlockHeap
-func (dtm dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
+func (dtm *dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
 	h := sizedUpBlockHeap{
 		impl:          upHeap{baseHeap{slice: make([]*blockHeapNode, 0, cap), ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,

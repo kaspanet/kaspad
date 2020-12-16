@@ -9,15 +9,15 @@ type testReachabilityManager struct {
 	*reachabilityManager
 }
 
-func (t testReachabilityManager) ReachabilityReindexSlack() uint64 {
+func (t *testReachabilityManager) ReachabilityReindexSlack() uint64 {
 	return t.reachabilityManager.reindexSlack
 }
 
-func (t testReachabilityManager) SetReachabilityReindexSlack(reindexSlack uint64) {
+func (t *testReachabilityManager) SetReachabilityReindexSlack(reindexSlack uint64) {
 	t.reachabilityManager.reindexSlack = reindexSlack
 }
 
-func (t testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uint64) {
+func (t *testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uint64) {
 	t.reachabilityManager.reindexWindow = reindexWindow
 }
 
