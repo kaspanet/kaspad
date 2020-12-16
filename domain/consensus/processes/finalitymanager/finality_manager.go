@@ -35,31 +35,6 @@ func New(databaseContext model.DBReader,
 	}
 }
 
-func (fm *finalityManager) IsViolatingFinality(blockHash *externalapi.DomainHash) (bool, error) {
-	if *blockHash == *fm.genesisHash {
-		log.Tracef("Block %s is the genesis block, "+
-			"and does not violate finality by definition", blockHash)
-		return false, nil
-	}
-	log.Tracef("isViolatingFinality start for block %s", blockHash)
-	defer log.Tracef("isViolatingFinality end for block %s", blockHash)
-
-	virtualFinalityPoint, err := fm.VirtualFinalityPoint()
-	if err != nil {
-		return false, err
-	}
-	log.Tracef("The virtual finality point is: %s", virtualFinalityPoint)
-
-	isInSelectedParentChain, err := fm.dagTopologyManager.IsInSelectedParentChainOf(virtualFinalityPoint, blockHash)
-	if err != nil {
-		return false, err
-	}
-	log.Tracef("Is the virtual finality point %s "+
-		"in the selected parent chain of %s: %t", virtualFinalityPoint, blockHash, isInSelectedParentChain)
-
-	return !isInSelectedParentChain, nil
-}
-
 func (fm *finalityManager) VirtualFinalityPoint() (*externalapi.DomainHash, error) {
 	log.Tracef("virtualFinalityPoint start")
 	defer log.Tracef("virtualFinalityPoint end")

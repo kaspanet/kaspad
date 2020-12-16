@@ -44,6 +44,9 @@ var (
 	// range.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
+	// ErrInvalidPoW indicates that the block proof-of-work is invalid.
+	ErrInvalidPoW = newRuleError("ErrInvalidPoW")
+
 	// ErrHighHash indicates the block does not hash to a value which is
 	// lower than the required target difficultly.
 	ErrHighHash = newRuleError("ErrHighHash")
@@ -56,7 +59,7 @@ var (
 	// the expected value.
 	ErrBadUTXOCommitment = newRuleError("ErrBadUTXOCommitment")
 
-	// ErrInvalidSubnetwork indicates the subnetwork is now allowed.
+	// ErrInvalidSubnetwork indicates the subnetwork is not allowed.
 	ErrInvalidSubnetwork = newRuleError("ErrInvalidSubnetwork")
 
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
@@ -237,6 +240,8 @@ var (
 
 	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
+
+	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

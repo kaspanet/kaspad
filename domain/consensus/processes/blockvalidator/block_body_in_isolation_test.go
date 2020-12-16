@@ -24,9 +24,9 @@ func TestChainedTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
-		block1Hash, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -47,13 +47,13 @@ func TestChainedTransactions(t *testing.T) {
 		}
 
 		// Check that a block is invalid if it contains chained transactions
-		_, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil,
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil,
 			[]*externalapi.DomainTransaction{tx1, chainedTx})
 		if !errors.Is(err, ruleerrors.ErrChainedTransactions) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
-		block2Hash, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, nil)
+		block2Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("unexpected error %+v", err)
 		}
@@ -69,7 +69,7 @@ func TestChainedTransactions(t *testing.T) {
 		}
 
 		// Check that a block is valid if it contains two non chained transactions
-		_, err = tc.AddBlock([]*externalapi.DomainHash{block2Hash}, nil,
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block2Hash}, nil,
 			[]*externalapi.DomainTransaction{tx1, tx2})
 		if err != nil {
 			t.Fatalf("unexpected error %+v", err)
@@ -86,7 +86,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 		blockHash := consensushashing.BlockHash(&exampleValidBlock)
 		if len(exampleValidBlock.Transactions) < 3 {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))

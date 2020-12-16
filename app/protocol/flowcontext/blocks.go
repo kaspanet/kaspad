@@ -89,7 +89,7 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
-	err := f.Domain().Consensus().ValidateAndInsertBlock(block)
+	_, err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Infof("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)

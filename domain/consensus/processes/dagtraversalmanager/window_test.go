@@ -1,14 +1,15 @@
 package dagtraversalmanager_test
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"reflect"
-	"testing"
 )
 
 func TestBlueBlockWindow(t *testing.T) {
@@ -313,7 +314,7 @@ func TestBlueBlockWindow(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		windowSize := 10
 		blockByIDMap := make(map[string]*externalapi.DomainHash)
@@ -330,7 +331,7 @@ func TestBlueBlockWindow(t *testing.T) {
 				parents.Add(parent)
 			}
 
-			block, err := tc.AddBlock(parents.ToSlice(), nil, nil)
+			block, _, err := tc.AddBlock(parents.ToSlice(), nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}

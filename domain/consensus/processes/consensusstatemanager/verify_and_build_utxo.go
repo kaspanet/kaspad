@@ -47,7 +47,7 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 	log.Tracef("Coinbase transaction validation passed for block %s", blockHash)
 
 	log.Tracef("Validating transactions against past UTXO for block %s", blockHash)
-	err = csm.validateBlockTransactionsAgainstPastUTXO(block, blockHash, pastUTXODiff)
+	err = csm.validateBlockTransactionsAgainstPastUTXO(block, pastUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -57,8 +57,9 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 }
 
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
+	pastUTXODiff model.UTXODiff) error {
 
+	blockHash := consensushashing.BlockHash(block)
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
 

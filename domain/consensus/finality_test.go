@@ -24,7 +24,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		buildAndInsertBlock := func(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 			block, _, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
@@ -32,7 +32,7 @@ func TestFinality(t *testing.T) {
 				return nil, err
 			}
 
-			err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				return nil, err
 			}
@@ -190,7 +190,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
-			err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block)
 			if err == nil {
 				return block, false
 			} else if errors.Is(err, ruleerrors.ErrViolatingBoundedMergeDepth) {
@@ -202,7 +202,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		processBlock := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock, name string) {
-			err := consensus.ValidateAndInsertBlock(block)
+			_, err := consensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: %s got unexpected error from ProcessBlock: %+v", name, err)
 
@@ -214,7 +214,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed building block: %v", err)
 			}
-			err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed Inserting block to consensus: %v", err)
 			}
@@ -241,7 +241,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
-		defer teardownFunc2()
+		defer teardownFunc2(false)
 
 		// Create a block on top on genesis
 		block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{params.GenesisHash})
@@ -266,7 +266,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// Teardown and assign nil to make sure we use the right DAG from here on.
-		teardownFunc1()
+		teardownFunc1(false)
 		consensusBuild = nil
 
 		// Now test against the real DAG

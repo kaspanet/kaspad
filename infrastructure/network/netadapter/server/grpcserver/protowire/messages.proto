@@ -439,7 +439,7 @@ message ChainBlock{
 
 message AcceptedBlock{
   string hash = 1;
-  repeated string acceptedTxIds = 2;
+  repeated string acceptedTransactionIds = 2;
 }
 
 message GetBlockRequestMessage{
