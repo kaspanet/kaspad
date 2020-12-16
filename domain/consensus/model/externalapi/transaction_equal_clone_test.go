@@ -8,55 +8,55 @@ import (
 // Changed fields of a test struct compared to a base test struct marked as "changed" and
 // pointing in some cases name changed struct field
 
-type TransactionToCompare struct {
+type transactionToCompare struct {
 	tx             *DomainTransaction
 	expectedResult bool
 	expectsPanic   bool
 }
 
-type TestDomainTransactionStruct struct {
+type testDomainTransactionStruct struct {
 	baseTx                 *DomainTransaction
-	transactionToCompareTo []*TransactionToCompare
+	transactionToCompareTo []*transactionToCompare
 }
 
-type TransactionInputToCompare struct {
+type transactionInputToCompare struct {
 	tx             *DomainTransactionInput
 	expectedResult bool
 }
 
-type TestDomainTransactionInputStruct struct {
+type testDomainTransactionInputStruct struct {
 	baseTx                      *DomainTransactionInput
-	transactionInputToCompareTo []*TransactionInputToCompare
+	transactionInputToCompareTo []*transactionInputToCompare
 }
 
-type TransactionOutputToCompare struct {
+type transactionOutputToCompare struct {
 	tx             *DomainTransactionOutput
 	expectedResult bool
 }
 
-type TestDomainTransactionOutputStruct struct {
+type testDomainTransactionOutputStruct struct {
 	baseTx                       *DomainTransactionOutput
-	transactionOutputToCompareTo []*TransactionOutputToCompare
+	transactionOutputToCompareTo []*transactionOutputToCompare
 }
 
-type DomainOutpointToCompare struct {
+type domainOutpointToCompare struct {
 	domainOutpoint *DomainOutpoint
 	expectedResult bool
 }
 
-type TestDomainOutpointStruct struct {
+type testDomainOutpointStruct struct {
 	baseDomainOutpoint        *DomainOutpoint
-	domainOutpointToCompareTo []*DomainOutpointToCompare
+	domainOutpointToCompareTo []*domainOutpointToCompare
 }
 
-type DomainTransactionIDToCompare struct {
+type domainTransactionIDToCompare struct {
 	domainTransactionID *DomainTransactionID
 	expectedResult      bool
 }
 
-type TestDomainTransactionIDStruct struct {
+type testDomainTransactionIDStruct struct {
 	baseDomainTransactionID        *DomainTransactionID
-	domainTransactionIDToCompareTo []*DomainTransactionIDToCompare
+	domainTransactionIDToCompareTo []*domainTransactionIDToCompare
 }
 
 func initTestBaseTransaction() *DomainTransaction {
@@ -93,9 +93,9 @@ func initTestBaseTransaction() *DomainTransaction {
 	return testTx
 }
 
-func initTestTransactionToCompare() []*TransactionToCompare {
+func initTestTransactionToCompare() []*transactionToCompare {
 
-	testTx := []*TransactionToCompare{{
+	testTx := []*transactionToCompare{{
 		tx: &DomainTransaction{
 			1,
 			[]*DomainTransactionInput{{DomainOutpoint{
@@ -124,7 +124,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-		}, //0
+		},
 		expectedResult: false,
 	}, {
 		tx: &DomainTransaction{
@@ -155,7 +155,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-		}, //1
+		},
 		expectedResult: false,
 	}, {
 		tx: &DomainTransaction{
@@ -186,7 +186,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-		}, //2
+		},
 		expectedResult: false,
 	}, {
 		tx: &DomainTransaction{
@@ -217,7 +217,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-		}, //3
+		},
 		expectedResult: false,
 	}, {
 		tx: &DomainTransaction{
@@ -247,7 +247,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-		}, //4
+		},
 		expectedResult: true,
 	},
 		{
@@ -311,7 +311,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			}, //5
+			},
 			expectedResult: false,
 		}, {
 			tx: &DomainTransaction{
@@ -401,7 +401,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			}, //8
+			},
 			expectedResult: false,
 		}, {
 			tx: &DomainTransaction{
@@ -439,7 +439,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			}, //9
+			},
 			expectedResult: false,
 		}, {
 			tx: &DomainTransaction{
@@ -470,7 +470,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			}, //10
+			},
 			expectedResult: false,
 		}, {
 			tx: &DomainTransaction{
@@ -497,7 +497,7 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 				0,
 				1,
 				nil, //changed
-			}, //11
+			},
 			expectedResult: true,
 		}, {
 			tx: &DomainTransaction{
@@ -527,12 +527,11 @@ func initTestTransactionToCompare() []*TransactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			}, //12
+			},
 			expectedResult: false,
 		},
 	}
 	return testTx
-
 }
 
 func initTestDomainTransactionForClone() []*DomainTransaction {
@@ -586,16 +585,16 @@ func initTestDomainTransactionForClone() []*DomainTransaction {
 	return tests
 }
 
-func initTestDomainTransactionForEqual() []TestDomainTransactionStruct {
+func initTestDomainTransactionForEqual() []testDomainTransactionStruct {
 
-	tests := []TestDomainTransactionStruct{
+	tests := []testDomainTransactionStruct{
 		{
 			baseTx:                 initTestBaseTransaction(),
 			transactionToCompareTo: initTestTransactionToCompare(),
 		},
 		{
 			baseTx: nil,
-			transactionToCompareTo: []*TransactionToCompare{{
+			transactionToCompareTo: []*transactionToCompare{{
 				tx: &DomainTransaction{
 					1,
 					[]*DomainTransactionInput{},
@@ -639,7 +638,7 @@ func initTestDomainTransactionForEqual() []TestDomainTransactionStruct {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 			},
-			transactionToCompareTo: []*TransactionToCompare{{
+			transactionToCompareTo: []*transactionToCompare{{
 				tx:             nil,
 				expectedResult: false,
 			}, {
@@ -697,8 +696,8 @@ func initTestBaseDomainTransactionInput() *DomainTransactionInput {
 	return basetxInput
 }
 
-func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
-	txInput := []*TransactionInputToCompare{{
+func initTestDomainTxInputToCompare() []*transactionInputToCompare {
+	txInput := []*transactionInputToCompare{{
 		tx: &DomainTransactionInput{
 			DomainOutpoint{DomainTransactionID{0x01}, 0xFFFF},
 			[]byte{1, 2, 3},
@@ -717,14 +716,14 @@ func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
 			&UTXOEntry{1,
 				[]byte{0, 1, 2, 3},
 				2,
-				false},
+				false}, // Changed
 		},
 		expectedResult: false,
 	}, {
 		tx: &DomainTransactionInput{
 			DomainOutpoint{DomainTransactionID{0x01}, 0xFFFF},
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0),
+			uint64(0xFFFFFFF0), // Changed
 			&UTXOEntry{1,
 				[]byte{0, 1, 2, 3},
 				2,
@@ -734,7 +733,7 @@ func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
 	}, {
 		tx: &DomainTransactionInput{
 			DomainOutpoint{DomainTransactionID{0x01}, 0xFFFF},
-			[]byte{1, 2, 3, 4},
+			[]byte{1, 2, 3, 4}, // Changed
 			uint64(0xFFFFFFFF),
 			&UTXOEntry{1,
 				[]byte{0, 1, 2, 3},
@@ -744,9 +743,9 @@ func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
 		expectedResult: false,
 	}, {
 		tx: &DomainTransactionInput{
-			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF},
+			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0),
+			uint64(0xFFFFFFF0), // Changed
 			&UTXOEntry{1,
 				[]byte{0, 1, 2, 3},
 				2,
@@ -755,10 +754,10 @@ func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
 		expectedResult: false,
 	}, {
 		tx: &DomainTransactionInput{
-			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF},
+			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0),
-			&UTXOEntry{2,
+			uint64(0xFFFFFFF0), // Changed
+			&UTXOEntry{2, // Changed
 				[]byte{0, 1, 2, 3},
 				2,
 				true},
@@ -766,12 +765,12 @@ func initTestDomainTxInputToCompare() []*TransactionInputToCompare {
 		expectedResult: false,
 	}, {
 		tx: &DomainTransactionInput{
-			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF},
+			DomainOutpoint{DomainTransactionID{0x01, 0x02}, 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0),
+			uint64(0xFFFFFFF0), // Changed
 			&UTXOEntry{1,
 				[]byte{0, 1, 2, 3},
-				3,
+				3, // Changed
 				true},
 		},
 		expectedResult: false,
@@ -823,80 +822,6 @@ func initTestBaseDomainTransactionOutput() *DomainTransactionOutput {
 	return basetxOutput
 }
 
-func initTestDomainTxOutputToCompare() []*TransactionOutputToCompare {
-	txInput := []*TransactionOutputToCompare{{
-		tx: &DomainTransactionOutput{
-			0xFFFFFFFF,
-			[]byte{0xFF, 0xFF}},
-		expectedResult: true,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFFF,
-			[]byte{0xF0, 0xFF},
-		},
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{0xFF, 0xFF},
-		},
-		expectedResult: false,
-	}, {
-		tx:             nil,
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{0xFF, 0xFF, 0x01},
-		},
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{},
-		},
-		expectedResult: false,
-	}}
-	return txInput
-}
-
-func initTestAnotherDomainTxOutputToCompare() []*TransactionOutputToCompare {
-	txInput := []*TransactionOutputToCompare{{
-		tx: &DomainTransactionOutput{
-			0xFFFFFFFF,
-			[]byte{0xFF, 0xFF}},
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFFF,
-			[]byte{0xF0, 0xFF},
-		},
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{0xFF, 0xFF},
-		},
-		expectedResult: false,
-	}, {
-		tx:             nil,
-		expectedResult: true,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{0xFF, 0xFF, 0x01},
-		},
-		expectedResult: false,
-	}, {
-		tx: &DomainTransactionOutput{
-			0xFFFFFFF0,
-			[]byte{},
-		},
-		expectedResult: false,
-	}}
-	return txInput
-}
-
 func initTestDomainTransactionOutputForClone() []*DomainTransactionOutput {
 	txInput := []*DomainTransactionOutput{
 		{
@@ -909,24 +834,87 @@ func initTestDomainTransactionOutputForClone() []*DomainTransactionOutput {
 	return txInput
 }
 
-func initTestDomainTransactionOutputForEqual() []TestDomainTransactionOutputStruct {
-
-	tests := []TestDomainTransactionOutputStruct{
+func initTestDomainTransactionOutputForEqual() []testDomainTransactionOutputStruct {
+	tests := []testDomainTransactionOutputStruct{
 		{
-			baseTx:                       initTestBaseDomainTransactionOutput(),
-			transactionOutputToCompareTo: initTestDomainTxOutputToCompare(),
+			baseTx: initTestBaseDomainTransactionOutput(),
+			transactionOutputToCompareTo: []*transactionOutputToCompare{{
+				tx: &DomainTransactionOutput{
+					0xFFFFFFFF,
+					[]byte{0xFF, 0xFF}},
+				expectedResult: true,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFFF,
+					[]byte{0xF0, 0xFF}, // Changed
+				},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0, // Changed
+					[]byte{0xFF, 0xFF},
+				},
+				expectedResult: false,
+			}, {
+				tx:             nil,
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0,               // Changed
+					[]byte{0xFF, 0xFF, 0x01}, // Changed
+				},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0, // Changed
+					[]byte{},   // Changed
+				},
+				expectedResult: false,
+			}},
 		},
 		{
-			baseTx:                       nil,
-			transactionOutputToCompareTo: initTestAnotherDomainTxOutputToCompare(),
+			baseTx: nil,
+			transactionOutputToCompareTo: []*transactionOutputToCompare{{
+				tx:             nil,
+				expectedResult: true,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFFF,
+					[]byte{0xFF, 0xFF}},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFFF,
+					[]byte{0xF0, 0xFF}, // Changed
+				},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0, // Changed
+					[]byte{0xFF, 0xFF},
+				},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0,
+					[]byte{0xFF, 0xFF, 0x01}, // Changed
+				},
+				expectedResult: false,
+			}, {
+				tx: &DomainTransactionOutput{
+					0xFFFFFFF0,
+					[]byte{}, // Changed
+				},
+				expectedResult: false,
+			}},
 		},
 	}
 	return tests
 }
 
-func initTestDomainTransactionInputForEqual() []TestDomainTransactionInputStruct {
+func initTestDomainTransactionInputForEqual() []testDomainTransactionInputStruct {
 
-	tests := []TestDomainTransactionInputStruct{
+	tests := []testDomainTransactionInputStruct{
 		{
 			baseTx:                      initTestBaseDomainTransactionInput(),
 			transactionInputToCompareTo: initTestDomainTxInputToCompare(),
@@ -1057,9 +1045,9 @@ func initTestDomainOutpointForClone() []*DomainOutpoint {
 	return outpoint
 }
 
-func initTestDomainOutpointForEqual() []TestDomainOutpointStruct {
+func initTestDomainOutpointForEqual() []testDomainOutpointStruct {
 
-	var outpoint = []*DomainOutpointToCompare{{
+	var outpoint = []*domainOutpointToCompare{{
 		domainOutpoint: &DomainOutpoint{
 			DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1084,7 +1072,7 @@ func initTestDomainOutpointForEqual() []TestDomainOutpointStruct {
 			2},
 		expectedResult: false,
 	}}
-	tests := []TestDomainOutpointStruct{
+	tests := []testDomainOutpointStruct{
 		{
 			baseDomainOutpoint: &DomainOutpoint{
 				DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1099,9 +1087,9 @@ func initTestDomainOutpointForEqual() []TestDomainOutpointStruct {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
 			1},
-			domainOutpointToCompareTo: []*DomainOutpointToCompare{{domainOutpoint: nil, expectedResult: false}},
+			domainOutpointToCompareTo: []*domainOutpointToCompare{{domainOutpoint: nil, expectedResult: false}},
 		}, {baseDomainOutpoint: nil,
-			domainOutpointToCompareTo: []*DomainOutpointToCompare{{domainOutpoint: nil, expectedResult: true}},
+			domainOutpointToCompareTo: []*domainOutpointToCompare{{domainOutpoint: nil, expectedResult: true}},
 		},
 	}
 	return tests
@@ -1153,9 +1141,9 @@ func initTestDomainTransactionIDForClone() []*DomainTransactionID {
 	return outpoint
 }
 
-func initTestDomainTransactionIDForEqual() []TestDomainTransactionIDStruct {
+func initTestDomainTransactionIDForEqual() []testDomainTransactionIDStruct {
 
-	var outpoint = []*DomainTransactionIDToCompare{{
+	var outpoint = []*domainTransactionIDToCompare{{
 		domainTransactionID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1174,7 +1162,7 @@ func initTestDomainTransactionIDForEqual() []TestDomainTransactionIDStruct {
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0},
 		expectedResult: false,
 	}}
-	tests := []TestDomainTransactionIDStruct{
+	tests := []testDomainTransactionIDStruct{
 		{
 			baseDomainTransactionID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1183,7 +1171,7 @@ func initTestDomainTransactionIDForEqual() []TestDomainTransactionIDStruct {
 			domainTransactionIDToCompareTo: outpoint,
 		}, {
 			baseDomainTransactionID: nil,
-			domainTransactionIDToCompareTo: []*DomainTransactionIDToCompare{{
+			domainTransactionIDToCompareTo: []*domainTransactionIDToCompare{{
 				domainTransactionID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

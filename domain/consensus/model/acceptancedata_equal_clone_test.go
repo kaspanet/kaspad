@@ -56,8 +56,7 @@ type testTransactionAcceptanceDataStruct struct {
 	transactionAcceptanceDataToCompareTo []testTransactionAcceptanceDataToCompare
 }
 
-func iniTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStruct {
-
+func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStruct {
 	var testTransactionAcceptanceDataBase = TransactionAcceptanceData{
 
 		&externalapi.DomainTransaction{
@@ -267,7 +266,7 @@ func iniTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStruc
 }
 
 func TestTransactionAcceptanceData_Equal(t *testing.T) {
-	acceptanceData := iniTransactionAcceptanceDataForEqual()
+	acceptanceData := initTransactionAcceptanceDataForEqual()
 	for i, test := range acceptanceData {
 		for j, subTest := range test.transactionAcceptanceDataToCompareTo {
 			result1 := test.baseTransactionAcceptanceData.Equal(subTest.transactionAcceptanceData)
@@ -599,18 +598,17 @@ func initTestAcceptanceDataForClone() []AcceptanceData {
 	return tests
 }
 
-type TestAcceptanceDataToCompare struct {
+type testAcceptanceDataToCompare struct {
 	acceptanceData AcceptanceData
 	expectedResult bool
 }
 
-type TestAcceptanceDataStruct struct {
+type testAcceptanceDataStruct struct {
 	baseAcceptanceData        AcceptanceData
-	acceptanceDataToCompareTo []TestAcceptanceDataToCompare
+	acceptanceDataToCompareTo []testAcceptanceDataToCompare
 }
 
-func iniAcceptanceDataForEqual() []TestAcceptanceDataStruct {
-
+func initAcceptanceDataForEqual() []testAcceptanceDataStruct {
 	var testAcceptanceDataBase = []*BlockAcceptanceData{
 		{[]*TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
@@ -755,10 +753,10 @@ func iniAcceptanceDataForEqual() []TestAcceptanceDataStruct {
 			true,
 		}}}}
 
-	tests := []TestAcceptanceDataStruct{
+	tests := []testAcceptanceDataStruct{
 		{
 			baseAcceptanceData: testAcceptanceDataBase,
-			acceptanceDataToCompareTo: []TestAcceptanceDataToCompare{
+			acceptanceDataToCompareTo: []testAcceptanceDataToCompare{
 				{
 					acceptanceData: testAcceptanceData1,
 					expectedResult: true,
@@ -777,7 +775,7 @@ func iniAcceptanceDataForEqual() []TestAcceptanceDataStruct {
 
 func TestAcceptanceData_Equal(t *testing.T) {
 
-	acceptances := iniAcceptanceDataForEqual()
+	acceptances := initAcceptanceDataForEqual()
 	for i, test := range acceptances {
 		for j, subTest := range test.acceptanceDataToCompareTo {
 			result1 := test.baseAcceptanceData.Equal(subTest.acceptanceData)

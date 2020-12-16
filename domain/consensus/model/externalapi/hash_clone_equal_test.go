@@ -33,21 +33,21 @@ func initTestDomainHashForClone() []*DomainHash {
 	return tests
 }
 
-type TestHashToCompare struct {
+type testHashToCompare struct {
 	hash           *DomainHash
 	expectedResult bool
 }
 
-type TestHashStruct struct {
+type testHashStruct struct {
 	baseHash          *DomainHash
-	hashesToCompareTo []TestHashToCompare
+	hashesToCompareTo []testHashToCompare
 }
 
-func initTestDomainHashForEqual() []*TestHashStruct {
-	tests := []*TestHashStruct{
+func initTestDomainHashForEqual() []*testHashStruct {
+	tests := []*testHashStruct{
 		{
 			baseHash: nil,
-			hashesToCompareTo: []TestHashToCompare{
+			hashesToCompareTo: []testHashToCompare{
 				{
 					hash:           nil,
 					expectedResult: true,
@@ -64,7 +64,7 @@ func initTestDomainHashForEqual() []*TestHashStruct {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},
-			hashesToCompareTo: []TestHashToCompare{
+			hashesToCompareTo: []testHashToCompare{
 				{
 					hash:           nil,
 					expectedResult: false,
