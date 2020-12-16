@@ -7,6 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// maxOrphans is the maximum amount of orphans allowed in the
+// orphans collection. This number is an approximation of how
+// many orphans there can possibly be in an average case. It
+// is based on: 2^orphanResolutionRange * PHANTOM K.
+const maxOrphans = 600
+
 // AddOrphan adds the block to the orphan set
 func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphansMutex.Lock()
@@ -15,7 +21,21 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	orphanHash := consensushashing.BlockHash(orphanBlock)
 	f.orphans[*orphanHash] = orphanBlock
 
+	if len(f.orphans) > maxOrphans {
+		log.Debugf("Orphan collection size exceeded. Evicting a random orphan")
+		f.removeRandomOrphan()
+	}
+
 	log.Infof("Received a block with missing parents, adding to orphan pool: %s", orphanHash)
+}
+
+func (f *FlowContext) removeRandomOrphan() {
+	var toRemove externalapi.DomainHash
+	for hash := range f.orphans {
+		toRemove = hash
+		break
+	}
+	delete(f.orphans, toRemove)
 }
 
 // IsOrphan returns whether the given blockHash belongs to an orphan block
