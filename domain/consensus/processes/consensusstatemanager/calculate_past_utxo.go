@@ -133,6 +133,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		blueBlockHash := consensushashing.BlockHash(blueBlock)
 		log.Tracef("Applying blue block %s", blueBlockHash)
 		blockAcceptanceData := &externalapi.BlockAcceptanceData{
+			BlockHash:                 blueBlockHash,
 			TransactionAcceptanceData: make([]*externalapi.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0

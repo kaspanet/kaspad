@@ -64,6 +64,11 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		return err
 	}
 
+	err = m.notifySelectedParentChainChanged(blockInsertionResult)
+	if err != nil {
+		return err
+	}
+
 	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
@@ -107,4 +112,16 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
 	}
 	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualInfo.BlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
+}
+
+func (m *Manager) notifySelectedParentChainChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifySelectedParentChainChanged")
+	defer onEnd()
+
+	notification, err := m.context.ConvertSelectedParentChainChangesToChainChangedNotificationMessage(
+		blockInsertionResult.SelectedParentChainChanges)
+	if err != nil {
+		return err
+	}
+	return m.context.NotificationManager.NotifyChainChanged(notification)
 }
