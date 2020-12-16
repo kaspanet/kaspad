@@ -36,7 +36,7 @@ func (f *FlowContext) evictRandomOrphan() {
 		break
 	}
 	delete(f.orphans, toEvict)
-	log.Debugf("Evicted %s from the orphan collection")
+	log.Debugf("Evicted %s from the orphan collection", toEvict)
 }
 
 // IsOrphan returns whether the given blockHash belongs to an orphan block
