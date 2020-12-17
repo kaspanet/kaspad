@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) setBlockStatus(block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
@@ -51,7 +51,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	err = bp.setBlockStatus(block, isPruningPoint)
+	err = bp.setBlockStatusAfterBlockValidation(block, isPruningPoint)
 	if err != nil {
 		return nil, err
 	}
