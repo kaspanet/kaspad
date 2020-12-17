@@ -25,6 +25,10 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 		}
 
 		if status == externalapi.StatusUTXOValid {
+			// A block cannot have status StatusUTXOValid just after finishing bp.validateBlock, because
+			// if it's the case it should have been rejected as duplicate block.
+			// The only exception is the pruning point because its status is manually set before inserting
+			// the block.
 			if !isPruningPoint {
 				return errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
 					"before adding to to the consensus state manager", blockHash)
