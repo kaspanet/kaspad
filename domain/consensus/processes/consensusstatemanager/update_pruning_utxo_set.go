@@ -111,8 +111,8 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Tracef("Staging the new pruning point as %s", externalapi.StatusValid)
-	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusValid)
+	log.Tracef("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
+	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusUTXOValid)
 
 	log.Tracef("Staging the new pruning point multiset")
 	csm.multisetStore.Stage(newPruningPointHash, utxoSetMultiSet)

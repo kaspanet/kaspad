@@ -24,7 +24,7 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 			return err
 		}
 
-		if status == externalapi.StatusValid {
+		if status == externalapi.StatusUTXOValid {
 			if !isPruningPoint {
 				return errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
 					"before adding to to the consensus state manager", blockHash)
