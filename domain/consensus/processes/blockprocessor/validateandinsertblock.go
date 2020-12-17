@@ -45,7 +45,7 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 			blockHash, externalapi.StatusHeaderOnly)
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	} else {
-		log.Tracef("Block %s a body so setting its status as %s",
+		log.Tracef("Block %s has body so setting its status as %s",
 			blockHash, externalapi.StatusUTXOPendingVerification)
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
 	}
