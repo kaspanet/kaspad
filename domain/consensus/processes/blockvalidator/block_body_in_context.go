@@ -23,7 +23,7 @@ func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash
 	}
 
 	if !isPruningPoint {
-		err := v.checkBlockBodiesExist(blockHash)
+		err := v.checkParentBlockBodiesExist(blockHash)
 		if err != nil {
 			return err
 		}
@@ -31,7 +31,7 @@ func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash
 	return nil
 }
 
-func (v *blockValidator) checkBlockBodiesExist(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.DomainHash) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
