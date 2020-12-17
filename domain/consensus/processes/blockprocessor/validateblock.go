@@ -21,7 +21,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 		return err
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedOnlyHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}

@@ -201,12 +201,12 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	hasValidatedOnlyHeader, err := bp.hasValidatedOnlyHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if hasValidatedOnlyHeader {
+	if hasValidatedHeader {
 		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork", blockHash)
 		return nil
 	}
@@ -230,7 +230,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 		}
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedOnlyHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,10 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 	return nil
 }
 
-func (bp *blockProcessor) hasValidatedOnlyHeader(blockHash *externalapi.DomainHash) (bool, error) {
+// hasValidatedHeader returns whether the block header was validated. It returns
+// true in any case the block header was validated, whether it was validated as a
+// header-only block or as a block with body.
+func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
 	if err != nil {
 		return false, err
