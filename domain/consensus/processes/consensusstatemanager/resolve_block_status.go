@@ -72,8 +72,8 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
 	if *lastUnverifiedBlock == *csm.genesisHash {
 		log.Tracef("the most recent unverified block is the genesis block, "+
-			"which by definition has status: %s", externalapi.StatusValid)
-		return externalapi.StatusValid, nil
+			"which by definition has status: %s", externalapi.StatusUTXOValid)
+		return externalapi.StatusUTXOValid, nil
 	}
 	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, lastUnverifiedBlock)
 	if err != nil {
@@ -164,7 +164,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	return externalapi.StatusValid, nil
+	return externalapi.StatusUTXOValid, nil
 }
 
 func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(

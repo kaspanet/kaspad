@@ -62,8 +62,8 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if !info.Exists {
 			t.Fatal("The block is missing")
 		}
-		if info.BlockStatus != externalapi.StatusValid {
-			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusValid, info.BlockStatus)
+		if info.BlockStatus != externalapi.StatusUTXOValid {
+			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusUTXOValid, info.BlockStatus)
 		}
 
 	})

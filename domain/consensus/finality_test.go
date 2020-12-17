@@ -55,9 +55,9 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Block #%d failed to get info: %+v", i, err)
 			}
-			if blockInfo.BlockStatus != externalapi.StatusValid {
+			if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
 				t.Fatalf("Block #%d in main chain expected to have status '%s', but got '%s'",
-					i, externalapi.StatusValid, blockInfo.BlockStatus)
+					i, externalapi.StatusUTXOValid, blockInfo.BlockStatus)
 			}
 		}
 
@@ -99,9 +99,9 @@ func TestFinality(t *testing.T) {
 		} else if !blockInfo.Exists {
 			t.Fatalf("TestFinality: Failed getting block info, doesn't exists")
 		}
-		if blockInfo.BlockStatus != externalapi.StatusValid {
+		if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
 			t.Fatalf("TestFinality: Overtaking block in side-chain expected to have status '%s', but got '%s'",
-				externalapi.StatusValid, blockInfo.BlockStatus)
+				externalapi.StatusUTXOValid, blockInfo.BlockStatus)
 		}
 		selectedTip, err := consensus.GetVirtualSelectedParent()
 		if err != nil {
@@ -387,14 +387,14 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// Lets validate the status of all the interesting blocks
-		if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusValid {
-			t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusValid, getStatus(consensusReal, pointAtBlueKosherizing))
+		if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusUTXOValid {
+			t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, pointAtBlueKosherizing))
 		}
 		if getStatus(consensusReal, pointAtRedKosherizing) != externalapi.StatusInvalid {
 			t.Fatalf("TestBoundedMergeDepth: pointAtRedKosherizing expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, pointAtRedKosherizing))
 		}
-		if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusValid {
-			t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusValid, getStatus(consensusReal, transitiveBlueKosherizing))
+		if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusUTXOValid {
+			t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, transitiveBlueKosherizing))
 		}
 		if getStatus(consensusReal, mergeDepthViolatingBlockBottom) != externalapi.StatusInvalid {
 			t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingBlockBottom expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingBlockBottom))
@@ -412,8 +412,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			}
 		}
 		for i, b := range selectedChain {
-			if getStatus(consensusReal, b) != externalapi.StatusValid {
-				t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusValid, getStatus(consensusReal, b))
+			if getStatus(consensusReal, b) != externalapi.StatusUTXOValid {
+				t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOValid, getStatus(consensusReal, b))
 			}
 		}
 	})
