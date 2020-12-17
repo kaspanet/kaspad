@@ -70,8 +70,8 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock1: %+v", err)
 		}
-		if goodBlock1Status != externalapi.StatusValid {
-			t.Fatalf("GoodBlock1 status expected to be '%s', but is '%s'", externalapi.StatusValid, goodBlock1Status)
+		if goodBlock1Status != externalapi.StatusUTXOValid {
+			t.Fatalf("GoodBlock1 status expected to be '%s', but is '%s'", externalapi.StatusUTXOValid, goodBlock1Status)
 		}
 
 		// To check that a block containing the same transaction already in it's past is disqualified:
@@ -145,8 +145,8 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
-		if goodBlock2Status != externalapi.StatusValid {
-			t.Fatalf("GoodBlock2 status expected to be '%s', but is '%s'", externalapi.StatusValid, goodBlock2Status)
+		if goodBlock2Status != externalapi.StatusUTXOValid {
+			t.Fatalf("GoodBlock2 status expected to be '%s', but is '%s'", externalapi.StatusUTXOValid, goodBlock2Status)
 		}
 	})
 }
@@ -167,7 +167,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error getting genesis status: %s", err)
 		}
-		if genesisStatus != externalapi.StatusValid {
+		if genesisStatus != externalapi.StatusUTXOValid {
 			t.Fatalf("genesis is unexpectedly non-valid. Its status is: %s", genesisStatus)
 		}
 
@@ -185,7 +185,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
 			}
-			if blockStatus != externalapi.StatusValid {
+			if blockStatus != externalapi.StatusUTXOValid {
 				t.Fatalf("block %d (%s) is unexpectedly non-valid. Its status is: %s", i, addedBlockHash, blockStatus)
 			}
 			currentHash = addedBlockHash
@@ -224,13 +224,13 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			allHashes = append(allHashes, addedBlockHash)
 		}
 
-		// Make sure that all the blocks in the DAG now have StatusValid
+		// Make sure that all the blocks in the DAG now have StatusUTXOValid
 		for _, hash := range allHashes {
 			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), hash)
 			if err != nil {
 				t.Fatalf("error getting block %s status: %s", hash, err)
 			}
-			if blockStatus != externalapi.StatusValid {
+			if blockStatus != externalapi.StatusUTXOValid {
 				t.Fatalf("block %s is unexpectedly non-valid. Its status is: %s", hash, blockStatus)
 			}
 		}

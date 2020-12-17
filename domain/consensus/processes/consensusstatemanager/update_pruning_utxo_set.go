@@ -54,59 +54,69 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	if err != nil {
 		return err
 	}
-	log.Tracef("Calculated multiset for given UTXO set: %s", utxoSetMultiSet.Hash())
+	log.Debugf("Calculated multiset for given UTXO set: %s", utxoSetMultiSet.Hash())
 
 	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, newPruningPointHash)
 	if err != nil {
 		return err
 	}
-	log.Tracef("The UTXO commitment of the pruning point: %s",
+	log.Debugf("The UTXO commitment of the pruning point: %s",
 		newPruningPointHeader.UTXOCommitment)
 
 	if newPruningPointHeader.UTXOCommitment != *utxoSetMultiSet.Hash() {
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
 			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment, *utxoSetMultiSet.Hash())
 	}
-	log.Tracef("The new pruning point UTXO commitment validation passed")
+	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	log.Tracef("Staging the parent hashes for pruning point as the DAG tips")
-	csm.consensusStateStore.StageTips(newPruningPointHeader.ParentHashes)
+	newTips := []*externalapi.DomainHash{newPruningPointHash}
 
-	log.Tracef("Setting the parent hashes for the header tips pruning point as the virtual parents")
-	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, newPruningPointHeader.ParentHashes)
+	log.Debugf("Staging the the pruning point as the only DAG tip")
+	csm.consensusStateStore.StageTips(newTips)
+
+	log.Debugf("Setting the pruning point as the only virtual parent")
+	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, newTips)
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Staging the virtual UTXO set")
-	err = csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
-	if err != nil {
-		return err
-	}
-
-	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
-	// against the provided UTXO set.
-	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPoint, utxo.NewUTXODiff())
-	if err != nil {
-		return err
-	}
-
+	log.Debugf("Calculating GHOSTDAG for the new virtual")
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Updating the header tips pruning point diff parents with an empty UTXO diff")
-	err = csm.updateVirtualDiffParents(utxo.NewUTXODiff())
+	log.Debugf("Staging the virtual UTXO set")
+	err = csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Staging the new pruning point and its UTXO set")
+	log.Debugf("Deleting all the existing virtual diff parents")
+	csm.consensusStateStore.StageVirtualDiffParents(nil)
+
+	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
+	err = csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Staging the new pruning point and its UTXO set")
 	csm.pruningStore.Stage(newPruningPointHash, serializedUTXOSet)
 
-	log.Tracef("Staging the new pruning point as %s", externalapi.StatusValid)
-	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusValid)
+	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
+	// against the provided UTXO set.
+	log.Debugf("Validating that the pruning point is UTXO valid")
+	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPoint, utxo.NewUTXODiff())
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
+	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusUTXOValid)
+
+	log.Debugf("Staging the new pruning point multiset")
+	csm.multisetStore.Stage(newPruningPointHash, utxoSetMultiSet)
 	return nil
 }
 

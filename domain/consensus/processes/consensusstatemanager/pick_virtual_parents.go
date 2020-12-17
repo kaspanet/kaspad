@@ -88,7 +88,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 		if err != nil {
 			return nil, err
 		}
-		if selectedParentCandidateStatus == externalapi.StatusValid {
+		if selectedParentCandidateStatus == externalapi.StatusUTXOValid {
 			log.Tracef("Block %s is valid. Returning it as the selected parent", selectedParentCandidate)
 			return selectedParentCandidate, nil
 		}
