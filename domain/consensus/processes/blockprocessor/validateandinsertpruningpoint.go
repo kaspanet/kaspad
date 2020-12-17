@@ -24,7 +24,7 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 
 	// We have to validate the pruning point block before we set the new pruning point in consensusStateManager.
 	log.Infof("Validating the new pruning point %s", newPruningPointHash)
-	err = bp.validateBlockAndDiscardChanges(newPruningPoint)
+	err = bp.validateBlockAndDiscardChanges(newPruningPoint, true)
 	if err != nil {
 		return err
 	}
@@ -34,6 +34,6 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 		return err
 	}
 
-	_, err = bp.ValidateAndInsertBlock(newPruningPoint)
+	_, err = bp.validateAndInsertBlock(newPruningPoint, true)
 	return err
 }

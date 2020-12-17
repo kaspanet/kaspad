@@ -13,11 +13,60 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash, isPruningPoint bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	return v.checkBlockTransactionsFinalized(blockHash)
+	err := v.checkBlockTransactionsFinalized(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if !isPruningPoint {
+		err := v.checkBlockBodiesExist(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (v *blockValidator) checkBlockBodiesExist(blockHash *externalapi.DomainHash) error {
+	missingParentHashes := []*externalapi.DomainHash{}
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+	for _, parent := range header.ParentHashes {
+		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if !hasBlock {
+			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+			if err != nil {
+				return err
+			}
+
+			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+			if err != nil {
+				return err
+			}
+
+			if isInPastOfPruningPoint {
+				continue
+			}
+
+			missingParentHashes = append(missingParentHashes, parent)
+		}
+	}
+
+	if len(missingParentHashes) > 0 {
+		return ruleerrors.NewErrMissingParents(missingParentHashes)
+	}
+
+	return nil
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {

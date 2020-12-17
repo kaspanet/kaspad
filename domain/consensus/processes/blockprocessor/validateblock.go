@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	defer bp.discardAllChanges()
-	return bp.validateBlock(block)
+	return bp.validateBlock(block, isPruningPoint)
 }
 
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
@@ -50,15 +50,17 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block)
+	err = bp.validatePostProofOfWork(block, isPruningPoint)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			hash := consensushashing.BlockHash(block)
-			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
-			commitErr := bp.commitAllChanges()
-			if commitErr != nil {
-				return commitErr
+			if !errors.As(err, &ruleerrors.ErrMissingParents{}) {
+				hash := consensushashing.BlockHash(block)
+				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
+				commitErr := bp.commitAllChanges()
+				if commitErr != nil {
+					return commitErr
+				}
 			}
 		}
 		return err
