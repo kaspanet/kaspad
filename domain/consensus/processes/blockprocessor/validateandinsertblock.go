@@ -86,7 +86,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when
-		// processing the pruning since it was already handled
+		// processing the pruning point since it was already handled
 		// in consensusStateManager.UpdatePruningPoint
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
