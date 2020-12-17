@@ -11,7 +11,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 		expectedResult bool
 	}
 
-	testSyncState := []struct {
+	tests := []struct {
 		baseUTXOEntry        *UTXOEntry
 		UTXOEntryToCompareTo []testUTXOEntryToCompare
 	}{
@@ -84,7 +84,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 		},
 	}
 
-	for i, test := range testSyncState {
+	for i, test := range tests {
 		for j, subTest := range test.UTXOEntryToCompareTo {
 			result1 := test.baseUTXOEntry.Equal(subTest.utxoEntry)
 			if result1 != subTest.expectedResult {
