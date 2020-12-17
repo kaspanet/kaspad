@@ -33,14 +33,20 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 				return errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
 					"before adding to to the consensus state manager", blockHash)
 			}
+			log.Tracef("Block %s is the pruning point and has status %s, so leaving its status untouched",
+				blockHash, status)
 			return nil
 		}
 	}
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if isHeaderOnlyBlock {
+		log.Tracef("Block %s is a header-only block so setting its status as %s",
+			blockHash, externalapi.StatusHeaderOnly)
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	} else {
+		log.Tracef("Block %s a body so setting its status as %s",
+			blockHash, externalapi.StatusUTXOPendingVerification)
 		bp.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
 	}
 

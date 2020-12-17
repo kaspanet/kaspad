@@ -29,11 +29,22 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 		return err
 	}
 
+	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
 	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint, serializedUTXOSet)
 	if err != nil {
 		return err
 	}
 
+	log.Infof("Inserting the new pruning point %s", newPruningPointHash)
 	_, err = bp.validateAndInsertBlock(newPruningPoint, true)
-	return err
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			// This should never happen because we already validated the block with bp.validateBlockAndDiscardChanges.
+			// We use Errorf so it won't be identified later on to be a rule error and will eventually cause
+			// the program to panic.
+			return errors.Errorf("validateAndInsertBlock returned unexpected rule error while processing "+
+				"the pruning point: %+v", err)
+		}
+	}
+	return nil
 }
