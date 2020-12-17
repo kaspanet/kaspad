@@ -54,9 +54,17 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 				return err
 			}
 
+			// If a block parent is in the past of the pruning point
+			// it means its body will never be used, so it's ok if
+			// it's missing.
+			// This will usually happen during IBD when getting the blocks
+			// in the pruning point anticone.
 			if isInPastOfPruningPoint {
+				log.Debugf("Block %s parent %s is missing a body, but is in the past of the pruning point")
 				continue
 			}
+
+			log.Debugf("Block %s parent %s is missing a body")
 
 			missingParentHashes = append(missingParentHashes, parent)
 		}
