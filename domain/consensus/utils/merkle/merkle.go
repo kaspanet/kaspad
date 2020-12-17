@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/pkg/errors"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if
@@ -28,17 +27,10 @@ func nextPowerOfTwo(n int) int {
 // function used to aid in the generation of a merkle tree.
 func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.DomainHash {
 	// Concatenate the left and right nodes.
-	w := hashes.NewHashWriter()
+	w := hashes.NewMerkleBranchHashWriter()
 
-	_, err := w.Write(left[:])
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
-	}
-
-	_, err = w.Write(right[:])
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
-	}
+	w.InfallibleWrite(left[:])
+	w.InfallibleWrite(right[:])
 
 	return w.Finalize()
 }
@@ -95,7 +87,7 @@ func merkleRoot(hashes []*externalapi.DomainHash) *externalapi.DomainHash {
 			newHash := hashMerkleBranches(merkles[i], merkles[i])
 			merkles[offset] = newHash
 
-		// The normal case sets the parent node to the double sha256
+		// The normal case sets the parent node to the hash
 		// of the concatentation of the left and right children.
 		default:
 			newHash := hashMerkleBranches(merkles[i], merkles[i+1])

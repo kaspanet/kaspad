@@ -285,7 +285,9 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 
 	var payloadHash externalapi.DomainHash
 	if *subnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = *hashes.HashData(payload)
+		writer := hashes.NewPayloadHashWriter()
+		writer.InfallibleWrite(payload)
+		payloadHash = *writer.Finalize()
 	}
 
 	return &MsgTx{

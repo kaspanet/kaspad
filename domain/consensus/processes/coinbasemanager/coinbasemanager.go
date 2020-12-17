@@ -48,7 +48,9 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	payloadHash := hashes.HashData(payload)
+	writer := hashes.NewPayloadHashWriter()
+	writer.InfallibleWrite(payload)
+	payloadHash := writer.Finalize()
 
 	return &externalapi.DomainTransaction{
 		Version:      constants.TransactionVersion,
