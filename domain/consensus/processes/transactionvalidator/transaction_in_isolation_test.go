@@ -113,7 +113,9 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
-					tx.PayloadHash = *hashes.HashData(tx.Payload)
+					writer := hashes.NewPayloadHashWriter()
+					writer.InfallibleWrite(tx.Payload)
+					tx.PayloadHash = *writer.Finalize()
 				},
 				ruleerrors.ErrInvalidPayloadHash},
 		}
