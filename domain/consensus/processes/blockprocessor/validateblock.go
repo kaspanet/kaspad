@@ -54,6 +54,8 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
+			// If we got ErrMissingParents the block shouldn't be considered as invalid
+			// because it could be added later on when its parents are present.
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) {
 				hash := consensushashing.BlockHash(block)
 				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
