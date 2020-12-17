@@ -115,13 +115,13 @@ func NewDomainOutpoint(id *DomainTransactionID, index uint32) *DomainOutpoint {
 
 type ScriptPublicKey struct {
 	Script  []byte
-	Version uint32
+	Version uint16
 }
 
 // DomainTransactionOutput represents a Kaspad transaction output
 type DomainTransactionOutput struct {
 	Value           uint64
-	ScriptPublicKey ScriptPublicKey
+	ScriptPublicKey *ScriptPublicKey
 }
 
 // Clone returns a clone of DomainTransactionOutput
@@ -130,7 +130,7 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 		return nil
 	}
 
-	scriptPublicKeyClone := ScriptPublicKey{make([]byte, len(output.ScriptPublicKey.Script)), output.ScriptPublicKey.Version}
+	scriptPublicKeyClone := &ScriptPublicKey{make([]byte, len(output.ScriptPublicKey.Script)), output.ScriptPublicKey.Version}
 	copy(scriptPublicKeyClone.Script, output.ScriptPublicKey.Script)
 
 	return &DomainTransactionOutput{

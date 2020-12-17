@@ -15,7 +15,7 @@ import (
 func TestIBDBlock(t *testing.T) {
 	pver := ProtocolVersion
 
-	// Block 1 header.
+	// Block 1 header.scriptPubKeyScriptLength
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot

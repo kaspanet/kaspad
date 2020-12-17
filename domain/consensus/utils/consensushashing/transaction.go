@@ -205,7 +205,7 @@ func writeTxOut(w io.Writer, to *externalapi.DomainTransactionOutput) error {
 	if err != nil {
 		return err
 	}
-	err = binaryserializer.PutUint32(w, to.ScriptPublicKey.Version)
+	err = binaryserializer.PutUint16(w, to.ScriptPublicKey.Version)
 	if err != nil {
 		return err
 	}

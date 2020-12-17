@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -184,7 +185,7 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
-func PayToAddrScript(addr util.Address) ([]byte, error) {
+func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 	const nilAddrErrStr = "unable to generate payment script for nil address"
 
 	switch addr := addr.(type) {

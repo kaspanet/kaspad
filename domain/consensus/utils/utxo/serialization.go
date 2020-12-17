@@ -120,7 +120,7 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	var version uint32
+	var version uint16
 	err = serialization.ReadElement(r, version)
 	var scriptPubKeyLen int
 	err = serialization.ReadElement(r, scriptPubKeyLen)
@@ -135,5 +135,5 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	}
 	scriptPubKey := externalapi.ScriptPublicKey{scriptPubKeyScript, version}
 
-	return NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
+	return NewUTXOEntry(amount, &scriptPubKey, isCoinbase, blockBlueScore), nil
 }

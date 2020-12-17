@@ -33,8 +33,11 @@ func dbUTXOCollectionToUTXOCollection(items []*DbUtxoCollectionItem) (model.UTXO
 		if err != nil {
 			return nil, err
 		}
-
-		utxoMap[*outpoint] = DBUTXOEntryToUTXOEntry(item.UtxoEntry)
+		utxoEntry, err := DBUTXOEntryToUTXOEntry(item.UtxoEntry)
+		if err != nil {
+			return nil, err
+		}
+		utxoMap[*outpoint] = utxoEntry
 	}
 	return utxo.NewUTXOCollection(utxoMap), nil
 }

@@ -17,9 +17,10 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 
 	dbOutputs := make([]*DbTransactionOutput, len(domainTransaction.Outputs))
 	for i, domainTransactionOutput := range domainTransaction.Outputs {
+		dbScriptPublicKey := ScriptPublicKeyToDBScriptPublicKey(domainTransactionOutput.ScriptPublicKey)
 		dbOutputs[i] = &DbTransactionOutput{
 			Value:           domainTransactionOutput.Value,
-			ScriptPublicKey: domainTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: dbScriptPublicKey,
 		}
 	}
 
@@ -61,9 +62,13 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 
 	domainOutputs := make([]*externalapi.DomainTransactionOutput, len(dbTransaction.Outputs))
 	for i, dbTransactionOutput := range dbTransaction.Outputs {
+		scriptPublicKey, err := DBScriptPublicKeyToScriptPublicKey(dbTransactionOutput.ScriptPublicKey)
+		if err != nil {
+			return nil, err
+		}
 		domainOutputs[i] = &externalapi.DomainTransactionOutput{
 			Value:           dbTransactionOutput.Value,
-			ScriptPublicKey: dbTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: scriptPublicKey,
 		}
 	}
 

@@ -30,9 +30,12 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
+		if protoOutput.ScriptPubKey.Version > 0xFFFF {
+			return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")
+		}
 		outputs[i] = &appmessage.TxOut{
 			Value:        protoOutput.Value,
-			ScriptPubKey: protoOutput.ScriptPubKey,
+			ScriptPubKey: &externalapi.ScriptPublicKey{protoOutput.ScriptPubKey.Script, uint16(protoOutput.ScriptPubKey.Version)},
 		}
 	}
 
@@ -81,8 +84,11 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	protoOutputs := make([]*TransactionOutput, len(msgTx.TxOut))
 	for i, output := range msgTx.TxOut {
 		protoOutputs[i] = &TransactionOutput{
-			Value:        output.Value,
-			ScriptPubKey: output.ScriptPubKey,
+			Value: output.Value,
+			ScriptPubKey: &ScriptPublicKey{
+				Script:  output.ScriptPubKey.Script,
+				Version: uint32(output.ScriptPubKey.Version),
+			},
 		}
 	}
 

@@ -4,18 +4,18 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type utxoEntry struct {
 	amount          uint64
-	scriptPublicKey externalapi.ScriptPublicKey
+	scriptPublicKey *externalapi.ScriptPublicKey
 	blockBlueScore  uint64
 	isCoinbase      bool
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(amount uint64, scriptPubKey externalapi.ScriptPublicKey, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
+func NewUTXOEntry(amount uint64, scriptPubKey *externalapi.ScriptPublicKey, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
 	scriptPubKeyClone := externalapi.ScriptPublicKey{make([]byte, len(scriptPubKey.Script)), scriptPubKey.Version}
 	copy(scriptPubKeyClone.Script, scriptPubKey.Script)
 	return &utxoEntry{
 		amount:          amount,
-		scriptPublicKey: scriptPubKeyClone,
+		scriptPublicKey: &scriptPubKeyClone,
 		blockBlueScore:  blockBlueScore,
 		isCoinbase:      isCoinbase,
 	}

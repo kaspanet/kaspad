@@ -102,7 +102,6 @@ type TransactionVerboseOutput struct {
 
 // ScriptPubKeyResult holds data about a script public key
 type ScriptPubKeyResult struct {
-	Asm     string
 	Hex     string
 	Type    string
 	Address string

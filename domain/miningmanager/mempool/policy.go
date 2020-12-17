@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
@@ -89,7 +90,7 @@ func checkInputsStandard(tx *consensusexternalapi.DomainTransaction) error {
 		// function.
 		entry := txIn.UTXOEntry
 		originScriptPubKey := entry.ScriptPublicKey()
-		switch txscript.GetScriptClass(originScriptPubKey) {
+		switch txscript.GetScriptClass(originScriptPubKey.Script) {
 		case txscript.ScriptHashTy:
 			numSigOps := txscript.GetPreciseSigOpCount(
 				txIn.SignatureScript, originScriptPubKey, true)
@@ -118,7 +119,7 @@ func checkInputsStandard(tx *consensusexternalapi.DomainTransaction) error {
 // minimum transaction relay fee, it is considered dust.
 func isDust(txOut *consensusexternalapi.DomainTransactionOutput, minRelayTxFee util.Amount) bool {
 	// Unspendable outputs are considered dust.
-	if txscript.IsUnspendable(txOut.ScriptPublicKey) {
+	if txscript.IsUnspendable(txOut.ScriptPublicKey.Script) {
 		return true
 	}
 
@@ -239,7 +240,10 @@ func checkTransactionStandard(tx *consensusexternalapi.DomainTransaction, policy
 	// None of the output public key scripts can be a non-standard script or
 	// be "dust".
 	for i, txOut := range tx.Outputs {
-		scriptClass := txscript.GetScriptClass(txOut.ScriptPublicKey)
+		if txOut.ScriptPublicKey.Version > constants.MaximumScriptPublicKeyVersion {
+			return txRuleError(RejectNonstandard, "The version of the scriptPublicKey is higher than the known version.")
+		}
+		scriptClass := txscript.GetScriptClass(txOut.ScriptPublicKey.Script)
 		if scriptClass == txscript.NonStandardTy {
 			str := fmt.Sprintf("transaction output %d: non-standard script form", i)
 			return txRuleError(RejectNonstandard, str)

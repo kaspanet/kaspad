@@ -136,14 +136,15 @@ message Outpoint{
 message TransactionId{
   bytes bytes = 1;
 }
-message DbScriptPublicKey {
+
+message ScriptPublicKey {
   bytes script = 1;
   uint32 version = 2;
 }
 
 message TransactionOutput{
   uint64 value = 1;
-  DbScriptPublicKey scriptPubKey = 2;
+  ScriptPublicKey scriptPubKey = 2;
 }
 // TransactionMessage end
 
@@ -511,10 +512,9 @@ message TransactionVerboseOutput{
 }
 
 message ScriptPubKeyResult{
-  string asm = 1;
-  string hex = 2;
-  string type = 3;
-  string address = 4;
+  string hex = 1;
+  string type = 2;
+  string address = 3;
 }
 
 message GetSubnetworkRequestMessage{

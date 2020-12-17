@@ -7,6 +7,7 @@ package txscript
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -205,20 +206,24 @@ func unparseScript(pops []parsedOpcode) ([]byte, error) {
 // script up to the point the failure occurred along with the string '[error]'
 // appended. In addition, the reason the script failed to parse is returned
 // if the caller wants more information about the failure.
-func DisasmString(buf []byte) (string, error) {
-	var disbuf bytes.Buffer
-	opcodes, err := parseScript(buf)
-	for _, pop := range opcodes {
-		disbuf.WriteString(pop.print(true))
-		disbuf.WriteByte(' ')
+func DisasmString(version uint32, buf []byte) (string, error) {
+	// currently, there is only one version exists so it equals to the max version.
+	if version == constants.MaximumScriptPublicKeyVersion {
+		var disbuf bytes.Buffer
+		opcodes, err := parseScript(buf)
+		for _, pop := range opcodes {
+			disbuf.WriteString(pop.print(true))
+			disbuf.WriteByte(' ')
+		}
+		if disbuf.Len() > 0 {
+			disbuf.Truncate(disbuf.Len() - 1)
+		}
+		if err != nil {
+			disbuf.WriteString("[error]")
+		}
+		return disbuf.String(), err
 	}
-	if disbuf.Len() > 0 {
-		disbuf.Truncate(disbuf.Len() - 1)
-	}
-	if err != nil {
-		disbuf.WriteString("[error]")
-	}
-	return disbuf.String(), err
+	return "", scriptError(ErrPubKeyFormat, "the version of the scriptPublicHash is higher then the known version")
 }
 
 // canonicalPush returns true if the object is either not a push instruction

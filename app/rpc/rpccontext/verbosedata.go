@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"math/big"
 	"strconv"
@@ -125,7 +126,7 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
 		// error here.
-		disbuf, _ := txscript.DisasmString(transactionInput.SignatureScript)
+		disbuf, _ := txscript.DisasmString(constants.MaximumScriptPublicKeyVersion, transactionInput.SignatureScript)
 
 		input := &appmessage.TransactionVerboseInput{}
 		input.TxID = transactionInput.PreviousOutpoint.TransactionID.String()
@@ -146,15 +147,12 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(tx.Outputs))
 	for i, transactionOutput := range tx.Outputs {
-		// The disassembled string will contain [error] inline if the
-		// script doesn't fully parse, so ignore the error here.
-		disbuf, _ := txscript.DisasmString(transactionOutput.ScriptPublicKey)
 
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams)
+			transactionOutput.ScriptPublicKey.Script, ctx.Config.ActiveNetParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
@@ -179,8 +177,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
 			Address: encodedAddr,
-			Asm:     disbuf,
-			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey),
+			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey.Script),
 			Type:    scriptClass.String(),
 		}
 		outputs[i] = output
