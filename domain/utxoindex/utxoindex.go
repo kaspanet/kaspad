@@ -73,6 +73,9 @@ func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
 	}
 	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptanceData.IsAccepted {
+				continue
+			}
 			err := ui.addTransaction(transactionAcceptanceData.Transaction, blockInfo.BlueScore)
 			if err != nil {
 				return err
@@ -90,6 +93,9 @@ func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
 	}
 	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptanceData.IsAccepted {
+				continue
+			}
 			err := ui.removeTransaction(transactionAcceptanceData.Transaction)
 			if err != nil {
 				return err
