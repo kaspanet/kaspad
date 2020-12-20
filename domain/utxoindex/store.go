@@ -222,6 +222,10 @@ func (uis *utxoIndexStore) stagedData() (
 }
 
 func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
+	if len(uis.toAdd) > 0 || len(uis.toRemove) > 0 {
+		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
+	}
+
 	bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
 	cursor, err := uis.database.Cursor(bucket)
 	if err != nil {
