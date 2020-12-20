@@ -52,9 +52,9 @@ message KaspadMessage {
     AddPeerResponseMessage addPeerResponse = 1019;
     SubmitTransactionRequestMessage submitTransactionRequest = 1020;
     SubmitTransactionResponseMessage submitTransactionResponse = 1021;
-    NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
-    NotifyChainChangedResponseMessage notifyChainChangedResponse = 1023;
-    ChainChangedNotificationMessage chainChangedNotification = 1024;
+    NotifyVirtualSelectedParentChainChangedRequestMessage notifyVirtualSelectedParentChainChangedRequest = 1022;
+    NotifyVirtualSelectedParentChainChangedResponseMessage notifyVirtualSelectedParentChainChangedResponse = 1023;
+    VirtualSelectedParentChainChangedNotificationMessage virtualSelectedParentChainChangedNotification = 1024;
     GetBlockRequestMessage getBlockRequest = 1025;
     GetBlockResponseMessage getBlockResponse = 1026;
     GetSubnetworkRequestMessage getSubnetworkRequest = 1027;
@@ -431,14 +431,14 @@ message SubmitTransactionResponseMessage{
   RPCError error = 1000;
 }
 
-message NotifyChainChangedRequestMessage{
+message NotifyVirtualSelectedParentChainChangedRequestMessage{
 }
 
-message NotifyChainChangedResponseMessage{
+message NotifyVirtualSelectedParentChainChangedResponseMessage{
   RPCError error = 1000;
 }
 
-message ChainChangedNotificationMessage{
+message VirtualSelectedParentChainChangedNotificationMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainBlock addedChainBlocks = 2;
 }

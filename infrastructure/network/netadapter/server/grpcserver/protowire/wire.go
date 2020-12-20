@@ -386,22 +386,22 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedRequestMessage:
-		payload := new(KaspadMessage_NotifyChainChangedRequest)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedResponseMessage:
-		payload := new(KaspadMessage_NotifyChainChangedResponse)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.ChainChangedNotificationMessage:
-		payload := new(KaspadMessage_ChainChangedNotification)
+	case *appmessage.VirtualSelectedParentChainChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentChainChangedNotification)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

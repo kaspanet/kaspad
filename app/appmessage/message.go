@@ -79,9 +79,9 @@ const (
 	CmdAddPeerResponseMessage
 	CmdSubmitTransactionRequestMessage
 	CmdSubmitTransactionResponseMessage
-	CmdNotifyChainChangedRequestMessage
-	CmdNotifyChainChangedResponseMessage
-	CmdChainChangedNotificationMessage
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage
+	CmdVirtualSelectedParentChainChangedNotificationMessage
 	CmdGetBlockRequestMessage
 	CmdGetBlockResponseMessage
 	CmdGetSubnetworkRequestMessage
@@ -171,9 +171,9 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdAddPeerResponseMessage:                                     "AddPeerResponse",
 	CmdSubmitTransactionRequestMessage:                            "SubmitTransactionRequest",
 	CmdSubmitTransactionResponseMessage:                           "SubmitTransactionResponse",
-	CmdNotifyChainChangedRequestMessage:                           "NotifyChainChangedRequest",
-	CmdNotifyChainChangedResponseMessage:                          "NotifyChainChangedResponse",
-	CmdChainChangedNotificationMessage:                            "ChainChangedNotification",
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage:      "NotifyVirtualSelectedParentChainChangedRequest",
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage:     "NotifyVirtualSelectedParentChainChangedResponse",
+	CmdVirtualSelectedParentChainChangedNotificationMessage:       "VirtualSelectedParentChainChangedNotification",
 	CmdGetBlockRequestMessage:                                     "GetBlockRequest",
 	CmdGetBlockResponseMessage:                                    "GetBlockResponse",
 	CmdGetSubnetworkRequestMessage:                                "GetSubnetworkRequest",

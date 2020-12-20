@@ -7,19 +7,19 @@ import (
 	"testing"
 )
 
-func TestSelectedParentChain(t *testing.T) {
+func TestVirtualSelectedParentChain(t *testing.T) {
 	// Setup a couple of kaspad instances
 	kaspad1, kaspad2, _, teardown := standardSetup(t)
 	defer teardown()
 
 	// Register to virtual selected parent chain changes
-	onChainChangedChan := make(chan *appmessage.ChainChangedNotificationMessage)
-	err := kaspad1.rpcClient.RegisterForChainChangedNotifications(
-		func(notification *appmessage.ChainChangedNotificationMessage) {
-			onChainChangedChan <- notification
+	onVirtualSelectedParentChainChangedChan := make(chan *appmessage.VirtualSelectedParentChainChangedNotificationMessage)
+	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(
+		func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
+			onVirtualSelectedParentChainChangedChan <- notification
 		})
 	if err != nil {
-		t.Fatalf("Failed to register for chain change notifications: %s", err)
+		t.Fatalf("Failed to register for virtual selected parent chain change notifications: %s", err)
 	}
 
 	// In kaspad1, mine a chain over the genesis and make sure
@@ -28,7 +28,7 @@ func TestSelectedParentChain(t *testing.T) {
 	const blockAmountToMine = 10
 	for i := 0; i < blockAmountToMine; i++ {
 		minedBlock := mineNextBlock(t, kaspad1)
-		notification := <-onChainChangedChan
+		notification := <-onVirtualSelectedParentChainChangedChan
 		if len(notification.RemovedChainBlockHashes) > 0 {
 			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
 		}
@@ -61,7 +61,7 @@ func TestSelectedParentChain(t *testing.T) {
 	// For the first `blockAmountToMine - 1` blocks we don't expect
 	// the chain to change at all
 	for i := 0; i < blockAmountToMine-1; i++ {
-		notification := <-onChainChangedChan
+		notification := <-onVirtualSelectedParentChainChangedChan
 		if len(notification.RemovedChainBlockHashes) > 0 {
 			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
 		}
@@ -72,10 +72,10 @@ func TestSelectedParentChain(t *testing.T) {
 
 	// Either the next block could cause a reorg or the one
 	// after it
-	potentialReorgNotification1 := <-onChainChangedChan
-	potentialReorgNotification2 := <-onChainChangedChan
-	var reorgNotification *appmessage.ChainChangedNotificationMessage
-	var nonReorgNotification *appmessage.ChainChangedNotificationMessage
+	potentialReorgNotification1 := <-onVirtualSelectedParentChainChangedChan
+	potentialReorgNotification2 := <-onVirtualSelectedParentChainChangedChan
+	var reorgNotification *appmessage.VirtualSelectedParentChainChangedNotificationMessage
+	var nonReorgNotification *appmessage.VirtualSelectedParentChainChangedNotificationMessage
 	if len(potentialReorgNotification1.RemovedChainBlockHashes) > 0 {
 		reorgNotification = potentialReorgNotification1
 		nonReorgNotification = potentialReorgNotification2

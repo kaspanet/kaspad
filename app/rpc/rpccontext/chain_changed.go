@@ -7,10 +7,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
-// ConvertSelectedParentChainChangesToChainChangedNotificationMessage converts
-// SelectedParentChainChanges to ChainChangedNotificationMessage
-func (ctx *Context) ConvertSelectedParentChainChangesToChainChangedNotificationMessage(
-	selectedParentChainChanges *externalapi.SelectedParentChainChanges) (*appmessage.ChainChangedNotificationMessage, error) {
+// ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage converts
+// VirtualSelectedParentChainChanges to VirtualSelectedParentChainChangedNotificationMessage
+func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+	selectedParentChainChanges *externalapi.SelectedParentChainChanges) (*appmessage.VirtualSelectedParentChainChangedNotificationMessage, error) {
 
 	removedChainBlockHashes := make([]string, len(selectedParentChainChanges.Removed))
 	for i, removed := range selectedParentChainChanges.Removed {
@@ -42,5 +42,5 @@ func (ctx *Context) ConvertSelectedParentChainChangesToChainChangedNotificationM
 		}
 	}
 
-	return appmessage.NewChainChangedNotificationMessage(removedChainBlockHashes, addedChainBlocks), nil
+	return appmessage.NewVirtualSelectedParentChainChangedNotificationMessage(removedChainBlockHashes, addedChainBlocks), nil
 }
