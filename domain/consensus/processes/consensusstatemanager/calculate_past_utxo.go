@@ -257,10 +257,10 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 	if err != nil {
 		return nil, err
 	}
-	if blockStatus != externalapi.StatusValid {
+	if blockStatus != externalapi.StatusUTXOValid {
 		return nil, errors.Errorf(
 			"block %s, has status '%s', and therefore can't restore it's UTXO set. Only blocks with status '%s' can be restored.",
-			blockHash, blockStatus, externalapi.StatusValid)
+			blockHash, blockStatus, externalapi.StatusUTXOValid)
 	}
 
 	log.Tracef("RestorePastUTXOSetIterator start for block %s", blockHash)

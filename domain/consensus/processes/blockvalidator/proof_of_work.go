@@ -19,7 +19,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentsExist(blockHash, header)
+	err = v.checkParentHeadersExist(header)
 	if err != nil {
 		return err
 	}
@@ -97,20 +97,14 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	if !v.skipPoW {
 		valid := pow.CheckProofOfWorkWithTarget(header, target)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrUnexpectedDifficulty, "block has invalid difficulty")
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
-
-	hasBlockBody, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
-	if err != nil {
-		return err
-	}
-
 	for _, parent := range header.ParentHashes {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
@@ -128,26 +122,6 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 
 		if parentStatus == externalapi.StatusInvalid {
 			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
-		}
-
-		if hasBlockBody {
-			if parentStatus == externalapi.StatusHeaderOnly {
-				pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
-				if err != nil {
-					return err
-				}
-
-				isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
-				if err != nil {
-					return err
-				}
-
-				if isInPastOfPruningPoint {
-					continue
-				}
-
-				missingParentHashes = append(missingParentHashes, parent)
-			}
 		}
 	}
 

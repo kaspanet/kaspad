@@ -149,6 +149,13 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash, options *ext
 	return blockInfo, nil
 }
 
+func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
+}
+
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

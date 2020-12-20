@@ -18,8 +18,8 @@ type NotificationManager struct {
 // UTXOsChangedNotificationAddress represents a kaspad address.
 // This type is meant to be used in UTXOsChanged notifications
 type UTXOsChangedNotificationAddress struct {
-	Address         string
-	ScriptPublicKey []byte
+	Address               string
+	ScriptPublicKeyString utxoindex.ScriptPublicKeyString
 }
 
 // NotificationListener represents a registered RPC notification listener
@@ -227,11 +227,11 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 
 	notification := &appmessage.UTXOsChangedNotificationMessage{}
 	for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
-		listenerScriptPublicKeyHexString := utxoindex.ConvertScriptPublicKeyToHexString(listenerAddress.ScriptPublicKey)
-		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyHexString]; ok {
+		listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
+		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
 			notification.Added = ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
 		}
-		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyHexString]; ok {
+		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
 			for outpoint := range removedOutpoints {
 				notification.Removed = append(notification.Removed, &appmessage.UTXOsByAddressesEntry{
 					Address: listenerAddress.Address,

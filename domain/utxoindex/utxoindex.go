@@ -67,12 +67,19 @@ func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges
 
 func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
 	log.Tracef("Adding block %s to UTXO index", blockHash)
-	blockInfo, err := ui.consensus.GetBlockInfo(blockHash, &externalapi.BlockInfoOptions{IncludeAcceptanceData: true})
+	acceptanceData, err := ui.consensus.GetBlockAcceptanceData(blockHash)
 	if err != nil {
 		return err
 	}
-	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
+	blockInfo, err := ui.consensus.GetBlockInfo(blockHash)
+	if err != nil {
+		return err
+	}
+	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptanceData.IsAccepted {
+				continue
+			}
 			err := ui.addTransaction(transactionAcceptanceData.Transaction, blockInfo.BlueScore)
 			if err != nil {
 				return err
@@ -84,12 +91,15 @@ func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
 
 func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
 	log.Tracef("Removing block %s from UTXO index", blockHash)
-	blockInfo, err := ui.consensus.GetBlockInfo(blockHash, &externalapi.BlockInfoOptions{IncludeAcceptanceData: true})
+	acceptanceData, err := ui.consensus.GetBlockAcceptanceData(blockHash)
 	if err != nil {
 		return err
 	}
-	for _, blockAcceptanceData := range blockInfo.AcceptanceData {
+	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+			if !transactionAcceptanceData.IsAccepted {
+				continue
+			}
 			err := ui.removeTransaction(transactionAcceptanceData.Transaction)
 			if err != nil {
 				return err
@@ -150,6 +160,9 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
+
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
 
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }
