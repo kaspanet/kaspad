@@ -1,19 +1,33 @@
 package consensusstatemanager
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
+
+func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
+	blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
+
+	return csm.calculateSelectedParentChainChanges(blockHash, virtualSelectedParent)
+}
 
 func (csm *consensusStateManager) calculateSelectedParentChainChanges(
-	oldVirtualSelectedParent, newVirtualSelectedParent *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
 
-	// Walk down from the old virtual until we reach the common selected
-	// parent chain ancestor of oldVirtualSelectedParent and
-	// newVirtualSelectedParent. Note that this slice will be empty if
-	// oldVirtualSelectedParent is the selected parent of
-	// newVirtualSelectedParent
+	// Walk down from fromBlockHash until we reach the common selected
+	// parent chain ancestor of fromBlockHash and toBlockHash. Note
+	// that this slice will be empty if fromBlockHash is the selected
+	// parent of toBlockHash
 	var removed []*externalapi.DomainHash
-	current := oldVirtualSelectedParent
+	current := fromBlockHash
 	for {
-		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := csm.dagTopologyManager.IsInSelectedParentChainOf(current, newVirtualSelectedParent)
+		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := csm.dagTopologyManager.IsInSelectedParentChainOf(current, toBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -30,9 +44,9 @@ func (csm *consensusStateManager) calculateSelectedParentChainChanges(
 	}
 	commonAncestor := current
 
-	// Walk down from the new virtual down to the common ancestor
+	// Walk down from the toBlockHash to the common ancestor
 	var added []*externalapi.DomainHash
-	current = newVirtualSelectedParent
+	current = toBlockHash
 	for *current != *commonAncestor {
 		added = append(added, current)
 		currentGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, current)

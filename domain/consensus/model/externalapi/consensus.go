@@ -20,4 +20,5 @@ type Consensus interface {
 	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
+	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedParentChainChanges, error)
 }
