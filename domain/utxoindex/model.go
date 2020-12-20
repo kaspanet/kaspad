@@ -1,12 +1,11 @@
 package utxoindex
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ScriptPublicKeyHexString is a script public key represented in hex
-type ScriptPublicKeyHexString string
+// ScriptPublicKeyString is a script public key represented as a string
+type ScriptPublicKeyString string
 
 // UTXOOutpointEntryPairs is a map between UTXO outpoints to UTXO entries
 type UTXOOutpointEntryPairs map[externalapi.DomainOutpoint]externalapi.UTXOEntry
@@ -17,16 +16,16 @@ type UTXOOutpoints map[externalapi.DomainOutpoint]interface{}
 // UTXOChanges is the set of changes made to the UTXO index after
 // a successful update
 type UTXOChanges struct {
-	Added   map[ScriptPublicKeyHexString]UTXOOutpointEntryPairs
-	Removed map[ScriptPublicKeyHexString]UTXOOutpoints
+	Added   map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	Removed map[ScriptPublicKeyString]UTXOOutpoints
 }
 
-// ConvertScriptPublicKeyToHexString converts the given scriptPublicKey to a hex string
-func ConvertScriptPublicKeyToHexString(scriptPublicKey []byte) ScriptPublicKeyHexString {
-	return ScriptPublicKeyHexString(hex.EncodeToString(scriptPublicKey))
+// ConvertScriptPublicKeyToString converts the given scriptPublicKey to a string
+func ConvertScriptPublicKeyToString(scriptPublicKey []byte) ScriptPublicKeyString {
+	return ScriptPublicKeyString(scriptPublicKey)
 }
 
-// ConvertHexStringToScriptPublicKey converts the given hex string to a scriptPublicKey byte slice
-func ConvertHexStringToScriptPublicKey(hexString ScriptPublicKeyHexString) ([]byte, error) {
-	return hex.DecodeString(string(hexString))
+// ConvertStringToScriptPublicKey converts the given string to a scriptPublicKey byte slice
+func ConvertStringToScriptPublicKey(string ScriptPublicKeyString) []byte {
+	return []byte(string)
 }

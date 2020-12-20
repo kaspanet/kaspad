@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -26,9 +27,10 @@ func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router
 			errorMessage.Error = appmessage.RPCErrorf("Could not create a scriptPublicKey for address '%s': %s", addressString, err)
 			return errorMessage, nil
 		}
+		scriptPublicKeyString := utxoindex.ConvertScriptPublicKeyToString(scriptPublicKey)
 		addresses[i] = &rpccontext.UTXOsChangedNotificationAddress{
-			Address:         addressString,
-			ScriptPublicKey: scriptPublicKey,
+			Address:               addressString,
+			ScriptPublicKeyString: scriptPublicKeyString,
 		}
 	}
 
