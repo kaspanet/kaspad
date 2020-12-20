@@ -25,6 +25,8 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	// In kaspad1, mine a chain over the genesis and make sure
 	// each chain changed notifications contains only one entry
 	// in `added` and nothing in `removed`
+	chain1TipHash := consensushashing.BlockHash(kaspad1.config.NetParams().GenesisBlock)
+	chain1TipHashHex := hex.EncodeToString(chain1TipHash[:])
 	const blockAmountToMine = 10
 	for i := 0; i < blockAmountToMine; i++ {
 		minedBlock := mineNextBlock(t, kaspad1)
@@ -43,6 +45,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 			t.Fatalf("Unexpected block hash in AddedChainBlocks. Want: %s, got: %s",
 				minedBlockHashHex, notification.AddedChainBlocks[0].Hash)
 		}
+		chain1TipHashHex = minedBlockHashHex
 	}
 
 	// In kaspad2, mine a different chain of `blockAmountToMine`
@@ -56,7 +59,9 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// In kaspad2, mine another block. This should trigger sync
 	// between the two nodes
-	mineNextBlock(t, kaspad2)
+	chain2Tip := mineNextBlock(t, kaspad2)
+	chain2TipHash := consensushashing.BlockHash(chain2Tip)
+	chain2TipHashHex := hex.EncodeToString(chain2TipHash[:])
 
 	// For the first `blockAmountToMine - 1` blocks we don't expect
 	// the chain to change at all
@@ -95,5 +100,31 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	if len(reorgNotification.RemovedChainBlockHashes) != blockAmountToMine {
 		t.Fatalf("Unexpected length of reorgNotification.RemovedChainBlockHashes. Want: %d, got: %d",
 			blockAmountToMine, len(reorgNotification.RemovedChainBlockHashes))
+	}
+
+	// Get the virtual selected parent chain from the tip of
+	// the first chain
+	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(chain1TipHashHex)
+	if err != nil {
+		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)
+	}
+
+	// Make sure that `blockAmountToMine` blocks were removed
+	// and `blockAmountToMine + 1` blocks were added
+	if len(virtualSelectedParentChainFromChain1Tip.RemovedChainBlockHashes) != blockAmountToMine {
+		t.Fatalf("Unexpected length of virtualSelectedParentChainFromChain1Tip.RemovedChainBlockHashes. Want: %d, got: %d",
+			blockAmountToMine, len(virtualSelectedParentChainFromChain1Tip.RemovedChainBlockHashes))
+	}
+	if len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks) != blockAmountToMine+1 {
+		t.Fatalf("Unexpected length of virtualSelectedParentChainFromChain1Tip.AddedChainBlocks. Want: %d, got: %d",
+			blockAmountToMine+1, len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks))
+	}
+
+	// Make sure that the last block in `added` is the tip
+	// of chain2
+	lastAddedChainBlock := virtualSelectedParentChainFromChain1Tip.AddedChainBlocks[len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks)-1]
+	if lastAddedChainBlock.Hash != chain2TipHashHex {
+		t.Fatalf("Unexpected last added chain block. Want: %s, got: %s",
+			chain2TipHashHex, lastAddedChainBlock.Hash)
 	}
 }
