@@ -86,8 +86,8 @@ const (
 	CmdGetBlockResponseMessage
 	CmdGetSubnetworkRequestMessage
 	CmdGetSubnetworkResponseMessage
-	CmdGetChainFromBlockRequestMessage
-	CmdGetChainFromBlockResponseMessage
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage
 	CmdGetBlocksRequestMessage
 	CmdGetBlocksResponseMessage
 	CmdGetBlockCountRequestMessage
@@ -178,8 +178,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetBlockResponseMessage:                                    "GetBlockResponse",
 	CmdGetSubnetworkRequestMessage:                                "GetSubnetworkRequest",
 	CmdGetSubnetworkResponseMessage:                               "GetSubnetworkResponse",
-	CmdGetChainFromBlockRequestMessage:                            "GetChainFromBlockRequest",
-	CmdGetChainFromBlockResponseMessage:                           "GetChainFromBlockResponse",
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage:       "GetVirtualSelectedParentChainFromBlockRequest",
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage:      "GetVirtualSelectedParentChainFromBlockResponse",
 	CmdGetBlocksRequestMessage:                                    "GetBlocksRequest",
 	CmdGetBlocksResponseMessage:                                   "GetBlocksResponse",
 	CmdGetBlockCountRequestMessage:                                "GetBlockCountRequest",

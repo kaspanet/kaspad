@@ -59,8 +59,8 @@ message KaspadMessage {
     GetBlockResponseMessage getBlockResponse = 1026;
     GetSubnetworkRequestMessage getSubnetworkRequest = 1027;
     GetSubnetworkResponseMessage getSubnetworkResponse = 1028;
-    GetChainFromBlockRequestMessage getChainFromBlockRequest = 1029;
-    GetChainFromBlockResponseMessage getChainFromBlockResponse = 1030;
+    GetVirtualSelectedParentChainFromBlockRequestMessage getVirtualSelectedParentChainFromBlockRequest = 1029;
+    GetVirtualSelectedParentChainFromBlockResponseMessage getVirtualSelectedParentChainFromBlockResponse = 1030;
     GetBlocksRequestMessage getBlocksRequest = 1031;
     GetBlocksResponseMessage getBlocksResponse = 1032;
     GetBlockCountRequestMessage getBlockCountRequest = 1033;
@@ -533,15 +533,14 @@ message GetSubnetworkResponseMessage{
   RPCError error = 1000;
 }
 
-message GetChainFromBlockRequestMessage{
+message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
-  bool includeBlockVerboseData = 2;
 }
 
-message GetChainFromBlockResponseMessage{
+message GetVirtualSelectedParentChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainBlock addedChainBlocks = 2;
-  repeated BlockVerboseData blockVerboseData = 3;
+
   RPCError error = 1000;
 }
 

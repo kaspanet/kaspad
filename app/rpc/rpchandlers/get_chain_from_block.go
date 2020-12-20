@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	// maxBlocksInGetChainFromBlockResponse is the max amount of blocks that
-	// are allowed in a GetChainFromBlockResponse.
-	maxBlocksInGetChainFromBlockResponse = 1000
+	// maxBlocksInGetVirtualSelectedParentChainFromBlockResponse is the max amount of blocks that
+	// are allowed in a GetVirtualSelectedParentChainFromBlockResponse.
+	maxBlocksInGetVirtualSelectedParentChainFromBlockResponse = 1000
 )
 
-// HandleGetChainFromBlock handles the respectively named RPC command
-func HandleGetChainFromBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	response := &appmessage.GetChainFromBlockResponseMessage{}
+// HandleGetVirtualSelectedParentChainFromBlock handles the respectively named RPC command
+func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	response := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
 	response.Error = appmessage.RPCErrorf("not implemented")
 	return response, nil
 }

@@ -435,15 +435,15 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockRequestMessage:
-		payload := new(KaspadMessage_GetChainFromBlockRequest)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockResponseMessage:
-		payload := new(KaspadMessage_GetChainFromBlockResponse)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
