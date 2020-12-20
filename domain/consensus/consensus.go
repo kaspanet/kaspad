@@ -141,6 +141,13 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	return blockInfo, nil
 }
 
+func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
+}
+
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -196,10 +203,16 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.consensusStateStore.Tips(s.databaseContext)
 }
 
 func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -212,11 +225,16 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
 
 	return &externalapi.VirtualInfo{
 		ParentHashes:   blockRelations.Parents,
 		Bits:           bits,
 		PastMedianTime: pastMedianTime,
+		BlueScore:      virtualGHOSTDAGData.BlueScore(),
 	}, nil
 }
 

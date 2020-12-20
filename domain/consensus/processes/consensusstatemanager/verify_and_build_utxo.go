@@ -18,7 +18,7 @@ import (
 )
 
 func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff model.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
 
 	log.Tracef("verifyUTXO start for block %s", blockHash)
 	defer log.Tracef("verifyUTXO end for block %s", blockHash)
@@ -97,7 +97,7 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 }
 
 func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
+	blockHash *externalapi.DomainHash, acceptanceData externalapi.AcceptanceData) error {
 
 	log.Tracef("validateAcceptedIDMerkleRoot start for block %s", blockHash)
 	defer log.Tracef("validateAcceptedIDMerkleRoot end for block %s", blockHash)
@@ -127,7 +127,7 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	return nil
 }
 
-func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData) *externalapi.DomainHash {
+func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.AcceptanceData) *externalapi.DomainHash {
 	log.Tracef("calculateAcceptedIDMerkleRoot start")
 	defer log.Tracef("calculateAcceptedIDMerkleRoot end")
 

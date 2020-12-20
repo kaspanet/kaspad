@@ -575,6 +575,76 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.NotifyUTXOsChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyUTXOsChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.UTXOsChangedNotificationMessage:
+		payload := new(KaspadMessage_UtxosChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentBlueScoreChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

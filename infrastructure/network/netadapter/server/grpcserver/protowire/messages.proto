@@ -77,8 +77,18 @@ message KaspadMessage {
     GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
     ShutDownRequestMessage shutDownRequest = 1045;
     ShutDownResponseMessage shutDownResponse = 1046;
-    GetHeadersRequestMessage getHeadersRequest = 10347;
+    GetHeadersRequestMessage getHeadersRequest = 1047;
     GetHeadersResponseMessage getHeadersResponse = 1048;
+    NotifyUtxosChangedRequestMessage notifyUtxosChangedRequest = 1049;
+    NotifyUtxosChangedResponseMessage notifyUtxosChangedResponse = 1050;
+    UtxosChangedNotificationMessage utxosChangedNotification = 1051;
+    GetUtxosByAddressesRequestMessage getUtxosByAddressesRequest = 1052;
+    GetUtxosByAddressesResponseMessage getUtxosByAddressesResponse = 1053;
+    GetVirtualSelectedParentBlueScoreRequestMessage getVirtualSelectedParentBlueScoreRequest = 1054;
+    GetVirtualSelectedParentBlueScoreResponseMessage getVirtualSelectedParentBlueScoreResponse = 1055;
+    NotifyVirtualSelectedParentBlueScoreChangedRequestMessage notifyVirtualSelectedParentBlueScoreChangedRequest = 1056;
+    NotifyVirtualSelectedParentBlueScoreChangedResponseMessage notifyVirtualSelectedParentBlueScoreChangedResponse = 1057;
+    VirtualSelectedParentBlueScoreChangedNotificationMessage virtualSelectedParentBlueScoreChangedNotification = 1058;
   }
 }
 
@@ -412,11 +422,12 @@ message AddPeerResponseMessage{
 }
 
 message SubmitTransactionRequestMessage{
-  TransactionMessage transaction = 1;
+  RpcTransaction transaction = 1;
 }
 
 message SubmitTransactionResponseMessage{
-  string txId = 1;
+  string transactionId = 1;
+
   RPCError error = 1000;
 }
 
@@ -610,6 +621,89 @@ message GetHeadersRequestMessage{
 message GetHeadersResponseMessage{
   repeated string headers = 1;
   RPCError error = 1000;
+}
+
+message NotifyUtxosChangedRequestMessage {
+  repeated string addresses = 1;
+}
+
+message NotifyUtxosChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+message UtxosChangedNotificationMessage {
+  repeated UtxosByAddressesEntry added = 1;
+  repeated UtxosByAddressesEntry removed = 2;
+}
+
+message UtxosByAddressesEntry {
+  string address = 1;
+  RpcOutpoint outpoint = 2;
+  RpcUtxoEntry utxoEntry = 3;
+}
+
+message RpcTransaction {
+  int32 version = 1;
+  repeated RpcTransactionInput inputs = 2;
+  repeated RpcTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payloadHash = 7;
+  string payload = 8;
+}
+
+message RpcTransactionInput {
+  RpcOutpoint previousOutpoint = 1;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
+}
+
+message RpcOutpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message RpcUtxoEntry {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message GetUtxosByAddressesRequestMessage {
+  repeated string addresses = 1;
+}
+
+message GetUtxosByAddressesResponseMessage {
+  repeated UtxosByAddressesEntry entries = 1;
+
+  RPCError error = 1000;
+}
+
+message GetVirtualSelectedParentBlueScoreRequestMessage {
+}
+
+message GetVirtualSelectedParentBlueScoreResponseMessage {
+  uint64 blueScore = 1;
+
+  RPCError error = 1000;
+}
+
+message NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
+}
+
+message NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+message VirtualSelectedParentBlueScoreChangedNotificationMessage {
+  uint64 virtualSelectedParentBlueScore = 1;
 }
 
 service RPC {
