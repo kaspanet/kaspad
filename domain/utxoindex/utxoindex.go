@@ -161,5 +161,8 @@ func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, erro
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
 
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }
