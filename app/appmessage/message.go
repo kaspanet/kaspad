@@ -55,6 +55,8 @@ const (
 	CmdIBDRootUTXOSetAndBlock
 	CmdRequestIBDBlocks
 	CmdIBDRootNotFound
+	CmdRequestIBDRootHash
+	CmdIBDRootHash
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -145,6 +147,8 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdIBDRootUTXOSetAndBlock:        "IBDRootUTXOSetAndBlock",
 	CmdRequestIBDBlocks:              "RequestIBDBlocks",
 	CmdIBDRootNotFound:               "IBDRootNotFound",
+	CmdRequestIBDRootHash:            "IBDRequestIBDRootHash",
+	CmdIBDRootHash:                   "IBDIBDRootHash",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

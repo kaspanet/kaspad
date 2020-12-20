@@ -184,6 +184,13 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
+func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningStore.PruningPoint(s.databaseContext)
+}
+
 func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()

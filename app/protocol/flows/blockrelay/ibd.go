@@ -30,22 +30,55 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	log.Debugf("Finished downloading headers up to %s", highHash)
 
 	// Fetch the UTXO set if we don't already have it
-	log.Debugf("Downloading the IBD root UTXO set under highHash %s", highHash)
-	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	log.Debugf("Checking if there's a new pruning point under %s", highHash)
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
 	if err != nil {
 		return err
 	}
-	if syncInfo.IsAwaitingUTXOSet {
-		found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
+
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
+	if !ok {
+		return protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
+	}
+
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
+	if err != nil {
+		return err
+	}
+
+	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
 		if err != nil {
 			return err
 		}
-		if !found {
-			log.Infof("Cannot download the IBD root UTXO set under highHash %s", highHash)
+
+		if !isValid {
+			log.Infof("The suggested pruning point is incompatible to this node DAG, so stopping IBD with this" +
+				" peer")
 			return nil
 		}
+
+		log.Info("Fetching the pruning point UTXO set")
+		succeed, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
+		if err != nil {
+			return err
+		}
+
+		if !succeed {
+			log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
+			return nil
+		}
+
+		log.Info("Fetched the new pruning point UTXO set")
+	} else {
+		log.Debugf("Already has the block data of the new suggested pruning point %s", msgIBDRootHash.Hash)
 	}
-	log.Debugf("Finished downloading the IBD root UTXO set under highHash %s", highHash)
 
 	// Fetch the block bodies
 	log.Debugf("Downloading block bodies up to %s", highHash)
@@ -56,6 +89,40 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	log.Debugf("Finished downloading block bodies up to %s", highHash)
 
 	return nil
+}
+
+func (flow *handleRelayInvsFlow) fetchUTXOSetIfMissing() (bool, error) {
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
+	if err != nil {
+		return false, err
+	}
+
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+
+	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
+	if !ok {
+		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
+	}
+
+	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
+	if err != nil {
+		return false, err
+	}
+
+	if !isValid {
+		return false, nil
+	}
+
+	found, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
@@ -207,19 +274,11 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 
 	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, utxoSet)
 	if err != nil {
+		// TODO: Find a better way to deal with finality conflicts.
+		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
+			return false, nil
+		}
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
-	}
-
-	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
-	if err != nil {
-		return false, err
-	}
-
-	// TODO: Find a better way to deal with finality conflicts.
-	if syncInfo.IsAwaitingUTXOSet {
-		log.Warnf("Still awaiting for UTXO set. This can happen only because the given pruning point violates " +
-			"finality. If this keeps happening delete the data directory and restart your node.")
-		return false, nil
 	}
 
 	return true, nil
