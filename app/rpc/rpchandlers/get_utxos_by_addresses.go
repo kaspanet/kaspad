@@ -10,6 +10,12 @@ import (
 
 // HandleGetUTXOsByAddresses handles the respectively named RPC command
 func HandleGetUTXOsByAddresses(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	if !context.Config.UTXOIndex {
+		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when kaspad is run without --utxoindex")
+		return errorMessage, nil
+	}
+
 	getUTXOsByAddressesRequest := request.(*appmessage.GetUTXOsByAddressesRequestMessage)
 
 	allEntries := make([]*appmessage.UTXOsByAddressesEntry, 0)
