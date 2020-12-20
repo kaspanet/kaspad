@@ -28,7 +28,7 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash, nil)
+			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
 			if err != nil {
 				return err
 			}

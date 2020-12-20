@@ -105,7 +105,7 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*external
 	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
 }
 
-func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash, options *externalapi.BlockInfoOptions) (*externalapi.BlockInfo, error) {
+func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -138,15 +138,14 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash, options *ext
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
 
-	if options != nil && options.IncludeAcceptanceData {
-		acceptanceData, err := s.acceptanceDataStore.Get(s.databaseContext, blockHash)
-		if err != nil {
-			return nil, err
-		}
-		blockInfo.AcceptanceData = acceptanceData
-	}
-
 	return blockInfo, nil
+}
+
+func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
