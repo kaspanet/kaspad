@@ -5,6 +5,8 @@ import (
 )
 
 // ScriptPublicKeyString is a script public key represented as a string
+// We use this type rather than just a byte slice because Go maps don't
+// support slices as keys. See: UTXOChanges
 type ScriptPublicKeyString string
 
 // UTXOOutpointEntryPairs is a map between UTXO outpoints to UTXO entries
