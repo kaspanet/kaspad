@@ -31,7 +31,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrTimeTooOld, err)
 		}
 
-		info, err := consensus.GetBlockInfo(consensushashing.BlockHash(invalidBlock), nil)
+		info, err := consensus.GetBlockInfo(consensushashing.BlockHash(invalidBlock))
 		if err != nil {
 			t.Fatalf("Failed to get block info: %v", err)
 		}
@@ -54,7 +54,7 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should not fail: %v", err)
 		}
 
-		info, err = consensus.GetBlockInfo(consensushashing.BlockHash(validBlock), nil)
+		info, err = consensus.GetBlockInfo(consensushashing.BlockHash(validBlock))
 		if err != nil {
 			t.Fatalf("Failed to get block info: %v", err)
 		}

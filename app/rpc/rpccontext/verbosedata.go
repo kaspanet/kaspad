@@ -26,7 +26,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	hash := consensushashing.BlockHash(block)
 	blockHeader := block.Header
 
-	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash, nil)
+	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
 	if err != nil {
 		return nil, err
 	}

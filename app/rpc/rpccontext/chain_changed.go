@@ -19,12 +19,12 @@ func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotifi
 
 	addedChainBlocks := make([]*appmessage.ChainBlock, len(selectedParentChainChanges.Added))
 	for i, added := range selectedParentChainChanges.Added {
-		blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(added, &externalapi.BlockInfoOptions{IncludeAcceptanceData: true})
+		acceptanceData, err := ctx.Domain.Consensus().GetBlockAcceptanceData(added)
 		if err != nil {
 			return nil, err
 		}
-		acceptedBlocks := make([]*appmessage.AcceptedBlock, len(blockInfo.AcceptanceData))
-		for j, acceptedBlock := range blockInfo.AcceptanceData {
+		acceptedBlocks := make([]*appmessage.AcceptedBlock, len(acceptanceData))
+		for j, acceptedBlock := range acceptanceData {
 			acceptedTransactionIDs := make([]string, len(acceptedBlock.TransactionAcceptanceData))
 			for k, transaction := range acceptedBlock.TransactionAcceptanceData {
 				transactionID := consensushashing.TransactionID(transaction.Transaction)

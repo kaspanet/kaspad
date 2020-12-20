@@ -329,7 +329,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		finalityStore:           finalityStore,
 	}
 
-	genesisInfo, err := c.GetBlockInfo(genesisHash, nil)
+	genesisInfo, err := c.GetBlockInfo(genesisHash)
 	if err != nil {
 		return nil, err
 	}
