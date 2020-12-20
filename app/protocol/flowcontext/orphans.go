@@ -7,6 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UnorphaningResult is the result of unorphaning a block
+type UnorphaningResult struct {
+	block                *externalapi.DomainBlock
+	blockInsertionResult *externalapi.BlockInsertionResult
+}
+
 // AddOrphan adds the block to the orphan set
 func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphansMutex.Lock()
@@ -28,7 +34,7 @@ func (f *FlowContext) IsOrphan(blockHash *externalapi.DomainHash) bool {
 }
 
 // UnorphanBlocks removes the block from the orphan set, and remove all of the blocks that are not orphans anymore.
-func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*externalapi.DomainBlock, error) {
+func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*UnorphaningResult, error) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
 
@@ -37,7 +43,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	rootBlockHash := consensushashing.BlockHash(rootBlock)
 	processQueue := f.addChildOrphansToProcessQueue(rootBlockHash, []externalapi.DomainHash{})
 
-	var unorphanedBlocks []*externalapi.DomainBlock
+	var unorphaningResults []*UnorphaningResult
 	for len(processQueue) > 0 {
 		var orphanHash externalapi.DomainHash
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
@@ -61,16 +67,19 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 			}
 		}
 		if canBeUnorphaned {
-			err := f.unorphanBlock(orphanHash)
+			blockInsertionResult, err := f.unorphanBlock(orphanHash)
 			if err != nil {
 				return nil, err
 			}
-			unorphanedBlocks = append(unorphanedBlocks, orphanBlock)
+			unorphaningResults = append(unorphaningResults, &UnorphaningResult{
+				block:                orphanBlock,
+				blockInsertionResult: blockInsertionResult,
+			})
 			processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
 		}
 	}
 
-	return unorphanedBlocks, nil
+	return unorphaningResults, nil
 }
 
 // addChildOrphansToProcessQueue finds all child orphans of `blockHash`
@@ -109,22 +118,22 @@ func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash)
 	return childOrphans
 }
 
-func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) error {
+func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.BlockInsertionResult, error) {
 	orphanBlock, ok := f.orphans[orphanHash]
 	if !ok {
-		return errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
+		return nil, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
 	delete(f.orphans, orphanHash)
 
-	_, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
+	blockInsertionResult, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Infof("Validation failed for orphan block %s: %s", orphanHash, err)
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 
 	log.Infof("Unorphaned block %s", orphanHash)
-	return nil
+	return blockInsertionResult, nil
 }
