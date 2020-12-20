@@ -9,21 +9,19 @@ import (
 type selectedChildIterator struct {
 	databaseContext    model.DBReader
 	dagTopologyManager model.DAGTopologyManager
-	highHash           *externalapi.DomainHash
-	current            *externalapi.DomainHash
+
+	reachabilityDataStore model.ReachabilityDataStore
+	highHash              *externalapi.DomainHash
+	current               *externalapi.DomainHash
 }
 
 func (s *selectedChildIterator) Next() bool {
-	children, err := s.dagTopologyManager.Children(s.current)
+	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.current)
 	if err != nil {
 		panic(err)
 	}
 
-	for _, child := range children {
-		if *child == *model.VirtualBlockHash {
-			continue
-		}
-
+	for _, child := range data.TreeNode.Children {
 		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
 		if err != nil {
 			panic(err)
@@ -51,9 +49,10 @@ func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externa
 		return nil, errors.Errorf("%s is not in the selected parent chain of %s", highHash, lowHash)
 	}
 	return &selectedChildIterator{
-		databaseContext:    dtm.databaseContext,
-		dagTopologyManager: dtm.dagTopologyManager,
-		highHash:           highHash,
-		current:            lowHash,
+		databaseContext:       dtm.databaseContext,
+		dagTopologyManager:    dtm.dagTopologyManager,
+		reachabilityDataStore: dtm.reachabilityDataStore,
+		highHash:              highHash,
+		current:               lowHash,
 	}, nil
 }

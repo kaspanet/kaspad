@@ -41,7 +41,8 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 
 	if isViolatingFinality {
 		log.Warnf("Finality Violation Detected! The suggest pruning point %s violates finality!", newPruningPointHash)
-		return nil
+		return errors.Wrapf(ruleerrors.ErrSuggestedPruningViolatesFinality, "%s cannot be a pruning point because "+
+			"it violates finality", newPruningPointHash)
 	}
 
 	protoUTXOSet := &utxoserialization.ProtoUTXOSet{}
@@ -102,7 +103,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	}
 
 	log.Debugf("Staging the new pruning point and its UTXO set")
-	csm.pruningStore.Stage(newPruningPointHash, serializedUTXOSet)
+	csm.pruningStore.StagePruningPoint(newPruningPointHash, serializedUTXOSet)
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.

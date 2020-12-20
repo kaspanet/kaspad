@@ -105,6 +105,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
+		reachabilityDataStore,
 		ghostdagManager)
 	pastMedianTimeManager := pastmediantimemanager.New(
 		dagParams.TimestampDeviationTolerance,

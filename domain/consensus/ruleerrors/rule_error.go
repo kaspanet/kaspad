@@ -242,6 +242,8 @@ var (
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
+
+	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

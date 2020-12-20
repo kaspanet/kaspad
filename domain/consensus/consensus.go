@@ -258,3 +258,7 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 
 	return s.syncManager.GetSyncInfo()
 }
+
+func (s *consensus) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
+	return s.pruningManager.IsValidPruningPoint(block)
+}
