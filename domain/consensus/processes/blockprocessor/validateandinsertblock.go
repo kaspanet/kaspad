@@ -142,7 +142,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	return &externalapi.BlockInsertionResult{
-		SelectedParentChainChanges: selectedParentChainChanges,
+		VirtualSelectedParentChainChanges: selectedParentChainChanges,
 	}, nil
 }
 

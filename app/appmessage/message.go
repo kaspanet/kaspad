@@ -79,15 +79,15 @@ const (
 	CmdAddPeerResponseMessage
 	CmdSubmitTransactionRequestMessage
 	CmdSubmitTransactionResponseMessage
-	CmdNotifyChainChangedRequestMessage
-	CmdNotifyChainChangedResponseMessage
-	CmdChainChangedNotificationMessage
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage
+	CmdVirtualSelectedParentChainChangedNotificationMessage
 	CmdGetBlockRequestMessage
 	CmdGetBlockResponseMessage
 	CmdGetSubnetworkRequestMessage
 	CmdGetSubnetworkResponseMessage
-	CmdGetChainFromBlockRequestMessage
-	CmdGetChainFromBlockResponseMessage
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage
 	CmdGetBlocksRequestMessage
 	CmdGetBlocksResponseMessage
 	CmdGetBlockCountRequestMessage
@@ -171,15 +171,15 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdAddPeerResponseMessage:                                     "AddPeerResponse",
 	CmdSubmitTransactionRequestMessage:                            "SubmitTransactionRequest",
 	CmdSubmitTransactionResponseMessage:                           "SubmitTransactionResponse",
-	CmdNotifyChainChangedRequestMessage:                           "NotifyChainChangedRequest",
-	CmdNotifyChainChangedResponseMessage:                          "NotifyChainChangedResponse",
-	CmdChainChangedNotificationMessage:                            "ChainChangedNotification",
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage:      "NotifyVirtualSelectedParentChainChangedRequest",
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage:     "NotifyVirtualSelectedParentChainChangedResponse",
+	CmdVirtualSelectedParentChainChangedNotificationMessage:       "VirtualSelectedParentChainChangedNotification",
 	CmdGetBlockRequestMessage:                                     "GetBlockRequest",
 	CmdGetBlockResponseMessage:                                    "GetBlockResponse",
 	CmdGetSubnetworkRequestMessage:                                "GetSubnetworkRequest",
 	CmdGetSubnetworkResponseMessage:                               "GetSubnetworkResponse",
-	CmdGetChainFromBlockRequestMessage:                            "GetChainFromBlockRequest",
-	CmdGetChainFromBlockResponseMessage:                           "GetChainFromBlockResponse",
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage:       "GetVirtualSelectedParentChainFromBlockRequest",
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage:      "GetVirtualSelectedParentChainFromBlockResponse",
 	CmdGetBlocksRequestMessage:                                    "GetBlocksRequest",
 	CmdGetBlocksResponseMessage:                                   "GetBlocksResponse",
 	CmdGetBlockCountRequestMessage:                                "GetBlockCountRequest",

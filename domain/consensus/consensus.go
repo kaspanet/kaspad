@@ -258,3 +258,10 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 
 	return s.syncManager.GetSyncInfo()
 }
+
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(blockHash)
+}

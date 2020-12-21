@@ -23,15 +23,21 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	hash := consensushashing.BlockHash(block)
 	log.Debugf("OnNewBlock start for block %s", hash)
 	defer log.Debugf("OnNewBlock end for block %s", hash)
-	unorphanedBlocks, err := f.UnorphanBlocks(block)
+	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
+	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
 
-	newBlocks := append([]*externalapi.DomainBlock{block}, unorphanedBlocks...)
-	for _, newBlock := range newBlocks {
+	newBlocks := []*externalapi.DomainBlock{block}
+	newBlockInsertionResults := []*externalapi.BlockInsertionResult{blockInsertionResult}
+	for _, unorphaningResult := range unorphaningResults {
+		newBlocks = append(newBlocks, unorphaningResult.block)
+		newBlockInsertionResults = append(newBlockInsertionResults, unorphaningResult.blockInsertionResult)
+	}
+
+	for i, newBlock := range newBlocks {
 		blocklogger.LogBlock(block)
 
 		log.Tracef("OnNewBlock: passing block %s transactions to mining manager", hash)
@@ -39,6 +45,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 
 		if f.onBlockAddedToDAGHandler != nil {
 			log.Tracef("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
+			blockInsertionResult = newBlockInsertionResults[i]
 			err := f.onBlockAddedToDAGHandler(newBlock, blockInsertionResult)
 			if err != nil {
 				return err

@@ -23,7 +23,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
-		blockASelectedParentChainChanges := blockAInsertionResult.SelectedParentChainChanges
+		blockASelectedParentChainChanges := blockAInsertionResult.VirtualSelectedParentChainChanges
 
 		// Make sure that the removed slice is empty
 		if len(blockASelectedParentChainChanges.Removed) > 0 {
@@ -63,7 +63,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding block C: %+v", err)
 		}
-		blockCSelectedParentChainChanges := blockCInsertionResult.SelectedParentChainChanges
+		blockCSelectedParentChainChanges := blockCInsertionResult.VirtualSelectedParentChainChanges
 
 		// Make sure that the removed slice contains only the block that was previously
 		// the selected parent
@@ -96,7 +96,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding block D: %+v", err)
 		}
-		blockDSelectedParentChainChanges := blockDInsertionResult.SelectedParentChainChanges
+		blockDSelectedParentChainChanges := blockDInsertionResult.VirtualSelectedParentChainChanges
 
 		// Make sure that both the added and the removed slices are empty
 		if len(blockDSelectedParentChainChanges.Added) > 0 {

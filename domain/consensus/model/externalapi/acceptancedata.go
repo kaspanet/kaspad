@@ -20,6 +20,7 @@ func (ad AcceptanceData) Clone() AcceptanceData {
 // BlockAcceptanceData stores all transactions in a block with an indication
 // if they were accepted or not by some other block
 type BlockAcceptanceData struct {
+	BlockHash                 *DomainHash
 	TransactionAcceptanceData []*TransactionAcceptanceData
 }
 
@@ -29,7 +30,10 @@ func (bad *BlockAcceptanceData) Clone() *BlockAcceptanceData {
 		return nil
 	}
 
-	clone := &BlockAcceptanceData{TransactionAcceptanceData: make([]*TransactionAcceptanceData, len(bad.TransactionAcceptanceData))}
+	clone := &BlockAcceptanceData{
+		BlockHash:                 bad.BlockHash,
+		TransactionAcceptanceData: make([]*TransactionAcceptanceData, len(bad.TransactionAcceptanceData)),
+	}
 	for i, acceptanceData := range bad.TransactionAcceptanceData {
 		clone.TransactionAcceptanceData[i] = acceptanceData.Clone()
 	}
