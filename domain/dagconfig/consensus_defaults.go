@@ -5,6 +5,23 @@ import (
 	"time"
 )
 
+// The documentation refers to the following constants which aren't explicated in the code:
+//	d - an upper bound on the round trip time of a block
+//	delta - the expected fraction of time the width of the network exceeds
+//			defaultGHOSTDAGK
+//
+// For more information about defaultGHOSTDAGK, and its dependency on delta and defaultTargetTimePerBlock 
+// please refer to the PHANTOM paper: https://eprint.iacr.org/2018/104.pdf
+//
+// For more information about the DAA constants defaultDifficultyAdjustmentWindowSize, defaultTimestampDeviationTolerance,
+// and their relation to defaultGHOSTDAGK and defaultTargetTimePerBlock see:
+// https://research.kas.pa/t/handling-timestamp-manipulations/97
+//
+// For more information about defaultMergeSetSizeLimit, defaultFinalityDuration and their relation to pruning, see:
+// https://research.kas.pa/t/a-proposal-for-finality-in-ghostdag/66/17
+// https://research.kas.pa/t/some-of-the-intuition-behind-the-design-of-the-invalidation-rules-for-pruning/95
+//
+
 const (
 	defaultMaxCoinbasePayloadLength                = 150
 	// defaultMaxBlockSize is a bound on the size of a block in bytes, larger values increase the bound d
@@ -27,9 +44,9 @@ const (
 	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
 	// defaultGHOSTDAGK is a bound on the number of blue blocks in the anticone of a blue block. Approximates the maximal
 	// width of the network.
-	// Formula (1) in section 4.2 shows how to calculate defaultGHOSTDAGK. The delta term represents a bound on the expected
-	// fraction of the network life in which the width was higher than defaultGHOSTDAGK. The current value of K was calculated
-	// for d = 5 seconds and p = 0.05.
+	// Formula (1) in section 4.2 of the PHATOM paper shows how to calculate defaultGHOSTDAGK. The delta term represents a bound
+	// on the expected fraction of the network life in which the width was higher than defaultGHOSTDAGK. The current value of K 
+	// was calculated for d = 5 seconds and delta = 0.05.
 	defaultGHOSTDAGK                               = 18
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.
@@ -38,7 +55,7 @@ const (
 	// A new block can't hold a timestamp lower than the median timestamp of the (defaultTimestampDeviationTolerance*2-1) blocks
 	// with highest accumulated blue work in its past, such blocks are considered invalid.
 	// A new block can't hold a timestamp higher than the local system time + defaultTimestampDeviationTolerance/defaultTargetTimePerBlock,
-	// such blocks are delayed.
+	// such blocks are not marked as invalid but are rejected.
 	defaultTimestampDeviationTolerance             = 132
 	// defaultFinalityDuration is an approximate lower bound of how old the finality block is. The finality block is chosen to
 	// be the newest block in the selected chain whose blue score difference from the selected tip is at least 
