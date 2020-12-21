@@ -269,3 +269,10 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 func (s *consensus) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
 	return s.pruningManager.IsValidPruningPoint(block)
 }
+
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(blockHash)
+}

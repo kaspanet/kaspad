@@ -23,4 +23,5 @@ type Consensus interface {
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
 	IsValidPruningPoint(block *DomainHash) (bool, error)
+	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedParentChainChanges, error)
 }

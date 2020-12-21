@@ -131,11 +131,15 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "a3d29c39bfb578235e4813cc8138a9ba10def63acad193a7a880159624840d7f"
+	txHash1Str := "c2ac1e792c5c49260103ad9f86caf749d431958b7c7e5e5129346ceab8b709cf"
+	txID1Str := "47ce12a5ee5727cf97c0481eebedad0d80646b743305b0921a2403f1836f8b37"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
-		t.Errorf("NewTxIDFromStr: %v", err)
-		return
+		t.Fatalf("NewTxIDFromStr: %v", err)
+	}
+	wantTxHash1, err := transactionid.FromString(txHash1Str)
+	if err != nil {
+		t.Fatalf("NewTxIDFromStr: %v", err)
 	}
 
 	// A coinbase transaction
@@ -167,7 +171,7 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
-	if *tx1Hash != (externalapi.DomainHash)(*wantTxID1) {
+	if *tx1Hash != (externalapi.DomainHash)(*wantTxHash1) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
 	}
@@ -179,14 +183,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "c84f3009b337aaa3adeb2ffd41010d5f62dd773ca25b39c908a77da91f87b729"
+	hash2Str := "6b769655a1420022e4690a4f7bb9b1c381185ebbefe3070351f06fb573a0600c"
 	wantHash2, err := hashes.FromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "7c919f676109743a1271a88beeb43849a6f9cc653f6082e59a7266f3df4802b9"
+	id2Str := "af916032e271adaaa21f02bee4b44db2cca4dad9149dcaebc188009c7313ec68"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -249,7 +253,7 @@ func TestTxHashAndID(t *testing.T) {
 
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if *tx2ID != (externalapi.DomainTransactionID)(*newTx2Hash) {
-		t.Errorf("tx2ID and newTx2Hash should be the same for transaction with an empty signature")
+	if *tx2ID == (externalapi.DomainTransactionID)(*newTx2Hash) {
+		t.Errorf("tx2ID and newTx2Hash should not be the same even for transaction with an empty signature")
 	}
 }

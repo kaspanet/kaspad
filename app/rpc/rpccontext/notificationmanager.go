@@ -25,7 +25,7 @@ type UTXOsChangedNotificationAddress struct {
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
 	propagateBlockAddedNotifications                            bool
-	propagateChainChangedNotifications                          bool
+	propagateVirtualSelectedParentChainChangedNotifications     bool
 	propagateFinalityConflictNotifications                      bool
 	propagateFinalityConflictResolvedNotifications              bool
 	propagateUTXOsChangedNotifications                          bool
@@ -88,13 +88,13 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 	return nil
 }
 
-// NotifyChainChanged notifies the notification manager that the DAG's selected parent chain has changed
-func (nm *NotificationManager) NotifyChainChanged(notification *appmessage.ChainChangedNotificationMessage) error {
+// NotifyVirtualSelectedParentChainChanged notifies the notification manager that the DAG's selected parent chain has changed
+func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
 	nm.RLock()
 	defer nm.RUnlock()
 
 	for router, listener := range nm.listeners {
-		if listener.propagateChainChangedNotifications {
+		if listener.propagateVirtualSelectedParentChainChangedNotifications {
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -183,7 +183,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		propagateBlockAddedNotifications:                            false,
-		propagateChainChangedNotifications:                          false,
+		propagateVirtualSelectedParentChainChangedNotifications:     false,
 		propagateFinalityConflictNotifications:                      false,
 		propagateFinalityConflictResolvedNotifications:              false,
 		propagateUTXOsChangedNotifications:                          false,
@@ -197,10 +197,10 @@ func (nl *NotificationListener) PropagateBlockAddedNotifications() {
 	nl.propagateBlockAddedNotifications = true
 }
 
-// PropagateChainChangedNotifications instructs the listener to send chain changed notifications
+// PropagateVirtualSelectedParentChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateChainChangedNotifications() {
-	nl.propagateChainChangedNotifications = true
+func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications() {
+	nl.propagateVirtualSelectedParentChainChangedNotifications = true
 }
 
 // PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications

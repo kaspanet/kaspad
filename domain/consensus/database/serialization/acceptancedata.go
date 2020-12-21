@@ -20,7 +20,10 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData externalapi.Acc
 			}
 		}
 
+		blockHash := DomainHashToDbHash(blockAcceptanceData.BlockHash)
+
 		dbBlockAcceptanceData[i] = &DbBlockAcceptanceData{
+			BlockHash:                 blockHash,
 			TransactionAcceptanceData: dbTransactionAcceptanceData,
 		}
 	}
@@ -49,7 +52,13 @@ func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) 
 			}
 		}
 
+		blockHash, err := DbHashToDomainHash(dbBlockAcceptanceData.BlockHash)
+		if err != nil {
+			return nil, err
+		}
+
 		domainAcceptanceData[i] = &externalapi.BlockAcceptanceData{
+			BlockHash:                 blockHash,
 			TransactionAcceptanceData: domainTransactionAcceptanceData,
 		}
 	}

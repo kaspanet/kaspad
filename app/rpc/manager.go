@@ -64,6 +64,11 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		return err
 	}
 
+	err = m.notifyVirtualSelectedParentChainChanged(blockInsertionResult)
+	if err != nil {
+		return err
+	}
+
 	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(appmessage.DomainBlockToMsgBlock(block))
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
@@ -90,7 +95,7 @@ func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInse
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyUTXOsChanged")
 	defer onEnd()
 
-	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.SelectedParentChainChanges)
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.VirtualSelectedParentChainChanges)
 	if err != nil {
 		return err
 	}
@@ -107,4 +112,16 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
 	}
 	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualInfo.BlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
+}
+
+func (m *Manager) notifyVirtualSelectedParentChainChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
+	defer onEnd()
+
+	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+		blockInsertionResult.VirtualSelectedParentChainChanges)
+	if err != nil {
+		return err
+	}
+	return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
 }
