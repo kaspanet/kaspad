@@ -47,7 +47,6 @@ func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader
 }
 
 func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.DomainBlockHeader) error {
-
 	blockTimestamp := header.TimeInMilliseconds
 	now := mstime.Now().UnixMilliseconds()
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
