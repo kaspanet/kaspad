@@ -14,6 +14,10 @@ func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
 	}
 	virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
 
+	// Calculate chain changes between the given blockHash and the
+	// virtual's selected parent. Note that we explicitly don't
+	// do the calculation against the virtual itself so that we
+	// won't later need to remove it from the result.
 	return csm.calculateSelectedParentChainChanges(blockHash, virtualSelectedParent)
 }
 
