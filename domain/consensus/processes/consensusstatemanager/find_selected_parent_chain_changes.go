@@ -8,16 +8,16 @@ import (
 func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
 	blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
 
+	// Calculate chain changes between the given blockHash and the
+	// virtual's selected parent. Note that we explicitly don't
+	// do the calculation against the virtual itself so that we
+	// won't later need to remove it from the result.
 	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
 	virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
 
-	// Calculate chain changes between the given blockHash and the
-	// virtual's selected parent. Note that we explicitly don't
-	// do the calculation against the virtual itself so that we
-	// won't later need to remove it from the result.
 	return csm.calculateSelectedParentChainChanges(blockHash, virtualSelectedParent)
 }
 
