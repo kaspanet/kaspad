@@ -6,13 +6,12 @@ package appmessage
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"strconv"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
@@ -285,9 +284,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 
 	var payloadHash externalapi.DomainHash
 	if *subnetworkID != subnetworks.SubnetworkIDNative {
-		writer := hashes.NewPayloadHashWriter()
-		writer.InfallibleWrite(payload)
-		payloadHash = *writer.Finalize()
+		payloadHash = *hashes.PayloadHash(payload)
 	}
 
 	return &MsgTx{

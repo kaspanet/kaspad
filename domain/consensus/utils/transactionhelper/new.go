@@ -11,9 +11,7 @@ func NewSubnetworkTransaction(version int32, inputs []*externalapi.DomainTransac
 	outputs []*externalapi.DomainTransactionOutput, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte) *externalapi.DomainTransaction {
 
-	writer := hashes.NewPayloadHashWriter()
-	writer.InfallibleWrite(payload)
-	payloadHash := writer.Finalize()
+	payloadHash := hashes.PayloadHash(payload)
 	return &externalapi.DomainTransaction{
 		Version:      version,
 		Inputs:       inputs,

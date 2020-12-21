@@ -39,13 +39,13 @@ func calcPowValue(header *externalapi.DomainBlockHeader) *big.Int {
 	writer.InfallibleWrite(prePowHash[:])
 	err := serialization.WriteElement(writer, timestamp)
 	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
 	zeroes := [32]byte{}
 	writer.InfallibleWrite(zeroes[:])
 	err = serialization.WriteElement(writer, nonce)
 	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
 	return hashes.ToBig(writer.Finalize())
 }
