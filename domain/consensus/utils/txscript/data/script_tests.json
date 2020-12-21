@@ -1218,19 +1218,19 @@
   ],
   [
     "''",
-    "BLAKE2B 0x20 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 EQUAL",
+    "BLAKE2B 0x20 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8 EQUAL",
     "",
     "OK"
   ],
   [
     "'a'",
-    "BLAKE2B 0x20 0xca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb EQUAL",
+    "BLAKE2B 0x20 0x8928aae63c84d87ea098564d1e03ad813f107add474e56aedd286349c0c03ea4 EQUAL",
     "",
     "OK"
   ],
   [
     "'abcdefghijklmnopqrstuvwxyz'",
-    "BLAKE2B 0x20 0x71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73 EQUAL",
+    "BLAKE2B 0x20 0x117ad6b940f5e8292c007d9c7e7350cd33cf85b5887e8da71c7957830f536e7c EQUAL",
     "",
     "OK"
   ],

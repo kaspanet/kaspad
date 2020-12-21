@@ -10,6 +10,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"golang.org/x/crypto/blake2b"
 	"hash"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -1969,7 +1970,7 @@ func opcodeBlake2b(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
-	hash := sha256.Sum256(buf)
+	hash := blake2b.Sum256(buf)
 	vm.dstack.PushByteArray(hash[:])
 	return nil
 }
