@@ -187,21 +187,23 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 // specified address.
 func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 	const nilAddrErrStr = "unable to generate payment script for nil address"
-
+	const version = 0
 	switch addr := addr.(type) {
 	case *util.AddressPubKeyHash:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
 		}
-		return payToPubKeyHashScript(addr.ScriptAddress())
+		script, err := payToPubKeyHashScript(addr.ScriptAddress())
+		return &externalapi.ScriptPublicKey{script, version}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
 		}
-		return payToScriptHashScript(addr.ScriptAddress())
+		script, err := payToScriptHashScript(addr.ScriptAddress())
+		return &externalapi.ScriptPublicKey{script, version}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
