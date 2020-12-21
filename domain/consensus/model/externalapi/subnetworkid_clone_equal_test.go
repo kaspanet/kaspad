@@ -12,21 +12,21 @@ func initTestDomainSubnetworkIDForClone() []*DomainSubnetworkID {
 	return tests
 }
 
-type TestDomainSubnetworkIDToCompare struct {
+type testDomainSubnetworkIDToCompare struct {
 	domainSubnetworkID *DomainSubnetworkID
 	expectedResult     bool
 }
 
-type TestDomainSubnetworkIDStruct struct {
+type testDomainSubnetworkIDStruct struct {
 	baseDomainSubnetworkID        *DomainSubnetworkID
-	domainSubnetworkIDToCompareTo []TestDomainSubnetworkIDToCompare
+	domainSubnetworkIDToCompareTo []testDomainSubnetworkIDToCompare
 }
 
-func initTestDomainSubnetworkIDForEqual() []TestDomainSubnetworkIDStruct {
-	tests := []TestDomainSubnetworkIDStruct{
+func initTestDomainSubnetworkIDForEqual() []testDomainSubnetworkIDStruct {
+	tests := []testDomainSubnetworkIDStruct{
 		{
 			baseDomainSubnetworkID: nil,
-			domainSubnetworkIDToCompareTo: []TestDomainSubnetworkIDToCompare{
+			domainSubnetworkIDToCompareTo: []testDomainSubnetworkIDToCompare{
 				{
 					domainSubnetworkID: &DomainSubnetworkID{255, 255, 0xFF, 0},
 					expectedResult:     false,
@@ -38,7 +38,7 @@ func initTestDomainSubnetworkIDForEqual() []TestDomainSubnetworkIDStruct {
 			},
 		}, {
 			baseDomainSubnetworkID: &DomainSubnetworkID{0},
-			domainSubnetworkIDToCompareTo: []TestDomainSubnetworkIDToCompare{
+			domainSubnetworkIDToCompareTo: []testDomainSubnetworkIDToCompare{
 				{
 					domainSubnetworkID: &DomainSubnetworkID{255, 254, 0xFF, 0},
 					expectedResult:     false,
@@ -51,7 +51,7 @@ func initTestDomainSubnetworkIDForEqual() []TestDomainSubnetworkIDStruct {
 		}, {
 			baseDomainSubnetworkID: &DomainSubnetworkID{0, 1, 0xFF, 1, 1, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-			domainSubnetworkIDToCompareTo: []TestDomainSubnetworkIDToCompare{
+			domainSubnetworkIDToCompareTo: []testDomainSubnetworkIDToCompare{
 				{
 					domainSubnetworkID: &DomainSubnetworkID{0, 1, 0xFF, 1, 1, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 						0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},

@@ -17,17 +17,17 @@ func initTestBlockRelationsForClone() []*BlockRelations {
 	return tests
 }
 
-type TestBlockRelationsToCompare struct {
+type testBlockRelationsToCompare struct {
 	blockRelations *BlockRelations
 	expectedResult bool
 }
 
-type TestBlockRelationsStruct struct {
+type testBlockRelationsStruct struct {
 	baseBlockRelations        *BlockRelations
-	blockRelationsToCompareTo []TestBlockRelationsToCompare
+	blockRelationsToCompareTo []testBlockRelationsToCompare
 }
 
-func initTestBlockRelationsForEqual() []TestBlockRelationsStruct {
+func initTestBlockRelationsForEqual() []testBlockRelationsStruct {
 
 	var testBlockRelationsBase = BlockRelations{
 		[]*externalapi.DomainHash{{1}, {2}},
@@ -49,10 +49,10 @@ func initTestBlockRelationsForEqual() []TestBlockRelationsStruct {
 		[]*externalapi.DomainHash{{3}, {4}},
 	}
 
-	tests := []TestBlockRelationsStruct{
+	tests := []testBlockRelationsStruct{
 		{
 			baseBlockRelations: &testBlockRelationsBase,
-			blockRelationsToCompareTo: []TestBlockRelationsToCompare{
+			blockRelationsToCompareTo: []testBlockRelationsToCompare{
 				{
 					blockRelations: &testBlockRelations1,
 					expectedResult: true,
@@ -69,7 +69,7 @@ func initTestBlockRelationsForEqual() []TestBlockRelationsStruct {
 			},
 		}, {
 			baseBlockRelations: nil,
-			blockRelationsToCompareTo: []TestBlockRelationsToCompare{
+			blockRelationsToCompareTo: []testBlockRelationsToCompare{
 				{
 					blockRelations: &testBlockRelations1,
 					expectedResult: false,

@@ -92,21 +92,21 @@ func initTestSyncInfoForClone() []*SyncInfo {
 	return tests
 }
 
-type TestSyncInfoToCompare struct {
+type testSyncInfoToCompare struct {
 	syncInfo       *SyncInfo
 	expectedResult bool
 }
 
-type TestSyncInfoStruct struct {
+type testSyncInfoStruct struct {
 	baseSyncInfo        *SyncInfo
-	syncInfoToCompareTo []TestSyncInfoToCompare
+	syncInfoToCompareTo []testSyncInfoToCompare
 }
 
-func initTestSyncInfoForEqual() []*TestSyncInfoStruct {
-	tests := []*TestSyncInfoStruct{
+func initTestSyncInfoForEqual() []*testSyncInfoStruct {
+	tests := []*testSyncInfoStruct{
 		{
 			baseSyncInfo: nil,
-			syncInfoToCompareTo: []TestSyncInfoToCompare{
+			syncInfoToCompareTo: []testSyncInfoToCompare{
 				{
 					syncInfo: &SyncInfo{
 						SyncState(1),
@@ -124,7 +124,7 @@ func initTestSyncInfoForEqual() []*TestSyncInfoStruct {
 				&DomainHash{1, 2},
 				0xF,
 				0xF},
-			syncInfoToCompareTo: []TestSyncInfoToCompare{
+			syncInfoToCompareTo: []testSyncInfoToCompare{
 				{
 					syncInfo: &SyncInfo{
 						SyncState(1),

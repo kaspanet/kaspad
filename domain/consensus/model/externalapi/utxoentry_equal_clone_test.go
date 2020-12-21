@@ -5,90 +5,86 @@ import (
 	"testing"
 )
 
-func initTestUTXOEntryForClone() []*UTXOEntry {
+func TestUTXOEntry_Equal(t *testing.T) {
+	type testUTXOEntryToCompare struct {
+		utxoEntry      *UTXOEntry
+		expectedResult bool
+	}
 
-	tests := []*UTXOEntry{
-		{0xFFFF,
-			[]byte{0xA1, 0xA2, 0xA3},
-			0xFFFF,
-			true},
-		{0x0000,
-			[]byte{0, 0, 0},
-			0x0000,
-			false}}
-	return tests
-}
-
-type TestUTXOEntryToCompare struct {
-	utxoEntry      *UTXOEntry
-	expectedResult bool
-}
-
-type TestUTXOEntryStruct struct {
-	baseUTXOEntry        *UTXOEntry
-	UTXOEntryToCompareTo []TestUTXOEntryToCompare
-}
-
-func initTestUTXOEntryForEqual() []*TestUTXOEntryStruct {
-	tests := []*TestUTXOEntryStruct{
+	tests := []struct {
+		baseUTXOEntry        *UTXOEntry
+		UTXOEntryToCompareTo []testUTXOEntryToCompare
+	}{
 		{
 			baseUTXOEntry: nil,
-			UTXOEntryToCompareTo: []TestUTXOEntryToCompare{
+			UTXOEntryToCompareTo: []testUTXOEntryToCompare{
 				{
-					utxoEntry: &UTXOEntry{0xFFFF,
-						[]byte{0xA1, 0xA2, 0xA3},
-						0xFFFF,
-						false},
-					expectedResult: false,
-				}, {
 					utxoEntry:      nil,
 					expectedResult: true,
 				},
+				{
+					utxoEntry: &UTXOEntry{
+						0xFFFF,
+						[]byte{0xA1, 0xA2, 0xA3},
+						0xFFFF,
+						false,
+					},
+					expectedResult: false,
+				},
 			},
 		}, {
-			baseUTXOEntry: &UTXOEntry{0xFFFF,
+			baseUTXOEntry: &UTXOEntry{
+				0xFFFF,
 				[]byte{0xA1, 0xA2, 0xA3},
 				0xFFFF,
-				true},
-			UTXOEntryToCompareTo: []TestUTXOEntryToCompare{
+				true,
+			},
+			UTXOEntryToCompareTo: []testUTXOEntryToCompare{
 				{
-					utxoEntry: &UTXOEntry{0xFFFF,
-						[]byte{0xA1, 0xA0, 0xA3},
+					utxoEntry: &UTXOEntry{
 						0xFFFF,
-						true},
+						[]byte{0xA1, 0xA0, 0xA3}, // Changed
+						0xFFFF,
+						true,
+					},
 					expectedResult: false,
-				}, {
-					utxoEntry: &UTXOEntry{0xFFFF,
+				},
+				{
+					utxoEntry: &UTXOEntry{
+						0xFFFF,
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFFF,
-						false},
+						false, // Changed
+					},
 					expectedResult: false,
-				}, {
-					utxoEntry: &UTXOEntry{0xFFFF,
+				},
+				{
+					utxoEntry: &UTXOEntry{
+						0xFFFF,
 						[]byte{0xA1, 0xA2, 0xA3},
-						0xFFF0,
-						true},
+						0xFFF0, // Changed
+						true,
+					},
 					expectedResult: false,
-				}, {
+				},
+				{
 					utxoEntry:      nil,
 					expectedResult: false,
-				}, {
-					utxoEntry: &UTXOEntry{0xFFF0,
+				},
+				{
+					utxoEntry: &UTXOEntry{
+						0xFFF0, // Changed
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFFF,
-						true},
+						true,
+					},
 					expectedResult: false,
 				},
 			},
 		},
 	}
-	return tests
-}
 
-func TestUTXOEntry_Equal(t *testing.T) {
-
-	testSyncState := initTestUTXOEntryForEqual()
-	for i, test := range testSyncState {
+	for i, test := range tests {
 		for j, subTest := range test.UTXOEntryToCompareTo {
 			result1 := test.baseUTXOEntry.Equal(subTest.utxoEntry)
 			if result1 != subTest.expectedResult {
@@ -103,8 +99,21 @@ func TestUTXOEntry_Equal(t *testing.T) {
 }
 
 func TestUTXOEntry_Clone(t *testing.T) {
+	testUTXOEntry := []*UTXOEntry{
+		{
+			0xFFFF,
+			[]byte{0xA1, 0xA2, 0xA3},
+			0xFFFF,
+			true,
+		},
+		{
+			0x0000,
+			[]byte{0, 0, 0},
+			0x0000,
+			false,
+		},
+	}
 
-	testUTXOEntry := initTestUTXOEntryForClone()
 	for i, utxoEntry := range testUTXOEntry {
 		utxoEntryClone := utxoEntry.Clone()
 		if !utxoEntryClone.Equal(utxoEntry) {

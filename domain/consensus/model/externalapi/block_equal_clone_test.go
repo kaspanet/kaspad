@@ -141,7 +141,6 @@ func initTestBlockStructsForClone() []*DomainBlock {
 }
 
 func initTestBlockStructsForEqual() *[]TestBlockStruct {
-
 	tests := []TestBlockStruct{
 		{
 			baseBlock: nil,
@@ -219,7 +218,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}, {2}}, //1
+							[]*DomainHash{{1}, {2}}, // Changed
 							DomainHash{2},
 							DomainHash{3},
 							DomainHash{4},
@@ -234,7 +233,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{100}},
+							[]*DomainHash{{100}}, // Changed
 							DomainHash{2},
 							DomainHash{3},
 							DomainHash{4},
@@ -250,7 +249,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 						&DomainBlockHeader{
 							0,
 							[]*DomainHash{{1}},
-							DomainHash{100},
+							DomainHash{100}, // Changed
 							DomainHash{3},
 							DomainHash{4},
 							5,
@@ -266,7 +265,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 							0,
 							[]*DomainHash{{1}},
 							DomainHash{2},
-							DomainHash{100},
+							DomainHash{100}, // Changed
 							DomainHash{4},
 							5,
 							6,
@@ -282,7 +281,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 							[]*DomainHash{{1}},
 							DomainHash{2},
 							DomainHash{3},
-							DomainHash{100},
+							DomainHash{100}, // Changed
 							5,
 							6,
 							7,
@@ -298,7 +297,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 							DomainHash{2},
 							DomainHash{3},
 							DomainHash{4},
-							100,
+							100, // Changed
 							6,
 							7,
 						},
@@ -314,7 +313,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 							DomainHash{3},
 							DomainHash{4},
 							5,
-							100,
+							100, // Changed
 							7,
 						},
 						initTestBaseTransactions(),
@@ -330,7 +329,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 							DomainHash{4},
 							5,
 							6,
-							100,
+							100, // Changed
 						},
 						initTestBaseTransactions(),
 					},

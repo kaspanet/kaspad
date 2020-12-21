@@ -27,18 +27,17 @@ func initTestUTXOCollectionForClone() []UTXOCollection {
 	return tests
 }
 
-type TestUTXOCollectionToCompare struct {
+type testUTXOCollectionToCompare struct {
 	utxoCollection UTXOCollection
 	expectedResult bool
 }
 
-type TestUTXOCollectionStruct struct {
+type testUTXOCollectionStruct struct {
 	baseUTXOCollection        UTXOCollection
-	utxoCollectionToCompareTo []TestUTXOCollectionToCompare
+	utxoCollectionToCompareTo []testUTXOCollectionToCompare
 }
 
-func initTestUTXOCollectionForEqual() []TestUTXOCollectionStruct {
-
+func initTestUTXOCollectionForEqual() []testUTXOCollectionStruct {
 	var testUTXOCollection1 UTXOCollection = map[externalapi.DomainOutpoint]*externalapi.UTXOEntry{}
 	testUTXOCollection1[externalapi.DomainOutpoint{
 		externalapi.DomainTransactionID{0x01}, 0xFFFF}] = &externalapi.UTXOEntry{0xFFFF,
@@ -111,10 +110,10 @@ func initTestUTXOCollectionForEqual() []TestUTXOCollectionStruct {
 		0xFFFF,
 		true}
 
-	tests := []TestUTXOCollectionStruct{
+	tests := []testUTXOCollectionStruct{
 		{
 			baseUTXOCollection: testUTXOCollection1,
-			utxoCollectionToCompareTo: []TestUTXOCollectionToCompare{
+			utxoCollectionToCompareTo: []testUTXOCollectionToCompare{
 				{
 					utxoCollection: testUTXOCollection2,
 					expectedResult: true,
