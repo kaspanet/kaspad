@@ -1199,12 +1199,6 @@
   ],
   [
     "''",
-    "DUP HASH256 SWAP SHA256 SHA256 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "''",
     "NOP HASH160 0x14 0xb472a266d0bd89c13706a4132ccfb16f7c3b9fcb EQUAL",
     "",
     "OK"
@@ -1224,19 +1218,19 @@
   ],
   [
     "''",
-    "HASH256 0x20 0x5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456 EQUAL",
+    "BLAKE2B 0x20 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8 EQUAL",
     "",
     "OK"
   ],
   [
     "'a'",
-    "HASH256 0x20 0xbf5d3affb73efd2ec6c36ad3112dd933efed63c4e1cbffcfa88e2759c144f2d8 EQUAL",
+    "BLAKE2B 0x20 0x8928aae63c84d87ea098564d1e03ad813f107add474e56aedd286349c0c03ea4 EQUAL",
     "",
     "OK"
   ],
   [
     "'abcdefghijklmnopqrstuvwxyz'",
-    "HASH256 0x20 0xca139bc10c2f660da42666f72e89a225936fc60f193c161124a672050c434671 EQUAL",
+    "BLAKE2B 0x20 0x117ad6b940f5e8292c007d9c7e7350cd33cf85b5887e8da71c7957830f536e7c EQUAL",
     "",
     "OK"
   ],
@@ -2225,7 +2219,7 @@
   ],
   [
     "0",
-    "HASH256",
+    "BLAKE2B",
     "",
     "OK"
   ],
@@ -4326,7 +4320,7 @@
   ],
   [
     "",
-    "HASH256",
+    "BLAKE2B",
     "",
     "INVALID_STACK_OPERATION"
   ],
@@ -4803,7 +4797,7 @@
   ],
   [
     "",
-    "HASH256 1",
+    "BLAKE2B 1",
     "",
     "INVALID_STACK_OPERATION"
   ],
