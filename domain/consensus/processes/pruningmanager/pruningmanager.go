@@ -149,10 +149,19 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 
 	pm.pruningStore.StagePruningPointCandidate(newCandidate)
 
-	// We move the pruning point every pm.finalityInterval blocks, so only if the
-	// candidate is at depth of at least pm.pruningDepth+pm.finalityInterval we
-	// move the pruning point.
-	if virtualSelectedParent.BlueScore()-newCandidateGHOSTDAGData.BlueScore() < pm.pruningDepth+pm.finalityInterval {
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	pruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	// We move the pruning point every time the candidate's finality score is
+	// bigger than the current pruning point finality score.
+	if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) <= pm.finalityScore(pruningPointGHOSTDAGData.BlueScore()) {
 		return nil
 	}
 
@@ -277,8 +286,8 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, err
 	}
 
-	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(headersSelectedTip,
-		block)
+	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(block,
+		headersSelectedTip)
 	if err != nil {
 		return false, err
 	}
@@ -302,14 +311,10 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, err
 	}
 
-	// We calculate how many pruning points were in the past of the block and its selected parent (inclusive)
-	// and comparing them. A pruning point and its selected parent cannot have the same number of pruning
-	// points in their past, so if it happens it means the given block cannot be a pruning point.
-	// Because the pruning changes only when its depth grows by pm.finalityInterval, we can calculate the number
-	// of pruning points in block past by doing (b.blueScore - pm.pruningDepth) / pm.finalityInterval + 1
-	blockPruningPointsInPast := (ghostdagData.BlueScore()-pm.pruningDepth)/pm.finalityInterval + 1
-	selectedParentPruningPointsInPast := (selectedParentGHOSTDAGData.BlueScore()-pm.pruningDepth)/pm.finalityInterval + 1
-	if blockPruningPointsInPast == selectedParentPruningPointsInPast {
+	// A pruning point has to be the lowest chain block with a certain finality score, so
+	// if the block selected parent has the same finality score it means it cannot be a
+	// pruning point.
+	if pm.finalityScore(ghostdagData.BlueScore()) == pm.finalityScore(selectedParentGHOSTDAGData.BlueScore()) {
 		return false, nil
 	}
 
@@ -335,4 +340,10 @@ func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error
 		return nil, err
 	}
 	return proto.Marshal(serializedUtxo)
+}
+
+// finalityScore is the number of finality intervals passed since
+// the given block.
+func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
+	return blueScore / pm.finalityInterval
 }
