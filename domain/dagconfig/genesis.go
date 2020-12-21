@@ -48,7 +48,7 @@ var genesisMerkleRoot = externalapi.DomainHash{
 // public transaction ledger for the main network.
 var genesisBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
+		Version:              0,
 		ParentHashes:         []*externalapi.DomainHash{},
 		HashMerkleRoot:       genesisMerkleRoot,
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
@@ -100,7 +100,7 @@ var devnetGenesisMerkleRoot = externalapi.DomainHash{
 // public transaction ledger for the development network.
 var devnetGenesisBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
+		Version:              0,
 		ParentHashes:         []*externalapi.DomainHash{},
 		HashMerkleRoot:       devnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
@@ -151,7 +151,7 @@ var simnetGenesisMerkleRoot = externalapi.DomainHash{
 // public transaction ledger for the development network.
 var simnetGenesisBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
+		Version:              0,
 		ParentHashes:         []*externalapi.DomainHash{},
 		HashMerkleRoot:       simnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
@@ -200,7 +200,7 @@ var testnetGenesisMerkleRoot = externalapi.DomainHash{
 // public transaction ledger for testnet.
 var testnetGenesisBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
+		Version:              0,
 		ParentHashes:         []*externalapi.DomainHash{},
 		HashMerkleRoot:       testnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: externalapi.DomainHash{},
