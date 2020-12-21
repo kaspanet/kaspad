@@ -60,7 +60,7 @@ const (
 	// defaultFinalityDuration is an approximate lower bound of how old the finality block is. The finality block is chosen to
 	// be the newest block in the selected chain whose blue score difference from the selected tip is at least 
 	// defaultFinalityDuration/defaultTargetTimePerBlock.
-	// The pruning block is selected similary, with the following duration:
+	// The pruning block is selected similarly, with the following duration:
 	//		pruning block duration = 
 	//					2*defaultFinalityDuration/defaultTargetTimePerBlock + 4*defaultMergeSetSizeLimit*defaultGHOSTDAGK +
 	//				  + 2*defaultGHOSTDAGK + 2
