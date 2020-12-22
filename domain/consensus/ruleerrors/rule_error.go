@@ -123,9 +123,6 @@ var (
 	// the stack.
 	ErrScriptValidation = newRuleError("ErrScriptValidation")
 
-	// ErrParentBlockUnknown indicates that the parent block is not known.
-	ErrParentBlockUnknown = newRuleError("ErrParentBlockUnknown")
-
 	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
 	// already failed validation.
 	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
