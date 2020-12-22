@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
-	"os"
 )
 
 func main() {
@@ -22,7 +20,6 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		printErrorAndExit(err)
 	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
 	"os"
 
@@ -14,11 +15,13 @@ const (
 )
 
 type createConfig struct {
+	config.NetworkFlags
 }
 
 type balanceConfig struct {
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	Address   string `long:"address" short:"d" description:"The public address to check the balance of" required:"true"`
+	config.NetworkFlags
 }
 
 type sendConfig struct {
@@ -26,6 +29,7 @@ type sendConfig struct {
 	PrivateKey string  `long:"private-key" short:"k" description:"The private key of the sender (encoded in hex)" required:"true"`
 	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	config.NetworkFlags
 }
 
 func parseCommandLine() (subCommand string, config interface{}) {
@@ -58,10 +62,22 @@ func parseCommandLine() (subCommand string, config interface{}) {
 
 	switch parser.Command.Active.Name {
 	case createSubCmd:
+		err := createConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
 		config = createConf
 	case balanceSubCmd:
+		err := balanceConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
 		config = balanceConf
 	case sendSubCmd:
+		err := sendConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
 		config = sendConf
 	}
 
