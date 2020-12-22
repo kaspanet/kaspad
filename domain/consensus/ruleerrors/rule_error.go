@@ -63,10 +63,6 @@ var (
 	// valid transaction must have at least one input.
 	ErrNoTxInputs = newRuleError("ErrNoTxInputs")
 
-	// ErrTxMassTooHigh indicates the mass of a transaction exceeds the maximum
-	// allowed limits.
-	ErrTxMassTooHigh = newRuleError("ErrTxMassTooHigh")
-
 	// ErrBadTxOutValue indicates an output value for a transaction is
 	// invalid in some way such as being out of range.
 	ErrBadTxOutValue = newRuleError("ErrBadTxOutValue")
