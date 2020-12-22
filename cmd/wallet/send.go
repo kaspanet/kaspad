@@ -18,7 +18,7 @@ import (
 const feeSompis uint64 = 1000
 
 func send(conf *sendConfig) error {
-	toAddress, err := util.DecodeAddress(conf.ToAddress, util.Bech32PrefixUnknown)
+	toAddress, err := util.DecodeAddress(conf.ToAddress, conf.ActiveNetParams.Prefix)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func send(conf *sendConfig) error {
 	if err != nil {
 		return err
 	}
-	fromAddress, err := util.NewAddressPubKeyHashFromPublicKey(serializedPublicKey[:], toAddress.Prefix())
+	fromAddress, err := util.NewAddressPubKeyHashFromPublicKey(serializedPublicKey[:], conf.ActiveNetParams.Prefix)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func send(conf *sendConfig) error {
 	if err != nil {
 		return err
 	}
-	utxos, err := fetchSpendableUTXOs(client, fromAddress.String())
+	utxos, err := fetchSpendableUTXOs(conf, client, fromAddress.String())
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func parsePrivateKey(privateKeyHex string) (*secp256k1.SchnorrKeyPair, *secp256k
 	return keyPair, publicKey, nil
 }
 
-func fetchSpendableUTXOs(client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
+func fetchSpendableUTXOs(conf *sendConfig, client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
 	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{address})
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func fetchSpendableUTXOs(client *rpcclient.RPCClient, address string) ([]*appmes
 
 	spendableUTXOs := make([]*appmessage.UTXOsByAddressesEntry, 0)
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore) {
+		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
 			continue
 		}
 		spendableUTXOs = append(spendableUTXOs, entry)

@@ -24,7 +24,7 @@ func balance(conf *balanceConfig) error {
 
 	var availableBalance, pendingBalance uint64
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if isUTXOSpendable(entry, virtualSelectedParentBlueScore) {
+		if isUTXOSpendable(entry, virtualSelectedParentBlueScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
 			availableBalance += entry.UTXOEntry.Amount
 		} else {
 			pendingBalance += entry.UTXOEntry.Amount
