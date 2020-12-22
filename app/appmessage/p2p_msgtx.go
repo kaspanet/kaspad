@@ -9,8 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"strconv"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -98,11 +96,11 @@ type TxIn struct {
 // NewTxIn returns a new kaspa transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
+func NewTxIn(prevOut *Outpoint, signatureScript []byte, sequence uint64) *TxIn {
 	return &TxIn{
 		PreviousOutpoint: *prevOut,
 		SignatureScript:  signatureScript,
-		Sequence:         constants.MaxTxInSequenceNum,
+		Sequence:         sequence,
 	}
 }
 
