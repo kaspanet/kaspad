@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
@@ -128,10 +130,11 @@ func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, totalToSpend uint64)
 	return selectedUTXOs, totalValue - totalToSpend, nil
 }
 
-func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*appmessage.UTXOsByAddressesEntry, sompisToSend uint64, change uint64,
-	toAddress util.Address, fromAddress util.Address) (*appmessage.RPCTransaction, error) {
+func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*appmessage.UTXOsByAddressesEntry,
+	sompisToSend uint64, change uint64, toAddress util.Address,
+	fromAddress util.Address) (*appmessage.RPCTransaction, error) {
 
-	txIns := make([]*appmessage.TxIn, len(selectedUTXOs))
+	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
 		outpointTransactionIDBytes, err := hex.DecodeString(utxo.Outpoint.TransactionID)
 		if err != nil {
@@ -141,32 +144,48 @@ func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*app
 		if err != nil {
 			return nil, err
 		}
-		txIns[i] = appmessage.NewTxIn(appmessage.NewOutpoint(outpointTransactionID, utxo.Outpoint.Index), []byte{})
+		outpoint := externalapi.DomainOutpoint{
+			TransactionID: *outpointTransactionID,
+			Index:         utxo.Outpoint.Index,
+		}
+		inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: outpoint}
 	}
 
 	toScript, err := txscript.PayToAddrScript(toAddress)
 	if err != nil {
 		return nil, err
 	}
-	mainTxOut := appmessage.NewTxOut(sompisToSend, toScript)
-
+	mainOutput := &externalapi.DomainTransactionOutput{
+		Value:           sompisToSend,
+		ScriptPublicKey: toScript,
+	}
 	fromScript, err := txscript.PayToAddrScript(fromAddress)
 	if err != nil {
 		return nil, err
 	}
-	changeTxOut := appmessage.NewTxOut(change, fromScript)
+	changeOutput := &externalapi.DomainTransactionOutput{
+		Value:           change,
+		ScriptPublicKey: fromScript,
+	}
+	outputs := []*externalapi.DomainTransactionOutput{mainOutput, changeOutput}
 
-	txOuts := []*appmessage.TxOut{mainTxOut, changeTxOut}
+	domainTransaction := &externalapi.DomainTransaction{
+		Version:      constants.TransactionVersion,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     0,
+		SubnetworkID: subnetworks.SubnetworkIDNative,
+		Gas:          0,
+		Payload:      nil,
+		PayloadHash:  externalapi.DomainHash{},
+	}
 
-	msgTx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
-	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
-
-	for i, txIn := range domainTransaction.Inputs {
+	for i, input := range domainTransaction.Inputs {
 		signatureScript, err := txscript.SignatureScript(domainTransaction, i, fromScript, txscript.SigHashAll, keyPair)
 		if err != nil {
 			return nil, err
 		}
-		txIn.SignatureScript = signatureScript
+		input.SignatureScript = signatureScript
 	}
 
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
