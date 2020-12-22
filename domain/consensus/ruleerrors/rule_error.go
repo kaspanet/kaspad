@@ -42,10 +42,6 @@ var (
 	// ErrInvalidPoW indicates that the block proof-of-work is invalid.
 	ErrInvalidPoW = newRuleError("ErrInvalidPoW")
 
-	// ErrHighHash indicates the block does not hash to a value which is
-	// lower than the required target difficultly.
-	ErrHighHash = newRuleError("ErrHighHash")
-
 	// ErrBadMerkleRoot indicates the calculated merkle root does not match
 	// the expected value.
 	ErrBadMerkleRoot = newRuleError("ErrBadMerkleRoot")
