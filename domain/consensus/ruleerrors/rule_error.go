@@ -71,11 +71,6 @@ var (
 	// input more than once.
 	ErrDuplicateTxInputs = newRuleError("ErrDuplicateTxInputs")
 
-	// ErrBadTxInput indicates a transaction input is invalid in some way
-	// such as referencing a previous transaction outpoint which is out of
-	// range or not referencing one at all.
-	ErrBadTxInput = newRuleError("ErrBadTxInput")
-
 	// ErrDoubleSpendInSameBlock indicates a transaction
 	// that spends an output that was already spent by another
 	// transaction in the same block.
