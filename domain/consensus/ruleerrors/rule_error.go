@@ -168,9 +168,6 @@ var (
 	// allowed limits.
 	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
 
-	// ErrBuiltInTransactionHasGas indicates that a transaction with built in subnetwork ID has a non zero gas.
-	ErrBuiltInTransactionHasGas = newRuleError("ErrBuiltInTransactionHasGas")
-
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
 	ErrSubnetworksDisabled    = newRuleError("ErrSubnetworksDisabled")
