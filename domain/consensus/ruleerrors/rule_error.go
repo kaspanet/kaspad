@@ -93,10 +93,6 @@ var (
 	// value than the sum of all of its inputs.
 	ErrSpendTooHigh = newRuleError("ErrSpendTooHigh")
 
-	// ErrBadFees indicates the total fees for a block are invalid due to
-	// exceeding the maximum possible value.
-	ErrBadFees = newRuleError("ErrBadFees")
-
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
 	ErrFirstTxNotCoinbase = newRuleError("ErrFirstTxNotCoinbase")
