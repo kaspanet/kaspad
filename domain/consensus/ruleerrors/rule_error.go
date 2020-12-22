@@ -127,11 +127,6 @@ var (
 	// already failed validation.
 	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
 
-	// ErrParentBlockNotCurrentTips indicates that the block's parents are not the
-	// current tips. This is not a block validation rule, but is required
-	// for block proposals submitted via getblocktemplate RPC.
-	ErrParentBlockNotCurrentTips = newRuleError("ErrParentBlockNotCurrentTips")
-
 	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
 	ErrWithDiff = newRuleError("ErrWithDiff")
 
