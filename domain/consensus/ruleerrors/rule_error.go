@@ -97,10 +97,6 @@ var (
 	// exceeding the maximum possible value.
 	ErrBadFees = newRuleError("ErrBadFees")
 
-	// ErrTooManySigOps indicates the total number of signature operations
-	// for a transaction or block exceed the maximum allowed limits.
-	ErrTooManySigOps = newRuleError("ErrTooManySigOps")
-
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
 	ErrFirstTxNotCoinbase = newRuleError("ErrFirstTxNotCoinbase")
