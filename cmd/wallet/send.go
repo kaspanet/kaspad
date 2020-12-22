@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"net/http"
-
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kasparov/apimodels"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +35,11 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	utxos, err := getUTXOs(conf.KasparovAddress, fromAddress.String())
+	client, err := rpcclient.NewRPCClient(conf.RPCServer)
+	if err != nil {
+		return err
+	}
+	utxos, err := fetchSpendableUTXOs(client, fromAddress.String())
 	if err != nil {
 		return err
 	}
@@ -52,18 +52,18 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	msgTx, err := generateTx(keyPair, selectedUTXOs, sendAmountSompi, changeSompi, toAddress, fromAddress)
+	rpcTransaction, err := generateTransaction(keyPair, selectedUTXOs, sendAmountSompi, changeSompi, toAddress, fromAddress)
 	if err != nil {
 		return err
 	}
 
-	err = sendTx(conf, msgTx)
+	transactionID, err := sendTransaction(client, rpcTransaction)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Transaction was sent successfully")
-	fmt.Printf("Transaction ID: \t%s", msgTx.TxID())
+	fmt.Printf("Transaction ID: \t%s", transactionID)
 
 	return nil
 }
@@ -84,19 +84,36 @@ func parsePrivateKey(privateKeyHex string) (*secp256k1.SchnorrKeyPair, *secp256k
 	return keyPair, publicKey, nil
 }
 
-func selectUTXOs(utxos []*apimodels.TransactionOutputResponse, totalToSpend uint64) (
-	selectedUTXOs []*apimodels.TransactionOutputResponse, changeSompi uint64, err error) {
+func fetchSpendableUTXOs(client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
+	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{address})
+	if err != nil {
+		return nil, err
+	}
+	virtualSelectedParentBlueScoreResponse, err := client.GetVirtualSelectedParentBlueScore()
+	if err != nil {
+		return nil, err
+	}
+	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
 
-	selectedUTXOs = []*apimodels.TransactionOutputResponse{}
+	spendableUTXOs := make([]*appmessage.UTXOsByAddressesEntry, 0)
+	for _, entry := range getUTXOsByAddressesResponse.Entries {
+		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore) {
+			continue
+		}
+		spendableUTXOs = append(spendableUTXOs, entry)
+	}
+	return spendableUTXOs, nil
+}
+
+func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, totalToSpend uint64) (
+	selectedUTXOs []*appmessage.UTXOsByAddressesEntry, changeSompi uint64, err error) {
+
+	selectedUTXOs = []*appmessage.UTXOsByAddressesEntry{}
 	totalValue := uint64(0)
 
 	for _, utxo := range utxos {
-		if utxo.IsSpendable == nil || !*utxo.IsSpendable {
-			continue
-		}
-
 		selectedUTXOs = append(selectedUTXOs, utxo)
-		totalValue += utxo.Value
+		totalValue += utxo.UTXOEntry.Amount
 
 		if totalValue >= totalToSpend {
 			break
@@ -111,17 +128,17 @@ func selectUTXOs(utxos []*apimodels.TransactionOutputResponse, totalToSpend uint
 	return selectedUTXOs, totalValue - totalToSpend, nil
 }
 
-func generateTx(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*apimodels.TransactionOutputResponse, sompisToSend uint64, change uint64,
-	toAddress util.Address, fromAddress util.Address) (*appmessage.MsgTx, error) {
+func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*appmessage.UTXOsByAddressesEntry, sompisToSend uint64, change uint64,
+	toAddress util.Address, fromAddress util.Address) (*appmessage.RPCTransaction, error) {
 
 	txIns := make([]*appmessage.TxIn, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
-		txID, err := transactionid.FromString(utxo.TransactionID)
+		txID, err := transactionid.FromString(utxo.Outpoint.TransactionID)
 		if err != nil {
 			return nil, err
 		}
 
-		txIns[i] = appmessage.NewTxIn(appmessage.NewOutpoint(txID, utxo.Index), []byte{})
+		txIns[i] = appmessage.NewTxIn(appmessage.NewOutpoint(txID, utxo.Outpoint.Index), []byte{})
 	}
 
 	toScript, err := txscript.PayToAddrScript(toAddress)
@@ -141,7 +158,7 @@ func generateTx(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*apimodels.Tr
 	msgTx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
 	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
 
-	for i, txIn := range msgTx.TxIn {
+	for i, txIn := range domainTransaction.Inputs {
 		signatureScript, err := txscript.SignatureScript(domainTransaction, i, fromScript, txscript.SigHashAll, keyPair)
 		if err != nil {
 			return nil, err
@@ -149,36 +166,14 @@ func generateTx(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*apimodels.Tr
 		txIn.SignatureScript = signatureScript
 	}
 
-	return msgTx, nil
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	return rpcTransaction, nil
 }
 
-func sendTx(conf *sendConfig, msgTx *appmessage.MsgTx) error {
-	txBuffer := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
-	if err := msgTx.KaspaEncode(txBuffer, 0); err != nil {
-		return err
-	}
-
-	txHex := hex.EncodeToString(txBuffer.Bytes())
-	rawTx := &apimodels.RawTransaction{
-		RawTransaction: txHex,
-	}
-	txBytes, err := json.Marshal(rawTx)
+func sendTransaction(client *rpcclient.RPCClient, rpcTransaction *appmessage.RPCTransaction) (string, error) {
+	submitTransactionResponse, err := client.SubmitTransaction(rpcTransaction)
 	if err != nil {
-		return errors.Wrap(err, "Error marshalling transaction to json")
+		return "", errors.Wrapf(err, "error submitting transaction")
 	}
-
-	requestURL, err := resourceURL(conf.KasparovAddress, sendTransactionEndpoint)
-	if err != nil {
-		return err
-	}
-	response, err := http.Post(requestURL, "application/json", bytes.NewBuffer(txBytes))
-	if err != nil {
-		return errors.Wrap(err, "Error posting transaction to server")
-	}
-	_, err = readResponse(response)
-	if err != nil {
-		return errors.Wrap(err, "Error reading send transaction response")
-	}
-
-	return err
+	return submitTransactionResponse.TransactionID, nil
 }
