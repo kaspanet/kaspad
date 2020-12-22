@@ -164,9 +164,6 @@ var (
 	// In the same block
 	ErrChainedTransactions = newRuleError("ErrChainedTransactions")
 
-	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
-	ErrSelectedParentDisqualifiedFromChain = newRuleError("ErrSelectedParentDisqualifiedFromChain")
-
 	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
 	// allowed limits.
 	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
