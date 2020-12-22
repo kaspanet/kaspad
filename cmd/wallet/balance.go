@@ -7,8 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-const minConfirmations = 100
-
 func balance(conf *balanceConfig) error {
 	client, err := rpcclient.NewRPCClient(conf.RPCServer)
 	if err != nil {
@@ -26,8 +24,7 @@ func balance(conf *balanceConfig) error {
 
 	var availableBalance, pendingBalance uint64
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		blockBlueScore := entry.UTXOEntry.BlockBlueScore
-		if blockBlueScore+minConfirmations < virtualSelectedParentBlueScore {
+		if isUTXOSpendable(entry, virtualSelectedParentBlueScore) {
 			availableBalance += entry.UTXOEntry.Amount
 		} else {
 			pendingBalance += entry.UTXOEntry.Amount
