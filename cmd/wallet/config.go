@@ -17,15 +17,15 @@ type createConfig struct {
 }
 
 type balanceConfig struct {
-	KasparovAddress string `long:"kasparov-address" short:"a" description:"An address of a Kasparov API Server to use to check the balance. Must include http:// or https:// (e.g. https://kasparov.kas.pa)" required:"true"`
-	Address         string `long:"address" short:"d" description:"The public address to check the balance of" required:"true"`
+	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	Address   string `long:"address" short:"d" description:"The public address to check the balance of" required:"true"`
 }
 
 type sendConfig struct {
-	KasparovAddress string  `long:"kasparov-address" short:"a" description:"An address of a Kasparov API Server to use to relay the transaction. Must include http:// or https:// (e.g. https://kasparov.kas.pa)" required:"true"`
-	PrivateKey      string  `long:"private-key" short:"k" description:"The private key of the sender (encoded in hex)" required:"true"`
-	ToAddress       string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount      float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	PrivateKey string  `long:"private-key" short:"k" description:"The private key of the sender (encoded in hex)" required:"true"`
+	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 }
 
 func parseCommandLine() (subCommand string, config interface{}) {

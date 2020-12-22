@@ -2,22 +2,35 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 
 	"github.com/kaspanet/kaspad/util"
 )
 
+const minConfirmations = 100
+
 func balance(conf *balanceConfig) error {
-	utxos, err := getUTXOs(conf.KasparovAddress, conf.Address)
+	client, err := rpcclient.NewRPCClient(conf.RPCServer)
 	if err != nil {
 		return err
 	}
+	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{conf.Address})
+	if err != nil {
+		return err
+	}
+	virtualSelectedParentBlueScoreResponse, err := client.GetVirtualSelectedParentBlueScore()
+	if err != nil {
+		return err
+	}
+	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
 
 	var availableBalance, pendingBalance uint64
-	for _, utxo := range utxos {
-		if utxo.IsSpendable != nil && *utxo.IsSpendable {
-			availableBalance += utxo.Value
+	for _, entry := range getUTXOsByAddressesResponse.Entries {
+		blockBlueScore := entry.UTXOEntry.BlockBlueScore
+		if blockBlueScore+minConfirmations < virtualSelectedParentBlueScore {
+			availableBalance += entry.UTXOEntry.Amount
 		} else {
-			pendingBalance += utxo.Value
+			pendingBalance += entry.UTXOEntry.Amount
 		}
 	}
 
