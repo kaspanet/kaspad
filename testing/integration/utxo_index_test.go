@@ -151,7 +151,7 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 	}
 
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(transactionID, entry.Outpoint.Index), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(transactionID, entry.Outpoint.Index), []byte{}, 0)
 
 	payeeAddress, err := util.DecodeAddress(miningAddress1, util.Bech32PrefixKaspaSim)
 	if err != nil {

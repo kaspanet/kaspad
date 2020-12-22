@@ -88,7 +88,7 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessa
 
 func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction, payer, payee *appHarness) *appmessage.MsgTx {
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{}, 0)
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
