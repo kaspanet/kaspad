@@ -124,7 +124,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	if *newPruningPoint != *currentP {
+	if !newPruningPoint.Equal(currentP) {
 		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err

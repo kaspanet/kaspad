@@ -128,7 +128,7 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.DomainTransaction) error {
 	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
 		payloadHash := hashes.PayloadHash(tx.Payload)
-		if tx.PayloadHash != *payloadHash {
+		if !tx.PayloadHash.Equal(payloadHash) {
 			return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
 		}
 	} else if tx.PayloadHash != (externalapi.DomainHash{}) {
@@ -177,7 +177,7 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := localNodeSubnetworkID == nil
-	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || subnetworks.IsEqual(&tx.SubnetworkID, localNodeSubnetworkID)
+	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || tx.SubnetworkID.Equal(localNodeSubnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+

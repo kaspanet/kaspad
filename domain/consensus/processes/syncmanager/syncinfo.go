@@ -36,7 +36,7 @@ func (sm *syncManager) isAwaitingUTXOSet() (isAwaitingUTXOSet bool, ibdRootUTXOB
 
 	// If the pruning point by headers is different from the current point
 	// it means we need to request the new pruning point UTXO set.
-	if *pruningPoint != *pruningPointByHeaders {
+	if !pruningPoint.Equal(pruningPointByHeaders) {
 		return true, pruningPointByHeaders, nil
 	}
 

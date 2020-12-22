@@ -15,7 +15,7 @@ import (
 func TestGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
 	hash := consensushashing.BlockHash(MainnetParams.GenesisBlock)
-	if *MainnetParams.GenesisHash != *hash {
+	if !MainnetParams.GenesisHash.Equal(hash) {
 		t.Fatalf("TestGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash, MainnetParams.GenesisHash)
 	}
@@ -26,7 +26,7 @@ func TestGenesisBlock(t *testing.T) {
 func TestTestnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
 	hash := consensushashing.BlockHash(TestnetParams.GenesisBlock)
-	if *TestnetParams.GenesisHash != *hash {
+	if !TestnetParams.GenesisHash.Equal(hash) {
 		t.Fatalf("TestTestnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
 			TestnetParams.GenesisHash)
@@ -38,7 +38,7 @@ func TestTestnetGenesisBlock(t *testing.T) {
 func TestSimnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
 	hash := consensushashing.BlockHash(SimnetParams.GenesisBlock)
-	if *SimnetParams.GenesisHash != *hash {
+	if !SimnetParams.GenesisHash.Equal(hash) {
 		t.Fatalf("TestSimnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
 			SimnetParams.GenesisHash)
@@ -50,7 +50,7 @@ func TestSimnetGenesisBlock(t *testing.T) {
 func TestDevnetGenesisBlock(t *testing.T) {
 	// Check hash of the block against expected hash.
 	hash := consensushashing.BlockHash(DevnetParams.GenesisBlock)
-	if *DevnetParams.GenesisHash != *hash {
+	if !DevnetParams.GenesisHash.Equal(hash) {
 		t.Fatalf("TestDevnetGenesisBlock: Genesis block hash does "+
 			"not appear valid - got %v, want %v", hash,
 			DevnetParams.GenesisHash)

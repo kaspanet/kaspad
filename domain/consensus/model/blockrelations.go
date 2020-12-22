@@ -10,12 +10,29 @@ type BlockRelations struct {
 
 // Clone returns a clone of BlockRelations
 func (br *BlockRelations) Clone() *BlockRelations {
-	if br == nil {
-		return nil
-	}
-
 	return &BlockRelations{
 		Parents:  externalapi.CloneHashes(br.Parents),
 		Children: externalapi.CloneHashes(br.Children),
 	}
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &BlockRelations{[]*externalapi.DomainHash{}, []*externalapi.DomainHash{}}
+
+// Equal returns whether br equals to other
+func (br *BlockRelations) Equal(other *BlockRelations) bool {
+	if br == nil || other == nil {
+		return br == other
+	}
+
+	if !externalapi.HashesEqual(br.Parents, other.Parents) {
+		return false
+	}
+
+	if !externalapi.HashesEqual(br.Children, other.Children) {
+		return false
+	}
+
+	return true
 }

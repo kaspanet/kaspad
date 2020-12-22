@@ -13,7 +13,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 
 	log.Tracef("Saving a reference to the GHOSTDAG data of the old virtual")
 	var oldVirtualSelectedParent *externalapi.DomainHash
-	if *newBlockHash != *csm.genesisHash {
+	if !newBlockHash.Equal(csm.genesisHash) {
 		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 		if err != nil {
 			return nil, err
@@ -65,7 +65,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 
 	log.Tracef("Calculating selected parent chain changes")
 	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
-	if *newBlockHash != *csm.genesisHash {
+	if !newBlockHash.Equal(csm.genesisHash) {
 		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 		if err != nil {
 			return nil, err

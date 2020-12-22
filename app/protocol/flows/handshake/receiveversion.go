@@ -90,7 +90,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	isRemoteNodeFull := msgVersion.SubnetworkID == nil
 	isOutbound := flow.peer.Connection().IsOutbound()
 	if (isLocalNodeFull && !isRemoteNodeFull && isOutbound) ||
-		(!isLocalNodeFull && !isRemoteNodeFull && *msgVersion.SubnetworkID != *localSubnetworkID) {
+		(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.Equal(localSubnetworkID)) {
 
 		return nil, protocolerrors.New(false, "incompatible subnetworks")
 	}

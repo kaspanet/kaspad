@@ -74,7 +74,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
-	isGenesis := *blockHash == *bp.genesisHash
+	isGenesis := blockHash.Equal(bp.genesisHash)
 	if !isGenesis {
 		var err error
 		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
@@ -156,7 +156,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 		return err
 	}
 
-	if *headersSelectedTip == *oldHeadersSelectedTip {
+	if headersSelectedTip.Equal(oldHeadersSelectedTip) {
 		return nil
 	}
 

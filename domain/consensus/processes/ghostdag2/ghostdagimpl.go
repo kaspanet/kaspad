@@ -92,7 +92,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
-		if *mergeSetBlock == *selectedParent {
+		if mergeSetBlock.Equal(selectedParent) {
 			if !contains(selectedParent, mergeSetBlues) {
 				mergeSetBlues = append(mergeSetBlues, selectedParent)
 				blueSet = append(blueSet, selectedParent)
@@ -252,7 +252,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 /*----------------contains-------------------------- */
 func contains(item *externalapi.DomainHash, items []*externalapi.DomainHash) bool {
 	for _, r := range items {
-		if *r == *item {
+		if r.Equal(item) {
 			return true
 		}
 	}
@@ -294,7 +294,7 @@ func (gh *ghostdagHelper) findMergeSet(parents []*externalapi.DomainHash, select
 	for len(blockQueue) > 0 {
 		block := blockQueue[0]
 		blockQueue = blockQueue[1:]
-		if *selectedParent == *block {
+		if selectedParent.Equal(block) {
 			if !contains(block, allMergeSet) {
 				allMergeSet = append(allMergeSet, block)
 			}

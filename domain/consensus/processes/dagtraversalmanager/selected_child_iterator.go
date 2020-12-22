@@ -20,7 +20,7 @@ func (s *selectedChildIterator) Next() bool {
 	}
 
 	for _, child := range children {
-		if *child == *model.VirtualBlockHash {
+		if child.Equal(model.VirtualBlockHash) {
 			continue
 		}
 

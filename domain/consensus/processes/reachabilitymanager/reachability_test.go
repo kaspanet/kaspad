@@ -950,7 +950,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			currentTreeNode = childTreeNode
 		}
 
-		originalRemainingInterval := *helper.remainingIntervalAfter(root)
+		originalRemainingInterval := helper.remainingIntervalAfter(root).Clone()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := helper.newNode()
@@ -961,7 +961,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if *helper.remainingIntervalAfter(root) == originalRemainingInterval {
+		if helper.remainingIntervalAfter(root).Equal(originalRemainingInterval) {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}
