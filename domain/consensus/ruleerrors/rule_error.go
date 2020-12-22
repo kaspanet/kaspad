@@ -127,9 +127,6 @@ var (
 	// already failed validation.
 	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
 
-	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
-	ErrWithDiff = newRuleError("ErrWithDiff")
-
 	// ErrFinality indicates that a block doesn't adhere to the finality rules
 	ErrFinality = newRuleError("ErrFinality")
 
