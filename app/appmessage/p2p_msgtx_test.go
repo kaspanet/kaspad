@@ -52,7 +52,7 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutpoint(txID, prevOutIndex)
-	if prevOut.TxID != *txID {
+	if !prevOut.TxID.Equal(txID) {
 		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}

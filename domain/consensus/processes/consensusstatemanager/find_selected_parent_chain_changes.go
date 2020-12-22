@@ -51,7 +51,7 @@ func (csm *consensusStateManager) calculateSelectedParentChainChanges(
 	// Walk down from the toBlockHash to the common ancestor
 	var added []*externalapi.DomainHash
 	current = toBlockHash
-	for *current != *commonAncestor {
+	for !current.Equal(commonAncestor) {
 		added = append(added, current)
 		currentGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, current)
 		if err != nil {

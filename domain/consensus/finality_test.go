@@ -309,7 +309,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Make sure it's actually blue
 		found := false
 		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if *blue == *kosherizingBlockHash {
+			if blue.Equal(kosherizingBlockHash) {
 				found = true
 				break
 			}
@@ -329,7 +329,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(pointAtBlueKosherizing) {
+		if !consensushashing.BlockHash(virtualSelectedParent).Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
 			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
 		}
 
@@ -346,7 +346,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *tip {
+		if !consensushashing.BlockHash(virtualSelectedParent).Equal(tip) {
 			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, consensushashing.BlockHash(virtualSelectedParent))
 		}
 
@@ -357,7 +357,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Make sure it's actually blue
 		found = false
 		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if *blue == *kosherizingBlockHash {
+			if blue.Equal(kosherizingBlockHash) {
 				found = true
 				break
 			}
@@ -382,7 +382,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(transitiveBlueKosherizing) {
+		if !consensushashing.BlockHash(virtualSelectedParent).Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
 			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
 		}
 

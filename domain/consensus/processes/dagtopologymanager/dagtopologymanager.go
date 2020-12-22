@@ -180,7 +180,7 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
 		selectedParent := ghostdagData.SelectedParent()
 
 		// In case where `blockHash` is an immediate parent of `highHash`
-		if *blockHash == *selectedParent {
+		if blockHash.Equal(selectedParent) {
 			return highHash, nil
 		}
 		highHash = selectedParent

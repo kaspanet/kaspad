@@ -103,7 +103,7 @@ func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalap
 	defer log.Tracef("validateAcceptedIDMerkleRoot end for block %s", blockHash)
 
 	calculatedAcceptedIDMerkleRoot := calculateAcceptedIDMerkleRoot(acceptanceData)
-	if block.Header.AcceptedIDMerkleRoot != *calculatedAcceptedIDMerkleRoot {
+	if !block.Header.AcceptedIDMerkleRoot.Equal(calculatedAcceptedIDMerkleRoot) {
 		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block %s accepted ID merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			blockHash, &block.Header.UTXOCommitment, calculatedAcceptedIDMerkleRoot)
@@ -119,7 +119,7 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	defer log.Tracef("validateUTXOCommitment end for block %s", blockHash)
 
 	multisetHash := multiset.Hash()
-	if block.Header.UTXOCommitment != *multisetHash {
+	if !block.Header.UTXOCommitment.Equal(multisetHash) {
 		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", blockHash, &block.Header.UTXOCommitment, multisetHash)
 	}

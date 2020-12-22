@@ -17,7 +17,7 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 
-	if *expectedNewPruningPointHash != *newPruningPointHash {
+	if !expectedNewPruningPointHash.Equal(newPruningPointHash) {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "expected pruning point %s but got %s",
 			expectedNewPruningPointHash, newPruningPointHash)
 	}
