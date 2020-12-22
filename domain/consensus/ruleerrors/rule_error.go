@@ -153,14 +153,6 @@ var (
 	// ErrTooManyParents indicates that a block points to more then `MaxNumParentBlocks` parents
 	ErrTooManyParents = newRuleError("ErrTooManyParents")
 
-	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
-	// submitted with BFDisallowDelay flag raised.
-	ErrDelayedBlockIsNotAllowed = newRuleError("ErrDelayedBlockIsNotAllowed")
-
-	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
-	// BFDisallowOrphans flag raised.
-	ErrOrphanBlockIsNotAllowed = newRuleError("ErrOrphanBlockIsNotAllowed")
-
 	// ErrViolatingBoundedMergeDepth indicates that a block is violating finality from
 	// its own point of view
 	ErrViolatingBoundedMergeDepth = newRuleError("ErrViolatingBoundedMergeDepth")
