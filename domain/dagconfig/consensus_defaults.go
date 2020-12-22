@@ -7,8 +7,7 @@ import (
 
 // The documentation refers to the following constants which aren't explicated in the code:
 //	d - an upper bound on the round trip time of a block
-//	delta - the expected fraction of time the width of the network exceeds
-//			defaultGHOSTDAGK
+//	delta - the expected fraction of time the width of the network exceeds defaultGHOSTDAGK
 //
 // For more information about defaultGHOSTDAGK, and its dependency on delta and defaultTargetTimePerBlock
 // please refer to the PHANTOM paper: https://eprint.iacr.org/2018/104.pdf
@@ -61,8 +60,8 @@ const (
 	// be the newest block in the selected chain whose blue score difference from the selected tip is at least
 	// defaultFinalityDuration/defaultTargetTimePerBlock.
 	// The pruning block is selected similarly, with the following duration:
-	//		pruning block duration =
-	//			2*defaultFinalityDuration/defaultTargetTimePerBlock + 4*defaultMergeSetSizeLimit*defaultGHOSTDAGK + 2*defaultGHOSTDAGK + 2
+	//	pruning block duration =
+	//		2*defaultFinalityDuration/defaultTargetTimePerBlock + 4*defaultMergeSetSizeLimit*defaultGHOSTDAGK + 2*defaultGHOSTDAGK + 2
 	defaultFinalityDuration = 24 * time.Hour
 	// defaultTargetTimePerBlock represents how much time should pass on average between two consecutive block creations.
 	// Should be parametrized such that the average width of the DAG is about defaultMaxBlockParents and such that most of the
