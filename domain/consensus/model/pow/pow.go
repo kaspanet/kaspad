@@ -1,13 +1,14 @@
 package pow
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 // CheckProofOfWorkWithTarget check's if the block has a valid PoW according to the provided target
@@ -47,5 +48,17 @@ func calcPowValue(header *externalapi.DomainBlockHeader) *big.Int {
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
-	return hashes.ToBig(writer.Finalize())
+	return toBig(writer.Finalize())
+}
+
+// ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.
+func toBig(hash *externalapi.DomainHash) *big.Int {
+	// We treat the Hash as little-endian for PoW purposes, but the big package wants the bytes in big-endian, so reverse them.
+	buf := hash.Clone()
+	blen := len(buf)
+	for i := 0; i < blen/2; i++ {
+		buf[i], buf[blen-1-i] = buf[blen-1-i], buf[i]
+	}
+
+	return new(big.Int).SetBytes(buf[:])
 }
