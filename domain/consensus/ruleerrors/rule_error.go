@@ -14,10 +14,6 @@ var (
 	// exists.
 	ErrDuplicateBlock = newRuleError("ErrDuplicateBlock")
 
-	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
-	// allowed limits.
-	ErrBlockMassTooHigh = newRuleError("ErrBlockMassTooHigh")
-
 	// ErrBlockVersionTooOld indicates the block version is too old and is
 	// no longer accepted since the majority of the network has upgraded
 	// to a newer version.
