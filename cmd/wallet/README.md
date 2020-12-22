@@ -13,7 +13,7 @@ Usage
 -----
 
 * Create a new wallet key-pair: `wallet create --testnet`
-* Print a wallet's current
-  balance: `wallet balance --testnet --address=kaspatest:000000000000000000000000000000000000000000`
-* Send funds to another
-  wallet: `wallet send --testnet --private-key=0000000000000000000000000000000000000000000000000000000000000000 --send-amount=50 --to-address=kaspatest:000000000000000000000000000000000000000000`
+* Print a wallet's current balance:
+  `wallet balance --testnet --address=kaspatest:000000000000000000000000000000000000000000`
+* Send funds to another wallet:
+  `wallet send --testnet --private-key=0000000000000000000000000000000000000000000000000000000000000000 --send-amount=50 --to-address=kaspatest:000000000000000000000000000000000000000000`
