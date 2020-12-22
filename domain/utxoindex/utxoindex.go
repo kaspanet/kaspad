@@ -126,7 +126,7 @@ func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, 
 		log.Tracef("Adding outpoint %s:%d to UTXO index", transactionID, index)
 		outpoint := externalapi.NewDomainOutpoint(transactionID, uint32(index))
 		utxoEntry := utxo.NewUTXOEntry(transactionOutput.Value, transactionOutput.ScriptPublicKey, isCoinbase, blockBlueScore)
-		err := ui.store.add(transactionOutput.ScriptPublicKey, outpoint, &utxoEntry)
+		err := ui.store.add(transactionOutput.ScriptPublicKey, outpoint, utxoEntry)
 		if err != nil {
 			return err
 		}
@@ -148,7 +148,7 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 	for _, transactionInput := range transaction.Inputs {
 		log.Tracef("Adding outpoint %s:%d to UTXO index",
 			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		err := ui.store.add(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, &transactionInput.UTXOEntry)
+		err := ui.store.add(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, transactionInput.UTXOEntry)
 		if err != nil {
 			return err
 		}

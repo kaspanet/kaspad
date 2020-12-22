@@ -25,7 +25,7 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	}
 }
 
-func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry *externalapi.UTXOEntry) error {
+func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
 	key := ConvertScriptPublicKeyToString(scriptPublicKey)
 	log.Tracef("Adding outpoint %s:%d to scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -52,7 +52,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 		return errors.Errorf("cannot add outpoint %s because it's being added already", outpoint)
 	}
 
-	toAddPairsOfKey[*outpoint] = *utxoEntry
+	toAddPairsOfKey[*outpoint] = utxoEntry
 
 	log.Tracef("Added outpoint %s:%d to scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
