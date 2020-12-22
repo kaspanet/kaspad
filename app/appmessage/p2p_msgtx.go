@@ -258,8 +258,8 @@ func (msg *MsgTx) MaxPayloadLength(pver uint32) uint32 {
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *externalapi.DomainSubnetworkID) bool {
 	return subnetworkID == nil ||
-		*subnetworkID == subnetworks.SubnetworkIDNative ||
-		*subnetworkID == msg.SubnetworkID
+		subnetworkID.Equal(&subnetworks.SubnetworkIDNative) ||
+		subnetworkID.Equal(&msg.SubnetworkID)
 }
 
 // newMsgTx returns a new tx message that conforms to the Message interface.

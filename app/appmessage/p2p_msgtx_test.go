@@ -247,7 +247,7 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if *tx2ID == (externalapi.DomainTransactionID)(*tx2Hash) {
+	if tx2ID.Equal((*externalapi.DomainTransactionID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
