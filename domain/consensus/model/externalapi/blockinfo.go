@@ -10,8 +10,8 @@ type BlockInfo struct {
 // Clone returns a clone of BlockInfo
 func (bi *BlockInfo) Clone() *BlockInfo {
 	return &BlockInfo{
-		Exists:                            bi.Exists,
-		BlockStatus:                       bi.BlockStatus.Clone(),
-		IsBlockInHeaderPruningPointFuture: bi.IsBlockInHeaderPruningPointFuture,
+		Exists:      bi.Exists,
+		BlockStatus: bi.BlockStatus.Clone(),
+		BlueScore:   bi.BlueScore,
 	}
 }

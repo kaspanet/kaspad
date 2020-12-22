@@ -42,12 +42,16 @@ type BlockAcceptanceData struct {
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = &BlockAcceptanceData{[]*TransactionAcceptanceData{}}
+var _ = &BlockAcceptanceData{&DomainHash{}, []*TransactionAcceptanceData{}}
 
 // Equal returns whether bad equals to other
 func (bad *BlockAcceptanceData) Equal(other *BlockAcceptanceData) bool {
 	if bad == nil || other == nil {
 		return bad == other
+	}
+
+	if !bad.BlockHash.Equal(other.BlockHash) {
+		return false
 	}
 
 	if len(bad.TransactionAcceptanceData) != len(other.TransactionAcceptanceData) {
@@ -90,7 +94,7 @@ type TransactionAcceptanceData struct {
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = &TransactionAcceptanceData{&externalapi.DomainTransaction{}, 0, false}
+var _ = &TransactionAcceptanceData{&DomainTransaction{}, 0, false}
 
 // Equal returns whether tad equals to other
 func (tad *TransactionAcceptanceData) Equal(other *TransactionAcceptanceData) bool {

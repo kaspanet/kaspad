@@ -1,14 +1,15 @@
-package model
+package model_test
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"reflect"
 	"testing"
 )
 
-func initTestTransactionAcceptanceDataForClone() []*TransactionAcceptanceData {
+func initTestTransactionAcceptanceDataForClone() []*externalapi.TransactionAcceptanceData {
 
-	tests := []*TransactionAcceptanceData{
+	tests := []*externalapi.TransactionAcceptanceData{
 		{
 			&externalapi.DomainTransaction{
 				Version: 1,
@@ -16,10 +17,7 @@ func initTestTransactionAcceptanceDataForClone() []*TransactionAcceptanceData {
 					externalapi.DomainTransactionID{0x01}, 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}},
 					{uint64(0xFFFF),
@@ -47,17 +45,17 @@ func initTestTransactionAcceptanceDataForClone() []*TransactionAcceptanceData {
 }
 
 type testTransactionAcceptanceDataToCompare struct {
-	transactionAcceptanceData *TransactionAcceptanceData
+	transactionAcceptanceData *externalapi.TransactionAcceptanceData
 	expectedResult            bool
 }
 
 type testTransactionAcceptanceDataStruct struct {
-	baseTransactionAcceptanceData        *TransactionAcceptanceData
+	baseTransactionAcceptanceData        *externalapi.TransactionAcceptanceData
 	transactionAcceptanceDataToCompareTo []testTransactionAcceptanceDataToCompare
 }
 
 func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStruct {
-	var testTransactionAcceptanceDataBase = TransactionAcceptanceData{
+	var testTransactionAcceptanceDataBase = externalapi.TransactionAcceptanceData{
 
 		&externalapi.DomainTransaction{
 			Version: 1,
@@ -65,10 +63,7 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 				externalapi.DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				&externalapi.UTXOEntry{1,
-					[]byte{0, 1, 2, 3},
-					2,
-					true}}},
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}},
 				{uint64(0xFFFF),
@@ -92,17 +87,14 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 		true,
 	}
 
-	var testTransactionAcceptanceData1 = TransactionAcceptanceData{
+	var testTransactionAcceptanceData1 = externalapi.TransactionAcceptanceData{
 		&externalapi.DomainTransaction{
 			Version: 1,
 			Inputs: []*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
 				externalapi.DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				&externalapi.UTXOEntry{1,
-					[]byte{0, 1, 2, 3},
-					2,
-					true}}},
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}},
 				{uint64(0xFFFF),
@@ -126,17 +118,14 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 		true,
 	}
 	// test 2: different transactions
-	var testTransactionAcceptanceData2 = TransactionAcceptanceData{
+	var testTransactionAcceptanceData2 = externalapi.TransactionAcceptanceData{
 		&externalapi.DomainTransaction{
 			Version: 2,
 			Inputs: []*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
 				externalapi.DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				&externalapi.UTXOEntry{1,
-					[]byte{0, 1, 2, 3},
-					2,
-					true}}},
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}},
 				{uint64(0xFFFF),
@@ -160,17 +149,14 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 		true,
 	}
 	//test 3: different Fee
-	var testTransactionAcceptanceData3 = TransactionAcceptanceData{
+	var testTransactionAcceptanceData3 = externalapi.TransactionAcceptanceData{
 		&externalapi.DomainTransaction{
 			Version: 1,
 			Inputs: []*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
 				externalapi.DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				&externalapi.UTXOEntry{1,
-					[]byte{0, 1, 2, 3},
-					2,
-					true}}},
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}},
 				{uint64(0xFFFF),
@@ -194,17 +180,14 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 		true,
 	}
 	//test 4: different isAccepted
-	var testTransactionAcceptanceData4 = TransactionAcceptanceData{
+	var testTransactionAcceptanceData4 = externalapi.TransactionAcceptanceData{
 		&externalapi.DomainTransaction{
 			Version: 1,
 			Inputs: []*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
 				externalapi.DomainTransactionID{0x01}, 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				&externalapi.UTXOEntry{1,
-					[]byte{0, 1, 2, 3},
-					2,
-					true}}},
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 				[]byte{1, 2}},
 				{uint64(0xFFFF),
@@ -295,60 +278,59 @@ func TestTransactionAcceptanceData_Clone(t *testing.T) {
 	}
 }
 
-func initTestBlockAcceptanceDataForClone() []*BlockAcceptanceData {
+func initTestBlockAcceptanceDataForClone() []*externalapi.BlockAcceptanceData {
 
-	tests := []*BlockAcceptanceData{{[]*TransactionAcceptanceData{
-		{
-			&externalapi.DomainTransaction{
+	tests := []*externalapi.BlockAcceptanceData{{&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{
+			{
+				&externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
+						externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
-					externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
-				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}},
+				true,
+			}},
 	},
 	}
 	return tests
 }
 
 type testBlockAcceptanceDataToCompare struct {
-	blockAcceptanceData *BlockAcceptanceData
+	blockAcceptanceData *externalapi.BlockAcceptanceData
 	expectedResult      bool
 }
 
 type testBlockAcceptanceDataStruct struct {
-	baseBlockAcceptanceData        *BlockAcceptanceData
+	baseBlockAcceptanceData        *externalapi.BlockAcceptanceData
 	blockAcceptanceDataToCompareTo []testBlockAcceptanceDataToCompare
 }
 
 func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
-	var testBlockAcceptanceDataBase = BlockAcceptanceData{
-		[]*TransactionAcceptanceData{{
+	var testBlockAcceptanceDataBase = externalapi.BlockAcceptanceData{
+		&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
 				1,
 				[]*externalapi.DomainTransactionInput{{
@@ -356,10 +338,7 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 						externalapi.DomainTransactionID{0x01}, 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}},
 					{uint64(0xFFFF),
@@ -383,8 +362,9 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 			true,
 		}}}
 	//test 1: structs are equal
-	var testBlockAcceptanceData1 = BlockAcceptanceData{
-		[]*TransactionAcceptanceData{{
+	var testBlockAcceptanceData1 = externalapi.BlockAcceptanceData{
+		&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
 				1,
 				[]*externalapi.DomainTransactionInput{{
@@ -392,10 +372,7 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 						externalapi.DomainTransactionID{0x01}, 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}},
 					{uint64(0xFFFF),
@@ -419,8 +396,9 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 			true,
 		}}}
 	// test 2: different size
-	var testBlockAcceptanceData2 = BlockAcceptanceData{
-		[]*TransactionAcceptanceData{{
+	var testBlockAcceptanceData2 = externalapi.BlockAcceptanceData{
+		&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
 				1,
 				[]*externalapi.DomainTransactionInput{{
@@ -428,10 +406,7 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 						externalapi.DomainTransactionID{0x01}, 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}},
 					{uint64(0xFFFF),
@@ -455,8 +430,9 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 			true,
 		}, {}}}
 	//test 3: different transactions, same size
-	var testBlockAcceptanceData3 = BlockAcceptanceData{
-		[]*TransactionAcceptanceData{{
+	var testBlockAcceptanceData3 = externalapi.BlockAcceptanceData{
+		&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{{
 			&externalapi.DomainTransaction{
 				1,
 				[]*externalapi.DomainTransactionInput{{
@@ -464,10 +440,7 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 						externalapi.DomainTransactionID{0x01}, 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}},
 					{uint64(0xFFFF),
@@ -491,6 +464,41 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 			false,
 		}}}
 
+	// test 4 - different block hash
+	var testBlockAcceptanceData4 = externalapi.BlockAcceptanceData{
+		&externalapi.DomainHash{2},
+		[]*externalapi.TransactionAcceptanceData{{
+			&externalapi.DomainTransaction{
+				1,
+				[]*externalapi.DomainTransactionInput{{
+					externalapi.DomainOutpoint{
+						externalapi.DomainTransactionID{0x01}, 0xFFFF},
+					[]byte{1, 2, 3},
+					uint64(0xFFFFFFFF),
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+					[]byte{1, 2}},
+					{uint64(0xFFFF),
+						[]byte{1, 3}}},
+				1,
+				externalapi.DomainSubnetworkID{0x01},
+				1,
+				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+				[]byte{0x01},
+				0,
+				1,
+				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+			},
+			1,
+			true,
+		}}}
+
 	tests := []testBlockAcceptanceDataStruct{
 		{
 			baseBlockAcceptanceData: &testBlockAcceptanceDataBase,
@@ -506,6 +514,10 @@ func iniBlockAcceptanceDataForEqual() []testBlockAcceptanceDataStruct {
 					expectedResult:      false,
 				}, {
 					blockAcceptanceData: nil,
+					expectedResult:      false,
+				},
+				{
+					blockAcceptanceData: &testBlockAcceptanceData4,
 					expectedResult:      false,
 				},
 			},
@@ -556,202 +568,194 @@ func TestBlockAcceptanceData_Clone(t *testing.T) {
 	}
 }
 
-func initTestAcceptanceDataForClone() []AcceptanceData {
+func initTestAcceptanceDataForClone() []externalapi.AcceptanceData {
 
-	test1 := []*BlockAcceptanceData{{[]*TransactionAcceptanceData{
-		{
-			&externalapi.DomainTransaction{
+	test1 := []*externalapi.BlockAcceptanceData{{
+		&externalapi.DomainHash{1},
+		[]*externalapi.TransactionAcceptanceData{
+			{
+				&externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
+						externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
-					externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
-				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}},
+				true,
+			}},
 	},
 	}
-	tests := []AcceptanceData{test1, test1}
+	tests := []externalapi.AcceptanceData{test1, test1}
 	return tests
 }
 
 type testAcceptanceDataToCompare struct {
-	acceptanceData AcceptanceData
+	acceptanceData externalapi.AcceptanceData
 	expectedResult bool
 }
 
 type testAcceptanceDataStruct struct {
-	baseAcceptanceData        AcceptanceData
+	baseAcceptanceData        externalapi.AcceptanceData
 	acceptanceDataToCompareTo []testAcceptanceDataToCompare
 }
 
 func initAcceptanceDataForEqual() []testAcceptanceDataStruct {
-	var testAcceptanceDataBase = []*BlockAcceptanceData{
-		{[]*TransactionAcceptanceData{{
-			&externalapi.DomainTransaction{
+	var testAcceptanceDataBase = []*externalapi.BlockAcceptanceData{
+		{
+			&externalapi.DomainHash{1},
+			[]*externalapi.TransactionAcceptanceData{{
+				&externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{{
+						externalapi.DomainOutpoint{
+							externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				[]*externalapi.DomainTransactionInput{{
-					externalapi.DomainOutpoint{
-						externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
-				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}}}}
+				true,
+			}}}}
 	//test 1: structs are equal
-	var testAcceptanceData1 = []*BlockAcceptanceData{
-		{[]*TransactionAcceptanceData{{
-			&externalapi.DomainTransaction{
+	var testAcceptanceData1 = []*externalapi.BlockAcceptanceData{
+		{&externalapi.DomainHash{1},
+			[]*externalapi.TransactionAcceptanceData{{
+				&externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{{
+						externalapi.DomainOutpoint{
+							externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				[]*externalapi.DomainTransactionInput{{
-					externalapi.DomainOutpoint{
-						externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
-				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}}}}
+				true,
+			}}}}
 	// test 2: different size
-	var testAcceptanceData2 = []*BlockAcceptanceData{
-		{[]*TransactionAcceptanceData{{
-			&externalapi.DomainTransaction{
+	var testAcceptanceData2 = []*externalapi.BlockAcceptanceData{
+		{&externalapi.DomainHash{1},
+			[]*externalapi.TransactionAcceptanceData{{
+				&externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{{
+						externalapi.DomainOutpoint{
+							externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				[]*externalapi.DomainTransactionInput{{
-					externalapi.DomainOutpoint{
-						externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
-				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}}}, {}}
+				true,
+			}}}, {}}
 	//test 3: different transactions, same size
-	var testAcceptanceData3 = []*BlockAcceptanceData{
-		{[]*TransactionAcceptanceData{{
-			&externalapi.DomainTransaction{
-				2,
-				[]*externalapi.DomainTransactionInput{{
-					externalapi.DomainOutpoint{
-						externalapi.DomainTransactionID{0x01}, 0xFFFF},
-					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					&externalapi.UTXOEntry{1,
-						[]byte{0, 1, 2, 3},
-						2,
-						true}}},
-				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
-					{uint64(0xFFFF),
-						[]byte{1, 3}}},
+	var testAcceptanceData3 = []*externalapi.BlockAcceptanceData{
+		{&externalapi.DomainHash{1},
+			[]*externalapi.TransactionAcceptanceData{{
+				&externalapi.DomainTransaction{
+					2,
+					[]*externalapi.DomainTransactionInput{{
+						externalapi.DomainOutpoint{
+							externalapi.DomainTransactionID{0x01}, 0xFFFF},
+						[]byte{1, 2, 3},
+						uint64(0xFFFFFFFF),
+						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+						[]byte{1, 2}},
+						{uint64(0xFFFF),
+							[]byte{1, 3}}},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					[]byte{0x01},
+					0,
+					1,
+					&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+				},
 				1,
-				externalapi.DomainSubnetworkID{0x01},
-				1,
-				externalapi.DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-				[]byte{0x01},
-				0,
-				1,
-				&externalapi.DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
-			},
-			1,
-			true,
-		}}}}
+				true,
+			}}}}
 
 	tests := []testAcceptanceDataStruct{
 		{

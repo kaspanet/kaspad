@@ -1,18 +1,18 @@
-package externalapi
+package utxo
 
 import (
-	"reflect"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"testing"
 )
 
 func TestUTXOEntry_Equal(t *testing.T) {
 	type testUTXOEntryToCompare struct {
-		utxoEntry      *UTXOEntry
+		utxoEntry      *utxoEntry
 		expectedResult bool
 	}
 
 	tests := []struct {
-		baseUTXOEntry        *UTXOEntry
+		baseUTXOEntry        *utxoEntry
 		UTXOEntryToCompareTo []testUTXOEntryToCompare
 	}{
 		{
@@ -23,7 +23,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 					expectedResult: true,
 				},
 				{
-					utxoEntry: &UTXOEntry{
+					utxoEntry: &utxoEntry{
 						0xFFFF,
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFFF,
@@ -33,7 +33,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				},
 			},
 		}, {
-			baseUTXOEntry: &UTXOEntry{
+			baseUTXOEntry: &utxoEntry{
 				0xFFFF,
 				[]byte{0xA1, 0xA2, 0xA3},
 				0xFFFF,
@@ -41,7 +41,20 @@ func TestUTXOEntry_Equal(t *testing.T) {
 			},
 			UTXOEntryToCompareTo: []testUTXOEntryToCompare{
 				{
-					utxoEntry: &UTXOEntry{
+					utxoEntry: &utxoEntry{
+						0xFFFF,
+						[]byte{0xA1, 0xA2, 0xA3},
+						0xFFFF,
+						true,
+					},
+					expectedResult: true,
+				},
+				{
+					utxoEntry:      nil,
+					expectedResult: false,
+				},
+				{
+					utxoEntry: &utxoEntry{
 						0xFFFF,
 						[]byte{0xA1, 0xA0, 0xA3}, // Changed
 						0xFFFF,
@@ -50,7 +63,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 					expectedResult: false,
 				},
 				{
-					utxoEntry: &UTXOEntry{
+					utxoEntry: &utxoEntry{
 						0xFFFF,
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFFF,
@@ -59,7 +72,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 					expectedResult: false,
 				},
 				{
-					utxoEntry: &UTXOEntry{
+					utxoEntry: &utxoEntry{
 						0xFFFF,
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFF0, // Changed
@@ -72,7 +85,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 					expectedResult: false,
 				},
 				{
-					utxoEntry: &UTXOEntry{
+					utxoEntry: &utxoEntry{
 						0xFFF0, // Changed
 						[]byte{0xA1, 0xA2, 0xA3},
 						0xFFFF,
@@ -86,41 +99,15 @@ func TestUTXOEntry_Equal(t *testing.T) {
 
 	for i, test := range tests {
 		for j, subTest := range test.UTXOEntryToCompareTo {
-			result1 := test.baseUTXOEntry.Equal(subTest.utxoEntry)
+			var base externalapi.UTXOEntry = test.baseUTXOEntry
+			result1 := base.Equal(subTest.utxoEntry)
 			if result1 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
 			}
-			result2 := subTest.utxoEntry.Equal(test.baseUTXOEntry)
+			result2 := subTest.utxoEntry.Equal(base)
 			if result2 != subTest.expectedResult {
 				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
 			}
-		}
-	}
-}
-
-func TestUTXOEntry_Clone(t *testing.T) {
-	testUTXOEntry := []*UTXOEntry{
-		{
-			0xFFFF,
-			[]byte{0xA1, 0xA2, 0xA3},
-			0xFFFF,
-			true,
-		},
-		{
-			0x0000,
-			[]byte{0, 0, 0},
-			0x0000,
-			false,
-		},
-	}
-
-	for i, utxoEntry := range testUTXOEntry {
-		utxoEntryClone := utxoEntry.Clone()
-		if !utxoEntryClone.Equal(utxoEntry) {
-			t.Fatalf("Test #%d:[Equal] clone should be equal to the original", i)
-		}
-		if !reflect.DeepEqual(utxoEntry, utxoEntryClone) {
-			t.Fatalf("Test #%d:[DeepEqual] clone should be equal to the original", i)
 		}
 	}
 }

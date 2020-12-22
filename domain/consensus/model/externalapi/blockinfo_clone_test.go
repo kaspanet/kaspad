@@ -11,23 +11,23 @@ func initTestBlockInfoStructsForClone() []*BlockInfo {
 		{
 			true,
 			BlockStatus(0x01),
-			true,
+			0,
 		}, {
 			true,
 			BlockStatus(0x02),
-			false,
+			0,
 		}, {
 			true,
 			1,
-			false,
+			1,
 		}, {
 			true,
 			255,
-			false,
+			2,
 		}, {
 			true,
 			0,
-			false,
+			3,
 		},
 	}
 	return tests
