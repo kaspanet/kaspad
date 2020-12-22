@@ -52,7 +52,7 @@ func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.Doma
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
 	if blockTimestamp > maxCurrentTime {
 		return errors.Wrapf(
-			ruleerrors.ErrBlockIsTooMuchInTheFuture, "The block timestamp is in the future.")
+			ruleerrors.ErrTimeTooMuchInTheFuture, "The block timestamp is in the future.")
 	}
 	return nil
 }
