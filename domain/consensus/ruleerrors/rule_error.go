@@ -127,9 +127,6 @@ var (
 	// already failed validation.
 	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
 
-	// ErrFinality indicates that a block doesn't adhere to the finality rules
-	ErrFinality = newRuleError("ErrFinality")
-
 	// ErrTransactionsNotSorted indicates that transactions in block are not
 	// sorted by subnetwork
 	ErrTransactionsNotSorted = newRuleError("ErrTransactionsNotSorted")
