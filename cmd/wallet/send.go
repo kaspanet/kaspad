@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"net/http"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/domain/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/kaspanet/kasparov/apimodels"
 	"github.com/pkg/errors"
 )
@@ -24,16 +25,16 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	privateKey, publicKey, err := parsePrivateKey(conf.PrivateKey)
+	keyPair, publicKey, err := parsePrivateKey(conf.PrivateKey)
 	if err != nil {
 		return err
 	}
 
-	serializedPublicKey, err := publicKey.SerializeCompressed()
+	serializedPublicKey, err := publicKey.Serialize()
 	if err != nil {
 		return err
 	}
-	fromAddress, err := util.NewAddressPubKeyHashFromPublicKey(serializedPublicKey, toAddress.Prefix())
+	fromAddress, err := util.NewAddressPubKeyHashFromPublicKey(serializedPublicKey[:], toAddress.Prefix())
 	if err != nil {
 		return err
 	}
@@ -51,7 +52,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	msgTx, err := generateTx(privateKey, selectedUTXOs, sendAmountSompi, changeSompi, toAddress, fromAddress)
+	msgTx, err := generateTx(keyPair, selectedUTXOs, sendAmountSompi, changeSompi, toAddress, fromAddress)
 	if err != nil {
 		return err
 	}
@@ -67,20 +68,20 @@ func send(conf *sendConfig) error {
 	return nil
 }
 
-func parsePrivateKey(privateKeyHex string) (*secp256k1.PrivateKey, *secp256k1.SchnorrPublicKey, error) {
+func parsePrivateKey(privateKeyHex string) (*secp256k1.SchnorrKeyPair, *secp256k1.SchnorrPublicKey, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error parsing private key hex")
 	}
-	privateKey, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error deserializing private key")
 	}
-	publicKey, err := privateKey.SchnorrPublicKey()
+	publicKey, err := keyPair.SchnorrPublicKey()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error generating public key")
 	}
-	return privateKey, publicKey, nil
+	return keyPair, publicKey, nil
 }
 
 func selectUTXOs(utxos []*apimodels.TransactionOutputResponse, totalToSpend uint64) (
@@ -110,12 +111,12 @@ func selectUTXOs(utxos []*apimodels.TransactionOutputResponse, totalToSpend uint
 	return selectedUTXOs, totalValue - totalToSpend, nil
 }
 
-func generateTx(privateKey *secp256k1.PrivateKey, selectedUTXOs []*apimodels.TransactionOutputResponse, sompisToSend uint64, change uint64,
+func generateTx(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*apimodels.TransactionOutputResponse, sompisToSend uint64, change uint64,
 	toAddress util.Address, fromAddress util.Address) (*appmessage.MsgTx, error) {
 
 	txIns := make([]*appmessage.TxIn, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
-		txID, err := daghash.NewTxIDFromStr(utxo.TransactionID)
+		txID, err := transactionid.FromString(utxo.TransactionID)
 		if err != nil {
 			return nil, err
 		}
@@ -137,17 +138,18 @@ func generateTx(privateKey *secp256k1.PrivateKey, selectedUTXOs []*apimodels.Tra
 
 	txOuts := []*appmessage.TxOut{mainTxOut, changeTxOut}
 
-	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
+	msgTx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
 
-	for i, txIn := range tx.TxIn {
-		signatureScript, err := txscript.SignatureScript(tx, i, fromScript, txscript.SigHashAll, privateKey, true)
+	for i, txIn := range msgTx.TxIn {
+		signatureScript, err := txscript.SignatureScript(domainTransaction, i, fromScript, txscript.SigHashAll, keyPair)
 		if err != nil {
 			return nil, err
 		}
 		txIn.SignatureScript = signatureScript
 	}
 
-	return tx, nil
+	return msgTx, nil
 }
 
 func sendTx(conf *sendConfig, msgTx *appmessage.MsgTx) error {

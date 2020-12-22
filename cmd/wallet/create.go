@@ -16,20 +16,20 @@ func create() error {
 	}
 
 	fmt.Println("This is your private key, granting access to all wallet funds. Keep it safe. Use it only when sending Kaspa.")
-	fmt.Printf("Private key (hex):\t%x\n\n", privateKey.Serialize()[:])
+	fmt.Printf("Private key (hex):\t%s\n\n", privateKey.SerializePrivateKey())
 
 	fmt.Println("These are your public addresses for each network, where money is to be sent.")
 	publicKey, err := privateKey.SchnorrPublicKey()
 	if err != nil {
 		return errors.Wrap(err, "Failed to generate public key")
 	}
-	publicKeySerialized, err := publicKey.SerializeCompressed()
+	publicKeySerialized, err := publicKey.Serialize()
 	if err != nil {
 		return errors.Wrap(err, "Failed to serialize public key")
 	}
 
 	for _, netParams := range []*dagconfig.Params{&dagconfig.MainnetParams, &dagconfig.TestnetParams, &dagconfig.DevnetParams} {
-		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized, netParams.Prefix)
+		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], netParams.Prefix)
 		if err != nil {
 			return errors.Wrap(err, "Failed to generate p2pkh address")
 		}
