@@ -4,8 +4,7 @@ package externalapi
 type BlockInfo struct {
 	Exists      bool
 	BlockStatus BlockStatus
-
-	IsBlockInHeaderPruningPointFuture bool
+	BlueScore   uint64
 }
 
 // Clone returns a clone of BlockInfo

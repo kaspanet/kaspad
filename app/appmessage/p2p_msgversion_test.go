@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 )
 
@@ -19,7 +18,6 @@ func TestVersion(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Create version message data.
-	selectedTipHash := &externalapi.DomainHash{12, 34}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	generatedID, err := id.GenerateID()
@@ -28,7 +26,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, generatedID, "mainnet", selectedTipHash, nil)
+	msg := NewMsgVersion(me, generatedID, "mainnet", nil)
 	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
@@ -44,10 +42,6 @@ func TestVersion(t *testing.T) {
 	if msg.UserAgent != DefaultUserAgent {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
-	}
-	if !msg.SelectedTipHash.Equal(selectedTipHash) {
-		t.Errorf("NewMsgVersion: wrong selected tip hash - got %s, want %s",
-			msg.SelectedTipHash, selectedTipHash)
 	}
 	if msg.DisableRelayTx {
 		t.Errorf("NewMsgVersion: disable relay tx is not false by "+

@@ -16,6 +16,7 @@ func (x *KaspadMessage_RequestBlockLocator) toAppMessage() (appmessage.Message, 
 	return &appmessage.MsgRequestBlockLocator{
 		LowHash:  lowHash,
 		HighHash: highHash,
+		Limit:    x.RequestBlockLocator.Limit,
 	}, nil
 }
 
@@ -23,6 +24,7 @@ func (x *KaspadMessage_RequestBlockLocator) fromAppMessage(msgGetBlockLocator *a
 	x.RequestBlockLocator = &RequestBlockLocatorMessage{
 		LowHash:  domainHashToProto(msgGetBlockLocator.LowHash),
 		HighHash: domainHashToProto(msgGetBlockLocator.HighHash),
+		Limit:    msgGetBlockLocator.Limit,
 	}
 	return nil
 }

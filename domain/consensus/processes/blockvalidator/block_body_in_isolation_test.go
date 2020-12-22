@@ -1,16 +1,17 @@
 package blockvalidator_test
 
 import (
+	"math"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"math"
-	"testing"
 )
 
 func TestChainedTransactions(t *testing.T) {
@@ -23,9 +24,9 @@ func TestChainedTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
-		block1Hash, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -46,13 +47,13 @@ func TestChainedTransactions(t *testing.T) {
 		}
 
 		// Check that a block is invalid if it contains chained transactions
-		_, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil,
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil,
 			[]*externalapi.DomainTransaction{tx1, chainedTx})
 		if !errors.Is(err, ruleerrors.ErrChainedTransactions) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
-		block2Hash, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, nil)
+		block2Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("unexpected error %+v", err)
 		}
@@ -68,7 +69,7 @@ func TestChainedTransactions(t *testing.T) {
 		}
 
 		// Check that a block is valid if it contains two non chained transactions
-		_, err = tc.AddBlock([]*externalapi.DomainHash{block2Hash}, nil,
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block2Hash}, nil,
 			[]*externalapi.DomainTransaction{tx1, tx2})
 		if err != nil {
 			t.Fatalf("unexpected error %+v", err)
@@ -85,8 +86,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
-		blockHash := consensusserialization.BlockHash(&exampleValidBlock)
+		defer teardown(false)
+		blockHash := consensushashing.BlockHash(&exampleValidBlock)
 		if len(exampleValidBlock.Transactions) < 3 {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
 		}
@@ -99,7 +100,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		}
 
 		// Test with block with wrong transactions sorting order
-		blockHash = consensusserialization.BlockHash(&blockWithWrongTxOrder)
+		blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
 		consensus.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
@@ -108,7 +109,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 		// Test a block with invalid parents order
 		// We no longer require blocks to have ordered parents
-		blockHash = consensusserialization.BlockHash(&unOrderedParentsBlock)
+		blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
 		consensus.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
 		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
@@ -135,10 +136,10 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			},
 		},
 		HashMerkleRoot: externalapi.DomainHash{
-			0xa2, 0x60, 0x5a, 0x45, 0xfe, 0x01, 0x41, 0xc9,
-			0xc2, 0x8d, 0xe2, 0xc3, 0x2d, 0x00, 0xa4, 0x29,
-			0xd4, 0x01, 0x57, 0x2d, 0x2f, 0xcd, 0x49, 0xd4,
-			0xff, 0x6f, 0xab, 0xd2, 0xd1, 0x96, 0x38, 0xb9,
+			0xf8, 0x55, 0x7b, 0xd0, 0xda, 0xf2, 0x06, 0x8b,
+			0x3b, 0xb1, 0x93, 0x5a, 0x2c, 0x52, 0x43, 0xf0,
+			0x02, 0xf2, 0xb1, 0x40, 0x81, 0x2c, 0x0c, 0x15,
+			0x8d, 0x04, 0x3d, 0xe2, 0x23, 0x54, 0x98, 0x88,
 		},
 		AcceptedIDMerkleRoot: externalapi.DomainHash{
 			0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
@@ -185,10 +186,10 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
+				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
+				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
+				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
 			},
 		},
 		{
@@ -409,10 +410,10 @@ var exampleValidBlock = externalapi.DomainBlock{
 			},
 		},
 		HashMerkleRoot: externalapi.DomainHash{
-			0xce, 0xea, 0x78, 0x53, 0x7e, 0x89, 0x67, 0xaf,
-			0xdc, 0x4a, 0xd1, 0x67, 0xb0, 0xc4, 0xfc, 0x6e,
-			0xe5, 0x4b, 0x87, 0xb0, 0x55, 0x8f, 0xf4, 0x6b,
-			0x05, 0x4d, 0x43, 0x0a, 0xb6, 0xbb, 0xe8, 0xdf,
+			0x33, 0x70, 0xa7, 0x40, 0x9f, 0x2d, 0x87, 0xe1,
+			0x26, 0xaf, 0x0f, 0x5c, 0x7e, 0xc3, 0x84, 0x5e,
+			0x4f, 0x68, 0x42, 0x0a, 0xbf, 0x90, 0xcd, 0xef,
+			0x94, 0x9b, 0xe1, 0x9a, 0xf7, 0xdd, 0xb0, 0xb5,
 		},
 		AcceptedIDMerkleRoot: externalapi.DomainHash{
 			0x8a, 0xb7, 0xd6, 0x73, 0x1b, 0xe6, 0xc5, 0xd3,
@@ -457,10 +458,10 @@ var exampleValidBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
+				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
+				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
+				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
 			},
 		},
 		{
@@ -764,10 +765,10 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
+				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
+				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
+				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
 			},
 		},
 		{

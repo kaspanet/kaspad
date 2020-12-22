@@ -1,35 +1,20 @@
 package model
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"math/big"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 // BlockGHOSTDAGData represents GHOSTDAG data for some block
-type BlockGHOSTDAGData struct {
-	BlueScore          uint64
-	SelectedParent     *externalapi.DomainHash
-	MergeSetBlues      []*externalapi.DomainHash
-	MergeSetReds       []*externalapi.DomainHash
-	BluesAnticoneSizes map[externalapi.DomainHash]KType
-}
-
-// Clone returns a clone of BlockGHOSTDAGData
-func (bgd *BlockGHOSTDAGData) Clone() *BlockGHOSTDAGData {
-	bluesAnticoneSizesClone := make(map[externalapi.DomainHash]KType, len(bgd.BluesAnticoneSizes))
-	for hash, size := range bgd.BluesAnticoneSizes {
-		bluesAnticoneSizesClone[hash] = size
-	}
-
-	var selectedParentClone *externalapi.DomainHash
-	if bgd.SelectedParent != nil {
-		selectedParentClone = bgd.SelectedParent.Clone()
-	}
-
-	return &BlockGHOSTDAGData{
-		BlueScore:          bgd.BlueScore,
-		SelectedParent:     selectedParentClone,
-		MergeSetBlues:      externalapi.CloneHashes(bgd.MergeSetBlues),
-		MergeSetReds:       externalapi.CloneHashes(bgd.MergeSetReds),
-		BluesAnticoneSizes: bluesAnticoneSizesClone,
-	}
+type BlockGHOSTDAGData interface {
+	BlueScore() uint64
+	BlueWork() *big.Int
+	SelectedParent() *externalapi.DomainHash
+	MergeSetBlues() []*externalapi.DomainHash
+	MergeSetReds() []*externalapi.DomainHash
+	BluesAnticoneSizes() map[externalapi.DomainHash]KType
+	Equal(other BlockGHOSTDAGData) bool
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's

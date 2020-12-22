@@ -5,7 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
@@ -182,7 +182,7 @@ func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash,
 	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
 }
 
-func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {
@@ -193,8 +193,8 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.Accep
 		}
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		acceptedTransactionIID := consensusserialization.TransactionID(acceptedTransactions[i])
-		acceptedTransactionJID := consensusserialization.TransactionID(acceptedTransactions[j])
+		acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
+		acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])
 		return transactionid.Less(acceptedTransactionIID, acceptedTransactionJID)
 	})
 

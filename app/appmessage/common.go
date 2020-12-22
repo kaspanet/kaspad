@@ -5,10 +5,8 @@
 package appmessage
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
-	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
@@ -22,16 +20,6 @@ const MaxVarIntPayload = 9
 
 // MaxInvPerMsg is the maximum number of inventory vectors that can be in any type of kaspa inv message.
 const MaxInvPerMsg = 1 << 17
-
-var (
-	// littleEndian is a convenience variable since binary.LittleEndian is
-	// quite long.
-	littleEndian = binary.LittleEndian
-
-	// bigEndian is a convenience variable since binary.BigEndian is quite
-	// long.
-	bigEndian = binary.BigEndian
-)
 
 // errNonCanonicalVarInt is the common format string used for non-canonically
 // encoded variable length integer errors.
@@ -53,7 +41,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 	// type assertions first.
 	switch e := element.(type) {
 	case *int32:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -61,7 +49,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *uint32:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -69,7 +57,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *int64:
-		rv, err := binaryserializer.Uint64(r, littleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
@@ -77,7 +65,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *uint64:
-		rv, err := binaryserializer.Uint64(r, littleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
@@ -106,7 +94,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 
 	// Unix timestamp encoded as an int64.
 	case *int64Time:
-		rv, err := binaryserializer.Uint64(r, binary.LittleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
@@ -123,7 +111,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 
 	// Message header command.
 	case *MessageCommand:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -156,7 +144,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *ServiceFlag:
-		rv, err := binaryserializer.Uint64(r, littleEndian)
+		rv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return err
 		}
@@ -164,7 +152,7 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *KaspaNet:
-		rv, err := binaryserializer.Uint32(r, littleEndian)
+		rv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return err
 		}
@@ -193,28 +181,28 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// type assertions first.
 	switch e := element.(type) {
 	case int32:
-		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
+		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case uint32:
-		err := binaryserializer.PutUint32(w, littleEndian, e)
+		err := binaryserializer.PutUint32(w, e)
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case int64:
-		err := binaryserializer.PutUint64(w, littleEndian, uint64(e))
+		err := binaryserializer.PutUint64(w, uint64(e))
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case uint64:
-		err := binaryserializer.PutUint64(w, littleEndian, e)
+		err := binaryserializer.PutUint64(w, e)
 		if err != nil {
 			return err
 		}
@@ -249,7 +237,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 
 	// Message header command.
 	case MessageCommand:
-		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
+		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {
 			return err
 		}
@@ -281,14 +269,14 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case ServiceFlag:
-		err := binaryserializer.PutUint64(w, littleEndian, uint64(e))
+		err := binaryserializer.PutUint64(w, uint64(e))
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case KaspaNet:
-		err := binaryserializer.PutUint32(w, littleEndian, uint32(e))
+		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {
 			return err
 		}
@@ -320,7 +308,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 	var rv uint64
 	switch discriminant {
 	case 0xff:
-		sv, err := binaryserializer.Uint64(r, littleEndian)
+		sv, err := binaryserializer.Uint64(r)
 		if err != nil {
 			return 0, err
 		}
@@ -335,7 +323,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 		}
 
 	case 0xfe:
-		sv, err := binaryserializer.Uint32(r, littleEndian)
+		sv, err := binaryserializer.Uint32(r)
 		if err != nil {
 			return 0, err
 		}
@@ -350,7 +338,7 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 		}
 
 	case 0xfd:
-		sv, err := binaryserializer.Uint16(r, littleEndian)
+		sv, err := binaryserializer.Uint16(r)
 		if err != nil {
 			return 0, err
 		}
@@ -369,144 +357,4 @@ func ReadVarInt(r io.Reader) (uint64, error) {
 	}
 
 	return rv, nil
-}
-
-// WriteVarInt serializes val to w using a variable number of bytes depending
-// on its value.
-func WriteVarInt(w io.Writer, val uint64) error {
-	if val < 0xfd {
-		_, err := w.Write([]byte{uint8(val)})
-		return errors.WithStack(err)
-	}
-
-	if val <= math.MaxUint16 {
-		var buf [3]byte
-		buf[0] = 0xfd
-		littleEndian.PutUint16(buf[1:], uint16(val))
-		_, err := w.Write(buf[:])
-		return errors.WithStack(err)
-	}
-
-	if val <= math.MaxUint32 {
-		var buf [5]byte
-		buf[0] = 0xfe
-		littleEndian.PutUint32(buf[1:], uint32(val))
-		_, err := w.Write(buf[:])
-		return errors.WithStack(err)
-	}
-
-	var buf [9]byte
-	buf[0] = 0xff
-	littleEndian.PutUint64(buf[1:], val)
-	_, err := w.Write(buf[:])
-	return errors.WithStack(err)
-}
-
-// VarIntSerializeSize returns the number of bytes it would take to serialize
-// val as a variable length integer.
-func VarIntSerializeSize(val uint64) int {
-	// The value is small enough to be represented by itself, so it's
-	// just 1 byte.
-	if val < 0xfd {
-		return 1
-	}
-
-	// Discriminant 1 byte plus 2 bytes for the uint16.
-	if val <= math.MaxUint16 {
-		return 3
-	}
-
-	// Discriminant 1 byte plus 4 bytes for the uint32.
-	if val <= math.MaxUint32 {
-		return 5
-	}
-
-	// Discriminant 1 byte plus 8 bytes for the uint64.
-	return 9
-}
-
-// ReadVarString reads a variable length string from r and returns it as a Go
-// string. A variable length string is encoded as a variable length integer
-// containing the length of the string followed by the bytes that represent the
-// string itself. An error is returned if the length is greater than the
-// maximum block payload size since it helps protect against memory exhaustion
-// attacks and forced panics through malformed messages.
-func ReadVarString(r io.Reader, pver uint32) (string, error) {
-	count, err := ReadVarInt(r)
-	if err != nil {
-		return "", err
-	}
-
-	// Prevent variable length strings that are larger than the maximum
-	// message size. It would be possible to cause memory exhaustion and
-	// panics without a sane upper bound on this count.
-	if count > MaxMessagePayload {
-		str := fmt.Sprintf("variable length string is too long "+
-			"[count %d, max %d]", count, MaxMessagePayload)
-		return "", messageError("ReadVarString", str)
-	}
-
-	buf := make([]byte, count)
-	_, err = io.ReadFull(r, buf)
-	if err != nil {
-		return "", err
-	}
-	return string(buf), nil
-}
-
-// WriteVarString serializes str to w as a variable length integer containing
-// the length of the string followed by the bytes that represent the string
-// itself.
-func WriteVarString(w io.Writer, str string) error {
-	err := WriteVarInt(w, uint64(len(str)))
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte(str))
-	return err
-}
-
-// ReadVarBytes reads a variable length byte array. A byte array is encoded
-// as a varInt containing the length of the array followed by the bytes
-// themselves. An error is returned if the length is greater than the
-// passed maxAllowed parameter which helps protect against memory exhaustion
-// attacks and forced panics through malformed messages. The fieldName
-// parameter is only used for the error message so it provides more context in
-// the error.
-func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
-	fieldName string) ([]byte, error) {
-
-	count, err := ReadVarInt(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Prevent byte array larger than the max message size. It would
-	// be possible to cause memory exhaustion and panics without a sane
-	// upper bound on this count.
-	if count > uint64(maxAllowed) {
-		str := fmt.Sprintf("%s is larger than the max allowed size "+
-			"[count %d, max %d]", fieldName, count, maxAllowed)
-		return nil, messageError("ReadVarBytes", str)
-	}
-
-	b := make([]byte, count)
-	_, err = io.ReadFull(r, b)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
-
-// WriteVarBytes serializes a variable length byte array to w as a varInt
-// containing the number of bytes, followed by the bytes themselves.
-func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
-	slen := uint64(len(bytes))
-	err := WriteVarInt(w, slen)
-	if err != nil {
-		return err
-	}
-
-	_, err = w.Write(bytes)
-	return err
 }

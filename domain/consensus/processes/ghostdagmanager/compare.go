@@ -53,14 +53,17 @@ func (gm *ghostdagManager) ChooseSelectedParent(blockHashes ...*externalapi.Doma
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData,
-	blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData,
+	blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
 
-	blockBlueScoreA := ghostdagDataA.BlueScore
-	blockBlueScoreB := ghostdagDataB.BlueScore
-	if blockBlueScoreA == blockBlueScoreB {
+	switch ghostdagDataA.BlueWork().Cmp(ghostdagDataB.BlueWork()) {
+	case -1:
+		return true
+	case 1:
+		return false
+	case 0:
 		return hashes.Less(blockHashA, blockHashB)
+	default:
+		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
 	}
-
-	return blockBlueScoreA < blockBlueScoreB
 }

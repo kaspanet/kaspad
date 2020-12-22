@@ -64,6 +64,7 @@ message DbAcceptanceData {
 
 message DbBlockAcceptanceData {
   repeated DbTransactionAcceptanceData transactionAcceptanceData = 1;
+  DbHash blockHash = 2;
 }
 
 message DbTransactionAcceptanceData {
@@ -83,10 +84,11 @@ message DbBlockStatus {
 
 message DbBlockGhostdagData {
   uint64 blueScore = 1;
-  DbHash selectedParent = 2;
-  repeated DbHash mergeSetBlues = 3;
-  repeated DbHash mergeSetReds = 4;
-  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 5;
+  bytes blueWork = 2;
+  DbHash selectedParent = 3;
+  repeated DbHash mergeSetBlues = 4;
+  repeated DbHash mergeSetReds = 5;
+  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 6;
 }
 
 message DbBluesAnticoneSizes {

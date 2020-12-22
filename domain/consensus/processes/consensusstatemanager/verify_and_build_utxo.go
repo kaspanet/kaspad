@@ -5,10 +5,9 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/coinbase"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 
@@ -19,7 +18,7 @@ import (
 )
 
 func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff *model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff model.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
 
 	log.Tracef("verifyUTXO start for block %s", blockHash)
 	defer log.Tracef("verifyUTXO end for block %s", blockHash)
@@ -40,7 +39,7 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 
 	coinbaseTransaction := block.Transactions[0]
 	log.Tracef("Validating coinbase transaction %s for block %s",
-		consensusserialization.TransactionID(coinbaseTransaction), blockHash)
+		consensushashing.TransactionID(coinbaseTransaction), blockHash)
 	err = csm.validateCoinbaseTransaction(blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
@@ -48,7 +47,7 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 	log.Tracef("Coinbase transaction validation passed for block %s", blockHash)
 
 	log.Tracef("Validating transactions against past UTXO for block %s", blockHash)
-	err = csm.validateBlockTransactionsAgainstPastUTXO(block, blockHash, pastUTXODiff)
+	err = csm.validateBlockTransactionsAgainstPastUTXO(block, pastUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -58,8 +57,9 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 }
 
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	pastUTXODiff model.UTXODiff) error {
 
+	blockHash := consensushashing.BlockHash(block)
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
 
@@ -70,7 +70,7 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 	log.Tracef("The past median time of %s is %d", blockHash, selectedParentMedianTime)
 
 	for i, transaction := range block.Transactions {
-		transactionID := consensusserialization.TransactionID(transaction)
+		transactionID := consensushashing.TransactionID(transaction)
 		log.Tracef("Validating transaction %s in block %s against "+
 			"the block's past UTXO", transactionID, blockHash)
 		if i == transactionhelper.CoinbaseTransactionIndex {
@@ -97,7 +97,7 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 }
 
 func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
+	blockHash *externalapi.DomainHash, acceptanceData externalapi.AcceptanceData) error {
 
 	log.Tracef("validateAcceptedIDMerkleRoot start for block %s", blockHash)
 	defer log.Tracef("validateAcceptedIDMerkleRoot end for block %s", blockHash)
@@ -127,7 +127,7 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	return nil
 }
 
-func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData) *externalapi.DomainHash {
+func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.AcceptanceData) *externalapi.DomainHash {
 	log.Tracef("calculateAcceptedIDMerkleRoot start")
 	defer log.Tracef("calculateAcceptedIDMerkleRoot end")
 
@@ -143,8 +143,8 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
 		return transactionid.Less(
-			consensusserialization.TransactionID(acceptedTransactions[i]),
-			consensusserialization.TransactionID(acceptedTransactions[j]))
+			consensushashing.TransactionID(acceptedTransactions[i]),
+			consensushashing.TransactionID(acceptedTransactions[j]))
 	})
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
@@ -156,8 +156,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 	defer log.Tracef("validateCoinbaseTransaction end for block %s", blockHash)
 
 	log.Tracef("Extracting coinbase data for coinbase transaction %s in block %s",
-		consensusserialization.TransactionID(coinbaseTransaction), blockHash)
-	_, coinbaseData, err := coinbase.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+		consensushashing.TransactionID(coinbaseTransaction), blockHash)
+	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,12 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 		return err
 	}
 
-	if !coinbaseTransaction.Equal(expectedCoinbaseTransaction) {
+	coinbaseTransactionHash := consensushashing.TransactionHash(coinbaseTransaction)
+	expectedCoinbaseTransactionHash := consensushashing.TransactionHash(expectedCoinbaseTransaction)
+	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s",
+		coinbaseTransactionHash, expectedCoinbaseTransactionHash)
+
+	if !coinbaseTransactionHash.Equal(expectedCoinbaseTransactionHash) {
 		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
 	}
 

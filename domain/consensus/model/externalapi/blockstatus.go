@@ -21,8 +21,8 @@ const (
 	// StatusInvalid indicates that the block is invalid.
 	StatusInvalid BlockStatus = iota
 
-	// StatusValid indicates that the block has been fully validated.
-	StatusValid
+	// StatusUTXOValid indicates the block is valid from any UTXO related aspects and has passed all the other validations as well.
+	StatusUTXOValid
 
 	// StatusUTXOPendingVerification indicates that the block is pending verification against its past UTXO-Set, either
 	// because it was not yet verified since the block was never in the selected parent chain, or if the
@@ -38,7 +38,7 @@ const (
 
 var blockStatusStrings = map[BlockStatus]string{
 	StatusInvalid:                 "Invalid",
-	StatusValid:                   "Valid",
+	StatusUTXOValid:               "Valid",
 	StatusUTXOPendingVerification: "UTXOPendingVerification",
 	StatusDisqualifiedFromChain:   "DisqualifiedFromChain",
 	StatusHeaderOnly:              "HeaderOnly",

@@ -2,9 +2,9 @@ package dagtraversalmanager
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // dagTraversalManager exposes methods for travering blocks
@@ -32,7 +32,7 @@ func (spi *selectedParentIterator) Next() bool {
 	if err != nil {
 		panic(fmt.Sprintf("ghostdagDataStore is missing ghostdagData for: %v. '%s' ", spi.current, err))
 	}
-	spi.current = ghostdagData.SelectedParent
+	spi.current = ghostdagData.SelectedParent()
 	return spi.current != nil
 }
 
@@ -75,17 +75,17 @@ func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, d
 	}
 
 	requiredBlueScore := uint64(0)
-	if highBlockGHOSTDAGData.BlueScore > depth {
-		requiredBlueScore = highBlockGHOSTDAGData.BlueScore - depth
+	if highBlockGHOSTDAGData.BlueScore() > depth {
+		requiredBlueScore = highBlockGHOSTDAGData.BlueScore() - depth
 	}
 
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
-	for currentBlockGHOSTDAGData.BlueScore >= requiredBlueScore {
-		if currentBlockGHOSTDAGData.SelectedParent == nil { // genesis
+	for currentBlockGHOSTDAGData.BlueScore() >= requiredBlueScore {
+		if currentBlockGHOSTDAGData.SelectedParent() == nil { // genesis
 			return currentBlockHash, nil
 		}
-		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent
+		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
 		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockHash)
 		if err != nil {
 			return nil, err
@@ -100,19 +100,24 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 		return nil, err
 	}
 
+	if highBlockGHOSTDAGData.BlueScore() < blueScore {
+		return nil, errors.Errorf("the given blue score %d is higher than block %s blue score of %d",
+			blueScore, highHash, highBlockGHOSTDAGData.BlueScore())
+	}
+
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	iterator := dtm.SelectedParentIterator(highHash)
 	for iterator.Next() {
-		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent)
+		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
 		}
 
-		if selectedParentBlockGHOSTDAGData.BlueScore < blueScore {
+		if selectedParentBlockGHOSTDAGData.BlueScore() < blueScore {
 			break
 		}
-		currentHash = selectedParentBlockGHOSTDAGData.SelectedParent
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 		currentBlockGHOSTDAGData = selectedParentBlockGHOSTDAGData
 	}
 

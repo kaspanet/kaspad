@@ -88,7 +88,7 @@ func checkInputsStandard(tx *consensusexternalapi.DomainTransaction) error {
 		// they have already been checked prior to calling this
 		// function.
 		entry := txIn.UTXOEntry
-		originScriptPubKey := entry.ScriptPublicKey
+		originScriptPubKey := entry.ScriptPublicKey()
 		switch txscript.GetScriptClass(originScriptPubKey) {
 		case txscript.ScriptHashTy:
 			numSigOps := txscript.GetPreciseSigOpCount(

@@ -3,7 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -13,9 +13,15 @@ import (
 func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitTransactionRequest := request.(*appmessage.SubmitTransactionRequestMessage)
 
-	domainTransaction := appmessage.MsgTxToDomainTransaction(submitTransactionRequest.Transaction)
-	transactionID := consensusserialization.TransactionID(domainTransaction)
-	err := context.ProtocolManager.AddTransaction(domainTransaction)
+	domainTransaction, err := appmessage.RPCTransactionToDomainTransaction(submitTransactionRequest.Transaction)
+	if err != nil {
+		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse transaction: %s", err)
+		return errorMessage, nil
+	}
+
+	transactionID := consensushashing.TransactionID(domainTransaction)
+	err = context.ProtocolManager.AddTransaction(domainTransaction)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {
 			return nil, err

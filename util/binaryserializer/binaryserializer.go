@@ -2,8 +2,9 @@ package binaryserializer
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 // maxItems is the number of buffers to keep in the free
@@ -48,13 +49,13 @@ func Uint8(r io.Reader) (uint8, error) {
 // Uint16 reads two bytes from the provided reader using a buffer from the
 // free list, converts it to a number using the provided byte order, and returns
 // the resulting uint16.
-func Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
+func Uint16(r io.Reader) (uint16, error) {
 	buf := Borrow()[:2]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
 		return 0, errors.WithStack(err)
 	}
-	rv := byteOrder.Uint16(buf)
+	rv := binary.LittleEndian.Uint16(buf)
 	Return(buf)
 	return rv, nil
 }
@@ -62,13 +63,13 @@ func Uint16(r io.Reader, byteOrder binary.ByteOrder) (uint16, error) {
 // Uint32 reads four bytes from the provided reader using a buffer from the
 // free list, converts it to a number using the provided byte order, and returns
 // the resulting uint32.
-func Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
+func Uint32(r io.Reader) (uint32, error) {
 	buf := Borrow()[:4]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
 		return 0, errors.WithStack(err)
 	}
-	rv := byteOrder.Uint32(buf)
+	rv := binary.LittleEndian.Uint32(buf)
 	Return(buf)
 	return rv, nil
 }
@@ -76,13 +77,13 @@ func Uint32(r io.Reader, byteOrder binary.ByteOrder) (uint32, error) {
 // Uint64 reads eight bytes from the provided reader using a buffer from the
 // free list, converts it to a number using the provided byte order, and returns
 // the resulting uint64.
-func Uint64(r io.Reader, byteOrder binary.ByteOrder) (uint64, error) {
+func Uint64(r io.Reader) (uint64, error) {
 	buf := Borrow()[:8]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		Return(buf)
 		return 0, errors.WithStack(err)
 	}
-	rv := byteOrder.Uint64(buf)
+	rv := binary.LittleEndian.Uint64(buf)
 	Return(buf)
 	return rv, nil
 }
@@ -100,9 +101,9 @@ func PutUint8(w io.Writer, val uint8) error {
 // PutUint16 serializes the provided uint16 using the given byte order into a
 // buffer from the free list and writes the resulting two bytes to the given
 // writer.
-func PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
+func PutUint16(w io.Writer, val uint16) error {
 	buf := Borrow()[:2]
-	byteOrder.PutUint16(buf, val)
+	binary.LittleEndian.PutUint16(buf, val)
 	_, err := w.Write(buf)
 	Return(buf)
 	return errors.WithStack(err)
@@ -111,22 +112,20 @@ func PutUint16(w io.Writer, byteOrder binary.ByteOrder, val uint16) error {
 // PutUint32 serializes the provided uint32 using the given byte order into a
 // buffer from the free list and writes the resulting four bytes to the given
 // writer.
-func PutUint32(w io.Writer, byteOrder binary.ByteOrder, val uint32) error {
-	buf := Borrow()[:4]
-	byteOrder.PutUint32(buf, val)
-	_, err := w.Write(buf)
-	Return(buf)
+func PutUint32(w io.Writer, val uint32) error {
+	var buf [4]byte
+	binary.LittleEndian.PutUint32(buf[:], val)
+	_, err := w.Write(buf[:])
 	return errors.WithStack(err)
 }
 
 // PutUint64 serializes the provided uint64 using the given byte order into a
 // buffer from the free list and writes the resulting eight bytes to the given
 // writer.
-func PutUint64(w io.Writer, byteOrder binary.ByteOrder, val uint64) error {
-	buf := Borrow()[:8]
-	byteOrder.PutUint64(buf, val)
-	_, err := w.Write(buf)
-	Return(buf)
+func PutUint64(w io.Writer, val uint64) error {
+	var buf [8]byte
+	binary.LittleEndian.PutUint64(buf[:], val)
+	_, err := w.Write(buf[:])
 	return errors.WithStack(err)
 }
 

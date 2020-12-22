@@ -7,10 +7,12 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	finalityDepth   uint64
-	pruningDepth    uint64
-	genesisHash     *externalapi.DomainHash
-	databaseContext model.DBManager
+	pruningDepth           uint64
+	maxMassAcceptedByBlock uint64
+	maxBlockParents        model.KType
+	mergeSetSizeLimit      uint64
+	genesisHash            *externalapi.DomainHash
+	databaseContext        model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
@@ -21,17 +23,19 @@ type consensusStateManager struct {
 	reachabilityManager   model.ReachabilityManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
-	headerTipsStore       model.HeaderTipsStore
+	finalityManager       model.FinalityManager
 
-	blockStatusStore    model.BlockStatusStore
-	ghostdagDataStore   model.GHOSTDAGDataStore
-	consensusStateStore model.ConsensusStateStore
-	multisetStore       model.MultisetStore
-	blockStore          model.BlockStore
-	utxoDiffStore       model.UTXODiffStore
-	blockRelationStore  model.BlockRelationStore
-	acceptanceDataStore model.AcceptanceDataStore
-	blockHeaderStore    model.BlockHeaderStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	blockStatusStore        model.BlockStatusStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	consensusStateStore     model.ConsensusStateStore
+	multisetStore           model.MultisetStore
+	blockStore              model.BlockStore
+	utxoDiffStore           model.UTXODiffStore
+	blockRelationStore      model.BlockRelationStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockHeaderStore        model.BlockHeaderStore
+	pruningStore            model.PruningStore
 
 	stores []model.Store
 }
@@ -39,9 +43,12 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	finalityDepth uint64,
 	pruningDepth uint64,
+	maxMassAcceptedByBlock uint64,
+	maxBlockParents model.KType,
+	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
+
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
@@ -51,6 +58,7 @@ func New(
 	reachabilityManager model.ReachabilityManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
+	finalityManager model.FinalityManager,
 
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -61,13 +69,16 @@ func New(
 	blockRelationStore model.BlockRelationStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore) (model.ConsensusStateManager, error) {
+	headersSelectedTipStore model.HeaderSelectedTipStore,
+	pruningStore model.PruningStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		finalityDepth:   finalityDepth,
-		pruningDepth:    pruningDepth,
-		genesisHash:     genesisHash,
-		databaseContext: databaseContext,
+		pruningDepth:           pruningDepth,
+		maxMassAcceptedByBlock: maxMassAcceptedByBlock,
+		maxBlockParents:        maxBlockParents,
+		mergeSetSizeLimit:      mergeSetSizeLimit,
+		genesisHash:            genesisHash,
+		databaseContext:        databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,
@@ -78,17 +89,19 @@ func New(
 		reachabilityManager:   reachabilityManager,
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
+		finalityManager:       finalityManager,
 
-		multisetStore:       multisetStore,
-		blockStore:          blockStore,
-		blockStatusStore:    blockStatusStore,
-		ghostdagDataStore:   ghostdagDataStore,
-		consensusStateStore: consensusStateStore,
-		utxoDiffStore:       utxoDiffStore,
-		blockRelationStore:  blockRelationStore,
-		acceptanceDataStore: acceptanceDataStore,
-		blockHeaderStore:    blockHeaderStore,
-		headerTipsStore:     headerTipsStore,
+		multisetStore:           multisetStore,
+		blockStore:              blockStore,
+		blockStatusStore:        blockStatusStore,
+		ghostdagDataStore:       ghostdagDataStore,
+		consensusStateStore:     consensusStateStore,
+		utxoDiffStore:           utxoDiffStore,
+		blockRelationStore:      blockRelationStore,
+		acceptanceDataStore:     acceptanceDataStore,
+		blockHeaderStore:        blockHeaderStore,
+		headersSelectedTipStore: headersSelectedTipStore,
+		pruningStore:            pruningStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -101,7 +114,8 @@ func New(
 			consensusStateStore,
 			utxoDiffStore,
 			blockHeaderStore,
-			headerTipsStore,
+			headersSelectedTipStore,
+			pruningStore,
 		},
 	}
 

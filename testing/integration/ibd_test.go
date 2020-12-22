@@ -14,7 +14,7 @@ func TestIBD(t *testing.T) {
 	syncer, syncee, _, teardown := standardSetup(t)
 	defer teardown()
 
-	for i := 0; i < numBlocks; i++ {
+	for i := 0; i < numBlocks-1; i++ {
 		mineNextBlock(t, syncer)
 	}
 
@@ -27,6 +27,9 @@ func TestIBD(t *testing.T) {
 	})
 
 	connect(t, syncer, syncee)
+
+	// We expect this to trigger IBD
+	mineNextBlock(t, syncer)
 
 	select {
 	case <-time.After(defaultTimeout):

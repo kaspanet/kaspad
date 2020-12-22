@@ -18,13 +18,13 @@ const (
 	rpcAddress2 = "127.0.0.1:12346"
 	rpcAddress3 = "127.0.0.1:12347"
 
-	miningAddress1           = "kaspasim:qzmdkk8ay8sgvp8cnwts8gtdylz9j7572slwdh85qv"
+	miningAddress1           = "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfd"
 	miningAddress1PrivateKey = "be9e9884f03e687166479e22d21b064db7903d69b5a46878aae66521c01a6094"
 
-	miningAddress2           = "kaspasim:qze20hwkc4lzq37jt0hrym5emlsxxs8j3qyf3y4ghs"
+	miningAddress2           = "kaspasim:qr7w7nqsdnc3zddm6u8s9fex4ysk95hm3v30q353ym"
 	miningAddress2PrivateKey = "98bd8d8e1f7078abefd017839f83edd0e3c8226ed4989e4d7a8bceb5935de193"
 
-	miningAddress3           = "kaspasim:qretklduvhg5h2aj7jd8w4heq7pvtkpv9q6w4sqfen"
+	miningAddress3           = "kaspasim:qz7n8gfak3j2wt9vywy5ljhs3v3xu7lgmutfjqaay5"
 	miningAddress3PrivateKey = "eb0af684f2cdbb4ed2d85fbfe0b7f40654a7777fb2c47f142ffb5543b594d1e4"
 
 	defaultTimeout = 10 * time.Second
@@ -35,6 +35,7 @@ func setConfig(t *testing.T, harness *appHarness) {
 	harness.config.DataDir = randomDirectory(t)
 	harness.config.Listeners = []string{harness.p2pAddress}
 	harness.config.RPCListeners = []string{harness.rpcAddress}
+	harness.config.UTXOIndex = harness.utxoIndex
 }
 
 func commonConfig() *config.Config {

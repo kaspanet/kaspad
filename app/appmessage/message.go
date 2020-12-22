@@ -41,8 +41,6 @@ const (
 	CmdPong
 	CmdRequestBlockLocator
 	CmdBlockLocator
-	CmdSelectedTip
-	CmdRequestSelectedTip
 	CmdInvRelayBlock
 	CmdRequestRelayBlocks
 	CmdInvTransaction
@@ -81,15 +79,15 @@ const (
 	CmdAddPeerResponseMessage
 	CmdSubmitTransactionRequestMessage
 	CmdSubmitTransactionResponseMessage
-	CmdNotifyChainChangedRequestMessage
-	CmdNotifyChainChangedResponseMessage
-	CmdChainChangedNotificationMessage
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage
+	CmdVirtualSelectedParentChainChangedNotificationMessage
 	CmdGetBlockRequestMessage
 	CmdGetBlockResponseMessage
 	CmdGetSubnetworkRequestMessage
 	CmdGetSubnetworkResponseMessage
-	CmdGetChainFromBlockRequestMessage
-	CmdGetChainFromBlockResponseMessage
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage
 	CmdGetBlocksRequestMessage
 	CmdGetBlocksResponseMessage
 	CmdGetBlockCountRequestMessage
@@ -108,6 +106,16 @@ const (
 	CmdShutDownResponseMessage
 	CmdGetHeadersRequestMessage
 	CmdGetHeadersResponseMessage
+	CmdNotifyUTXOsChangedRequestMessage
+	CmdNotifyUTXOsChangedResponseMessage
+	CmdUTXOsChangedNotificationMessage
+	CmdGetUTXOsByAddressesRequestMessage
+	CmdGetUTXOsByAddressesResponseMessage
+	CmdGetVirtualSelectedParentBlueScoreRequestMessage
+	CmdGetVirtualSelectedParentBlueScoreResponseMessage
+	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	CmdNotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	CmdVirtualSelectedParentBlueScoreChangedNotificationMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -123,8 +131,6 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdPong:                          "Pong",
 	CmdRequestBlockLocator:           "RequestBlockLocator",
 	CmdBlockLocator:                  "BlockLocator",
-	CmdSelectedTip:                   "SelectedTip",
-	CmdRequestSelectedTip:            "RequestSelectedTip",
 	CmdInvRelayBlock:                 "InvRelayBlock",
 	CmdRequestRelayBlocks:            "RequestRelayBlocks",
 	CmdInvTransaction:                "InvTransaction",
@@ -143,53 +149,63 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation
 var RPCMessageCommandToString = map[MessageCommand]string{
-	CmdGetCurrentNetworkRequestMessage:             "GetCurrentNetworkRequest",
-	CmdGetCurrentNetworkResponseMessage:            "GetCurrentNetworkResponse",
-	CmdSubmitBlockRequestMessage:                   "SubmitBlockRequest",
-	CmdSubmitBlockResponseMessage:                  "SubmitBlockResponse",
-	CmdGetBlockTemplateRequestMessage:              "GetBlockTemplateRequest",
-	CmdGetBlockTemplateResponseMessage:             "GetBlockTemplateResponse",
-	CmdGetBlockTemplateTransactionMessage:          "CmdGetBlockTemplateTransaction",
-	CmdNotifyBlockAddedRequestMessage:              "NotifyBlockAddedRequest",
-	CmdNotifyBlockAddedResponseMessage:             "NotifyBlockAddedResponse",
-	CmdBlockAddedNotificationMessage:               "BlockAddedNotification",
-	CmdGetPeerAddressesRequestMessage:              "GetPeerAddressesRequest",
-	CmdGetPeerAddressesResponseMessage:             "GetPeerAddressesResponse",
-	CmdGetSelectedTipHashRequestMessage:            "GetSelectedTipHashRequest",
-	CmdGetSelectedTipHashResponseMessage:           "GetSelectedTipHashResponse",
-	CmdGetMempoolEntryRequestMessage:               "GetMempoolEntryRequest",
-	CmdGetMempoolEntryResponseMessage:              "GetMempoolEntryResponse",
-	CmdGetConnectedPeerInfoRequestMessage:          "GetConnectedPeerInfoRequest",
-	CmdGetConnectedPeerInfoResponseMessage:         "GetConnectedPeerInfoResponse",
-	CmdAddPeerRequestMessage:                       "AddPeerRequest",
-	CmdAddPeerResponseMessage:                      "AddPeerResponse",
-	CmdSubmitTransactionRequestMessage:             "SubmitTransactionRequest",
-	CmdSubmitTransactionResponseMessage:            "SubmitTransactionResponse",
-	CmdNotifyChainChangedRequestMessage:            "NotifyChainChangedRequest",
-	CmdNotifyChainChangedResponseMessage:           "NotifyChainChangedResponse",
-	CmdChainChangedNotificationMessage:             "ChainChangedNotification",
-	CmdGetBlockRequestMessage:                      "GetBlockRequest",
-	CmdGetBlockResponseMessage:                     "GetBlockResponse",
-	CmdGetSubnetworkRequestMessage:                 "GetSubnetworkRequest",
-	CmdGetSubnetworkResponseMessage:                "GetSubnetworkResponse",
-	CmdGetChainFromBlockRequestMessage:             "GetChainFromBlockRequest",
-	CmdGetChainFromBlockResponseMessage:            "GetChainFromBlockResponse",
-	CmdGetBlocksRequestMessage:                     "GetBlocksRequest",
-	CmdGetBlocksResponseMessage:                    "GetBlocksResponse",
-	CmdGetBlockCountRequestMessage:                 "GetBlockCountRequest",
-	CmdGetBlockCountResponseMessage:                "GetBlockCountResponse",
-	CmdGetBlockDAGInfoRequestMessage:               "GetBlockDAGInfoRequest",
-	CmdGetBlockDAGInfoResponseMessage:              "GetBlockDAGInfoResponse",
-	CmdResolveFinalityConflictRequestMessage:       "ResolveFinalityConflictRequest",
-	CmdResolveFinalityConflictResponseMessage:      "ResolveFinalityConflictResponse",
-	CmdNotifyFinalityConflictsRequestMessage:       "NotifyFinalityConflictsRequest",
-	CmdNotifyFinalityConflictsResponseMessage:      "NotifyFinalityConflictsResponse",
-	CmdFinalityConflictNotificationMessage:         "FinalityConflictNotification",
-	CmdFinalityConflictResolvedNotificationMessage: "FinalityConflictResolvedNotification",
-	CmdGetMempoolEntriesRequestMessage:             "GetMempoolEntriesRequestMessage",
-	CmdGetMempoolEntriesResponseMessage:            "GetMempoolEntriesResponseMessage",
-	CmdGetHeadersRequestMessage:                    "GetHeadersRequest",
-	CmdGetHeadersResponseMessage:                   "GetHeadersResponse",
+	CmdGetCurrentNetworkRequestMessage:                            "GetCurrentNetworkRequest",
+	CmdGetCurrentNetworkResponseMessage:                           "GetCurrentNetworkResponse",
+	CmdSubmitBlockRequestMessage:                                  "SubmitBlockRequest",
+	CmdSubmitBlockResponseMessage:                                 "SubmitBlockResponse",
+	CmdGetBlockTemplateRequestMessage:                             "GetBlockTemplateRequest",
+	CmdGetBlockTemplateResponseMessage:                            "GetBlockTemplateResponse",
+	CmdGetBlockTemplateTransactionMessage:                         "CmdGetBlockTemplateTransaction",
+	CmdNotifyBlockAddedRequestMessage:                             "NotifyBlockAddedRequest",
+	CmdNotifyBlockAddedResponseMessage:                            "NotifyBlockAddedResponse",
+	CmdBlockAddedNotificationMessage:                              "BlockAddedNotification",
+	CmdGetPeerAddressesRequestMessage:                             "GetPeerAddressesRequest",
+	CmdGetPeerAddressesResponseMessage:                            "GetPeerAddressesResponse",
+	CmdGetSelectedTipHashRequestMessage:                           "GetSelectedTipHashRequest",
+	CmdGetSelectedTipHashResponseMessage:                          "GetSelectedTipHashResponse",
+	CmdGetMempoolEntryRequestMessage:                              "GetMempoolEntryRequest",
+	CmdGetMempoolEntryResponseMessage:                             "GetMempoolEntryResponse",
+	CmdGetConnectedPeerInfoRequestMessage:                         "GetConnectedPeerInfoRequest",
+	CmdGetConnectedPeerInfoResponseMessage:                        "GetConnectedPeerInfoResponse",
+	CmdAddPeerRequestMessage:                                      "AddPeerRequest",
+	CmdAddPeerResponseMessage:                                     "AddPeerResponse",
+	CmdSubmitTransactionRequestMessage:                            "SubmitTransactionRequest",
+	CmdSubmitTransactionResponseMessage:                           "SubmitTransactionResponse",
+	CmdNotifyVirtualSelectedParentChainChangedRequestMessage:      "NotifyVirtualSelectedParentChainChangedRequest",
+	CmdNotifyVirtualSelectedParentChainChangedResponseMessage:     "NotifyVirtualSelectedParentChainChangedResponse",
+	CmdVirtualSelectedParentChainChangedNotificationMessage:       "VirtualSelectedParentChainChangedNotification",
+	CmdGetBlockRequestMessage:                                     "GetBlockRequest",
+	CmdGetBlockResponseMessage:                                    "GetBlockResponse",
+	CmdGetSubnetworkRequestMessage:                                "GetSubnetworkRequest",
+	CmdGetSubnetworkResponseMessage:                               "GetSubnetworkResponse",
+	CmdGetVirtualSelectedParentChainFromBlockRequestMessage:       "GetVirtualSelectedParentChainFromBlockRequest",
+	CmdGetVirtualSelectedParentChainFromBlockResponseMessage:      "GetVirtualSelectedParentChainFromBlockResponse",
+	CmdGetBlocksRequestMessage:                                    "GetBlocksRequest",
+	CmdGetBlocksResponseMessage:                                   "GetBlocksResponse",
+	CmdGetBlockCountRequestMessage:                                "GetBlockCountRequest",
+	CmdGetBlockCountResponseMessage:                               "GetBlockCountResponse",
+	CmdGetBlockDAGInfoRequestMessage:                              "GetBlockDAGInfoRequest",
+	CmdGetBlockDAGInfoResponseMessage:                             "GetBlockDAGInfoResponse",
+	CmdResolveFinalityConflictRequestMessage:                      "ResolveFinalityConflictRequest",
+	CmdResolveFinalityConflictResponseMessage:                     "ResolveFinalityConflictResponse",
+	CmdNotifyFinalityConflictsRequestMessage:                      "NotifyFinalityConflictsRequest",
+	CmdNotifyFinalityConflictsResponseMessage:                     "NotifyFinalityConflictsResponse",
+	CmdFinalityConflictNotificationMessage:                        "FinalityConflictNotification",
+	CmdFinalityConflictResolvedNotificationMessage:                "FinalityConflictResolvedNotification",
+	CmdGetMempoolEntriesRequestMessage:                            "GetMempoolEntriesRequest",
+	CmdGetMempoolEntriesResponseMessage:                           "GetMempoolEntriesResponse",
+	CmdGetHeadersRequestMessage:                                   "GetHeadersRequest",
+	CmdGetHeadersResponseMessage:                                  "GetHeadersResponse",
+	CmdNotifyUTXOsChangedRequestMessage:                           "NotifyUTXOsChangedRequest",
+	CmdNotifyUTXOsChangedResponseMessage:                          "NotifyUTXOsChangedResponse",
+	CmdUTXOsChangedNotificationMessage:                            "UTXOsChangedNotification",
+	CmdGetUTXOsByAddressesRequestMessage:                          "GetUTXOsByAddressesRequest",
+	CmdGetUTXOsByAddressesResponseMessage:                         "GetUTXOsByAddressesResponse",
+	CmdGetVirtualSelectedParentBlueScoreRequestMessage:            "GetVirtualSelectedParentBlueScoreRequest",
+	CmdGetVirtualSelectedParentBlueScoreResponseMessage:           "GetVirtualSelectedParentBlueScoreResponse",
+	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage:  "NotifyVirtualSelectedParentBlueScoreChangedRequest",
+	CmdNotifyVirtualSelectedParentBlueScoreChangedResponseMessage: "NotifyVirtualSelectedParentBlueScoreChangedResponse",
+	CmdVirtualSelectedParentBlueScoreChangedNotificationMessage:   "VirtualSelectedParentBlueScoreChangedNotification",
 }
 
 // Message is an interface that describes a kaspa message. A type that

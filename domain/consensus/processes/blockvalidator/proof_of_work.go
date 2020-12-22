@@ -2,25 +2,34 @@ package blockvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) ValidateProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsExist(header)
+	err = v.checkParentHeadersExist(header)
 	if err != nil {
 		return err
 	}
 
 	err = v.checkParentsIncest(header)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPruningPointViolation(header)
 	if err != nil {
 		return err
 	}
@@ -84,32 +93,35 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 			"higher than max of %064x", target, v.powMax)
 	}
 
-	// The block hash must be less than the claimed target unless the flag
-	// to avoid proof of work checks is set.
+	// The block pow must be valid unless the flag to avoid proof of work checks is set.
 	if !v.skipPoW {
-		// The block hash must be less than the claimed target.
-		hash := consensusserialization.HeaderHash(header)
-		hashNum := hashes.ToBig(hash)
-		if hashNum.Cmp(target) > 0 {
-			return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block hash of %064x is higher than "+
-				"expected max of %064x", hashNum, target)
+		valid := pow.CheckProofOfWorkWithTarget(header, target)
+		if !valid {
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
-
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
-
 	for _, parent := range header.ParentHashes {
-		exists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+		if !parentHeaderExists {
+			missingParentHashes = append(missingParentHashes, parent)
+			continue
+		}
+
+		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
 		if err != nil {
 			return err
 		}
 
-		if !exists {
-			missingParentHashes = append(missingParentHashes, parent)
+		if parentStatus == externalapi.StatusInvalid {
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 	}
 
@@ -117,5 +129,33 @@ func (v *blockValidator) checkParentsExist(header *externalapi.DomainBlockHeader
 		return ruleerrors.NewErrMissingParents(missingParentHashes)
 	}
 
+	return nil
+}
+func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBlockHeader) error {
+	// check if the pruning point is on past of at least one parent of the header's parents.
+
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	//If hasPruningPoint has a false value, it means that it's the genesis - so no violation can exist.
+	if !hasPruningPoint {
+		return nil
+	}
+
+	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes)
+	if err != nil {
+		return err
+	}
+	if !isAncestorOfAny {
+		return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
+			"expected pruning point %s to be in block %s past.", pruningPoint, consensushashing.HeaderHash(header))
+	}
 	return nil
 }

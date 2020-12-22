@@ -6,15 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -45,12 +42,14 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
-	tx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
-	response, err := payer.rpcClient.SubmitTransaction(tx)
+	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
-	txID := response.TxID
+	txID := response.TransactionID
 
 	txAddedToMempoolChan := make(chan struct{})
 
@@ -89,7 +88,7 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessa
 
 func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction, payer, payee *appHarness) *appmessage.MsgTx {
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensusserialization.TransactionID(firstBlockCoinbase), 0), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{})
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
@@ -116,7 +115,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	}
 
 	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
-		fromScript, txscript.SigHashAll, privateKey, true)
+		fromScript, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

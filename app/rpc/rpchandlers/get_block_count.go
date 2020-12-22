@@ -12,6 +12,6 @@ func HandleGetBlockCount(context *rpccontext.Context, _ *router.Router, _ appmes
 	if err != nil {
 		return nil, err
 	}
-	response := appmessage.NewGetBlockCountResponseMessage(syncInfo.BlockCount)
+	response := appmessage.NewGetBlockCountResponseMessage(syncInfo)
 	return response, nil
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -13,25 +13,24 @@ import (
 
 func TestConsensus_GetBlockInfo(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		factory := NewFactory()
 		consensus, teardown, err := factory.NewTestConsensus(params, "TestConsensus_GetBlockInfo")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		invalidBlock, _, err := consensus.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 		invalidBlock.Header.TimeInMilliseconds = 0
-		err = consensus.ValidateAndInsertBlock(invalidBlock)
+		_, err = consensus.ValidateAndInsertBlock(invalidBlock)
 		if !errors.Is(err, ruleerrors.ErrTimeTooOld) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrTimeTooOld, err)
 		}
 
-		info, err := consensus.GetBlockInfo(consensusserialization.BlockHash(invalidBlock))
+		info, err := consensus.GetBlockInfo(consensushashing.BlockHash(invalidBlock))
 		if err != nil {
 			t.Fatalf("Failed to get block info: %v", err)
 		}
@@ -42,9 +41,6 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if info.BlockStatus != externalapi.StatusInvalid {
 			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusInvalid, info.BlockStatus)
 		}
-		if info.IsBlockInHeaderPruningPointFuture != false {
-			t.Fatalf("Expected IsBlockInHeaderPruningPointFuture=false, instead found: %t", info.IsBlockInHeaderPruningPointFuture)
-		}
 
 		emptyCoinbase := externalapi.DomainCoinbaseData{}
 		validBlock, err := consensus.BuildBlock(&emptyCoinbase, nil)
@@ -52,12 +48,12 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("consensus.BuildBlock with an empty coinbase shouldn't fail: %v", err)
 		}
 
-		err = consensus.ValidateAndInsertBlock(validBlock)
+		_, err = consensus.ValidateAndInsertBlock(validBlock)
 		if err != nil {
 			t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should not fail: %v", err)
 		}
 
-		info, err = consensus.GetBlockInfo(consensusserialization.BlockHash(validBlock))
+		info, err = consensus.GetBlockInfo(consensushashing.BlockHash(validBlock))
 		if err != nil {
 			t.Fatalf("Failed to get block info: %v", err)
 		}
@@ -65,11 +61,8 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if !info.Exists {
 			t.Fatal("The block is missing")
 		}
-		if info.BlockStatus != externalapi.StatusValid {
-			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusValid, info.BlockStatus)
-		}
-		if info.IsBlockInHeaderPruningPointFuture != true {
-			t.Fatalf("Expected IsBlockInHeaderPruningPointFuture=true, instead found: %t", info.IsBlockInHeaderPruningPointFuture)
+		if info.BlockStatus != externalapi.StatusUTXOValid {
+			t.Fatalf("Expected block status: %s, instead got: %s", externalapi.StatusUTXOValid, info.BlockStatus)
 		}
 
 	})

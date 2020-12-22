@@ -3,18 +3,28 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 type testConsensus struct {
 	*consensus
+	dagParams *dagconfig.Params
 
-	testBlockBuilder          model.TestBlockBuilder
-	testReachabilityManager   model.TestReachabilityManager
-	testConsensusStateManager model.TestConsensusStateManager
+	testBlockBuilder          testapi.TestBlockBuilder
+	testReachabilityManager   testapi.TestReachabilityManager
+	testConsensusStateManager testapi.TestConsensusStateManager
+	testTransactionValidator  testapi.TestTransactionValidator
 }
 
-func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, *model.UTXODiff, error) {
+func (tc *testConsensus) DAGParams() *dagconfig.Params {
+	return tc.dagParams
+}
+
+func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
+	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
+	*externalapi.DomainBlock, model.UTXODiff, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -24,7 +34,7 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error) {
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -32,15 +42,15 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 
 	block, _, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	err = tc.blockProcessor.ValidateAndInsertBlock(block)
+	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return consensusserialization.BlockHash(block), nil
+	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
 func (tc *testConsensus) DiscardAllStores() {

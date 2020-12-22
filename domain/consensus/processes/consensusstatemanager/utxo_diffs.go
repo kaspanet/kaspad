@@ -7,7 +7,7 @@ import (
 )
 
 func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
-	utxoDiff *model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
+	utxoDiff model.UTXODiff, utxoDiffChild *externalapi.DomainHash) error {
 
 	log.Tracef("stageDiff start for block %s", blockHash)
 	defer log.Tracef("stageDiff end for block %s", blockHash)

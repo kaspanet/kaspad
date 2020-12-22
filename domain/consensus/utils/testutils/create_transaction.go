@@ -2,7 +2,7 @@ package testutils
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 )
@@ -19,7 +19,7 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 	}
 	input := &externalapi.DomainTransactionInput{
 		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: *consensusserialization.TransactionID(txToSpend),
+			TransactionID: *consensushashing.TransactionID(txToSpend),
 			Index:         0,
 		},
 		SignatureScript: signatureScript,

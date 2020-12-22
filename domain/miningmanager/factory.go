@@ -8,14 +8,14 @@ import (
 
 // Factory instantiates new mining managers
 type Factory interface {
-	NewMiningManager(consensus externalapi.Consensus, blockMaxMass uint64) MiningManager
+	NewMiningManager(consensus externalapi.Consensus, blockMaxMass uint64, acceptNonStd bool) MiningManager
 }
 
 type factory struct{}
 
 // NewMiningManager instantiate a new mining manager
-func (f *factory) NewMiningManager(consensus externalapi.Consensus, blockMaxMass uint64) MiningManager {
-	mempool := mempoolpkg.New(consensus)
+func (f *factory) NewMiningManager(consensus externalapi.Consensus, blockMaxMass uint64, acceptNonStd bool) MiningManager {
+	mempool := mempoolpkg.New(consensus, acceptNonStd)
 	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, blockMaxMass)
 
 	return &miningManager{

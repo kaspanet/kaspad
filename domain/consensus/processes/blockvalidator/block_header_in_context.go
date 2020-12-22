@@ -3,25 +3,28 @@ package blockvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
 func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
+	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if !isHeadersOnlyBlock {
+	if !hasValidatedHeader {
 		err = v.ghostdagManager.GHOSTDAG(blockHash)
 		if err != nil {
 			return err
@@ -38,6 +41,21 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	// If needed - calculate reachability data right before calling CheckBoundedMergeDepth,
+	// since it's used to find a block's finality point.
+	// This might not be required if this block's header has previously been received during
+	// headers-first synchronization.
+	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+	if !hasReachabilityData {
+		err = v.reachabilityManager.AddBlock(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = v.mergeDepthManager.CheckBoundedMergeDepth(blockHash)
 	if err != nil {
 		return err
@@ -46,7 +64,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	return nil
 }
 
-func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
 	if err != nil {
 		return false, err
@@ -96,7 +114,7 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
-	hash := consensusserialization.HeaderHash(header)
+	hash := consensushashing.HeaderHash(header)
 	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(hash)
 	if err != nil {
 		return err
@@ -116,11 +134,11 @@ func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error
 		return err
 	}
 
-	mergeSetSize := len(ghostdagData.MergeSetReds) + len(ghostdagData.MergeSetBlues)
+	mergeSetSize := len(ghostdagData.MergeSetReds()) + len(ghostdagData.MergeSetBlues())
 
-	if mergeSetSize > constants.MergeSetSizeLimit {
+	if uint64(mergeSetSize) > v.mergeSetSizeLimit {
 		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,
-			"The block merges %d blocks > %d merge set size limit", mergeSetSize, constants.MergeSetSizeLimit)
+			"The block merges %d blocks > %d merge set size limit", mergeSetSize, v.mergeSetSizeLimit)
 	}
 
 	return nil

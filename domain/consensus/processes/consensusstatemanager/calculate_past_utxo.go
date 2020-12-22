@@ -1,8 +1,7 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
@@ -11,11 +10,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 )
 
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
-	*model.UTXODiff, model.AcceptanceData, model.Multiset, error) {
+	model.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
 	log.Tracef("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
 	defer log.Tracef("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
@@ -23,7 +21,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Block %s is the genesis. By definition, "+
 			"it has an empty UTXO diff, empty acceptance data, and a blank multiset", blockHash)
-		return &model.UTXODiff{}, model.AcceptanceData{}, multiset.New(), nil
+		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
 	}
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
@@ -32,8 +30,8 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	}
 
 	log.Tracef("Restoring the past UTXO of block %s with selectedParent %s",
-		blockHash, blockGHOSTDAGData.SelectedParent)
-	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent)
+		blockHash, blockGHOSTDAGData.SelectedParent())
+	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -51,17 +49,17 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	}
 	log.Tracef("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
 
-	return utxoDiff, acceptanceData, multiset, nil
+	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
 
-func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (*model.UTXODiff, error) {
+func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.MutableUTXODiff, error) {
 	log.Tracef("restorePastUTXO start for block %s", blockHash)
 	defer log.Tracef("restorePastUTXO end for block %s", blockHash)
 
 	var err error
 
 	log.Tracef("Collecting UTXO diffs for block %s", blockHash)
-	var utxoDiffs []*model.UTXODiff
+	var utxoDiffs []model.UTXODiff
 	nextBlockHash := blockHash
 	for {
 		log.Tracef("Collecting UTXO diff for block %s", nextBlockHash)
@@ -97,9 +95,9 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 
 	// apply the diffs in reverse order
 	log.Tracef("Applying the collected UTXO diffs for block %s in reverse order", blockHash)
-	accumulatedDiff := model.NewUTXODiff()
+	accumulatedDiff := utxo.NewMutableUTXODiff()
 	for i := len(utxoDiffs) - 1; i >= 0; i-- {
-		accumulatedDiff, err = utxoalgebra.WithDiff(accumulatedDiff, utxoDiffs[i])
+		err = accumulatedDiff.WithDiffInPlace(utxoDiffs[i])
 		if err != nil {
 			return nil, err
 		}
@@ -110,13 +108,13 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff *model.UTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
-	model.AcceptanceData, *model.UTXODiff, error) {
+	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData model.BlockGHOSTDAGData) (
+	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
 
 	log.Tracef("applyBlueBlocks start for block %s", blockHash)
 	defer log.Tracef("applyBlueBlocks end for block %s", blockHash)
 
-	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues)
+	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -127,15 +125,16 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	}
 	log.Tracef("The past median time for block %s is: %d", blockHash, selectedParentMedianTime)
 
-	multiblockAcceptanceData := make(model.AcceptanceData, len(blueBlocks))
-	accumulatedUTXODiff := selectedParentPastUTXODiff.Clone()
+	multiblockAcceptanceData := make(externalapi.AcceptanceData, len(blueBlocks))
+	accumulatedUTXODiff := selectedParentPastUTXODiff
 	accumulatedMass := uint64(0)
 
 	for i, blueBlock := range blueBlocks {
-		blueBlockHash := consensusserialization.BlockHash(blueBlock)
+		blueBlockHash := consensushashing.BlockHash(blueBlock)
 		log.Tracef("Applying blue block %s", blueBlockHash)
-		blockAcceptanceData := &model.BlockAcceptanceData{
-			TransactionAcceptanceData: make([]*model.TransactionAcceptanceData, len(blueBlock.Transactions)),
+		blockAcceptanceData := &externalapi.BlockAcceptanceData{
+			BlockHash:                 blueBlockHash,
+			TransactionAcceptanceData: make([]*externalapi.TransactionAcceptanceData, len(blueBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
 		log.Tracef("Is blue block %s the selected parent: %t", blueBlockHash, isSelectedParent)
@@ -143,19 +142,19 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 		for j, transaction := range blueBlock.Transactions {
 			var isAccepted bool
 
-			transactionID := consensusserialization.TransactionID(transaction)
+			transactionID := consensushashing.TransactionID(transaction)
 			log.Tracef("Attempting to accept transaction %s in block %s",
 				transactionID, blueBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
-				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore)
+				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore())
 			if err != nil {
 				return nil, nil, err
 			}
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
 				transactionID, blueBlockHash, isAccepted, transaction.Fee)
 
-			blockAcceptanceData.TransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+			blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
 				Transaction: transaction,
 				Fee:         transaction.Fee,
 				IsAccepted:  isAccepted,
@@ -168,16 +167,16 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalapi.DomainTransaction,
-	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff *model.UTXODiff,
+	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff model.MutableUTXODiff,
 	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64, err error) {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("maybeAcceptTransaction start for transaction %s in block %s", transactionID, blockHash)
 	defer log.Tracef("maybeAcceptTransaction end for transaction %s in block %s", transactionID, blockHash)
 
 	log.Tracef("Populating transaction %s with UTXO entries", transactionID)
-	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff)
+	err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, accumulatedUTXODiff.ToImmutable())
 	if err != nil {
 		if !errors.As(err, &(ruleerrors.RuleError{})) {
 			return false, 0, err
@@ -220,7 +219,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 	}
 
 	log.Tracef("Adding transaction %s in block %s to the accumulated diff", transactionID, blockHash)
-	err = utxoalgebra.DiffAddTransaction(accumulatedUTXODiff, transaction, blockBlueScore)
+	err = accumulatedUTXODiff.AddTransaction(transaction, blockBlueScore)
 	if err != nil {
 		return false, 0, err
 	}
@@ -232,7 +231,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 	transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64) {
 
-	transactionID := consensusserialization.TransactionID(transaction)
+	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("checkTransactionMass start for transaction %s", transactionID)
 	defer log.Tracef("checkTransactionMass end for transaction %s", transactionID)
 
@@ -243,7 +242,7 @@ func (csm *consensusStateManager) checkTransactionMass(
 
 	// We could potentially overflow the accumulator so check for
 	// overflow as well.
-	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > constants.MaxMassAcceptedByBlock {
+	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > csm.maxMassAcceptedByBlock {
 		return false, 0
 	}
 
@@ -258,10 +257,10 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 	if err != nil {
 		return nil, err
 	}
-	if blockStatus != externalapi.StatusValid {
+	if blockStatus != externalapi.StatusUTXOValid {
 		return nil, errors.Errorf(
 			"block %s, has status '%s', and therefore can't restore it's UTXO set. Only blocks with status '%s' can be restored.",
-			blockHash, blockStatus, externalapi.StatusValid)
+			blockHash, blockStatus, externalapi.StatusUTXOValid)
 	}
 
 	log.Tracef("RestorePastUTXOSetIterator start for block %s", blockHash)
@@ -278,5 +277,5 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, err
 	}
 
-	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff)
+	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff.ToImmutable())
 }

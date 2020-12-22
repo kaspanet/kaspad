@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -41,10 +42,15 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveVersionFlow.start()")
+	defer onEnd()
+
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("Got version message")
 
 	msgVersion, ok := message.(*appmessage.MsgVersion)
 	if !ok {

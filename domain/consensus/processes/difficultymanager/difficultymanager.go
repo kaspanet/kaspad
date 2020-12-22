@@ -1,12 +1,13 @@
 package difficultymanager
 
 import (
+	"math/big"
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/bigintpool"
-	"math/big"
-	"time"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -18,23 +19,25 @@ type difficultyManager struct {
 	headerStore                    model.BlockHeaderStore
 	dagTopologyManager             model.DAGTopologyManager
 	dagTraversalManager            model.DAGTraversalManager
+	genesisHash                    *externalapi.DomainHash
 	powMax                         *big.Int
-	difficultyAdjustmentWindowSize uint64
+	difficultyAdjustmentWindowSize int
+	disableDifficultyAdjustment    bool
 	targetTimePerBlock             time.Duration
 }
 
 // New instantiates a new DifficultyManager
-func New(
-	databaseContext model.DBReader,
+func New(databaseContext model.DBReader,
 	ghostdagManager model.GHOSTDAGManager,
 	ghostdagStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	powMax *big.Int,
-	difficultyAdjustmentWindowSize uint64,
+	difficultyAdjustmentWindowSize int,
+	disableDifficultyAdjustment bool,
 	targetTimePerBlock time.Duration,
-) model.DifficultyManager {
+	genesisHash *externalapi.DomainHash) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
 		ghostdagManager:                ghostdagManager,
@@ -44,20 +47,30 @@ func New(
 		dagTraversalManager:            dagTraversalManager,
 		powMax:                         powMax,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		targetTimePerBlock:             targetTimePerBlock,
+		genesisHash:                    genesisHash,
 	}
+}
+
+func (dm *difficultyManager) genesisBits() (uint32, error) {
+	header, err := dm.headerStore.BlockHeader(dm.databaseContext, dm.genesisHash)
+	if err != nil {
+		return 0, err
+	}
+
+	return header.Bits, nil
 }
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-
 	parents, err := dm.dagTopologyManager.Parents(blockHash)
 	if err != nil {
 		return 0, err
 	}
-	// Genesis block
-	if len(parents) == 0 {
-		return util.BigToCompact(dm.powMax), nil
+	// Genesis block or network that doesn't have difficulty adjustment (such as simnet)
+	if len(parents) == 0 || dm.disableDifficultyAdjustment {
+		return dm.genesisBits()
 	}
 
 	// find bluestParent
@@ -82,8 +95,8 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// Not enough blocks for building a difficulty window.
-	if bluestGhostDAG.BlueScore < dm.difficultyAdjustmentWindowSize+1 {
-		return util.BigToCompact(dm.powMax), nil
+	if bluestGhostDAG.BlueScore() < uint64(dm.difficultyAdjustmentWindowSize)+1 {
+		return dm.genesisBits()
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals

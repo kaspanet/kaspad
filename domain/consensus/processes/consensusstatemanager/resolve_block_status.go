@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo/utxoalgebra"
 	"github.com/pkg/errors"
 )
 
@@ -73,14 +72,14 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
 	if lastUnverifiedBlock.Equal(csm.genesisHash) {
 		log.Tracef("the most recent unverified block is the genesis block, "+
-			"which by definition has status: %s", externalapi.StatusValid)
-		return externalapi.StatusValid, nil
+			"which by definition has status: %s", externalapi.StatusUTXOValid)
+		return externalapi.StatusUTXOValid, nil
 	}
 	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, lastUnverifiedBlock)
 	if err != nil {
 		return 0, err
 	}
-	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent)
+	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocks(
@@ -111,13 +110,13 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 			return nil, err
 		}
 
-		if currentBlockGHOSTDAGData.SelectedParent == nil {
+		if currentBlockGHOSTDAGData.SelectedParent() == nil {
 			log.Tracef("Genesis block reached. Returning all the "+
 				"unverified blocks prior to it: %s", unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
 
-		currentHash = currentBlockGHOSTDAGData.SelectedParent
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 	}
 }
 
@@ -165,11 +164,11 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	return externalapi.StatusValid, nil
+	return externalapi.StatusUTXOValid, nil
 }
 
 func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff *model.UTXODiff) error {
+	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
 
 	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
@@ -209,7 +208,7 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 		if err != nil {
 			return err
 		}
-		newDiff, err := utxoalgebra.DiffFrom(pastUTXODiff, currentDiff)
+		newDiff, err := pastUTXODiff.DiffFrom(currentDiff)
 		if err != nil {
 			return err
 		}

@@ -1,16 +1,17 @@
 package pastmediantimemanager
 
 import (
+	"sort"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"sort"
 )
 
 // pastMedianTimeManager provides a method to resolve the
 // past median time of a block
 type pastMedianTimeManager struct {
-	timestampDeviationTolerance uint64
+	timestampDeviationTolerance int
 
 	databaseContext model.DBReader
 
@@ -21,7 +22,7 @@ type pastMedianTimeManager struct {
 }
 
 // New instantiates a new PastMedianTimeManager
-func New(timestampDeviationTolerance uint64,
+func New(timestampDeviationTolerance int,
 	databaseContext model.DBReader,
 	dagTraversalManager model.DAGTraversalManager,
 	blockHeaderStore model.BlockHeaderStore,
@@ -44,7 +45,7 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainH
 	if err != nil {
 		return 0, err
 	}
-	selectedParentHash := blockGHOSTDAGData.SelectedParent
+	selectedParentHash := blockGHOSTDAGData.SelectedParent()
 
 	// Genesis block
 	if selectedParentHash == nil {

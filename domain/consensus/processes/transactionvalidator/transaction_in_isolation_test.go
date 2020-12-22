@@ -1,18 +1,19 @@
 package transactionvalidator_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 type txSubnetworkData struct {
@@ -28,7 +29,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		tests := []struct {
 			name                   string
@@ -79,7 +80,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				1,
 				1,
 				subnetworks.SubnetworkIDNative,
-				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, constants.MaxCoinbasePayloadLength+1)},
+				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, params.MaxCoinbasePayloadLength+1)},
 				nil,
 				ruleerrors.ErrBadCoinbasePayloadLen},
 			{"non-zero gas in Kaspa", 1, 1, 0,
@@ -112,7 +113,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
-					tx.PayloadHash = *hashes.HashData(tx.Payload)
+					tx.PayloadHash = *hashes.PayloadHash(tx.Payload)
 				},
 				ruleerrors.ErrInvalidPayloadHash},
 		}

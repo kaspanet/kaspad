@@ -11,13 +11,14 @@ import (
 type pruningManager struct {
 	databaseContext model.DBReader
 
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManager    model.DAGTopologyManager
-	consensusStateManager model.ConsensusStateManager
-	consensusStateStore   model.ConsensusStateStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	pruningStore          model.PruningStore
-	blockStatusStore      model.BlockStatusStore
+	dagTraversalManager    model.DAGTraversalManager
+	dagTopologyManager     model.DAGTopologyManager
+	consensusStateManager  model.ConsensusStateManager
+	consensusStateStore    model.ConsensusStateStore
+	ghostdagDataStore      model.GHOSTDAGDataStore
+	pruningStore           model.PruningStore
+	blockStatusStore       model.BlockStatusStore
+	headerSelectedTipStore model.HeaderSelectedTipStore
 
 	multiSetStore       model.MultisetStore
 	acceptanceDataStore model.AcceptanceDataStore
@@ -40,6 +41,7 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
+	headerSelectedTipStore model.HeaderSelectedTipStore,
 
 	multiSetStore model.MultisetStore,
 	acceptanceDataStore model.AcceptanceDataStore,
@@ -52,90 +54,85 @@ func New(
 ) model.PruningManager {
 
 	return &pruningManager{
-		databaseContext:       databaseContext,
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManager:    dagTopologyManager,
-		consensusStateManager: consensusStateManager,
-		consensusStateStore:   consensusStateStore,
-		ghostdagDataStore:     ghostdagDataStore,
-		pruningStore:          pruningStore,
-		blockStatusStore:      blockStatusStore,
-		multiSetStore:         multiSetStore,
-		acceptanceDataStore:   acceptanceDataStore,
-		blocksStore:           blocksStore,
-		utxoDiffStore:         utxoDiffStore,
-		genesisHash:           genesisHash,
-		pruningDepth:          pruningDepth,
-		finalityInterval:      finalityInterval,
+		databaseContext:        databaseContext,
+		dagTraversalManager:    dagTraversalManager,
+		dagTopologyManager:     dagTopologyManager,
+		consensusStateManager:  consensusStateManager,
+		consensusStateStore:    consensusStateStore,
+		ghostdagDataStore:      ghostdagDataStore,
+		pruningStore:           pruningStore,
+		blockStatusStore:       blockStatusStore,
+		multiSetStore:          multiSetStore,
+		acceptanceDataStore:    acceptanceDataStore,
+		blocksStore:            blocksStore,
+		utxoDiffStore:          utxoDiffStore,
+		headerSelectedTipStore: headerSelectedTipStore,
+		genesisHash:            genesisHash,
+		pruningDepth:           pruningDepth,
+		finalityInterval:       finalityInterval,
 	}
 }
 
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
-func (pm *pruningManager) FindNextPruningPoint() error {
+func (pm *pruningManager) UpdatePruningPointByVirtual() error {
+	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	if !hasPruningPoint {
+		err = pm.savePruningPoint(pm.genesisHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	currentP, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
 	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	currentP, err := pm.PruningPoint()
+	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, virtual.SelectedParent())
 	if err != nil {
 		return err
 	}
+
 	currentPGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentP)
 	if err != nil {
 		return err
 	}
-	currentPBlueScore := currentPGhost.BlueScore
+	currentPBlueScore := currentPGhost.BlueScore()
 	// Because the pruning point changes only once per finality, then there's no need to even check for that if a finality interval hasn't passed.
-	if virtual.BlueScore <= currentPBlueScore+pm.finalityInterval {
+	if virtualSelectedParent.BlueScore() <= currentPBlueScore+pm.finalityInterval {
 		return nil
 	}
 
 	// This means the pruning point is still genesis.
-	if virtual.BlueScore <= pm.pruningDepth+pm.finalityInterval {
+	if virtualSelectedParent.BlueScore() <= pm.pruningDepth+pm.finalityInterval {
 		return nil
 	}
 
 	// get Virtual(pruningDepth)
-	candidatePHash, err := pm.dagTraversalManager.BlockAtDepth(model.VirtualBlockHash, pm.pruningDepth)
-	if err != nil {
-		return err
-	}
-	candidatePGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, candidatePHash)
+	newPruningPoint, err := pm.calculatePruningPointFromBlock(model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	// Actually check if the pruning point changed
-	if (currentPBlueScore / pm.finalityInterval) < (candidatePGhost.BlueScore / pm.finalityInterval) {
-		err = pm.savePruningPoint(candidatePHash)
+	if *newPruningPoint != *currentP {
+		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err
 		}
-		return pm.deletePastBlocks(candidatePHash)
-	}
-	return pm.deletePastBlocks(currentP)
-}
-
-// PruningPoint returns the hash of the current pruning point
-func (pm *pruningManager) PruningPoint() (*externalapi.DomainHash, error) {
-	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-	if hasPruningPoint {
-		return pm.pruningStore.PruningPoint(pm.databaseContext)
+		return pm.deletePastBlocks(newPruningPoint)
 	}
 
-	// If there's no pruning point yet, set genesis as the pruning point.
-	// This is the genesis because it means `FindNextPruningPoint()` has never been called before,
-	// if this is part of the first `FindNextPruningPoint()` call, then it might move the pruning point forward.
-	err = pm.savePruningPoint(pm.genesisHash)
-	if err != nil {
-		return nil, err
-	}
-	return pm.genesisHash, nil
+	return nil
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
@@ -238,6 +235,30 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 
 	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
+}
+
+func (pm *pruningManager) CalculatePruningPointByHeaderSelectedTip() (*externalapi.DomainHash, error) {
+	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return pm.calculatePruningPointFromBlock(headersSelectedTip)
+}
+
+func (pm *pruningManager) calculatePruningPointFromBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	targetBlueScore := uint64(0)
+	if ghostdagData.BlueScore() > pm.pruningDepth {
+		// The target blue is calculated by calculating ghostdagData.BlueScore() - pm.pruningDepth and rounding
+		// down with the precision of finality interval.
+		targetBlueScore = ((ghostdagData.BlueScore() - pm.pruningDepth) / pm.finalityInterval) * pm.finalityInterval
+	}
+	return pm.dagTraversalManager.LowestChainBlockAboveOrEqualToBlueScore(blockHash, targetBlueScore)
 }
 
 func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error) {

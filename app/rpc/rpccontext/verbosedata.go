@@ -3,7 +3,7 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blocks"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -14,7 +14,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/pointers"
@@ -23,14 +23,13 @@ import (
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // This method must be called with the DAG lock held for reads
 func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
-	hash := consensusserialization.BlockHash(block)
+	hash := consensushashing.BlockHash(block)
 	blockHeader := block.Header
 
-	blueScore, err := blocks.ExtractBlueScore(block)
+	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
 	if err != nil {
 		return nil, err
 	}
-
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -43,19 +42,19 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
-		BlueScore:            blueScore,
+		BlueScore:            blockInfo.BlueScore,
 	}
 
 	txIDs := make([]string, len(block.Transactions))
 	for i, tx := range block.Transactions {
-		txIDs[i] = consensusserialization.TransactionID(tx).String()
+		txIDs[i] = consensushashing.TransactionID(tx).String()
 	}
 	result.TxIDs = txIDs
 
 	if includeTransactionVerboseData {
 		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
 		for i, tx := range block.Transactions {
-			txID := consensusserialization.TransactionID(tx).String()
+			txID := consensushashing.TransactionID(tx).String()
 			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
 			if err != nil {
 				return nil, err
@@ -78,12 +77,11 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
-	outString := difficulty.FloatString(8)
-	diff, err := strconv.ParseFloat(outString, 64)
-	if err != nil {
-		log.Errorf("Cannot get difficulty: %s", err)
-		return 0
-	}
+	diff, _ := difficulty.Float64()
+
+	roundingPrecision := float64(100)
+	diff = math.Round(diff*roundingPrecision) / roundingPrecision
+
 	return diff
 }
 
@@ -100,7 +98,7 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 
 	txReply := &appmessage.TransactionVerboseData{
 		TxID:                      txID,
-		Hash:                      consensusserialization.TransactionHash(tx).String(),
+		Hash:                      consensushashing.TransactionHash(tx).String(),
 		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
 		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
 		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(tx, nil),

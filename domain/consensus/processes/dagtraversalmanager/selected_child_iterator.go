@@ -13,7 +13,7 @@ type selectedChildIterator struct {
 	current            *externalapi.DomainHash
 }
 
-func (s selectedChildIterator) Next() bool {
+func (s *selectedChildIterator) Next() bool {
 	children, err := s.dagTopologyManager.Children(s.current)
 	if err != nil {
 		panic(err)
@@ -21,7 +21,7 @@ func (s selectedChildIterator) Next() bool {
 
 	for _, child := range children {
 		if child.Equal(model.VirtualBlockHash) {
-			break
+			continue
 		}
 
 		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
@@ -37,7 +37,7 @@ func (s selectedChildIterator) Next() bool {
 	return false
 }
 
-func (s selectedChildIterator) Get() *externalapi.DomainHash {
+func (s *selectedChildIterator) Get() *externalapi.DomainHash {
 	return s.current
 }
 

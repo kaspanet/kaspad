@@ -7,7 +7,7 @@ package appmessage
 import (
 	"math"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -73,7 +73,7 @@ func (h *MsgBlockHeader) NumParentBlocks() byte {
 
 // BlockHash computes the block identifier hash for the given block header.
 func (h *MsgBlockHeader) BlockHash() *externalapi.DomainHash {
-	return consensusserialization.HeaderHash(BlockHeaderToDomainBlockHeader(h))
+	return consensushashing.HeaderHash(BlockHeaderToDomainBlockHeader(h))
 }
 
 // IsGenesis returns true iff this block is a genesis block

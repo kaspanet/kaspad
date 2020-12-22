@@ -11,7 +11,7 @@ import (
 
 type consensus struct {
 	lock            *sync.Mutex
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -25,23 +25,25 @@ type consensus struct {
 	dagTraversalManager   model.DAGTraversalManager
 	difficultyManager     model.DifficultyManager
 	ghostdagManager       model.GHOSTDAGManager
-	headerTipsManager     model.HeaderTipsManager
+	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
+	finalityManager       model.FinalityManager
 
-	acceptanceDataStore   model.AcceptanceDataStore
-	blockStore            model.BlockStore
-	blockHeaderStore      model.BlockHeaderStore
-	pruningStore          model.PruningStore
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	blockRelationStore    model.BlockRelationStore
-	blockStatusStore      model.BlockStatusStore
-	consensusStateStore   model.ConsensusStateStore
-	headerTipsStore       model.HeaderTipsStore
-	multisetStore         model.MultisetStore
-	reachabilityDataStore model.ReachabilityDataStore
-	utxoDiffStore         model.UTXODiffStore
+	acceptanceDataStore     model.AcceptanceDataStore
+	blockStore              model.BlockStore
+	blockHeaderStore        model.BlockHeaderStore
+	pruningStore            model.PruningStore
+	ghostdagDataStore       model.GHOSTDAGDataStore
+	blockRelationStore      model.BlockRelationStore
+	blockStatusStore        model.BlockStatusStore
+	consensusStateStore     model.ConsensusStateStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
+	multisetStore           model.MultisetStore
+	reachabilityDataStore   model.ReachabilityDataStore
+	utxoDiffStore           model.UTXODiffStore
+	finalityStore           model.FinalityStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -57,7 +59,7 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) error {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -129,13 +131,21 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	isBlockInHeaderPruningPointFuture, err := s.syncManager.IsBlockInHeaderPruningPointFuture(blockHash)
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	blockInfo.IsBlockInHeaderPruningPointFuture = isBlockInHeaderPruningPointFuture
+
+	blockInfo.BlueScore = ghostdagData.BlueScore()
 
 	return blockInfo, nil
+}
+
+func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -174,11 +184,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
-func (s *consensus) SetPruningPointUTXOSet(serializedUTXOSet []byte) error {
+func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.consensusStateManager.SetPruningPointUTXOSet(serializedUTXOSet)
+	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
@@ -189,14 +199,50 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	if err != nil {
 		return nil, err
 	}
-	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent)
+	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.syncManager.CreateBlockLocator(lowHash, highHash)
+	return s.consensusStateStore.Tips(s.databaseContext)
+}
+
+func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	bits, err := s.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.VirtualInfo{
+		ParentHashes:   blockRelations.Parents,
+		Bits:           bits,
+		PastMedianTime: pastMedianTime,
+		BlueScore:      virtualGHOSTDAGData.BlueScore(),
+	}, nil
+}
+
+func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
@@ -211,4 +257,11 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	defer s.lock.Unlock()
 
 	return s.syncManager.GetSyncInfo()
+}
+
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(blockHash)
 }

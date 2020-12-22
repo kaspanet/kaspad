@@ -16,6 +16,7 @@ func (e *ProtocolError) Error() string {
 	return e.Cause.Error()
 }
 
+// Unwrap returns the cause of ProtocolError, to be used with `errors.Unwrap()`
 func (e *ProtocolError) Unwrap() error {
 	return e.Cause
 }
