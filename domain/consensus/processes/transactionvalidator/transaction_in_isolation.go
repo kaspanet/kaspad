@@ -45,7 +45,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	// TODO: fill it with the right subnetwork id.
+	// TODO: fill it with the node's subnetwork id.
 	err = v.checkTransactionSubnetwork(tx, nil)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 }
 
 func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction,
-	subnetworkID *externalapi.DomainSubnetworkID) error {
+	localNodeSubnetworkID *externalapi.DomainSubnetworkID) error {
 	if !v.enableNonNativeSubnetworks && tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
 		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase {
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
@@ -176,8 +176,8 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
-	isLocalNodeFull := subnetworkID == nil
-	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || subnetworks.IsEqual(&tx.SubnetworkID, subnetworkID)
+	isLocalNodeFull := localNodeSubnetworkID == nil
+	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || subnetworks.IsEqual(&tx.SubnetworkID, localNodeSubnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+

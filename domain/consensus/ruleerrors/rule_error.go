@@ -50,9 +50,6 @@ var (
 	// the expected value.
 	ErrBadUTXOCommitment = newRuleError("ErrBadUTXOCommitment")
 
-	// ErrInvalidSubnetwork indicates the subnetwork is not allowed.
-	ErrInvalidSubnetwork = newRuleError("ErrInvalidSubnetwork")
-
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
 	ErrFinalityPointTimeTooOld = newRuleError("ErrFinalityPointTimeTooOld")
