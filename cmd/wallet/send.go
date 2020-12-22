@@ -133,12 +133,15 @@ func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*app
 
 	txIns := make([]*appmessage.TxIn, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
-		txID, err := transactionid.FromString(utxo.Outpoint.TransactionID)
+		outpointTransactionIDBytes, err := hex.DecodeString(utxo.Outpoint.TransactionID)
 		if err != nil {
 			return nil, err
 		}
-
-		txIns[i] = appmessage.NewTxIn(appmessage.NewOutpoint(txID, utxo.Outpoint.Index), []byte{})
+		outpointTransactionID, err := transactionid.FromBytes(outpointTransactionIDBytes)
+		if err != nil {
+			return nil, err
+		}
+		txIns[i] = appmessage.NewTxIn(appmessage.NewOutpoint(outpointTransactionID, utxo.Outpoint.Index), []byte{})
 	}
 
 	toScript, err := txscript.PayToAddrScript(toAddress)
