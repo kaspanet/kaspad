@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
-func create() error {
+func create(conf *createConfig) error {
 	privateKey, err := secp256k1.GeneratePrivateKey()
 	if err != nil {
 		return errors.Wrap(err, "Failed to generate private key")
@@ -18,7 +17,7 @@ func create() error {
 	fmt.Println("This is your private key, granting access to all wallet funds. Keep it safe. Use it only when sending Kaspa.")
 	fmt.Printf("Private key (hex):\t%s\n\n", privateKey.SerializePrivateKey())
 
-	fmt.Println("These are your public addresses for each network, where money is to be sent.")
+	fmt.Println("This is your public address, where money is to be sent.")
 	publicKey, err := privateKey.SchnorrPublicKey()
 	if err != nil {
 		return errors.Wrap(err, "Failed to generate public key")
@@ -28,13 +27,11 @@ func create() error {
 		return errors.Wrap(err, "Failed to serialize public key")
 	}
 
-	for _, netParams := range []*dagconfig.Params{&dagconfig.MainnetParams, &dagconfig.TestnetParams, &dagconfig.DevnetParams} {
-		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], netParams.Prefix)
-		if err != nil {
-			return errors.Wrap(err, "Failed to generate p2pkh address")
-		}
-		fmt.Printf("Address (%s):\t%s\n", netParams.Name, addr)
+	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], conf.ActiveNetParams.Prefix)
+	if err != nil {
+		return errors.Wrap(err, "Failed to generate p2pkh address")
 	}
+	fmt.Printf("Address (%s):\t%s\n", conf.ActiveNetParams.Name, addr)
 
 	return nil
 }

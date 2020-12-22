@@ -10,7 +10,7 @@ func main() {
 	var err error
 	switch subCmd {
 	case createSubCmd:
-		err = create()
+		err = create(config.(*createConfig))
 	case balanceSubCmd:
 		err = balance(config.(*balanceConfig))
 	case sendSubCmd:
