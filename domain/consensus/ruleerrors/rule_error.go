@@ -27,9 +27,8 @@ var (
 	// the last several blocks per the DAG consensus rules.
 	ErrTimeTooOld = newRuleError("ErrTimeTooOld")
 
-	// ErrTimeTooNew indicates the time is too far in the future as compared
-	// the current time.
-	ErrTimeTooNew = newRuleError("ErrTimeTooNew")
+	//ErrTimeTooMuchInTheFuture indicates that the block timestamp is too much in the future.
+	ErrTimeTooMuchInTheFuture = newRuleError("ErrTimeTooMuchInTheFuture")
 
 	// ErrNoParents indicates that the block is missing parents
 	ErrNoParents = newRuleError("ErrNoParents")
@@ -237,9 +236,6 @@ var (
 
 	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
-
-	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
-	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 )
