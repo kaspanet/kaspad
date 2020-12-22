@@ -85,11 +85,6 @@ var (
 	// valid block may only contain unique transactions.
 	ErrDuplicateTx = newRuleError("ErrDuplicateTx")
 
-	// ErrOverwriteTx indicates a block contains a transaction that has
-	// the same hash as a previous transaction which has not been fully
-	// spent.
-	ErrOverwriteTx = newRuleError("ErrOverwriteTx")
-
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
 	// coinbase that has not yet reached the required maturity.
 	ErrImmatureSpend = newRuleError("ErrImmatureSpend")
