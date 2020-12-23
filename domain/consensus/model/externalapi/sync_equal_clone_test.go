@@ -8,8 +8,6 @@ import (
 func initTestSyncInfoForClone() []*SyncInfo {
 
 	tests := []*SyncInfo{{
-		false,
-		&DomainHash{1, 2},
 		0xF,
 		0xF}}
 	return tests
@@ -32,8 +30,6 @@ func initTestSyncInfoForEqual() []*testSyncInfoStruct {
 			syncInfoToCompareTo: []testSyncInfoToCompare{
 				{
 					syncInfo: &SyncInfo{
-						false,
-						&DomainHash{1, 2},
 						0xF,
 						0xF},
 					expectedResult: false,
@@ -43,38 +39,17 @@ func initTestSyncInfoForEqual() []*testSyncInfoStruct {
 				},
 			}}, {
 			baseSyncInfo: &SyncInfo{
-				false,
-				&DomainHash{1, 2},
 				0xF,
 				0xF},
 			syncInfoToCompareTo: []testSyncInfoToCompare{
 				{
 					syncInfo: &SyncInfo{
-						false,
-						&DomainHash{1, 2},
 						0xF,
 						0xF},
 					expectedResult: true,
-				}, {
-					syncInfo: &SyncInfo{
-						true,
-						&DomainHash{1, 2},
-						0xF,
-						0xF},
-					expectedResult: false,
 				},
 				{
 					syncInfo: &SyncInfo{
-						false,
-						&DomainHash{1, 3},
-						0xF,
-						0xF},
-					expectedResult: false,
-				},
-				{
-					syncInfo: &SyncInfo{
-						false,
-						&DomainHash{1, 2},
 						0xF1,
 						0xF},
 					expectedResult: false,
@@ -83,8 +58,6 @@ func initTestSyncInfoForEqual() []*testSyncInfoStruct {
 					expectedResult: false,
 				}, {
 					syncInfo: &SyncInfo{
-						false,
-						&DomainHash{1, 2},
 						0xF,
 						0xF1},
 					expectedResult: false},
