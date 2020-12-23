@@ -132,8 +132,8 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txHash1Str := "c2ac1e792c5c49260103ad9f86caf749d431958b7c7e5e5129346ceab8b709cf"
-	txID1Str := "47ce12a5ee5727cf97c0481eebedad0d80646b743305b0921a2403f1836f8b37"
+	txHash1Str := "cf09b7b8ea6c3429515e7e7c8b9531d449f7ca869fad030126495c2c791eacc2"
+	txID1Str := "378b6f83f103241a92b00533746b64800dadedeb1e48c097cf2757eea512ce47"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Fatalf("NewTxIDFromStr: %v", err)
@@ -174,7 +174,7 @@ func TestTxHashAndID(t *testing.T) {
 	tx1Hash := tx1.TxHash()
 	if *tx1Hash != (externalapi.DomainHash)(*wantTxHash1) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
-			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
+			spew.Sprint(tx1Hash), spew.Sprint(wantTxHash1))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
@@ -184,14 +184,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "6b769655a1420022e4690a4f7bb9b1c381185ebbefe3070351f06fb573a0600c"
+	hash2Str := "0c60a073b56ff0510307e3efbb5e1881c3b1b97b4f0a69e4220042a15596766b"
 	wantHash2, err := hashes.FromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "af916032e271adaaa21f02bee4b44db2cca4dad9149dcaebc188009c7313ec68"
+	id2Str := "68ec13739c0088c1ebca9d14d9daa4ccb24db4e4be021fa2aaad71e2326091af"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
