@@ -9,8 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"strconv"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -98,11 +96,11 @@ type TxIn struct {
 // NewTxIn returns a new kaspa transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
+func NewTxIn(prevOut *Outpoint, signatureScript []byte, sequence uint64) *TxIn {
 	return &TxIn{
 		PreviousOutpoint: *prevOut,
 		SignatureScript:  signatureScript,
-		Sequence:         constants.MaxTxInSequenceNum,
+		Sequence:         sequence,
 	}
 }
 
@@ -258,8 +256,8 @@ func (msg *MsgTx) MaxPayloadLength(pver uint32) uint32 {
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *externalapi.DomainSubnetworkID) bool {
 	return subnetworkID == nil ||
-		*subnetworkID == subnetworks.SubnetworkIDNative ||
-		*subnetworkID == msg.SubnetworkID
+		subnetworkID.Equal(&subnetworks.SubnetworkIDNative) ||
+		subnetworkID.Equal(&msg.SubnetworkID)
 }
 
 // newMsgTx returns a new tx message that conforms to the Message interface.

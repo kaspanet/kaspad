@@ -51,7 +51,7 @@ func (fm *finalityManager) VirtualFinalityPoint() (*externalapi.DomainHash, erro
 func (fm *finalityManager) FinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	log.Tracef("FinalityPoint start")
 	defer log.Tracef("FinalityPoint end")
-	if *blockHash == *model.VirtualBlockHash {
+	if blockHash.Equal(model.VirtualBlockHash) {
 		return fm.VirtualFinalityPoint()
 	}
 	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, blockHash)
@@ -88,7 +88,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 	}
 
 	selectedParent := ghostdagData.SelectedParent()
-	if *selectedParent == *fm.genesisHash {
+	if selectedParent.Equal(fm.genesisHash) {
 		return fm.genesisHash, nil
 	}
 

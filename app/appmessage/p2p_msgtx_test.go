@@ -7,6 +7,7 @@ package appmessage
 import (
 	"bytes"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"reflect"
 	"testing"
@@ -52,7 +53,7 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutpoint(txID, prevOutIndex)
-	if prevOut.TxID != *txID {
+	if !prevOut.TxID.Equal(txID) {
 		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
@@ -68,7 +69,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction input back out.
 	sigScript := []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62}
-	txIn := NewTxIn(prevOut, sigScript)
+	txIn := NewTxIn(prevOut, sigScript, constants.MaxTxInSequenceNum)
 	if !reflect.DeepEqual(&txIn.PreviousOutpoint, prevOut) {
 		t.Errorf("NewTxIn: wrong prev outpoint - got %v, want %v",
 			spew.Sprint(&txIn.PreviousOutpoint),
@@ -178,7 +179,7 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if *tx1ID != *wantTxID1 {
+	if !tx1ID.Equal(wantTxID1) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
@@ -235,19 +236,19 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
-	if *tx2Hash != *wantHash2 {
+	if !tx2Hash.Equal(wantHash2) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx2ID := tx2.TxID()
-	if *tx2ID != *wantID2 {
+	if !tx2ID.Equal(wantID2) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if *tx2ID == (externalapi.DomainTransactionID)(*tx2Hash) {
+	if tx2ID.Equal((*externalapi.DomainTransactionID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 

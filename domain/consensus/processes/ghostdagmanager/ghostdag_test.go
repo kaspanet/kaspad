@@ -137,7 +137,7 @@ func TestGHOSTDAG(t *testing.T) {
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.Score, ghostdagData.BlueScore())
 					}
 
-					if *StringToByte(testBlockData.SelectedParent) != *ghostdagData.SelectedParent() {
+					if !StringToByte(testBlockData.SelectedParent).Equal(ghostdagData.SelectedParent()) {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected selected parent %v but got %v.",
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.SelectedParent, string(ghostdagData.SelectedParent()[:]))
 					}
@@ -267,7 +267,7 @@ func (dt *DAGTopologyManagerImpl) IsAncestorOf(hashBlockA *externalapi.DomainHas
 	}
 
 	for _, parentOfB := range blockBParents {
-		if *parentOfB == *hashBlockA {
+		if parentOfB.Equal(hashBlockA) {
 			return true, nil
 		}
 	}

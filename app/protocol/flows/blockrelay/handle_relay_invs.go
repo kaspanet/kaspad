@@ -171,7 +171,7 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
-	if *blockHash != *requestHash {
+	if !blockHash.Equal(requestHash) {
 		return nil, false, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
 	}
 

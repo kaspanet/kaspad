@@ -6,3 +6,12 @@ type BlockInfo struct {
 	BlockStatus BlockStatus
 	BlueScore   uint64
 }
+
+// Clone returns a clone of BlockInfo
+func (bi *BlockInfo) Clone() *BlockInfo {
+	return &BlockInfo{
+		Exists:      bi.Exists,
+		BlockStatus: bi.BlockStatus.Clone(),
+		BlueScore:   bi.BlueScore,
+	}
+}

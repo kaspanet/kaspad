@@ -109,7 +109,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 
 			// remove virtual from parentChildren if it's there
 			for i, parentChild := range parentChildren {
-				if *parentChild == *model.VirtualBlockHash {
+				if parentChild.Equal(model.VirtualBlockHash) {
 					parentChildren = append(parentChildren[:i], parentChildren[i+1:]...)
 					break
 				}

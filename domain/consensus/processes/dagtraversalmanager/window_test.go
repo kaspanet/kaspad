@@ -1,7 +1,9 @@
 package dagtraversalmanager_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -343,10 +345,25 @@ func TestBlueBlockWindow(t *testing.T) {
 			if err != nil {
 				t.Fatalf("BlueWindow: %s", err)
 			}
+			sortWindow(t, tc, window)
 			if err := checkWindowIDs(window, blockData.expectedWindowWithGenesisPadding, idByBlockMap); err != nil {
 				t.Errorf("Unexpected values for window for block %s: %s", blockData.id, err)
 			}
 		}
+	})
+}
+
+func sortWindow(t *testing.T, tc testapi.TestConsensus, window []*externalapi.DomainHash) {
+	sort.Slice(window, func(i, j int) bool {
+		ghostdagDataI, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), window[i])
+		if err != nil {
+			t.Fatalf("Failed getting ghostdag data for %s", err)
+		}
+		ghostdagDataJ, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), window[j])
+		if err != nil {
+			t.Fatalf("Failed getting ghostdag data for %s", err)
+		}
+		return !tc.GHOSTDAGManager().Less(window[i], ghostdagDataI, window[j], ghostdagDataJ)
 	})
 }
 

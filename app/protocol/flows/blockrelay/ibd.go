@@ -338,7 +338,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 
 			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
 			blockHash := consensushashing.BlockHash(block)
-			if *expectedHash != *blockHash {
+			if !expectedHash.Equal(blockHash) {
 				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 			}
 

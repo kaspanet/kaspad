@@ -8,7 +8,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	log.Tracef("isViolatingFinality start for block %s", blockHash)
 	defer log.Tracef("isViolatingFinality end for block %s", blockHash)
 
-	if *blockHash == *csm.genesisHash {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Tracef("Block %s is the genesis block, "+
 			"and does not violate finality by definition", blockHash)
 		return false, false, nil

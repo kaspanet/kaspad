@@ -35,7 +35,7 @@ func TestNewHashFromStr(t *testing.T) {
 
 			result := newHashFromStr(test.hexStr)
 
-			if *result != *test.expectedHash {
+			if !result.Equal(test.expectedHash) {
 				t.Errorf("%s: Expected hash: %s, but got %s", test.hexStr, test.expectedHash, result)
 			}
 		}()

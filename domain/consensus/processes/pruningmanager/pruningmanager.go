@@ -162,7 +162,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		}
 	}
 
-	if *newCandidate != *currentCandidate {
+	if !newCandidate.Equal(currentCandidate) {
 		pm.pruningStore.StagePruningPointCandidate(newCandidate)
 	}
 
@@ -172,7 +172,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return nil
 	}
 
-	if *newPruningPoint != *currentPruningPoint {
+	if !newPruningPoint.Equal(currentPruningPoint) {
 		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err

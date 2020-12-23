@@ -15,3 +15,8 @@ package externalapi
 // The block locator for block 17 would be the hashes of blocks:
 //  [17 16 14 11 7 2 genesis]
 type BlockLocator []*DomainHash
+
+// Clone returns a clone of BlockLocator
+func (locator BlockLocator) Clone() BlockLocator {
+	return CloneHashes(locator)
+}

@@ -8,6 +8,15 @@ func (bs BlockStatus) Clone() BlockStatus {
 	return bs
 }
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ BlockStatus = 0
+
+// Equal returns whether bs equals to other
+func (bs BlockStatus) Equal(other BlockStatus) bool {
+	return bs == other
+}
+
 const (
 	// StatusInvalid indicates that the block is invalid.
 	StatusInvalid BlockStatus = iota

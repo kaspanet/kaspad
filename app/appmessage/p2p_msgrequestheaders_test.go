@@ -26,7 +26,7 @@ func TestRequstIBDBlocks(t *testing.T) {
 
 	// Ensure we get the same data back out.
 	msg := NewMsgRequstHeaders(lowHash, highHash)
-	if *msg.HighHash != *highHash {
+	if !msg.HighHash.Equal(highHash) {
 		t.Errorf("NewMsgRequstHeaders: wrong high hash - got %v, want %v",
 			msg.HighHash, highHash)
 	}

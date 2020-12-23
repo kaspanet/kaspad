@@ -35,7 +35,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 			t.Fatalf("The `added` slice contains an unexpected amount of items after inserting block A. "+
 				"Want: %d, got: %d", 1, len(blockASelectedParentChainChanges.Added))
 		}
-		if *blockASelectedParentChainChanges.Added[0] != *blockAHash {
+		if !blockASelectedParentChainChanges.Added[0].Equal(blockAHash) {
 			t.Fatalf("The `added` slice contains an unexpected hash. Want: %s, got: %s",
 				blockAHash, blockASelectedParentChainChanges.Added[0])
 		}
@@ -53,7 +53,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 		}
 		virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
 		notVirtualSelectedParent := blockAHash
-		if *virtualSelectedParent == *blockAHash {
+		if virtualSelectedParent.Equal(blockAHash) {
 			notVirtualSelectedParent = blockBHash
 		}
 
@@ -71,7 +71,7 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 			t.Fatalf("The `removed` slice contains an unexpected amount of items after inserting block C. "+
 				"Want: %d, got: %d", 1, len(blockCSelectedParentChainChanges.Removed))
 		}
-		if *blockCSelectedParentChainChanges.Removed[0] != *virtualSelectedParent {
+		if !blockCSelectedParentChainChanges.Removed[0].Equal(virtualSelectedParent) {
 			t.Fatalf("The `removed` slice contains an unexpected hash. "+
 				"Want: %s, got: %s", virtualSelectedParent, blockCSelectedParentChainChanges.Removed[0])
 		}
@@ -82,11 +82,11 @@ func TestCalculateSelectedParentChainChanges(t *testing.T) {
 			t.Fatalf("The `added` slice contains an unexpected amount of items after inserting block C. "+
 				"Want: %d, got: %d", 2, len(blockCSelectedParentChainChanges.Added))
 		}
-		if *blockCSelectedParentChainChanges.Added[0] != *notVirtualSelectedParent {
+		if !blockCSelectedParentChainChanges.Added[0].Equal(notVirtualSelectedParent) {
 			t.Fatalf("The `added` slice contains an unexpected hash as the first item. "+
 				"Want: %s, got: %s", notVirtualSelectedParent, blockCSelectedParentChainChanges.Added[0])
 		}
-		if *blockCSelectedParentChainChanges.Added[1] != *blockCHash {
+		if !blockCSelectedParentChainChanges.Added[1].Equal(blockCHash) {
 			t.Fatalf("The `added` slice contains an unexpected hash as the second item. "+
 				"Want: %s, got: %s", blockCHash, blockCSelectedParentChainChanges.Added[1])
 		}

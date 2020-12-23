@@ -171,7 +171,7 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 		return nil, err
 	}
 
-	if *expectedPruningPointHash != *pruningPointHash {
+	if !expectedPruningPointHash.Equal(pruningPointHash) {
 		return nil, errors.Wrapf(ruleerrors.ErrWrongPruningPointHash, "expected pruning point %s but got %s",
 			expectedPruningPointHash,
 			pruningPointHash)

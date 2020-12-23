@@ -46,7 +46,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 			return err
 		}
 
-		if *newHeadersSelectedTip != *headersSelectedTip {
+		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
 			h.headersSelectedTipStore.Stage(newHeadersSelectedTip)
 		}
 	}
