@@ -116,12 +116,12 @@ func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
 		return false
 	}
 
-	if tx.Fee != other.Fee {
-		return false
+	if tx.Fee != 0 && other.Fee != 0 && tx.Fee != other.Fee {
+		panic(errors.New("identical transactions should always have the same fee"))
 	}
 
-	if tx.Mass != other.Mass {
-		return false
+	if tx.Mass != 0 && other.Mass != 0 && tx.Mass != other.Mass {
+		panic(errors.New("identical transactions should always have the same mass"))
 	}
 
 	if tx.ID != nil && other.ID != nil && !tx.ID.Equal(other.ID) {
@@ -162,8 +162,8 @@ func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
 		return false
 	}
 
-	if !input.UTXOEntry.Equal(other.UTXOEntry) {
-		return false
+	if input.UTXOEntry != nil && other.UTXOEntry != nil && !input.UTXOEntry.Equal(other.UTXOEntry) {
+		panic(errors.New("identical inputs should always have the same UTXO entry"))
 	}
 
 	return true

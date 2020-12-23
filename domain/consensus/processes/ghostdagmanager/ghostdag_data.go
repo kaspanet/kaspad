@@ -57,3 +57,13 @@ func (bgd *blockGHOSTDAGData) MergeSetReds() []*externalapi.DomainHash {
 func (bgd *blockGHOSTDAGData) BluesAnticoneSizes() map[externalapi.DomainHash]model.KType {
 	return bgd.bluesAnticoneSizes
 }
+
+func (bgd *blockGHOSTDAGData) MergeSet() []*externalapi.DomainHash {
+	mergeSet := make([]*externalapi.DomainHash, len(bgd.mergeSetBlues)+len(bgd.mergeSetReds))
+	copy(mergeSet, bgd.mergeSetBlues)
+	if len(bgd.mergeSetReds) > 0 {
+		copy(mergeSet[len(bgd.mergeSetBlues):], bgd.mergeSetReds)
+	}
+
+	return mergeSet
+}

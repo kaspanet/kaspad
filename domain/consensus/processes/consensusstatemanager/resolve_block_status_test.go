@@ -2,6 +2,9 @@ package consensusstatemanager_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -147,6 +150,207 @@ func TestDoubleSpends(t *testing.T) {
 		}
 		if goodBlock2Status != externalapi.StatusUTXOValid {
 			t.Fatalf("GoodBlock2 status expected to be '%s', but is '%s'", externalapi.StatusUTXOValid, goodBlock2Status)
+		}
+	})
+}
+
+func TestTransactionAcceptance(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.BlockCoinbaseMaturity = 0
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, "TestTransactionAcceptance")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		fundingBlock1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating fundingBlock1: %+v", err)
+		}
+
+		fundingBlock2Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock1Hash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating fundingBlock2: %+v", err)
+		}
+
+		fundingBlock3Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock2Hash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating fundingBlock2: %+v", err)
+		}
+
+		tipHash := fundingBlock3Hash
+		for i := model.KType(0); i < params.K; i++ {
+			var err error
+			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("Error creating fundingBlock1: %+v", err)
+			}
+		}
+
+		fundingBlock2, err := tc.GetBlock(fundingBlock2Hash)
+		if err != nil {
+			t.Fatalf("Error getting fundingBlock: %+v", err)
+		}
+
+		fundingTransaction1 := fundingBlock2.Transactions[transactionhelper.CoinbaseTransactionIndex]
+
+		fundingBlock3, err := tc.GetBlock(fundingBlock3Hash)
+		if err != nil {
+			t.Fatalf("Error getting fundingBlock: %+v", err)
+		}
+
+		fundingTransaction2 := fundingBlock3.Transactions[transactionhelper.CoinbaseTransactionIndex]
+
+		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction1)
+		if err != nil {
+			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+		}
+
+		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction2)
+		if err != nil {
+			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+		}
+
+		redHash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock3Hash}, nil,
+			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
+		if err != nil {
+			t.Fatalf("Error creating redBlock: %+v", err)
+		}
+
+		blueScriptPublicKey := []byte{1}
+		blueHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: blueScriptPublicKey,
+			ExtraData:       nil,
+		},
+			[]*externalapi.DomainTransaction{spendingTransaction1})
+		if err != nil {
+			t.Fatalf("Error creating blue: %+v", err)
+		}
+
+		// Mining two blocks so tipHash will definitely be the selected tip.
+		tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating tip: %+v", err)
+		}
+
+		finalTipSelectedParentScriptPublicKey := []byte{3}
+		finalTipSelectedParentHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tipHash},
+			&externalapi.DomainCoinbaseData{
+				ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
+				ExtraData:       nil,
+			}, nil)
+		if err != nil {
+			t.Fatalf("Error creating tip: %+v", err)
+		}
+
+		finalTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash}, nil,
+			nil)
+		if err != nil {
+			t.Fatalf("Error creating finalTip: %+v", err)
+		}
+
+		acceptanceData, err := tc.AcceptanceDataStore().Get(tc.DatabaseContext(), finalTipHash)
+		if err != nil {
+			t.Fatalf("Error getting acceptance data: %+v", err)
+		}
+
+		finalTipSelectedParent, err := tc.GetBlock(finalTipSelectedParentHash)
+		if err != nil {
+			t.Fatalf("Error getting finalTipSelectedParent: %+v", err)
+		}
+
+		blue, err := tc.GetBlock(blueHash)
+		if err != nil {
+			t.Fatalf("Error getting blue: %+v", err)
+		}
+
+		red, err := tc.GetBlock(redHash)
+		if err != nil {
+			t.Fatalf("Error getting blue: %+v", err)
+		}
+
+		expectedAcceptanceData := externalapi.AcceptanceData{
+			{
+				BlockHash: finalTipSelectedParentHash,
+				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
+					{
+						Transaction: finalTipSelectedParent.Transactions[0],
+						Fee:         0,
+						IsAccepted:  true,
+					},
+				},
+			},
+			{
+				BlockHash: blueHash,
+				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
+					{
+						Transaction: blue.Transactions[0],
+						Fee:         0,
+						IsAccepted:  false,
+					},
+					{
+						Transaction: spendingTransaction1,
+						Fee:         1,
+						IsAccepted:  true,
+					},
+				},
+			},
+			{
+				BlockHash: redHash,
+				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
+					{
+						Transaction: red.Transactions[0],
+						Fee:         0,
+						IsAccepted:  false,
+					},
+					{
+						Transaction: spendingTransaction1,
+						Fee:         0,
+						IsAccepted:  false,
+					},
+					{
+						Transaction: spendingTransaction2,
+						Fee:         1,
+						IsAccepted:  true,
+					},
+				},
+			},
+		}
+
+		if !acceptanceData.Equal(expectedAcceptanceData) {
+			t.Fatalf("The acceptance data is not the expected acceptance data")
+		}
+
+		finalTip, err := tc.GetBlock(finalTipHash)
+		if err != nil {
+			t.Fatalf("Error getting finalTip: %+v", err)
+		}
+
+		if !finalTip.Transactions[0].Equal(&externalapi.DomainTransaction{
+			Version: constants.TransactionVersion,
+			Inputs:  nil,
+			Outputs: []*externalapi.DomainTransactionOutput{
+				{
+					Value:           50 * constants.SompiPerKaspa,
+					ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
+				},
+				{
+					Value:           50*constants.SompiPerKaspa + 1,
+					ScriptPublicKey: blueScriptPublicKey,
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
+			Gas:          0,
+			PayloadHash:  finalTip.Transactions[0].PayloadHash,
+			Payload:      finalTip.Transactions[0].Payload,
+			Fee:          0,
+			Mass:         0,
+			ID:           nil,
+		}) {
+			t.Fatalf("wat?")
 		}
 	})
 }
