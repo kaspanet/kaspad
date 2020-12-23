@@ -101,7 +101,7 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	blockInsertionResult, err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Infof("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
+			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
 		}
 		return err
 	}
