@@ -1,0 +1,23 @@
+name: Pull Request Comment Trigger
+on:
+  pull_request:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    name: Example
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+
+      - name: Test
+        shell: bash
+        run: ./build_and_test.sh
