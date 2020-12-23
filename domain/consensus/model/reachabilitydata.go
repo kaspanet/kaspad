@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -93,15 +94,9 @@ func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
 
 // Clone returns a clone of ReachabilityTreeNode
 func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
-
-	var parentClone *externalapi.DomainHash
-	if rtn.Parent != nil {
-		parentClone = rtn.Parent.Clone()
-	}
-
 	return &ReachabilityTreeNode{
 		Children: externalapi.CloneHashes(rtn.Children),
-		Parent:   parentClone,
+		Parent:   rtn.Parent,
 		Interval: rtn.Interval.Clone(),
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/pkg/errors"
 )
 
@@ -21,13 +20,7 @@ func (m multiset) Remove(data []byte) {
 }
 
 func (m multiset) Hash() *externalapi.DomainHash {
-	hash, err := hashes.FromBytes(m.ms.Finalize()[:])
-	if err != nil {
-		panic(errors.Errorf("this should never happen unless seckp hash size is different than %d",
-			externalapi.DomainHashSize))
-	}
-
-	return hash
+	return externalapi.NewDomainHashFromByteArray((*[secp256k1.HashSize]byte)(m.ms.Finalize()))
 }
 
 func (m multiset) Serialize() []byte {

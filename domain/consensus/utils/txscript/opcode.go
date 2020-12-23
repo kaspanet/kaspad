@@ -10,8 +10,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"hash"
+
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
@@ -2051,7 +2052,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	var valid bool
-	secpHash := secp256k1.Hash(*sigHash)
+	secpHash := secp256k1.Hash(*sigHash.BytesArray())
 	if vm.sigCache != nil {
 
 		valid = vm.sigCache.Exists(secpHash, signature, pubKey)
@@ -2245,7 +2246,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			return err
 		}
 
-		secpHash := secp256k1.Hash(*sigHash)
+		secpHash := secp256k1.Hash(*sigHash.BytesArray())
 		var valid bool
 		if vm.sigCache != nil {
 			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)

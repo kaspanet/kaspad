@@ -111,5 +111,5 @@ func (bss *blockStatusStore) deserializeBlockStatus(statusBytes []byte) (externa
 }
 
 func (bss *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.BytesSlice())
 }

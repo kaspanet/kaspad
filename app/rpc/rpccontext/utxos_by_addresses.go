@@ -2,6 +2,7 @@ package rpccontext
 
 import (
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 )
@@ -14,7 +15,7 @@ func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pair
 		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
 			Address: address,
 			Outpoint: &appmessage.RPCOutpoint{
-				TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
+				TransactionID: outpoint.TransactionID.String(),
 				Index:         outpoint.Index,
 			},
 			UTXOEntry: &appmessage.RPCUTXOEntry{

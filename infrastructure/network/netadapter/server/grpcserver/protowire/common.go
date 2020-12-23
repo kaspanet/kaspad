@@ -1,11 +1,11 @@
 package protowire
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
-	"math"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -13,7 +13,7 @@ import (
 )
 
 func (x *Hash) toDomain() (*externalapi.DomainHash, error) {
-	return hashes.FromBytes(x.Bytes)
+	return externalapi.NewDomainHashFromByteSlice(x.Bytes)
 }
 
 func protoHashesToDomain(protoHashes []*Hash) ([]*externalapi.DomainHash, error) {
@@ -30,7 +30,7 @@ func protoHashesToDomain(protoHashes []*Hash) ([]*externalapi.DomainHash, error)
 
 func domainHashToProto(hash *externalapi.DomainHash) *Hash {
 	return &Hash{
-		Bytes: hash[:],
+		Bytes: hash.BytesSlice(),
 	}
 }
 
@@ -60,7 +60,7 @@ func protoTransactionIDsToDomain(protoIDs []*TransactionId) ([]*externalapi.Doma
 
 func domainTransactionIDToProto(id *externalapi.DomainTransactionID) *TransactionId {
 	return &TransactionId{
-		Bytes: id[:],
+		Bytes: id.BytesSlice(),
 	}
 }
 

@@ -178,7 +178,7 @@ func (bs *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBl
 }
 
 func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.BytesSlice())
 }
 
 func (bs *blockStore) Count() uint64 {

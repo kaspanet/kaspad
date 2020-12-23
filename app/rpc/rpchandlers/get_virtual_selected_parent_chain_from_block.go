@@ -1,10 +1,9 @@
 package rpchandlers
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -12,13 +11,7 @@ import (
 func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getVirtualSelectedParentChainFromBlockRequest := request.(*appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage)
 
-	startHashBytes, err := hex.DecodeString(getVirtualSelectedParentChainFromBlockRequest.StartHash)
-	if err != nil {
-		errorMessage := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Could not parse startHash: %s", err)
-		return errorMessage, nil
-	}
-	startHash, err := hashes.FromBytes(startHashBytes)
+	startHash, err := externalapi.NewDomainHashFromString(getVirtualSelectedParentChainFromBlockRequest.StartHash)
 	if err != nil {
 		errorMessage := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not parse startHash: %s", err)

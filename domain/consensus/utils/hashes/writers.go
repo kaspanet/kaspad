@@ -1,9 +1,10 @@
 package hashes
 
 import (
+	"hash"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"hash"
 )
 
 // HashWriter is used to incrementally hash data without concatenating all of the data to a single buffer
@@ -25,8 +26,8 @@ func (h HashWriter) InfallibleWrite(p []byte) {
 
 // Finalize returns the resulting hash
 func (h HashWriter) Finalize() *externalapi.DomainHash {
-	var sum externalapi.DomainHash
+	var sum [externalapi.DomainHashSize]byte
 	// This should prevent `Sum` for allocating an output buffer, by using the DomainHash buffer. we still copy because we don't want to rely on that.
 	copy(sum[:], h.Sum(sum[:0]))
-	return &sum
+	return externalapi.NewDomainHashFromByteArray(&sum)
 }

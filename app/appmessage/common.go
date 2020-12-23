@@ -127,7 +127,10 @@ func ReadElement(r io.Reader, element interface{}) error {
 		return nil
 
 	case *externalapi.DomainHash:
-		_, err := io.ReadFull(r, e[:])
+		var buf [externalapi.DomainHashSize]byte
+		_, err := io.ReadFull(r, buf[:])
+		hash := externalapi.NewDomainHashFromByteArray(&buf)
+		*e = *hash
 		if err != nil {
 			return err
 		}
@@ -252,7 +255,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case *externalapi.DomainHash:
-		_, err := w.Write(e[:])
+		_, err := w.Write(e.BytesSlice())
 		if err != nil {
 			return err
 		}
