@@ -59,8 +59,8 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		}
 
 		if !isValid {
-			log.Infof("The suggested pruning point is incompatible to this node DAG, so stopping IBD with this" +
-				" peer")
+			log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
+				" peer", msgIBDRootHash.Hash)
 			return nil
 		}
 
@@ -91,7 +91,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) fetchUTXOSetIfMissing() (bool, error) {
+func (flow *handleRelayInvsFlow) fetchUTXOSetIfMissing() (bool, error) { // TODO: Remove this
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
 	if err != nil {
 		return false, err

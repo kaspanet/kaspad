@@ -154,6 +154,8 @@ func TestDoubleSpends(t *testing.T) {
 	})
 }
 
+// TestTransactionAcceptance checks that blue blocks transactions are favoured above
+// red blocks transactions, and that the block reward is payed only for blue blocks.
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
@@ -175,11 +177,14 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating fundingBlock2: %+v", err)
 		}
 
+		// Generate fundingBlock3 to pay for fundingBlock1 and fundingBlock2
 		fundingBlock3Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock2Hash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Error creating fundingBlock2: %+v", err)
+			t.Fatalf("Error creating fundingBlock3: %+v", err)
 		}
 
+		// Add a chain of K blocks above fundingBlock3 so we'll
+		// be able to mine a red block on top of it.
 		tipHash := fundingBlock3Hash
 		for i := model.KType(0); i < params.K; i++ {
 			var err error
@@ -268,9 +273,12 @@ func TestTransactionAcceptance(t *testing.T) {
 
 		red, err := tc.GetBlock(redHash)
 		if err != nil {
-			t.Fatalf("Error getting blue: %+v", err)
+			t.Fatalf("Error getting red: %+v", err)
 		}
 
+		// We expect spendingTransaction1 to be accepted by the blue block and not by the red one, because
+		// blue blocks in the merge set should always be ordered before red blocks in the merge set.
+		// We also expect spendingTransaction2 to be accepted by the red because nothing conflicts it.
 		expectedAcceptanceData := externalapi.AcceptanceData{
 			{
 				BlockHash: finalTipSelectedParentHash,
@@ -328,7 +336,9 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error getting finalTip: %+v", err)
 		}
 
-		if !finalTip.Transactions[0].Equal(&externalapi.DomainTransaction{
+		// We expect the coinbase transaction to pay reward for the selected parent, the
+		// blue block, and not for the red block.
+		expectedCoinbase := &externalapi.DomainTransaction{
 			Version: constants.TransactionVersion,
 			Inputs:  nil,
 			Outputs: []*externalapi.DomainTransactionOutput{
@@ -337,7 +347,7 @@ func TestTransactionAcceptance(t *testing.T) {
 					ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
 				},
 				{
-					Value:           50*constants.SompiPerKaspa + 1,
+					Value:           50*constants.SompiPerKaspa + 1, // testutils.CreateTransaction pays a fee of 1 sompi
 					ScriptPublicKey: blueScriptPublicKey,
 				},
 			},
@@ -346,11 +356,9 @@ func TestTransactionAcceptance(t *testing.T) {
 			Gas:          0,
 			PayloadHash:  finalTip.Transactions[0].PayloadHash,
 			Payload:      finalTip.Transactions[0].Payload,
-			Fee:          0,
-			Mass:         0,
-			ID:           nil,
-		}) {
-			t.Fatalf("wat?")
+		}
+		if !finalTip.Transactions[transactionhelper.CoinbaseTransactionIndex].Equal(expectedCoinbase) {
+			t.Fatalf("Unexpected coinbase transaction")
 		}
 	})
 }
