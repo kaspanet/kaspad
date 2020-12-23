@@ -10,6 +10,14 @@ jobs:
     runs-on: ubuntu-16.04
     name: Example
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup go
-      - run: echo "Hello World"
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+
+      - name: Test
+        shell: bash
+        run: ./build_and_test.sh
