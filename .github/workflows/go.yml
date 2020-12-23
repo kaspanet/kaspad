@@ -6,7 +6,7 @@ on:
     # edtited - "title, body, or the base branch of the PR is modified"
     # synchronize - "commit(s) pushed to the pull request"
     types: [opened, synchronize, edited, reopened]
-  pull_request_review_comment:
+  issue_comment:
     types: [created]
 
 jobs:
