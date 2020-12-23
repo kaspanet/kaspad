@@ -56,7 +56,6 @@ func TestGHOSTDAG(t *testing.T) {
 		{ghostdag2.New, "Tal's impl"},
 	}
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		dagTopology := &DAGTopologyManagerImpl{
 			parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
 		}
