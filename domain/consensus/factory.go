@@ -74,7 +74,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(200)
+	blockRelationStore := blockrelationstore.New(10_000)
 	blockStatusStore := blockstatusstore.New(200)
 	multisetStore := multisetstore.New(200)
 	pruningStore := pruningstore.New()
