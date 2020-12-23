@@ -149,7 +149,7 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externa
 	blockInsertionResult, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Infof("Validation failed for orphan block %s: %s", orphanHash, err)
+			log.Warnf("Validation failed for orphan block %s: %s", orphanHash, err)
 			return nil, nil
 		}
 		return nil, err
