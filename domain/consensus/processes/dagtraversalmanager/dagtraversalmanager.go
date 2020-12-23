@@ -12,9 +12,10 @@ import (
 type dagTraversalManager struct {
 	databaseContext model.DBReader
 
-	dagTopologyManager model.DAGTopologyManager
-	ghostdagDataStore  model.GHOSTDAGDataStore
-	ghostdagManager    model.GHOSTDAGManager
+	dagTopologyManager    model.DAGTopologyManager
+	ghostdagDataStore     model.GHOSTDAGDataStore
+	reachabilityDataStore model.ReachabilityDataStore
+	ghostdagManager       model.GHOSTDAGManager
 }
 
 // selectedParentIterator implements the `model.BlockIterator` API
@@ -45,12 +46,14 @@ func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
 	return &dagTraversalManager{
-		databaseContext:    databaseContext,
-		dagTopologyManager: dagTopologyManager,
-		ghostdagDataStore:  ghostdagDataStore,
-		ghostdagManager:    ghostdagManager,
+		databaseContext:       databaseContext,
+		dagTopologyManager:    dagTopologyManager,
+		ghostdagDataStore:     ghostdagDataStore,
+		reachabilityDataStore: reachabilityDataStore,
+		ghostdagManager:       ghostdagManager,
 	}
 }
 

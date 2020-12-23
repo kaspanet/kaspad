@@ -177,6 +177,8 @@ var (
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
 
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
+
+	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

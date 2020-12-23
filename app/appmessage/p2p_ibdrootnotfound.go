@@ -17,6 +17,6 @@ func (msg *MsgIBDRootNotFound) Command() MessageCommand {
 
 // NewMsgIBDRootNotFound returns a new kaspa IBDRootNotFound message that conforms to the
 // Message interface.
-func NewMsgIBDRootNotFound() *MsgDoneHeaders {
-	return &MsgDoneHeaders{}
+func NewMsgIBDRootNotFound() *MsgIBDRootNotFound {
+	return &MsgIBDRootNotFound{}
 }

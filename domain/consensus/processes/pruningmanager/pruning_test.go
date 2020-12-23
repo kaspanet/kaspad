@@ -26,10 +26,10 @@ type testJSON struct {
 func TestPruning(t *testing.T) {
 	expectedPruningPointByNet := map[string]map[string]string{
 		"chain-for-test-pruning.json": {
-			"kaspa-mainnet": "84",
-			"kaspa-simnet":  "84",
-			"kaspa-devnet":  "84",
-			"kaspa-testnet": "84",
+			"kaspa-mainnet": "1582",
+			"kaspa-simnet":  "1582",
+			"kaspa-devnet":  "1582",
+			"kaspa-testnet": "1582",
 		},
 		"dag-for-test-pruning.json": {
 			"kaspa-mainnet": "503",
@@ -100,9 +100,29 @@ func TestPruning(t *testing.T) {
 
 				blockIDToHash[dagBlock.ID] = blockHash
 				blockHashToID[*blockHash] = dagBlock.ID
+
+				pruningPoint, err := tc.PruningPoint()
+				if err != nil {
+					return err
+				}
+
+				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext())
+				if err != nil {
+					return err
+				}
+
+				isValidPruningPoint, err := tc.IsValidPruningPoint(pruningPointCandidate)
+				if err != nil {
+					return err
+				}
+
+				shouldBeValid := *pruningPoint == *pruningPointCandidate
+				if isValidPruningPoint != shouldBeValid {
+					t.Fatalf("isValidPruningPoint is %t while expected %t", isValidPruningPoint, shouldBeValid)
+				}
 			}
 
-			pruningPoint, err := tc.PruningStore().PruningPoint(tc.DatabaseContext())
+			pruningPoint, err := tc.PruningPoint()
 			if err != nil {
 				t.Fatalf("PruningPoint: %+v", err)
 			}

@@ -88,7 +88,12 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		}
 	}
 
-	currentP, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	currentCandidate, err := pm.pruningPointCandidate()
+	if err != nil {
+		return err
+	}
+
+	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentCandidate)
 	if err != nil {
 		return err
 	}
@@ -103,28 +108,71 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	currentPGhost, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentP)
-	if err != nil {
-		return err
-	}
-	currentPBlueScore := currentPGhost.BlueScore()
-	// Because the pruning point changes only once per finality, then there's no need to even check for that if a finality interval hasn't passed.
-	if virtualSelectedParent.BlueScore() <= currentPBlueScore+pm.finalityInterval {
-		return nil
-	}
-
-	// This means the pruning point is still genesis.
-	if virtualSelectedParent.BlueScore() <= pm.pruningDepth+pm.finalityInterval {
-		return nil
-	}
-
-	// get Virtual(pruningDepth)
-	newPruningPoint, err := pm.calculatePruningPointFromBlock(model.VirtualBlockHash)
+	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
 	}
 
-	if !newPruningPoint.Equal(currentP) {
+	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentPruningPoint)
+	if err != nil {
+		return err
+	}
+
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(virtual.SelectedParent(), currentCandidate)
+	if err != nil {
+		return err
+	}
+
+	// Finding the next pruning point candidate: look for the latest
+	// selected child of the current candidate that is in depth of at
+	// least pm.pruningDepth blocks from the virtual selected parent.
+	//
+	// Note: Sometimes the current candidate is less than pm.pruningDepth
+	// from the virtual. This can happen only if the virtual blue score
+	// got smaller, because virtual blue score is not guaranteed to always
+	// increase (because sometimes a block with higher blue work can have
+	// lower blue score).
+	// In such cases we still keep the same candidate because it's guaranteed
+	// that a block that was once in depth of pm.pruningDepth cannot be
+	// reorged without causing a finality conflict first.
+	newCandidate := currentCandidate
+	newCandidateGHOSTDAGData := currentCandidateGHOSTDAGData
+
+	newPruningPoint := currentPruningPoint
+	newPruningPointGHOSTDAGData := currentPruningPointGHOSTDAGData
+	for iterator.Next() {
+		selectedChild := iterator.Get()
+		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, selectedChild)
+		if err != nil {
+			return err
+		}
+
+		if virtualSelectedParent.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
+			break
+		}
+
+		newCandidate = selectedChild
+		newCandidateGHOSTDAGData = selectedChildGHOSTDAGData
+
+		// We move the pruning point every time the candidate's finality score is
+		// bigger than the current pruning point finality score.
+		if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) > pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) {
+			newPruningPoint = newCandidate
+			newPruningPointGHOSTDAGData = newCandidateGHOSTDAGData
+		}
+	}
+
+	if !newCandidate.Equal(currentCandidate) {
+		pm.pruningStore.StagePruningPointCandidate(newCandidate)
+	}
+
+	// We move the pruning point every time the candidate's finality score is
+	// bigger than the current pruning point finality score.
+	if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) <= pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore()) {
+		return nil
+	}
+
+	if !newPruningPoint.Equal(currentPruningPoint) {
 		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err
@@ -214,7 +262,7 @@ func (pm *pruningManager) savePruningPoint(blockHash *externalapi.DomainHash) er
 	if err != nil {
 		return err
 	}
-	pm.pruningStore.Stage(blockHash, serializedUtxo)
+	pm.pruningStore.StagePruningPoint(blockHash, serializedUtxo)
 
 	return nil
 }
@@ -237,28 +285,68 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	return false, nil
 }
 
-func (pm *pruningManager) CalculatePruningPointByHeaderSelectedTip() (*externalapi.DomainHash, error) {
+func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
+	if *pm.genesisHash == *block {
+		return true, nil
+	}
+
 	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return pm.calculatePruningPointFromBlock(headersSelectedTip)
+	// A pruning point has to be in the selected chain of the headers selected tip.
+	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, headersSelectedTip)
+	if err != nil {
+		return false, err
+	}
+
+	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(block,
+		headersSelectedTip)
+	if err != nil {
+		return false, err
+	}
+
+	if !isInSelectedParentChainOfHeadersSelectedTip {
+		return false, nil
+	}
+
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, block)
+	if err != nil {
+		return false, err
+	}
+
+	// A pruning point has to be at depth of at least pm.pruningDepth
+	if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
+		return false, nil
+	}
+
+	selectedParentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, ghostdagData.SelectedParent())
+	if err != nil {
+		return false, err
+	}
+
+	// A pruning point has to be the lowest chain block with a certain finality score, so
+	// if the block selected parent has the same finality score it means it cannot be a
+	// pruning point.
+	if pm.finalityScore(ghostdagData.BlueScore()) == pm.finalityScore(selectedParentGHOSTDAGData.BlueScore()) {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func (pm *pruningManager) calculatePruningPointFromBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
+func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, error) {
+	hasPruningPointCandidate, err := pm.pruningStore.HasPruningPointCandidate(pm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
 
-	targetBlueScore := uint64(0)
-	if ghostdagData.BlueScore() > pm.pruningDepth {
-		// The target blue is calculated by calculating ghostdagData.BlueScore() - pm.pruningDepth and rounding
-		// down with the precision of finality interval.
-		targetBlueScore = ((ghostdagData.BlueScore() - pm.pruningDepth) / pm.finalityInterval) * pm.finalityInterval
+	if !hasPruningPointCandidate {
+		return pm.genesisHash, nil
 	}
-	return pm.dagTraversalManager.LowestChainBlockAboveOrEqualToBlueScore(blockHash, targetBlueScore)
+
+	return pm.pruningStore.PruningPointCandidate(pm.databaseContext)
 }
 
 func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error) {
@@ -267,4 +355,10 @@ func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error
 		return nil, err
 	}
 	return proto.Marshal(serializedUtxo)
+}
+
+// finalityScore is the number of finality intervals passed since
+// the given block.
+func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
+	return blueScore / pm.finalityInterval
 }

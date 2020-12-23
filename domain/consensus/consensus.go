@@ -184,6 +184,13 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
+func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningStore.PruningPoint(s.databaseContext)
+}
+
 func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -257,6 +264,10 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	defer s.lock.Unlock()
 
 	return s.syncManager.GetSyncInfo()
+}
+
+func (s *consensus) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
+	return s.pruningManager.IsValidPruningPoint(block)
 }
 
 func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {

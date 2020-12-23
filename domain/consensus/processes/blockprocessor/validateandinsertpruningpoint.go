@@ -10,16 +10,15 @@ import (
 func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
 
-	expectedNewPruningPointHash, err := bp.pruningManager.CalculatePruningPointByHeaderSelectedTip()
+	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
+	isValidPruningPoint, err := bp.pruningManager.IsValidPruningPoint(newPruningPointHash)
 	if err != nil {
 		return err
 	}
 
-	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
-
-	if !expectedNewPruningPointHash.Equal(newPruningPointHash) {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "expected pruning point %s but got %s",
-			expectedNewPruningPointHash, newPruningPointHash)
+	if !isValidPruningPoint {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedPruningPoint, "%s is not a valid pruning point",
+			newPruningPointHash)
 	}
 
 	// We have to validate the pruning point block before we set the new pruning point in consensusStateManager.

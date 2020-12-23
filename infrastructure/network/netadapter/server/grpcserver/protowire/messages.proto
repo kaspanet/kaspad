@@ -30,6 +30,8 @@ message KaspadMessage {
     IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     IBDRootNotFoundMessage ibdRootNotFound = 27;
+    RequestIBDRootHash requestIBDRootHash = 28;
+    IBDRootHash ibdRootHash = 29;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -296,6 +298,17 @@ message RequestIBDBlocksMessage{
 message IBDRootNotFoundMessage{
 }
 // IBDRootNotFoundMessage end
+
+// RequestIBDRootHash start
+message RequestIBDRootHash{
+}
+// RequestIBDRootHash end
+
+// IBDRootHash start
+message IBDRootHash{
+  Hash hash = 1;
+}
+// IBDRootHash end
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
