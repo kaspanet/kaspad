@@ -89,7 +89,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
 	spawn("solveLoop", func() {
-		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
+		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced)
 	})
 }
 
@@ -151,16 +151,17 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 }
 
 func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *externalapi.DomainBlock,
-	mineWhenNotSynced bool, errChan chan error) {
+	mineWhenNotSynced bool) {
 
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
-		if stopOldTemplateSolving != nil {
-			close(stopOldTemplateSolving)
-		}
 		if !template.IsSynced && !mineWhenNotSynced {
 			log.Warnf("Kaspad is not synced. Skipping current block template")
 			continue
+		}
+
+		if stopOldTemplateSolving != nil {
+			close(stopOldTemplateSolving)
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
