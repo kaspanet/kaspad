@@ -159,7 +159,7 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 			close(stopOldTemplateSolving)
 		}
 		if !template.IsSynced && !mineWhenNotSynced {
-			log.Warnf("Kaspad is not synced. Skipping this block template")
+			log.Warnf("Kaspad is not synced. Skipping current block template")
 			continue
 		}
 
