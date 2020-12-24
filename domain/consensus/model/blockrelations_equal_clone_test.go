@@ -1,17 +1,24 @@
 package model
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 func initTestBlockRelationsForClone() []*BlockRelations {
 
 	tests := []*BlockRelations{
 		{
-			[]*externalapi.DomainHash{{1}, {2}},
-			[]*externalapi.DomainHash{{3}, {4}},
+			[]*externalapi.DomainHash{
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+			},
+			[]*externalapi.DomainHash{
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
+			},
 		},
 	}
 	return tests
@@ -30,23 +37,47 @@ type testBlockRelationsStruct struct {
 func initTestBlockRelationsForEqual() []testBlockRelationsStruct {
 
 	var testBlockRelationsBase = BlockRelations{
-		[]*externalapi.DomainHash{{1}, {2}},
-		[]*externalapi.DomainHash{{3}, {4}},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+		},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
+		},
 	}
 	//First test: structs are equal
 	var testBlockRelations1 = BlockRelations{
-		[]*externalapi.DomainHash{{1}, {2}},
-		[]*externalapi.DomainHash{{3}, {4}},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+		},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
+		},
 	}
 	//Second test: children changed
 	var testBlockRelations2 = BlockRelations{
-		[]*externalapi.DomainHash{{1}, {2}},
-		[]*externalapi.DomainHash{{3}, {5}},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+		},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{5}),
+		},
 	}
 	//Third test: parents changed
 	var testBlockRelations3 = BlockRelations{
-		[]*externalapi.DomainHash{{6}, {2}},
-		[]*externalapi.DomainHash{{3}, {4}},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{6}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+		},
+		[]*externalapi.DomainHash{
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
+		},
 	}
 
 	tests := []testBlockRelationsStruct{

@@ -99,7 +99,7 @@ func (ms *multisetStore) Delete(blockHash *externalapi.DomainHash) {
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (ms *multisetStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {

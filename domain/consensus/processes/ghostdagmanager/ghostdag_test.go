@@ -56,7 +56,6 @@ func TestGHOSTDAG(t *testing.T) {
 		{ghostdag2.New, "Tal's impl"},
 	}
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		dagTopology := &DAGTopologyManagerImpl{
 			parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
 		}
@@ -95,8 +94,7 @@ func TestGHOSTDAG(t *testing.T) {
 			}
 			params.K = test.K
 
-			var genesisHash externalapi.DomainHash
-			copy(genesisHash[:], test.GenesisID)
+			genesisHash := *StringToDomainHash(test.GenesisID)
 
 			dagTopology.parentsMap[genesisHash] = nil
 
@@ -108,10 +106,10 @@ func TestGHOSTDAG(t *testing.T) {
 				g := factory.function(nil, dagTopology, ghostdagDataStore, blockHeadersStore, test.K)
 				for _, testBlockData := range test.Blocks {
 
-					blockID := StringToByte(testBlockData.ID)
-					dagTopology.parentsMap[*blockID] = StringToByteArray(testBlockData.Parents)
+					blockID := StringToDomainHash(testBlockData.ID)
+					dagTopology.parentsMap[*blockID] = StringToDomainHashSlice(testBlockData.Parents)
 					blockHeadersStore.dagMap[*blockID] = &externalapi.DomainBlockHeader{
-						ParentHashes: StringToByteArray(testBlockData.Parents),
+						ParentHashes: StringToDomainHashSlice(testBlockData.Parents),
 						Bits:         genesisHeader.Bits,
 					}
 
@@ -137,17 +135,17 @@ func TestGHOSTDAG(t *testing.T) {
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.Score, ghostdagData.BlueScore())
 					}
 
-					if !StringToByte(testBlockData.SelectedParent).Equal(ghostdagData.SelectedParent()) {
-						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected selected parent %v but got %v.",
-							factory.implName, info.Name(), testBlockData.ID, testBlockData.SelectedParent, string(ghostdagData.SelectedParent()[:]))
+					if !StringToDomainHash(testBlockData.SelectedParent).Equal(ghostdagData.SelectedParent()) {
+						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected selected parent %v but got %s.",
+							factory.implName, info.Name(), testBlockData.ID, testBlockData.SelectedParent, ghostdagData.SelectedParent())
 					}
 
-					if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues()) {
+					if !reflect.DeepEqual(StringToDomainHashSlice(testBlockData.MergeSetBlues), ghostdagData.MergeSetBlues()) {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected merge set blues %v but got %v.",
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetBlues, hashesToStrings(ghostdagData.MergeSetBlues()))
 					}
 
-					if !reflect.DeepEqual(StringToByteArray(testBlockData.MergeSetReds), ghostdagData.MergeSetReds()) {
+					if !reflect.DeepEqual(StringToDomainHashSlice(testBlockData.MergeSetReds), ghostdagData.MergeSetReds()) {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: expected merge set reds %v but got %v.",
 							factory.implName, info.Name(), testBlockData.ID, testBlockData.MergeSetReds, hashesToStrings(ghostdagData.MergeSetReds()))
 					}
@@ -175,21 +173,21 @@ func TestGHOSTDAG(t *testing.T) {
 func hashesToStrings(arr []*externalapi.DomainHash) []string {
 	var strArr = make([]string, len(arr))
 	for i, hash := range arr {
-		strArr[i] = string(hash[:])
+		strArr[i] = hash.String()
 	}
 	return strArr
 }
 
-func StringToByte(strID string) *externalapi.DomainHash {
-	var domainHash externalapi.DomainHash
-	copy(domainHash[:], strID)
-	return &domainHash
+func StringToDomainHash(strID string) *externalapi.DomainHash {
+	var genesisHashArray [externalapi.DomainHashSize]byte
+	copy(genesisHashArray[:], strID)
+	return externalapi.NewDomainHashFromByteArray(&genesisHashArray)
 }
 
-func StringToByteArray(stringIDArr []string) []*externalapi.DomainHash {
+func StringToDomainHashSlice(stringIDArr []string) []*externalapi.DomainHash {
 	domainHashArr := make([]*externalapi.DomainHash, len(stringIDArr))
 	for i, strID := range stringIDArr {
-		domainHashArr[i] = StringToByte(strID)
+		domainHashArr[i] = StringToDomainHash(strID)
 	}
 	return domainHashArr
 }

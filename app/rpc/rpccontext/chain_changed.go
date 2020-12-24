@@ -1,7 +1,6 @@
 package rpccontext
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -14,7 +13,7 @@ func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotifi
 
 	removedChainBlockHashes := make([]string, len(selectedParentChainChanges.Removed))
 	for i, removed := range selectedParentChainChanges.Removed {
-		removedChainBlockHashes[i] = hex.EncodeToString(removed[:])
+		removedChainBlockHashes[i] = removed.String()
 	}
 
 	addedChainBlocks := make([]*appmessage.ChainBlock, len(selectedParentChainChanges.Added))
@@ -28,16 +27,16 @@ func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotifi
 			acceptedTransactionIDs := make([]string, len(acceptedBlock.TransactionAcceptanceData))
 			for k, transaction := range acceptedBlock.TransactionAcceptanceData {
 				transactionID := consensushashing.TransactionID(transaction.Transaction)
-				acceptedTransactionIDs[k] = hex.EncodeToString(transactionID[:])
+				acceptedTransactionIDs[k] = transactionID.String()
 			}
 			acceptedBlocks[j] = &appmessage.AcceptedBlock{
-				Hash:                   hex.EncodeToString(acceptedBlock.BlockHash[:]),
+				Hash:                   acceptedBlock.BlockHash.String(),
 				AcceptedTransactionIDs: acceptedTransactionIDs,
 			}
 		}
 
 		addedChainBlocks[i] = &appmessage.ChainBlock{
-			Hash:           hex.EncodeToString(added[:]),
+			Hash:           added.String(),
 			AcceptedBlocks: acceptedBlocks,
 		}
 	}

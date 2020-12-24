@@ -63,9 +63,9 @@ func (header *DomainBlockHeader) Clone() *DomainBlockHeader {
 	return &DomainBlockHeader{
 		Version:              header.Version,
 		ParentHashes:         CloneHashes(header.ParentHashes),
-		HashMerkleRoot:       *header.HashMerkleRoot.Clone(),
-		AcceptedIDMerkleRoot: *header.AcceptedIDMerkleRoot.Clone(),
-		UTXOCommitment:       *header.UTXOCommitment.Clone(),
+		HashMerkleRoot:       header.HashMerkleRoot,
+		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
+		UTXOCommitment:       header.UTXOCommitment,
 		TimeInMilliseconds:   header.TimeInMilliseconds,
 		Bits:                 header.Bits,
 		Nonce:                header.Nonce,

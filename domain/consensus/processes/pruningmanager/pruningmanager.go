@@ -198,7 +198,14 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 			return err
 		}
 		if !hasPruningPointInPast {
-			isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOf(model.VirtualBlockHash, tip)
+			virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+			if err != nil {
+				return err
+			}
+
+			// Because virtual doesn't have reachability data, we need to check reachability
+			// using it parents.
+			isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(tip, virtualParents)
 			if err != nil {
 				return err
 			}

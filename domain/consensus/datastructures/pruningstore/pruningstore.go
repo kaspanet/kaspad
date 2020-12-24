@@ -22,7 +22,7 @@ type pruningStore struct {
 }
 
 func (ps *pruningStore) StagePruningPointCandidate(candidate *externalapi.DomainHash) {
-	ps.pruningPointCandidateStaging = candidate.Clone()
+	ps.pruningPointCandidateStaging = candidate
 }
 
 func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader) (*externalapi.DomainHash, error) {
@@ -66,7 +66,7 @@ func New() model.PruningStore {
 
 // Stage stages the pruning state
 func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte) {
-	ps.pruningPointStaging = pruningPointBlockHash.Clone()
+	ps.pruningPointStaging = pruningPointBlockHash
 	ps.serializedUTXOSetStaging = pruningPointUTXOSetBytes
 }
 

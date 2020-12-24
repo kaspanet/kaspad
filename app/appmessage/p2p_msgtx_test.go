@@ -7,12 +7,11 @@ package appmessage
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
@@ -185,7 +184,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 
 	hash2Str := "0c60a073b56ff0510307e3efbb5e1881c3b1b97b4f0a69e4220042a15596766b"
-	wantHash2, err := hashes.FromString(hash2Str)
+	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
@@ -201,7 +200,7 @@ func TestTxHashAndID(t *testing.T) {
 	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
-			TxID:  externalapi.DomainTransactionID{1, 2, 3},
+			TxID:  *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{1, 2, 3}),
 		},
 		SignatureScript: []byte{
 			0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,

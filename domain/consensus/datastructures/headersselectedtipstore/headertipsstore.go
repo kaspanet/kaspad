@@ -56,7 +56,7 @@ func (hts *headerSelectedTipStore) Commit(dbTx model.DBTransaction) error {
 }
 
 func (hts *headerSelectedTipStore) Stage(selectedTip *externalapi.DomainHash) {
-	hts.staging = selectedTip.Clone()
+	hts.staging = selectedTip
 }
 
 func (hts *headerSelectedTipStore) IsStaged() bool {
@@ -65,11 +65,11 @@ func (hts *headerSelectedTipStore) IsStaged() bool {
 
 func (hts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader) (*externalapi.DomainHash, error) {
 	if hts.staging != nil {
-		return hts.staging.Clone(), nil
+		return hts.staging, nil
 	}
 
 	if hts.cache != nil {
-		return hts.cache.Clone(), nil
+		return hts.cache, nil
 	}
 
 	selectedTipBytes, err := dbContext.Get(headerSelectedTipKey)
@@ -82,7 +82,7 @@ func (hts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader) 
 		return nil, err
 	}
 	hts.cache = selectedTip
-	return hts.cache.Clone(), nil
+	return hts.cache, nil
 }
 
 func (hts *headerSelectedTipStore) serializeHeadersSelectedTip(selectedTip *externalapi.DomainHash) ([]byte, error) {

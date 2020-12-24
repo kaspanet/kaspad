@@ -1,12 +1,12 @@
 package rpccontext
 
 import (
-	"encoding/hex"
+	"sync"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-	"sync"
 )
 
 // NotificationManager manages notifications for the RPC
@@ -236,7 +236,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Removed = append(notification.Removed, &appmessage.UTXOsByAddressesEntry{
 					Address: listenerAddress.Address,
 					Outpoint: &appmessage.RPCOutpoint{
-						TransactionID: hex.EncodeToString(outpoint.TransactionID[:]),
+						TransactionID: outpoint.TransactionID.String(),
 						Index:         outpoint.Index,
 					},
 				})

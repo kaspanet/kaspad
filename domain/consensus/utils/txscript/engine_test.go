@@ -26,7 +26,7 @@ func TestBadPC(t *testing.T) {
 	inputs := []*externalapi.DomainTransactionInput{
 		{
 			PreviousOutpoint: externalapi.DomainOutpoint{
-				TransactionID: externalapi.DomainTransactionID([32]byte{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -95,7 +95,7 @@ func TestCheckErrorCondition(t *testing.T) {
 		func() {
 			inputs := []*externalapi.DomainTransactionInput{{
 				PreviousOutpoint: externalapi.DomainOutpoint{
-					TransactionID: externalapi.DomainTransactionID([32]byte{
+					TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -223,7 +223,7 @@ func TestDisasmPC(t *testing.T) {
 	// tx with almost empty scripts.
 	inputs := []*externalapi.DomainTransactionInput{{
 		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: externalapi.DomainTransactionID([32]byte{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,
@@ -287,7 +287,7 @@ func TestDisasmScript(t *testing.T) {
 	// tx with almost empty scripts.
 	inputs := []*externalapi.DomainTransactionInput{{
 		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: externalapi.DomainTransactionID([32]byte{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,

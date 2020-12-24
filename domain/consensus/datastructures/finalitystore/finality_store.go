@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
@@ -43,7 +42,7 @@ func (fs *finalityStore) FinalityPoint(
 	if err != nil {
 		return nil, err
 	}
-	finalityPointHash, err := hashes.FromBytes(finalityPointHashBytes)
+	finalityPointHash, err := externalapi.NewDomainHashFromByteSlice(finalityPointHashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (fs *finalityStore) Discard() {
 
 func (fs *finalityStore) Commit(dbTx model.DBTransaction) error {
 	for hash, finalityPointHash := range fs.staging {
-		err := dbTx.Put(fs.hashAsKey(&hash), finalityPointHash[:])
+		err := dbTx.Put(fs.hashAsKey(&hash), finalityPointHash.ByteSlice())
 		if err != nil {
 			return err
 		}
@@ -74,5 +73,5 @@ func (fs *finalityStore) IsStaged() bool {
 }
 
 func (fs *finalityStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }

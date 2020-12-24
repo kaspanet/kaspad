@@ -137,7 +137,7 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 }
 
 func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return reachabilityDataBucket.Key(hash[:])
+	return reachabilityDataBucket.Key(hash.ByteSlice())
 }
 
 func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData *model.ReachabilityData) ([]byte, error) {

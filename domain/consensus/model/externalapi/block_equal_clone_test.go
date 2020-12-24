@@ -24,17 +24,19 @@ func initTestBaseTransactions() []*DomainTransaction {
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}),
 	}}
 	return testTx
 }
@@ -48,17 +50,19 @@ func initTestAnotherTransactions() []*DomainTransaction {
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 	}}
 	return testTx
 }
@@ -72,17 +76,19 @@ func initTestTwoTransactions() []*DomainTransaction {
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 	}, {
 		Version:      1,
 		Inputs:       []*DomainTransactionInput{},
@@ -90,17 +96,19 @@ func initTestTwoTransactions() []*DomainTransaction {
 		LockTime:     1,
 		SubnetworkID: DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: DomainHash{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: &DomainTransactionID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 	}}
 	return testTx
 }
@@ -112,10 +120,10 @@ func initTestBlockStructsForClone() []*DomainBlock {
 			&DomainBlockHeader{
 
 				0,
-				[]*DomainHash{{0}},
-				DomainHash{1},
-				DomainHash{2},
-				DomainHash{3},
+				[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 				4,
 				5,
 				6,
@@ -126,9 +134,9 @@ func initTestBlockStructsForClone() []*DomainBlock {
 
 				0,
 				[]*DomainHash{},
-				DomainHash{1},
-				DomainHash{2},
-				DomainHash{3},
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 				4,
 				5,
 				6,
@@ -153,10 +161,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{0}},
-							DomainHash{1},
-							DomainHash{2},
-							DomainHash{3},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 							4,
 							5,
 							6,
@@ -169,10 +177,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 			baseBlock: &DomainBlock{
 				&DomainBlockHeader{
 					0,
-					[]*DomainHash{{1}},
-					DomainHash{2},
-					DomainHash{3},
-					DomainHash{4},
+					[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+					*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+					*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+					*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 					5,
 					6,
 					7,
@@ -188,10 +196,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -203,10 +211,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -218,10 +226,13 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}, {2}}, // Changed
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{
+								NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+								NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -233,10 +244,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{100}}, // Changed
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{100})}, // Changed
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -248,10 +259,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{100}, // Changed
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -263,10 +274,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{100}, // Changed
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
@@ -278,10 +289,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{100}, // Changed
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
 							5,
 							6,
 							7,
@@ -293,10 +304,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							100, // Changed
 							6,
 							7,
@@ -308,10 +319,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							100, // Changed
 							7,
@@ -323,10 +334,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &DomainBlock{
 						&DomainBlockHeader{
 							0,
-							[]*DomainHash{{1}},
-							DomainHash{2},
-							DomainHash{3},
-							DomainHash{4},
+							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 							5,
 							6,
 							100, // Changed

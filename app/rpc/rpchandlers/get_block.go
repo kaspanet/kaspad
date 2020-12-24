@@ -3,7 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -12,7 +12,7 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 	getBlockRequest := request.(*appmessage.GetBlockRequestMessage)
 
 	// Load the raw block bytes from the database.
-	hash, err := hashes.FromString(getBlockRequest.Hash)
+	hash, err := externalapi.NewDomainHashFromString(getBlockRequest.Hash)
 	if err != nil {
 		errorMessage := &appmessage.GetBlockResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Hash could not be parsed: %s", err)

@@ -168,7 +168,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 		}
 		tx := appmessage.MsgTxToDomainTransaction(msgTx)
 		txID := consensushashing.TransactionID(tx)
-		if txID != expectedID {
+		if !txID.Equal(expectedID) {
 			return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 				expectedID, txID)
 		}
