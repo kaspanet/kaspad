@@ -180,11 +180,11 @@ func (uds *utxoDiffStore) Delete(blockHash *externalapi.DomainHash) {
 }
 
 func (uds *utxoDiffStore) utxoDiffHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return utxoDiffBucket.Key(hash.BytesSlice())
+	return utxoDiffBucket.Key(hash.ByteSlice())
 }
 
 func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return utxoDiffChildBucket.Key(hash.BytesSlice())
+	return utxoDiffChildBucket.Key(hash.ByteSlice())
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff model.UTXODiff) ([]byte, error) {

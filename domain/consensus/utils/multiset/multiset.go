@@ -20,7 +20,9 @@ func (m multiset) Remove(data []byte) {
 }
 
 func (m multiset) Hash() *externalapi.DomainHash {
-	return externalapi.NewDomainHashFromByteArray((*[secp256k1.HashSize]byte)(m.ms.Finalize()))
+	finalizedHash := m.ms.Finalize()
+	finalizedHashAsByteArray := (*[secp256k1.HashSize]byte)(finalizedHash)
+	return externalapi.NewDomainHashFromByteArray(finalizedHashAsByteArray)
 }
 
 func (m multiset) Serialize() []byte {

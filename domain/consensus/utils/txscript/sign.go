@@ -22,7 +22,7 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script []byte,
 	if err != nil {
 		return nil, err
 	}
-	secpHash := secp256k1.Hash(*hash.BytesArray())
+	secpHash := secp256k1.Hash(*hash.ByteArray())
 	signature, err := key.SchnorrSign(&secpHash)
 	if err != nil {
 		return nil, errors.Errorf("cannot sign tx input: %s", err)

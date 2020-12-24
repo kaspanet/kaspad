@@ -11,8 +11,8 @@ import (
 //   +1 if a >  b
 //
 func cmp(a, b *externalapi.DomainHash) int {
-	aBytes := a.BytesArray()
-	bBytes := b.BytesArray()
+	aBytes := a.ByteArray()
+	bBytes := b.ByteArray()
 	// We compare the hashes backwards because Hash is stored as a little endian byte array.
 	for i := externalapi.DomainHashSize - 1; i >= 0; i-- {
 		switch {

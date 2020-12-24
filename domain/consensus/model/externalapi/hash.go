@@ -58,17 +58,17 @@ func (hash DomainHash) String() string {
 	return hex.EncodeToString(hash.hashArray[:])
 }
 
-// BytesArray returns the bytes in this hash represented as a bytes array.
+// ByteArray returns the bytes in this hash represented as a byte array.
 // The hash bytes are cloned, therefore it is safe to modify the resulting array.
-func (hash *DomainHash) BytesArray() *[DomainHashSize]byte {
+func (hash *DomainHash) ByteArray() *[DomainHashSize]byte {
 	arrayClone := hash.hashArray
 	return &arrayClone
 }
 
-// BytesSlice returns the bytes in this hash represented as a bytes slice.
+// ByteSlice returns the bytes in this hash represented as a byte slice.
 // The hash bytes are cloned, therefore it is safe to modify the resulting slice.
-func (hash *DomainHash) BytesSlice() []byte {
-	return hash.BytesArray()[:]
+func (hash *DomainHash) ByteSlice() []byte {
+	return hash.ByteArray()[:]
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's

@@ -66,14 +66,14 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case externalapi.DomainHash:
-		_, err := w.Write(e.BytesSlice())
+		_, err := w.Write(e.ByteSlice())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case *externalapi.DomainHash:
-		_, err := w.Write(e.BytesSlice())
+		_, err := w.Write(e.ByteSlice())
 		if err != nil {
 			return err
 		}

@@ -57,7 +57,7 @@ func (fs *finalityStore) Discard() {
 
 func (fs *finalityStore) Commit(dbTx model.DBTransaction) error {
 	for hash, finalityPointHash := range fs.staging {
-		err := dbTx.Put(fs.hashAsKey(&hash), finalityPointHash.BytesSlice())
+		err := dbTx.Put(fs.hashAsKey(&hash), finalityPointHash.ByteSlice())
 		if err != nil {
 			return err
 		}
@@ -73,5 +73,5 @@ func (fs *finalityStore) IsStaged() bool {
 }
 
 func (fs *finalityStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.BytesSlice())
+	return bucket.Key(hash.ByteSlice())
 }

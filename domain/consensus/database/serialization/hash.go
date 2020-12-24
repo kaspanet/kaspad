@@ -11,7 +11,7 @@ func DbHashToDomainHash(dbHash *DbHash) (*externalapi.DomainHash, error) {
 
 // DomainHashToDbHash converts a DomainHash to a DbHash
 func DomainHashToDbHash(domainHash *externalapi.DomainHash) *DbHash {
-	return &DbHash{Hash: domainHash.BytesSlice()}
+	return &DbHash{Hash: domainHash.ByteSlice()}
 }
 
 // DomainHashesToDbHashes converts a slice of DomainHash to a slice of DbHash

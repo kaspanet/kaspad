@@ -2052,7 +2052,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	var valid bool
-	secpHash := secp256k1.Hash(*sigHash.BytesArray())
+	secpHash := secp256k1.Hash(*sigHash.ByteArray())
 	if vm.sigCache != nil {
 
 		valid = vm.sigCache.Exists(secpHash, signature, pubKey)
@@ -2246,7 +2246,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			return err
 		}
 
-		secpHash := secp256k1.Hash(*sigHash.BytesArray())
+		secpHash := secp256k1.Hash(*sigHash.ByteArray())
 		var valid bool
 		if vm.sigCache != nil {
 			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)

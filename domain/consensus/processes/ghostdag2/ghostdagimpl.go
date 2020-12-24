@@ -123,8 +123,8 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 
 /* --------isMoreHash(w, selectedParent)----------------*/
 func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
-	parentByteArray := parent.BytesArray()
-	selectedParentByteArray := selectedParent.BytesArray()
+	parentByteArray := parent.ByteArray()
+	selectedParentByteArray := selectedParent.ByteArray()
 	//Check if parentHash is more then selectedParentHash
 	for i := len(parentByteArray) - 1; i >= 0; i-- {
 		switch {

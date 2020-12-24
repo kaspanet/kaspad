@@ -12,5 +12,5 @@ func DbTransactionIDToDomainTransactionID(dbTransactionID *DbTransactionId) (*ex
 
 // DomainTransactionIDToDbTransactionID converts DomainTransactionID to DbTransactionId
 func DomainTransactionIDToDbTransactionID(domainTransactionID *externalapi.DomainTransactionID) *DbTransactionId {
-	return &DbTransactionId{TransactionId: domainTransactionID.BytesSlice()}
+	return &DbTransactionId{TransactionId: domainTransactionID.ByteSlice()}
 }

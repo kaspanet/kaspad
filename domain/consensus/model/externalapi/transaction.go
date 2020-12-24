@@ -305,14 +305,14 @@ func (id *DomainTransactionID) Equal(other *DomainTransactionID) bool {
 	return (*DomainHash)(id).Equal((*DomainHash)(other))
 }
 
-// BytesArray returns the bytes in this transactionID represented as a bytes array.
+// ByteArray returns the bytes in this transactionID represented as a byte array.
 // The transactionID bytes are cloned, therefore it is safe to modify the resulting array.
-func (id *DomainTransactionID) BytesArray() *[DomainHashSize]byte {
-	return (*DomainHash)(id).BytesArray()
+func (id *DomainTransactionID) ByteArray() *[DomainHashSize]byte {
+	return (*DomainHash)(id).ByteArray()
 }
 
-// BytesSlice returns the bytes in this transactionID represented as a bytes slice.
+// ByteSlice returns the bytes in this transactionID represented as a byte slice.
 // The transactionID bytes are cloned, therefore it is safe to modify the resulting slice.
-func (id *DomainTransactionID) BytesSlice() []byte {
-	return (*DomainHash)(id).BytesSlice()
+func (id *DomainTransactionID) ByteSlice() []byte {
+	return (*DomainHash)(id).ByteSlice()
 }

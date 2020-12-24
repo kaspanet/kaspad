@@ -30,7 +30,7 @@ func protoHashesToDomain(protoHashes []*Hash) ([]*externalapi.DomainHash, error)
 
 func domainHashToProto(hash *externalapi.DomainHash) *Hash {
 	return &Hash{
-		Bytes: hash.BytesSlice(),
+		Bytes: hash.ByteSlice(),
 	}
 }
 
@@ -60,7 +60,7 @@ func protoTransactionIDsToDomain(protoIDs []*TransactionId) ([]*externalapi.Doma
 
 func domainTransactionIDToProto(id *externalapi.DomainTransactionID) *TransactionId {
 	return &TransactionId{
-		Bytes: id.BytesSlice(),
+		Bytes: id.ByteSlice(),
 	}
 }
 

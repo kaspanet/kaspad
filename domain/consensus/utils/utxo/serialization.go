@@ -44,7 +44,7 @@ func DeserializeUTXO(utxoBytes []byte) (entry externalapi.UTXOEntry, outpoint *e
 }
 
 func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
-	_, err := w.Write(outpoint.TransactionID.BytesSlice())
+	_, err := w.Write(outpoint.TransactionID.ByteSlice())
 	if err != nil {
 		return err
 	}
