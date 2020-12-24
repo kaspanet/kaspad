@@ -155,12 +155,13 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
-		if stopOldTemplateSolving != nil {
-			close(stopOldTemplateSolving)
-		}
 		if !template.IsSynced && !mineWhenNotSynced {
 			log.Warnf("Kaspad is not synced. Skipping current block template")
 			continue
+		}
+
+		if stopOldTemplateSolving != nil {
+			close(stopOldTemplateSolving)
 		}
 
 		stopOldTemplateSolving = make(chan struct{})
