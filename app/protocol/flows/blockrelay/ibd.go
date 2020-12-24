@@ -91,40 +91,6 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) fetchUTXOSetIfMissing() (bool, error) { // TODO: Remove this
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
-	if err != nil {
-		return false, err
-	}
-
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return false, err
-	}
-
-	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
-	if !ok {
-		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
-	}
-
-	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	if !isValid {
-		return false, nil
-	}
-
-	found, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	return found, nil
-}
-
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
 	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
