@@ -24,10 +24,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{0}},
-						DomainHash{1},
-						DomainHash{2},
-						DomainHash{3},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 						4,
 						5,
 						6,
@@ -39,10 +39,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 		{
 			baseHeader: &DomainBlockHeader{
 				0,
-				[]*DomainHash{{1}},
-				DomainHash{2},
-				DomainHash{3},
-				DomainHash{4},
+				[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+				*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 				5,
 				6,
 				7,
@@ -55,10 +55,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -68,10 +68,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						100,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -81,10 +81,13 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}, {2}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						// []*DomainHash{{1}, {2}},
+						[]*DomainHash{
+							NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+							NewDomainHashFromByteArray(&[DomainHashSize]byte{2})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -94,10 +97,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{100}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{100})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -107,10 +110,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{100},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -120,10 +123,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{100},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						7,
@@ -133,10 +136,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{100},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}),
 						5,
 						6,
 						7,
@@ -146,10 +149,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						100,
 						6,
 						7,
@@ -159,10 +162,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						100,
 						7,
@@ -172,10 +175,10 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &DomainBlockHeader{
 						0,
-						[]*DomainHash{{1}},
-						DomainHash{2},
-						DomainHash{3},
-						DomainHash{4},
+						[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+						*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
 						5,
 						6,
 						100,
@@ -205,10 +208,10 @@ func TestDomainBlockHeader_Clone(t *testing.T) {
 	headers := []*DomainBlockHeader{
 		{
 			0,
-			[]*DomainHash{{0}},
-			DomainHash{1},
-			DomainHash{2},
-			DomainHash{3},
+			[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 			4,
 			5,
 			6,
@@ -216,9 +219,9 @@ func TestDomainBlockHeader_Clone(t *testing.T) {
 		{
 			0,
 			[]*DomainHash{},
-			DomainHash{1},
-			DomainHash{2},
-			DomainHash{3},
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+			*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
 			4,
 			5,
 			6,

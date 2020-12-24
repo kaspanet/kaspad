@@ -264,6 +264,26 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 // DomainTransactionID represents the ID of a Kaspa transaction
 type DomainTransactionID DomainHash
 
+func NewDomainTransactionIDFromByteArray(transactionIDBytes *[DomainHashSize]byte) *DomainTransactionID {
+	return (*DomainTransactionID)(NewDomainHashFromByteArray(transactionIDBytes))
+}
+
+func NewDomainTransactionIDFromByteSlice(transactionIDBytes []byte) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromByteSlice(transactionIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
+func NewDomainTransactionIDFromString(transactionIDString string) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromString(transactionIDString)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
 // String stringifies a transaction ID.
 func (id DomainTransactionID) String() string {
 	return DomainHash(id).String()

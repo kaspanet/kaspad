@@ -46,7 +46,6 @@ func NewDomainHashFromString(hashString string) (*DomainHash, error) {
 	}
 
 	return NewDomainHashFromByteSlice(hashBytes)
-
 }
 
 // String returns the Hash as the hexadecimal string of the hash.

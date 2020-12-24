@@ -7,19 +7,19 @@ package appmessage
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // TestRequstIBDBlocks tests the MsgRequestHeaders API.
 func TestRequstIBDBlocks(t *testing.T) {
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	lowHash, err := hashes.FromString(hashStr)
+	lowHash, err := externalapi.NewDomainHashFromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	highHash, err := hashes.FromString(hashStr)
+	highHash, err := externalapi.NewDomainHashFromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
