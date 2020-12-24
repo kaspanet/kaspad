@@ -13,6 +13,7 @@ type BlockGHOSTDAGData interface {
 	SelectedParent() *externalapi.DomainHash
 	MergeSetBlues() []*externalapi.DomainHash
 	MergeSetReds() []*externalapi.DomainHash
+	MergeSet() []*externalapi.DomainHash
 	BluesAnticoneSizes() map[externalapi.DomainHash]KType
 }
 

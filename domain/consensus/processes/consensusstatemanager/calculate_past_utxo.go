@@ -37,7 +37,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	}
 
 	log.Tracef("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
-	acceptanceData, utxoDiff, err := csm.applyBlueBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
+	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -107,14 +107,14 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	return accumulatedDiff, nil
 }
 
-func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainHash,
+func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.DomainHash,
 	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData model.BlockGHOSTDAGData) (
 	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
 
-	log.Tracef("applyBlueBlocks start for block %s", blockHash)
-	defer log.Tracef("applyBlueBlocks end for block %s", blockHash)
+	log.Tracef("applyMergeSetBlocks start for block %s", blockHash)
+	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
 
-	blueBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSetBlues())
+	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSet())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -125,26 +125,26 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 	}
 	log.Tracef("The past median time for block %s is: %d", blockHash, selectedParentMedianTime)
 
-	multiblockAcceptanceData := make(externalapi.AcceptanceData, len(blueBlocks))
+	multiblockAcceptanceData := make(externalapi.AcceptanceData, len(mergeSetBlocks))
 	accumulatedUTXODiff := selectedParentPastUTXODiff
 	accumulatedMass := uint64(0)
 
-	for i, blueBlock := range blueBlocks {
-		blueBlockHash := consensushashing.BlockHash(blueBlock)
-		log.Tracef("Applying blue block %s", blueBlockHash)
+	for i, mergeSetBlock := range mergeSetBlocks {
+		mergeSetBlockHash := consensushashing.BlockHash(mergeSetBlock)
+		log.Tracef("Applying merge set block %s", mergeSetBlockHash)
 		blockAcceptanceData := &externalapi.BlockAcceptanceData{
-			BlockHash:                 blueBlockHash,
-			TransactionAcceptanceData: make([]*externalapi.TransactionAcceptanceData, len(blueBlock.Transactions)),
+			BlockHash:                 mergeSetBlockHash,
+			TransactionAcceptanceData: make([]*externalapi.TransactionAcceptanceData, len(mergeSetBlock.Transactions)),
 		}
 		isSelectedParent := i == 0
-		log.Tracef("Is blue block %s the selected parent: %t", blueBlockHash, isSelectedParent)
+		log.Tracef("Is merge set block %s the selected parent: %t", mergeSetBlockHash, isSelectedParent)
 
-		for j, transaction := range blueBlock.Transactions {
+		for j, transaction := range mergeSetBlock.Transactions {
 			var isAccepted bool
 
 			transactionID := consensushashing.TransactionID(transaction)
 			log.Tracef("Attempting to accept transaction %s in block %s",
-				transactionID, blueBlockHash)
+				transactionID, mergeSetBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
 				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore())
@@ -152,7 +152,7 @@ func (csm *consensusStateManager) applyBlueBlocks(blockHash *externalapi.DomainH
 				return nil, nil, err
 			}
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
-				transactionID, blueBlockHash, isAccepted, transaction.Fee)
+				transactionID, mergeSetBlockHash, isAccepted, transaction.Fee)
 
 			blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
 				Transaction: transaction,

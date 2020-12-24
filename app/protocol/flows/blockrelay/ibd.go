@@ -59,8 +59,8 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		}
 
 		if !isValid {
-			log.Infof("The suggested pruning point is incompatible to this node DAG, so stopping IBD with this" +
-				" peer")
+			log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
+				" peer", msgIBDRootHash.Hash)
 			return nil
 		}
 
@@ -89,40 +89,6 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	log.Debugf("Finished downloading block bodies up to %s", highHash)
 
 	return nil
-}
-
-func (flow *handleRelayInvsFlow) fetchUTXOSetIfMissing() (bool, error) {
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
-	if err != nil {
-		return false, err
-	}
-
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return false, err
-	}
-
-	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
-	if !ok {
-		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
-	}
-
-	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	if !isValid {
-		return false, nil
-	}
-
-	found, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	return found, nil
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {

@@ -25,6 +25,7 @@ type testDomainTransactionStruct struct {
 type transactionInputToCompare struct {
 	tx             *externalapi.DomainTransactionInput
 	expectedResult bool
+	expectsPanic   bool
 }
 
 type testDomainTransactionInputStruct struct {
@@ -291,7 +292,7 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}),
 			},
-			expectedResult: false,
+			expectedResult: true,
 		}, {
 			tx: &externalapi.DomainTransaction{
 				2, //Changed
@@ -317,7 +318,7 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}),
-			}, //6
+			},
 			expectedResult: false,
 		}, {
 			tx: &externalapi.DomainTransaction{
@@ -344,8 +345,8 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
-			}, //7
-			expectedResult: false,
+			},
+			expectsPanic: true,
 		}, {
 			tx: &externalapi.DomainTransaction{
 				1,
@@ -463,14 +464,43 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
-					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3, 4}, true, 2)}},
+					uint64(0xFFFFFFF0), // Changed sequence
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 					[]byte{1, 2}}, {uint64(0xFFFF),
 					[]byte{1, 3}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
+				*externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+				[]byte{0x01},
+				0,
+				1,
+				externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}),
+			},
+			expectedResult: false,
+		},
+		{
+			tx: &externalapi.DomainTransaction{
+				1,
+				[]*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
+					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
+					[]byte{1, 2, 3},
+					uint64(0xFFFFFFFF),
+					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+					[]byte{1, 2}},
+					{uint64(0xFFFF),
+						[]byte{1, 3}}},
+				1,
+				externalapi.DomainSubnetworkID{0x01},
+				2, // Changed
 				*externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -583,7 +613,7 @@ func initTestDomainTransactionForEqual() []testDomainTransactionStruct {
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
 				[]byte{0x01},
-				0,
+				1,
 				1,
 				externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -606,7 +636,7 @@ func initTestDomainTransactionForEqual() []testDomainTransactionStruct {
 						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
 					[]byte{0x01},
-					0,
+					1,
 					1,
 					nil,
 				},
@@ -624,11 +654,29 @@ func initTestDomainTransactionForEqual() []testDomainTransactionStruct {
 						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
 					[]byte{0x01},
-					0,
+					1,
 					1,
 					nil,
 				},
 				expectedResult: true,
+			}, {
+				tx: &externalapi.DomainTransaction{
+					1,
+					[]*externalapi.DomainTransactionInput{},
+					[]*externalapi.DomainTransactionOutput{},
+					1,
+					externalapi.DomainSubnetworkID{0x01},
+					1,
+					*externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+					[]byte{0x01},
+					2, // Changed fee
+					1,
+					nil,
+				},
+				expectsPanic: true,
 			}},
 		},
 	}
@@ -661,7 +709,15 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			uint64(0xFFFFFFFF),
 			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, false, 2), // Changed
 		},
-		expectedResult: false,
+		expectsPanic: true,
+	}, {
+		tx: &externalapi.DomainTransactionInput{
+			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
+			[]byte{1, 2, 3},
+			uint64(0xFFFFFFFF),
+			nil, // Changed
+		},
+		expectedResult: true,
 	}, {
 		tx: &externalapi.DomainTransactionInput{
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
@@ -682,7 +738,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 		tx: &externalapi.DomainTransactionInput{
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0), // Changed
+			uint64(0xFFFFFFFF),
 			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
 		},
 		expectedResult: false,
@@ -690,7 +746,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 		tx: &externalapi.DomainTransactionInput{
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0), // Changed
+			uint64(0xFFFFFFFF),
 			utxo.NewUTXOEntry(2 /* Changed */, []byte{0, 1, 2, 3}, true, 2), // Changed
 		},
 		expectedResult: false,
@@ -698,7 +754,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 		tx: &externalapi.DomainTransactionInput{
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
-			uint64(0xFFFFFFF0), // Changed
+			uint64(0xFFFFFFFF),
 			utxo.NewUTXOEntry(3 /* Changed */, []byte{0, 1, 2, 3}, true, 3), // Changed
 		},
 		expectedResult: false,
@@ -852,7 +908,7 @@ func TestDomainTransaction_Equal(t *testing.T) {
 					r := recover()
 					panicked := r != nil
 					if panicked != subTest.expectsPanic {
-						t.Fatalf("panicked expected to be %t but got %t", subTest.expectsPanic, panicked)
+						t.Fatalf("Test #%d:%d: panicked expected to be %t but got %t: %s", i, j, subTest.expectsPanic, panicked, r)
 					}
 				}()
 				result1 := test.baseTx.Equal(subTest.tx)
@@ -865,7 +921,7 @@ func TestDomainTransaction_Equal(t *testing.T) {
 					r := recover()
 					panicked := r != nil
 					if panicked != subTest.expectsPanic {
-						t.Fatalf("panicked expected to be %t but got %t", subTest.expectsPanic, panicked)
+						t.Fatalf("Test #%d:%d: panicked expected to be %t but got %t: %s", i, j, subTest.expectsPanic, panicked, r)
 					}
 				}()
 				result2 := subTest.tx.Equal(test.baseTx)
@@ -896,14 +952,32 @@ func TestDomainTransactionInput_Equal(t *testing.T) {
 	txTests := initTestDomainTransactionInputForEqual()
 	for i, test := range txTests {
 		for j, subTest := range test.transactionInputToCompareTo {
-			result1 := test.baseTx.Equal(subTest.tx)
-			if result1 != subTest.expectedResult {
-				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
-			}
-			result2 := subTest.tx.Equal(test.baseTx)
-			if result2 != subTest.expectedResult {
-				t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
-			}
+			func() {
+				defer func() {
+					r := recover()
+					panicked := r != nil
+					if panicked != subTest.expectsPanic {
+						t.Fatalf("Test #%d:%d: panicked expected to be %t but got %t: %s", i, j, subTest.expectsPanic, panicked, r)
+					}
+				}()
+				result1 := test.baseTx.Equal(subTest.tx)
+				if result1 != subTest.expectedResult {
+					t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result1)
+				}
+			}()
+			func() {
+				defer func() {
+					r := recover()
+					panicked := r != nil
+					if panicked != subTest.expectsPanic {
+						t.Fatalf("Test #%d:%d: panicked expected to be %t but got %t: %s", i, j, subTest.expectsPanic, panicked, r)
+					}
+				}()
+				result2 := subTest.tx.Equal(test.baseTx)
+				if result2 != subTest.expectedResult {
+					t.Fatalf("Test #%d:%d: Expected %t but got %t", i, j, subTest.expectedResult, result2)
+				}
+			}()
 		}
 	}
 }
