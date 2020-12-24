@@ -155,30 +155,30 @@ func TestDoubleSpends(t *testing.T) {
 }
 
 // TestTransactionAcceptance checks that blue blocks transactions are favoured above
-// red blocks transactions, and that the block reward is payed only for blue blocks.
+// red blocks transactions, and that the block reward is paid only for blue blocks.
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestTransactionAcceptance")
+		testConsensus, teardown, err := factory.NewTestConsensus(params, "TestTransactionAcceptance")
 		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
+			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
 		defer teardown(false)
 
-		fundingBlock1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		fundingBlock1Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock1: %+v", err)
 		}
 
-		fundingBlock2Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock1Hash}, nil, nil)
+		fundingBlock2Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock1Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock2: %+v", err)
 		}
 
-		// Generate fundingBlock3 to pay for fundingBlock1 and fundingBlock2
-		fundingBlock3Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock2Hash}, nil, nil)
+		// Generate fundingBlock3 to pay for fundingBlock2
+		fundingBlock3Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock2Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock3: %+v", err)
 		}
@@ -188,20 +188,20 @@ func TestTransactionAcceptance(t *testing.T) {
 		tipHash := fundingBlock3Hash
 		for i := model.KType(0); i < params.K; i++ {
 			var err error
-			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating fundingBlock1: %+v", err)
 			}
 		}
 
-		fundingBlock2, err := tc.GetBlock(fundingBlock2Hash)
+		fundingBlock2, err := testConsensus.GetBlock(fundingBlock2Hash)
 		if err != nil {
 			t.Fatalf("Error getting fundingBlock: %+v", err)
 		}
 
 		fundingTransaction1 := fundingBlock2.Transactions[transactionhelper.CoinbaseTransactionIndex]
 
-		fundingBlock3, err := tc.GetBlock(fundingBlock3Hash)
+		fundingBlock3, err := testConsensus.GetBlock(fundingBlock3Hash)
 		if err != nil {
 			t.Fatalf("Error getting fundingBlock: %+v", err)
 		}
@@ -218,14 +218,14 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
 
-		redHash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock3Hash}, nil,
+		redHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock3Hash}, nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
 		if err != nil {
 			t.Fatalf("Error creating redBlock: %+v", err)
 		}
 
 		blueScriptPublicKey := []byte{1}
-		blueHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{
+		blueHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: blueScriptPublicKey,
 			ExtraData:       nil,
 		},
@@ -235,13 +235,13 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 
 		// Mining two blocks so tipHash will definitely be the selected tip.
-		tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+		tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating tip: %+v", err)
 		}
 
 		finalTipSelectedParentScriptPublicKey := []byte{3}
-		finalTipSelectedParentHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tipHash},
+		finalTipSelectedParentHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
 				ExtraData:       nil,
@@ -250,28 +250,28 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating tip: %+v", err)
 		}
 
-		finalTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash}, nil,
+		finalTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash}, nil,
 			nil)
 		if err != nil {
 			t.Fatalf("Error creating finalTip: %+v", err)
 		}
 
-		acceptanceData, err := tc.AcceptanceDataStore().Get(tc.DatabaseContext(), finalTipHash)
+		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), finalTipHash)
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
 
-		finalTipSelectedParent, err := tc.GetBlock(finalTipSelectedParentHash)
+		finalTipSelectedParent, err := testConsensus.GetBlock(finalTipSelectedParentHash)
 		if err != nil {
 			t.Fatalf("Error getting finalTipSelectedParent: %+v", err)
 		}
 
-		blue, err := tc.GetBlock(blueHash)
+		blue, err := testConsensus.GetBlock(blueHash)
 		if err != nil {
 			t.Fatalf("Error getting blue: %+v", err)
 		}
 
-		red, err := tc.GetBlock(redHash)
+		red, err := testConsensus.GetBlock(redHash)
 		if err != nil {
 			t.Fatalf("Error getting red: %+v", err)
 		}
@@ -331,7 +331,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("The acceptance data is not the expected acceptance data")
 		}
 
-		finalTip, err := tc.GetBlock(finalTipHash)
+		finalTip, err := testConsensus.GetBlock(finalTipHash)
 		if err != nil {
 			t.Fatalf("Error getting finalTip: %+v", err)
 		}
