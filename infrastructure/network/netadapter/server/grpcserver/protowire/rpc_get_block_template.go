@@ -22,12 +22,13 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 	if err != nil {
 		return nil, err
 	}
-	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock), nil
+	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock, x.GetBlockTemplateResponse.IsSynced), nil
 }
 
 func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
 		BlockMessage: &BlockMessage{},
+		IsSynced:     message.IsSynced,
 	}
 	return x.GetBlockTemplateResponse.BlockMessage.fromAppMessage(message.MsgBlock)
 }

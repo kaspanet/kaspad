@@ -67,3 +67,8 @@ func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowconte
 func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
 }
+
+// IsIBDRunning returns true if IBD is currently running
+func (m *Manager) IsIBDRunning() bool {
+	return m.context.IsIBDRunning()
+}
