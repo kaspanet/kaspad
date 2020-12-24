@@ -89,7 +89,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
 	})
 	spawn("solveLoop", func() {
-		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
+		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced)
 	})
 }
 
@@ -151,7 +151,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 }
 
 func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *externalapi.DomainBlock,
-	mineWhenNotSynced bool, errChan chan error) {
+	mineWhenNotSynced bool) {
 
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
