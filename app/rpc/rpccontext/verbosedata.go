@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"strconv"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
@@ -37,7 +39,7 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
-		ParentHashes:         externalapi.DomainHashesToStrings(blockHeader.ParentHashes),
+		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),

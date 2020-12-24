@@ -3,6 +3,7 @@ package externalapi
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/pkg/errors"
 )
 
@@ -52,7 +53,7 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		LockTime:     tx.LockTime,
 		SubnetworkID: *tx.SubnetworkID.Clone(),
 		Gas:          tx.Gas,
-		PayloadHash:  *tx.PayloadHash.Clone(),
+		PayloadHash:  tx.PayloadHash,
 		Payload:      payloadClone,
 		Fee:          tx.Fee,
 		Mass:         tx.Mass,
@@ -263,6 +264,31 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 // DomainTransactionID represents the ID of a Kaspa transaction
 type DomainTransactionID DomainHash
 
+// NewDomainTransactionIDFromByteArray constructs a new TransactionID out of a byte array
+func NewDomainTransactionIDFromByteArray(transactionIDBytes *[DomainHashSize]byte) *DomainTransactionID {
+	return (*DomainTransactionID)(NewDomainHashFromByteArray(transactionIDBytes))
+}
+
+// NewDomainTransactionIDFromByteSlice constructs a new TransactionID out of a byte slice
+// Returns an error if the length of the byte slice is not exactly `DomainHashSize`
+func NewDomainTransactionIDFromByteSlice(transactionIDBytes []byte) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromByteSlice(transactionIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
+// NewDomainTransactionIDFromString constructs a new TransactionID out of a string
+// Returns an error if the length of the string is not exactly `DomainHashSize * 2`
+func NewDomainTransactionIDFromString(transactionIDString string) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromString(transactionIDString)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
 // String stringifies a transaction ID.
 func (id DomainTransactionID) String() string {
 	return DomainHash(id).String()
@@ -274,15 +300,19 @@ func (id *DomainTransactionID) Clone() *DomainTransactionID {
 	return &idClone
 }
 
-// If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal and Clone accordingly.
-var _ DomainTransactionID = [DomainHashSize]byte{}
-
 // Equal returns whether id equals to other
 func (id *DomainTransactionID) Equal(other *DomainTransactionID) bool {
-	if id == nil || other == nil {
-		return id == other
-	}
+	return (*DomainHash)(id).Equal((*DomainHash)(other))
+}
 
-	return *id == *other
+// ByteArray returns the bytes in this transactionID represented as a byte array.
+// The transactionID bytes are cloned, therefore it is safe to modify the resulting array.
+func (id *DomainTransactionID) ByteArray() *[DomainHashSize]byte {
+	return (*DomainHash)(id).ByteArray()
+}
+
+// ByteSlice returns the bytes in this transactionID represented as a byte slice.
+// The transactionID bytes are cloned, therefore it is safe to modify the resulting slice.
+func (id *DomainTransactionID) ByteSlice() []byte {
+	return (*DomainHash)(id).ByteSlice()
 }

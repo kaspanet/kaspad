@@ -8,7 +8,13 @@ import (
 )
 
 func TestNewErrMissingTxOut(t *testing.T) {
-	outer := NewErrMissingTxOut([]*externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
+	outer := NewErrMissingTxOut(
+		[]*externalapi.DomainOutpoint{
+			{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{255, 255, 255}),
+				Index:         5,
+			},
+		})
 	expectedOuterErr := "ErrMissingTxOut: missing the following outpoint: [(ffffff0000000000000000000000000000000000000000000000000000000000: 5)]"
 	inner := &ErrMissingTxOut{}
 	if !errors.As(outer, inner) {

@@ -29,8 +29,8 @@ func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.Domain
 	// Concatenate the left and right nodes.
 	w := hashes.NewMerkleBranchHashWriter()
 
-	w.InfallibleWrite(left[:])
-	w.InfallibleWrite(right[:])
+	w.InfallibleWrite(left.ByteSlice())
+	w.InfallibleWrite(right.ByteSlice())
 
 	return w.Finalize()
 }

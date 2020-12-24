@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"encoding/hex"
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"testing"
 )
 
 func TestVirtualSelectedParentChain(t *testing.T) {
@@ -26,7 +26,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	// each chain changed notifications contains only one entry
 	// in `added` and nothing in `removed`
 	chain1TipHash := consensushashing.BlockHash(kaspad1.config.NetParams().GenesisBlock)
-	chain1TipHashHex := hex.EncodeToString(chain1TipHash[:])
+	chain1TipHashString := chain1TipHash.String()
 	const blockAmountToMine = 10
 	for i := 0; i < blockAmountToMine; i++ {
 		minedBlock := mineNextBlock(t, kaspad1)
@@ -40,12 +40,12 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		}
 
 		minedBlockHash := consensushashing.BlockHash(minedBlock)
-		minedBlockHashHex := hex.EncodeToString(minedBlockHash[:])
-		if minedBlockHashHex != notification.AddedChainBlocks[0].Hash {
+		minedBlockHashString := minedBlockHash.String()
+		if minedBlockHashString != notification.AddedChainBlocks[0].Hash {
 			t.Fatalf("Unexpected block hash in AddedChainBlocks. Want: %s, got: %s",
-				minedBlockHashHex, notification.AddedChainBlocks[0].Hash)
+				minedBlockHashString, notification.AddedChainBlocks[0].Hash)
 		}
-		chain1TipHashHex = minedBlockHashHex
+		chain1TipHashString = minedBlockHashString
 	}
 
 	// In kaspad2, mine a different chain of `blockAmountToMine`
@@ -61,7 +61,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	// between the two nodes
 	chain2Tip := mineNextBlock(t, kaspad2)
 	chain2TipHash := consensushashing.BlockHash(chain2Tip)
-	chain2TipHashHex := hex.EncodeToString(chain2TipHash[:])
+	chain2TipHashString := chain2TipHash.String()
 
 	// For the first `blockAmountToMine - 1` blocks we don't expect
 	// the chain to change at all
@@ -104,7 +104,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Get the virtual selected parent chain from the tip of
 	// the first chain
-	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(chain1TipHashHex)
+	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(chain1TipHashString)
 	if err != nil {
 		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)
 	}
@@ -123,8 +123,8 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	// Make sure that the last block in `added` is the tip
 	// of chain2
 	lastAddedChainBlock := virtualSelectedParentChainFromChain1Tip.AddedChainBlocks[len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks)-1]
-	if lastAddedChainBlock.Hash != chain2TipHashHex {
+	if lastAddedChainBlock.Hash != chain2TipHashString {
 		t.Fatalf("Unexpected last added chain block. Want: %s, got: %s",
-			chain2TipHashHex, lastAddedChainBlock.Hash)
+			chain2TipHashString, lastAddedChainBlock.Hash)
 	}
 }

@@ -180,7 +180,7 @@ func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, 
 }
 
 func writeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
-	_, err := w.Write(outpoint.TransactionID[:])
+	_, err := w.Write(outpoint.TransactionID.ByteSlice())
 	if err != nil {
 		return err
 	}

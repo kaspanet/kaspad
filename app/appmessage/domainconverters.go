@@ -2,8 +2,8 @@ package appmessage
 
 import (
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -208,7 +208,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	if err != nil {
 		return nil, err
 	}
-	payloadHash, err := hashes.FromBytes(payloadHashBytes)
+	payloadHash, err := externalapi.NewDomainHashFromByteSlice(payloadHashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransaction) *RPCTransaction {
 	inputs := make([]*RPCTransactionInput, len(transaction.Inputs))
 	for i, input := range transaction.Inputs {
-		transactionID := hex.EncodeToString(input.PreviousOutpoint.TransactionID[:])
+		transactionID := input.PreviousOutpoint.TransactionID.String()
 		previousOutpoint := &RPCOutpoint{
 			TransactionID: transactionID,
 			Index:         input.PreviousOutpoint.Index,
@@ -254,7 +254,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		}
 	}
 	subnetworkID := hex.EncodeToString(transaction.SubnetworkID[:])
-	payloadHash := hex.EncodeToString(transaction.PayloadHash[:])
+	payloadHash := transaction.PayloadHash.String()
 	payload := hex.EncodeToString(transaction.Payload)
 	return &RPCTransaction{
 		Version:      transaction.Version,

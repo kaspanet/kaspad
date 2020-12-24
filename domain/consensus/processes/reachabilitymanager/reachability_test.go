@@ -2,11 +2,12 @@ package reachabilitymanager
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type reachabilityDataStoreMock struct {
@@ -87,10 +88,10 @@ type testHelper struct {
 }
 
 func (th *testHelper) generateHash() *externalapi.DomainHash {
-	var hash externalapi.DomainHash
-	binary.LittleEndian.PutUint64(hash[:], th.hashCounter)
+	var hashArray [externalapi.DomainHashSize]byte
+	binary.LittleEndian.PutUint64(hashArray[:], th.hashCounter)
 	th.hashCounter++
-	return &hash
+	return externalapi.NewDomainHashFromByteArray(&hashArray)
 }
 
 func (th *testHelper) newNode() *externalapi.DomainHash {

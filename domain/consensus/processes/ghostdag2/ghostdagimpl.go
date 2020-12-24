@@ -5,10 +5,11 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"math/big"
 )
 
 type ghostdagHelper struct {
@@ -122,12 +123,14 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 
 /* --------isMoreHash(w, selectedParent)----------------*/
 func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
+	parentByteArray := parent.ByteArray()
+	selectedParentByteArray := selectedParent.ByteArray()
 	//Check if parentHash is more then selectedParentHash
-	for i := len(parent) - 1; i >= 0; i-- {
+	for i := len(parentByteArray) - 1; i >= 0; i-- {
 		switch {
-		case parent[i] < selectedParent[i]:
+		case parentByteArray[i] < selectedParentByteArray[i]:
 			return false
-		case parent[i] > selectedParent[i]:
+		case parentByteArray[i] > selectedParentByteArray[i]:
 			return true
 		}
 	}

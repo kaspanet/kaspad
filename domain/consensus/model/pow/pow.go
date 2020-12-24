@@ -37,7 +37,7 @@ func calcPowValue(header *externalapi.DomainBlockHeader) *big.Int {
 
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.NewPoWHashWriter()
-	writer.InfallibleWrite(prePowHash[:])
+	writer.InfallibleWrite(prePowHash.ByteSlice())
 	err := serialization.WriteElement(writer, timestamp)
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
@@ -54,11 +54,11 @@ func calcPowValue(header *externalapi.DomainBlockHeader) *big.Int {
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.
 func toBig(hash *externalapi.DomainHash) *big.Int {
 	// We treat the Hash as little-endian for PoW purposes, but the big package wants the bytes in big-endian, so reverse them.
-	buf := hash.Clone()
+	buf := hash.ByteSlice()
 	blen := len(buf)
 	for i := 0; i < blen/2; i++ {
 		buf[i], buf[blen-1-i] = buf[blen-1-i], buf[i]
 	}
 
-	return new(big.Int).SetBytes(buf[:])
+	return new(big.Int).SetBytes(buf)
 }
