@@ -375,6 +375,7 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 	testTransactionValidator := transactionvalidator.NewTestTransactionValidator(consensusAsImplementation.transactionValidator)
 
 	tstConsensus := &testConsensus{
+		dagParams:                 dagParams,
 		consensus:                 consensusAsImplementation,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
