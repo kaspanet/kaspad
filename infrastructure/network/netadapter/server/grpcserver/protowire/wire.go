@@ -11,7 +11,11 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
-	appMessage, err := x.Payload.(converter).toAppMessage()
+	converter, ok := x.Payload.(converter)
+	if !ok {
+		return nil, errors.Errorf("received invalid message")
+	}
+	appMessage, err := converter.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
