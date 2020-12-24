@@ -344,6 +344,7 @@ message GetBlockTemplateRequestMessage{
 
 message GetBlockTemplateResponseMessage{
   BlockMessage blockMessage = 1;
+  bool isSynced = 2;
 
   RPCError error = 1000;
 }
