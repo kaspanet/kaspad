@@ -14,12 +14,15 @@ type DomainHash struct {
 	hashArray [DomainHashSize]byte
 }
 
+// NewDomainHashFromByteArray constructs a new DomainHash out of a byte array
 func NewDomainHashFromByteArray(hashBytes *[DomainHashSize]byte) *DomainHash {
 	return &DomainHash{
 		hashArray: *hashBytes,
 	}
 }
 
+// NewDomainHashFromByteSlice constructs a new DomainHash out of a byte slice.
+// Returns an error if the length of the byte slice is not exactly `DomainHashSize`
 func NewDomainHashFromByteSlice(hashBytes []byte) (*DomainHash, error) {
 	if len(hashBytes) != DomainHashSize {
 		return nil, errors.Errorf("invalid hash size. Want: %d, got: %d",
@@ -32,6 +35,8 @@ func NewDomainHashFromByteSlice(hashBytes []byte) (*DomainHash, error) {
 	return &domainHash, nil
 }
 
+// NewDomainHashFromString constructs a new DomainHash out of a hex-encoded string.
+// Returns an error if the length of the string is not exactly `DomainHashSize * 2`
 func NewDomainHashFromString(hashString string) (*DomainHash, error) {
 	expectedLength := DomainHashSize * 2
 	// Return error if hash string is too long.
@@ -60,7 +65,7 @@ func (hash *DomainHash) BytesArray() *[DomainHashSize]byte {
 	return &arrayClone
 }
 
-// BytesArray returns the bytes in this hash represented as a bytes slice.
+// BytesSlice returns the bytes in this hash represented as a bytes slice.
 // The hash bytes are cloned, therefore it is safe to modify the resulting slice.
 func (hash *DomainHash) BytesSlice() []byte {
 	return hash.BytesArray()[:]

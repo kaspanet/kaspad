@@ -264,10 +264,13 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 // DomainTransactionID represents the ID of a Kaspa transaction
 type DomainTransactionID DomainHash
 
+// NewDomainTransactionIDFromByteArray constructs a new TransactionID out of a byte array
 func NewDomainTransactionIDFromByteArray(transactionIDBytes *[DomainHashSize]byte) *DomainTransactionID {
 	return (*DomainTransactionID)(NewDomainHashFromByteArray(transactionIDBytes))
 }
 
+// NewDomainTransactionIDFromByteSlice constructs a new TransactionID out of a byte slice
+// Returns an error if the length of the byte slice is not exactly `DomainHashSize`
 func NewDomainTransactionIDFromByteSlice(transactionIDBytes []byte) (*DomainTransactionID, error) {
 	hash, err := NewDomainHashFromByteSlice(transactionIDBytes)
 	if err != nil {
@@ -276,6 +279,8 @@ func NewDomainTransactionIDFromByteSlice(transactionIDBytes []byte) (*DomainTran
 	return (*DomainTransactionID)(hash), nil
 }
 
+// NewDomainTransactionIDFromString constructs a new TransactionID out of a string
+// Returns an error if the length of the string is not exactly `DomainHashSize * 2`
 func NewDomainTransactionIDFromString(transactionIDString string) (*DomainTransactionID, error) {
 	hash, err := NewDomainHashFromString(transactionIDString)
 	if err != nil {
@@ -306,7 +311,7 @@ func (id *DomainTransactionID) BytesArray() *[DomainHashSize]byte {
 	return (*DomainHash)(id).BytesArray()
 }
 
-// BytesArray returns the bytes in this transactionID represented as a bytes slice.
+// BytesSlice returns the bytes in this transactionID represented as a bytes slice.
 // The transactionID bytes are cloned, therefore it is safe to modify the resulting slice.
 func (id *DomainTransactionID) BytesSlice() []byte {
 	return (*DomainHash)(id).BytesSlice()
