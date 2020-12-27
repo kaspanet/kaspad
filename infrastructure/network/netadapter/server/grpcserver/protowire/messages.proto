@@ -494,7 +494,8 @@ message BlockVerboseData{
   repeated string parentHashes = 12;
   string selectedParentHash = 13;
   repeated string transactionIDs = 14;
-  uint64 blueScore = 15;
+  bool isHeaderOnly = 15;
+  uint64 blueScore = 16;
 }
 
 message TransactionVerboseData{
