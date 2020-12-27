@@ -7,8 +7,11 @@ import (
 )
 
 // antiPastHashesBetween returns the hashes of the blocks between the
-// lowHash's antiPast and highHash's antiPast.
-func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+// lowHash's antiPast and highHash's antiPast, or up to
+// `maxBlueScoreDifference`, if non-zero.
+func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash,
+	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
 		return nil, err
@@ -20,6 +23,26 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	if lowBlockGHOSTDAGData.BlueScore() >= highBlockGHOSTDAGData.BlueScore() {
 		return nil, errors.Errorf("low hash blueScore >= high hash blueScore (%d >= %d)",
 			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
+	}
+
+	if maxBlueScoreDifference != 0 {
+		// In order to get no more then maxBlueScoreDifference
+		// blocks from the future of the lowHash (including itself),
+		// we iterate the selected parent chain of the highNode and
+		// stop once we reach
+		// highBlockBlueScore-lowBlockBlueScore+1 <= maxBlueScoreDifference.
+		// That stop point becomes the new highHash.
+		// Using blueScore as an approximation is considered to be
+		// fairly accurate because we presume that most DAG blocks are
+		// blue.
+		for highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
+			highHash = highBlockGHOSTDAGData.SelectedParent()
+			var err error
+			highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// Collect every node in highHash's past (including itself) but
@@ -103,7 +126,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 			lowHash, highHash)
 	}
 
-	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)
+	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,7 @@ type Consensus interface {
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
 
-	GetHashesBetween(lowHash, highHash *DomainHash) ([]*DomainHash, error)
+	GetHashesBetween(lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) ([]*DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
 	GetPruningPointUTXOSet(expectedPruningPointHash *DomainHash) ([]byte, error)
 	PruningPoint() (*DomainHash, error)
