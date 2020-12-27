@@ -54,11 +54,13 @@ func New(
 	}
 }
 
-func (sm *syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (sm *syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
+	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetHashesBetween")
 	defer onEnd()
 
-	return sm.antiPastHashesBetween(lowHash, highHash)
+	return sm.antiPastHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

@@ -292,8 +292,8 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	return false, nil
 }
 
-func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
-	if *pm.genesisHash == *block {
+func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	if *pm.genesisHash == *blockHash {
 		return true, nil
 	}
 
@@ -308,7 +308,7 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, err
 	}
 
-	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(block,
+	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(blockHash,
 		headersSelectedTip)
 	if err != nil {
 		return false, err
@@ -318,7 +318,7 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, nil
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, block)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
 	if err != nil {
 		return false, err
 	}
