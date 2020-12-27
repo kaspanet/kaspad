@@ -3,10 +3,19 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
 	blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+
+	exists, err := csm.blockStatusStore.Exists(csm.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("block %s does not exists", blockHash)
+	}
 
 	// Calculate chain changes between the given blockHash and the
 	// virtual's selected parent. Note that we explicitly don't

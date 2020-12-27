@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
+	"github.com/pkg/errors"
 )
 
 // pruningManager resolves and manages the current pruning point
@@ -292,9 +293,17 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	return false, nil
 }
 
-func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bool, error) {
-	if *pm.genesisHash == *block {
+func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	if *pm.genesisHash == *blockHash {
 		return true, nil
+	}
+
+	exists, err := pm.blockStatusStore.Exists(pm.databaseContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, errors.Errorf("block %s does not exists", blockHash)
 	}
 
 	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext)
@@ -308,7 +317,7 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, err
 	}
 
-	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(block,
+	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(blockHash,
 		headersSelectedTip)
 	if err != nil {
 		return false, err
@@ -318,7 +327,7 @@ func (pm *pruningManager) IsValidPruningPoint(block *externalapi.DomainHash) (bo
 		return false, nil
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, block)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
 	if err != nil {
 		return false, err
 	}

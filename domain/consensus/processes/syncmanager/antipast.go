@@ -78,6 +78,14 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, highHash)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("highHash %s does not exist", highHash)
+	}
+
 	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
 	if err != nil {
 		return nil, err
