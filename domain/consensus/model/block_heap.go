@@ -7,4 +7,5 @@ type BlockHeap interface {
 	Push(blockHash *externalapi.DomainHash) error
 	Pop() *externalapi.DomainHash
 	Len() int
+	ToSlice() []*externalapi.DomainHash
 }

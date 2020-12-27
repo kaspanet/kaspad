@@ -67,14 +67,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		}
 	}
 
-	// Pop hashesUpHeap into a slice. Since hashesUpHeap is
-	// an up-heap, it's guaranteed to be ordered from low to high
-	hashesLength := hashesUpHeap.Len()
-	hashes := make([]*externalapi.DomainHash, hashesLength)
-	for i := 0; i < hashesLength; i++ {
-		hashes[i] = hashesUpHeap.Pop()
-	}
-	return hashes, nil
+	return hashesUpHeap.ToSlice(), nil
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

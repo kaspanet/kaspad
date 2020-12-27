@@ -114,6 +114,16 @@ func (bh *blockHeap) Len() int {
 	return bh.impl.Len()
 }
 
+// ToSlice copies this heap to a slice
+func (bh *blockHeap) ToSlice() []*externalapi.DomainHash {
+	length := bh.Len()
+	hashes := make([]*externalapi.DomainHash, length)
+	for i := 0; i < length; i++ {
+		hashes[i] = bh.Pop()
+	}
+	return hashes
+}
+
 // sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their blueWork+hash, capped by a specific size.
 type sizedUpBlockHeap struct {
 	impl          upHeap
