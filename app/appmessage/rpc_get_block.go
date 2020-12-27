@@ -59,6 +59,7 @@ type BlockVerboseData struct {
 	ParentHashes           []string
 	SelectedParentHash     string
 	BlueScore              uint64
+	IsHeaderOnly           bool
 }
 
 // TransactionVerboseData holds verbose data about a transaction
