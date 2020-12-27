@@ -66,13 +66,6 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	// Block validations passed, save whatever DAG data was
-	// collected so far
-	err = bp.commitAllChanges()
-	if err != nil {
-		return nil, err
-	}
-
 	var oldHeadersSelectedTip *externalapi.DomainHash
 	isGenesis := blockHash.Equal(bp.genesisHash)
 	if !isGenesis {
