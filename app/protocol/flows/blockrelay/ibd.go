@@ -27,6 +27,17 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
+
+	// Make sure that highHash exists and has status HeaderOnly
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
+	if err != nil {
+		return err
+	}
+	if !blockInfo.Exists || blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+		return protocolerrors.Errorf(true, "requested headers up to "+
+			"block %s but never received it", highHash)
+	}
+
 	log.Debugf("Finished downloading headers up to %s", highHash)
 
 	// Fetch the UTXO set if we don't already have it
@@ -47,7 +58,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
 	}
 
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
+	blockInfo, err = flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
 	if err != nil {
 		return err
 	}
