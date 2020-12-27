@@ -79,10 +79,6 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 func (sm *syncManager) findNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (
 	lowHash, highHash *externalapi.DomainHash, err error) {
 
-	if len(blockLocator) == 0 {
-		return nil, nil, errors.Errorf("empty block locator")
-	}
-
 	// Find the most recent locator block hash in the DAG. In case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	highestKnownHash := sm.genesisBlockHash
