@@ -793,7 +793,7 @@ func TestInsertToFutureCoveringSet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("futureCoveringSet: %s", err)
 		}
-		if !reflect.DeepEqual(model.FutureCoveringTreeNodeSet(resultFutureCoveringTreeNodeSet), test.expectedResult) {
+		if !reflect.DeepEqual(resultFutureCoveringTreeNodeSet, test.expectedResult) {
 			t.Errorf("TestInsertToFutureCoveringSet: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, resultFutureCoveringTreeNodeSet)
 		}

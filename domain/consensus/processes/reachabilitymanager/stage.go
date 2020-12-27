@@ -10,7 +10,7 @@ func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data
 }
 
 func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.DomainHash, set model.FutureCoveringTreeNodeSet) error {
-	data, err := rt.data(blockHash)
+	data, err := rt.reachabilityDataForInsertion(blockHash)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.Dom
 }
 
 func (rt *reachabilityManager) stageTreeNode(blockHash *externalapi.DomainHash, node *model.ReachabilityTreeNode) error {
-	data, err := rt.data(blockHash)
+	data, err := rt.reachabilityDataForInsertion(blockHash)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (rt *reachabilityManager) stageReindexRoot(blockHash *externalapi.DomainHas
 }
 
 func (rt *reachabilityManager) addChildAndStage(node, child *externalapi.DomainHash) error {
-	nodeData, err := rt.data(node)
+	nodeData, err := rt.reachabilityDataForInsertion(node)
 	if err != nil {
 		return err
 	}
@@ -46,20 +46,22 @@ func (rt *reachabilityManager) addChildAndStage(node, child *externalapi.DomainH
 }
 
 func (rt *reachabilityManager) stageParent(node, parent *externalapi.DomainHash) error {
-	treeNode, err := rt.treeNode(node)
+	nodeData, err := rt.reachabilityDataForInsertion(node)
 	if err != nil {
 		return err
 	}
+	treeNode := nodeData.TreeNode
 
 	treeNode.Parent = parent
 	return rt.stageTreeNode(node, treeNode)
 }
 
 func (rt *reachabilityManager) stageInterval(node *externalapi.DomainHash, interval *model.ReachabilityInterval) error {
-	treeNode, err := rt.treeNode(node)
+	nodeData, err := rt.reachabilityDataForInsertion(node)
 	if err != nil {
 		return err
 	}
+	treeNode := nodeData.TreeNode
 
 	treeNode.Interval = interval
 	return rt.stageTreeNode(node, treeNode)

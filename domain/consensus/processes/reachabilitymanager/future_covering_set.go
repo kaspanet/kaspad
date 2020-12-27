@@ -24,7 +24,7 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 		return err
 	}
 
-	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(futureCoveringSet, futureNode)
+	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(orderedTreeNodeSet(futureCoveringSet), futureNode)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *exter
 		return false, err
 	}
 
-	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(futureCoveringSet, other)
+	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(orderedTreeNodeSet(futureCoveringSet), other)
 	if err != nil {
 		return false, err
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityManager) data(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+func (rt *reachabilityManager) reachabilityDataForInsertion(blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
 	hasData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
@@ -21,8 +21,8 @@ func (rt *reachabilityManager) data(blockHash *externalapi.DomainHash) (*model.R
 	return rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 }
 
-func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	data, err := rt.data(blockHash)
+func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHa
 }
 
 func (rt *reachabilityManager) treeNode(blockHash *externalapi.DomainHash) (*model.ReachabilityTreeNode, error) {
-	data, err := rt.data(blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*mod
 }
 
 func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	data, err := rt.data(blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*e
 }
 
 func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	data, err := rt.data(blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
