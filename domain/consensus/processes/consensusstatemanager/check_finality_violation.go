@@ -5,11 +5,11 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.DomainHash) (isViolatingFinality bool,
 	shouldSendNotification bool, err error) {
 
-	log.Tracef("isViolatingFinality start for block %s", blockHash)
-	defer log.Tracef("isViolatingFinality end for block %s", blockHash)
+	log.Debugf("isViolatingFinality start for block %s", blockHash)
+	defer log.Debugf("isViolatingFinality end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
-		log.Tracef("Block %s is the genesis block, "+
+		log.Debugf("Block %s is the genesis block, "+
 			"and does not violate finality by definition", blockHash)
 		return false, false, nil
 	}
@@ -19,7 +19,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	if err != nil {
 		return false, false, err
 	}
-	log.Tracef("The virtual finality point is: %s", virtualFinalityPoint)
+	log.Debugf("The virtual finality point is: %s", virtualFinalityPoint)
 
 	// There can be a situation where the virtual points close to the pruning point (or even in the past
 	// of the pruning point before calling validateAndInsertBlock for the pruning point block) and the
@@ -30,7 +30,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	if err != nil {
 		return false, false, err
 	}
-	log.Tracef("The pruning point is: %s", pruningPoint)
+	log.Debugf("The pruning point is: %s", pruningPoint)
 
 	isFinalityPointInPastOfPruningPoint, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, pruningPoint)
 	if err != nil {
@@ -40,7 +40,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	if !isFinalityPointInPastOfPruningPoint {
 		finalityPoint = virtualFinalityPoint
 	} else {
-		log.Tracef("The virtual finality point is %s in the past of the pruning point, so finality is validated "+
+		log.Debugf("The virtual finality point is %s in the past of the pruning point, so finality is validated "+
 			"using the pruning point", virtualFinalityPoint)
 		finalityPoint = pruningPoint
 	}
@@ -60,7 +60,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 		// of the finality point.
 		return true, false, nil
 	}
-	log.Tracef("Block %s does not violate finality", blockHash)
+	log.Debugf("Block %s does not violate finality", blockHash)
 
 	return false, false, nil
 }

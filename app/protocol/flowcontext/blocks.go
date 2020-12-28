@@ -40,11 +40,11 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	for i, newBlock := range newBlocks {
 		blocklogger.LogBlock(block)
 
-		log.Tracef("OnNewBlock: passing block %s transactions to mining manager", hash)
+		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
 		_ = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 
 		if f.onBlockAddedToDAGHandler != nil {
-			log.Tracef("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
+			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
 			blockInsertionResult = newBlockInsertionResults[i]
 			err := f.onBlockAddedToDAGHandler(newBlock, blockInsertionResult)
 			if err != nil {
