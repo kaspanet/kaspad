@@ -100,7 +100,7 @@ func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff model
 			return err
 		}
 
-		log.Debugf("Staging new UTXO diff for virtual diff parent %s: %s", virtualDiffParent, newDiff)
+		log.Debugf("Staging new UTXO diff for virtual diff parent %s", virtualDiffParent)
 		err = csm.stageDiff(virtualDiffParent, newDiff, nil)
 		if err != nil {
 			return err
