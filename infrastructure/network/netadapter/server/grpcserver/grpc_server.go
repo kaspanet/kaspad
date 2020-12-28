@@ -18,7 +18,7 @@ type gRPCServer struct {
 }
 
 // MaxMessageSize is the max size allowed for a message
-const MaxMessageSize = 1024 * 1024 * 10 // 10MB
+const MaxMessageSize = 1024 * 1024 * 1024 // 1GB
 
 // newGRPCServer creates a gRPC server
 func newGRPCServer(listeningAddresses []string) *gRPCServer {

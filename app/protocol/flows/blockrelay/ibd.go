@@ -53,6 +53,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	}
 
 	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgIBDRootHash.Hash)
 		isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
 		if err != nil {
 			return err
