@@ -2,6 +2,7 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
@@ -70,9 +71,12 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		}
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
+	if x.Version > 0xffff {
+		return nil, errors.Errorf("Invalid version size - bigger then uint16")
+	}
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
-		Version:                x.Version,
+		Version:                uint16(x.Version),
 		VersionHex:             x.VersionHex,
 		HashMerkleRoot:         x.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   x.AcceptedIDMerkleRoot,
@@ -100,7 +104,7 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	}
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
-		Version:                message.Version,
+		Version:                uint32(message.Version),
 		VersionHex:             message.VersionHex,
 		HashMerkleRoot:         message.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   message.AcceptedIDMerkleRoot,

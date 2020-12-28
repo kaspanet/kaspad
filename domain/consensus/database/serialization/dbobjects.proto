@@ -9,7 +9,7 @@ message DbBlock {
 }
 
 message DbBlockHeader {
-  int32 version = 1;
+  uint32 version = 1;
   repeated DbHash parentHashes = 2;
   DbHash hashMerkleRoot = 3;
   DbHash acceptedIDMerkleRoot = 4;

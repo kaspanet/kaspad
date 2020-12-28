@@ -25,7 +25,7 @@ func (block *DomainBlock) Clone() *DomainBlock {
 
 // DomainBlockHeader represents the header part of a Kaspa block
 type DomainBlockHeader struct {
-	Version              int32
+	Version              uint16
 	ParentHashes         []*DomainHash
 	HashMerkleRoot       DomainHash
 	AcceptedIDMerkleRoot DomainHash

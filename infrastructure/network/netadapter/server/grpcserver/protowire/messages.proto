@@ -155,7 +155,7 @@ message BlockMessage{
 }
 
 message BlockHeaderMessage{
-  int32 version = 1;
+  uint32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
   Hash acceptedIdMerkleRoot = 4;
@@ -461,7 +461,7 @@ message GetBlockResponseMessage{
 
 message BlockVerboseData{
   string hash = 1;
-  int32 version = 2;
+  uint32 version = 2;
   string versionHex = 3;
   string hashMerkleRoot = 4;
   string acceptedIDMerkleRoot = 5;

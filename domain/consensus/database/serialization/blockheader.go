@@ -2,12 +2,13 @@ package serialization
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts DomainBlockHeader to DbBlockHeader
 func DomainBlockHeaderToDbBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *DbBlockHeader {
 	return &DbBlockHeader{
-		Version:              domainBlockHeader.Version,
+		Version:              uint32(domainBlockHeader.Version),
 		ParentHashes:         DomainHashesToDbHashes(domainBlockHeader.ParentHashes),
 		HashMerkleRoot:       DomainHashToDbHash(&domainBlockHeader.HashMerkleRoot),
 		AcceptedIDMerkleRoot: DomainHashToDbHash(&domainBlockHeader.AcceptedIDMerkleRoot),
@@ -36,9 +37,11 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (*externalap
 	if err != nil {
 		return nil, err
 	}
-
+	if dbBlockHeader.Version > 0xffff {
+		return nil, errors.Errorf("Invalid version size - bigger then uint16")
+	}
 	return &externalapi.DomainBlockHeader{
-		Version:              dbBlockHeader.Version,
+		Version:              uint16(dbBlockHeader.Version),
 		ParentHashes:         parentHashes,
 		HashMerkleRoot:       *hashMerkleRoot,
 		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
