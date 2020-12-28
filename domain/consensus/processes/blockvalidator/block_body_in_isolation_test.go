@@ -122,7 +122,7 @@ const version = 0
 
 var unOrderedParentsBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version: 0x10000000,
+		Version: 0x00000000,
 		ParentHashes: []*externalapi.DomainHash{
 			{
 				0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
@@ -138,10 +138,10 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			},
 		},
 		HashMerkleRoot: externalapi.DomainHash{
-			0xa2, 0x60, 0x5a, 0x45, 0xfe, 0x01, 0x41, 0xc9,
-			0xc2, 0x8d, 0xe2, 0xc3, 0x2d, 0x00, 0xa4, 0x29,
-			0xd4, 0x01, 0x57, 0x2d, 0x2f, 0xcd, 0x49, 0xd4,
-			0xff, 0x6f, 0xab, 0xd2, 0xd1, 0x96, 0x38, 0xb9,
+			0x19, 0xa3, 0x58, 0x3f, 0x41, 0x31, 0x7a, 0x48,
+			0x5f, 0xa7, 0x96, 0xd8, 0x5f, 0xe6, 0x56, 0x18,
+			0x5b, 0x40, 0xdc, 0xa5, 0xe2, 0xda, 0x65, 0xe9,
+			0xaf, 0x0d, 0xa8, 0x8b, 0x78, 0xab, 0xb9, 0x59,
 		},
 		AcceptedIDMerkleRoot: externalapi.DomainHash{
 			0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
@@ -161,7 +161,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 	},
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -186,16 +186,16 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x5d, 0xac, 0x93, 0xd6, 0xd2, 0xa9, 0x68, 0x89,
+				0x97, 0xee, 0x3b, 0x4d, 0x7e, 0x8b, 0xae, 0x3b,
+				0xa7, 0x36, 0xe5, 0xad, 0xbd, 0xdc, 0xee, 0xfa,
+				0xe2, 0x5c, 0x85, 0x18, 0x33, 0xe5, 0xe3, 0x6c,
 			},
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -265,7 +265,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -334,7 +334,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -396,7 +396,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 // exampleValidBlock defines a sample valid block
 var exampleValidBlock = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version: 0x10000000,
+		Version: 0x00000000,
 		ParentHashes: []*externalapi.DomainHash{
 			{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
@@ -412,10 +412,10 @@ var exampleValidBlock = externalapi.DomainBlock{
 			},
 		},
 		HashMerkleRoot: externalapi.DomainHash{
-			0xce, 0xea, 0x78, 0x53, 0x7e, 0x89, 0x67, 0xaf,
-			0xdc, 0x4a, 0xd1, 0x67, 0xb0, 0xc4, 0xfc, 0x6e,
-			0xe5, 0x4b, 0x87, 0xb0, 0x55, 0x8f, 0xf4, 0x6b,
-			0x05, 0x4d, 0x43, 0x0a, 0xb6, 0xbb, 0xe8, 0xdf,
+			0xdf, 0x63, 0xf7, 0x0d, 0x77, 0xf9, 0xc8, 0xb4,
+			0xbc, 0xce, 0x0a, 0x59, 0x43, 0xaf, 0x8b, 0x3a,
+			0xd6, 0x80, 0x51, 0x72, 0x6d, 0xd6, 0x33, 0xc3,
+			0x00, 0xc7, 0x9c, 0x0f, 0x81, 0xf2, 0xb9, 0x39,
 		},
 		AcceptedIDMerkleRoot: externalapi.DomainHash{
 			0x8a, 0xb7, 0xd6, 0x73, 0x1b, 0xe6, 0xc5, 0xd3,
@@ -430,7 +430,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 	},
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -458,16 +458,16 @@ var exampleValidBlock = externalapi.DomainBlock{
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x5d, 0xac, 0x93, 0xd6, 0xd2, 0xa9, 0x68, 0x89,
+				0x97, 0xee, 0x3b, 0x4d, 0x7e, 0x8b, 0xae, 0x3b,
+				0xa7, 0x36, 0xe5, 0xad, 0xbd, 0xdc, 0xee, 0xfa,
+				0xe2, 0x5c, 0x85, 0x18, 0x33, 0xe5, 0xe3, 0x6c,
 			},
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -497,7 +497,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -567,7 +567,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -636,7 +636,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -698,7 +698,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 // blockWithWrongTxOrder defines invalid block 100,000 of the block DAG.
 var blockWithWrongTxOrder = externalapi.DomainBlock{
 	Header: &externalapi.DomainBlockHeader{
-		Version: 1,
+		Version: 0,
 		ParentHashes: []*externalapi.DomainHash{
 			{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
@@ -737,7 +737,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 	},
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -765,16 +765,17 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: externalapi.DomainHash{
-				0x95, 0x7b, 0xde, 0x03, 0xa6, 0x26, 0x1f, 0xf0,
-				0x95, 0x5d, 0x2c, 0x92, 0x07, 0x4b, 0x5c, 0xdc,
-				0xd5, 0xbb, 0x9f, 0x7d, 0x8f, 0xeb, 0x61, 0x16,
-				0xe3, 0xe5, 0x77, 0x16, 0x5e, 0x98, 0x82, 0xa7,
+				0x5d, 0xac, 0x93, 0xd6, 0xd2, 0xa9, 0x68, 0x89,
+				0x97, 0xee, 0x3b, 0x4d, 0x7e, 0x8b, 0xae, 0x3b,
+				0xa7, 0x36, 0xe5, 0xad, 0xbd, 0xdc, 0xee, 0xfa,
+				0xe2, 0x5c, 0x85, 0x18, 0x33, 0xe5, 0xe3, 0x6c,
 			},
 		},
+
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -804,7 +805,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -876,7 +877,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			PayloadHash:  [32]byte{0xFF, 0xFF},
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -945,7 +946,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{

@@ -84,19 +84,21 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction output back out.
 	txValue := uint64(5000000000)
-	scriptPubKey := &externalapi.ScriptPublicKey{[]byte{
-		0x41, // OP_DATA_65
-		0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
-		0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
-		0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
-		0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
-		0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
-		0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
-		0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
-		0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
-		0xa6, // 65-byte signature
-		0xac, // OP_CHECKSIG
-	}, 0}
+	scriptPubKey := &externalapi.ScriptPublicKey{
+		Script: []byte{
+			0x41, // OP_DATA_65
+			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
+			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
+			0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
+			0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
+			0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
+			0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
+			0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
+			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
+			0xa6, // 65-byte signature
+			0xac, // OP_CHECKSIG
+		},
+		Version: 0}
 	txOut := NewTxOut(txValue, scriptPubKey)
 	if txOut.Value != txValue {
 		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
@@ -133,7 +135,7 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "a3d29c39bfb578235e4813cc8138a9ba10def63acad193a7a880159624840d7f"
+	txID1Str := "d88c9ec2660be79c8ed93247e40af00efdf02456e10b76103ccc3e3c8b2dad4a"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -165,7 +167,7 @@ func TestTxHashAndID(t *testing.T) {
 			0xac, // OP_CHECKSIG
 		}, version_cur},
 	}
-	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
+	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
@@ -181,14 +183,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "c84f3009b337aaa3adeb2ffd41010d5f62dd773ca25b39c908a77da91f87b729"
+	hash2Str := "bd77d78707ea99c868225a112b2116f1efeb4ac64fdd2c3884a85853823052d1"
 	wantHash2, err := hashes.FromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "7c919f676109743a1271a88beeb43849a6f9cc653f6082e59a7266f3df4802b9"
+	id2Str := "9be45ec70f713292497f955675ca679621f7f953397db3eb1ec861ed51a75168"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)

@@ -330,15 +330,20 @@ func TestPayToAddrScript(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		scriptPubKey, err := PayToAddrScript(test.in)
+
 		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
 			continue
 		}
-
+		scriptPubKey, err := PayToAddrScript(test.in)
+		//if err != nil{
+		//	t.Errorf("PayToAddrScript #%d unexpected error - "+
+		//		"%v", i, err)
+		//	continue
+		//}
 		expected := mustParseShortForm(test.expected)
-		if !bytes.Equal(scriptPubKey, expected) {
+		if !bytes.Equal(scriptPubKey.Script, expected) {
 			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
 				i, scriptPubKey, expected)
 			continue

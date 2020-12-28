@@ -113,7 +113,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	}
 
 	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
-		fromScript, txscript.SigHashAll, privateKey)
+		fromScript.Script, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

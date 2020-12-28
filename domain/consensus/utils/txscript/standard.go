@@ -195,6 +195,9 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 				nilAddrErrStr)
 		}
 		script, err := payToPubKeyHashScript(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
 		return &externalapi.ScriptPublicKey{script, version}, err
 
 	case *util.AddressScriptHash:
@@ -203,6 +206,9 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 				nilAddrErrStr)
 		}
 		script, err := payToScriptHashScript(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
 		return &externalapi.ScriptPublicKey{script, version}, err
 	}
 

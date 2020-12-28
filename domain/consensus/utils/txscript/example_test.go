@@ -36,7 +36,7 @@ func ExamplePayToAddrScript() {
 	}
 	fmt.Printf("Script Hex: %x\n", script)
 
-	disasm, err := txscript.DisasmString(script)
+	disasm, err := txscript.DisasmString(uint32(script.Version), script.Script)
 	if err != nil {
 		fmt.Println(err)
 		return

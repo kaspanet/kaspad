@@ -213,7 +213,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
-func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransaction {
+func createSpendingTx(sigScript []byte, scriptPubKey *externalapi.ScriptPublicKey) *externalapi.DomainTransaction {
 	outpoint := externalapi.DomainOutpoint{
 		TransactionID: externalapi.DomainTransactionID{},
 		Index:         ^uint32(0),
@@ -295,12 +295,13 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 			t.Errorf("%s: public key script is not a string", name)
 			continue
 		}
-		scriptPubKey, err := parseShortForm(scriptPubKeyStr)
+		script, err := parseShortForm(scriptPubKeyStr)
 		if err != nil {
 			t.Errorf("%s: can't parse public key script: %v", name,
 				err)
 			continue
 		}
+		scriptPubKey := &externalapi.ScriptPublicKey{script, 0}
 
 		// Extract and parse the script flags from the test fields.
 		flagsStr, ok := test[2].(string)

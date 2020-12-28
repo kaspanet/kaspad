@@ -130,7 +130,9 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 		return nil
 	}
 
-	scriptPublicKeyClone := &ScriptPublicKey{make([]byte, len(output.ScriptPublicKey.Script)), output.ScriptPublicKey.Version}
+	scriptPublicKeyClone := &ScriptPublicKey{
+		Script:  make([]byte, len(output.ScriptPublicKey.Script)),
+		Version: output.ScriptPublicKey.Version}
 	copy(scriptPublicKeyClone.Script, output.ScriptPublicKey.Script)
 
 	return &DomainTransactionOutput{

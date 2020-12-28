@@ -46,7 +46,12 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("Expected IsBlockInHeaderPruningPointFuture=false, instead found: %t", info.IsBlockInHeaderPruningPointFuture)
 		}
 
-		emptyCoinbase := externalapi.DomainCoinbaseData{}
+		emptyCoinbase := externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  nil,
+				Version: 0,
+			},
+		}
 		validBlock, err := consensus.BuildBlock(&emptyCoinbase, nil)
 		if err != nil {
 			t.Fatalf("consensus.BuildBlock with an empty coinbase shouldn't fail: %v", err)

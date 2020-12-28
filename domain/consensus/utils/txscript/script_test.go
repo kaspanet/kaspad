@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"testing"
 )
@@ -3816,8 +3817,9 @@ func TestGetPreciseSigOps(t *testing.T) {
 	// The signature in the p2sh script is nonsensical for the tests since
 	// this script will never be executed. What matters is that it matches
 	// the right pattern.
-	scriptPubKey := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
+	scriptOnly := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
 		"27f564529c57197f9ae88 EQUAL")
+	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
 	for _, test := range tests {
 		count := GetPreciseSigOpCount(test.scriptSig, scriptPubKey, true)
 		if count != test.nSigOps {
@@ -3834,7 +3836,7 @@ func TestIsPayToScriptHash(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := mustParseShortForm(test.script)
+		script := &externalapi.ScriptPublicKey{mustParseShortForm(test.script), 0}
 		shouldBe := (test.class == ScriptHashTy)
 		p2sh := IsPayToScriptHash(script)
 		if p2sh != shouldBe {

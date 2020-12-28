@@ -18,7 +18,6 @@ const lengthOfVersionScriptPubKey = uint16Len
 
 // serializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
-
 	scriptLengthOfScriptPubKey := len(coinbaseData.ScriptPublicKey.Script)
 	if uint64(scriptLengthOfScriptPubKey) > c.coinbasePayloadScriptPublicKeyMaxLength {
 		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
@@ -30,6 +29,7 @@ func (c coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData
 	if len(coinbaseData.ScriptPublicKey.Script) > math.MaxUint8 {
 		return nil, errors.Errorf("script public key is bigger than %d", math.MaxUint8)
 	}
+
 	payload[uint64Len] = uint8(coinbaseData.ScriptPublicKey.Version)
 	payload[uint64Len+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
 	copy(payload[uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength:], coinbaseData.ScriptPublicKey.Script)
@@ -62,7 +62,7 @@ func (c coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi
 	}
 	scriptPubKeyScript := coinbaseTx.Payload[uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength : uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength+scriptPubKeyScriptLength]
 	return blueScore, &externalapi.DomainCoinbaseData{
-		ScriptPublicKey: &externalapi.ScriptPublicKey{scriptPubKeyScript, scriptPubKeyVersion},
+		ScriptPublicKey: &externalapi.ScriptPublicKey{Script: scriptPubKeyScript, Version: scriptPubKeyVersion},
 		ExtraData:       coinbaseTx.Payload[uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength+scriptPubKeyScriptLength:],
 	}, nil
 }

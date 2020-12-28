@@ -51,7 +51,7 @@ func TestBadPC(t *testing.T) {
 		Inputs:  inputs,
 		Outputs: outputs,
 	}
-	scriptPubKey := mustParseShortForm("NOP")
+	scriptPubKey := &externalapi.ScriptPublicKey{mustParseShortForm("NOP"), 0}
 
 	for _, test := range tests {
 		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
@@ -120,7 +120,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Outputs: outputs,
 			}
 
-			scriptPubKey := mustParseShortForm(test.script)
+			scriptPubKey := &externalapi.ScriptPublicKey{mustParseShortForm(test.script), 0}
 
 			vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 			if err != nil {
@@ -248,7 +248,7 @@ func TestDisasmPC(t *testing.T) {
 		Outputs: outputs,
 	}
 
-	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
+	scriptPubKey := &externalapi.ScriptPublicKey{mustParseShortForm("OP_DROP NOP TRUE"), 0}
 
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
@@ -312,8 +312,7 @@ func TestDisasmScript(t *testing.T) {
 		Outputs: outputs,
 	}
 
-	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
-
+	scriptPubKey := &externalapi.ScriptPublicKey{mustParseShortForm("OP_DROP NOP TRUE"), 0}
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
 		t.Fatalf("failed to create script: %v", err)
