@@ -1,8 +1,9 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
 
 // The documentation refers to the following constants which aren't explicated in the code:
@@ -28,7 +29,7 @@ const (
 	defaultMaxBlockSize = 1_000_000
 	// defaultMaxBlockParents is the number of blocks any block can point to.
 	// Should be about d/defaultTargetTimePerBlock where d is a bound on the round trip time of a block.
-	defaultMaxBlockParents         = 10
+	defaultMaxBlockParents         = 20
 	defaultMassPerTxByte           = 1
 	defaultMassPerScriptPubKeyByte = 10
 	defaultMassPerSigOp            = 10000
