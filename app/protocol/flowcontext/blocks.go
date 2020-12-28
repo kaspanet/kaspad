@@ -23,6 +23,8 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	hash := consensushashing.BlockHash(block)
 	log.Debugf("OnNewBlock start for block %s", hash)
 	defer log.Debugf("OnNewBlock end for block %s", hash)
+
+	f.updateRecentBlockAddedTimesWithLastBlock()
 	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err

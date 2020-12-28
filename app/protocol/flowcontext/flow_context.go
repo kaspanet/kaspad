@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
@@ -34,6 +35,11 @@ type FlowContext struct {
 	domain            domain.Domain
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
+
+	recentBlockAddedTimes      []int64
+	recentBlockAddedTimesMutex sync.Mutex
+
+	timeStarted int64
 
 	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
 	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
@@ -69,6 +75,7 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
 		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		timeStarted:                 mstime.Now().UnixMilliseconds(),
 	}
 }
 
