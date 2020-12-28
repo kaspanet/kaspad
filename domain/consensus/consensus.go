@@ -311,6 +311,9 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 }
 
 func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	err := s.validateBlockHashExists(blockHash)
 	if err != nil {
 		return false, err
