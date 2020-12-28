@@ -32,8 +32,8 @@ func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 }
 
 func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
-	timestamp := header.TimeInMilliseconds
 
+	timestamp := header.TimeInMilliseconds
 	numParents := len(header.ParentHashes)
 	if err := serialization.WriteElements(w, header.Version, uint64(numParents)); err != nil {
 		return err

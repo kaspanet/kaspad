@@ -237,6 +237,9 @@ var (
 
 	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
+
+	//ErrBlockVersionIsUnknown indicates that the block version is unknown.
+	ErrBlockVersionIsUnknown = newRuleError("ErrBlockVersionIsUnknown")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
