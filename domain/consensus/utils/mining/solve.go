@@ -12,11 +12,12 @@ import (
 
 // SolveBlock increments the given block's nonce until it matches the difficulty requirements in its bits field
 func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
-	targetDifficulty := utilsMath.CompactToBig(block.Header.Bits)
-
+	targetDifficulty := utilsMath.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
 	for i := rd.Uint64(); i < math.MaxUint64; i++ {
-		block.Header.Nonce = i
-		if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
+		headerForMining.SetNonce(i)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
 			return
 		}
 	}

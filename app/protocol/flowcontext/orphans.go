@@ -71,10 +71,10 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 		orphanBlock := f.orphans[orphanHash]
 
 		log.Tracef("Considering to unorphan block %s with parents %s",
-			orphanHash, orphanBlock.Header.ParentHashes)
+			orphanHash, orphanBlock.Header.ParentHashes())
 
 		canBeUnorphaned := true
-		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
+		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes() {
 			orphanBlockParentInfo, err := f.domain.Consensus().GetBlockInfo(orphanBlockParentHash)
 			if err != nil {
 				return nil, err
@@ -129,7 +129,7 @@ func (f *FlowContext) addChildOrphansToProcessQueue(blockHash *externalapi.Domai
 func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash) []externalapi.DomainHash {
 	var childOrphans []externalapi.DomainHash
 	for orphanHash, orphanBlock := range f.orphans {
-		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes {
+		for _, orphanBlockParentHash := range orphanBlock.Header.ParentHashes() {
 			if orphanBlockParentHash.Equal(blockHash) {
 				childOrphans = append(childOrphans, orphanHash)
 				break

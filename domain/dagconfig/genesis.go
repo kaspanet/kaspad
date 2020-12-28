@@ -6,6 +6,7 @@ package dagconfig
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
@@ -46,16 +47,16 @@ var genesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externalapi.Dom
 // genesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the main network.
 var genesisBlock = externalapi.DomainBlock{
-	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
-		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       *genesisMerkleRoot,
-		AcceptedIDMerkleRoot: externalapi.DomainHash{},
-		UTXOCommitment:       externalapi.DomainHash{},
-		TimeInMilliseconds:   0x1763db5c4a9,
-		Bits:                 0x207fffff,
-		Nonce:                0x1,
-	},
+	Header: blockheader.NewImmutableBlockHeader(
+		1,
+		[]*externalapi.DomainHash{},
+		genesisMerkleRoot,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0x1763db5c4a9,
+		0x207fffff,
+		0x1,
+	),
 	Transactions: []*externalapi.DomainTransaction{genesisCoinbaseTx},
 }
 
@@ -97,16 +98,16 @@ var devnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 // devnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
 var devnetGenesisBlock = externalapi.DomainBlock{
-	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
-		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       *devnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: externalapi.DomainHash{},
-		UTXOCommitment:       externalapi.DomainHash{},
-		TimeInMilliseconds:   0x1763db5c4a9,
-		Bits:                 0x1e7fffff,
-		Nonce:                0xb6c8,
-	},
+	Header: blockheader.NewImmutableBlockHeader(
+		1,
+		[]*externalapi.DomainHash{},
+		devnetGenesisMerkleRoot,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0x1763db5c4a9,
+		0x1e7fffff,
+		0xb6c8,
+	),
 	Transactions: []*externalapi.DomainTransaction{devnetGenesisCoinbaseTx},
 }
 
@@ -147,16 +148,16 @@ var simnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 // simnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for the development network.
 var simnetGenesisBlock = externalapi.DomainBlock{
-	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
-		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       *simnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: externalapi.DomainHash{},
-		UTXOCommitment:       externalapi.DomainHash{},
-		TimeInMilliseconds:   0x1763db5c4a9,
-		Bits:                 0x207fffff,
-		Nonce:                0x0,
-	},
+	Header: blockheader.NewImmutableBlockHeader(
+		1,
+		[]*externalapi.DomainHash{},
+		simnetGenesisMerkleRoot,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0x1763db5c4a9,
+		0x207fffff,
+		0x0,
+	),
 	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }
 
@@ -195,15 +196,15 @@ var testnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[external
 // testnetGenesisBlock defines the genesis block of the block DAG which serves as the
 // public transaction ledger for testnet.
 var testnetGenesisBlock = externalapi.DomainBlock{
-	Header: &externalapi.DomainBlockHeader{
-		Version:              1,
-		ParentHashes:         []*externalapi.DomainHash{},
-		HashMerkleRoot:       *testnetGenesisMerkleRoot,
-		AcceptedIDMerkleRoot: externalapi.DomainHash{},
-		UTXOCommitment:       externalapi.DomainHash{},
-		TimeInMilliseconds:   0x1763db5c4a9,
-		Bits:                 0x1e7fffff,
-		Nonce:                0x493d,
-	},
+	Header: blockheader.NewImmutableBlockHeader(
+		1,
+		[]*externalapi.DomainHash{},
+		testnetGenesisMerkleRoot,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0x1763db5c4a9,
+		0x1e7fffff,
+		0x493d,
+	),
 	Transactions: []*externalapi.DomainTransaction{testnetGenesisCoinbaseTx},
 }

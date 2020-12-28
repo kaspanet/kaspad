@@ -148,7 +148,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
-		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, util.CompactToBig(blk.Header.Bits))
+		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, util.CompactToBig(blk.Header.Bits()))
 
 	return blk, nil
 }

@@ -12,11 +12,13 @@ import (
 )
 
 func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
+	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
 	initialNonce := rand.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
-		block.Header.Nonce = i
-		if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
+		headerForMining.SetNonce(i)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
 			return block
 		}
 	}

@@ -1,30 +1,32 @@
-package externalapi
+package externalapi_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"reflect"
 	"testing"
 )
 
 type blockToCompare struct {
-	block          *DomainBlock
+	block          *externalapi.DomainBlock
 	expectedResult bool
 }
 
 type TestBlockStruct struct {
-	baseBlock         *DomainBlock
+	baseBlock         *externalapi.DomainBlock
 	blocksToCompareTo []blockToCompare
 }
 
-func initTestBaseTransactions() []*DomainTransaction {
+func initTestBaseTransactions() []*externalapi.DomainTransaction {
 
-	testTx := []*DomainTransaction{{
+	testTx := []*externalapi.DomainTransaction{{
 		Version:      1,
-		Inputs:       []*DomainTransactionInput{},
-		Outputs:      []*DomainTransactionOutput{},
+		Inputs:       []*externalapi.DomainTransactionInput{},
+		Outputs:      []*externalapi.DomainTransactionOutput{},
 		LockTime:     1,
-		SubnetworkID: DomainSubnetworkID{0x01},
+		SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
+		PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -32,7 +34,7 @@ func initTestBaseTransactions() []*DomainTransaction {
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
+		ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -41,16 +43,16 @@ func initTestBaseTransactions() []*DomainTransaction {
 	return testTx
 }
 
-func initTestAnotherTransactions() []*DomainTransaction {
+func initTestAnotherTransactions() []*externalapi.DomainTransaction {
 
-	testTx := []*DomainTransaction{{
+	testTx := []*externalapi.DomainTransaction{{
 		Version:      1,
-		Inputs:       []*DomainTransactionInput{},
-		Outputs:      []*DomainTransactionOutput{},
+		Inputs:       []*externalapi.DomainTransactionInput{},
+		Outputs:      []*externalapi.DomainTransactionOutput{},
 		LockTime:     1,
-		SubnetworkID: DomainSubnetworkID{0x01},
+		SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
+		PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -58,7 +60,7 @@ func initTestAnotherTransactions() []*DomainTransaction {
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
+		ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -67,16 +69,16 @@ func initTestAnotherTransactions() []*DomainTransaction {
 	return testTx
 }
 
-func initTestTwoTransactions() []*DomainTransaction {
+func initTestTwoTransactions() []*externalapi.DomainTransaction {
 
-	testTx := []*DomainTransaction{{
+	testTx := []*externalapi.DomainTransaction{{
 		Version:      1,
-		Inputs:       []*DomainTransactionInput{},
-		Outputs:      []*DomainTransactionOutput{},
+		Inputs:       []*externalapi.DomainTransactionInput{},
+		Outputs:      []*externalapi.DomainTransactionOutput{},
 		LockTime:     1,
-		SubnetworkID: DomainSubnetworkID{0x01},
+		SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
+		PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -84,19 +86,19 @@ func initTestTwoTransactions() []*DomainTransaction {
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
+		ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}),
 	}, {
 		Version:      1,
-		Inputs:       []*DomainTransactionInput{},
-		Outputs:      []*DomainTransactionOutput{},
+		Inputs:       []*externalapi.DomainTransactionInput{},
+		Outputs:      []*externalapi.DomainTransactionOutput{},
 		LockTime:     1,
-		SubnetworkID: DomainSubnetworkID{0x01},
+		SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 		Gas:          1,
-		PayloadHash: *NewDomainHashFromByteArray(&[DomainHashSize]byte{
+		PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -104,7 +106,7 @@ func initTestTwoTransactions() []*DomainTransaction {
 		Payload: []byte{0x01},
 		Fee:     0,
 		Mass:    1,
-		ID: NewDomainTransactionIDFromByteArray(&[DomainHashSize]byte{
+		ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -113,34 +115,34 @@ func initTestTwoTransactions() []*DomainTransaction {
 	return testTx
 }
 
-func initTestBlockStructsForClone() []*DomainBlock {
+func initTestBlockStructsForClone() []*externalapi.DomainBlock {
 
-	tests := []*DomainBlock{
+	tests := []*externalapi.DomainBlock{
 		{
-			&DomainBlockHeader{
+			blockheader.NewImmutableBlockHeader(
 
 				0,
-				[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+				[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})},
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 				4,
 				5,
 				6,
-			},
+			),
 			initTestBaseTransactions(),
 		}, {
-			&DomainBlockHeader{
+			blockheader.NewImmutableBlockHeader(
 
 				0,
-				[]*DomainHash{},
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-				*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+				[]*externalapi.DomainHash{},
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 				4,
 				5,
 				6,
-			},
+			),
 			initTestBaseTransactions(),
 		},
 	}
@@ -158,33 +160,33 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					expectedResult: true,
 				},
 				{
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{0})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							4,
 							5,
 							6,
-						},
+						),
 						initTestBaseTransactions()},
 					expectedResult: false,
 				},
 			},
 		}, {
-			baseBlock: &DomainBlock{
-				&DomainBlockHeader{
+			baseBlock: &externalapi.DomainBlock{
+				blockheader.NewImmutableBlockHeader(
 					0,
-					[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-					*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-					*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-					*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+					[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 					5,
 					6,
 					7,
-				},
+				),
 				initTestBaseTransactions(),
 			},
 			blocksToCompareTo: []blockToCompare{
@@ -193,155 +195,155 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					expectedResult: false,
 				},
 				{
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestAnotherTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: true,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{
-								NewDomainHashFromByteArray(&[DomainHashSize]byte{1}),
-								NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
+							[]*externalapi.DomainHash{
+								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
+								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{100})}, // Changed
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100})}, // Changed
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestTwoTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{100}), // Changed
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
 							5,
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							100, // Changed
 							6,
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							100, // Changed
 							7,
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
 				}, {
-					block: &DomainBlock{
-						&DomainBlockHeader{
+					block: &externalapi.DomainBlock{
+						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*DomainHash{NewDomainHashFromByteArray(&[DomainHashSize]byte{1})},
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{2}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{3}),
-							*NewDomainHashFromByteArray(&[DomainHashSize]byte{4}),
+							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
 							5,
 							6,
 							100, // Changed
-						},
+						),
 						initTestBaseTransactions(),
 					},
 					expectedResult: false,
