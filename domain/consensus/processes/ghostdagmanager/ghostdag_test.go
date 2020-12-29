@@ -166,7 +166,7 @@ func TestGHOSTDAG(t *testing.T) {
 			t.Fatal(err)
 		}
 		if testsCounter != 6 {
-			t.Fatalf("Expected 3 test files, ran %d instead", testsCounter)
+			t.Fatalf("Expected 6 test files, ran %d instead", testsCounter)
 		}
 	})
 }
