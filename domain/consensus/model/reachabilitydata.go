@@ -26,6 +26,8 @@ import (
 // This set allows to query reachability over the entirety of the DAG.
 // See documentation of FutureCoveringTreeNodeSet for additional details.
 
+// ReadOnlyReachabilityData is a read-only version of a block's ReachabilityData
+// Use CloneWritable to edit the ReachabilityData.
 type ReadOnlyReachabilityData interface {
 	Children() []*externalapi.DomainHash
 	Parent() *externalapi.DomainHash
@@ -35,6 +37,7 @@ type ReadOnlyReachabilityData interface {
 	Equal(other ReadOnlyReachabilityData) bool
 }
 
+// ReachabilityData represents a block's ReachabilityData, with ability to edit it
 type ReachabilityData interface {
 	ReadOnlyReachabilityData
 

@@ -21,10 +21,12 @@ var _ = &reachabilityData{
 	model.FutureCoveringTreeNodeSet{},
 }
 
+// EmptyReachabilityData constructs an empty ReachabilityData object
 func EmptyReachabilityData() model.ReachabilityData {
 	return &reachabilityData{}
 }
 
+// New constructs a ReachabilityData object filled with given fields
 func New(children []*externalapi.DomainHash,
 	parent *externalapi.DomainHash,
 	interval *model.ReachabilityInterval,
