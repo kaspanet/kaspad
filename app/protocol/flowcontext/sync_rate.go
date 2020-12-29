@@ -4,7 +4,7 @@ import "github.com/kaspanet/kaspad/util/mstime"
 
 const (
 	syncRateWindowInMilliSeconds                         = 60_000
-	syncRatMaxDeviation                                  = 0.05
+	syncRateMaxDeviation                                 = 0.05
 	maxSelectedParentTimeDiffToAllowMiningInMilliSeconds = 300_000
 )
 
@@ -44,7 +44,7 @@ func (f *FlowContext) isSyncRateBelowMinimum() bool {
 	}
 
 	expectedBlocks := float64(syncRateWindowInMilliSeconds) / float64(f.cfg.NetParams().TargetTimePerBlock.Milliseconds())
-	return 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRatMaxDeviation
+	return 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRateMaxDeviation
 }
 
 // ShouldMine returns whether it's ok to use block template from this node
