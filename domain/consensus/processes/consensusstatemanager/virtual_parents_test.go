@@ -19,17 +19,6 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
-		buildAndInsertBlock := func(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash) *externalapi.DomainHash {
-			block, _, err := tc.BuildBlockWithParents(parentHashes, nil, nil)
-			if err != nil {
-				t.Fatalf("Failed building block with parents: %v", err)
-			}
-			_, err = tc.ValidateAndInsertBlock(block)
-			if err != nil {
-				t.Fatalf("Failed Inserting block to tc: %v", err)
-			}
-			return consensushashing.BlockHash(block)
-		}
 
 		getSortedVirtualParents := func(tc testapi.TestConsensus) []*externalapi.DomainHash {
 			virtualRelations, err := tc.BlockRelationStore().BlockRelation(tc.DatabaseContext(), model.VirtualBlockHash)
@@ -55,7 +44,10 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 		for i := 0; i < 2*int(params.MaxBlockParents); i++ {
 			lastBlock := params.GenesisHash
 			for j := 0; j <= i; j++ {
-				lastBlock = buildAndInsertBlock(tc, []*externalapi.DomainHash{lastBlock})
+				lastBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{lastBlock}, nil, nil)
+				if err != nil {
+					t.Fatalf("Failed Adding block to tc: %v", err)
+				}
 			}
 			parents = append(parents, lastBlock)
 		}
@@ -100,9 +92,13 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			}
 		}
 		// build exactly params.MaxBlockParents
-		parents = parents[:0]
+		parents = make([]*externalapi.DomainHash, 0, params.MaxBlockParents)
 		for i := 0; i < int(params.MaxBlockParents); i++ {
-			parents = append(parents, buildAndInsertBlock(tc, []*externalapi.DomainHash{virtualSelectedParent}))
+			block, _, err := tc.AddBlock([]*externalapi.DomainHash{virtualSelectedParent}, nil, nil)
+			if err != nil {
+				t.Fatalf("Failed Adding block to tc: %v", err)
+			}
+			parents = append(parents, block)
 		}
 
 		sort.Sort(consensus.NewTestGhostDAGSorter(parents, tc, t))

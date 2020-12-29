@@ -33,7 +33,6 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 
 	selectedVirtualParents := hashset.NewFromSlice(virtualSelectedParent)
 	candidates := candidatesHeap.ToSlice()
-	candidatesHeap = nil
 	// prioritize half the blocks with highest blueWork and half with lowest, so the network will merge splits faster.
 	if len(candidates) >= int(csm.maxBlockParents) {
 		// We already have the selectedParent, so we're left with csm.maxBlockParents-1.
