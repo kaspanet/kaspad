@@ -57,7 +57,7 @@ func (bh *blockHeader) Nonce() uint64 {
 	return bh.nonce
 }
 
-func (bh *blockHeader) Equal(other externalapi.BlockHeader) bool {
+func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 	if bh == nil || other == nil {
 		return bh == other
 	}
