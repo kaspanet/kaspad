@@ -1,6 +1,8 @@
 package reachabilitydatastore
 
 import (
+	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -31,6 +33,10 @@ func New(cacheSize int) model.ReachabilityDataStore {
 // StageReachabilityData stages the given reachabilityData for the given blockHash
 func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
 	reachabilityData model.ReadOnlyReachabilityData) {
+
+	if blockHash.String() == "975bc80003886bc362033a47175732b8c3404eb2a13ef59f99d921bf3496e4cf" {
+		fmt.Printf("~~~~ THERE YOU ARE!!!!")
+	}
 	rds.reachabilityDataStaging[*blockHash] = reachabilityData
 }
 
@@ -80,6 +86,9 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	blockHash *externalapi.DomainHash) (model.ReadOnlyReachabilityData, error) {
 
+	if blockHash.String() == "cfe4508cf36b68f6c7c17de8dd4368cc77bb5b0cbd8d5a47e589a4a0c71be984" {
+		fmt.Printf("~~~~ AHA! FOUND YA!")
+	}
 	if reachabilityData, ok := rds.reachabilityDataStaging[*blockHash]; ok {
 		return reachabilityData, nil
 	}
@@ -90,6 +99,7 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
 	if err != nil {
+		fmt.Printf("~~~~~~ Problematic hash: %s\n", blockHash)
 		return nil, err
 	}
 

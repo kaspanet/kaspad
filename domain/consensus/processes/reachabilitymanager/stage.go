@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data *model.ReachabilityData) {
+func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data model.ReadOnlyReachabilityData) {
 	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 }
 
@@ -15,18 +15,8 @@ func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.Dom
 		return err
 	}
 
-	data.FutureCoveringSet = set
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
-	return nil
-}
+	data.SetFutureCoveringSet(set)
 
-func (rt *reachabilityManager) stageTreeNode(blockHash *externalapi.DomainHash, node *model.ReachabilityTreeNode) error {
-	data, err := rt.reachabilityDataForInsertion(blockHash)
-	if err != nil {
-		return err
-	}
-
-	data.TreeNode = node
 	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 	return nil
 }
@@ -41,8 +31,10 @@ func (rt *reachabilityManager) addChildAndStage(node, child *externalapi.DomainH
 		return err
 	}
 
-	nodeData.TreeNode.Children = append(nodeData.TreeNode.Children, child)
-	return rt.stageTreeNode(node, nodeData.TreeNode)
+	nodeData.AddChild(child)
+	rt.stageData(node, nodeData)
+
+	return nil
 }
 
 func (rt *reachabilityManager) stageParent(node, parent *externalapi.DomainHash) error {
@@ -50,10 +42,10 @@ func (rt *reachabilityManager) stageParent(node, parent *externalapi.DomainHash)
 	if err != nil {
 		return err
 	}
-	treeNode := nodeData.TreeNode
+	nodeData.SetParent(parent)
+	rt.stageData(node, nodeData)
 
-	treeNode.Parent = parent
-	return rt.stageTreeNode(node, treeNode)
+	return nil
 }
 
 func (rt *reachabilityManager) stageInterval(node *externalapi.DomainHash, interval *model.ReachabilityInterval) error {
@@ -61,8 +53,8 @@ func (rt *reachabilityManager) stageInterval(node *externalapi.DomainHash, inter
 	if err != nil {
 		return err
 	}
-	treeNode := nodeData.TreeNode
+	nodeData.SetInterval(interval)
+	rt.stageData(node, nodeData)
 
-	treeNode.Interval = interval
-	return rt.stageTreeNode(node, treeNode)
+	return nil
 }

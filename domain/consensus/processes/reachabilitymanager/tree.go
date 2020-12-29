@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -57,11 +59,14 @@ func exponentialFractions(sizes []uint64) []float64 {
 	return fractions
 }
 
-func newReachabilityTreeNode() *model.ReachabilityTreeNode {
+func newReachabilityTreeData() model.ReadOnlyReachabilityData {
 	// Please see the comment above model.ReachabilityTreeNode to understand why
 	// we use these initial values.
 	interval := newReachabilityInterval(1, math.MaxUint64-1)
-	return &model.ReachabilityTreeNode{Interval: interval}
+	data := reachabilitydata.EmptyReachabilityData()
+	data.SetInterval(interval)
+
+	return data
 }
 
 func (rt *reachabilityManager) intervalRangeForChildAllocation(hash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {

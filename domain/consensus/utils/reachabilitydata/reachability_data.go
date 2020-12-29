@@ -75,29 +75,33 @@ func (rd *reachabilityData) SetInterval(interval *model.ReachabilityInterval) {
 	rd.interval = interval
 }
 
-func (rd *reachabilityData) AddToFutureCoveringSet(futureHash *externalapi.DomainHash) {
-	rd.futureCoveringSet = append(rd.futureCoveringSet, futureHash)
+func (rd *reachabilityData) SetFutureCoveringSet(futureCoveringSet model.FutureCoveringTreeNodeSet) {
+	rd.futureCoveringSet = futureCoveringSet
 }
 
 // Equal returns whether rd equals to other
 func (rd *reachabilityData) Equal(other model.ReadOnlyReachabilityData) bool {
-	if rd == nil || other == nil {
-		return rd == nil && other == nil
+	otherReachabilityData, ok := other.(*reachabilityData)
+	if !ok {
+		return false
+	}
+	if rd == nil || otherReachabilityData == nil {
+		return rd == otherReachabilityData
 	}
 
-	if !externalapi.HashesEqual(rd.children, other.Children()) {
+	if !externalapi.HashesEqual(rd.children, otherReachabilityData.Children()) {
 		return false
 	}
 
-	if !rd.parent.Equal(other.Parent()) {
+	if !rd.parent.Equal(otherReachabilityData.Parent()) {
 		return false
 	}
 
-	if !rd.interval.Equal(other.Interval()) {
+	if !rd.interval.Equal(otherReachabilityData.Interval()) {
 		return false
 	}
 
-	if !rd.futureCoveringSet.Equal(other.FutureCoveringSet()) {
+	if !rd.futureCoveringSet.Equal(otherReachabilityData.FutureCoveringSet()) {
 		return false
 	}
 

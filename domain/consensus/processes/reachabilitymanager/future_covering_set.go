@@ -1,6 +1,8 @@
 package reachabilitymanager
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -19,59 +21,62 @@ import (
 //   is-superset relation will by definition
 //   be always preserved.
 func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *externalapi.DomainHash) error {
-	futureCoveringSet, err := rt.futureCoveringSet(node)
+	reachabilityData, err := rt.reachabilityDataForInsertion(node)
 	if err != nil {
 		return err
 	}
+	futureCoveringSet := reachabilityData.FutureCoveringSet()
 
 	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(orderedTreeNodeSet(futureCoveringSet), futureNode)
 	if err != nil {
 		return err
 	}
 
+	var newSet []*externalapi.DomainHash
 	if !ok {
-		newSet := append([]*externalapi.DomainHash{futureNode}, futureCoveringSet...)
+		newSet = append([]*externalapi.DomainHash{futureNode}, futureCoveringSet...)
 		err := rt.stageFutureCoveringSet(node, newSet)
 		if err != nil {
 			return err
 		}
-
 		return nil
+	} else {
+		candidate := futureCoveringSet[ancestorIndex]
+		candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(candidate, futureNode)
+		if err != nil {
+			return err
+		}
+
+		if candidateIsAncestorOfFutureNode {
+			// candidate is an ancestor of futureNode, no need to insert
+			return nil
+		}
+
+		futureNodeIsAncestorOfCandidate, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
+		if err != nil {
+			return err
+		}
+
+		if futureNodeIsAncestorOfCandidate {
+			// futureNode is an ancestor of candidate, and can thus replace it
+			newSet := make([]*externalapi.DomainHash, len(futureCoveringSet))
+			copy(newSet, futureCoveringSet)
+			newSet[ancestorIndex] = futureNode
+
+			return rt.stageFutureCoveringSet(node, newSet)
+		}
+
+		// Insert futureNode in the correct index to maintain futureCoveringTreeNodeSet as
+		// a sorted-by-interval list.
+		// Note that ancestorIndex might be equal to len(futureCoveringTreeNodeSet)
+		left := futureCoveringSet[:ancestorIndex+1]
+		right := append([]*externalapi.DomainHash{futureNode}, futureCoveringSet[ancestorIndex+1:]...)
+		newSet = append(left, right...)
 	}
+	reachabilityData.SetFutureCoveringSet(newSet)
+	rt.stageData(node, reachabilityData)
 
-	candidate := futureCoveringSet[ancestorIndex]
-	candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(candidate, futureNode)
-	if err != nil {
-		return err
-	}
-
-	if candidateIsAncestorOfFutureNode {
-		// candidate is an ancestor of futureNode, no need to insert
-		return nil
-	}
-
-	futureNodeIsAncestorOfCandidate, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
-	if err != nil {
-		return err
-	}
-
-	if futureNodeIsAncestorOfCandidate {
-		// futureNode is an ancestor of candidate, and can thus replace it
-		newSet := make([]*externalapi.DomainHash, len(futureCoveringSet))
-		copy(newSet, futureCoveringSet)
-		newSet[ancestorIndex] = futureNode
-
-		return rt.stageFutureCoveringSet(node, newSet)
-	}
-
-	// Insert futureNode in the correct index to maintain futureCoveringTreeNodeSet as
-	// a sorted-by-interval list.
-	// Note that ancestorIndex might be equal to len(futureCoveringTreeNodeSet)
-	left := futureCoveringSet[:ancestorIndex+1]
-	right := append([]*externalapi.DomainHash{futureNode}, futureCoveringSet[ancestorIndex+1:]...)
-	newSet := append(left, right...)
-	return rt.stageFutureCoveringSet(node, newSet)
-
+	return nil
 }
 
 // futureCoveringSetHasAncestorOf resolves whether the given node `other` is in the subtree of
@@ -99,5 +104,8 @@ func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *exter
 	}
 
 	candidate := futureCoveringSet[ancestorIndex]
+	if candidate.String() == "975bc80003886bc362033a47175732b8c3404eb2a13ef59f99d921bf3496e4cf" {
+		fmt.Printf("~~~~ HERE IT IS!!!")
+	}
 	return rt.IsReachabilityTreeAncestorOf(candidate, other)
 }

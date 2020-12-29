@@ -11,7 +11,7 @@ import (
 )
 
 type reachabilityDataStoreMock struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
+	reachabilityDataStaging        map[externalapi.DomainHash]model.ReadOnlyReachabilityData
 	recorder                       map[externalapi.DomainHash]struct{}
 	reachabilityReindexRootStaging *externalapi.DomainHash
 }
@@ -24,7 +24,9 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+func (r *reachabilityDataStoreMock) StageReachabilityData(
+	blockHash *externalapi.DomainHash, reachabilityData model.ReadOnlyReachabilityData) {
+
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
 }
@@ -37,7 +39,9 @@ func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
+	model.ReadOnlyReachabilityData, error) {
+
 	return r.reachabilityDataStaging[*blockHash], nil
 }
 
@@ -70,7 +74,7 @@ func (r *reachabilityDataStoreMock) resetRecorder() {
 
 func newReachabilityDataStoreMock() *reachabilityDataStoreMock {
 	return &reachabilityDataStoreMock{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]*model.ReachabilityData),
+		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReadOnlyReachabilityData),
 		recorder:                       make(map[externalapi.DomainHash]struct{}),
 		reachabilityReindexRootStaging: nil,
 	}
@@ -96,11 +100,7 @@ func (th *testHelper) generateHash() *externalapi.DomainHash {
 
 func (th *testHelper) newNode() *externalapi.DomainHash {
 	node := th.generateHash()
-	err := th.stageTreeNode(node, newReachabilityTreeNode())
-	if err != nil {
-		th.t.Fatalf("stageTreeNode: %s", err)
-	}
-
+	th.stageData(node, newReachabilityTreeData())
 	return node
 }
 

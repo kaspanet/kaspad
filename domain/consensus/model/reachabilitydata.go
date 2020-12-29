@@ -41,7 +41,7 @@ type ReachabilityData interface {
 	AddChild(child *externalapi.DomainHash)
 	SetParent(parent *externalapi.DomainHash)
 	SetInterval(interval *ReachabilityInterval)
-	AddToFutureCoveringSet(futureHash *externalapi.DomainHash)
+	SetFutureCoveringSet(futureCoveringSet FutureCoveringTreeNodeSet)
 }
 
 // ReachabilityInterval represents an interval to be used within the

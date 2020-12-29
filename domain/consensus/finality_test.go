@@ -186,10 +186,11 @@ func TestBoundedMergeDepth(t *testing.T) {
 		checkViolatingMergeDepth := func(consensus testapi.TestConsensus, parents []*externalapi.DomainHash) (*externalapi.DomainBlock, bool) {
 			block, _, err := consensus.BuildBlockWithParents(parents, nil, nil)
 			if err != nil {
-				t.Fatalf("TestBoundedMergeDepth: BuildBlockWithParents failed: %v", err)
+				t.Fatalf("TestBoundedMergeDepth: BuildBlockWithParents failed: %+v", err)
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
+			fmt.Printf("~~~~~~ inserting block %s\n", consensushashing.BlockHash(block))
 			_, err = consensus.ValidateAndInsertBlock(block)
 			if err == nil {
 				return block, false
