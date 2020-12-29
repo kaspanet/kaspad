@@ -42,7 +42,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 		// We expect that if the other peer did not receive all the headers
 		// they requested, they'd re-request a block locator and re-request
 		// headers with a higher lowHash
-		const maxBlueScoreDifference = 1 << 12
+		const maxBlueScoreDifference = 1 << 10
 		blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 		if err != nil {
 			return err
