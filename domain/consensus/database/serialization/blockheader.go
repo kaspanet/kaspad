@@ -5,8 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 )
 
-// DomainBlockHeaderToDbBlockHeader converts ImmutableBlockHeader to DbBlockHeader
-func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.ImmutableBlockHeader) *DbBlockHeader {
+// DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader
+func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader) *DbBlockHeader {
 	return &DbBlockHeader{
 		Version:              domainBlockHeader.Version(),
 		ParentHashes:         DomainHashesToDbHashes(domainBlockHeader.ParentHashes()),
@@ -19,8 +19,8 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.ImmutableBlo
 	}
 }
 
-// DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to ImmutableBlockHeader
-func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi.ImmutableBlockHeader, error) {
+// DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to BlockHeader
+func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi.BlockHeader, error) {
 	parentHashes, err := DbHashesToDomainHashes(dbBlockHeader.ParentHashes)
 	if err != nil {
 		return nil, err

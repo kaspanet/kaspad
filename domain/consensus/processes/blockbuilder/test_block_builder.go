@@ -42,7 +42,7 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 
 func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
 	transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
-	externalapi.ImmutableBlockHeader, error) {
+	externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(tempBlockHash)
 	if err != nil {

@@ -96,7 +96,7 @@ func (bb *blockBuilder) newBlockCoinbaseTransaction(
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
 }
 
-func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (externalapi.ImmutableBlockHeader, error) {
+func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 	parentHashes, err := bb.newBlockParentHashes()
 	if err != nil {
 		return nil, err

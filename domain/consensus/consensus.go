@@ -103,7 +103,7 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	return s.blockStore.Block(s.databaseContext, blockHash)
 }
 
-func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.ImmutableBlockHeader, error) {
+func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

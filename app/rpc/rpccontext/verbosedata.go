@@ -23,7 +23,7 @@ import (
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
-func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.ImmutableBlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
 	hash := consensushashing.HeaderHash(blockHeader)
 
 	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
@@ -96,7 +96,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader externalapi.ImmutableBlockHeader, blockHash string) (
+	blockHeader externalapi.BlockHeader, blockHash string) (
 	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string

@@ -33,7 +33,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	return nil
 }
 
-func (v *blockValidator) checkParentsLimit(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error {
 	hash := consensushashing.HeaderHash(header)
 	if len(header.ParentHashes()) == 0 && !hash.Equal(v.genesisHash) {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
@@ -46,7 +46,7 @@ func (v *blockValidator) checkParentsLimit(header externalapi.ImmutableBlockHead
 	return nil
 }
 
-func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.BlockHeader) error {
 	blockTimestamp := header.TimeInMilliseconds()
 	now := mstime.Now().UnixMilliseconds()
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()

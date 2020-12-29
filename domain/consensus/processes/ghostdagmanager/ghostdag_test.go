@@ -67,7 +67,7 @@ func TestGHOSTDAG(t *testing.T) {
 		}
 
 		blockHeadersStore := &blockHeadersStore{
-			dagMap: make(map[externalapi.DomainHash]externalapi.ImmutableBlockHeader),
+			dagMap: make(map[externalapi.DomainHash]externalapi.BlockHeader),
 		}
 
 		blockGHOSTDAGDataGenesis := ghostdagmanager.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
@@ -162,7 +162,7 @@ func TestGHOSTDAG(t *testing.T) {
 				dagTopology.parentsMap[genesisHash] = nil
 				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]model.BlockGHOSTDAGData)
 				ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
-				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]externalapi.ImmutableBlockHeader)
+				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]externalapi.BlockHeader)
 				blockHeadersStore.dagMap[genesisHash] = genesisHeader
 			}
 
@@ -307,20 +307,20 @@ func (dt *DAGTopologyManagerImpl) SetParents(blockHash *externalapi.DomainHash, 
 }
 
 type blockHeadersStore struct {
-	dagMap map[externalapi.DomainHash]externalapi.ImmutableBlockHeader
+	dagMap map[externalapi.DomainHash]externalapi.BlockHeader
 }
 
 func (b *blockHeadersStore) Discard() { panic("unimplemented") }
 
 func (b *blockHeadersStore) Commit(_ model.DBTransaction) error { panic("unimplemented") }
 
-func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.ImmutableBlockHeader) {
+func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
 	b.dagMap[*blockHash] = blockHeader
 }
 
 func (b *blockHeadersStore) IsStaged() bool { panic("unimplemented") }
 
-func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (externalapi.ImmutableBlockHeader, error) {
+func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	header, ok := b.dagMap[*blockHash]
 	if ok {
 		return header, nil
@@ -333,8 +333,8 @@ func (b *blockHeadersStore) HasBlockHeader(_ model.DBReader, blockHash *external
 	return ok, nil
 }
 
-func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.ImmutableBlockHeader, error) {
-	res := make([]externalapi.ImmutableBlockHeader, 0, len(blockHashes))
+func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+	res := make([]externalapi.BlockHeader, 0, len(blockHashes))
 	for _, hash := range blockHashes {
 		header, err := b.BlockHeader(nil, hash)
 		if err != nil {

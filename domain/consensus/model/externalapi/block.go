@@ -2,7 +2,7 @@ package externalapi
 
 // DomainBlock represents a Kaspa block
 type DomainBlock struct {
-	Header       ImmutableBlockHeader
+	Header       BlockHeader
 	Transactions []*DomainTransaction
 }
 
@@ -46,8 +46,8 @@ func (block *DomainBlock) Equal(other *DomainBlock) bool {
 	return true
 }
 
-// ImmutableBlockHeader represents an immutable block header.
-type ImmutableBlockHeader interface {
+// BlockHeader represents an immutable block header.
+type BlockHeader interface {
 	BaseBlockHeader
 	ToMutable() MutableBlockHeader
 }
@@ -62,14 +62,14 @@ type BaseBlockHeader interface {
 	TimeInMilliseconds() int64
 	Bits() uint32
 	Nonce() uint64
-	Equal(other ImmutableBlockHeader) bool
+	Equal(other BaseBlockHeader) bool
 }
 
 // MutableBlockHeader represents a block header that can be mutated, but only
 // the fields that are relevant to mining (Nonce and TimeInMilliseconds).
 type MutableBlockHeader interface {
 	BaseBlockHeader
-	ToImmutable() ImmutableBlockHeader
+	ToImmutable() BlockHeader
 	SetNonce(nonce uint64)
 	SetTimeInMilliseconds(timeInMilliseconds int64)
 }

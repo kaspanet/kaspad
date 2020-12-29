@@ -7,7 +7,7 @@ import (
 // headerEstimatedSerializedSize is the estimated size of a block header in some
 // serialization. This has to be deterministic, but not necessarily accurate, since
 // it's only used to check block size limit violation.
-func (v *blockValidator) headerEstimatedSerializedSize(header externalapi.ImmutableBlockHeader) uint64 {
+func (v *blockValidator) headerEstimatedSerializedSize(header externalapi.BlockHeader) uint64 {
 	size := uint64(0)
 	size += 4 // Version (int32)
 

@@ -13,7 +13,7 @@ type blockHeader struct {
 	nonce                uint64
 }
 
-func (bh *blockHeader) ToImmutable() externalapi.ImmutableBlockHeader {
+func (bh *blockHeader) ToImmutable() externalapi.BlockHeader {
 	return bh.clone()
 }
 
@@ -57,7 +57,7 @@ func (bh *blockHeader) Nonce() uint64 {
 	return bh.nonce
 }
 
-func (bh *blockHeader) Equal(other externalapi.ImmutableBlockHeader) bool {
+func (bh *blockHeader) Equal(other externalapi.BlockHeader) bool {
 	if bh == nil || other == nil {
 		return bh == other
 	}
@@ -132,7 +132,7 @@ func NewImmutableBlockHeader(
 	timeInMilliseconds int64,
 	bits uint32,
 	nonce uint64,
-) externalapi.ImmutableBlockHeader {
+) externalapi.BlockHeader {
 	return &blockHeader{
 		version:              version,
 		parentHashes:         parentHashes,

@@ -79,7 +79,7 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (v *blockValidator) checkProofOfWork(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
 	target := util.CompactToBig(header.Bits())
 	if target.Sign() <= 0 {
@@ -103,7 +103,7 @@ func (v *blockValidator) checkProofOfWork(header externalapi.ImmutableBlockHeade
 	return nil
 }
 
-func (v *blockValidator) checkParentHeadersExist(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 	for _, parent := range header.ParentHashes() {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
@@ -131,7 +131,7 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.ImmutableBlo
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
 	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)

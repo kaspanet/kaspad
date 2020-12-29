@@ -83,7 +83,7 @@ func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) checkParentsIncest(header externalapi.BlockHeader) error {
 	for _, parentA := range header.ParentHashes() {
 		for _, parentB := range header.ParentHashes() {
 			if parentA.Equal(parentB) {
@@ -107,7 +107,7 @@ func (v *blockValidator) checkParentsIncest(header externalapi.ImmutableBlockHea
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(header externalapi.ImmutableBlockHeader) error {
+func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) error {
 	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
