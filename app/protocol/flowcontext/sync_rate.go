@@ -65,14 +65,19 @@ func (f *FlowContext) ShouldMine() (bool, error) {
 		return false, err
 	}
 
+	virtualSelectedParentHeader, err := f.domain.Consensus().GetBlockHeader(virtualSelectedParent)
+	if err != nil {
+		return false, err
+	}
+
 	now := mstime.Now().UnixMilliseconds()
-	if now-virtualSelectedParent.Header.TimeInMilliseconds < maxSelectedParentTimeDiffToAllowMiningInMilliSeconds {
+	if now-virtualSelectedParentHeader.TimeInMilliseconds < maxSelectedParentTimeDiffToAllowMiningInMilliSeconds {
 		log.Debugf("The selected tip timestamp is recent (%d), so ShouldMine returns true",
-			virtualSelectedParent.Header.TimeInMilliseconds)
+			virtualSelectedParentHeader.TimeInMilliseconds)
 		return true, nil
 	}
 
 	log.Debugf("The selected tip timestamp is old (%d), so ShouldMine returns false",
-		virtualSelectedParent.Header.TimeInMilliseconds)
+		virtualSelectedParentHeader.TimeInMilliseconds)
 	return false, nil
 }
