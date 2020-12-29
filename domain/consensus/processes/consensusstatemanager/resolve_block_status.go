@@ -8,39 +8,39 @@ import (
 )
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Tracef("resolveBlockStatus start for block %s", blockHash)
-	defer log.Tracef("resolveBlockStatus end for block %s", blockHash)
+	log.Debugf("resolveBlockStatus start for block %s", blockHash)
+	defer log.Debugf("resolveBlockStatus end for block %s", blockHash)
 
-	log.Tracef("Getting a list of all blocks in the selected "+
+	log.Debugf("Getting a list of all blocks in the selected "+
 		"parent chain of %s that have no yet resolved their status", blockHash)
 	unverifiedBlocks, err := csm.getUnverifiedChainBlocks(blockHash)
 	if err != nil {
 		return 0, err
 	}
-	log.Tracef("Got %d unverified blocks in the selected parent "+
+	log.Debugf("Got %d unverified blocks in the selected parent "+
 		"chain of %s: %s", len(unverifiedBlocks), blockHash, unverifiedBlocks)
 
 	// If there's no unverified blocks in the given block's chain - this means the given block already has a
 	// UTXO-verified status, and therefore it should be retrieved from the store and returned
 	if len(unverifiedBlocks) == 0 {
-		log.Tracef("There are not unverified blocks in %s's selected parent chain. "+
+		log.Debugf("There are not unverified blocks in %s's selected parent chain. "+
 			"This means that the block already has a UTXO-verified status.", blockHash)
 		status, err := csm.blockStatusStore.Get(csm.databaseContext, blockHash)
 		if err != nil {
 			return 0, err
 		}
-		log.Tracef("Block %s's status resolved to: %s", blockHash, status)
+		log.Debugf("Block %s's status resolved to: %s", blockHash, status)
 		return status, nil
 	}
 
-	log.Tracef("Finding the status of the selected parent of %s", blockHash)
+	log.Debugf("Finding the status of the selected parent of %s", blockHash)
 	selectedParentStatus, err := csm.findSelectedParentStatus(unverifiedBlocks)
 	if err != nil {
 		return 0, err
 	}
-	log.Tracef("The status of the selected parent of %s is: %s", blockHash, selectedParentStatus)
+	log.Debugf("The status of the selected parent of %s is: %s", blockHash, selectedParentStatus)
 
-	log.Tracef("Resolving the unverified blocks' status in reverse order (past to present)")
+	log.Debugf("Resolving the unverified blocks' status in reverse order (past to present)")
 	var blockStatus externalapi.BlockStatus
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
@@ -66,12 +66,12 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*externalapi.DomainHash) (
 	externalapi.BlockStatus, error) {
 
-	log.Tracef("findSelectedParentStatus start")
-	defer log.Tracef("findSelectedParentStatus end")
+	log.Debugf("findSelectedParentStatus start")
+	defer log.Debugf("findSelectedParentStatus end")
 
 	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
 	if lastUnverifiedBlock.Equal(csm.genesisHash) {
-		log.Tracef("the most recent unverified block is the genesis block, "+
+		log.Debugf("the most recent unverified block is the genesis block, "+
 			"which by definition has status: %s", externalapi.StatusUTXOValid)
 		return externalapi.StatusUTXOValid, nil
 	}
@@ -85,24 +85,24 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 func (csm *consensusStateManager) getUnverifiedChainBlocks(
 	blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	log.Tracef("getUnverifiedChainBlocks start for block %s", blockHash)
-	defer log.Tracef("getUnverifiedChainBlocks end for block %s", blockHash)
+	log.Debugf("getUnverifiedChainBlocks start for block %s", blockHash)
+	defer log.Debugf("getUnverifiedChainBlocks end for block %s", blockHash)
 
 	var unverifiedBlocks []*externalapi.DomainHash
 	currentHash := blockHash
 	for {
-		log.Tracef("Getting status for block %s", currentHash)
+		log.Debugf("Getting status for block %s", currentHash)
 		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, currentHash)
 		if err != nil {
 			return nil, err
 		}
 		if currentBlockStatus != externalapi.StatusUTXOPendingVerification {
-			log.Tracef("Block %s has status %s. Returning all the "+
+			log.Debugf("Block %s has status %s. Returning all the "+
 				"unverified blocks prior to it: %s", currentHash, currentBlockStatus, unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
 
-		log.Tracef("Block %s is unverified. Adding it to the unverified block collection", currentHash)
+		log.Debugf("Block %s is unverified. Adding it to the unverified block collection", currentHash)
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
 		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
@@ -111,7 +111,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 		}
 
 		if currentBlockGHOSTDAGData.SelectedParent() == nil {
-			log.Tracef("Genesis block reached. Returning all the "+
+			log.Debugf("Genesis block reached. Returning all the "+
 				"unverified blocks prior to it: %s", unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
@@ -121,7 +121,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Tracef("resolveSingleBlockStatus start for block %s", blockHash)
+	log.Debugf("resolveSingleBlockStatus start for block %s", blockHash)
 	defer log.Tracef("resolveSingleBlockStatus end for block %s", blockHash)
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)

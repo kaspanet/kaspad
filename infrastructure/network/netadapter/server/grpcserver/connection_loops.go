@@ -1,14 +1,13 @@
 package grpcserver
 
 import (
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"io"
 	"time"
 
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 )

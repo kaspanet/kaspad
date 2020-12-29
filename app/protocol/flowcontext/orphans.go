@@ -70,7 +70,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
 		orphanBlock := f.orphans[orphanHash]
 
-		log.Tracef("Considering to unorphan block %s with parents %s",
+		log.Debugf("Considering to unorphan block %s with parents %s",
 			orphanHash, orphanBlock.Header.ParentHashes)
 
 		canBeUnorphaned := true
@@ -80,7 +80,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 				return nil, err
 			}
 			if !orphanBlockParentInfo.Exists || orphanBlockParentInfo.BlockStatus == externalapi.StatusHeaderOnly {
-				log.Tracef("Cannot unorphan block %s. It's missing at "+
+				log.Debugf("Cannot unorphan block %s. It's missing at "+
 					"least the following parent: %s", orphanHash, orphanBlockParentHash)
 
 				canBeUnorphaned = false
