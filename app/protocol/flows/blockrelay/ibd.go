@@ -31,7 +31,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 
 	// Fetch the UTXO set if we don't already have it
 	log.Debugf("Checking if there's a new pruning point under %s", highHash)
-	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHashMessage())
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		return err
 	}
 
-	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
+	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHashMessage)
 	if !ok {
 		return protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())

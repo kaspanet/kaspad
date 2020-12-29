@@ -8,11 +8,11 @@ func (x *KaspadMessage_IbdRootHash) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	return &appmessage.MsgIBDRootHash{Hash: hash}, nil
+	return &appmessage.MsgIBDRootHashMessage{Hash: hash}, nil
 }
 
-func (x *KaspadMessage_IbdRootHash) fromAppMessage(msgIBDRootHash *appmessage.MsgIBDRootHash) error {
-	x.IbdRootHash = &IBDRootHash{
+func (x *KaspadMessage_IbdRootHash) fromAppMessage(msgIBDRootHash *appmessage.MsgIBDRootHashMessage) error {
+	x.IbdRootHash = &IBDRootHashMessage{
 		Hash: domainHashToProto(msgIBDRootHash.Hash),
 	}
 	return nil

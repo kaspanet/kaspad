@@ -30,8 +30,9 @@ message KaspadMessage {
     IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     IBDRootNotFoundMessage ibdRootNotFound = 27;
-    RequestIBDRootHash requestIBDRootHash = 28;
-    IBDRootHash ibdRootHash = 29;
+    RequestIBDRootHashMessage requestIBDRootHash = 28;
+    IBDRootHashMessage ibdRootHash = 29;
+    BlockLocatorHighestHashMessage blockLocatorHighestHash = 30;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -299,16 +300,22 @@ message IBDRootNotFoundMessage{
 }
 // IBDRootNotFoundMessage end
 
-// RequestIBDRootHash start
-message RequestIBDRootHash{
+// RequestIBDRootHashMessage start
+message RequestIBDRootHashMessage{
 }
-// RequestIBDRootHash end
+// RequestIBDRootHashMessage end
 
-// IBDRootHash start
-message IBDRootHash{
+// IBDRootHashMessage start
+message IBDRootHashMessage{
   Hash hash = 1;
 }
-// IBDRootHash end
+// IBDRootHashMessage end
+
+// BlockLocatorHighestHashMessage start
+message BlockLocatorHighestHashMessage {
+  Hash highestHash = 1;
+}
+// BlockLocatorHighestHashMessage end
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
