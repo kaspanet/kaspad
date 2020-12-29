@@ -33,11 +33,6 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 	var newSet []*externalapi.DomainHash
 	if !ok {
 		newSet = append([]*externalapi.DomainHash{futureNode}, futureCoveringSet...)
-		err := rt.stageFutureCoveringSet(node, newSet)
-		if err != nil {
-			return err
-		}
-		return nil
 	} else {
 		candidate := futureCoveringSet[ancestorIndex]
 		candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(candidate, futureNode)
