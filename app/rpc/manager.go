@@ -106,11 +106,17 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
 	defer onEnd()
 
-	virtualInfo, err := m.context.Domain.Consensus().GetVirtualInfo()
+	virtualSelectedParent, err := m.context.Domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return err
 	}
-	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualInfo.BlueScore)
+
+	blockInfo, err := m.context.Domain.Consensus().GetBlockInfo(virtualSelectedParent)
+	if err != nil {
+		return err
+	}
+
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(blockInfo.BlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }
 

@@ -3,7 +3,6 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -14,8 +13,7 @@ func HandleGetSelectedTipHash(context *rpccontext.Context, _ *router.Router, _ a
 		return nil, err
 	}
 
-	response := appmessage.NewGetSelectedTipHashResponseMessage(
-		consensushashing.BlockHash(selectedTip).String())
+	response := appmessage.NewGetSelectedTipHashResponseMessage(selectedTip.String())
 
 	return response, nil
 }
