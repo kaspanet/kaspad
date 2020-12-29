@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 // pruningManager resolves and manages the current pruning point
@@ -184,6 +185,9 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 }
 
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.deletePastBlocks")
+	defer onEnd()
+
 	// Go over all P.Past and P.AC that's not in V.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
 
@@ -261,6 +265,9 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 }
 
 func (pm *pruningManager) savePruningPoint(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
+	defer onEnd()
+
 	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(blockHash)
 	if err != nil {
 		return err

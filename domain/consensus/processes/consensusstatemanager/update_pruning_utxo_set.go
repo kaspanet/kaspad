@@ -27,8 +27,8 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 }
 
 func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
-	log.Tracef("updatePruningPoint start")
-	defer log.Tracef("updatePruningPoint end")
+	log.Debugf("updatePruningPoint start")
+	defer log.Debugf("updatePruningPoint end")
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 
