@@ -23,7 +23,7 @@ func ReachablityDataToDBReachablityData(reachabilityData model.ReadOnlyReachabil
 }
 
 // DBReachablityDataToReachablityData converts DbReachabilityData to ReachabilityData
-func DBReachablityDataToReachablityData(dbReachabilityData *DbReachabilityData) (model.ReachabilityData, error) {
+func DBReachablityDataToReachablityData(dbReachabilityData *DbReachabilityData) (model.ReadOnlyReachabilityData, error) {
 	children, err := DbHashesToDomainHashes(dbReachabilityData.Children)
 	if err != nil {
 		return nil, err
