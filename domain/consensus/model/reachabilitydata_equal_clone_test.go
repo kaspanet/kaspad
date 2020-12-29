@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -27,7 +29,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 				&ReachabilityTreeNode{
 					[]*externalapi.DomainHash{},
 					&externalapi.DomainHash{},
-					&ReachabilityInterval{},
+					&reachabilitydata.ReachabilityInterval{},
 				},
 				FutureCoveringTreeNodeSet{},
 			},
@@ -37,7 +39,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							&externalapi.DomainHash{},
-							&ReachabilityInterval{},
+							&reachabilitydata.ReachabilityInterval{},
 						},
 						FutureCoveringTreeNodeSet{},
 					},
@@ -51,7 +53,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							}, // Changed
 							&externalapi.DomainHash{},
-							&ReachabilityInterval{},
+							&reachabilitydata.ReachabilityInterval{},
 						},
 						FutureCoveringTreeNodeSet{},
 					},
@@ -62,7 +64,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}), // Changed
-							&ReachabilityInterval{},
+							&reachabilitydata.ReachabilityInterval{},
 						},
 						FutureCoveringTreeNodeSet{},
 					},
@@ -73,7 +75,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							&externalapi.DomainHash{},
-							&ReachabilityInterval{100, 0}, // Changed start
+							&reachabilitydata.ReachabilityInterval{100, 0}, // Changed start
 						},
 						FutureCoveringTreeNodeSet{},
 					},
@@ -84,7 +86,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							&externalapi.DomainHash{},
-							&ReachabilityInterval{0, 100}, // Changed end
+							&reachabilitydata.ReachabilityInterval{0, 100}, // Changed end
 						},
 						FutureCoveringTreeNodeSet{},
 					},
@@ -95,7 +97,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{},
 							&externalapi.DomainHash{},
-							&ReachabilityInterval{},
+							&reachabilitydata.ReachabilityInterval{},
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -114,7 +116,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})},
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-					&ReachabilityInterval{100, 200},
+					&reachabilitydata.ReachabilityInterval{100, 200},
 				},
 				FutureCoveringTreeNodeSet{
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -129,7 +131,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{100, 200},
+							&reachabilitydata.ReachabilityInterval{100, 200},
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -145,7 +147,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{100, 200},
+							&reachabilitydata.ReachabilityInterval{100, 200},
 						},
 						FutureCoveringTreeNodeSet{}, // Changed
 					},
@@ -159,7 +161,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{200, 200}, // Changed start
+							&reachabilitydata.ReachabilityInterval{200, 200}, // Changed start
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -191,7 +193,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{100, 100}, // Changed end
+							&reachabilitydata.ReachabilityInterval{100, 100}, // Changed end
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -204,7 +206,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 						&ReachabilityTreeNode{
 							[]*externalapi.DomainHash{}, // Changed
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{100, 200},
+							&reachabilitydata.ReachabilityInterval{100, 200},
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -219,7 +221,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
 							&externalapi.DomainHash{}, // Changed
-							&ReachabilityInterval{100, 200},
+							&reachabilitydata.ReachabilityInterval{100, 200},
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -234,7 +236,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{}, // Changed
+							&reachabilitydata.ReachabilityInterval{}, // Changed
 						},
 						FutureCoveringTreeNodeSet{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -249,7 +251,7 @@ func TestReachabilityData_Equal(t *testing.T) {
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							&ReachabilityInterval{100, 200},
+							&reachabilitydata.ReachabilityInterval{100, 200},
 						},
 						FutureCoveringTreeNodeSet{}, // Changed
 					},
@@ -291,7 +293,7 @@ func TestReachabilityData_Clone(t *testing.T) {
 			&ReachabilityTreeNode{
 				[]*externalapi.DomainHash{},
 				&externalapi.DomainHash{},
-				&ReachabilityInterval{},
+				&reachabilitydata.ReachabilityInterval{},
 			},
 			FutureCoveringTreeNodeSet{},
 		},
@@ -301,7 +303,7 @@ func TestReachabilityData_Clone(t *testing.T) {
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-				&ReachabilityInterval{100, 200},
+				&reachabilitydata.ReachabilityInterval{100, 200},
 			},
 			FutureCoveringTreeNodeSet{
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -311,7 +313,7 @@ func TestReachabilityData_Clone(t *testing.T) {
 			&ReachabilityTreeNode{
 				[]*externalapi.DomainHash{},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-				&ReachabilityInterval{100, 200},
+				&reachabilitydata.ReachabilityInterval{100, 200},
 			},
 			FutureCoveringTreeNodeSet{
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -323,7 +325,7 @@ func TestReachabilityData_Clone(t *testing.T) {
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-				&ReachabilityInterval{},
+				&reachabilitydata.ReachabilityInterval{},
 			},
 			FutureCoveringTreeNodeSet{
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
@@ -333,7 +335,7 @@ func TestReachabilityData_Clone(t *testing.T) {
 			&ReachabilityTreeNode{
 				[]*externalapi.DomainHash{},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-				&ReachabilityInterval{100, 200},
+				&reachabilitydata.ReachabilityInterval{100, 200},
 			},
 			FutureCoveringTreeNodeSet{
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
