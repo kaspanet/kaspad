@@ -156,6 +156,7 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externa
 		}
 		return nil, false, err
 	}
+	f.updateRecentBlockAddedTimesWithLastBlock()
 
 	log.Infof("Unorphaned block %s", orphanHash)
 	return blockInsertionResult, true, nil
