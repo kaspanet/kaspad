@@ -107,7 +107,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		if !consensushashing.BlockHash(selectedTip).Equal(sideChainTipHash) {
+		if !selectedTip.Equal(sideChainTipHash) {
 			t.Fatalf("Overtaking block in side-chain is not selectedTip")
 		}
 
@@ -145,7 +145,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), consensushashing.BlockHash(selectedTip))
+		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), selectedTip)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
@@ -329,8 +329,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if !consensushashing.BlockHash(virtualSelectedParent).Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), virtualSelectedParent)
 		}
 
 		// Now let's make the kosherizing block red and try to merge again
@@ -346,8 +346,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if !consensushashing.BlockHash(virtualSelectedParent).Equal(tip) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(tip) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, virtualSelectedParent)
 		}
 
 		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(), model.VirtualBlockHash)
@@ -382,8 +382,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if !consensushashing.BlockHash(virtualSelectedParent).Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), virtualSelectedParent)
 		}
 
 		// Lets validate the status of all the interesting blocks

@@ -184,6 +184,27 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	return nil
 }
 
+func (pm *pruningManager) isInPruningFutureOrInVirtualPast(block *externalapi.DomainHash, pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) (bool, error) {
+	hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(pruningPoint, block)
+	if err != nil {
+		return false, err
+	}
+	if hasPruningPointInPast {
+		return true, nil
+	}
+	// Because virtual doesn't have reachability data, we need to check reachability
+	// using it parents.
+	isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(block, virtualParents)
+	if err != nil {
+		return false, err
+	}
+	if isInVirtualPast {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.deletePastBlocks")
 	defer onEnd()
@@ -196,29 +217,20 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	if err != nil {
 		return err
 	}
+	virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
 	for _, tip := range dagTips {
-		hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(pruningPoint, tip)
+		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(tip, pruningPoint, virtualParents)
 		if err != nil {
 			return err
 		}
-		if !hasPruningPointInPast {
-			virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+		if !isInPruningFutureOrInVirtualPast {
+			// Add them to the queue so they and their past will be pruned
+			err := queue.Push(tip)
 			if err != nil {
 				return err
-			}
-
-			// Because virtual doesn't have reachability data, we need to check reachability
-			// using it parents.
-			isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(tip, virtualParents)
-			if err != nil {
-				return err
-			}
-			if !isInVirtualPast {
-				// Add them to the queue so they and their past will be pruned
-				err := queue.Push(tip)
-				if err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -261,6 +273,24 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 			}
 		}
 	}
+
+	// Delete virtual diff parents that are in PruningPoint's Anticone and not in Virtual's Past
+	virtualDiffParents, err := pm.consensusStateStore.VirtualDiffParents(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	validVirtualDiffParents := make([]*externalapi.DomainHash, 0, len(virtualParents))
+	for _, parent := range virtualDiffParents {
+		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(parent, pruningPoint, virtualParents)
+		if err != nil {
+			return err
+		}
+		if isInPruningFutureOrInVirtualPast {
+			validVirtualDiffParents = append(validVirtualDiffParents, parent)
+		}
+	}
+	pm.consensusStateStore.StageVirtualDiffParents(validVirtualDiffParents)
+
 	return nil
 }
 

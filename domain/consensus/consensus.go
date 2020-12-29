@@ -229,7 +229,7 @@ func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.D
 	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
 }
 
-func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
+func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -237,7 +237,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	if err != nil {
 		return nil, err
 	}
-	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
+	return virtualGHOSTDAGData.SelectedParent(), nil
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {

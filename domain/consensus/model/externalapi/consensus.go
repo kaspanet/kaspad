@@ -16,7 +16,7 @@ type Consensus interface {
 	GetPruningPointUTXOSet(expectedPruningPointHash *DomainHash) ([]byte, error)
 	PruningPoint() (*DomainHash, error)
 	ValidateAndInsertPruningPoint(newPruningPoint *DomainBlock, serializedUTXOSet []byte) error
-	GetVirtualSelectedParent() (*DomainBlock, error)
+	GetVirtualSelectedParent() (*DomainHash, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
 	FindNextBlockLocatorBoundaries(blockLocator BlockLocator) (lowHash, highHash *DomainHash, err error)
 	GetSyncInfo() (*SyncInfo, error)
