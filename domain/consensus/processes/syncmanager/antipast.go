@@ -35,12 +35,18 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		// Using blueScore as an approximation is considered to be
 		// fairly accurate because we presume that most DAG blocks are
 		// blue.
-		for highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
-			highHash = highBlockGHOSTDAGData.SelectedParent()
-			var err error
+		iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
+		if err != nil {
+			return nil, err
+		}
+		for iterator.Next() {
+			highHash = iterator.Get()
 			highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
 			if err != nil {
 				return nil, err
+			}
+			if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
+				break
 			}
 		}
 	}
