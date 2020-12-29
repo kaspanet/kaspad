@@ -55,9 +55,11 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 			return nil, err
 		}
 	}
-
+	if x.Version > 0xffff {
+		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
+	}
 	return &appmessage.MsgTx{
-		Version:      x.Version,
+		Version:      uint16(x.Version),
 		TxIn:         inputs,
 		TxOut:        outputs,
 		LockTime:     x.LockTime,
@@ -93,7 +95,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	}
 
 	*x = TransactionMessage{
-		Version:      msgTx.Version,
+		Version:      uint32(msgTx.Version),
 		Inputs:       protoInputs,
 		Outputs:      protoOutputs,
 		LockTime:     msgTx.LockTime,

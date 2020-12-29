@@ -135,7 +135,7 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "d88c9ec2660be79c8ed93247e40af00efdf02456e10b76103ccc3e3c8b2dad4a"
+	txID1Str := "b2ea3b2bfb71b55bd702933e239763f88bd402a640b71ed41438702e8ff17d66"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -183,14 +183,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "bd77d78707ea99c868225a112b2116f1efeb4ac64fdd2c3884a85853823052d1"
+	hash2Str := "2e97428e1991a8ae2e2369b3d584308d45af261a31b99adf6e92174fec95f967"
 	wantHash2, err := hashes.FromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "9be45ec70f713292497f955675ca679621f7f953397db3eb1ec861ed51a75168"
+	id2Str := "0e6e96424c5fbbb6bab3d70ff1bf0c6ed5bee9b5635888114031c1b592ffcd9f"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)

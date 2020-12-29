@@ -6,7 +6,7 @@ import (
 
 // DomainTransaction represents a Kaspa transaction
 type DomainTransaction struct {
-	Version      int32
+	Version      uint16
 	Inputs       []*DomainTransactionInput
 	Outputs      []*DomainTransactionOutput
 	LockTime     uint64

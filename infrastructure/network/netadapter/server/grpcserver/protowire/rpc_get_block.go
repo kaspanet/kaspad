@@ -148,11 +148,14 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 			ScriptPubKey: scriptPubKey,
 		}
 	}
+	if x.Version > 0xffff {
+		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
+	}
 	return &appmessage.TransactionVerboseData{
 		TxID:                      x.TxId,
 		Hash:                      x.Hash,
 		Size:                      x.Size,
-		Version:                   x.Version,
+		Version:                   uint16(x.Version),
 		LockTime:                  x.LockTime,
 		SubnetworkID:              x.SubnetworkId,
 		Gas:                       x.Gas,
@@ -197,7 +200,7 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		TxId:                      message.TxID,
 		Hash:                      message.Hash,
 		Size:                      message.Size,
-		Version:                   message.Version,
+		Version:                   uint32(message.Version),
 		LockTime:                  message.LockTime,
 		SubnetworkId:              message.SubnetworkID,
 		Gas:                       message.Gas,

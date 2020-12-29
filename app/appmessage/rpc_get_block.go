@@ -66,7 +66,7 @@ type TransactionVerboseData struct {
 	TxID                      string
 	Hash                      string
 	Size                      uint64
-	Version                   int32
+	Version                   uint16
 	LockTime                  uint64
 	SubnetworkID              string
 	Gas                       uint64

@@ -240,6 +240,9 @@ var (
 
 	//ErrBlockVersionIsUnknown indicates that the block version is unknown.
 	ErrBlockVersionIsUnknown = newRuleError("ErrBlockVersionIsUnknown")
+
+	//ErrTxnVersionIsUnknown indicates that the txn version is unknown.
+	ErrTxnVersionIsUnknown = newRuleError("ErrTxnVersionIsUnknown")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

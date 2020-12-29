@@ -93,7 +93,7 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 }
 
 func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
-	err := binaryserializer.PutUint32(w, uint32(tx.Version))
+	err := binaryserializer.PutUint16(w, tx.Version)
 	if err != nil {
 		return err
 	}

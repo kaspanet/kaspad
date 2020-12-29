@@ -14,7 +14,7 @@ func TransactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 		return 0
 	}
 	size := uint64(0)
-
+	size += 2 // Txn Version
 	size += 8 // number of inputs (uint64)
 	for _, input := range tx.Inputs {
 		size += transactionInputEstimatedSerializedSize(input)

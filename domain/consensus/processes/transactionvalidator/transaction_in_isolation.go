@@ -50,6 +50,11 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if err != nil {
 		return err
 	}
+
+	if tx.Version > constants.TransactionVersion {
+		return errors.Wrapf(ruleerrors.ErrTxnVersionIsUnknown, "validation failed: unknown transaction version. ")
+	}
+
 	return nil
 }
 
