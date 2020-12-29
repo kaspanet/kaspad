@@ -190,7 +190,6 @@ func TestBoundedMergeDepth(t *testing.T) {
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
-			fmt.Printf("~~~~~~ inserting block %s\n", consensushashing.BlockHash(block))
 			_, err = consensus.ValidateAndInsertBlock(block)
 			if err == nil {
 				return block, false

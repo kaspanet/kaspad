@@ -1,8 +1,6 @@
 package reachabilitymanager
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -104,8 +102,6 @@ func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *exter
 	}
 
 	candidate := futureCoveringSet[ancestorIndex]
-	if candidate.String() == "975bc80003886bc362033a47175732b8c3404eb2a13ef59f99d921bf3496e4cf" {
-		fmt.Printf("~~~~ HERE IT IS!!!")
-	}
+
 	return rt.IsReachabilityTreeAncestorOf(candidate, other)
 }

@@ -1,8 +1,6 @@
 package reachabilitymanager
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
@@ -34,9 +32,6 @@ func New(
 
 // AddBlock adds the block with the given blockHash into the reachability tree.
 func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
-	if blockHash.String() == "975bc80003886bc362033a47175732b8c3404eb2a13ef59f99d921bf3496e4cf" {
-		fmt.Printf("~~~~~ AHA! GOT YOU!")
-	}
 	// Allocate a new reachability data
 	newReachabilityData := newReachabilityTreeData()
 	rt.stageData(blockHash, newReachabilityData)
