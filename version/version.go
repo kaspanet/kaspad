@@ -21,8 +21,7 @@ var appBuild string
 
 var version = "" // string used for memoization of version
 
-// Version returns the application version as a properly formed string
-func Version() string {
+func init() {
 	if version == "" {
 		// Start with the major, minor, and patch versions.
 		version = fmt.Sprintf("%d.%d.%d", appMajor, appMinor, appPatch)
@@ -35,7 +34,10 @@ func Version() string {
 			version = fmt.Sprintf("%s-%s", version, appBuild)
 		}
 	}
+}
 
+// Version returns the application version as a properly formed string
+func Version() string {
 	return version
 }
 

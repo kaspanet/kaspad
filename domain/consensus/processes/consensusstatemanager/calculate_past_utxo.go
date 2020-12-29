@@ -15,11 +15,11 @@ import (
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
 	model.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
-	log.Tracef("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
-	defer log.Tracef("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
+	log.Debugf("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
+	defer log.Debugf("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
-		log.Tracef("Block %s is the genesis. By definition, "+
+		log.Debugf("Block %s is the genesis. By definition, "+
 			"it has an empty UTXO diff, empty acceptance data, and a blank multiset", blockHash)
 		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
 	}
@@ -29,53 +29,53 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Restoring the past UTXO of block %s with selectedParent %s",
+	log.Debugf("Restoring the past UTXO of block %s with selectedParent %s",
 		blockHash, blockGHOSTDAGData.SelectedParent())
 	selectedParentPastUTXO, err := csm.restorePastUTXO(blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
+	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
 	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Calculating the multiset of %s", blockHash)
+	log.Debugf("Calculating the multiset of %s", blockHash)
 	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	log.Tracef("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
+	log.Debugf("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
 
 	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
 
 func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.MutableUTXODiff, error) {
-	log.Tracef("restorePastUTXO start for block %s", blockHash)
-	defer log.Tracef("restorePastUTXO end for block %s", blockHash)
+	log.Debugf("restorePastUTXO start for block %s", blockHash)
+	defer log.Debugf("restorePastUTXO end for block %s", blockHash)
 
 	var err error
 
-	log.Tracef("Collecting UTXO diffs for block %s", blockHash)
+	log.Debugf("Collecting UTXO diffs for block %s", blockHash)
 	var utxoDiffs []model.UTXODiff
 	nextBlockHash := blockHash
 	for {
-		log.Tracef("Collecting UTXO diff for block %s", nextBlockHash)
+		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
-		log.Tracef("Collected UTXO diff for block %s: %s", nextBlockHash, utxoDiff)
+		log.Debugf("Collected UTXO diff for block %s: %s", nextBlockHash, utxoDiff)
 
 		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			log.Tracef("Block %s does not have a UTXO diff child, "+
+			log.Debugf("Block %s does not have a UTXO diff child, "+
 				"meaning we reached the virtual. Returning the collected "+
 				"UTXO diffs: %s", nextBlockHash, utxoDiffs)
 			break
@@ -86,7 +86,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 			return nil, err
 		}
 		if nextBlockHash == nil {
-			log.Tracef("Block %s does not have a UTXO diff child, "+
+			log.Debugf("Block %s does not have a UTXO diff child, "+
 				"meaning we reached the virtual. Returning the collected "+
 				"UTXO diffs: %s", nextBlockHash, utxoDiffs)
 			break
@@ -94,7 +94,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	}
 
 	// apply the diffs in reverse order
-	log.Tracef("Applying the collected UTXO diffs for block %s in reverse order", blockHash)
+	log.Debugf("Applying the collected UTXO diffs for block %s in reverse order", blockHash)
 	accumulatedDiff := utxo.NewMutableUTXODiff()
 	for i := len(utxoDiffs) - 1; i >= 0; i-- {
 		err = accumulatedDiff.WithDiffInPlace(utxoDiffs[i])
@@ -111,7 +111,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData model.BlockGHOSTDAGData) (
 	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
 
-	log.Tracef("applyMergeSetBlocks start for block %s", blockHash)
+	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
 	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
 
 	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSet())

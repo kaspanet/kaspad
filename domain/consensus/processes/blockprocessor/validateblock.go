@@ -27,10 +27,10 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 	}
 
 	if !hasValidatedHeader {
-		log.Tracef("Staging block %s header", blockHash)
+		log.Debugf("Staging block %s header", blockHash)
 		bp.blockHeaderStore.Stage(blockHash, block.Header)
 	} else {
-		log.Tracef("Block %s header is already known, so no need to stage it", blockHash)
+		log.Debugf("Block %s header is already known, so no need to stage it", blockHash)
 	}
 
 	// If any validation until (included) proof-of-work fails, simply

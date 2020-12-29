@@ -70,7 +70,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
 		orphanBlock := f.orphans[orphanHash]
 
-		log.Tracef("Considering to unorphan block %s with parents %s",
+		log.Debugf("Considering to unorphan block %s with parents %s",
 			orphanHash, orphanBlock.Header.ParentHashes)
 
 		canBeUnorphaned := true
@@ -80,7 +80,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 				return nil, err
 			}
 			if !orphanBlockParentInfo.Exists || orphanBlockParentInfo.BlockStatus == externalapi.StatusHeaderOnly {
-				log.Tracef("Cannot unorphan block %s. It's missing at "+
+				log.Debugf("Cannot unorphan block %s. It's missing at "+
 					"least the following parent: %s", orphanHash, orphanBlockParentHash)
 
 				canBeUnorphaned = false
@@ -88,15 +88,17 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 			}
 		}
 		if canBeUnorphaned {
-			blockInsertionResult, err := f.unorphanBlock(orphanHash)
+			blockInsertionResult, unorphaningSucceeded, err := f.unorphanBlock(orphanHash)
 			if err != nil {
 				return nil, err
 			}
-			unorphaningResults = append(unorphaningResults, &UnorphaningResult{
-				block:                orphanBlock,
-				blockInsertionResult: blockInsertionResult,
-			})
-			processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
+			if unorphaningSucceeded {
+				unorphaningResults = append(unorphaningResults, &UnorphaningResult{
+					block:                orphanBlock,
+					blockInsertionResult: blockInsertionResult,
+				})
+				processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
+			}
 		}
 	}
 
@@ -139,10 +141,10 @@ func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash)
 	return childOrphans
 }
 
-func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.BlockInsertionResult, error) {
+func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.BlockInsertionResult, bool, error) {
 	orphanBlock, ok := f.orphans[orphanHash]
 	if !ok {
-		return nil, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
+		return nil, false, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
 	delete(f.orphans, orphanHash)
 
@@ -150,11 +152,12 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externa
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for orphan block %s: %s", orphanHash, err)
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
+	f.updateRecentBlockAddedTimesWithLastBlock()
 
 	log.Infof("Unorphaned block %s", orphanHash)
-	return blockInsertionResult, nil
+	return blockInsertionResult, true, nil
 }
