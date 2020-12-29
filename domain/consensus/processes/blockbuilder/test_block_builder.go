@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -41,7 +42,7 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 
 func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
 	transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
-	*externalapi.DomainBlockHeader, error) {
+	externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(tempBlockHash)
 	if err != nil {
@@ -60,16 +61,16 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	utxoCommitment := multiset.Hash()
 
 	bb.nonceCounter++
-	return &externalapi.DomainBlockHeader{
-		Version:              constants.BlockVersion,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   timeInMilliseconds,
-		Bits:                 bits,
-		Nonce:                bb.nonceCounter,
-	}, nil
+	return blockheader.NewImmutableBlockHeader(
+		constants.BlockVersion,
+		parentHashes,
+		hashMerkleRoot,
+		acceptedIDMerkleRoot,
+		utxoCommitment,
+		timeInMilliseconds,
+		bits,
+		bb.nonceCounter,
+	), nil
 }
 
 func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error) {

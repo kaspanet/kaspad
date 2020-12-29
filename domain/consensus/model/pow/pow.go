@@ -13,7 +13,7 @@ import (
 
 // CheckProofOfWorkWithTarget check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func CheckProofOfWorkWithTarget(header *externalapi.DomainBlockHeader, target *big.Int) bool {
+func CheckProofOfWorkWithTarget(header externalapi.MutableBlockHeader, target *big.Int) bool {
 	// The block pow must be less than the claimed target
 	powNum := calcPowValue(header)
 
@@ -23,17 +23,19 @@ func CheckProofOfWorkWithTarget(header *externalapi.DomainBlockHeader, target *b
 
 // CheckProofOfWorkByBits check's if the block has a valid PoW according to its Bits field
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func CheckProofOfWorkByBits(header *externalapi.DomainBlockHeader) bool {
-	return CheckProofOfWorkWithTarget(header, util.CompactToBig(header.Bits))
+func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader) bool {
+	return CheckProofOfWorkWithTarget(header, util.CompactToBig(header.Bits()))
 }
 
-func calcPowValue(header *externalapi.DomainBlockHeader) *big.Int {
+func calcPowValue(header externalapi.MutableBlockHeader) *big.Int {
 	// Zero out the time and nonce.
-	timestamp, nonce := header.TimeInMilliseconds, header.Nonce
-	header.TimeInMilliseconds, header.Nonce = 0, 0
+	timestamp, nonce := header.TimeInMilliseconds(), header.Nonce()
+	header.SetTimeInMilliseconds(0)
+	header.SetNonce(0)
 
 	prePowHash := consensushashing.HeaderHash(header)
-	header.TimeInMilliseconds, header.Nonce = timestamp, nonce
+	header.SetTimeInMilliseconds(timestamp)
+	header.SetNonce(nonce)
 
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.NewPoWHashWriter()

@@ -33,21 +33,21 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	return nil
 }
 
-func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error {
 	hash := consensushashing.HeaderHash(header)
-	if len(header.ParentHashes) == 0 && !hash.Equal(v.genesisHash) {
+	if len(header.ParentHashes()) == 0 && !hash.Equal(v.genesisHash) {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.ParentHashes)) > uint64(v.maxBlockParents) {
+	if uint64(len(header.ParentHashes())) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(header.ParentHashes), v.maxBlockParents)
+			"is %d", len(header.ParentHashes()), v.maxBlockParents)
 	}
 	return nil
 }
 
-func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.DomainBlockHeader) error {
-	blockTimestamp := header.TimeInMilliseconds
+func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.BlockHeader) error {
+	blockTimestamp := header.TimeInMilliseconds()
 	now := mstime.Now().UnixMilliseconds()
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
 	if blockTimestamp > maxCurrentTime {

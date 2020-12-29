@@ -71,13 +71,13 @@ func (f *FlowContext) ShouldMine() (bool, error) {
 	}
 
 	now := mstime.Now().UnixMilliseconds()
-	if now-virtualSelectedParentHeader.TimeInMilliseconds < maxSelectedParentTimeDiffToAllowMiningInMilliSeconds {
+	if now-virtualSelectedParentHeader.TimeInMilliseconds() < maxSelectedParentTimeDiffToAllowMiningInMilliSeconds {
 		log.Debugf("The selected tip timestamp is recent (%d), so ShouldMine returns true",
-			virtualSelectedParentHeader.TimeInMilliseconds)
+			virtualSelectedParentHeader.TimeInMilliseconds())
 		return true, nil
 	}
 
 	log.Debugf("The selected tip timestamp is old (%d), so ShouldMine returns false",
-		virtualSelectedParentHeader.TimeInMilliseconds)
+		virtualSelectedParentHeader.TimeInMilliseconds())
 	return false, nil
 }

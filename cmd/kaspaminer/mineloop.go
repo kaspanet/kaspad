@@ -95,7 +95,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes, client.Address())
+	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
 
 	err := client.SubmitBlock(block)
 	if err != nil {
@@ -105,16 +105,18 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 }
 
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
+	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
 			return
 		default:
-			block.Header.Nonce = i
+			headerForMining.SetNonce(i)
 			atomic.AddUint64(&hashesTried, 1)
-			if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
+			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+				block.Header = headerForMining.ToImmutable()
 				foundBlock <- block
 				return
 			}

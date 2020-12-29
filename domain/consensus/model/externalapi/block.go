@@ -2,7 +2,7 @@ package externalapi
 
 // DomainBlock represents a Kaspa block
 type DomainBlock struct {
-	Header       *DomainBlockHeader
+	Header       BlockHeader
 	Transactions []*DomainTransaction
 }
 
@@ -14,14 +14,14 @@ func (block *DomainBlock) Clone() *DomainBlock {
 	}
 
 	return &DomainBlock{
-		Header:       block.Header.Clone(),
+		Header:       block.Header,
 		Transactions: transactionClone,
 	}
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = DomainBlock{&DomainBlockHeader{}, []*DomainTransaction{}}
+var _ = DomainBlock{nil, []*DomainTransaction{}}
 
 // Equal returns whether block equals to other
 func (block *DomainBlock) Equal(other *DomainBlock) bool {
@@ -46,74 +46,30 @@ func (block *DomainBlock) Equal(other *DomainBlock) bool {
 	return true
 }
 
-// DomainBlockHeader represents the header part of a Kaspa block
-type DomainBlockHeader struct {
-	Version              int32
-	ParentHashes         []*DomainHash
-	HashMerkleRoot       DomainHash
-	AcceptedIDMerkleRoot DomainHash
-	UTXOCommitment       DomainHash
-	TimeInMilliseconds   int64
-	Bits                 uint32
-	Nonce                uint64
+// BlockHeader represents an immutable block header.
+type BlockHeader interface {
+	BaseBlockHeader
+	ToMutable() MutableBlockHeader
 }
 
-// Clone returns a clone of DomainBlockHeader
-func (header *DomainBlockHeader) Clone() *DomainBlockHeader {
-	return &DomainBlockHeader{
-		Version:              header.Version,
-		ParentHashes:         CloneHashes(header.ParentHashes),
-		HashMerkleRoot:       header.HashMerkleRoot,
-		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
-		UTXOCommitment:       header.UTXOCommitment,
-		TimeInMilliseconds:   header.TimeInMilliseconds,
-		Bits:                 header.Bits,
-		Nonce:                header.Nonce,
-	}
+// BaseBlockHeader represents the header part of a Kaspa block
+type BaseBlockHeader interface {
+	Version() int32
+	ParentHashes() []*DomainHash
+	HashMerkleRoot() *DomainHash
+	AcceptedIDMerkleRoot() *DomainHash
+	UTXOCommitment() *DomainHash
+	TimeInMilliseconds() int64
+	Bits() uint32
+	Nonce() uint64
+	Equal(other BaseBlockHeader) bool
 }
 
-// If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal and Clone accordingly.
-var _ = &DomainBlockHeader{0, []*DomainHash{}, DomainHash{},
-	DomainHash{}, DomainHash{}, 0, 0, 0}
-
-// Equal returns whether header equals to other
-func (header *DomainBlockHeader) Equal(other *DomainBlockHeader) bool {
-	if header == nil || other == nil {
-		return header == other
-	}
-
-	if header.Version != other.Version {
-		return false
-	}
-
-	if !HashesEqual(header.ParentHashes, other.ParentHashes) {
-		return false
-	}
-
-	if !header.HashMerkleRoot.Equal(&other.HashMerkleRoot) {
-		return false
-	}
-
-	if !header.AcceptedIDMerkleRoot.Equal(&other.AcceptedIDMerkleRoot) {
-		return false
-	}
-
-	if !header.UTXOCommitment.Equal(&other.UTXOCommitment) {
-		return false
-	}
-
-	if header.TimeInMilliseconds != other.TimeInMilliseconds {
-		return false
-	}
-
-	if header.Bits != other.Bits {
-		return false
-	}
-
-	if header.Nonce != other.Nonce {
-		return false
-	}
-
-	return true
+// MutableBlockHeader represents a block header that can be mutated, but only
+// the fields that are relevant to mining (Nonce and TimeInMilliseconds).
+type MutableBlockHeader interface {
+	BaseBlockHeader
+	ToImmutable() BlockHeader
+	SetNonce(nonce uint64)
+	SetTimeInMilliseconds(timeInMilliseconds int64)
 }

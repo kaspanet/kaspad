@@ -2,6 +2,7 @@ package appmessage
 
 import (
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -21,17 +22,17 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	}
 }
 
-// DomainBlockHeaderToBlockHeader converts an externalapi.DomainBlockHeader to MsgBlockHeader
-func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *MsgBlockHeader {
+// DomainBlockHeaderToBlockHeader converts an externalapi.BlockHeader to MsgBlockHeader
+func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *MsgBlockHeader {
 	return &MsgBlockHeader{
-		Version:              domainBlockHeader.Version,
-		ParentHashes:         domainBlockHeader.ParentHashes,
-		HashMerkleRoot:       &domainBlockHeader.HashMerkleRoot,
-		AcceptedIDMerkleRoot: &domainBlockHeader.AcceptedIDMerkleRoot,
-		UTXOCommitment:       &domainBlockHeader.UTXOCommitment,
-		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds),
-		Bits:                 domainBlockHeader.Bits,
-		Nonce:                domainBlockHeader.Nonce,
+		Version:              domainBlockHeader.Version(),
+		ParentHashes:         domainBlockHeader.ParentHashes(),
+		HashMerkleRoot:       domainBlockHeader.HashMerkleRoot(),
+		AcceptedIDMerkleRoot: domainBlockHeader.AcceptedIDMerkleRoot(),
+		UTXOCommitment:       domainBlockHeader.UTXOCommitment(),
+		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
+		Bits:                 domainBlockHeader.Bits(),
+		Nonce:                domainBlockHeader.Nonce(),
 	}
 }
 
@@ -48,18 +49,18 @@ func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 	}
 }
 
-// BlockHeaderToDomainBlockHeader converts a MsgBlockHeader to externalapi.DomainBlockHeader
-func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) *externalapi.DomainBlockHeader {
-	return &externalapi.DomainBlockHeader{
-		Version:              blockHeader.Version,
-		ParentHashes:         blockHeader.ParentHashes,
-		HashMerkleRoot:       *blockHeader.HashMerkleRoot,
-		AcceptedIDMerkleRoot: *blockHeader.AcceptedIDMerkleRoot,
-		UTXOCommitment:       *blockHeader.UTXOCommitment,
-		TimeInMilliseconds:   blockHeader.Timestamp.UnixMilliseconds(),
-		Bits:                 blockHeader.Bits,
-		Nonce:                blockHeader.Nonce,
-	}
+// BlockHeaderToDomainBlockHeader converts a MsgBlockHeader to externalapi.BlockHeader
+func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.BlockHeader {
+	return blockheader.NewImmutableBlockHeader(
+		blockHeader.Version,
+		blockHeader.ParentHashes,
+		blockHeader.HashMerkleRoot,
+		blockHeader.AcceptedIDMerkleRoot,
+		blockHeader.UTXOCommitment,
+		blockHeader.Timestamp.UnixMilliseconds(),
+		blockHeader.Bits,
+		blockHeader.Nonce,
+	)
 }
 
 // DomainTransactionToMsgTx converts an externalapi.DomainTransaction into an MsgTx

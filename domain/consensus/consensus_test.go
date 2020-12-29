@@ -24,7 +24,9 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		invalidBlock.Header.TimeInMilliseconds = 0
+		newHeader := invalidBlock.Header.ToMutable()
+		newHeader.SetTimeInMilliseconds(0)
+		invalidBlock.Header = newHeader.ToImmutable()
 		_, err = consensus.ValidateAndInsertBlock(invalidBlock)
 		if !errors.Is(err, ruleerrors.ErrTimeTooOld) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrTimeTooOld, err)

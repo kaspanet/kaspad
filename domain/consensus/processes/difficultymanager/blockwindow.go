@@ -23,8 +23,8 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 		return difficultyBlock{}, err
 	}
 	return difficultyBlock{
-		timeInMilliseconds: header.TimeInMilliseconds,
-		Bits:               header.Bits,
+		timeInMilliseconds: header.TimeInMilliseconds(),
+		Bits:               header.Bits(),
 	}, nil
 }
 
