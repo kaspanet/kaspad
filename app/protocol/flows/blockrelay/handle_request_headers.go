@@ -10,7 +10,6 @@ import (
 )
 
 const ibdBatchSize = router.DefaultMaxMessages
-const maxHeaders = appmessage.MaxInvPerMsg
 
 // RequestIBDBlocksContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestIBDBlocksContext interface {
@@ -39,26 +38,40 @@ func (flow *handleRequestBlocksFlow) start() error {
 			return err
 		}
 
-		msgHeaders, err := flow.buildMsgBlockHeaders(lowHash, highHash)
+		// GetHashesBetween is a relatively heavy operation so we limit it.
+		// We expect that if the other peer did not receive all the headers
+		// they requested, they'd re-request a block locator and re-request
+		// headers with a higher lowHash
+		const maxBlueScoreDifference = 1 << 10
+		blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 		if err != nil {
 			return err
 		}
 
-		for offset := 0; offset < len(msgHeaders); offset += ibdBatchSize {
+		for offset := 0; offset < len(blockHashes); offset += ibdBatchSize {
 			end := offset + ibdBatchSize
-			if end > len(msgHeaders) {
-				end = len(msgHeaders)
+			if end > len(blockHashes) {
+				end = len(blockHashes)
 			}
 
-			blocksToSend := msgHeaders[offset:end]
-			err = flow.sendHeaders(blocksToSend)
+			blocksHashesToSend := blockHashes[offset:end]
+
+			msgBlockHeadersToSend := make([]*appmessage.MsgBlockHeader, len(blocksHashesToSend))
+			for i, blockHash := range blocksHashesToSend {
+				header, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
+				if err != nil {
+					return err
+				}
+				msgBlockHeadersToSend[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
+			}
+			err = flow.sendHeaders(msgBlockHeadersToSend)
 			if err != nil {
 				return nil
 			}
 
 			// Exit the loop and don't wait for the GetNextIBDBlocks message if the last batch was
 			// less than ibdBatchSize.
-			if len(blocksToSend) < ibdBatchSize {
+			if len(blocksHashesToSend) < ibdBatchSize {
 				break
 			}
 
@@ -89,30 +102,6 @@ func receiveRequestHeaders(incomingRoute *router.Route) (lowHash *externalapi.Do
 	msgRequestIBDBlocks := message.(*appmessage.MsgRequestHeaders)
 
 	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
-}
-
-func (flow *handleRequestBlocksFlow) buildMsgBlockHeaders(lowHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash) ([]*appmessage.MsgBlockHeader, error) {
-
-	blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(blockHashes) > maxHeaders {
-		blockHashes = blockHashes[:maxHeaders]
-	}
-
-	msgBlockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
-	for i, blockHash := range blockHashes {
-		header, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
-		if err != nil {
-			return nil, err
-		}
-		msgBlockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
-	}
-
-	return msgBlockHeaders, nil
 }
 
 func (flow *handleRequestBlocksFlow) sendHeaders(headers []*appmessage.MsgBlockHeader) error {

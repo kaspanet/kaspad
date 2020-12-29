@@ -5,17 +5,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsExist(blockHash, header)
+	err = v.checkParentHeadersExist(header)
 	if err != nil {
 		return err
 	}
@@ -93,20 +97,14 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 	if !v.skipPoW {
 		valid := pow.CheckProofOfWorkWithTarget(header, target)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrUnexpectedDifficulty, "block has invalid difficulty")
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(header *externalapi.DomainBlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
-
-	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
-	if err != nil {
-		return err
-	}
-
 	for _, parent := range header.ParentHashes {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
@@ -117,14 +115,13 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			continue
 		}
 
-		if isFullBlock {
-			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-			if err != nil {
-				return err
-			}
-			if parentStatus == externalapi.StatusHeaderOnly {
-				missingParentHashes = append(missingParentHashes, parent)
-			}
+		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if parentStatus == externalapi.StatusInvalid {
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 	}
 

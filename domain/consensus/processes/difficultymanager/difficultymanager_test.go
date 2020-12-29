@@ -2,6 +2,9 @@ package difficultymanager_test
 
 import (
 	"testing"
+	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -18,6 +21,14 @@ func TestDifficulty(t *testing.T) {
 		if params.DisableDifficultyAdjustment {
 			return
 		}
+		// This test generates 3066 blocks above genesis with at least 1 second between each block, amounting to
+		// a bit less then an hour of timestamps.
+		// To prevent rejected blocks due to timestamps in the future, the following safeguard makes sure
+		// the genesis block is at least 1 hour in the past.
+		if params.GenesisBlock.Header.TimeInMilliseconds > mstime.ToMSTime(time.Now().Add(-time.Hour)).UnixMilliseconds() {
+			t.Fatalf("TestDifficulty requires the GenesisBlock to be at least 1 hour old to pass")
+		}
+
 		params.K = 1
 		params.DifficultyAdjustmentWindowSize = 264
 
@@ -26,7 +37,7 @@ func TestDifficulty(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		addBlock := func(blockTime int64, parents ...*externalapi.DomainHash) (*externalapi.DomainBlock, *externalapi.DomainHash) {
 			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(parents...)
@@ -49,7 +60,7 @@ func TestDifficulty(t *testing.T) {
 			}
 
 			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
+			_, err = tc.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}

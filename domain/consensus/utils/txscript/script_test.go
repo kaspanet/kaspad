@@ -3364,17 +3364,17 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			expectedErr: scriptError(ErrInternal, ""),
 		},
 		{
-			name: "OP_HASH256",
+			name: "OP_BLAKE2B",
 			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash256],
+				opcode: &opcodeArray[OpBlake2b],
 				data:   nil,
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "OP_HASH256 long",
+			name: "OP_BLAKE2B long",
 			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash256],
+				opcode: &opcodeArray[OpBlake2b],
 				data:   make([]byte, 1),
 			},
 			expectedErr: scriptError(ErrInternal, ""),

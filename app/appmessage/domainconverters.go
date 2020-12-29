@@ -1,7 +1,11 @@
 package appmessage
 
 import (
+	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
@@ -151,5 +155,115 @@ func outpointToDomainOutpoint(outpoint *Outpoint) *externalapi.DomainOutpoint {
 	return &externalapi.DomainOutpoint{
 		TransactionID: outpoint.TxID,
 		Index:         outpoint.Index,
+	}
+}
+
+// RPCTransactionToDomainTransaction converts RPCTransactions to DomainTransactions
+func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externalapi.DomainTransaction, error) {
+	inputs := make([]*externalapi.DomainTransactionInput, len(rpcTransaction.Inputs))
+	for i, input := range rpcTransaction.Inputs {
+		transactionIDBytes, err := hex.DecodeString(input.PreviousOutpoint.TransactionID)
+		if err != nil {
+			return nil, err
+		}
+		transactionID, err := transactionid.FromBytes(transactionIDBytes)
+		if err != nil {
+			return nil, err
+		}
+		previousOutpoint := &externalapi.DomainOutpoint{
+			TransactionID: *transactionID,
+			Index:         input.PreviousOutpoint.Index,
+		}
+		signatureScript, err := hex.DecodeString(input.SignatureScript)
+		if err != nil {
+			return nil, err
+		}
+		inputs[i] = &externalapi.DomainTransactionInput{
+			PreviousOutpoint: *previousOutpoint,
+			SignatureScript:  signatureScript,
+			Sequence:         input.Sequence,
+		}
+	}
+	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
+	for i, output := range rpcTransaction.Outputs {
+		scriptPublicKey, err := hex.DecodeString(output.ScriptPubKey)
+		if err != nil {
+			return nil, err
+		}
+		outputs[i] = &externalapi.DomainTransactionOutput{
+			Value:           output.Amount,
+			ScriptPublicKey: scriptPublicKey,
+		}
+	}
+
+	subnetworkIDBytes, err := hex.DecodeString(rpcTransaction.SubnetworkID)
+	if err != nil {
+		return nil, err
+	}
+	subnetworkID, err := subnetworks.FromBytes(subnetworkIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	payloadHashBytes, err := hex.DecodeString(rpcTransaction.PayloadHash)
+	if err != nil {
+		return nil, err
+	}
+	payloadHash, err := externalapi.NewDomainHashFromByteSlice(payloadHashBytes)
+	if err != nil {
+		return nil, err
+	}
+	payload, err := hex.DecodeString(rpcTransaction.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainTransaction{
+		Version:      rpcTransaction.Version,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     rpcTransaction.LockTime,
+		SubnetworkID: *subnetworkID,
+		Gas:          rpcTransaction.LockTime,
+		PayloadHash:  *payloadHash,
+		Payload:      payload,
+	}, nil
+}
+
+// DomainTransactionToRPCTransaction converts DomainTransactions to RPCTransactions
+func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransaction) *RPCTransaction {
+	inputs := make([]*RPCTransactionInput, len(transaction.Inputs))
+	for i, input := range transaction.Inputs {
+		transactionID := input.PreviousOutpoint.TransactionID.String()
+		previousOutpoint := &RPCOutpoint{
+			TransactionID: transactionID,
+			Index:         input.PreviousOutpoint.Index,
+		}
+		signatureScript := hex.EncodeToString(input.SignatureScript)
+		inputs[i] = &RPCTransactionInput{
+			PreviousOutpoint: previousOutpoint,
+			SignatureScript:  signatureScript,
+			Sequence:         input.Sequence,
+		}
+	}
+	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))
+	for i, output := range transaction.Outputs {
+		scriptPublicKey := hex.EncodeToString(output.ScriptPublicKey)
+		outputs[i] = &RPCTransactionOutput{
+			Amount:       output.Value,
+			ScriptPubKey: scriptPublicKey,
+		}
+	}
+	subnetworkID := hex.EncodeToString(transaction.SubnetworkID[:])
+	payloadHash := transaction.PayloadHash.String()
+	payload := hex.EncodeToString(transaction.Payload)
+	return &RPCTransaction{
+		Version:      transaction.Version,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     transaction.LockTime,
+		SubnetworkID: subnetworkID,
+		Gas:          transaction.LockTime,
+		PayloadHash:  payloadHash,
+		Payload:      payload,
 	}
 }

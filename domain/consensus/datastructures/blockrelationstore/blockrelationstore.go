@@ -89,7 +89,7 @@ func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *external
 }
 
 func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (brs *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) ([]byte, error) {

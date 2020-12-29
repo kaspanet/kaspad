@@ -89,6 +89,8 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		Difficulty:             x.Difficulty,
 		ParentHashes:           x.ParentHashes,
 		SelectedParentHash:     x.SelectedParentHash,
+		IsHeaderOnly:           x.IsHeaderOnly,
+		BlueScore:              x.BlueScore,
 	}, nil
 }
 
@@ -117,6 +119,8 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 		Difficulty:             message.Difficulty,
 		ParentHashes:           message.ParentHashes,
 		SelectedParentHash:     message.SelectedParentHash,
+		IsHeaderOnly:           message.IsHeaderOnly,
+		BlueScore:              message.BlueScore,
 	}
 	return nil
 }

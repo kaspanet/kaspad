@@ -1,7 +1,10 @@
 package externalapi
 
 import (
+	"bytes"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // DomainTransaction represents a Kaspa transaction
@@ -25,10 +28,6 @@ type DomainTransaction struct {
 
 // Clone returns a clone of DomainTransaction
 func (tx *DomainTransaction) Clone() *DomainTransaction {
-	if tx == nil {
-		return nil
-	}
-
 	payloadClone := make([]byte, len(tx.Payload))
 	copy(payloadClone, tx.Payload)
 
@@ -42,6 +41,11 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		outputsClone[i] = output.Clone()
 	}
 
+	var idClone *DomainTransactionID
+	if tx.ID != nil {
+		idClone = tx.ID.Clone()
+	}
+
 	return &DomainTransaction{
 		Version:      tx.Version,
 		Inputs:       inputsClone,
@@ -49,11 +53,83 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		LockTime:     tx.LockTime,
 		SubnetworkID: *tx.SubnetworkID.Clone(),
 		Gas:          tx.Gas,
-		PayloadHash:  *tx.PayloadHash.Clone(),
+		PayloadHash:  tx.PayloadHash,
 		Payload:      payloadClone,
 		Fee:          tx.Fee,
 		Mass:         tx.Mass,
+		ID:           idClone,
 	}
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
+	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0,
+	&DomainTransactionID{}}
+
+// Equal returns whether tx equals to other
+func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
+	if tx == nil || other == nil {
+		return tx == other
+	}
+
+	if tx.Version != other.Version {
+		return false
+	}
+
+	if len(tx.Inputs) != len(other.Inputs) {
+		return false
+	}
+
+	for i, input := range tx.Inputs {
+		if !input.Equal(other.Inputs[i]) {
+			return false
+		}
+	}
+
+	if len(tx.Outputs) != len(other.Outputs) {
+		return false
+	}
+
+	for i, output := range tx.Outputs {
+		if !output.Equal(other.Outputs[i]) {
+			return false
+		}
+	}
+
+	if tx.LockTime != other.LockTime {
+		return false
+	}
+
+	if !tx.SubnetworkID.Equal(&other.SubnetworkID) {
+		return false
+	}
+
+	if tx.Gas != other.Gas {
+		return false
+	}
+
+	if !tx.PayloadHash.Equal(&other.PayloadHash) {
+		return false
+	}
+
+	if !bytes.Equal(tx.Payload, other.Payload) {
+		return false
+	}
+
+	if tx.Fee != 0 && other.Fee != 0 && tx.Fee != other.Fee {
+		panic(errors.New("identical transactions should always have the same fee"))
+	}
+
+	if tx.Mass != 0 && other.Mass != 0 && tx.Mass != other.Mass {
+		panic(errors.New("identical transactions should always have the same mass"))
+	}
+
+	if tx.ID != nil && other.ID != nil && !tx.ID.Equal(other.ID) {
+		panic(errors.New("identical transactions should always have the same ID"))
+	}
+
+	return true
 }
 
 // DomainTransactionInput represents a Kaspa transaction input
@@ -65,12 +141,37 @@ type DomainTransactionInput struct {
 	UTXOEntry UTXOEntry
 }
 
-// Clone returns a clone of DomainTransactionInput
-func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
-	if input == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &DomainTransactionInput{DomainOutpoint{}, []byte{}, 0, nil}
+
+// Equal returns whether input equals to other
+func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
+	if input == nil || other == nil {
+		return input == other
 	}
 
+	if !input.PreviousOutpoint.Equal(&other.PreviousOutpoint) {
+		return false
+	}
+
+	if !bytes.Equal(input.SignatureScript, other.SignatureScript) {
+		return false
+	}
+
+	if input.Sequence != other.Sequence {
+		return false
+	}
+
+	if input.UTXOEntry != nil && other.UTXOEntry != nil && !input.UTXOEntry.Equal(other.UTXOEntry) {
+		panic(errors.New("identical inputs should always have the same UTXO entry"))
+	}
+
+	return true
+}
+
+// Clone returns a clone of DomainTransactionInput
+func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
 	signatureScriptClone := make([]byte, len(input.SignatureScript))
 	copy(signatureScriptClone, input.SignatureScript)
 
@@ -88,12 +189,21 @@ type DomainOutpoint struct {
 	Index         uint32
 }
 
-// Clone returns a clone of DomainOutpoint
-func (op *DomainOutpoint) Clone() *DomainOutpoint {
-	if op == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = DomainOutpoint{DomainTransactionID{}, 0}
+
+// Equal returns whether op equals to other
+func (op *DomainOutpoint) Equal(other *DomainOutpoint) bool {
+	if op == nil || other == nil {
+		return op == other
 	}
 
+	return *op == *other
+}
+
+// Clone returns a clone of DomainOutpoint
+func (op *DomainOutpoint) Clone() *DomainOutpoint {
 	return &DomainOutpoint{
 		TransactionID: *op.TransactionID.Clone(),
 		Index:         op.Index,
@@ -124,6 +234,27 @@ type DomainTransactionOutput struct {
 	ScriptPublicKey *ScriptPublicKey
 }
 
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = DomainTransactionOutput{0, &ScriptPublicKey{Script: []byte{}, Version: 0}}
+
+// Equal returns whether output equals to other
+func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) bool {
+	if output == nil || other == nil {
+		return output == other
+	}
+
+	if output.Value != other.Value {
+		return false
+	}
+
+	if !bytes.Equal(output.ScriptPublicKey.Script, other.ScriptPublicKey.Script) {
+		return false
+	}
+
+	return true
+}
+
 // Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 	if output == nil {
@@ -144,6 +275,31 @@ func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
 // DomainTransactionID represents the ID of a Kaspa transaction
 type DomainTransactionID DomainHash
 
+// NewDomainTransactionIDFromByteArray constructs a new TransactionID out of a byte array
+func NewDomainTransactionIDFromByteArray(transactionIDBytes *[DomainHashSize]byte) *DomainTransactionID {
+	return (*DomainTransactionID)(NewDomainHashFromByteArray(transactionIDBytes))
+}
+
+// NewDomainTransactionIDFromByteSlice constructs a new TransactionID out of a byte slice
+// Returns an error if the length of the byte slice is not exactly `DomainHashSize`
+func NewDomainTransactionIDFromByteSlice(transactionIDBytes []byte) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromByteSlice(transactionIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
+// NewDomainTransactionIDFromString constructs a new TransactionID out of a string
+// Returns an error if the length of the string is not exactly `DomainHashSize * 2`
+func NewDomainTransactionIDFromString(transactionIDString string) (*DomainTransactionID, error) {
+	hash, err := NewDomainHashFromString(transactionIDString)
+	if err != nil {
+		return nil, err
+	}
+	return (*DomainTransactionID)(hash), nil
+}
+
 // String stringifies a transaction ID.
 func (id DomainTransactionID) String() string {
 	return DomainHash(id).String()
@@ -151,10 +307,23 @@ func (id DomainTransactionID) String() string {
 
 // Clone returns a clone of DomainTransactionID
 func (id *DomainTransactionID) Clone() *DomainTransactionID {
-	if id == nil {
-		return nil
-	}
-
 	idClone := *id
 	return &idClone
+}
+
+// Equal returns whether id equals to other
+func (id *DomainTransactionID) Equal(other *DomainTransactionID) bool {
+	return (*DomainHash)(id).Equal((*DomainHash)(other))
+}
+
+// ByteArray returns the bytes in this transactionID represented as a byte array.
+// The transactionID bytes are cloned, therefore it is safe to modify the resulting array.
+func (id *DomainTransactionID) ByteArray() *[DomainHashSize]byte {
+	return (*DomainHash)(id).ByteArray()
+}
+
+// ByteSlice returns the bytes in this transactionID represented as a byte slice.
+// The transactionID bytes are cloned, therefore it is safe to modify the resulting slice.
+func (id *DomainTransactionID) ByteSlice() []byte {
+	return (*DomainHash)(id).ByteSlice()
 }

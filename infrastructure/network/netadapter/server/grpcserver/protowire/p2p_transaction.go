@@ -25,7 +25,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		}
 
 		outpoint := appmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
-		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript)
+		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript, protoInput.Sequence)
 	}
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))

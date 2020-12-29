@@ -118,15 +118,15 @@ func TestSignTxOutput(t *testing.T) {
 	outputs := []*externalapi.DomainTransactionOutput{
 		{
 			Value:           1,
-			ScriptPublicKey: &externalapi.ScriptPublicKey{nil, 0},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 		{
 			Value:           2,
-			ScriptPublicKey: &externalapi.ScriptPublicKey{nil, 0},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 		{
 			Value:           3,
-			ScriptPublicKey: &externalapi.ScriptPublicKey{nil, 0},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 	}
 	tx := &externalapi.DomainTransaction{

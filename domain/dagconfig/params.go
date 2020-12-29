@@ -5,9 +5,10 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -31,8 +32,8 @@ var (
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^239 - 1.
-	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	// can have for the test network. It is the value 2^255 - 1.
+	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// simnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
@@ -40,8 +41,8 @@ var (
 
 	// devnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
-	// 2^239 - 1.
-	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	// 2^255 - 1.
+	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
@@ -70,6 +71,10 @@ type Params struct {
 	// DNSSeeds defines a list of DNS seeds for the network that are used
 	// as one method to discover peers.
 	DNSSeeds []string
+
+	// GRPCSeeds defines a list of GRPC seeds for the network that are used
+	// as one method to discover peers.
+	GRPCSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
 	GenesisBlock *externalapi.DomainBlock
@@ -203,7 +208,7 @@ var MainnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
-	GenesisHash:                    &genesisHash,
+	GenesisHash:                    genesisHash,
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -256,11 +261,11 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
+	GRPCSeeds:   []string{"testnet-dnsseed.kas.pa:17100"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    &testnetGenesisHash,
+	GenesisHash:                    testnetGenesisHash,
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -323,7 +328,7 @@ var SimnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    &simnetGenesisHash,
+	GenesisHash:                    simnetGenesisHash,
 	PowMax:                         simnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -378,7 +383,7 @@ var DevnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    &devnetGenesisHash,
+	GenesisHash:                    devnetGenesisHash,
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,

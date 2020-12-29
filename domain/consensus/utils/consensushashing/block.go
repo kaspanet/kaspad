@@ -17,15 +17,15 @@ func BlockHash(block *externalapi.DomainBlock) *externalapi.DomainHash {
 
 // HeaderHash returns the given header's hash
 func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
-	// Encode the header and double sha256 everything prior to the number of
+	// Encode the header and hash everything prior to the number of
 	// transactions.
-	writer := hashes.NewHashWriter()
+	writer := hashes.NewBlockHashWriter()
 	err := serializeHeader(writer, header)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
 		// the only non-writer error path here is unknown types in `WriteElement`
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
 
 	return writer.Finalize()

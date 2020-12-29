@@ -30,6 +30,8 @@ message KaspadMessage {
     IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     IBDRootNotFoundMessage ibdRootNotFound = 27;
+    RequestIBDRootHash requestIBDRootHash = 28;
+    IBDRootHash ibdRootHash = 29;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -52,15 +54,15 @@ message KaspadMessage {
     AddPeerResponseMessage addPeerResponse = 1019;
     SubmitTransactionRequestMessage submitTransactionRequest = 1020;
     SubmitTransactionResponseMessage submitTransactionResponse = 1021;
-    NotifyChainChangedRequestMessage notifyChainChangedRequest = 1022;
-    NotifyChainChangedResponseMessage notifyChainChangedResponse = 1023;
-    ChainChangedNotificationMessage chainChangedNotification = 1024;
+    NotifyVirtualSelectedParentChainChangedRequestMessage notifyVirtualSelectedParentChainChangedRequest = 1022;
+    NotifyVirtualSelectedParentChainChangedResponseMessage notifyVirtualSelectedParentChainChangedResponse = 1023;
+    VirtualSelectedParentChainChangedNotificationMessage virtualSelectedParentChainChangedNotification = 1024;
     GetBlockRequestMessage getBlockRequest = 1025;
     GetBlockResponseMessage getBlockResponse = 1026;
     GetSubnetworkRequestMessage getSubnetworkRequest = 1027;
     GetSubnetworkResponseMessage getSubnetworkResponse = 1028;
-    GetChainFromBlockRequestMessage getChainFromBlockRequest = 1029;
-    GetChainFromBlockResponseMessage getChainFromBlockResponse = 1030;
+    GetVirtualSelectedParentChainFromBlockRequestMessage getVirtualSelectedParentChainFromBlockRequest = 1029;
+    GetVirtualSelectedParentChainFromBlockResponseMessage getVirtualSelectedParentChainFromBlockResponse = 1030;
     GetBlocksRequestMessage getBlocksRequest = 1031;
     GetBlocksResponseMessage getBlocksResponse = 1032;
     GetBlockCountRequestMessage getBlockCountRequest = 1033;
@@ -77,8 +79,18 @@ message KaspadMessage {
     GetMempoolEntriesResponseMessage getMempoolEntriesResponse = 1044;
     ShutDownRequestMessage shutDownRequest = 1045;
     ShutDownResponseMessage shutDownResponse = 1046;
-    GetHeadersRequestMessage getHeadersRequest = 10347;
+    GetHeadersRequestMessage getHeadersRequest = 1047;
     GetHeadersResponseMessage getHeadersResponse = 1048;
+    NotifyUtxosChangedRequestMessage notifyUtxosChangedRequest = 1049;
+    NotifyUtxosChangedResponseMessage notifyUtxosChangedResponse = 1050;
+    UtxosChangedNotificationMessage utxosChangedNotification = 1051;
+    GetUtxosByAddressesRequestMessage getUtxosByAddressesRequest = 1052;
+    GetUtxosByAddressesResponseMessage getUtxosByAddressesResponse = 1053;
+    GetVirtualSelectedParentBlueScoreRequestMessage getVirtualSelectedParentBlueScoreRequest = 1054;
+    GetVirtualSelectedParentBlueScoreResponseMessage getVirtualSelectedParentBlueScoreResponse = 1055;
+    NotifyVirtualSelectedParentBlueScoreChangedRequestMessage notifyVirtualSelectedParentBlueScoreChangedRequest = 1056;
+    NotifyVirtualSelectedParentBlueScoreChangedResponseMessage notifyVirtualSelectedParentBlueScoreChangedResponse = 1057;
+    VirtualSelectedParentBlueScoreChangedNotificationMessage virtualSelectedParentBlueScoreChangedNotification = 1058;
   }
 }
 
@@ -292,6 +304,17 @@ message IBDRootNotFoundMessage{
 }
 // IBDRootNotFoundMessage end
 
+// RequestIBDRootHash start
+message RequestIBDRootHash{
+}
+// RequestIBDRootHash end
+
+// IBDRootHash start
+message IBDRootHash{
+  Hash hash = 1;
+}
+// IBDRootHash end
+
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
 }
@@ -326,6 +349,7 @@ message GetBlockTemplateRequestMessage{
 
 message GetBlockTemplateResponseMessage{
   BlockMessage blockMessage = 1;
+  bool isSynced = 2;
 
   RPCError error = 1000;
 }
@@ -417,22 +441,23 @@ message AddPeerResponseMessage{
 }
 
 message SubmitTransactionRequestMessage{
-  TransactionMessage transaction = 1;
+  RpcTransaction transaction = 1;
 }
 
 message SubmitTransactionResponseMessage{
-  string txId = 1;
+  string transactionId = 1;
+
   RPCError error = 1000;
 }
 
-message NotifyChainChangedRequestMessage{
+message NotifyVirtualSelectedParentChainChangedRequestMessage{
 }
 
-message NotifyChainChangedResponseMessage{
+message NotifyVirtualSelectedParentChainChangedResponseMessage{
   RPCError error = 1000;
 }
 
-message ChainChangedNotificationMessage{
+message VirtualSelectedParentChainChangedNotificationMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainBlock addedChainBlocks = 2;
 }
@@ -444,7 +469,7 @@ message ChainBlock{
 
 message AcceptedBlock{
   string hash = 1;
-  repeated string acceptedTxIds = 2;
+  repeated string acceptedTransactionIds = 2;
 }
 
 message GetBlockRequestMessage{
@@ -474,6 +499,8 @@ message BlockVerboseData{
   repeated string parentHashes = 12;
   string selectedParentHash = 13;
   repeated string transactionIDs = 14;
+  bool isHeaderOnly = 15;
+  uint64 blueScore = 16;
 }
 
 message TransactionVerboseData{
@@ -526,15 +553,14 @@ message GetSubnetworkResponseMessage{
   RPCError error = 1000;
 }
 
-message GetChainFromBlockRequestMessage{
+message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
-  bool includeBlockVerboseData = 2;
 }
 
-message GetChainFromBlockResponseMessage{
+message GetVirtualSelectedParentChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
   repeated ChainBlock addedChainBlocks = 2;
-  repeated BlockVerboseData blockVerboseData = 3;
+
   RPCError error = 1000;
 }
 
@@ -614,6 +640,89 @@ message GetHeadersRequestMessage{
 message GetHeadersResponseMessage{
   repeated string headers = 1;
   RPCError error = 1000;
+}
+
+message NotifyUtxosChangedRequestMessage {
+  repeated string addresses = 1;
+}
+
+message NotifyUtxosChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+message UtxosChangedNotificationMessage {
+  repeated UtxosByAddressesEntry added = 1;
+  repeated UtxosByAddressesEntry removed = 2;
+}
+
+message UtxosByAddressesEntry {
+  string address = 1;
+  RpcOutpoint outpoint = 2;
+  RpcUtxoEntry utxoEntry = 3;
+}
+
+message RpcTransaction {
+  int32 version = 1;
+  repeated RpcTransactionInput inputs = 2;
+  repeated RpcTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payloadHash = 7;
+  string payload = 8;
+}
+
+message RpcTransactionInput {
+  RpcOutpoint previousOutpoint = 1;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
+}
+
+message RpcOutpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message RpcUtxoEntry {
+  uint64 amount = 1;
+  string scriptPubKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message GetUtxosByAddressesRequestMessage {
+  repeated string addresses = 1;
+}
+
+message GetUtxosByAddressesResponseMessage {
+  repeated UtxosByAddressesEntry entries = 1;
+
+  RPCError error = 1000;
+}
+
+message GetVirtualSelectedParentBlueScoreRequestMessage {
+}
+
+message GetVirtualSelectedParentBlueScoreResponseMessage {
+  uint64 blueScore = 1;
+
+  RPCError error = 1000;
+}
+
+message NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
+}
+
+message NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+message VirtualSelectedParentBlueScoreChangedNotificationMessage {
+  uint64 virtualSelectedParentBlueScore = 1;
 }
 
 service RPC {

@@ -1,6 +1,9 @@
 package utxo
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 type utxoEntry struct {
 	amount          uint64
@@ -11,7 +14,7 @@ type utxoEntry struct {
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
 func NewUTXOEntry(amount uint64, scriptPubKey *externalapi.ScriptPublicKey, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
-	scriptPubKeyClone := externalapi.ScriptPublicKey{make([]byte, len(scriptPubKey.Script)), scriptPubKey.Version}
+	scriptPubKeyClone := externalapi.ScriptPublicKey{Script: make([]byte, len(scriptPubKey.Script)), Version: scriptPubKey.Version}
 	copy(scriptPubKeyClone.Script, scriptPubKey.Script)
 	return &utxoEntry{
 		amount:          amount,
@@ -26,7 +29,7 @@ func (u *utxoEntry) Amount() uint64 {
 }
 
 func (u *utxoEntry) ScriptPublicKey() *externalapi.ScriptPublicKey {
-	clone := externalapi.ScriptPublicKey{make([]byte, len(u.scriptPublicKey.Script)), u.scriptPublicKey.Version}
+	clone := externalapi.ScriptPublicKey{Script: make([]byte, len(u.scriptPublicKey.Script)), Version: u.scriptPublicKey.Version}
 	copy(clone.Script, u.scriptPublicKey.Script)
 	return &clone
 }
@@ -37,4 +40,37 @@ func (u *utxoEntry) BlockBlueScore() uint64 {
 
 func (u *utxoEntry) IsCoinbase() bool {
 	return u.isCoinbase
+}
+
+// Equal returns whether entry equals to other
+func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
+	if u == nil || other == nil {
+		return u == other
+	}
+
+	// If only the underlying value of other is nil it'll
+	// make `other == nil` return false, so we check it
+	// explicitly.
+	downcastedOther := other.(*utxoEntry)
+	if u == nil || downcastedOther == nil {
+		return u == downcastedOther
+	}
+
+	if u.Amount() != other.Amount() {
+		return false
+	}
+
+	if !bytes.Equal(u.ScriptPublicKey().Script, other.ScriptPublicKey().Script) {
+		return false
+	}
+
+	if u.BlockBlueScore() != other.BlockBlueScore() {
+		return false
+	}
+
+	if u.IsCoinbase() != other.IsCoinbase() {
+		return false
+	}
+
+	return true
 }

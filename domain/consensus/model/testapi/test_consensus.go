@@ -11,7 +11,7 @@ type TestConsensus interface {
 	externalapi.Consensus
 
 	DAGParams() *dagconfig.Params
-	DatabaseContext() model.DBReader
+	DatabaseContext() model.DBManager
 
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
@@ -19,7 +19,7 @@ type TestConsensus interface {
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block
 	AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, error)
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
 
 	DiscardAllStores()
 
@@ -30,7 +30,7 @@ type TestConsensus interface {
 	BlockStore() model.BlockStore
 	ConsensusStateStore() model.ConsensusStateStore
 	GHOSTDAGDataStore() model.GHOSTDAGDataStore
-	HeaderTipsStore() model.HeaderTipsStore
+	HeaderTipsStore() model.HeaderSelectedTipStore
 	MultisetStore() model.MultisetStore
 	PruningStore() model.PruningStore
 	ReachabilityDataStore() model.ReachabilityDataStore
@@ -46,7 +46,7 @@ type TestConsensus interface {
 	DAGTraversalManager() model.DAGTraversalManager
 	DifficultyManager() model.DifficultyManager
 	GHOSTDAGManager() model.GHOSTDAGManager
-	HeaderTipsManager() model.HeaderTipsManager
+	HeaderTipsManager() model.HeadersSelectedTipManager
 	MergeDepthManager() model.MergeDepthManager
 	PastMedianTimeManager() model.PastMedianTimeManager
 	PruningManager() model.PruningManager

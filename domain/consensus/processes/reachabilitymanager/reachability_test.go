@@ -2,11 +2,12 @@ package reachabilitymanager
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type reachabilityDataStoreMock struct {
@@ -87,10 +88,10 @@ type testHelper struct {
 }
 
 func (th *testHelper) generateHash() *externalapi.DomainHash {
-	var hash externalapi.DomainHash
-	binary.LittleEndian.PutUint64(hash[:], th.hashCounter)
+	var hashArray [externalapi.DomainHashSize]byte
+	binary.LittleEndian.PutUint64(hashArray[:], th.hashCounter)
 	th.hashCounter++
-	return &hash
+	return externalapi.NewDomainHashFromByteArray(&hashArray)
 }
 
 func (th *testHelper) newNode() *externalapi.DomainHash {
@@ -950,7 +951,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			currentTreeNode = childTreeNode
 		}
 
-		originalRemainingInterval := *helper.remainingIntervalAfter(root)
+		originalRemainingInterval := helper.remainingIntervalAfter(root).Clone()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := helper.newNode()
@@ -961,7 +962,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if *helper.remainingIntervalAfter(root) == originalRemainingInterval {
+		if helper.remainingIntervalAfter(root).Equal(originalRemainingInterval) {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}

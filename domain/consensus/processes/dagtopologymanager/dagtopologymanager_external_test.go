@@ -16,28 +16,28 @@ func TestIsAncestorOf(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		// Add a chain of two blocks above the genesis. This will be the
 		// selected parent chain.
-		blockA, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockA, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		blockB, err := tc.AddBlock([]*externalapi.DomainHash{blockA}, nil, nil)
+		blockB, _, err := tc.AddBlock([]*externalapi.DomainHash{blockA}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}
 
 		// Add another block above the genesis
-		blockC, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockC, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}
 
 		// Add a block whose parents are the two tips
-		blockD, err := tc.AddBlock([]*externalapi.DomainHash{blockB, blockC}, nil, nil)
+		blockD, _, err := tc.AddBlock([]*externalapi.DomainHash{blockB, blockC}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}

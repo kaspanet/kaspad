@@ -15,12 +15,12 @@ func NewTestConsensusStateManager(baseConsensusStateManager model.ConsensusState
 	return &testConsensusStateManager{consensusStateManager: baseConsensusStateManager.(*consensusStateManager)}
 }
 
-func (csm testConsensusStateManager) AddUTXOToMultiset(
+func (csm *testConsensusStateManager) AddUTXOToMultiset(
 	multiset model.Multiset, entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) error {
 
 	return addUTXOToMultiset(multiset, entry, outpoint)
 }
 
-func (csm testConsensusStateManager) ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
+func (csm *testConsensusStateManager) ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	return csm.resolveBlockStatus(blockHash)
 }

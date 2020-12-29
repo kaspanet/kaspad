@@ -21,6 +21,7 @@ type appHarness struct {
 	miningAddressPrivateKey string
 	config                  *config.Config
 	database                database.Database
+	utxoIndex               bool
 }
 
 type harnessParams struct {
@@ -28,6 +29,7 @@ type harnessParams struct {
 	rpcAddress              string
 	miningAddress           string
 	miningAddressPrivateKey string
+	utxoIndex               bool
 }
 
 // setupHarness creates a single appHarness with given parameters
@@ -37,6 +39,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		rpcAddress:              params.rpcAddress,
 		miningAddress:           params.miningAddress,
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
+		utxoIndex:               params.utxoIndex,
 	}
 
 	setConfig(t, harness)

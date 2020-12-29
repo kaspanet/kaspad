@@ -16,6 +16,6 @@ func OpTrueScript() (*externalapi.ScriptPublicKey, []byte) {
 	if err != nil {
 		panic(errors.Wrapf(err, "Couldn't parse opTrueScript. This should never happen"))
 	}
-	scriptPublicKey := &externalapi.ScriptPublicKey{scriptPublicKeyScript, constants.MaximumScriptPublicKeyVersion}
+	scriptPublicKey := &externalapi.ScriptPublicKey{Script: scriptPublicKeyScript, Version: constants.MaximumScriptPublicKeyVersion}
 	return scriptPublicKey, redeemScript
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -12,15 +13,32 @@ type ReachabilityData struct {
 	FutureCoveringSet FutureCoveringTreeNodeSet
 }
 
-// Clone returns a clone of ReachabilityData
-func (rd *ReachabilityData) Clone() *ReachabilityData {
-	if rd == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &ReachabilityData{&ReachabilityTreeNode{}, FutureCoveringTreeNodeSet{}}
+
+// Equal returns whether rd equals to other
+func (rd *ReachabilityData) Equal(other *ReachabilityData) bool {
+	if rd == nil || other == nil {
+		return rd == other
 	}
 
+	if !rd.TreeNode.Equal(other.TreeNode) {
+		return false
+	}
+
+	if !rd.FutureCoveringSet.Equal(other.FutureCoveringSet) {
+		return false
+	}
+
+	return true
+}
+
+// Clone returns a clone of ReachabilityData
+func (rd *ReachabilityData) Clone() *ReachabilityData {
 	return &ReachabilityData{
 		TreeNode:          rd.TreeNode.Clone(),
-		FutureCoveringSet: externalapi.CloneHashes(rd.FutureCoveringSet),
+		FutureCoveringSet: rd.FutureCoveringSet.Clone(),
 	}
 }
 
@@ -48,15 +66,37 @@ type ReachabilityTreeNode struct {
 	Interval *ReachabilityInterval
 }
 
-// Clone returns a clone of ReachabilityTreeNode
-func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
-	if rtn == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &ReachabilityTreeNode{[]*externalapi.DomainHash{}, &externalapi.DomainHash{},
+	&ReachabilityInterval{}}
+
+// Equal returns whether rtn equals to other
+func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
+	if rtn == nil || other == nil {
+		return rtn == other
 	}
 
+	if !externalapi.HashesEqual(rtn.Children, other.Children) {
+		return false
+	}
+
+	if !rtn.Parent.Equal(other.Parent) {
+		return false
+	}
+
+	if !rtn.Interval.Equal(other.Interval) {
+		return false
+	}
+
+	return true
+}
+
+// Clone returns a clone of ReachabilityTreeNode
+func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
 	return &ReachabilityTreeNode{
 		Children: externalapi.CloneHashes(rtn.Children),
-		Parent:   rtn.Parent.Clone(),
+		Parent:   rtn.Parent,
 		Interval: rtn.Interval.Clone(),
 	}
 }
@@ -69,12 +109,29 @@ type ReachabilityInterval struct {
 	End   uint64
 }
 
-// Clone returns a clone of ReachabilityInterval
-func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
-	if ri == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &ReachabilityInterval{0, 0}
+
+// Equal returns whether ri equals to other
+func (ri *ReachabilityInterval) Equal(other *ReachabilityInterval) bool {
+	if ri == nil || other == nil {
+		return ri == other
 	}
 
+	if ri.Start != other.Start {
+		return false
+	}
+
+	if ri.End != other.End {
+		return false
+	}
+
+	return true
+}
+
+// Clone returns a clone of ReachabilityInterval
+func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
 	return &ReachabilityInterval{
 		Start: ri.Start,
 		End:   ri.End,
@@ -98,3 +155,17 @@ func (ri *ReachabilityInterval) String() string {
 //
 // See insertNode, hasAncestorOf, and isInPast for further details.
 type FutureCoveringTreeNodeSet []*externalapi.DomainHash
+
+// Clone returns a clone of FutureCoveringTreeNodeSet
+func (fctns FutureCoveringTreeNodeSet) Clone() FutureCoveringTreeNodeSet {
+	return externalapi.CloneHashes(fctns)
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ FutureCoveringTreeNodeSet = []*externalapi.DomainHash{}
+
+// Equal returns whether fctns equals to other
+func (fctns FutureCoveringTreeNodeSet) Equal(other FutureCoveringTreeNodeSet) bool {
+	return externalapi.HashesEqual(fctns, other)
+}

@@ -8,6 +8,8 @@ import (
 	"math/big"
 	"strconv"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
@@ -23,9 +25,8 @@ import (
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // This method must be called with the DAG lock held for reads
-func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
-	hash := consensushashing.BlockHash(block)
-	blockHeader := block.Header
+func (ctx *Context) BuildBlockVerboseData(blockHeader *externalapi.DomainBlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+	hash := consensushashing.HeaderHash(blockHeader)
 
 	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
 	if err != nil {
@@ -38,31 +39,39 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
-		ParentHashes:         externalapi.DomainHashesToStrings(blockHeader.ParentHashes),
+		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.TimeInMilliseconds,
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
 		BlueScore:            blockInfo.BlueScore,
+		IsHeaderOnly:         blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
 	}
 
-	txIDs := make([]string, len(block.Transactions))
-	for i, tx := range block.Transactions {
-		txIDs[i] = consensushashing.TransactionID(tx).String()
-	}
-	result.TxIDs = txIDs
-
-	if includeTransactionVerboseData {
-		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
-		for i, tx := range block.Transactions {
-			txID := consensushashing.TransactionID(tx).String()
-			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
-			if err != nil {
-				return nil, err
-			}
-			transactionVerboseData[i] = data
+	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+		block, err := ctx.Domain.Consensus().GetBlock(hash)
+		if err != nil {
+			return nil, err
 		}
-		result.TransactionVerboseData = transactionVerboseData
+
+		txIDs := make([]string, len(block.Transactions))
+		for i, tx := range block.Transactions {
+			txIDs[i] = consensushashing.TransactionID(tx).String()
+		}
+		result.TxIDs = txIDs
+
+		if includeTransactionVerboseData {
+			transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
+			for i, tx := range block.Transactions {
+				txID := consensushashing.TransactionID(tx).String()
+				data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
+				if err != nil {
+					return nil, err
+				}
+				transactionVerboseData[i] = data
+			}
+			result.TransactionVerboseData = transactionVerboseData
+		}
 	}
 
 	return result, nil

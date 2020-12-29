@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -12,8 +13,69 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
-	return v.checkBlockTransactionsFinalized(blockHash)
+func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash, isPruningPoint bool) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
+	defer onEnd()
+
+	err := v.checkBlockTransactionsFinalized(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if !isPruningPoint {
+		err := v.checkParentBlockBodiesExist(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.DomainHash) error {
+	missingParentHashes := []*externalapi.DomainHash{}
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+	for _, parent := range header.ParentHashes {
+		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if !hasBlock {
+			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+			if err != nil {
+				return err
+			}
+
+			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+			if err != nil {
+				return err
+			}
+
+			// If a block parent is in the past of the pruning point
+			// it means its body will never be used, so it's ok if
+			// it's missing.
+			// This will usually happen during IBD when getting the blocks
+			// in the pruning point anticone.
+			if isInPastOfPruningPoint {
+				log.Debugf("Block %s parent %s is missing a body, but is in the past of the pruning point",
+					blockHash, parent)
+				continue
+			}
+
+			log.Debugf("Block %s parent %s is missing a body", blockHash, parent)
+
+			missingParentHashes = append(missingParentHashes, parent)
+		}
+	}
+
+	if len(missingParentHashes) > 0 {
+		return ruleerrors.NewErrMissingParents(missingParentHashes)
+	}
+
+	return nil
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {

@@ -467,10 +467,10 @@ func (mp *mempool) removeChainTransaction(tx *consensusexternalapi.DomainTransac
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeDoubleSpends(tx *consensusexternalapi.DomainTransaction) error {
-	txID := *consensushashing.TransactionID(tx)
+	txID := consensushashing.TransactionID(tx)
 	for _, txIn := range tx.Inputs {
 		if txRedeemer, ok := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(txIn.PreviousOutpoint); ok {
-			if !(*consensushashing.TransactionID(txRedeemer) == txID) {
+			if !consensushashing.TransactionID(txRedeemer).Equal(txID) {
 				err := mp.removeTransactionAndItsChainedTransactions(txRedeemer)
 				if err != nil {
 					return err

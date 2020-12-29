@@ -164,7 +164,7 @@ func (bhs *blockHeaderStore) Delete(blockHash *externalapi.DomainHash) {
 }
 
 func (bhs *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (bhs *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {

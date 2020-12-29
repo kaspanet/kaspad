@@ -71,7 +71,7 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 // Note: this operation modifies the block in place.
 func (msg *MsgBlock) ConvertToPartial(subnetworkID *externalapi.DomainSubnetworkID) {
 	for _, tx := range msg.Transactions {
-		if tx.SubnetworkID != *subnetworkID {
+		if !tx.SubnetworkID.Equal(subnetworkID) {
 			tx.Payload = []byte{}
 		}
 	}

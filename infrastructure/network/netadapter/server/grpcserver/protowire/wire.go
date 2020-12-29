@@ -11,7 +11,11 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
-	appMessage, err := x.Payload.(converter).toAppMessage()
+	converter, ok := x.Payload.(converter)
+	if !ok {
+		return nil, errors.Errorf("received invalid message")
+	}
+	appMessage, err := converter.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +236,22 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 
+	case *appmessage.MsgRequestIBDRootHash:
+		payload := new(KaspadMessage_RequestIBDRootHash)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
+	case *appmessage.MsgIBDRootHash:
+		payload := new(KaspadMessage_IbdRootHash)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+
 	default:
 		return nil, nil
 	}
@@ -386,22 +406,22 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedRequestMessage:
-		payload := new(KaspadMessage_NotifyChainChangedRequest)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedResponseMessage:
-		payload := new(KaspadMessage_NotifyChainChangedResponse)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.ChainChangedNotificationMessage:
-		payload := new(KaspadMessage_ChainChangedNotification)
+	case *appmessage.VirtualSelectedParentChainChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentChainChangedNotification)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -435,15 +455,15 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockRequestMessage:
-		payload := new(KaspadMessage_GetChainFromBlockRequest)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockResponseMessage:
-		payload := new(KaspadMessage_GetChainFromBlockResponse)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -570,6 +590,76 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.GetHeadersResponseMessage:
 		payload := new(KaspadMessage_GetHeadersResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyUTXOsChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyUTXOsChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.UTXOsChangedNotificationMessage:
+		payload := new(KaspadMessage_UtxosChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentBlueScoreChangedNotification)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

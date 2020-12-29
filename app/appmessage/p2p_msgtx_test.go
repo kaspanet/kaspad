@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
@@ -54,7 +54,7 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutpoint(txID, prevOutIndex)
-	if prevOut.TxID != *txID {
+	if !prevOut.TxID.Equal(txID) {
 		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
@@ -70,7 +70,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction input back out.
 	sigScript := []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62}
-	txIn := NewTxIn(prevOut, sigScript)
+	txIn := NewTxIn(prevOut, sigScript, constants.MaxTxInSequenceNum)
 	if !reflect.DeepEqual(&txIn.PreviousOutpoint, prevOut) {
 		t.Errorf("NewTxIn: wrong prev outpoint - got %v, want %v",
 			spew.Sprint(&txIn.PreviousOutpoint),
@@ -135,11 +135,15 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "b2ea3b2bfb71b55bd702933e239763f88bd402a640b71ed41438702e8ff17d66"
+	txHash1Str := "cf09b7b8ea6c3429515e7e7c8b9531d449f7ca869fad030126495c2c791eacc2"
+	txID1Str := "378b6f83f103241a92b00533746b64800dadedeb1e48c097cf2757eea512ce47"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
-		t.Errorf("NewTxIDFromStr: %v", err)
-		return
+		t.Fatalf("NewTxIDFromStr: %v", err)
+	}
+	wantTxHash1, err := transactionid.FromString(txHash1Str)
+	if err != nil {
+		t.Fatalf("NewTxIDFromStr: %v", err)
 	}
 
 	// A coinbase transaction
@@ -153,7 +157,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	txOut := &TxOut{
 		Value: 5000000000,
-		ScriptPubKey: &externalapi.ScriptPublicKey{[]byte{
+		ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -165,32 +169,32 @@ func TestTxHashAndID(t *testing.T) {
 			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
 			0xa6, // 65-byte signature
 			0xac, // OP_CHECKSIG
-		}, version_cur},
+		}, Version: version_cur},
 	}
 	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
-	if *tx1Hash != (externalapi.DomainHash)(*wantTxID1) {
+	if *tx1Hash != (externalapi.DomainHash)(*wantTxHash1) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
-			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
+			spew.Sprint(tx1Hash), spew.Sprint(wantTxHash1))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if *tx1ID != *wantTxID1 {
+	if !tx1ID.Equal(wantTxID1) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "2e97428e1991a8ae2e2369b3d584308d45af261a31b99adf6e92174fec95f967"
-	wantHash2, err := hashes.FromString(hash2Str)
+	hash2Str := "0c60a073b56ff0510307e3efbb5e1881c3b1b97b4f0a69e4220042a15596766b"
+	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "0e6e96424c5fbbb6bab3d70ff1bf0c6ed5bee9b5635888114031c1b592ffcd9f"
+	id2Str := "68ec13739c0088c1ebca9d14d9daa4ccb24db4e4be021fa2aaad71e2326091af"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -200,7 +204,7 @@ func TestTxHashAndID(t *testing.T) {
 	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
-			TxID:  externalapi.DomainTransactionID{1, 2, 3},
+			TxID:  *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{1, 2, 3}),
 		},
 		SignatureScript: []byte{
 			0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,
@@ -218,42 +222,42 @@ func TestTxHashAndID(t *testing.T) {
 	txOuts := []*TxOut{
 		{
 			Value: 244623243,
-			ScriptPubKey: &externalapi.ScriptPublicKey{[]byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
-			}, version_cur},
+			}, Version: version_cur},
 		},
 		{
 			Value: 44602432,
-			ScriptPubKey: &externalapi.ScriptPublicKey{[]byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
-			}, version_cur},
+			}, Version: version_cur},
 		},
 	}
 	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
-	if *tx2Hash != *wantHash2 {
+	if !tx2Hash.Equal(wantHash2) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx2ID := tx2.TxID()
-	if *tx2ID != *wantID2 {
+	if !tx2ID.Equal(wantID2) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if *tx2ID == (externalapi.DomainTransactionID)(*tx2Hash) {
+	if tx2ID.Equal((*externalapi.DomainTransactionID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if *tx2ID != (externalapi.DomainTransactionID)(*newTx2Hash) {
-		t.Errorf("tx2ID and newTx2Hash should be the same for transaction with an empty signature")
+	if *tx2ID == (externalapi.DomainTransactionID)(*newTx2Hash) {
+		t.Errorf("tx2ID and newTx2Hash should not be the same even for transaction with an empty signature")
 	}
 }

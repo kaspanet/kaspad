@@ -14,10 +14,6 @@ var (
 	// exists.
 	ErrDuplicateBlock = newRuleError("ErrDuplicateBlock")
 
-	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
-	// allowed limits.
-	ErrBlockMassTooHigh = newRuleError("ErrBlockMassTooHigh")
-
 	// ErrBlockVersionTooOld indicates the block version is too old and is
 	// no longer accepted since the majority of the network has upgraded
 	// to a newer version.
@@ -27,9 +23,8 @@ var (
 	// the last several blocks per the DAG consensus rules.
 	ErrTimeTooOld = newRuleError("ErrTimeTooOld")
 
-	// ErrTimeTooNew indicates the time is too far in the future as compared
-	// the current time.
-	ErrTimeTooNew = newRuleError("ErrTimeTooNew")
+	//ErrTimeTooMuchInTheFuture indicates that the block timestamp is too much in the future.
+	ErrTimeTooMuchInTheFuture = newRuleError("ErrTimeTooMuchInTheFuture")
 
 	// ErrNoParents indicates that the block is missing parents
 	ErrNoParents = newRuleError("ErrNoParents")
@@ -44,9 +39,8 @@ var (
 	// range.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
-	// ErrHighHash indicates the block does not hash to a value which is
-	// lower than the required target difficultly.
-	ErrHighHash = newRuleError("ErrHighHash")
+	// ErrInvalidPoW indicates that the block proof-of-work is invalid.
+	ErrInvalidPoW = newRuleError("ErrInvalidPoW")
 
 	// ErrBadMerkleRoot indicates the calculated merkle root does not match
 	// the expected value.
@@ -55,9 +49,6 @@ var (
 	// ErrBadUTXOCommitment indicates the calculated UTXO commitment does not match
 	// the expected value.
 	ErrBadUTXOCommitment = newRuleError("ErrBadUTXOCommitment")
-
-	// ErrInvalidSubnetwork indicates the subnetwork is now allowed.
-	ErrInvalidSubnetwork = newRuleError("ErrInvalidSubnetwork")
 
 	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
 	// last finality point.
@@ -72,10 +63,6 @@ var (
 	// valid transaction must have at least one input.
 	ErrNoTxInputs = newRuleError("ErrNoTxInputs")
 
-	// ErrTxMassTooHigh indicates the mass of a transaction exceeds the maximum
-	// allowed limits.
-	ErrTxMassTooHigh = newRuleError("ErrTxMassTooHigh")
-
 	// ErrBadTxOutValue indicates an output value for a transaction is
 	// invalid in some way such as being out of range.
 	ErrBadTxOutValue = newRuleError("ErrBadTxOutValue")
@@ -83,11 +70,6 @@ var (
 	// ErrDuplicateTxInputs indicates a transaction references the same
 	// input more than once.
 	ErrDuplicateTxInputs = newRuleError("ErrDuplicateTxInputs")
-
-	// ErrBadTxInput indicates a transaction input is invalid in some way
-	// such as referencing a previous transaction outpoint which is out of
-	// range or not referencing one at all.
-	ErrBadTxInput = newRuleError("ErrBadTxInput")
 
 	// ErrDoubleSpendInSameBlock indicates a transaction
 	// that spends an output that was already spent by another
@@ -103,11 +85,6 @@ var (
 	// valid block may only contain unique transactions.
 	ErrDuplicateTx = newRuleError("ErrDuplicateTx")
 
-	// ErrOverwriteTx indicates a block contains a transaction that has
-	// the same hash as a previous transaction which has not been fully
-	// spent.
-	ErrOverwriteTx = newRuleError("ErrOverwriteTx")
-
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
 	// coinbase that has not yet reached the required maturity.
 	ErrImmatureSpend = newRuleError("ErrImmatureSpend")
@@ -115,14 +92,6 @@ var (
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
 	// value than the sum of all of its inputs.
 	ErrSpendTooHigh = newRuleError("ErrSpendTooHigh")
-
-	// ErrBadFees indicates the total fees for a block are invalid due to
-	// exceeding the maximum possible value.
-	ErrBadFees = newRuleError("ErrBadFees")
-
-	// ErrTooManySigOps indicates the total number of signature operations
-	// for a transaction or block exceed the maximum allowed limits.
-	ErrTooManySigOps = newRuleError("ErrTooManySigOps")
 
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
@@ -150,23 +119,9 @@ var (
 	// the stack.
 	ErrScriptValidation = newRuleError("ErrScriptValidation")
 
-	// ErrParentBlockUnknown indicates that the parent block is not known.
-	ErrParentBlockUnknown = newRuleError("ErrParentBlockUnknown")
-
 	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
 	// already failed validation.
 	ErrInvalidAncestorBlock = newRuleError("ErrInvalidAncestorBlock")
-
-	// ErrParentBlockNotCurrentTips indicates that the block's parents are not the
-	// current tips. This is not a block validation rule, but is required
-	// for block proposals submitted via getblocktemplate RPC.
-	ErrParentBlockNotCurrentTips = newRuleError("ErrParentBlockNotCurrentTips")
-
-	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
-	ErrWithDiff = newRuleError("ErrWithDiff")
-
-	// ErrFinality indicates that a block doesn't adhere to the finality rules
-	ErrFinality = newRuleError("ErrFinality")
 
 	// ErrTransactionsNotSorted indicates that transactions in block are not
 	// sorted by subnetwork
@@ -194,14 +149,6 @@ var (
 	// ErrTooManyParents indicates that a block points to more then `MaxNumParentBlocks` parents
 	ErrTooManyParents = newRuleError("ErrTooManyParents")
 
-	// ErrDelayedBlockIsNotAllowed indicates that a block with a delayed timestamp was
-	// submitted with BFDisallowDelay flag raised.
-	ErrDelayedBlockIsNotAllowed = newRuleError("ErrDelayedBlockIsNotAllowed")
-
-	// ErrOrphanBlockIsNotAllowed indicates that an orphan block was submitted with
-	// BFDisallowOrphans flag raised.
-	ErrOrphanBlockIsNotAllowed = newRuleError("ErrOrphanBlockIsNotAllowed")
-
 	// ErrViolatingBoundedMergeDepth indicates that a block is violating finality from
 	// its own point of view
 	ErrViolatingBoundedMergeDepth = newRuleError("ErrViolatingBoundedMergeDepth")
@@ -213,15 +160,9 @@ var (
 	// In the same block
 	ErrChainedTransactions = newRuleError("ErrChainedTransactions")
 
-	// ErrSelectedParentDisqualifiedFromChain indicates that a block's selectedParent has the status DisqualifiedFromChain
-	ErrSelectedParentDisqualifiedFromChain = newRuleError("ErrSelectedParentDisqualifiedFromChain")
-
 	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
 	// allowed limits.
 	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
-
-	// ErrBuiltInTransactionHasGas indicates that a transaction with built in subnetwork ID has a non zero gas.
-	ErrBuiltInTransactionHasGas = newRuleError("ErrBuiltInTransactionHasGas")
 
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
@@ -235,6 +176,9 @@ var (
 	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
 
+	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
+
+	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
 	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
 	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 

@@ -79,7 +79,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externala
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData model.BlockGHOSTDAGData) ([]byte, error) {

@@ -301,7 +301,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 				err)
 			continue
 		}
-		scriptPubKey := &externalapi.ScriptPublicKey{script, 0}
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: 0}
 
 		// Extract and parse the script flags from the test fields.
 		flagsStr, ok := test[2].(string)

@@ -14,7 +14,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selecteParent *external
 	queue := []*externalapi.DomainHash{}
 	// Queueing all parents (other than the selected parent itself) for processing.
 	for _, parent := range blockParents {
-		if *parent == *selecteParent {
+		if parent.Equal(selecteParent) {
 			continue
 		}
 		mergeSetMap[*parent] = struct{}{}

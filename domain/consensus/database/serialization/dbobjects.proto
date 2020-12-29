@@ -64,6 +64,7 @@ message DbAcceptanceData {
 
 message DbBlockAcceptanceData {
   repeated DbTransactionAcceptanceData transactionAcceptanceData = 1;
+  DbHash blockHash = 2;
 }
 
 message DbTransactionAcceptanceData {

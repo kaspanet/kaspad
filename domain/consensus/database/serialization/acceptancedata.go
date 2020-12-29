@@ -1,9 +1,11 @@
 package serialization
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 // DomainAcceptanceDataToDbAcceptanceData converts model.AcceptanceData to DbAcceptanceData
-func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.AcceptanceData) *DbAcceptanceData {
+func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData externalapi.AcceptanceData) *DbAcceptanceData {
 	dbBlockAcceptanceData := make([]*DbBlockAcceptanceData, len(domainAcceptanceData))
 	for i, blockAcceptanceData := range domainAcceptanceData {
 		dbTransactionAcceptanceData := make([]*DbTransactionAcceptanceData,
@@ -18,7 +20,10 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.Acceptanc
 			}
 		}
 
+		blockHash := DomainHashToDbHash(blockAcceptanceData.BlockHash)
+
 		dbBlockAcceptanceData[i] = &DbBlockAcceptanceData{
+			BlockHash:                 blockHash,
 			TransactionAcceptanceData: dbTransactionAcceptanceData,
 		}
 	}
@@ -29,10 +34,10 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData model.Acceptanc
 }
 
 // DbAcceptanceDataToDomainAcceptanceData converts DbAcceptanceData to model.AcceptanceData
-func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) (model.AcceptanceData, error) {
-	domainAcceptanceData := make(model.AcceptanceData, len(dbAcceptanceData.BlockAcceptanceData))
+func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) (externalapi.AcceptanceData, error) {
+	domainAcceptanceData := make(externalapi.AcceptanceData, len(dbAcceptanceData.BlockAcceptanceData))
 	for i, dbBlockAcceptanceData := range dbAcceptanceData.BlockAcceptanceData {
-		domainTransactionAcceptanceData := make([]*model.TransactionAcceptanceData,
+		domainTransactionAcceptanceData := make([]*externalapi.TransactionAcceptanceData,
 			len(dbBlockAcceptanceData.TransactionAcceptanceData))
 
 		for j, dbTransactionAcceptanceData := range dbBlockAcceptanceData.TransactionAcceptanceData {
@@ -40,14 +45,20 @@ func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) 
 			if err != nil {
 				return nil, err
 			}
-			domainTransactionAcceptanceData[j] = &model.TransactionAcceptanceData{
+			domainTransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
 				Transaction: domainTransaction,
 				Fee:         dbTransactionAcceptanceData.Fee,
 				IsAccepted:  dbTransactionAcceptanceData.IsAccepted,
 			}
 		}
 
-		domainAcceptanceData[i] = &model.BlockAcceptanceData{
+		blockHash, err := DbHashToDomainHash(dbBlockAcceptanceData.BlockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		domainAcceptanceData[i] = &externalapi.BlockAcceptanceData{
+			BlockHash:                 blockHash,
 			TransactionAcceptanceData: domainTransactionAcceptanceData,
 		}
 	}

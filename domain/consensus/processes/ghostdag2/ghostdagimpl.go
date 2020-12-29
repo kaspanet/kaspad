@@ -5,10 +5,11 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"math/big"
 )
 
 type ghostdagHelper struct {
@@ -92,7 +93,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
-		if *mergeSetBlock == *selectedParent {
+		if mergeSetBlock.Equal(selectedParent) {
 			if !contains(selectedParent, mergeSetBlues) {
 				mergeSetBlues = append(mergeSetBlues, selectedParent)
 				blueSet = append(blueSet, selectedParent)
@@ -122,12 +123,14 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 
 /* --------isMoreHash(w, selectedParent)----------------*/
 func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
+	parentByteArray := parent.ByteArray()
+	selectedParentByteArray := selectedParent.ByteArray()
 	//Check if parentHash is more then selectedParentHash
-	for i := len(parent) - 1; i >= 0; i-- {
+	for i := len(parentByteArray) - 1; i >= 0; i-- {
 		switch {
-		case parent[i] < selectedParent[i]:
+		case parentByteArray[i] < selectedParentByteArray[i]:
 			return false
-		case parent[i] > selectedParent[i]:
+		case parentByteArray[i] > selectedParentByteArray[i]:
 			return true
 		}
 	}
@@ -252,7 +255,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 /*----------------contains-------------------------- */
 func contains(item *externalapi.DomainHash, items []*externalapi.DomainHash) bool {
 	for _, r := range items {
-		if *r == *item {
+		if r.Equal(item) {
 			return true
 		}
 	}
@@ -294,7 +297,7 @@ func (gh *ghostdagHelper) findMergeSet(parents []*externalapi.DomainHash, select
 	for len(blockQueue) > 0 {
 		block := blockQueue[0]
 		blockQueue = blockQueue[1:]
-		if *selectedParent == *block {
+		if selectedParent.Equal(block) {
 			if !contains(block, allMergeSet) {
 				allMergeSet = append(allMergeSet, block)
 			}

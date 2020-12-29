@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"sync/atomic"
 
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -93,6 +94,12 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		return nil, err
 	}
 
+	var utxoIndex *utxoindex.UTXOIndex
+	if cfg.UTXOIndex {
+		utxoIndex = utxoindex.New(domain.Consensus(), db)
+		log.Infof("UTXO index started")
+	}
+
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
@@ -101,7 +108,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -121,11 +128,20 @@ func setupRPC(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
 
 	rpcManager := rpc.NewManager(
-		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
+		cfg,
+		domain,
+		netAdapter,
+		protocolManager,
+		connectionManager,
+		addressManager,
+		utxoIndex,
+		shutDownChan,
+	)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 
 	return rpcManager
@@ -140,9 +156,7 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				// source. So we'll take first returned address as source.
 				a.addressManager.AddAddresses(addresses...)
 			})
-	}
 
-	if a.cfg.GRPCSeed != "" {
 		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 			func(addresses []*appmessage.NetAddress) {
 				a.addressManager.AddAddresses(addresses...)

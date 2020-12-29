@@ -72,14 +72,14 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case externalapi.DomainHash:
-		_, err := w.Write(e[:])
+		_, err := w.Write(e.ByteSlice())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case *externalapi.DomainHash:
-		_, err := w.Write(e[:])
+		_, err := w.Write(e.ByteSlice())
 		if err != nil {
 			return err
 		}
@@ -194,5 +194,5 @@ func ReadElements(r io.Reader, elements ...interface{}) error {
 
 // IsMalformedError returns whether the error indicates a malformed data source
 func IsMalformedError(err error) bool {
-	return errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, errMalformed)
+	return errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || errors.Is(err, errMalformed)
 }

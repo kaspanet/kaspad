@@ -30,22 +30,56 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	log.Debugf("Finished downloading headers up to %s", highHash)
 
 	// Fetch the UTXO set if we don't already have it
-	log.Debugf("Downloading the IBD root UTXO set under highHash %s", highHash)
-	syncInfo, err := flow.Domain().Consensus().GetSyncInfo()
+	log.Debugf("Checking if there's a new pruning point under %s", highHash)
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHash())
 	if err != nil {
 		return err
 	}
-	if syncInfo.State == externalapi.SyncStateAwaitingUTXOSet {
-		found, err := flow.fetchMissingUTXOSet(syncInfo.IBDRootUTXOBlockHash)
+
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHash)
+	if !ok {
+		return protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
+	}
+
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
+	if err != nil {
+		return err
+	}
+
+	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgIBDRootHash.Hash)
+		isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
 		if err != nil {
 			return err
 		}
-		if !found {
-			log.Infof("Cannot download the IBD root UTXO set under highHash %s", highHash)
+
+		if !isValid {
+			log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
+				" peer", msgIBDRootHash.Hash)
 			return nil
 		}
+
+		log.Info("Fetching the pruning point UTXO set")
+		succeed, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
+		if err != nil {
+			return err
+		}
+
+		if !succeed {
+			log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
+			return nil
+		}
+
+		log.Info("Fetched the new pruning point UTXO set")
+	} else {
+		log.Debugf("Already has the block data of the new suggested pruning point %s", msgIBDRootHash.Hash)
 	}
-	log.Debugf("Finished downloading the IBD root UTXO set under highHash %s", highHash)
 
 	// Fetch the block bodies
 	log.Debugf("Downloading block bodies up to %s", highHash)
@@ -59,14 +93,29 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
-	if err != nil {
-		return err
-	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+	highHashReceived := false
+	for !highHashReceived {
+		log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+		highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	return flow.downloadHeaders(highestSharedBlockHash, highHash)
+		err = flow.downloadHeaders(highestSharedBlockHash, highHash)
+		if err != nil {
+			return err
+		}
+
+		// We're finished once highHash has been inserted into the DAG
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
+		if err != nil {
+			return err
+		}
+		highHashReceived = blockInfo.Exists
+		log.Debugf("Headers downloaded from peer %s. Are further headers required: %t", flow.peer, !highHashReceived)
+	}
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalapi.DomainHash) (
@@ -178,7 +227,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	_, err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
@@ -190,8 +239,8 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (bool, error) {
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
+func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
 	if err != nil {
 		return false, err
 	}
@@ -205,14 +254,12 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, nil
 	}
 
-	err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, utxoSet)
 	if err != nil {
-		blockHash := consensushashing.BlockHash(block)
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "got invalid block %s during IBD", blockHash)
-	}
-
-	err = flow.Domain().Consensus().SetPruningPointUTXOSet(utxoSet)
-	if err != nil {
+		// TODO: Find a better way to deal with finality conflicts.
+		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
+			return false, nil
+		}
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
 	}
 
@@ -273,15 +320,15 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 
 			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
 			blockHash := consensushashing.BlockHash(block)
-			if *expectedHash != *blockHash {
+			if !expectedHash.Equal(blockHash) {
 				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 			}
 
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
-			err = flow.OnNewBlock(block)
+			err = flow.OnNewBlock(block, blockInsertionResult)
 			if err != nil {
 				return err
 			}

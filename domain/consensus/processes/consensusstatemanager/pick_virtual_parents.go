@@ -9,10 +9,10 @@ import (
 )
 
 func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	log.Tracef("pickVirtualParents start for tips: %s", tips)
-	defer log.Tracef("pickVirtualParents end for tips: %s", tips)
+	log.Debugf("pickVirtualParents start for tips: %s", tips)
+	defer log.Debugf("pickVirtualParents end for tips: %s", tips)
 
-	log.Tracef("Pushing all tips into a DownHeap")
+	log.Debugf("Pushing all tips into a DownHeap")
 	candidatesHeap := csm.dagTraversalManager.NewDownHeap()
 	for _, tip := range tips {
 		err := candidatesHeap.Push(tip)
@@ -29,7 +29,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("The selected parent of the virtual is: %s", virtualSelectedParent)
+	log.Debugf("The selected parent of the virtual is: %s", virtualSelectedParent)
 
 	selectedVirtualParents := hashset.NewFromSlice(virtualSelectedParent)
 
@@ -38,17 +38,17 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	for candidatesHeap.Len() > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
 		candidate := candidatesHeap.Pop()
 
-		log.Tracef("Attempting to add %s to the virtual parents", candidate)
-		log.Tracef("The current merge set size is %d", mergeSetSize)
+		log.Debugf("Attempting to add %s to the virtual parents", candidate)
+		log.Debugf("The current merge set size is %d", mergeSetSize)
 
 		mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents)
 		if err != nil {
 			return nil, err
 		}
-		log.Tracef("The merge set would increase by %d with block %s", mergeSetIncrease, candidate)
+		log.Debugf("The merge set would increase by %d with block %s", mergeSetIncrease, candidate)
 
 		if mergeSetSize+mergeSetIncrease > csm.mergeSetSizeLimit {
-			log.Tracef("Cannot add block %s since that would violate the merge set size limit", candidate)
+			log.Debugf("Cannot add block %s since that would violate the merge set size limit", candidate)
 			continue
 		}
 
@@ -88,7 +88,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 		if err != nil {
 			return nil, err
 		}
-		if selectedParentCandidateStatus == externalapi.StatusValid {
+		if selectedParentCandidateStatus == externalapi.StatusUTXOValid {
 			log.Tracef("Block %s is valid. Returning it as the selected parent", selectedParentCandidate)
 			return selectedParentCandidate, nil
 		}
@@ -109,7 +109,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 
 			// remove virtual from parentChildren if it's there
 			for i, parentChild := range parentChildren {
-				if *parentChild == *model.VirtualBlockHash {
+				if parentChild.Equal(model.VirtualBlockHash) {
 					parentChildren = append(parentChildren[:i], parentChildren[i+1:]...)
 					break
 				}

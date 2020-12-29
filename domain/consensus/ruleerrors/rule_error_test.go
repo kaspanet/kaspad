@@ -8,8 +8,14 @@ import (
 )
 
 func TestNewErrMissingTxOut(t *testing.T) {
-	outer := NewErrMissingTxOut([]*externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
-	expectedOuterErr := "ErrMissingTxOut: missing the following outpoint: [(0000000000000000000000000000000000000000000000000000000000ffffff: 5)]"
+	outer := NewErrMissingTxOut(
+		[]*externalapi.DomainOutpoint{
+			{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{255, 255, 255}),
+				Index:         5,
+			},
+		})
+	expectedOuterErr := "ErrMissingTxOut: missing the following outpoint: [(ffffff0000000000000000000000000000000000000000000000000000000000: 5)]"
 	inner := &ErrMissingTxOut{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestWrapInRuleError: Outer should contain ErrMissingTxOut in it")
@@ -41,7 +47,7 @@ func TestNewErrMissingTxOut(t *testing.T) {
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(5b9037ad4aff8fb7eddb43353b393cdf9f01924898191e636ec3931c15d19376: ErrNoTxInputs)]"
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(3e93deca99d6f1b285bff219220a1e56447bdbf99dfa2ab5b794df883036a54e: ErrNoTxInputs)]"
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")
