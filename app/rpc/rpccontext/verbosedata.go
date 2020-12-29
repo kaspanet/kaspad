@@ -23,7 +23,6 @@ import (
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
-// This method must be called with the DAG lock held for reads
 func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.ImmutableBlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
 	hash := consensushashing.HeaderHash(blockHeader)
 
