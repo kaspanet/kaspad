@@ -21,8 +21,8 @@ var _ = &reachabilityData{
 	model.FutureCoveringTreeNodeSet{},
 }
 
-// EmptyReachabilityData constructs an empty ReachabilityData object
-func EmptyReachabilityData() model.ReachabilityData {
+// EmptyReachabilityData constructs an empty MutableReachabilityData object
+func EmptyReachabilityData() model.MutableReachabilityData {
 	return &reachabilityData{}
 }
 
@@ -56,7 +56,7 @@ func (rd *reachabilityData) FutureCoveringSet() model.FutureCoveringTreeNodeSet 
 	return rd.futureCoveringSet
 }
 
-func (rd *reachabilityData) CloneWritable() model.ReachabilityData {
+func (rd *reachabilityData) CloneMutable() model.MutableReachabilityData {
 	return &reachabilityData{
 		children:          externalapi.CloneHashes(rd.children),
 		parent:            rd.parent,
@@ -82,7 +82,7 @@ func (rd *reachabilityData) SetFutureCoveringSet(futureCoveringSet model.FutureC
 }
 
 // Equal returns whether rd equals to other
-func (rd *reachabilityData) Equal(other model.ReadOnlyReachabilityData) bool {
+func (rd *reachabilityData) Equal(other model.ReachabilityData) bool {
 	otherReachabilityData, ok := other.(*reachabilityData)
 	if !ok {
 		return false

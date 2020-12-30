@@ -7,7 +7,7 @@ import (
 )
 
 // ReachablityDataToDBReachablityData converts ReachabilityData to DbReachabilityData
-func ReachablityDataToDBReachablityData(reachabilityData model.ReadOnlyReachabilityData) *DbReachabilityData {
+func ReachablityDataToDBReachablityData(reachabilityData model.ReachabilityData) *DbReachabilityData {
 	parent := reachabilityData.Parent()
 	var dbParent *DbHash
 	if parent != nil {
@@ -23,7 +23,7 @@ func ReachablityDataToDBReachablityData(reachabilityData model.ReadOnlyReachabil
 }
 
 // DBReachablityDataToReachablityData converts DbReachabilityData to ReachabilityData
-func DBReachablityDataToReachablityData(dbReachabilityData *DbReachabilityData) (model.ReadOnlyReachabilityData, error) {
+func DBReachablityDataToReachablityData(dbReachabilityData *DbReachabilityData) (model.ReachabilityData, error) {
 	children, err := DbHashesToDomainHashes(dbReachabilityData.Children)
 	if err != nil {
 		return nil, err

@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data model.ReadOnlyReachabilityData) {
+func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data model.ReachabilityData) {
 	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
 }
 

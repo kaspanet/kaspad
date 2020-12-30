@@ -7,7 +7,7 @@ import (
 )
 
 func (rt *reachabilityManager) reachabilityDataForInsertion(
-	blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
+	blockHash *externalapi.DomainHash) (model.MutableReachabilityData, error) {
 
 	hasData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, blockHash)
 	if err != nil {
@@ -22,7 +22,7 @@ func (rt *reachabilityManager) reachabilityDataForInsertion(
 	if err != nil {
 		return nil, err
 	}
-	return data.CloneWritable(), nil
+	return data.CloneMutable(), nil
 }
 
 func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {

@@ -11,7 +11,7 @@ import (
 )
 
 type reachabilityDataStoreMock struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]model.ReadOnlyReachabilityData
+	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
 	recorder                       map[externalapi.DomainHash]struct{}
 	reachabilityReindexRootStaging *externalapi.DomainHash
 }
@@ -25,7 +25,7 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 }
 
 func (r *reachabilityDataStoreMock) StageReachabilityData(
-	blockHash *externalapi.DomainHash, reachabilityData model.ReadOnlyReachabilityData) {
+	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
 
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
@@ -40,7 +40,7 @@ func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
 }
 
 func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
-	model.ReadOnlyReachabilityData, error) {
+	model.ReachabilityData, error) {
 
 	return r.reachabilityDataStaging[*blockHash], nil
 }
@@ -74,7 +74,7 @@ func (r *reachabilityDataStoreMock) resetRecorder() {
 
 func newReachabilityDataStoreMock() *reachabilityDataStoreMock {
 	return &reachabilityDataStoreMock{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReadOnlyReachabilityData),
+		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReachabilityData),
 		recorder:                       make(map[externalapi.DomainHash]struct{}),
 		reachabilityReindexRootStaging: nil,
 	}

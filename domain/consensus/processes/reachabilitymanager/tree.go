@@ -59,7 +59,7 @@ func exponentialFractions(sizes []uint64) []float64 {
 	return fractions
 }
 
-func newReachabilityTreeData() model.ReadOnlyReachabilityData {
+func newReachabilityTreeData() model.ReachabilityData {
 	// Please see the comment above model.ReachabilityTreeNode to understand why
 	// we use these initial values.
 	interval := newReachabilityInterval(1, math.MaxUint64-1)

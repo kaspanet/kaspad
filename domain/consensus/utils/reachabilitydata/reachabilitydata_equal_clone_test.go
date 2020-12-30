@@ -301,7 +301,7 @@ func TestReachabilityData_CloneWritable(t *testing.T) {
 	}
 
 	for i, data := range testData {
-		clone := data.CloneWritable()
+		clone := data.CloneMutable()
 		if !clone.Equal(data) {
 			t.Fatalf("Test #%d: clone should be equal to the original", i)
 		}

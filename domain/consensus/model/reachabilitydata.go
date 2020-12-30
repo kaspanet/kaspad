@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ReachabilityData represents a node in the reachability tree
+// MutableReachabilityData represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
 // index interval for each node and making sure all nodes in its
@@ -26,20 +26,20 @@ import (
 // This set allows to query reachability over the entirety of the DAG.
 // See documentation of FutureCoveringTreeNodeSet for additional details.
 
-// ReadOnlyReachabilityData is a read-only version of a block's ReachabilityData
-// Use CloneWritable to edit the ReachabilityData.
-type ReadOnlyReachabilityData interface {
+// ReachabilityData is a read-only version of a block's MutableReachabilityData
+// Use CloneWritable to edit the MutableReachabilityData.
+type ReachabilityData interface {
 	Children() []*externalapi.DomainHash
 	Parent() *externalapi.DomainHash
 	Interval() *ReachabilityInterval
 	FutureCoveringSet() FutureCoveringTreeNodeSet
-	CloneWritable() ReachabilityData
-	Equal(other ReadOnlyReachabilityData) bool
+	CloneMutable() MutableReachabilityData
+	Equal(other ReachabilityData) bool
 }
 
-// ReachabilityData represents a block's ReachabilityData, with ability to edit it
-type ReachabilityData interface {
-	ReadOnlyReachabilityData
+// MutableReachabilityData represents a block's MutableReachabilityData, with ability to edit it
+type MutableReachabilityData interface {
+	ReachabilityData
 
 	AddChild(child *externalapi.DomainHash)
 	SetParent(parent *externalapi.DomainHash)
