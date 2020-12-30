@@ -96,7 +96,7 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	highHashReceived := false
 	for !highHashReceived {
 		log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-		highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
+		highestSharedBlockHash, err := flow.findHighestSharedBlockHash()
 		if err != nil {
 			return err
 		}
@@ -118,40 +118,57 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(highHash *externalapi.DomainHash) (
-	lowHash *externalapi.DomainHash, err error) {
-
-	lowHash = flow.Config().ActiveNetParams.GenesisHash
-	currentHighHash := highHash
-
-	for {
-		err := flow.sendGetBlockLocator(lowHash, currentHighHash, 0)
-		if err != nil {
-			return nil, err
-		}
-
-		blockLocatorHashes, err := flow.receiveBlockLocator()
-		if err != nil {
-			return nil, err
-		}
-
-		// We check whether the locator's highest hash is in the local DAG.
-		// If it is, return it. If it isn't, we need to narrow our
-		// getBlockLocator request and try again.
-		locatorHighHash := blockLocatorHashes[0]
-		locatorHighHashInfo, err := flow.Domain().Consensus().GetBlockInfo(locatorHighHash)
-		if err != nil {
-			return nil, err
-		}
-		if locatorHighHashInfo.Exists {
-			return locatorHighHash, nil
-		}
-
-		lowHash, currentHighHash, err = flow.Domain().Consensus().FindNextBlockLocatorBoundaries(blockLocatorHashes)
-		if err != nil {
-			return nil, err
-		}
+func (flow *handleRelayInvsFlow) findHighestSharedBlockHash() (*externalapi.DomainHash, error) {
+	lowHash := flow.Config().ActiveNetParams.GenesisHash
+	highHash, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err != nil {
+		return nil, err
 	}
+
+	for !lowHash.Equal(highHash) {
+		log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
+		blockLocator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(blockLocator)
+		err = flow.outgoingRoute.Enqueue(ibdBlockLocatorMessage)
+		if err != nil {
+			return nil, err
+		}
+		message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+		if err != nil {
+			return nil, err
+		}
+		ibdBlockLocatorHighestHashMessage := message.(*appmessage.MsgIBDBlockLocatorHighestHash)
+		highestHash := ibdBlockLocatorHighestHashMessage.HighestHash
+		log.Debugf("The highest hash the peer %s knows is %s", flow.peer, highestHash)
+
+		highestHashIndex := 0
+		highestHashIndexFound := false
+		for i, blockLocatorHash := range blockLocator {
+			if highestHash.Equal(blockLocatorHash) {
+				highestHashIndex = i
+				highestHashIndexFound = true
+				break
+			}
+		}
+		if !highestHashIndexFound {
+			return nil, protocolerrors.Errorf(true, "highest hash %s "+
+				"returned from peer %s is not in the original blockLocator", highestHash, flow.peer)
+		}
+		log.Debugf("The index of the highest hash in the original "+
+			"blockLocator sent to %s is %d", flow.peer, highestHashIndex)
+
+		locatorHashAboveHighestHash := highestHash
+		if highestHashIndex > 0 {
+			locatorHashAboveHighestHash = blockLocator[highestHashIndex-1]
+		}
+		highHash = locatorHashAboveHighestHash
+		lowHash = highestHash
+	}
+	return highHash, nil
 }
 
 func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
