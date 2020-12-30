@@ -360,3 +360,10 @@ func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash
 
 	return s.dagTopologyManager.IsInSelectedParentChainOf(blockHashA, blockHashB)
 }
+
+func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+}
