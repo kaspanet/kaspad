@@ -187,7 +187,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 		m.registerFlow("HandleIBDBlockLocator", router,
 			[]appmessage.MessageCommand{appmessage.CmdIBDBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleIBDBlockLocator(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleIBDBlockLocator(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 	}

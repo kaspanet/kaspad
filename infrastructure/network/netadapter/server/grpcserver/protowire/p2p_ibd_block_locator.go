@@ -5,16 +5,24 @@ import (
 )
 
 func (x *KaspadMessage_IbdBlockLocator) toAppMessage() (appmessage.Message, error) {
-	hashes, err := protoHashesToDomain(x.IbdBlockLocator.Hashes)
+	targetHash, err := x.IbdBlockLocator.TargetHash.toDomain()
 	if err != nil {
 		return nil, err
 	}
-	return &appmessage.MsgIBDBlockLocator{Hashes: hashes}, nil
+	blockLocatorHash, err := protoHashesToDomain(x.IbdBlockLocator.BlockLocatorHashes)
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.MsgIBDBlockLocator{
+		TargetHash:         targetHash,
+		BlockLocatorHashes: blockLocatorHash,
+	}, nil
 }
 
 func (x *KaspadMessage_IbdBlockLocator) fromAppMessage(message *appmessage.MsgIBDBlockLocator) error {
 	x.IbdBlockLocator = &IbdBlockLocatorMessage{
-		Hashes: domainHashesToProto(message.Hashes),
+		TargetHash:         domainHashToProto(message.TargetHash),
+		BlockLocatorHashes: domainHashesToProto(message.BlockLocatorHashes),
 	}
 	return nil
 }

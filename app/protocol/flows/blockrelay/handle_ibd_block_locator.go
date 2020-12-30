@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -13,9 +14,10 @@ type HandleIBDBlockLocatorContext interface {
 }
 
 // HandleIBDBlockRequests listens to appmessage.MsgIBDBlockLocator messages and sends
-// the the highest known block to the requesting peer.
+// the highest known block that's in the selected parent chain of `targetHash` to the
+// requesting peer.
 func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *router.Route,
-	outgoingRoute *router.Route) error {
+	outgoingRoute *router.Route, peer *peer.Peer) error {
 
 	for {
 		message, err := incomingRoute.Dequeue()
@@ -24,25 +26,52 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 		}
 		ibdBlockLocatorMessage := message.(*appmessage.MsgIBDBlockLocator)
 
-		foundHighestHash := false
-		for _, hash := range ibdBlockLocatorMessage.Hashes {
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
+		targetHash := ibdBlockLocatorMessage.TargetHash
+		log.Debugf("Received IBDBlockLocator from %s with targetHash %s", peer, targetHash)
+
+		blockInfo, err := context.Domain().Consensus().GetBlockInfo(targetHash)
+		if err != nil {
+			return err
+		}
+		if !blockInfo.Exists {
+			return protocolerrors.Errorf(true, "received IBDBlockLocator "+
+				"with an unknown targetHash %s", targetHash)
+		}
+
+		foundHighestHashInTheSelectedParentChainOfTargetHash := false
+		for _, blockLocatorHash := range ibdBlockLocatorMessage.BlockLocatorHashes {
+			blockInfo, err := context.Domain().Consensus().GetBlockInfo(blockLocatorHash)
 			if err != nil {
 				return err
 			}
-			if blockInfo.Exists {
-				foundHighestHash = true
-				ibdBlockLocatorHighestHashMessage := appmessage.NewMsgIBDBlockLocatorHighestHash(hash)
-				err = outgoingRoute.Enqueue(ibdBlockLocatorHighestHashMessage)
-				if err != nil {
-					return err
-				}
-				break
+			if !blockInfo.Exists {
+				continue
 			}
+
+			isBlockLocatorHashInSelectedParentChainOfHighHash, err :=
+				context.Domain().Consensus().IsInSelectedParentChainOf(blockLocatorHash, targetHash)
+			if err != nil {
+				return err
+			}
+			if !isBlockLocatorHashInSelectedParentChainOfHighHash {
+				continue
+			}
+
+			foundHighestHashInTheSelectedParentChainOfTargetHash = true
+			log.Debugf("Found a known hash %s amongst peer %s's "+
+				"blockLocator that's in the selected parent chain of targetHash %s", blockLocatorHash, peer, targetHash)
+
+			ibdBlockLocatorHighestHashMessage := appmessage.NewMsgIBDBlockLocatorHighestHash(blockLocatorHash)
+			err = outgoingRoute.Enqueue(ibdBlockLocatorHighestHashMessage)
+			if err != nil {
+				return err
+			}
+			break
 		}
 
-		if !foundHighestHash {
-			return protocolerrors.Errorf(true, "no known hash was found in block locator")
+		if !foundHighestHashInTheSelectedParentChainOfTargetHash {
+			return protocolerrors.Errorf(true, "no hash was found in the blockLocator "+
+				"that was in the selected parent chain of targetHash %s", targetHash)
 		}
 	}
 }

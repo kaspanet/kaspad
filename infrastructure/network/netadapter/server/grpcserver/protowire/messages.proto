@@ -314,7 +314,8 @@ message IBDRootHashMessage{
 
 // IbdBlockLocatorMessage start
 message IbdBlockLocatorMessage {
-  repeated Hash hashes = 1;
+  Hash targetHash = 1;
+  repeated Hash blockLocatorHashes = 2;
 }
 // IbdBlockLocatorMessage end
 

@@ -7,7 +7,8 @@ import (
 // MsgIBDBlockLocator represents a kaspa ibdBlockLocator message
 type MsgIBDBlockLocator struct {
 	baseMessage
-	Hashes []*externalapi.DomainHash
+	TargetHash         *externalapi.DomainHash
+	BlockLocatorHashes []*externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message
@@ -16,8 +17,11 @@ func (msg *MsgIBDBlockLocator) Command() MessageCommand {
 }
 
 // NewMsgIBDBlockLocator returns a new kaspa ibdBlockLocator message
-func NewMsgIBDBlockLocator(hashes []*externalapi.DomainHash) *MsgIBDBlockLocator {
+func NewMsgIBDBlockLocator(targetHash *externalapi.DomainHash,
+	blockLocatorHashes []*externalapi.DomainHash) *MsgIBDBlockLocator {
+
 	return &MsgIBDBlockLocator{
-		Hashes: hashes,
+		TargetHash:         targetHash,
+		BlockLocatorHashes: blockLocatorHashes,
 	}
 }

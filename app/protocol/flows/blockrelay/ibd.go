@@ -96,7 +96,7 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	highHashReceived := false
 	for !highHashReceived {
 		log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-		highestSharedBlockHash, err := flow.findHighestSharedBlockHash()
+		highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) findHighestSharedBlockHash() (*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	lowHash := flow.Config().ActiveNetParams.GenesisHash
 	highHash, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
@@ -132,7 +132,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash() (*externalapi.Doma
 			return nil, err
 		}
 
-		ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(blockLocator)
+		ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(targetHash, blockLocator)
 		err = flow.outgoingRoute.Enqueue(ibdBlockLocatorMessage)
 		if err != nil {
 			return nil, err
