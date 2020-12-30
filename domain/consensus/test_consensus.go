@@ -22,17 +22,6 @@ func (tc *testConsensus) DAGParams() *dagconfig.Params {
 	return tc.dagParams
 }
 
-func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
-	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
-	*externalapi.DomainBlock, model.UTXODiff, error) {
-
-	// Require write lock because BuildBlockWithParents stages temporary data
-	tc.lock.Lock()
-	defer tc.lock.Unlock()
-
-	return tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
-}
-
 func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
 	for _, tx := range block.Transactions {
 		tx.Fee = 0
@@ -43,6 +32,24 @@ func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
 			input.UTXOEntry = nil
 		}
 	}
+}
+
+func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
+	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
+	*externalapi.DomainBlock, model.UTXODiff, error) {
+
+	// Require write lock because BuildBlockWithParents stages temporary data
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	block, diff, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cleanBlockPrefilledFields(block)
+
+	return block, diff, nil
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
@@ -56,8 +63,6 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	if err != nil {
 		return nil, nil, err
 	}
-
-	cleanBlockPrefilledFields(block)
 
 	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
