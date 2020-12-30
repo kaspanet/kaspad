@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -95,24 +96,28 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.validateBlockHashExists(blockHash)
+	block, err := s.blockStore.Block(s.databaseContext, blockHash)
 	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+		}
 		return nil, err
 	}
-
-	return s.blockStore.Block(s.databaseContext, blockHash)
+	return block, nil
 }
 
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.validateBlockHashExists(blockHash)
+	blockHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
 	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block header %s does not exist", blockHash)
+		}
 		return nil, err
 	}
-
-	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
+	return blockHeader, nil
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
@@ -340,7 +345,7 @@ func (s *consensus) validateBlockHashExists(blockHash *externalapi.DomainHash) e
 		return err
 	}
 	if !exists {
-		return errors.Errorf("block %s does not exists", blockHash)
+		return errors.Errorf("block %s does not exist", blockHash)
 	}
 	return nil
 }
