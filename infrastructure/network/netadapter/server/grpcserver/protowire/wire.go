@@ -244,8 +244,15 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgBlockLocatorHighestHash:
-		payload := new(KaspadMessage_BlockLocatorHighestHash)
+	case *appmessage.MsgIBDBlockLocator:
+		payload := new(KaspadMessage_IbdBlockLocator)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlockLocatorHighestHash:
+		payload := new(KaspadMessage_IbdBlockLocatorHighestHash)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

@@ -57,7 +57,8 @@ const (
 	CmdIBDRootNotFound
 	CmdRequestIBDRootHash
 	CmdIBDRootHash
-	CmdBlockLocatorHighestHash
+	CmdIBDBlockLocator
+	CmdIBDBlockLocatorHighestHash
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -150,7 +151,8 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdIBDRootNotFound:               "IBDRootNotFound",
 	CmdRequestIBDRootHash:            "IBDRequestIBDRootHash",
 	CmdIBDRootHash:                   "IBDIBDRootHash",
-	CmdBlockLocatorHighestHash:       "BlockLocatorHighestHash",
+	CmdIBDBlockLocator:               "IBDBlockLocator",
+	CmdIBDBlockLocatorHighestHash:    "IBDBlockLocatorHighestHash",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation
