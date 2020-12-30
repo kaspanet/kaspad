@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util"
 	"os"
+
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/version"
 
@@ -47,7 +48,7 @@ func main() {
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop", func() {
-		err = mineLoop(client, cfg.NumberOfBlocks, cfg.BlockDelay, cfg.MineWhenNotSynced, miningAddr)
+		err = mineLoop(client, cfg.NumberOfBlocks, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
 			panic(errors.Wrap(err, "error in mine loop"))
 		}

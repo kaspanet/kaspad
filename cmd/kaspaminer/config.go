@@ -34,7 +34,6 @@ type configFlags struct {
 	RPCServer         string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 	MiningAddr        string `long:"miningaddr" description:"Address to mine to"`
 	NumberOfBlocks    uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
-	BlockDelay        uint64 `long:"block-delay" description:"Delay for block submission (in milliseconds). This is used only for testing purposes."`
 	MineWhenNotSynced bool   `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
 	Profile           string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	config.NetworkFlags

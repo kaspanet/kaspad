@@ -2,11 +2,11 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -24,7 +24,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool,
+func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
 
 	errChan := make(chan error)
@@ -33,25 +33,16 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop-internalLoop", func() {
-		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *externalapi.DomainBlock)
 			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
-			wg.Add(1)
-			spawn("mineLoop-handleFoundBlock", func() {
-				if blockDelay != 0 {
-					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
-				}
-				err := handleFoundBlock(client, block)
-				if err != nil {
-					errChan <- err
-				}
-				wg.Done()
-			})
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+			}
 		}
-		wg.Wait()
 		doneChan <- struct{}{}
 	})
 
