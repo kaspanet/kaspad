@@ -33,6 +33,18 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 	return tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
 }
 
+func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
+	for _, tx := range block.Transactions {
+		tx.Fee = 0
+		tx.Mass = 0
+		tx.ID = nil
+
+		for _, input := range tx.Inputs {
+			input.UTXOEntry = nil
+		}
+	}
+}
+
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 
@@ -44,6 +56,8 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	if err != nil {
 		return nil, nil, err
 	}
+
+	cleanBlockPrefilledFields(block)
 
 	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
