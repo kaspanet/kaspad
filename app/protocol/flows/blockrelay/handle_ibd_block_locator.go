@@ -13,7 +13,7 @@ type HandleIBDBlockLocatorContext interface {
 	Domain() domain.Domain
 }
 
-// HandleIBDBlockRequests listens to appmessage.MsgIBDBlockLocator messages and sends
+// HandleIBDBlockLocator listens to appmessage.MsgIBDBlockLocator messages and sends
 // the highest known block that's in the selected parent chain of `targetHash` to the
 // requesting peer.
 func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *router.Route,
