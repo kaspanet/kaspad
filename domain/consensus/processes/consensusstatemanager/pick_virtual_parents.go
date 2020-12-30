@@ -9,8 +9,8 @@ import (
 )
 
 func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	log.Debugf("pickVirtualParents start for tips: %s", tips)
-	defer log.Debugf("pickVirtualParents end for tips: %s", tips)
+	log.Debugf("pickVirtualParents start for tips len: %d", len(tips))
+	defer log.Debugf("pickVirtualParents end for tips len: %d", len(tips))
 
 	log.Debugf("Pushing all tips into a DownHeap")
 	candidatesHeap := csm.dagTraversalManager.NewDownHeap()

@@ -4,25 +4,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/pkg/errors"
 )
 
 func (rt *reachabilityManager) reachabilityDataForInsertion(
 	blockHash *externalapi.DomainHash) (model.MutableReachabilityData, error) {
-
-	hasData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, blockHash)
-	if err != nil {
-		return nil, err
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	if err == nil {
+		return data.CloneMutable(), nil
 	}
 
-	if !hasData {
+	if errors.Is(err, database.ErrNotFound) {
 		return reachabilitydata.EmptyReachabilityData(), nil
 	}
-
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
-	if err != nil {
-		return nil, err
-	}
-	return data.CloneMutable(), nil
+	return nil, err
 }
 
 func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
