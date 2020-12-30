@@ -30,7 +30,12 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
-	return tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	block, diff, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return block, diff, nil
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
