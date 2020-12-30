@@ -141,7 +141,11 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 		if err != nil {
 			return nil, err
 		}
-		ibdBlockLocatorHighestHashMessage := message.(*appmessage.MsgIBDBlockLocatorHighestHash)
+		ibdBlockLocatorHighestHashMessage, ok := message.(*appmessage.MsgIBDBlockLocatorHighestHash)
+		if !ok {
+			return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: %s, got: %s", appmessage.CmdIBDBlockLocatorHighestHash, message.Command())
+		}
 		highestHash := ibdBlockLocatorHighestHashMessage.HighestHash
 		log.Debugf("The highest hash the peer %s knows is %s", flow.peer, highestHash)
 
