@@ -21,7 +21,7 @@ func (s *selectedChildIterator) Next() bool {
 		panic(err)
 	}
 
-	for _, child := range data.TreeNode.Children {
+	for _, child := range data.Children() {
 		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
 		if err != nil {
 			panic(err)

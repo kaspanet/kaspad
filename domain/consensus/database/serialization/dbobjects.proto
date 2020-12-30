@@ -117,14 +117,10 @@ message DbUtxoEntry {
 }
 
 message DbReachabilityData {
-  DbReachabilityTreeNode treeNode = 1;
-  repeated DbHash futureCoveringSet = 2;
-}
-
-message DbReachabilityTreeNode {
   repeated DbHash children = 1;
   DbHash parent = 2;
   DbReachabilityInterval interval = 3;
+  repeated DbHash futureCoveringSet = 4;
 }
 
 message DbReachabilityInterval {
