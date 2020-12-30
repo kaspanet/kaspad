@@ -81,7 +81,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add two blocks on top of the genesis block
@@ -171,7 +171,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add three children to the genesis: leftBlock, centerBlock, rightBlock
@@ -242,7 +242,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityData: %s", err)
 		}
 
-		treeChildOfCenterBlock := centerData.TreeNode.Children[0]
+		treeChildOfCenterBlock := centerData.Children()[0]
 		treeChildOfCenterBlockOriginalIntervalSize := intervalSize(treeChildOfCenterBlock)
 		leftTipHash := leftBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {

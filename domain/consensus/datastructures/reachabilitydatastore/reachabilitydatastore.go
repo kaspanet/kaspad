@@ -14,7 +14,7 @@ var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-re
 
 // reachabilityDataStore represents a store of ReachabilityData
 type reachabilityDataStore struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
+	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
 	reachabilityReindexRootStaging *externalapi.DomainHash
 	reachabilityDataCache          *lrucache.LRUCache
 	reachabilityReindexRootCache   *externalapi.DomainHash
@@ -23,15 +23,16 @@ type reachabilityDataStore struct {
 // New instantiates a new ReachabilityDataStore
 func New(cacheSize int) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
-		reachabilityDataStaging: make(map[externalapi.DomainHash]*model.ReachabilityData),
+		reachabilityDataStaging: make(map[externalapi.DomainHash]model.ReachabilityData),
 		reachabilityDataCache:   lrucache.New(cacheSize),
 	}
 }
 
 // StageReachabilityData stages the given reachabilityData for the given blockHash
 func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
-	reachabilityData *model.ReachabilityData) {
-	rds.reachabilityDataStaging[*blockHash] = reachabilityData.Clone()
+	reachabilityData model.ReachabilityData) {
+
+	rds.reachabilityDataStaging[*blockHash] = reachabilityData
 }
 
 // StageReachabilityReindexRoot stages the given reachabilityReindexRoot
@@ -44,7 +45,7 @@ func (rds *reachabilityDataStore) IsAnythingStaged() bool {
 }
 
 func (rds *reachabilityDataStore) Discard() {
-	rds.reachabilityDataStaging = make(map[externalapi.DomainHash]*model.ReachabilityData)
+	rds.reachabilityDataStaging = make(map[externalapi.DomainHash]model.ReachabilityData)
 	rds.reachabilityReindexRootStaging = nil
 }
 
@@ -78,14 +79,14 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 
 // ReachabilityData returns the reachabilityData associated with the given blockHash
 func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
-	blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+	blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 
 	if reachabilityData, ok := rds.reachabilityDataStaging[*blockHash]; ok {
-		return reachabilityData.Clone(), nil
+		return reachabilityData, nil
 	}
 
 	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
-		return reachabilityData.(*model.ReachabilityData).Clone(), nil
+		return reachabilityData.(model.ReachabilityData), nil
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
@@ -98,7 +99,7 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 		return nil, err
 	}
 	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
-	return reachabilityData.Clone(), nil
+	return reachabilityData, nil
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
@@ -140,18 +141,18 @@ func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externala
 	return reachabilityDataBucket.Key(hash.ByteSlice())
 }
 
-func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData *model.ReachabilityData) ([]byte, error) {
+func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData model.ReachabilityData) ([]byte, error) {
 	return proto.Marshal(serialization.ReachablityDataToDBReachablityData(reachabilityData))
 }
 
-func (rds *reachabilityDataStore) deserializeReachabilityData(reachabilityDataBytes []byte) (*model.ReachabilityData, error) {
+func (rds *reachabilityDataStore) deserializeReachabilityData(reachabilityDataBytes []byte) (model.ReachabilityData, error) {
 	dbReachabilityData := &serialization.DbReachabilityData{}
 	err := proto.Unmarshal(reachabilityDataBytes, dbReachabilityData)
 	if err != nil {
 		return nil, err
 	}
 
-	return serialization.DBReachablityDataToReachablityData(dbReachabilityData), nil
+	return serialization.DBReachablityDataToReachablityData(dbReachabilityData)
 }
 
 func (rds *reachabilityDataStore) serializeReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) ([]byte, error) {
