@@ -22,18 +22,6 @@ func (tc *testConsensus) DAGParams() *dagconfig.Params {
 	return tc.dagParams
 }
 
-func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
-	for _, tx := range block.Transactions {
-		tx.Fee = 0
-		tx.Mass = 0
-		tx.ID = nil
-
-		for _, input := range tx.Inputs {
-			input.UTXOEntry = nil
-		}
-	}
-}
-
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
 	*externalapi.DomainBlock, model.UTXODiff, error) {
@@ -46,8 +34,6 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 	if err != nil {
 		return nil, nil, err
 	}
-
-	cleanBlockPrefilledFields(block)
 
 	return block, diff, nil
 }

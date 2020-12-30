@@ -28,6 +28,18 @@ func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus test
 	}
 }
 
+func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
+	for _, tx := range block.Transactions {
+		tx.Fee = 0
+		tx.Mass = 0
+		tx.ID = nil
+
+		for _, input := range tx.Inputs {
+			input.UTXOEntry = nil
+		}
+	}
+}
+
 // BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
 // and returns the block together with its past UTXO-diff from the virtual.
 func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
@@ -37,7 +49,16 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
 	defer onEnd()
 
-	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
+	block, diff, err := bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// It's invalid to insert a block with prefilled fields to consensus, so we
+	// clean them before returning the block.
+	cleanBlockPrefilledFields(block)
+
+	return block, diff, nil
 }
 
 func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
