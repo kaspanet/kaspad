@@ -64,6 +64,8 @@ func NewFactory() Factory {
 func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
 	dbManager := consensusdatabase.New(db)
 
+	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
+
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New(200)
 	blockStore, err := blockstore.New(dbManager, 200)
@@ -74,14 +76,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(10_000)
+	blockRelationStore := blockrelationstore.New(pruningWindowSizeForCaches)
 	blockStatusStore := blockstatusstore.New(200)
 	multisetStore := multisetstore.New(200)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(10_000)
+	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizeForCaches)
 	utxoDiffStore := utxodiffstore.New(200)
 	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New(10_000)
+	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200)
 

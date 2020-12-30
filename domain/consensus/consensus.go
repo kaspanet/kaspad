@@ -344,3 +344,26 @@ func (s *consensus) validateBlockHashExists(blockHash *externalapi.DomainHash) e
 	}
 	return nil
 }
+
+func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(blockHashA)
+	if err != nil {
+		return false, err
+	}
+	err = s.validateBlockHashExists(blockHashB)
+	if err != nil {
+		return false, err
+	}
+
+	return s.dagTopologyManager.IsInSelectedParentChainOf(blockHashA, blockHashB)
+}
+
+func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+}
