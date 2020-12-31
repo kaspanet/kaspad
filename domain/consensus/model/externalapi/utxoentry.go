@@ -10,5 +10,4 @@ type UTXOEntry interface {
 	BlockBlueScore() uint64  // Blue score of the block accepting the tx.
 	IsCoinbase() bool
 	Equal(other UTXOEntry) bool
-	Clone() UTXOEntry
 }
