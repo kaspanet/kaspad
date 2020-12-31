@@ -71,6 +71,7 @@ message DbTransactionAcceptanceData {
   DbTransaction transaction = 1;
   uint64 fee = 2;
   bool isAccepted = 3;
+  repeated DbUtxoEntry transactionInputUtxoEntries = 4;
 }
 
 message DbBlockRelations {

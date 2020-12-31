@@ -87,14 +87,15 @@ func (bad *BlockAcceptanceData) Clone() *BlockAcceptanceData {
 // TransactionAcceptanceData stores a transaction together with an indication
 // if it was accepted or not by some block
 type TransactionAcceptanceData struct {
-	Transaction *DomainTransaction
-	Fee         uint64
-	IsAccepted  bool
+	Transaction                 *DomainTransaction
+	Fee                         uint64
+	IsAccepted                  bool
+	TransactionInputUTXOEntries []UTXOEntry
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = &TransactionAcceptanceData{&DomainTransaction{}, 0, false}
+var _ = &TransactionAcceptanceData{&DomainTransaction{}, 0, false, []UTXOEntry{}}
 
 // Equal returns whether tad equals to other
 func (tad *TransactionAcceptanceData) Equal(other *TransactionAcceptanceData) bool {
@@ -114,14 +115,31 @@ func (tad *TransactionAcceptanceData) Equal(other *TransactionAcceptanceData) bo
 		return false
 	}
 
+	if len(tad.TransactionInputUTXOEntries) != len(other.TransactionInputUTXOEntries) {
+		return false
+	}
+
+	for i, thisUTXOEntry := range tad.TransactionInputUTXOEntries {
+		otherUTXOEntry := other.TransactionInputUTXOEntries[i]
+		if !thisUTXOEntry.Equal(otherUTXOEntry) {
+			return false
+		}
+	}
+
 	return true
 }
 
 // Clone returns a clone of TransactionAcceptanceData
 func (tad *TransactionAcceptanceData) Clone() *TransactionAcceptanceData {
+	cloneTransactionInputUTXOEntries := make([]UTXOEntry, len(tad.TransactionInputUTXOEntries))
+	for i, utxoEntry := range tad.TransactionInputUTXOEntries {
+		cloneTransactionInputUTXOEntries[i] = utxoEntry
+	}
+
 	return &TransactionAcceptanceData{
-		Transaction: tad.Transaction.Clone(),
-		Fee:         tad.Fee,
-		IsAccepted:  tad.IsAccepted,
+		Transaction:                 tad.Transaction.Clone(),
+		Fee:                         tad.Fee,
+		IsAccepted:                  tad.IsAccepted,
+		TransactionInputUTXOEntries: cloneTransactionInputUTXOEntries,
 	}
 }

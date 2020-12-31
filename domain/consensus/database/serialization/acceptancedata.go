@@ -13,10 +13,17 @@ func DomainAcceptanceDataToDbAcceptanceData(domainAcceptanceData externalapi.Acc
 
 		for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 			dbTransaction := DomainTransactionToDbTransaction(transactionAcceptanceData.Transaction)
+
+			dbTransactionInputUTXOEntries := make([]*DbUtxoEntry, len(transactionAcceptanceData.TransactionInputUTXOEntries))
+			for k, transactionInputUTXOEntry := range transactionAcceptanceData.TransactionInputUTXOEntries {
+				dbTransactionInputUTXOEntries[k] = UTXOEntryToDBUTXOEntry(transactionInputUTXOEntry)
+			}
+
 			dbTransactionAcceptanceData[j] = &DbTransactionAcceptanceData{
-				Transaction: dbTransaction,
-				Fee:         transactionAcceptanceData.Fee,
-				IsAccepted:  transactionAcceptanceData.IsAccepted,
+				Transaction:                 dbTransaction,
+				Fee:                         transactionAcceptanceData.Fee,
+				IsAccepted:                  transactionAcceptanceData.IsAccepted,
+				TransactionInputUtxoEntries: dbTransactionInputUTXOEntries,
 			}
 		}
 
@@ -45,10 +52,23 @@ func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) 
 			if err != nil {
 				return nil, err
 			}
+
+			domainTransactionInputUTXOEntries := make([]externalapi.UTXOEntry, len(dbTransactionAcceptanceData.TransactionInputUtxoEntries))
+			for k, transactionInputUTXOEntry := range dbTransactionAcceptanceData.TransactionInputUtxoEntries {
+				domainTransactionInputUTXOEntry := DBUTXOEntryToUTXOEntry(transactionInputUTXOEntry)
+				domainTransactionInputUTXOEntries[k] = domainTransactionInputUTXOEntry
+
+				// For consistency's sake, we fill up the transaction input's
+				// UTXOEntry field as well, since that's how the acceptanceData
+				// must have arrived when it was originally serialized
+				domainTransaction.Inputs[k].UTXOEntry = domainTransactionInputUTXOEntry
+			}
+
 			domainTransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
-				Transaction: domainTransaction,
-				Fee:         dbTransactionAcceptanceData.Fee,
-				IsAccepted:  dbTransactionAcceptanceData.IsAccepted,
+				Transaction:                 domainTransaction,
+				Fee:                         dbTransactionAcceptanceData.Fee,
+				IsAccepted:                  dbTransactionAcceptanceData.IsAccepted,
+				TransactionInputUTXOEntries: domainTransactionInputUTXOEntries,
 			}
 		}
 
