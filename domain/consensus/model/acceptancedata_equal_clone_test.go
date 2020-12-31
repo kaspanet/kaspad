@@ -228,6 +228,41 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 		[]externalapi.UTXOEntry{utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)},
 	}
 
+	//test 5: different TransactionInputUTXOEntries
+	var testTransactionAcceptanceData5 = externalapi.TransactionAcceptanceData{
+		&externalapi.DomainTransaction{
+			Version: 1,
+			Inputs: []*externalapi.DomainTransactionInput{{externalapi.DomainOutpoint{
+				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
+				[]byte{1, 2, 3},
+				uint64(0xFFFFFFFF),
+				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+				[]byte{1, 2}},
+				{uint64(0xFFFF),
+					[]byte{1, 3}}},
+			LockTime:     1,
+			SubnetworkID: externalapi.DomainSubnetworkID{0x01},
+			Gas:          1,
+			PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+			Payload: []byte{0x01},
+			Fee:     0,
+			Mass:    1,
+			ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}),
+		},
+		1,
+		false,
+		[]externalapi.UTXOEntry{utxo.NewUTXOEntry(1, []byte{0, 1, 4, 3}, true, 2)},
+	}
+
 	tests := []testTransactionAcceptanceDataStruct{
 		{
 			baseTransactionAcceptanceData: &testTransactionAcceptanceDataBase,
@@ -243,6 +278,9 @@ func initTransactionAcceptanceDataForEqual() []testTransactionAcceptanceDataStru
 					expectedResult:            false,
 				}, {
 					transactionAcceptanceData: &testTransactionAcceptanceData4,
+					expectedResult:            false,
+				}, {
+					transactionAcceptanceData: &testTransactionAcceptanceData5,
 					expectedResult:            false,
 				}, {
 					transactionAcceptanceData: nil,
