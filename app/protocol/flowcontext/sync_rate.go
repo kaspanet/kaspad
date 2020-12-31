@@ -50,7 +50,7 @@ func (f *FlowContext) isSyncRateBelowMinimum() bool {
 
 	if isSyncRateTooLow {
 		log.Debugf("In the last %d seconds, got %d blocks, while at least %f were expected.",
-			syncRateWindowInMilliSeconds/1000, len(f.recentBlockAddedTimes), expectedBlocks*syncRateMaxDeviation)
+			syncRateWindowInMilliSeconds/1000, len(f.recentBlockAddedTimes), expectedBlocks*(1-syncRateMaxDeviation))
 	}
 
 	return isSyncRateTooLow
