@@ -74,3 +74,12 @@ func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
 
 	return true
 }
+
+func (u *utxoEntry) Clone() externalapi.UTXOEntry {
+	return NewUTXOEntry(
+		u.amount,
+		u.scriptPublicKey,
+		u.isCoinbase,
+		u.blockBlueScore,
+	)
+}
