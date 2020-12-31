@@ -46,14 +46,14 @@ func (f *FlowContext) isSyncRateBelowMinimum() bool {
 	}
 
 	expectedBlocks := float64(syncRateWindowInMilliSeconds) / float64(f.cfg.NetParams().TargetTimePerBlock.Milliseconds())
-	result := 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRateMaxDeviation
+	isSyncRateTooLow := 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRateMaxDeviation
 
-	if result == true {
-		log.Debugf("In the last %d seconds, got %d blocks, while %f were expected.",
-			syncRateWindowInMilliSeconds/1000, len(f.recentBlockAddedTimes), expectedBlocks)
+	if isSyncRateTooLow {
+		log.Debugf("In the last %d seconds, got %d blocks, while at least %f were expected.",
+			syncRateWindowInMilliSeconds/1000, len(f.recentBlockAddedTimes), expectedBlocks*syncRateMaxDeviation)
 	}
 
-	return result
+	return isSyncRateTooLow
 }
 
 // ShouldMine returns whether it's ok to use block template from this node
