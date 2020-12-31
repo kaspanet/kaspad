@@ -212,10 +212,20 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
+		spendingTransaction1UTXOEntry, err := testConsensus.ConsensusStateStore().
+			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction1.Inputs[0].PreviousOutpoint)
+		if err != nil {
+			t.Fatalf("Error getting UTXOEntry for spendingTransaction1: %s", err)
+		}
 
 		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction2)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+		}
+		spendingTransaction2UTXOEntry, err := testConsensus.ConsensusStateStore().
+			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction2.Inputs[0].PreviousOutpoint)
+		if err != nil {
+			t.Fatalf("Error getting UTXOEntry for spendingTransaction2: %s", err)
 		}
 
 		redHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock3Hash}, nil,
@@ -284,9 +294,10 @@ func TestTransactionAcceptance(t *testing.T) {
 				BlockHash: finalTipSelectedParentHash,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{
-						Transaction: finalTipSelectedParent.Transactions[0],
-						Fee:         0,
-						IsAccepted:  true,
+						Transaction:                 finalTipSelectedParent.Transactions[0],
+						Fee:                         0,
+						IsAccepted:                  true,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 				},
 			},
@@ -294,14 +305,16 @@ func TestTransactionAcceptance(t *testing.T) {
 				BlockHash: blueHash,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{
-						Transaction: blue.Transactions[0],
-						Fee:         0,
-						IsAccepted:  false,
+						Transaction:                 blue.Transactions[0],
+						Fee:                         0,
+						IsAccepted:                  false,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 					{
-						Transaction: spendingTransaction1,
-						Fee:         1,
-						IsAccepted:  true,
+						Transaction:                 spendingTransaction1,
+						Fee:                         1,
+						IsAccepted:                  true,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction1UTXOEntry},
 					},
 				},
 			},
@@ -309,19 +322,22 @@ func TestTransactionAcceptance(t *testing.T) {
 				BlockHash: redHash,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{
-						Transaction: red.Transactions[0],
-						Fee:         0,
-						IsAccepted:  false,
+						Transaction:                 red.Transactions[0],
+						Fee:                         0,
+						IsAccepted:                  false,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 					{
-						Transaction: spendingTransaction1,
-						Fee:         0,
-						IsAccepted:  false,
+						Transaction:                 spendingTransaction1,
+						Fee:                         0,
+						IsAccepted:                  false,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 					{
-						Transaction: spendingTransaction2,
-						Fee:         1,
-						IsAccepted:  true,
+						Transaction:                 spendingTransaction2,
+						Fee:                         1,
+						IsAccepted:                  true,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction2UTXOEntry},
 					},
 				},
 			},

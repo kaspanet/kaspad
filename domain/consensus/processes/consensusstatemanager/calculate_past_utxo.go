@@ -155,10 +155,19 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
 				transactionID, mergeSetBlockHash, isAccepted, transaction.Fee)
 
+			var transactionInputUTXOEntries []externalapi.UTXOEntry
+			if isAccepted {
+				transactionInputUTXOEntries = make([]externalapi.UTXOEntry, len(transaction.Inputs))
+				for k, input := range transaction.Inputs {
+					transactionInputUTXOEntries[k] = input.UTXOEntry
+				}
+			}
+
 			blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
-				Transaction: transaction,
-				Fee:         transaction.Fee,
-				IsAccepted:  isAccepted,
+				Transaction:                 transaction,
+				Fee:                         transaction.Fee,
+				IsAccepted:                  isAccepted,
+				TransactionInputUTXOEntries: transactionInputUTXOEntries,
 			}
 		}
 		multiblockAcceptanceData[i] = blockAcceptanceData
