@@ -1,6 +1,8 @@
 package blockrelay
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
@@ -8,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
@@ -257,6 +258,9 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
+
+	flow.UpdateRecentBlockAddedTimesWithLastBlock()
+
 	return nil
 }
 
