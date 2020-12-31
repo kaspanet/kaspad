@@ -82,7 +82,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	pruningStore := pruningstore.New()
 	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizeForCaches)
 	utxoDiffStore := utxodiffstore.New(200)
-	consensusStateStore := consensusstatestore.New()
+	consensusStateStore := consensusstatestore.New(10_000)
 	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200)

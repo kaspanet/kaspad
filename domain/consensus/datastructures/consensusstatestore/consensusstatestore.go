@@ -3,6 +3,7 @@ package consensusstatestore
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
 )
 
 // consensusStateStore represents a store for the current consensus state
@@ -12,13 +13,19 @@ type consensusStateStore struct {
 	virtualUTXODiffStaging    model.UTXODiff
 	virtualUTXOSetStaging     model.UTXOCollection
 
+	virtualUTXOSetCache *utxolrucache.LRUCache
+	utxoSetCacheSize    int
+
 	tipsCache               []*externalapi.DomainHash
 	virtualDiffParentsCache []*externalapi.DomainHash
 }
 
 // New instantiates a new ConsensusStateStore
-func New() model.ConsensusStateStore {
-	return &consensusStateStore{}
+func New(utxoSetCacheSize int) model.ConsensusStateStore {
+	return &consensusStateStore{
+		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize),
+		utxoSetCacheSize:    utxoSetCacheSize,
+	}
 }
 
 func (css *consensusStateStore) Discard() {
