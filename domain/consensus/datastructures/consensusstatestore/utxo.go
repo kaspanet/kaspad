@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
 	"github.com/pkg/errors"
 )
 
@@ -86,7 +85,7 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		return nil
 	}
 
-	css.virtualUTXOSetCache = utxolrucache.New(css.utxoSetCacheSize)
+	css.virtualUTXOSetCache.Clear()
 	iterator := css.virtualUTXOSetStaging.Iterator()
 	for iterator.Next() {
 		outpoint, utxoEntry, err := iterator.Get()

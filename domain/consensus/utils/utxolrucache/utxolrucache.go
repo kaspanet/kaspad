@@ -49,6 +49,18 @@ func (c *LRUCache) Remove(key *externalapi.DomainOutpoint) {
 	delete(c.cache, *key)
 }
 
+// Clear clears the cache
+func (c *LRUCache) Clear() {
+	keys := make([]externalapi.DomainOutpoint, len(c.cache))
+	for outpoint := range c.cache {
+		keys = append(keys, outpoint)
+	}
+
+	for _, key := range keys {
+		delete(c.cache, key)
+	}
+}
+
 func (c *LRUCache) evictRandom() {
 	var keyToEvict externalapi.DomainOutpoint
 	for key := range c.cache {

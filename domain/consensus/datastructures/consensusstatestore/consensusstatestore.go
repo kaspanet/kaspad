@@ -14,7 +14,6 @@ type consensusStateStore struct {
 	virtualUTXOSetStaging     model.UTXOCollection
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
-	utxoSetCacheSize    int
 
 	tipsCache               []*externalapi.DomainHash
 	virtualDiffParentsCache []*externalapi.DomainHash
@@ -24,7 +23,6 @@ type consensusStateStore struct {
 func New(utxoSetCacheSize int) model.ConsensusStateStore {
 	return &consensusStateStore{
 		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize),
-		utxoSetCacheSize:    utxoSetCacheSize,
 	}
 }
 
