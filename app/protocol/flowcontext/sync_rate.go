@@ -3,12 +3,14 @@ package flowcontext
 import "github.com/kaspanet/kaspad/util/mstime"
 
 const (
-	syncRateWindowInMilliSeconds                         = 60_000
+	syncRateWindowInMilliSeconds                         = 15 * 60 * 1000
 	syncRateMaxDeviation                                 = 0.05
 	maxSelectedParentTimeDiffToAllowMiningInMilliSeconds = 300_000
 )
 
-func (f *FlowContext) updateRecentBlockAddedTimesWithLastBlock() {
+// UpdateRecentBlockAddedTimesWithLastBlock adds current time to list of times when block was added.
+// We use this list to determine the current sync rate
+func (f *FlowContext) UpdateRecentBlockAddedTimesWithLastBlock() {
 	f.recentBlockAddedTimesMutex.Lock()
 	defer f.recentBlockAddedTimesMutex.Unlock()
 
@@ -44,7 +46,14 @@ func (f *FlowContext) isSyncRateBelowMinimum() bool {
 	}
 
 	expectedBlocks := float64(syncRateWindowInMilliSeconds) / float64(f.cfg.NetParams().TargetTimePerBlock.Milliseconds())
-	return 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRateMaxDeviation
+	result := 1-float64(len(f.recentBlockAddedTimes))/expectedBlocks > syncRateMaxDeviation
+
+	if result == true {
+		log.Debugf("In the last %d seconds, got %d blocks, while %f were expected.",
+			syncRateWindowInMilliSeconds/1000, len(f.recentBlockAddedTimes), expectedBlocks)
+	}
+
+	return result
 }
 
 // ShouldMine returns whether it's ok to use block template from this node
