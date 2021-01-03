@@ -9,7 +9,7 @@ import (
 
 type blockHeapNode struct {
 	hash         *externalapi.DomainHash
-	ghostdagData model.BlockGHOSTDAGData
+	ghostdagData *model.BlockGHOSTDAGData
 }
 
 func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {

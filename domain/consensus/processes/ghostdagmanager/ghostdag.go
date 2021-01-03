@@ -8,6 +8,19 @@ import (
 	"math/big"
 )
 
+type blockGHOSTDAGData struct {
+	blueScore          uint64
+	blueWork           *big.Int
+	selectedParent     *externalapi.DomainHash
+	mergeSetBlues      []*externalapi.DomainHash
+	mergeSetReds       []*externalapi.DomainHash
+	bluesAnticoneSizes map[externalapi.DomainHash]model.KType
+}
+
+func (bg *blockGHOSTDAGData) toModel() *model.BlockGHOSTDAGData {
+	return model.NewBlockGHOSTDAGData(bg.blueScore, bg.blueWork, bg.selectedParent, bg.mergeSetBlues, bg.mergeSetReds, bg.bluesAnticoneSizes)
+}
+
 // GHOSTDAG runs the GHOSTDAG protocol and calculates the block BlockGHOSTDAGData by the given parents.
 // The function calculates MergeSetBlues by iterating over the blocks in
 // the anticone of the new block selected parent (which is the parent with the
@@ -57,7 +70,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	}
 
 	for _, blueCandidate := range mergeSetWithoutSelectedParent {
-		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData, blueCandidate)
+		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData.toModel(), blueCandidate)
 		if err != nil {
 			return err
 		}
@@ -96,22 +109,22 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.blueWork.SetUint64(0)
 	}
 
-	gm.ghostdagDataStore.Stage(blockHash, newBlockData)
+	gm.ghostdagDataStore.Stage(blockHash, newBlockData.toModel())
 
 	return nil
 }
 
 type chainBlockData struct {
 	hash      *externalapi.DomainHash
-	blockData model.BlockGHOSTDAGData
+	blockData *model.BlockGHOSTDAGData
 }
 
-func (gm *ghostdagManager) checkBlueCandidate(newBlockData *blockGHOSTDAGData, blueCandidate *externalapi.DomainHash) (
+func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *externalapi.DomainHash) (
 	isBlue bool, candidateAnticoneSize model.KType, candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType, err error) {
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
-	if model.KType(len(newBlockData.mergeSetBlues)) == gm.k+1 {
+	if model.KType(len(newBlockData.MergeSetBlues())) == gm.k+1 {
 		return false, 0, nil, nil
 	}
 
@@ -153,7 +166,7 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *blockGHOSTDAGData, b
 	return true, candidateAnticoneSize, candidateBluesAnticoneSizes, nil
 }
 
-func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData model.BlockGHOSTDAGData,
+func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.BlockGHOSTDAGData,
 	chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
 	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType,
 	candidateAnticoneSize *model.KType) (isBlue, isRed bool, err error) {
@@ -218,7 +231,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData model.B
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, context model.BlockGHOSTDAGData) (model.KType, error) {
+func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
