@@ -43,9 +43,9 @@ func (flow *handleRequestBlocksFlow) start() error {
 			return err
 		}
 
-		batchBlockHeaders := make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
 		for !lowHash.Equal(highHash) {
 			log.Debugf("Getting block hashes between %s and %s to %s", lowHash, highHash, flow.peer)
+
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
 			const maxBlueScoreDifference = 1 << 10
@@ -53,57 +53,34 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d headers hashes lowHash %s", len(blockHashes), lowHash)
+			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
 
-			offset := 0
-			for offset < len(blockHashes) {
-				for len(batchBlockHeaders) < ibdBatchSize {
-					hashAtOffset := blockHashes[offset]
-					blockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashAtOffset)
-					if err != nil {
-						return err
-					}
-					blockHeaderMessage := appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
-					batchBlockHeaders = append(batchBlockHeaders, blockHeaderMessage)
-
-					offset++
-					if offset == len(blockHashes) {
-						break
-					}
-				}
-
-				if len(batchBlockHeaders) < ibdBatchSize {
-					break
-				}
-
-				err = flow.sendHeaders(batchBlockHeaders)
-				if err != nil {
-					return nil
-				}
-				log.Debugf("Sent %d headers to peer %s", len(batchBlockHeaders), flow.peer)
-
-				batchBlockHeaders = make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
-
-				message, err := flow.incomingRoute.Dequeue()
+			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
+			for i, blockHash := range blockHashes {
+				blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
 				if err != nil {
 					return err
 				}
-				if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
-					return protocolerrors.Errorf(true, "received unexpected message type. "+
-						"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
-				}
+				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+			}
+
+			blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)
+			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
+			if err != nil {
+				return err
+			}
+
+			message, err := flow.incomingRoute.Dequeue()
+			if err != nil {
+				return err
+			}
+			if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
+				return protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
 			}
 
 			// The next lowHash is the last element in blockHashes
 			lowHash = blockHashes[len(blockHashes)-1]
-		}
-
-		if len(batchBlockHeaders) > 0 {
-			err = flow.sendHeaders(batchBlockHeaders)
-			if err != nil {
-				return nil
-			}
-			log.Debugf("Sent %d headers to peer %s", len(batchBlockHeaders), flow.peer)
 		}
 
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
@@ -123,14 +100,4 @@ func receiveRequestHeaders(incomingRoute *router.Route) (lowHash *externalapi.Do
 	msgRequestIBDBlocks := message.(*appmessage.MsgRequestHeaders)
 
 	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
-}
-
-func (flow *handleRequestBlocksFlow) sendHeaders(headers []*appmessage.MsgBlockHeader) error {
-	for _, msgBlockHeader := range headers {
-		err := flow.outgoingRoute.Enqueue(msgBlockHeader)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

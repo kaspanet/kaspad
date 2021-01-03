@@ -184,27 +184,47 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 		return err
 	}
 
-	blocksReceived := 0
-	for {
-		msgBlockHeader, doneIBD, err := flow.receiveHeader()
-		if err != nil {
-			return err
-		}
-		if doneIBD {
-			return nil
-		}
+	// Keep a short queue of blockHeadersMessages so that there's
+	// never a moment when the node is not validating and inserting
+	// headers
+	blockHeadersMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
+	errChan := make(chan error)
+	doneChan := make(chan interface{})
+	spawn("handleRelayInvsFlow-downloadHeaders", func() {
+		for {
+			blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
+			if err != nil {
+				errChan <- err
+				return
+			}
+			if doneIBD {
+				doneChan <- struct{}{}
+				return
+			}
 
-		err = flow.processHeader(msgBlockHeader)
-		if err != nil {
-			return err
-		}
+			blockHeadersMessageChan <- blockHeadersMessage
 
-		blocksReceived++
-		if blocksReceived%ibdBatchSize == 0 {
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
-				return err
+				errChan <- err
+				return
 			}
+		}
+	})
+
+	for {
+		select {
+		case blockHeadersMessage := <-blockHeadersMessageChan:
+			for _, header := range blockHeadersMessage.BlockHeaders {
+				err = flow.processHeader(header)
+				if err != nil {
+					return err
+				}
+			}
+		case err := <-errChan:
+			return err
+		case <-doneChan:
+			return nil
 		}
 	}
 }
@@ -216,13 +236,13 @@ func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *exte
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
+func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneIBD bool, err error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 	switch message := message.(type) {
-	case *appmessage.MsgBlockHeader:
+	case *appmessage.BlockHeadersMessage:
 		return message, false, nil
 	case *appmessage.MsgDoneHeaders:
 		return nil, true, nil
