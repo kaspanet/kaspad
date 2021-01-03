@@ -11,8 +11,8 @@ func (msg *BlockHeadersMessage) Command() MessageCommand {
 	return CmdBlockHeaders
 }
 
-// NewMsgBlockHeadersMessage returns a new kaspa BlockHeaders message
-func NewMsgBlockHeadersMessage(blockHeaders []*MsgBlockHeader) *BlockHeadersMessage {
+// NewBlockHeadersMessage returns a new kaspa BlockHeaders message
+func NewBlockHeadersMessage(blockHeaders []*MsgBlockHeader) *BlockHeadersMessage {
 	return &BlockHeadersMessage{
 		BlockHeaders: blockHeaders,
 	}

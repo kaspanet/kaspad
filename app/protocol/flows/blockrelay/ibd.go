@@ -184,9 +184,8 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 		return err
 	}
 
-	blocksReceived := 0
 	for {
-		msgBlockHeader, doneIBD, err := flow.receiveHeader()
+		blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
 		if err != nil {
 			return err
 		}
@@ -194,17 +193,16 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 			return nil
 		}
 
-		err = flow.processHeader(msgBlockHeader)
-		if err != nil {
-			return err
-		}
-
-		blocksReceived++
-		if blocksReceived%ibdBatchSize == 0 {
-			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
+		for _, header := range blockHeadersMessage.BlockHeaders {
+			err = flow.processHeader(header)
 			if err != nil {
 				return err
 			}
+		}
+
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
+		if err != nil {
+			return err
 		}
 	}
 }
@@ -216,13 +214,13 @@ func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *exte
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleRelayInvsFlow) receiveHeader() (msgIBDBlock *appmessage.MsgBlockHeader, doneIBD bool, err error) {
+func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneIBD bool, err error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 	switch message := message.(type) {
-	case *appmessage.MsgBlockHeader:
+	case *appmessage.BlockHeadersMessage:
 		return message, false, nil
 	case *appmessage.MsgDoneHeaders:
 		return nil, true, nil
