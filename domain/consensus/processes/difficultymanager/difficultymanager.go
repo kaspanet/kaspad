@@ -73,24 +73,13 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// find bluestParent
-	bluestParent := parents[0]
-	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
+	bluestParent, err := dm.ghostdagManager.ChooseSelectedParent(parents...)
 	if err != nil {
 		return 0, err
 	}
-	for i := 1; i < len(parents); i++ {
-		parentGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, parents[i])
-		if err != nil {
-			return 0, err
-		}
-		newBluest, err := dm.ghostdagManager.ChooseSelectedParent(bluestParent, parents[i])
-		if err != nil {
-			return 0, err
-		}
-		if bluestParent != newBluest {
-			bluestParent = newBluest
-			bluestGhostDAG = parentGhostDAG
-		}
+	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
+	if err != nil {
+		return 0, err
 	}
 
 	// Not enough blocks for building a difficulty window.
