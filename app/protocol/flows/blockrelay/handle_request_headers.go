@@ -40,6 +40,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 
 		batchBlockHeaders := make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
 		for !lowHash.Equal(highHash) {
+			log.Debugf("Getting block headers between %s and %s", lowHash, highHash)
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
 			const maxBlueScoreDifference = 1 << 10
@@ -47,6 +48,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return err
 			}
+			log.Debugf("Got %d headers above lowHash %s", len(blockHashes), lowHash)
 
 			offset := 0
 			for offset < len(blockHashes) {
@@ -73,6 +75,8 @@ func (flow *handleRequestBlocksFlow) start() error {
 				if err != nil {
 					return nil
 				}
+				log.Debugf("Sent %d headers", len(batchBlockHeaders))
+
 				batchBlockHeaders = make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
 
 				message, err := flow.incomingRoute.Dequeue()
@@ -94,6 +98,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return nil
 			}
+			log.Debugf("Sent %d headers", len(batchBlockHeaders))
 		}
 
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
