@@ -38,7 +38,7 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (*externalap
 		return nil, err
 	}
 	if dbBlockHeader.Version > 0xffff {
-		return nil, errors.Errorf("Invalid version size - bigger then uint16")
+		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
 	return &externalapi.DomainBlockHeader{
 		Version:              uint16(dbBlockHeader.Version),

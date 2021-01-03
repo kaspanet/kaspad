@@ -6,6 +6,8 @@ package txscript
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"reflect"
 	"testing"
 
@@ -330,13 +332,13 @@ func TestPayToAddrScript(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		scriptPubKey, err := PayToAddrScript(test.in)
+		script, err := PayToAddrScript(test.in)
 		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
 			continue
 		}
-
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 		expected := mustParseShortForm(test.expected)
 		if scriptPubKey == nil && len(expected) == 0 {
 			continue

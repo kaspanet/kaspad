@@ -188,8 +188,11 @@ func TestCheckTransactionStandard(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	dummyTxOut := consensusexternalapi.DomainTransactionOutput{
-		Value:           100000000, // 1 KAS
-		ScriptPublicKey: dummyScriptPublicKey,
+		Value: 100000000, // 1 KAS
+		ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{
+			Script:  dummyScriptPublicKey,
+			Version: 0,
+		},
 	}
 
 	tests := []struct {
@@ -268,11 +271,14 @@ func TestCheckTransactionStandard(t *testing.T) {
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
-		{
+		{ //Todo : check on ScriptPublicKey type.
 			name: "Dust output",
 			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
-				Value:           0,
-				ScriptPublicKey: dummyScriptPublicKey,
+				Value: 0,
+				ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{
+					Script:  dummyScriptPublicKey,
+					Version: 0,
+				},
 			}}},
 			height:     300000,
 			isStandard: false,

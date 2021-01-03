@@ -1,6 +1,7 @@
 package utxoindex
 
 import (
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -23,11 +24,20 @@ type UTXOChanges struct {
 }
 
 // ConvertScriptPublicKeyToString converts the given scriptPublicKey to a string
-func ConvertScriptPublicKeyToString(scriptPublicKey []byte) ScriptPublicKeyString {
-	return ScriptPublicKeyString(scriptPublicKey)
+func ConvertScriptPublicKeyToString(scriptPublicKey *externalapi.ScriptPublicKey) ScriptPublicKeyString {
+	var versionBytes = make([]byte, 2) // uint16
+	binary.LittleEndian.PutUint16(versionBytes, scriptPublicKey.Version)
+	versionString := ScriptPublicKeyString(versionBytes)
+	scriptString := ScriptPublicKeyString(scriptPublicKey.Script)
+	return versionString + scriptString
+
 }
 
-// ConvertStringToScriptPublicKey converts the given string to a scriptPublicKey byte slice
-func ConvertStringToScriptPublicKey(string ScriptPublicKeyString) []byte {
-	return []byte(string)
+// ConvertStringToScriptPublicKey converts the given string to a scriptPublicKey
+func ConvertStringToScriptPublicKey(string ScriptPublicKeyString) *externalapi.ScriptPublicKey {
+	bytes := []byte(string)
+	version := binary.LittleEndian.Uint16(bytes[:2])
+	script := bytes[2:]
+	return &externalapi.ScriptPublicKey{Script: script, Version: version}
+
 }

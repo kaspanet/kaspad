@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"testing"
 
 	"github.com/kaspanet/go-secp256k1"
@@ -167,11 +168,12 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptPubKey, err := PayToAddrScript(address)
+			script, err := PayToAddrScript(address)
 			if err != nil {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey.Script, hashType,
@@ -240,12 +242,12 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptPubKey, err := PayToAddrScript(address)
+			script, err := PayToAddrScript(address)
 			if err != nil {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
-
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
@@ -290,11 +292,12 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptPubKey, err := PayToAddrScript(address)
+			script, err := PayToAddrScript(address)
 			if err != nil {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptPubKey.Script, hashType,
@@ -365,11 +368,12 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptPubKey, err := PayToAddrScript(address)
+			script, err := PayToAddrScript(address)
 			if err != nil {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 
 			scriptAddr, err := util.NewAddressScriptHash(
 				scriptPubKey.Script, util.Bech32PrefixKaspaTest)
@@ -379,13 +383,13 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
+			script, err = PayToAddrScript(scriptAddr)
 			if err != nil {
 				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
+			scriptScriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 
 			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
@@ -433,11 +437,12 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptPubKey, err := PayToAddrScript(address)
+			script, err := PayToAddrScript(address)
 			if err != nil {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 
 			scriptAddr, err := util.NewAddressScriptHash(
 				scriptPubKey.Script, util.Bech32PrefixKaspaTest)
@@ -447,14 +452,13 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
+			script, err = PayToAddrScript(scriptAddr)
 			if err != nil {
 				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
-
+			scriptScriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: constants.MaximumScriptPublicKeyVersion}
 			_, err = SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptScriptPubKey.Script, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{

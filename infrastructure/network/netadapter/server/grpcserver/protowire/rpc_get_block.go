@@ -71,9 +71,11 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		}
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
+
 	if x.Version > 0xffff {
-		return nil, errors.Errorf("Invalid version size - bigger then uint16")
+		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
+
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
 		Version:                uint16(x.Version),

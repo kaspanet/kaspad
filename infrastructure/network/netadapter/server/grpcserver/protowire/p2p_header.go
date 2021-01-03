@@ -41,7 +41,7 @@ func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) 
 		return nil, err
 	}
 	if x.Version > 0xffff {
-		return nil, errors.Errorf("Invalid version size - bigger then uint16")
+		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
 	return &appmessage.MsgBlockHeader{
 		Version:              uint16(x.Version),

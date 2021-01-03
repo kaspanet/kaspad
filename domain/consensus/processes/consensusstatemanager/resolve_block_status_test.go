@@ -224,7 +224,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating redBlock: %+v", err)
 		}
 
-		blueScriptPublicKey := []byte{1}
+		blueScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{1}, Version: 0}
 		blueHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: blueScriptPublicKey,
 			ExtraData:       nil,
@@ -240,7 +240,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating tip: %+v", err)
 		}
 
-		finalTipSelectedParentScriptPublicKey := []byte{3}
+		finalTipSelectedParentScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
 		finalTipSelectedParentHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: finalTipSelectedParentScriptPublicKey,

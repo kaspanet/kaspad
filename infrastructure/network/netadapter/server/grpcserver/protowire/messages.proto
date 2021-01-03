@@ -662,7 +662,7 @@ message UtxosByAddressesEntry {
 }
 
 message RpcTransaction {
-  int32 version = 1;
+  uint32 version = 1;
   repeated RpcTransactionInput inputs = 2;
   repeated RpcTransactionOutput outputs = 3;
   uint64 lockTime = 4;
@@ -680,6 +680,11 @@ message RpcTransactionInput {
 
 message RpcTransactionOutput {
   uint64 amount = 1;
+  RpcScriptPubKey scriptPubKey = 2;
+}
+
+message RpcScriptPubKey {
+  uint32 version = 1;
   string scriptPubKey = 2;
 }
 
@@ -690,7 +695,7 @@ message RpcOutpoint {
 
 message RpcUtxoEntry {
   uint64 amount = 1;
-  string scriptPubKey = 2;
+  RpcScriptPubKey scriptPubKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
 }
