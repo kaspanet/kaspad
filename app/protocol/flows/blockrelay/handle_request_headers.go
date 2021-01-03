@@ -1,10 +1,10 @@
 package blockrelay
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
@@ -38,53 +38,64 @@ func (flow *handleRequestBlocksFlow) start() error {
 			return err
 		}
 
-		// GetHashesBetween is a relatively heavy operation so we limit it.
-		// We expect that if the other peer did not receive all the headers
-		// they requested, they'd re-request a block locator and re-request
-		// headers with a higher lowHash
-		const maxBlueScoreDifference = 1 << 10
-		blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
-		if err != nil {
-			return err
-		}
-
-		for offset := 0; offset < len(blockHashes); offset += ibdBatchSize {
-			end := offset + ibdBatchSize
-			if end > len(blockHashes) {
-				end = len(blockHashes)
-			}
-
-			blocksHashesToSend := blockHashes[offset:end]
-
-			msgBlockHeadersToSend := make([]*appmessage.MsgBlockHeader, len(blocksHashesToSend))
-			for i, blockHash := range blocksHashesToSend {
-				header, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
-				if err != nil {
-					return err
-				}
-				msgBlockHeadersToSend[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
-			}
-			err = flow.sendHeaders(msgBlockHeadersToSend)
-			if err != nil {
-				return nil
-			}
-
-			// Exit the loop and don't wait for the GetNextIBDBlocks message if the last batch was
-			// less than ibdBatchSize.
-			if len(blocksHashesToSend) < ibdBatchSize {
-				break
-			}
-
-			message, err := flow.incomingRoute.Dequeue()
+		batchBlockHeaders := make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
+		for !lowHash.Equal(highHash) {
+			// GetHashesBetween is a relatively heavy operation so we limit it
+			// in order to avoid locking the consensus for too long
+			const maxBlueScoreDifference = 1 << 10
+			blockHashes, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 			if err != nil {
 				return err
 			}
 
-			if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
+			offset := 0
+			for offset < len(blockHashes) {
+				for len(batchBlockHeaders) < ibdBatchSize {
+					hashAtOffset := blockHashes[offset]
+					blockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashAtOffset)
+					if err != nil {
+						return err
+					}
+					blockHeaderMessage := appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+					batchBlockHeaders = append(batchBlockHeaders, blockHeaderMessage)
+
+					offset++
+					if offset == len(blockHashes) {
+						break
+					}
+				}
+
+				if len(batchBlockHeaders) < ibdBatchSize {
+					break
+				}
+
+				err = flow.sendHeaders(batchBlockHeaders)
+				if err != nil {
+					return nil
+				}
+				batchBlockHeaders = make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
+
+				message, err := flow.incomingRoute.Dequeue()
+				if err != nil {
+					return err
+				}
+				if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
+					return protocolerrors.Errorf(true, "received unexpected message type. "+
+						"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
+				}
+			}
+
+			// The next lowHash is the last element in blockHashes
+			lowHash = blockHashes[len(blockHashes)-1]
+		}
+
+		if len(batchBlockHeaders) > 0 {
+			err = flow.sendHeaders(batchBlockHeaders)
+			if err != nil {
+				return nil
 			}
 		}
+
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 		if err != nil {
 			return err
