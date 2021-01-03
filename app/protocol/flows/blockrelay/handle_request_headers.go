@@ -1,6 +1,7 @@
 package blockrelay
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -19,14 +20,18 @@ type RequestIBDBlocksContext interface {
 type handleRequestBlocksFlow struct {
 	RequestIBDBlocksContext
 	incomingRoute, outgoingRoute *router.Route
+	peer                         *peer.Peer
 }
 
 // HandleRequestHeaders handles RequestHeaders messages
-func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
+func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router.Route,
+	outgoingRoute *router.Route, peer *peer.Peer) error {
+
 	flow := &handleRequestBlocksFlow{
 		RequestIBDBlocksContext: context,
 		incomingRoute:           incomingRoute,
 		outgoingRoute:           outgoingRoute,
+		peer:                    peer,
 	}
 	return flow.start()
 }
@@ -40,7 +45,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 
 		batchBlockHeaders := make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
 		for !lowHash.Equal(highHash) {
-			log.Debugf("Getting block headers between %s and %s", lowHash, highHash)
+			log.Debugf("Getting block hashes between %s and %s to %s", lowHash, highHash, flow.peer)
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
 			const maxBlueScoreDifference = 1 << 10
@@ -48,7 +53,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d headers above lowHash %s", len(blockHashes), lowHash)
+			log.Debugf("Got %d headers hashes lowHash %s", len(blockHashes), lowHash)
 
 			offset := 0
 			for offset < len(blockHashes) {
@@ -75,7 +80,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 				if err != nil {
 					return nil
 				}
-				log.Debugf("Sent %d headers", len(batchBlockHeaders))
+				log.Debugf("Sent %d headers to peer %s", len(batchBlockHeaders), flow.peer)
 
 				batchBlockHeaders = make([]*appmessage.MsgBlockHeader, 0, ibdBatchSize)
 
@@ -98,7 +103,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return nil
 			}
-			log.Debugf("Sent %d headers", len(batchBlockHeaders))
+			log.Debugf("Sent %d headers to peer %s", len(batchBlockHeaders), flow.peer)
 		}
 
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
