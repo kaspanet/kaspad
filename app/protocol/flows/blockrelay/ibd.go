@@ -184,25 +184,46 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 		return err
 	}
 
-	for {
-		blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
-		if err != nil {
-			return err
-		}
-		if doneIBD {
-			return nil
-		}
-
-		for _, header := range blockHeadersMessage.BlockHeaders {
-			err = flow.processHeader(header)
+	// Keep a short queue of blockHeadersMessages so that there's
+	// never a moment when the node is not validating and inserting
+	// headers
+	blockHeadersMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
+	errChan := make(chan error)
+	doneChan := make(chan interface{})
+	spawn("handleRelayInvsFlow-downloadHeaders", func() {
+		for {
+			blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
 			if err != nil {
-				return err
+				errChan <- err
+				return
+			}
+			if doneIBD {
+				doneChan <- struct{}{}
+				return
+			}
+
+			blockHeadersMessageChan <- blockHeadersMessage
+
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
+			if err != nil {
+				errChan <- err
 			}
 		}
+	})
 
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
-		if err != nil {
+	for {
+		select {
+		case blockHeadersMessage := <-blockHeadersMessageChan:
+			for _, header := range blockHeadersMessage.BlockHeaders {
+				err = flow.processHeader(header)
+				if err != nil {
+					return err
+				}
+			}
+		case err := <-errChan:
 			return err
+		case <-doneChan:
+			return nil
 		}
 	}
 }
