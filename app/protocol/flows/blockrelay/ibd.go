@@ -207,6 +207,7 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
 				errChan <- err
+				return
 			}
 		}
 	})

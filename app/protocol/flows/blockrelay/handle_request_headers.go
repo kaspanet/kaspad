@@ -45,6 +45,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 
 		for !lowHash.Equal(highHash) {
 			log.Debugf("Getting block hashes between %s and %s to %s", lowHash, highHash, flow.peer)
+
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
 			const maxBlueScoreDifference = 1 << 10
@@ -52,7 +53,7 @@ func (flow *handleRequestBlocksFlow) start() error {
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d header hashes lowHash %s", len(blockHashes), lowHash)
+			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
 
 			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
 			for i, blockHash := range blockHashes {
