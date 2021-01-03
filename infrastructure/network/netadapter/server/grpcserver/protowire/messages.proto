@@ -34,6 +34,7 @@ message KaspadMessage {
     IBDRootHashMessage ibdRootHash = 29;
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
+    BlockHeadersMessage blockHeaders = 32;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -324,6 +325,10 @@ message IbdBlockLocatorHighestHashMessage {
   Hash highestHash = 1;
 }
 // IbdBlockLocatorHighestHashMessage end
+
+message BlockHeadersMessage {
+  repeated BlockHeaderMessage blockHeaders = 1;
+}
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
