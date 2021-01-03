@@ -114,23 +114,33 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 		}
 		log.Debugf("The parents of block %s are: %s", selectedParentCandidate, candidateParents)
 		for _, parent := range candidateParents {
-			parentChildren, err := csm.dagTopologyManager.Children(parent)
+			allParentChildren, err := csm.dagTopologyManager.Children(parent)
 			if err != nil {
 				return nil, err
 			}
+			log.Debugf("The children of block %s are: %s", parent, allParentChildren)
 
-			// remove virtual from parentChildren if it's there
-			for i, parentChild := range parentChildren {
+			// remove virtual and any headers-only blocks from parentChildren if such are there
+			nonHeadersOnlyParentChildren := make([]*externalapi.DomainHash, 0, len(allParentChildren))
+			for _, parentChild := range allParentChildren {
 				if parentChild.Equal(model.VirtualBlockHash) {
-					parentChildren = append(parentChildren[:i], parentChildren[i+1:]...)
-					break
+					continue
 				}
-			}
-			log.Debugf("The children of block %s are: %s", parent, parentChildren)
 
-			if disqualifiedCandidates.ContainsAllInSlice(parentChildren) {
+				parentChildStatus, err := csm.blockStatusStore.Get(csm.databaseContext, parentChild)
+				if err != nil {
+					return nil, err
+				}
+				if parentChildStatus == externalapi.StatusHeaderOnly {
+					continue
+				}
+				nonHeadersOnlyParentChildren = append(nonHeadersOnlyParentChildren, parentChild)
+			}
+			log.Debugf("The non-virtual, non-headers-only children of block %s are: %s", parent, nonHeadersOnlyParentChildren)
+
+			if disqualifiedCandidates.ContainsAllInSlice(nonHeadersOnlyParentChildren) {
 				log.Debugf("The disqualified set contains all the "+
-					"children of %s. Adding it to the candidate heap", parentChildren)
+					"children of %s. Adding it to the candidate heap", nonHeadersOnlyParentChildren)
 				err := candidatesHeap.Push(parent)
 				if err != nil {
 					return nil, err
