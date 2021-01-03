@@ -105,3 +105,22 @@ func HashesEqual(a, b []*DomainHash) bool {
 	}
 	return true
 }
+
+func cmp(a, b *DomainHash) int {
+	// We compare the hashes backwards because Hash is stored as a little endian byte array.
+	for i := DomainHashSize - 1; i >= 0; i-- {
+		switch {
+		case a.hashArray[i] < b.hashArray[i]:
+			return -1
+		case a.hashArray[i] > b.hashArray[i]:
+			return 1
+		}
+	}
+	return 0
+}
+
+// Less returns true iff hash a is less than hash b
+func Less(a, b *DomainHash) bool {
+	return cmp(a, b) < 0
+	//return bytes.Compare(a.hashArray[:], b.hashArray[:]) < 0
+}

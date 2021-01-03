@@ -3,7 +3,6 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
@@ -61,7 +60,7 @@ func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagData
 	case 1:
 		return false
 	case 0:
-		return hashes.Less(blockHashA, blockHashB)
+		return externalapi.Less(blockHashA, blockHashB)
 	default:
 		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
 	}
