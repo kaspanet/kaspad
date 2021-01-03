@@ -3,14 +3,14 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 // AddBlock submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
 func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
-	log.Debugf("AddBlock start for block %s", blockHash)
-	defer log.Debugf("AddBlock end for block %s", blockHash)
+	logger.LogAndMeasureExecutionTime(log, "csm.AddBlock")
 
 	log.Debugf("Resolving whether the block %s is the next virtual selected parent", blockHash)
 	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(blockHash)
