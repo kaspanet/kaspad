@@ -195,13 +195,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgBlockHeader:
-		payload := new(KaspadMessage_BlockHeader)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.MsgRequestIBDRootUTXOSetAndBlock:
 		payload := new(KaspadMessage_RequestIBDRootUTXOSetAndBlock)
 		err := payload.fromAppMessage(message)

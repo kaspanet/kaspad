@@ -25,7 +25,6 @@ message KaspadMessage {
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
-    BlockHeaderMessage blockHeader = 23;
     RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
     IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
