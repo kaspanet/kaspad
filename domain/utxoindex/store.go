@@ -314,7 +314,7 @@ func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPai
 		if err != nil {
 			return err
 		}
-		logInterval := 10_000
+		const logInterval = 10_000
 		if i%logInterval == 0 {
 			log.Debugf("Recovered %d UTXO entries out of %d", i+1, len(utxoSet))
 		}
