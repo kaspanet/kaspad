@@ -9,8 +9,8 @@ import (
 )
 
 func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	log.Debugf("pickVirtualParents start for tips: %s", tips)
-	defer log.Debugf("pickVirtualParents end for tips: %s", tips)
+	log.Debugf("pickVirtualParents start for tips len: %d", len(tips))
+	defer log.Debugf("pickVirtualParents end for tips len: %d", len(tips))
 
 	log.Debugf("Pushing all tips into a DownHeap")
 	candidatesHeap := csm.dagTraversalManager.NewDownHeap()
@@ -32,11 +32,23 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	log.Debugf("The selected parent of the virtual is: %s", virtualSelectedParent)
 
 	selectedVirtualParents := hashset.NewFromSlice(virtualSelectedParent)
+	candidates := candidatesHeap.ToSlice()
+	// prioritize half the blocks with highest blueWork and half with lowest, so the network will merge splits faster.
+	if len(candidates) >= int(csm.maxBlockParents) {
+		// We already have the selectedParent, so we're left with csm.maxBlockParents-1.
+		maxParents := csm.maxBlockParents - 1
+		end := len(candidates) - 1
+		for i := (maxParents) / 2; i < maxParents; i++ {
+			candidates[i], candidates[end] = candidates[end], candidates[i]
+			end--
+		}
+	}
 
 	mergeSetSize := uint64(1) // starts counting from 1 because selectedParent is already in the mergeSet
 
-	for candidatesHeap.Len() > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
-		candidate := candidatesHeap.Pop()
+	for len(candidates) > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
+		candidate := candidates[0]
+		candidates = candidates[1:]
 
 		log.Debugf("Attempting to add %s to the virtual parents", candidate)
 		log.Debugf("The current merge set size is %d", mergeSetSize)

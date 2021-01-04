@@ -80,7 +80,8 @@ func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
 			if !transactionAcceptanceData.IsAccepted {
 				continue
 			}
-			err := ui.addTransaction(transactionAcceptanceData.Transaction, blockInfo.BlueScore)
+			err := ui.addTransaction(transactionAcceptanceData.Transaction,
+				transactionAcceptanceData.TransactionInputUTXOEntries, blockInfo.BlueScore)
 			if err != nil {
 				return err
 			}
@@ -100,7 +101,8 @@ func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
 			if !transactionAcceptanceData.IsAccepted {
 				continue
 			}
-			err := ui.removeTransaction(transactionAcceptanceData.Transaction)
+			err := ui.removeTransaction(transactionAcceptanceData.Transaction,
+				transactionAcceptanceData.TransactionInputUTXOEntries)
 			if err != nil {
 				return err
 			}
@@ -109,15 +111,18 @@ func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
-func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
+func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction,
+	transactionInputUTXOEntries []externalapi.UTXOEntry, blockBlueScore uint64) error {
+
 	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("Adding transaction %s to UTXO index", transactionID)
 
 	isCoinbase := transactionhelper.IsCoinBase(transaction)
-	for _, transactionInput := range transaction.Inputs {
+	for i, transactionInput := range transaction.Inputs {
 		log.Tracef("Removing outpoint %s:%d from UTXO index",
 			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		err := ui.store.remove(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint)
+		inputUTXOEntry := transactionInputUTXOEntries[i]
+		err := ui.store.remove(inputUTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}
@@ -134,7 +139,9 @@ func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction, 
 	return nil
 }
 
-func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction) error {
+func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction,
+	transactionInputUTXOEntries []externalapi.UTXOEntry) error {
+
 	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("Removing transaction %s from UTXO index", transactionID)
 	for index, transactionOutput := range transaction.Outputs {
@@ -145,10 +152,11 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 			return err
 		}
 	}
-	for _, transactionInput := range transaction.Inputs {
+	for i, transactionInput := range transaction.Inputs {
 		log.Tracef("Adding outpoint %s:%d to UTXO index",
 			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		err := ui.store.add(transactionInput.UTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, transactionInput.UTXOEntry)
+		inputUTXOEntry := transactionInputUTXOEntries[i]
+		err := ui.store.add(inputUTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, transactionInput.UTXOEntry)
 		if err != nil {
 			return err
 		}

@@ -33,6 +33,7 @@ type RelayInvsContext interface {
 	IsIBDRunning() bool
 	TrySetIBDRunning() bool
 	UnsetIBDRunning()
+	UpdateRecentBlockAddedTimesWithLastBlock()
 }
 
 type handleRelayInvsFlow struct {

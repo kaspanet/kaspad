@@ -130,15 +130,14 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 			"unexpectedly failed: %s", testName, err)
 	}
 
-	// Make sure that the new value doesn't exist inside the transaction
-	_, err = dbTx.Get(key2)
-	if err == nil {
+	// Make sure that the new value exists inside the transaction
+	newValue2, err := dbTx.Get(key2)
+	if err != nil {
 		t.Fatalf("%s: Get "+
-			"unexpectedly succeeded", testName)
+			"unexpectedly failed: %v", testName, err)
 	}
-	if !database.IsNotFoundError(err) {
-		t.Fatalf("%s: Get "+
-			"returned wrong error: %s", testName, err)
+	if !bytes.Equal(value2, newValue2) {
+		t.Fatalf("Expected %x and %x to be the same", value2, newValue2)
 	}
 
 	// Put a new value into the transaction
@@ -221,15 +220,15 @@ func testTransactionHas(t *testing.T, db database.Database, testName string) {
 			"unexpectedly failed: %s", testName, err)
 	}
 
-	// Make sure that the new value doesn't exist inside the transaction
+	// Make sure that the new value exists inside the transaction
 	exists, err = dbTx.Has(key2)
 	if err != nil {
 		t.Fatalf("%s: Has "+
 			"unexpectedly failed: %s", testName, err)
 	}
-	if exists {
+	if !exists {
 		t.Fatalf("%s: Has "+
-			"unexpectedly returned that the value exists", testName)
+			"unexpectedly returned that the value doesn't exists", testName)
 	}
 }
 
@@ -296,15 +295,15 @@ func testTransactionDelete(t *testing.T, db database.Database, testName string) 
 			"unexpectedly returned that the value exists", testName)
 	}
 
-	// Make sure that the second transaction was no affected
+	// Make sure that the second transaction is also affected
 	exists, err = dbTx2.Has(key)
 	if err != nil {
 		t.Fatalf("%s: Has "+
 			"unexpectedly failed: %s", testName, err)
 	}
-	if !exists {
+	if exists {
 		t.Fatalf("%s: Has "+
-			"unexpectedly returned that the value does not exist", testName)
+			"unexpectedly returned that the value exists", testName)
 	}
 }
 

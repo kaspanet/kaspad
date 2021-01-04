@@ -104,10 +104,10 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 	utxoCommitment := ms.Hash()
 
 	// Make sure that the two commitments are equal
-	if *utxoCommitment != block.Header.UTXOCommitment {
+	if !utxoCommitment.Equal(block.Header.UTXOCommitment()) {
 		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment for block %s and "+
 			"actual UTXO commitment don't match. Want: %s, got: %s", blockName,
-			utxoCommitment, block.Header.UTXOCommitment)
+			utxoCommitment, block.Header.UTXOCommitment())
 	}
 }
 

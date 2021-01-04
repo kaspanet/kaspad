@@ -6,43 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ReachabilityData holds the set of data required to answer
-// reachability queries
-type ReachabilityData struct {
-	TreeNode          *ReachabilityTreeNode
-	FutureCoveringSet FutureCoveringTreeNodeSet
-}
-
-// If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal and Clone accordingly.
-var _ = &ReachabilityData{&ReachabilityTreeNode{}, FutureCoveringTreeNodeSet{}}
-
-// Equal returns whether rd equals to other
-func (rd *ReachabilityData) Equal(other *ReachabilityData) bool {
-	if rd == nil || other == nil {
-		return rd == other
-	}
-
-	if !rd.TreeNode.Equal(other.TreeNode) {
-		return false
-	}
-
-	if !rd.FutureCoveringSet.Equal(other.FutureCoveringSet) {
-		return false
-	}
-
-	return true
-}
-
-// Clone returns a clone of ReachabilityData
-func (rd *ReachabilityData) Clone() *ReachabilityData {
-	return &ReachabilityData{
-		TreeNode:          rd.TreeNode.Clone(),
-		FutureCoveringSet: rd.FutureCoveringSet.Clone(),
-	}
-}
-
-// ReachabilityTreeNode represents a node in the reachability tree
+// MutableReachabilityData represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
 // index interval for each node and making sure all nodes in its
@@ -57,48 +21,30 @@ func (rd *ReachabilityData) Clone() *ReachabilityData {
 // (e.g., [0, 2^64-1]) should always suffice for any practical use-
 // case, and so reindexing should always succeed unless more than
 // 2^64 blocks are added to the DAG/tree.
-type ReachabilityTreeNode struct {
-	Children []*externalapi.DomainHash
-	Parent   *externalapi.DomainHash
+//
+// In addition, we keep a future covering set for every node.
+// This set allows to query reachability over the entirety of the DAG.
+// See documentation of FutureCoveringTreeNodeSet for additional details.
 
-	// interval is the index interval containing all intervals of
-	// blocks in this node's subtree
-	Interval *ReachabilityInterval
+// ReachabilityData is a read-only version of a block's MutableReachabilityData
+// Use CloneWritable to edit the MutableReachabilityData.
+type ReachabilityData interface {
+	Children() []*externalapi.DomainHash
+	Parent() *externalapi.DomainHash
+	Interval() *ReachabilityInterval
+	FutureCoveringSet() FutureCoveringTreeNodeSet
+	CloneMutable() MutableReachabilityData
+	Equal(other ReachabilityData) bool
 }
 
-// If this doesn't compile, it means the type definition has been changed, so it's
-// an indication to update Equal and Clone accordingly.
-var _ = &ReachabilityTreeNode{[]*externalapi.DomainHash{}, &externalapi.DomainHash{},
-	&ReachabilityInterval{}}
+// MutableReachabilityData represents a block's MutableReachabilityData, with ability to edit it
+type MutableReachabilityData interface {
+	ReachabilityData
 
-// Equal returns whether rtn equals to other
-func (rtn *ReachabilityTreeNode) Equal(other *ReachabilityTreeNode) bool {
-	if rtn == nil || other == nil {
-		return rtn == other
-	}
-
-	if !externalapi.HashesEqual(rtn.Children, other.Children) {
-		return false
-	}
-
-	if !rtn.Parent.Equal(other.Parent) {
-		return false
-	}
-
-	if !rtn.Interval.Equal(other.Interval) {
-		return false
-	}
-
-	return true
-}
-
-// Clone returns a clone of ReachabilityTreeNode
-func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
-	return &ReachabilityTreeNode{
-		Children: externalapi.CloneHashes(rtn.Children),
-		Parent:   rtn.Parent,
-		Interval: rtn.Interval.Clone(),
-	}
+	AddChild(child *externalapi.DomainHash)
+	SetParent(parent *externalapi.DomainHash)
+	SetInterval(interval *ReachabilityInterval)
+	SetFutureCoveringSet(futureCoveringSet FutureCoveringTreeNodeSet)
 }
 
 // ReachabilityInterval represents an interval to be used within the

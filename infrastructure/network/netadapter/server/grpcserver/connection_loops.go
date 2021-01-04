@@ -89,6 +89,12 @@ func (c *gRPCConnection) receiveLoop() error {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				return nil
 			}
+
+			// ErrRouteCapacityReached isn't an invalid message error, so
+			// we return it in order to log it later on.
+			if errors.Is(err, routerpkg.ErrRouteCapacityReached) {
+				return err
+			}
 			if c.onInvalidMessageHandler != nil {
 				c.onInvalidMessageHandler(err)
 			}

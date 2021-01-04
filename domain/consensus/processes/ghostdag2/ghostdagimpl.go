@@ -113,7 +113,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if err != nil {
 			return err
 		}
-		myWork.Add(myWork, util.CalcWork(header.Bits))
+		myWork.Add(myWork, util.CalcWork(header.Bits()))
 	}
 
 	e := ghostdagmanager.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)

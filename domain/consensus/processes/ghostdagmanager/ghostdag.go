@@ -88,7 +88,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 			if err != nil {
 				return err
 			}
-			newBlockData.blueWork.Add(newBlockData.blueWork, util.CalcWork(header.Bits))
+			newBlockData.blueWork.Add(newBlockData.blueWork, util.CalcWork(header.Bits()))
 		}
 	} else {
 		// Genesis's blue score is defined to be 0.

@@ -165,7 +165,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 			return errors.Errorf("couldn't convert %s to big int", *config.PowMax)
 		}
 
-		genesisTarget := math.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits)
+		genesisTarget := math.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits())
 		if powMax.Cmp(genesisTarget) > 0 {
 			return errors.Errorf("powMax (%s) is smaller than genesis's target (%s)", powMax.Text(16),
 				genesisTarget.Text(16))

@@ -54,7 +54,7 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainH
 			return 0, err
 		}
 
-		return header.TimeInMilliseconds, nil
+		return header.TimeInMilliseconds(), nil
 	}
 
 	window, err := pmtm.dagTraversalManager.BlueWindow(selectedParentHash, 2*pmtm.timestampDeviationTolerance-1)
@@ -76,7 +76,7 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.D
 		if err != nil {
 			return 0, err
 		}
-		timestamps[i] = blockHeader.TimeInMilliseconds
+		timestamps[i] = blockHeader.TimeInMilliseconds()
 	}
 
 	sort.Slice(timestamps, func(i, j int) bool {

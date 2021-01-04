@@ -21,7 +21,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		oldVirtualSelectedParent = oldVirtualGHOSTDAGData.SelectedParent()
 	}
 
-	log.Debugf("Picking virtual parents from the tips: %s", tips)
+	log.Debugf("Picking virtual parents from tips len: %d", len(tips))
 	virtualParents, err := csm.pickVirtualParents(tips)
 	if err != nil {
 		return nil, err

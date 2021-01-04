@@ -287,8 +287,11 @@ func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransact
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
-	parsedScript, err := parseScript(script)
+func CalcSignatureHash(script *externalapi.ScriptPublicKey, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
+	if script.Version > constants.MaximumScriptPublicKeyVersion {
+		return nil, errors.Errorf("Script version is unkown.")
+	}
+	parsedScript, err := parseScript(script.Script)
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
 	}

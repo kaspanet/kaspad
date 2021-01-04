@@ -62,11 +62,11 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 	log.Debugf("The UTXO commitment of the pruning point: %s",
-		newPruningPointHeader.UTXOCommitment)
+		newPruningPointHeader.UTXOCommitment())
 
-	if !newPruningPointHeader.UTXOCommitment.Equal(utxoSetMultiSet.Hash()) {
+	if !newPruningPointHeader.UTXOCommitment().Equal(utxoSetMultiSet.Hash()) {
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
-			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment, *utxoSetMultiSet.Hash())
+			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *utxoSetMultiSet.Hash())
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 

@@ -30,8 +30,10 @@ message KaspadMessage {
     IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     IBDRootNotFoundMessage ibdRootNotFound = 27;
-    RequestIBDRootHash requestIBDRootHash = 28;
-    IBDRootHash ibdRootHash = 29;
+    RequestIBDRootHashMessage requestIBDRootHash = 28;
+    IBDRootHashMessage ibdRootHash = 29;
+    IbdBlockLocatorMessage ibdBlockLocator = 30;
+    IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
@@ -148,7 +150,6 @@ message Outpoint{
 message TransactionId{
   bytes bytes = 1;
 }
-
 message ScriptPublicKey {
   bytes script = 1;
   uint32 version = 2;
@@ -304,16 +305,29 @@ message IBDRootNotFoundMessage{
 }
 // IBDRootNotFoundMessage end
 
-// RequestIBDRootHash start
-message RequestIBDRootHash{
+// RequestIBDRootHashMessage start
+message RequestIBDRootHashMessage{
 }
-// RequestIBDRootHash end
+// RequestIBDRootHashMessage end
 
-// IBDRootHash start
-message IBDRootHash{
+// IBDRootHashMessage start
+message IBDRootHashMessage{
   Hash hash = 1;
 }
-// IBDRootHash end
+// IBDRootHashMessage end
+
+// IbdBlockLocatorMessage start
+message IbdBlockLocatorMessage {
+  Hash targetHash = 1;
+  repeated Hash blockLocatorHashes = 2;
+}
+// IbdBlockLocatorMessage end
+
+// IbdBlockLocatorHighestHashMessage start
+message IbdBlockLocatorHighestHashMessage {
+  Hash highestHash = 1;
+}
+// IbdBlockLocatorHighestHashMessage end
 
 service P2P {
   rpc MessageStream (stream KaspadMessage) returns (stream KaspadMessage) {}
@@ -539,9 +553,10 @@ message TransactionVerboseOutput{
 }
 
 message ScriptPubKeyResult{
-  string hex = 1;
-  string type = 2;
-  string address = 3;
+  string asm = 1;
+  string hex = 2;
+  string type = 3;
+  string address = 4;
 }
 
 message GetSubnetworkRequestMessage{
@@ -678,14 +693,14 @@ message RpcTransactionInput {
   uint64 sequence = 3;
 }
 
-message RpcTransactionOutput {
-  uint64 amount = 1;
-  RpcScriptPubKey scriptPubKey = 2;
-}
-
 message RpcScriptPubKey {
   uint32 version = 1;
   string scriptPubKey = 2;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  RpcScriptPubKey scriptPubKey = 2;
 }
 
 message RpcOutpoint {

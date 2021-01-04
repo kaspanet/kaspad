@@ -68,7 +68,8 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
-		log.Debugf("Collected UTXO diff for block %s: %s", nextBlockHash, utxoDiff)
+		log.Debugf("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
+			nextBlockHash, utxoDiff.ToAdd().Len(), utxoDiff.ToRemove().Len())
 
 		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nextBlockHash)
 		if err != nil {
@@ -154,10 +155,19 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
 				transactionID, mergeSetBlockHash, isAccepted, transaction.Fee)
 
+			var transactionInputUTXOEntries []externalapi.UTXOEntry
+			if isAccepted {
+				transactionInputUTXOEntries = make([]externalapi.UTXOEntry, len(transaction.Inputs))
+				for k, input := range transaction.Inputs {
+					transactionInputUTXOEntries[k] = input.UTXOEntry
+				}
+			}
+
 			blockAcceptanceData.TransactionAcceptanceData[j] = &externalapi.TransactionAcceptanceData{
-				Transaction: transaction,
-				Fee:         transaction.Fee,
-				IsAccepted:  isAccepted,
+				Transaction:                 transaction,
+				Fee:                         transaction.Fee,
+				IsAccepted:                  isAccepted,
+				TransactionInputUTXOEntries: transactionInputUTXOEntries,
 			}
 		}
 		multiblockAcceptanceData[i] = blockAcceptanceData

@@ -16,7 +16,7 @@ func BlockHash(block *externalapi.DomainBlock) *externalapi.DomainHash {
 }
 
 // HeaderHash returns the given header's hash
-func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
+func HeaderHash(header externalapi.BaseBlockHeader) *externalapi.DomainHash {
 	// Encode the header and hash everything prior to the number of
 	// transactions.
 	writer := hashes.NewBlockHashWriter()
@@ -31,18 +31,18 @@ func HeaderHash(header *externalapi.DomainBlockHeader) *externalapi.DomainHash {
 	return writer.Finalize()
 }
 
-func serializeHeader(w io.Writer, header *externalapi.DomainBlockHeader) error {
+func serializeHeader(w io.Writer, header externalapi.BaseBlockHeader) error {
+	timestamp := header.TimeInMilliseconds()
 
-	timestamp := header.TimeInMilliseconds
-	numParents := len(header.ParentHashes)
-	if err := serialization.WriteElements(w, header.Version, uint64(numParents)); err != nil {
+	numParents := len(header.ParentHashes())
+	if err := serialization.WriteElements(w, header.Version(), uint64(numParents)); err != nil {
 		return err
 	}
-	for _, hash := range header.ParentHashes {
+	for _, hash := range header.ParentHashes() {
 		if err := serialization.WriteElement(w, hash); err != nil {
 			return err
 		}
 	}
-	return serialization.WriteElements(w, &header.HashMerkleRoot, &header.AcceptedIDMerkleRoot, &header.UTXOCommitment, timestamp,
-		header.Bits, header.Nonce)
+	return serialization.WriteElements(w, header.HashMerkleRoot(), header.AcceptedIDMerkleRoot(), header.UTXOCommitment(), timestamp,
+		header.Bits(), header.Nonce())
 }
