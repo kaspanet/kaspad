@@ -114,6 +114,8 @@ func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmana
 
 func (mp *mempool) GetTransaction(
 	transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool) {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 
 	txDesc, exists := mp.fetchTxDesc(transactionID)
 	if !exists {

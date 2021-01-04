@@ -59,6 +59,12 @@ func (f *FlowContext) isSyncRateBelowMinimum() bool {
 // ShouldMine returns whether it's ok to use block template from this node
 // for mining purposes.
 func (f *FlowContext) ShouldMine() (bool, error) {
+	peers := f.Peers()
+	if len(peers) == 0 {
+		log.Debugf("The node is not connected, so ShouldMine returns false")
+		return false, nil
+	}
+
 	if f.isSyncRateBelowMinimum() {
 		log.Debugf("The sync rate is below the minimum, so ShouldMine returns true")
 		return true, nil
