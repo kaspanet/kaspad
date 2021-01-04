@@ -87,6 +87,7 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 	}, nil
 }
 
+// ConvertFromRpcScriptPubKeyToRPCScriptPubKey converts from RpcScriptPubKey to RPCScriptPubKey.
 func ConvertFromRpcScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPubKey) (*appmessage.RPCScriptPubKey, error) {
 	if toConvert.Version > 0xffff {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
@@ -96,6 +97,8 @@ func ConvertFromRpcScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPubKey) (*a
 	return &appmessage.RPCScriptPubKey{Version: version,
 		Script: script}, nil
 }
+
+// ConvertFromRPCScriptPubKeyToRpcScriptPubKey converts from RPCScriptPubKey to RpcScriptPubKey.
 func ConvertFromRPCScriptPubKeyToRpcScriptPubKey(toConvert *appmessage.RPCScriptPubKey) *RpcScriptPubKey {
 	return &RpcScriptPubKey{Version: uint32(toConvert.Version), ScriptPubKey: toConvert.Script}
 }

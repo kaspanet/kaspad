@@ -20,7 +20,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-const version_cur = 0
+const versionCur = 0
 
 // TestTx tests the MsgTx API.
 func TestTx(t *testing.T) {
@@ -169,7 +169,7 @@ func TestTxHashAndID(t *testing.T) {
 			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
 			0xa6, // 65-byte signature
 			0xac, // OP_CHECKSIG
-		}, Version: version_cur},
+		}, Version: versionCur},
 	}
 	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
@@ -225,14 +225,14 @@ func TestTxHashAndID(t *testing.T) {
 			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
-			}, Version: version_cur},
+			}, Version: versionCur},
 		},
 		{
 			Value: 44602432,
 			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
-			}, Version: version_cur},
+			}, Version: versionCur},
 		},
 	}
 	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)

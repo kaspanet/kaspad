@@ -11,7 +11,7 @@ func ScriptPublicKeyToDBScriptPublicKey(scriptPublicKey *externalapi.ScriptPubli
 	return &DbScriptPublicKey{Script: scriptPublicKey.Script, Version: uint32(scriptPublicKey.Version)}
 }
 
-// DBScriptPublicKey convert DbScriptPublicKey ro ScriptPublicKey
+// DBScriptPublicKeyToScriptPublicKey convert DbScriptPublicKey ro ScriptPublicKey
 func DBScriptPublicKeyToScriptPublicKey(dbScriptPublicKey *DbScriptPublicKey) (*externalapi.ScriptPublicKey, error) {
 	if dbScriptPublicKey.Version > 0xFFFF {
 		return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")

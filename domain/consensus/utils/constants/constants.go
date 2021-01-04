@@ -41,5 +41,6 @@ const (
 	// seconds. Enforced relative lock times are multiples of 524288 milliseconds.
 	SequenceLockTimeGranularity = 19
 
+	// MaximumScriptPublicKeyVersion is the higher known ScriptPublicKey version.
 	MaximumScriptPublicKeyVersion = 0
 )
