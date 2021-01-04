@@ -10,13 +10,13 @@ import (
 )
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
-var utxoIndexLastSelectedTipKey = database.MakeBucket().Key([]byte("utxo-index-last-selected-tip"))
+var utxoIndexLastVirtualSelectedParentKey = database.MakeBucket().Key([]byte("utxo-index-last-virtual-selected-parent"))
 
 type utxoIndexStore struct {
-	database    database.Database
-	toAdd       map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove    map[ScriptPublicKeyString]UTXOOutpoints
-	selectedTip *externalapi.DomainHash
+	database              database.Database
+	toAdd                 map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	toRemove              map[ScriptPublicKeyString]UTXOOutpoints
+	virtualSelectedParent *externalapi.DomainHash
 }
 
 func newUTXOIndexStore(database database.Database) *utxoIndexStore {
@@ -98,7 +98,7 @@ func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.
 func (uis *utxoIndexStore) discard() {
 	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
 	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
-	uis.selectedTip = nil
+	uis.virtualSelectedParent = nil
 }
 
 func (uis *utxoIndexStore) commit() error {
@@ -145,7 +145,7 @@ func (uis *utxoIndexStore) commit() error {
 		}
 	}
 
-	err = dbTransaction.Put(utxoIndexLastSelectedTipKey, uis.selectedTip.ByteSlice())
+	err = dbTransaction.Put(utxoIndexLastVirtualSelectedParentKey, uis.virtualSelectedParent.ByteSlice())
 	if err != nil {
 		return err
 	}
@@ -262,39 +262,39 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey []byte) (UT
 	return utxoOutpointEntryPairs, nil
 }
 
-func (uis *utxoIndexStore) getLastSelectedTip() (*externalapi.DomainHash, bool, error) {
+func (uis *utxoIndexStore) getLastVirtualSelectedParent() (*externalapi.DomainHash, bool, error) {
 	if uis.isAnythingStaged() {
 		return nil, false, errors.Errorf("cannot get last selected tip while staging isn't empty")
 	}
 
-	hasLastSelectedTip, err := uis.database.Has(utxoIndexLastSelectedTipKey)
+	hasLastVirtualSelectedParent, err := uis.database.Has(utxoIndexLastVirtualSelectedParentKey)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if !hasLastSelectedTip {
+	if !hasLastVirtualSelectedParent {
 		return nil, false, nil
 	}
 
-	lastSelectedTipBytes, err := uis.database.Get(utxoIndexLastSelectedTipKey)
+	lastVirtualSelectedParentBytes, err := uis.database.Get(utxoIndexLastVirtualSelectedParentKey)
 	if err != nil {
 		return nil, false, err
 	}
 
-	lastSelectedTip, err := externalapi.NewDomainHashFromByteSlice(lastSelectedTipBytes)
+	lastVirtualSelectedParent, err := externalapi.NewDomainHashFromByteSlice(lastVirtualSelectedParentBytes)
 	if err != nil {
 		return nil, false, err
 	}
 
-	return lastSelectedTip, true, nil
+	return lastVirtualSelectedParent, true, nil
 }
 
 func (uis *utxoIndexStore) isAnythingStaged() bool {
-	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0 || uis.selectedTip != nil
+	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0 || uis.virtualSelectedParent != nil
 }
 
 func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPair,
-	selectedTip *externalapi.DomainHash) error {
+	virtualSelectedParent *externalapi.DomainHash) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.replaceUTXOSet")
 	defer onEnd()
@@ -308,7 +308,7 @@ func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPai
 		return err
 	}
 
-	uis.selectedTip = selectedTip
+	uis.virtualSelectedParent = virtualSelectedParent
 	for _, pair := range utxoSet {
 		err := uis.add(pair.Entry.ScriptPublicKey(), pair.Outpoint, pair.Entry)
 		if err != nil {
@@ -345,7 +345,7 @@ func (uis *utxoIndexStore) resetStore() error {
 		}
 	}
 
-	err = uis.database.Delete(utxoIndexLastSelectedTipKey)
+	err = uis.database.Delete(utxoIndexLastVirtualSelectedParentKey)
 	if err != nil {
 		return err
 	}

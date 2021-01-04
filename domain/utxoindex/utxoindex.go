@@ -71,16 +71,16 @@ func (ui *UTXOIndex) isSynced() (bool, error) {
 		return false, err
 	}
 
-	lastSelectedTip, hasLastSelectedTip, err := ui.store.getLastSelectedTip()
+	lastVirtualSelectedParent, hasLastVirtualSelectedParent, err := ui.store.getLastVirtualSelectedParent()
 	if err != nil {
 		return false, err
 	}
 
-	if !hasLastSelectedTip {
+	if !hasLastVirtualSelectedParent {
 		return virtualSelectedParent.Equal(ui.genesisHash), nil
 	}
 
-	return virtualSelectedParent.Equal(lastSelectedTip), nil
+	return virtualSelectedParent.Equal(lastVirtualSelectedParent), nil
 }
 
 // Update updates the UTXO index with the given DAG selected parent chain changes
@@ -100,8 +100,8 @@ func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges
 		return nil, nil
 	}
 
-	selectedTip := chainChanges.Added[len(chainChanges.Added)-1]
-	ui.store.selectedTip = selectedTip
+	virtualSelectedParent := chainChanges.Added[len(chainChanges.Added)-1]
+	ui.store.virtualSelectedParent = virtualSelectedParent
 
 	for _, removedBlockHash := range chainChanges.Removed {
 		err := ui.removeBlock(removedBlockHash)
