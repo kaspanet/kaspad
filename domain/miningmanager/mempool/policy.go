@@ -192,7 +192,7 @@ func isDust(txOut *consensusexternalapi.DomainTransactionOutput, minRelayTxFee u
 func checkTransactionStandard(tx *consensusexternalapi.DomainTransaction, policy *policy) error {
 
 	// The transaction must be a currently supported version.
-	if tx.Version > policy.MaxTxVersion || tx.Version < 0 {
+	if tx.Version > policy.MaxTxVersion {
 		str := fmt.Sprintf("transaction version %d is not in the "+
 			"valid range of %d-%d", tx.Version, 0,
 			policy.MaxTxVersion)
