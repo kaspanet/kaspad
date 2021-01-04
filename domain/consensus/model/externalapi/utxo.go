@@ -1,7 +1,7 @@
 package externalapi
 
-// UTXOOutpointPair is a pair of outpoint and UTXO entry
-type UTXOOutpointPair struct {
+// OutpointUTXOPair is a pair of outpoint and UTXO entry
+type OutpointUTXOPair struct {
 	Outpoint *DomainOutpoint
 	Entry    UTXOEntry
 }

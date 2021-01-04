@@ -27,5 +27,5 @@ type Consensus interface {
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)
 
-	GetVirtualUTXOSet() ([]*UTXOOutpointPair, error)
+	GetVirtualUTXOSet() ([]*OutpointUTXOPair, error)
 }

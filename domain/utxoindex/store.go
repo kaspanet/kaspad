@@ -293,7 +293,7 @@ func (uis *utxoIndexStore) isAnythingStaged() bool {
 	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0 || uis.selectedTip != nil
 }
 
-func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.UTXOOutpointPair,
+func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPair,
 	selectedTip *externalapi.DomainHash) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.replaceUTXOSet")
