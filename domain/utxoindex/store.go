@@ -323,33 +323,32 @@ func (uis *utxoIndexStore) resetStore() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.resetStore")
 	defer onEnd()
 
-	dbTransaction, err := uis.database.Begin()
-	if err != nil {
-		return err
-	}
-	defer dbTransaction.RollbackUnlessClosed()
-
-	cursor, err := dbTransaction.Cursor(utxoIndexBucket)
+	cursor, err := uis.database.Cursor(utxoIndexBucket)
 	if err != nil {
 		return err
 	}
 
+	keysToDelete := make([]*database.Key, 0)
 	for cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {
 			return err
 		}
 
-		err = dbTransaction.Delete(key)
+		keysToDelete = append(keysToDelete, key)
+	}
+
+	for _, key := range keysToDelete {
+		err = uis.database.Delete(key)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = dbTransaction.Delete(utxoIndexLastSelectedTipKey)
+	err = uis.database.Delete(utxoIndexLastSelectedTipKey)
 	if err != nil {
 		return err
 	}
 
-	return dbTransaction.Commit()
+	return nil
 }
