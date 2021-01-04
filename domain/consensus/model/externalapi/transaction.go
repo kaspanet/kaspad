@@ -223,7 +223,7 @@ func NewDomainOutpoint(id *DomainTransactionID, index uint32) *DomainOutpoint {
 	}
 }
 
-// DomainTransactionOutput represents a Kaspad ScriptPublicKey
+// ScriptPublicKey represents a Kaspad ScriptPublicKey
 type ScriptPublicKey struct {
 	Script  []byte
 	Version uint16
