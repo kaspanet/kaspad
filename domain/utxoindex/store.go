@@ -264,7 +264,7 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey []byte) (UT
 
 func (uis *utxoIndexStore) getLastVirtualSelectedParent() (*externalapi.DomainHash, bool, error) {
 	if uis.isAnythingStaged() {
-		return nil, false, errors.Errorf("cannot get last selected tip while staging isn't empty")
+		return nil, false, errors.Errorf("cannot get last virtual selected parent while staging isn't empty")
 	}
 
 	hasLastVirtualSelectedParent, err := uis.database.Has(utxoIndexLastVirtualSelectedParentKey)
