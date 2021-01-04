@@ -115,7 +115,9 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
 	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
 
-	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, ghostdagData.MergeSet())
+	mergeSetHashes := ghostdagData.MergeSet()
+	log.Debugf("Merge set for block %s is %v", blockHash, mergeSetHashes)
+	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, mergeSetHashes)
 	if err != nil {
 		return nil, nil, err
 	}
