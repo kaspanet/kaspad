@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -374,6 +375,9 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 }
 
 func (s *consensus) GetVirtualUTXOSet() ([]*externalapi.OutpointUTXOPair, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "consensus.GetVirtualUTXOSet")
+	defer onEnd()
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
