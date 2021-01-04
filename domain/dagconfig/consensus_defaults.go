@@ -25,7 +25,7 @@ const (
 	defaultMaxCoinbasePayloadLength = 150
 	// defaultMaxBlockSize is a bound on the size of a block in bytes, larger values increase the bound d
 	// on the round trip time of a block, which affects the other parameters as described below
-	defaultMaxBlockSize = 1_000_000
+	defaultMaxBlockSize = 50_000
 	// defaultMaxBlockParents is the number of blocks any block can point to.
 	// Should be about d/defaultTargetTimePerBlock where d is a bound on the round trip time of a block.
 	defaultMaxBlockParents         = 10
@@ -38,7 +38,7 @@ const (
 	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
 	// in block take longer)
 	defaultMergeSetSizeLimit                       = 1000
-	defaultMaxMassAcceptedByBlock                  = 10000000
+	defaultMaxMassAcceptedByBlock                  = 500_000
 	defaultBaseSubsidy                             = 50 * constants.SompiPerKaspa
 	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
 	// defaultGHOSTDAGK is a bound on the number of blue blocks in the anticone of a blue block. Approximates the maximal
