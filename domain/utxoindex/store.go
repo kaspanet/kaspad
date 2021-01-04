@@ -309,10 +309,14 @@ func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPai
 	}
 
 	uis.virtualSelectedParent = virtualSelectedParent
-	for _, pair := range utxoSet {
+	for i, pair := range utxoSet {
 		err := uis.add(pair.Entry.ScriptPublicKey(), pair.Outpoint, pair.Entry)
 		if err != nil {
 			return err
+		}
+		logInterval := 10_000
+		if i%logInterval == 0 {
+			log.Debugf("Recovered %d UTXO entries out of %d", i+1, len(utxoSet))
 		}
 	}
 
