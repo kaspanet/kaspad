@@ -96,7 +96,10 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 
 	var utxoIndex *utxoindex.UTXOIndex
 	if cfg.UTXOIndex {
-		utxoIndex = utxoindex.New(domain.Consensus(), db)
+		utxoIndex, err = utxoindex.New(domain.Consensus(), db, cfg.ActiveNetParams.GenesisHash)
+		if err != nil {
+			return nil, err
+		}
 		log.Infof("UTXO index started")
 	}
 

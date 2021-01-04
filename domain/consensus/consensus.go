@@ -372,3 +372,25 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 
 	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
 }
+
+func (s *consensus) GetVirtualUTXOSet() ([]*externalapi.OutpointUTXOPair, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	iterator, err := s.consensusStateStore.VirtualUTXOSetIterator(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	pairs := make([]*externalapi.OutpointUTXOPair, 0)
+	for iterator.Next() {
+		outpoint, entry, err := iterator.Get()
+		if err != nil {
+			return nil, err
+		}
+
+		pairs = append(pairs, &externalapi.OutpointUTXOPair{Outpoint: outpoint, Entry: entry})
+	}
+
+	return pairs, nil
+}
