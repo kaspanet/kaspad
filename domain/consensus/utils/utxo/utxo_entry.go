@@ -64,6 +64,10 @@ func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
 		return false
 	}
 
+	if u.ScriptPublicKey().Version != other.ScriptPublicKey().Version {
+		return false
+	}
+
 	if u.BlockBlueScore() != other.BlockBlueScore() {
 		return false
 	}
