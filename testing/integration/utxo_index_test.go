@@ -148,7 +148,7 @@ func TestUTXOIndex(t *testing.T) {
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
 		}
-		if *notificationEntry.UTXOEntry.ScriptPubKey != *foundResponseEntry.UTXOEntry.ScriptPubKey {
+		if *notificationEntry.UTXOEntry.ScriptPublicKey != *foundResponseEntry.UTXOEntry.ScriptPublicKey {
 			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
@@ -180,7 +180,7 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 
 	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(entry.UTXOEntry.Amount-1000, toScript)}
 
-	fromScript, err := hex.DecodeString(entry.UTXOEntry.ScriptPubKey.Script)
+	fromScript, err := hex.DecodeString(entry.UTXOEntry.ScriptPublicKey.Script)
 	if err != nil {
 		t.Fatalf("Error decoding script public key: %s", err)
 	}

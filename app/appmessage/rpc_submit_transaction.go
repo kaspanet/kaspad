@@ -84,8 +84,8 @@ type RPCOutpoint struct {
 // RPCUTXOEntry is a kaspad utxo entry representation meant to be used
 // over RPC
 type RPCUTXOEntry struct {
-	Amount         uint64
-	ScriptPubKey   *RPCScriptPublicKey
-	BlockBlueScore uint64
-	IsCoinbase     bool
+	Amount          uint64
+	ScriptPublicKey *RPCScriptPublicKey
+	BlockBlueScore  uint64
+	IsCoinbase      bool
 }
