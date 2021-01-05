@@ -122,5 +122,4 @@ func cmp(a, b *DomainHash) int {
 // Less returns true iff hash a is less than hash b
 func Less(a, b *DomainHash) bool {
 	return cmp(a, b) < 0
-	//return bytes.Compare(a.hashArray[:], b.hashArray[:]) < 0
 }
