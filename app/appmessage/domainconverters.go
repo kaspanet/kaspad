@@ -187,13 +187,13 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	}
 	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
 	for i, output := range rpcTransaction.Outputs {
-		script, err := hex.DecodeString(output.ScriptPubKey.Script)
+		scriptPublicKey, err := hex.DecodeString(output.ScriptPubKey.Script)
 		if err != nil {
 			return nil, err
 		}
 		outputs[i] = &externalapi.DomainTransactionOutput{
 			Value:           output.Amount,
-			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: script, Version: output.ScriptPubKey.Version},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPubKey.Version},
 		}
 	}
 
