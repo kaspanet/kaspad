@@ -6,11 +6,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 type testConsensus struct {
 	*consensus
 	dagParams *dagconfig.Params
+	database  database.Database
 
 	testBlockBuilder          testapi.TestBlockBuilder
 	testReachabilityManager   testapi.TestReachabilityManager

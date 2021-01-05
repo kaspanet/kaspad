@@ -63,14 +63,14 @@ func TestGHOSTDAG(t *testing.T) {
 		}
 
 		ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-			dagMap: make(map[externalapi.DomainHash]model.BlockGHOSTDAGData),
+			dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
 		}
 
 		blockHeadersStore := &blockHeadersStore{
 			dagMap: make(map[externalapi.DomainHash]externalapi.BlockHeader),
 		}
 
-		blockGHOSTDAGDataGenesis := ghostdagmanager.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
+		blockGHOSTDAGDataGenesis := model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 		genesisHeader := params.GenesisBlock.Header
 		genesisWork := util.CalcWork(genesisHeader.Bits())
 
@@ -160,7 +160,7 @@ func TestGHOSTDAG(t *testing.T) {
 				}
 				dagTopology.parentsMap = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 				dagTopology.parentsMap[genesisHash] = nil
-				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]model.BlockGHOSTDAGData)
+				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
 				ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
 				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]externalapi.BlockHeader)
 				blockHeadersStore.dagMap[genesisHash] = genesisHeader
@@ -202,10 +202,10 @@ func StringToDomainHashSlice(stringIDArr []string) []*externalapi.DomainHash {
 
 /* ---------------------- */
 type GHOSTDAGDataStoreImpl struct {
-	dagMap map[externalapi.DomainHash]model.BlockGHOSTDAGData
+	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData model.BlockGHOSTDAGData) {
+func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
 }
 
@@ -221,7 +221,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil
