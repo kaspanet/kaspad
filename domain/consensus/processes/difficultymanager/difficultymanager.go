@@ -59,7 +59,7 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 		return 0, err
 	}
 
-	return header.Bits, nil
+	return header.Bits(), nil
 }
 
 // RequiredDifficulty returns the difficulty required for some block

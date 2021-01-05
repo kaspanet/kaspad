@@ -37,7 +37,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 	if err != nil {
 		return err
 	}
-	for _, parent := range header.ParentHashes {
+	for _, parent := range header.ParentHashes() {
 		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
 		if err != nil {
 			return err
@@ -84,7 +84,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 		return err
 	}
 
-	blockTime := block.Header.TimeInMilliseconds
+	blockTime := block.Header.TimeInMilliseconds()
 
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
 	if err != nil {
@@ -92,7 +92,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 	}
 
 	// If it's not genesis
-	if len(block.Header.ParentHashes) != 0 {
+	if len(block.Header.ParentHashes()) != 0 {
 		blockTime, err = v.pastMedianTimeManager.PastMedianTime(blockHash)
 		if err != nil {
 			return err

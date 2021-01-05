@@ -24,7 +24,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	log.Debugf("OnNewBlock start for block %s", hash)
 	defer log.Debugf("OnNewBlock end for block %s", hash)
 
-	f.updateRecentBlockAddedTimesWithLastBlock()
+	f.UpdateRecentBlockAddedTimesWithLastBlock()
 	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err

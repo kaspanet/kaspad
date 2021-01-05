@@ -16,7 +16,7 @@ type handleIBDRootHashRequestsFlow struct {
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleIBDRootHashRequests listens to appmessage.MsgRequestIBDRootHash messages and sends
+// HandleIBDRootHashRequests listens to appmessage.MsgRequestIBDRootHashMessage messages and sends
 // the IBD root hash as response.
 func HandleIBDRootHashRequests(context HandleIBDRootHashRequestsFlowContext, incomingRoute,
 	outgoingRoute *router.Route) error {
@@ -41,7 +41,7 @@ func (flow *handleIBDRootHashRequestsFlow) start() error {
 			return err
 		}
 
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootHash(pruningPoint))
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootHashMessage(pruningPoint))
 		if err != nil {
 			return err
 		}

@@ -23,6 +23,11 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	err = v.checkNoPrefilledFields(block)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkBlockSize(block)
 	if err != nil {
 		return err
@@ -143,10 +148,10 @@ func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainB
 
 func (v *blockValidator) checkBlockHashMerkleRoot(block *externalapi.DomainBlock) error {
 	calculatedHashMerkleRoot := merkle.CalculateHashMerkleRoot(block.Transactions)
-	if !block.Header.HashMerkleRoot.Equal(calculatedHashMerkleRoot) {
+	if !block.Header.HashMerkleRoot().Equal(calculatedHashMerkleRoot) {
 		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
-			block.Header.HashMerkleRoot, calculatedHashMerkleRoot)
+			block.Header.HashMerkleRoot(), calculatedHashMerkleRoot)
 	}
 	return nil
 }
@@ -219,6 +224,31 @@ func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
 		if size > v.maxBlockSize || size < sizeBefore {
 			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d",
 				v.maxBlockSize)
+		}
+	}
+
+	return nil
+}
+
+func (v *blockValidator) checkNoPrefilledFields(block *externalapi.DomainBlock) error {
+	for _, tx := range block.Transactions {
+		if tx.Fee != 0 {
+			return errors.Errorf("transaction %s has a prefilled fee", consensushashing.TransactionID(tx))
+		}
+
+		if tx.Mass != 0 {
+			return errors.Errorf("transaction %s has a prefilled mass", consensushashing.TransactionID(tx))
+		}
+
+		if tx.ID != nil {
+			return errors.Errorf("transaction %s has a prefilled ID", consensushashing.TransactionID(tx))
+		}
+
+		for i, input := range tx.Inputs {
+			if input.UTXOEntry != nil {
+				return errors.Errorf("input %d in transaction %s has a prefilled UTXO entry",
+					i, consensushashing.TransactionID(tx))
+			}
 		}
 	}
 

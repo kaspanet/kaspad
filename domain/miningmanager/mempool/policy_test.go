@@ -188,11 +188,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	dummyTxOut := consensusexternalapi.DomainTransactionOutput{
-		Value: 100000000, // 1 KAS
-		ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{
-			Script:  dummyScriptPublicKey,
-			Version: 0,
-		},
+		Value:           100000000, // 1 KAS
+		ScriptPublicKey: dummyScriptPublicKey,
 	}
 
 	tests := []struct {
@@ -215,18 +212,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
-		// This is commented out, because transaction finaliation is a consensus check, not a policy check.
-		//{
-		//	name: "Transaction is not finalized",
-		//	tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{{
-		//		PreviousOutpoint: dummyPrevOut,
-		//		SignatureScript:  dummySigScript,
-		//		Sequence:         0,
-		//	}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}, LockTime: 300001},
-		//	height:     300000,
-		//	isStandard: false,
-		//	code:       RejectNonstandard,
-		//},
+
 		{
 			name: "Transaction size is too large",
 			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
@@ -274,11 +260,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{ //Todo : check on ScriptPublicKey type.
 			name: "Dust output",
 			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
-				Value: 0,
-				ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{
-					Script:  dummyScriptPublicKey,
-					Version: 0,
-				},
+				Value:           0,
+				ScriptPublicKey: dummyScriptPublicKey,
 			}}},
 			height:     300000,
 			isStandard: false,

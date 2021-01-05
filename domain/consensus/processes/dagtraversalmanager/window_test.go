@@ -1,7 +1,6 @@
 package dagtraversalmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"reflect"
 	"sort"
 	"testing"
@@ -59,37 +58,37 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "C", "H", "D", "B", "G", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "H", "C", "D", "G", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "C", "H", "D", "B", "G", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "H", "C", "D", "G", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "H", "D", "B", "G", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "H", "C", "D", "G", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "H", "D", "B", "G", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "H", "C", "D", "G", "B", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "H", "D", "B", "G"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "H", "C", "D", "G", "B"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "H", "D", "B"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "H", "C", "D", "G"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "H", "D"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "H", "C", "D"},
 			},
 		},
 		"kaspa-testnet": {
@@ -131,37 +130,37 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "D", "H", "C", "B", "G", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "H", "D", "C", "G", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "D", "H", "C", "B", "G", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "H", "D", "C", "G", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "H", "C", "B", "G", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "H", "D", "C", "G", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "H", "C", "B", "G", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "H", "D", "C", "G", "B", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "H", "C", "B", "G"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "H", "D", "C", "G", "B"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "B"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "H", "D", "C", "G"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "H", "C"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "H", "D", "C"},
 			},
 		},
 		"kaspa-devnet": {
@@ -203,37 +202,37 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "C", "D", "H", "G", "B", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "C", "H", "D", "G", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "C", "D", "H", "G", "B", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "C", "H", "D", "G", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "D", "H", "G", "B", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "H", "D", "G", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "D", "H", "G", "B", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "H", "D", "G", "B", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "D", "H", "G", "B"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "H", "D", "G", "B"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "D", "H", "G"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "H", "D", "G"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "H"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "H", "D"},
 			},
 		},
 		"kaspa-simnet": {
@@ -255,12 +254,12 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"D", "C"},
 				id:                               "E",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"D", "C"},
 				id:                               "F",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"A"},
@@ -275,37 +274,37 @@ func TestBlueBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "D", "C", "H", "B", "G", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "H", "C", "D", "G", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "D", "C", "H", "B", "G", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "H", "C", "D", "G", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "C", "H", "B", "G", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "H", "C", "D", "G", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "C", "H", "B", "G", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "H", "C", "D", "G", "B", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "C", "H", "B", "G"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "H", "C", "D", "G", "B"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "C", "H", "B"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "H", "C", "D", "G"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "C", "H"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "H", "C", "D"},
 			},
 		},
 	}
@@ -345,25 +344,11 @@ func TestBlueBlockWindow(t *testing.T) {
 			if err != nil {
 				t.Fatalf("BlueWindow: %s", err)
 			}
-			sortWindow(t, tc, window)
+			sort.Sort(consensus.NewTestGhostDAGSorter(window, tc, t))
 			if err := checkWindowIDs(window, blockData.expectedWindowWithGenesisPadding, idByBlockMap); err != nil {
 				t.Errorf("Unexpected values for window for block %s: %s", blockData.id, err)
 			}
 		}
-	})
-}
-
-func sortWindow(t *testing.T, tc testapi.TestConsensus, window []*externalapi.DomainHash) {
-	sort.Slice(window, func(i, j int) bool {
-		ghostdagDataI, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), window[i])
-		if err != nil {
-			t.Fatalf("Failed getting ghostdag data for %s", err)
-		}
-		ghostdagDataJ, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), window[j])
-		if err != nil {
-			t.Fatalf("Failed getting ghostdag data for %s", err)
-		}
-		return !tc.GHOSTDAGManager().Less(window[i], ghostdagDataI, window[j], ghostdagDataJ)
 	})
 }
 

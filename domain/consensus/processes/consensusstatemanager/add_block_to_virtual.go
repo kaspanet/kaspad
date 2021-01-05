@@ -3,14 +3,14 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 // AddBlock submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
 func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
-	log.Debugf("AddBlock start for block %s", blockHash)
-	defer log.Debugf("AddBlock end for block %s", blockHash)
+	logger.LogAndMeasureExecutionTime(log, "csm.AddBlock")
 
 	log.Debugf("Resolving whether the block %s is the next virtual selected parent", blockHash)
 	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(blockHash)
@@ -53,7 +53,7 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("After adding %s, the new tips are %s", blockHash, newTips)
+	log.Debugf("After adding %s, the amount of new tips are %d", blockHash, len(newTips))
 
 	log.Debugf("Updating the virtual with the new tips")
 	selectedParentChainChanges, err := csm.updateVirtual(blockHash, newTips)
@@ -99,10 +99,9 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The new tips are: %s", newTips)
 
 	csm.consensusStateStore.StageTips(newTips)
-	log.Debugf("Staged the new tips %s", newTips)
+	log.Debugf("Staged the new tips, len: %d", len(newTips))
 
 	return newTips, nil
 }

@@ -2,6 +2,7 @@ package blockvalidator_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -28,7 +29,9 @@ func TestValidateMedianTime(t *testing.T) {
 				t.Fatalf("BuildBlockWithParents: %+v", err)
 			}
 
-			block.Header.TimeInMilliseconds = blockTime
+			newHeader := block.Header.ToMutable()
+			newHeader.SetTimeInMilliseconds(blockTime)
+			block.Header = newHeader.ToImmutable()
 			_, err = tc.ValidateAndInsertBlock(block)
 			if !errors.Is(err, expectedErr) {
 				t.Fatalf("expected error %s but got %+v", expectedErr, err)
@@ -62,7 +65,7 @@ func TestValidateMedianTime(t *testing.T) {
 		tip := params.GenesisBlock
 		tipHash := params.GenesisHash
 
-		blockTime := tip.Header.TimeInMilliseconds
+		blockTime := tip.Header.TimeInMilliseconds()
 
 		for i := 0; i < 100; i++ {
 			blockTime += 1000
@@ -105,16 +108,16 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 
 		directParentsRelationBlock := &externalapi.DomainBlock{
-			Header: &externalapi.DomainBlockHeader{
-				Version:              0,
-				ParentHashes:         []*externalapi.DomainHash{a, b},
-				HashMerkleRoot:       externalapi.DomainHash{},
-				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-				UTXOCommitment:       externalapi.DomainHash{},
-				TimeInMilliseconds:   0,
-				Bits:                 0,
-				Nonce:                0,
-			},
+			Header: blockheader.NewImmutableBlockHeader(
+				0,
+				[]*externalapi.DomainHash{a, b},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				0,
+				0,
+				0,
+			),
 			Transactions: nil,
 		}
 
@@ -124,16 +127,16 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 
 		indirectParentsRelationBlock := &externalapi.DomainBlock{
-			Header: &externalapi.DomainBlockHeader{
-				Version:              0,
-				ParentHashes:         []*externalapi.DomainHash{params.GenesisHash, b},
-				HashMerkleRoot:       externalapi.DomainHash{},
-				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-				UTXOCommitment:       externalapi.DomainHash{},
-				TimeInMilliseconds:   0,
-				Bits:                 0,
-				Nonce:                0,
-			},
+			Header: blockheader.NewImmutableBlockHeader(
+				0,
+				[]*externalapi.DomainHash{params.GenesisHash, b},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				0,
+				0,
+				0,
+			),
 			Transactions: nil,
 		}
 

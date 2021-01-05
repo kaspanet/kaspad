@@ -90,7 +90,7 @@ func (x *UtxosByAddressesEntry) toAppMessage() (*appmessage.UTXOsByAddressesEntr
 	}
 	var utxoEntry *appmessage.RPCUTXOEntry
 	if x.UtxoEntry != nil {
-		scriptPubKey, err := ConvertFromRpcScriptPubKeyToRPCScriptPubKey(x.UtxoEntry.ScriptPubKey)
+		scriptPubKey, err := ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(x.UtxoEntry.ScriptPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +117,7 @@ func (x *UtxosByAddressesEntry) fromAppMessage(entry *appmessage.UTXOsByAddresse
 	if entry.UTXOEntry != nil {
 		utxoEntry = &RpcUtxoEntry{
 			Amount:         entry.UTXOEntry.Amount,
-			ScriptPubKey:   ConvertFromRPCScriptPubKeyToRpcScriptPubKey(entry.UTXOEntry.ScriptPubKey),
+			ScriptPubKey:   ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(entry.UTXOEntry.ScriptPubKey),
 			BlockBlueScore: entry.UTXOEntry.BlockBlueScore,
 			IsCoinbase:     entry.UTXOEntry.IsCoinbase,
 		}

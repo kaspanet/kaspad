@@ -14,7 +14,7 @@ var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
-	staging  map[externalapi.DomainHash]*externalapi.DomainBlockHeader
+	staging  map[externalapi.DomainHash]externalapi.BlockHeader
 	toDelete map[externalapi.DomainHash]struct{}
 	cache    *lrucache.LRUCache
 	count    uint64
@@ -23,7 +23,7 @@ type blockHeaderStore struct {
 // New instantiates a new BlockHeaderStore
 func New(dbContext model.DBReader, cacheSize int) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
-		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
+		staging:  make(map[externalapi.DomainHash]externalapi.BlockHeader),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
 		cache:    lrucache.New(cacheSize),
 	}
@@ -57,8 +57,8 @@ func (bhs *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
 }
 
 // Stage stages the given block header for the given blockHash
-func (bhs *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) {
-	bhs.staging[*blockHash] = blockHeader.Clone()
+func (bhs *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
+	bhs.staging[*blockHash] = blockHeader
 }
 
 func (bhs *blockHeaderStore) IsStaged() bool {
@@ -66,7 +66,7 @@ func (bhs *blockHeaderStore) IsStaged() bool {
 }
 
 func (bhs *blockHeaderStore) Discard() {
-	bhs.staging = make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader)
+	bhs.staging = make(map[externalapi.DomainHash]externalapi.BlockHeader)
 	bhs.toDelete = make(map[externalapi.DomainHash]struct{})
 }
 
@@ -101,13 +101,13 @@ func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // BlockHeader gets the block header associated with the given blockHash
-func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
+func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	if header, ok := bhs.staging[*blockHash]; ok {
-		return header.Clone(), nil
+		return header, nil
 	}
 
 	if header, ok := bhs.cache.Get(blockHash); ok {
-		return header.(*externalapi.DomainBlockHeader).Clone(), nil
+		return header.(externalapi.BlockHeader), nil
 	}
 
 	headerBytes, err := dbContext.Get(bhs.hashAsKey(blockHash))
@@ -120,7 +120,7 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *ex
 		return nil, err
 	}
 	bhs.cache.Add(blockHash, header)
-	return header.Clone(), nil
+	return header, nil
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.
@@ -142,8 +142,8 @@ func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, blockHash 
 }
 
 // BlockHeaders gets the block headers associated with the given blockHashes
-func (bhs *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlockHeader, error) {
-	headers := make([]*externalapi.DomainBlockHeader, len(blockHashes))
+func (bhs *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+	headers := make([]externalapi.BlockHeader, len(blockHashes))
 	for i, hash := range blockHashes {
 		var err error
 		headers[i], err = bhs.BlockHeader(dbContext, hash)
@@ -167,12 +167,12 @@ func (bhs *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey
 	return bucket.Key(hash.ByteSlice())
 }
 
-func (bhs *blockHeaderStore) serializeHeader(header *externalapi.DomainBlockHeader) ([]byte, error) {
+func (bhs *blockHeaderStore) serializeHeader(header externalapi.BlockHeader) ([]byte, error) {
 	dbBlockHeader := serialization.DomainBlockHeaderToDbBlockHeader(header)
 	return proto.Marshal(dbBlockHeader)
 }
 
-func (bhs *blockHeaderStore) deserializeHeader(headerBytes []byte) (*externalapi.DomainBlockHeader, error) {
+func (bhs *blockHeaderStore) deserializeHeader(headerBytes []byte) (externalapi.BlockHeader, error) {
 	dbBlockHeader := &serialization.DbBlockHeader{}
 	err := proto.Unmarshal(headerBytes, dbBlockHeader)
 	if err != nil {

@@ -56,7 +56,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0}, // Changed
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA0, 0xA3}, Version: 0}, // Changed
 						0xFFFF,
 						true,
 					},

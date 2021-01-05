@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// orderedTreeNodeSet is an ordered set of model.ReachabilityTreeNodes
+// orderedTreeNodeSet is an ordered set of model.DomainHash ordered by the respectful intervals.
 // Note that this type does not validate order validity. It's the
 // responsibility of the caller to construct instances of this
 // type properly.
@@ -31,12 +31,10 @@ func (rt *reachabilityManager) findAncestorOfNode(tns orderedTreeNodeSet, node *
 // the index of the block with the maximum start that is below the
 // given block.
 func (rt *reachabilityManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (int, bool, error) {
-	treeNode, err := rt.treeNode(node)
+	blockInterval, err := rt.interval(node)
 	if err != nil {
 		return 0, false, err
 	}
-
-	blockInterval := treeNode.Interval
 	end := blockInterval.End
 
 	low := 0

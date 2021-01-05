@@ -1,11 +1,12 @@
 package ghostdagmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selecteParent *externalapi.DomainHash,
+func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externalapi.DomainHash,
 	blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
 	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k)
@@ -14,7 +15,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selecteParent *external
 	queue := []*externalapi.DomainHash{}
 	// Queueing all parents (other than the selected parent itself) for processing.
 	for _, parent := range blockParents {
-		if parent.Equal(selecteParent) {
+		if parent.Equal(selectedParent) {
 			continue
 		}
 		mergeSetMap[*parent] = struct{}{}
@@ -40,7 +41,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selecteParent *external
 				continue
 			}
 
-			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(parent, selecteParent)
+			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(parent, selectedParent)
 			if err != nil {
 				return nil, err
 			}

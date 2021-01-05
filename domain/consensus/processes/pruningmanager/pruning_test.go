@@ -35,7 +35,7 @@ func TestPruning(t *testing.T) {
 			"kaspa-mainnet": "503",
 			"kaspa-simnet":  "502",
 			"kaspa-devnet":  "503",
-			"kaspa-testnet": "503",
+			"kaspa-testnet": "502",
 		},
 	}
 

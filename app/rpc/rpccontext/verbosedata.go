@@ -24,8 +24,7 @@ import (
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
-// This method must be called with the DAG lock held for reads
-func (ctx *Context) BuildBlockVerboseData(blockHeader *externalapi.DomainBlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
 	hash := consensushashing.HeaderHash(blockHeader)
 
 	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
@@ -34,16 +33,16 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader *externalapi.DomainBlockHe
 	}
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
-		Version:              blockHeader.Version,
-		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
-		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
-		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
-		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
-		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes),
-		Nonce:                blockHeader.Nonce,
-		Time:                 blockHeader.TimeInMilliseconds,
-		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
+		Version:              blockHeader.Version(),
+		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version()),
+		HashMerkleRoot:       blockHeader.HashMerkleRoot().String(),
+		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot().String(),
+		UTXOCommitment:       blockHeader.UTXOCommitment().String(),
+		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes()),
+		Nonce:                blockHeader.Nonce(),
+		Time:                 blockHeader.TimeInMilliseconds(),
+		Bits:                 strconv.FormatInt(int64(blockHeader.Bits()), 16),
+		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
 		BlueScore:            blockInfo.BlueScore,
 		IsHeaderOnly:         blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
 	}
@@ -98,7 +97,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader *externalapi.DomainBlockHeader, blockHash string) (
+	blockHeader externalapi.BlockHeader, blockHash string) (
 	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string
@@ -121,8 +120,8 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	}
 
 	if blockHeader != nil {
-		txReply.Time = uint64(blockHeader.TimeInMilliseconds)
-		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds)
+		txReply.Time = uint64(blockHeader.TimeInMilliseconds())
+		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds())
 		txReply.BlockHash = blockHash
 	}
 
@@ -161,7 +160,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			transactionOutput.ScriptPublicKey.Script, ctx.Config.ActiveNetParams)
+			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.

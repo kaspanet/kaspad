@@ -6,15 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BlockHeader) toAppMessage() (appmessage.Message, error) {
-	return x.BlockHeader.toAppMessage()
-}
-
-func (x *KaspadMessage_BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) error {
-	x.BlockHeader = new(BlockHeaderMessage)
-	return x.BlockHeader.fromAppMessage(msgBlockHeader)
-}
-
 func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	if len(x.ParentHashes) > appmessage.MaxBlockParents {
 		return nil, errors.Errorf("block header has %d parents, but the maximum allowed amount "+

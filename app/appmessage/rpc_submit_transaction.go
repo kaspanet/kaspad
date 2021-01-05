@@ -61,6 +61,7 @@ type RPCTransactionInput struct {
 	Sequence         uint64
 }
 
+// RPCScriptPubKey is a kaspad ScriptPubKey (in output) representation
 type RPCScriptPubKey struct {
 	Version uint16
 	Script  string

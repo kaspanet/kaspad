@@ -20,7 +20,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-const version_cur = 0
+const versionCur = 0
 
 // TestTx tests the MsgTx API.
 func TestTx(t *testing.T) {
@@ -135,8 +135,8 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txHash1Str := "cf09b7b8ea6c3429515e7e7c8b9531d449f7ca869fad030126495c2c791eacc2"
-	txID1Str := "378b6f83f103241a92b00533746b64800dadedeb1e48c097cf2757eea512ce47"
+	txHash1Str := "f21795944d03403e69619dada802f265abd720b519e536c9f83c854faafb40cb"
+	txID1Str := "f297a716385c77417a3823a14db7d32234c8f8a940fed279521d754c2b3552de"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Fatalf("NewTxIDFromStr: %v", err)
@@ -169,7 +169,7 @@ func TestTxHashAndID(t *testing.T) {
 			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
 			0xa6, // 65-byte signature
 			0xac, // OP_CHECKSIG
-		}, Version: version_cur},
+		}, Version: versionCur},
 	}
 	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
@@ -187,14 +187,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "0c60a073b56ff0510307e3efbb5e1881c3b1b97b4f0a69e4220042a15596766b"
+	hash2Str := "9444dba0510b0b2bc0ca555195d24b3dd9b9e0036ed75acd76ca90af2fe4b0d9"
 	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "68ec13739c0088c1ebca9d14d9daa4ccb24db4e4be021fa2aaad71e2326091af"
+	id2Str := "cfb77537d15e925e776020fe1254139ae3050d71a9ffabcb700a2833192b7355"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -225,14 +225,14 @@ func TestTxHashAndID(t *testing.T) {
 			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
-			}, Version: version_cur},
+			}, Version: versionCur},
 		},
 		{
 			Value: 44602432,
 			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
-			}, Version: version_cur},
+			}, Version: versionCur},
 		},
 	}
 	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)

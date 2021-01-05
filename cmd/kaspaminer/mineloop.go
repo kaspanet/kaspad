@@ -2,11 +2,11 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -24,7 +24,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool,
+func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
 
 	errChan := make(chan error)
@@ -33,25 +33,16 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, min
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop-internalLoop", func() {
-		wg := sync.WaitGroup{}
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			foundBlock := make(chan *externalapi.DomainBlock)
 			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
 			templateStopChan <- struct{}{}
-			wg.Add(1)
-			spawn("mineLoop-handleFoundBlock", func() {
-				if blockDelay != 0 {
-					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
-				}
-				err := handleFoundBlock(client, block)
-				if err != nil {
-					errChan <- err
-				}
-				wg.Done()
-			})
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+			}
 		}
-		wg.Wait()
 		doneChan <- struct{}{}
 	})
 
@@ -95,7 +86,7 @@ func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes, client.Address())
+	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
 
 	err := client.SubmitBlock(block)
 	if err != nil {
@@ -105,16 +96,18 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 }
 
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
+	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
 			return
 		default:
-			block.Header.Nonce = i
+			headerForMining.SetNonce(i)
 			atomic.AddUint64(&hashesTried, 1)
-			if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
+			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+				block.Header = headerForMining.ToImmutable()
 				foundBlock <- block
 				return
 			}

@@ -2,6 +2,8 @@ package ghostdagmanager_test
 
 import (
 	"encoding/json"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -65,12 +67,12 @@ func TestGHOSTDAG(t *testing.T) {
 		}
 
 		blockHeadersStore := &blockHeadersStore{
-			dagMap: make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader),
+			dagMap: make(map[externalapi.DomainHash]externalapi.BlockHeader),
 		}
 
 		blockGHOSTDAGDataGenesis := ghostdagmanager.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 		genesisHeader := params.GenesisBlock.Header
-		genesisWork := util.CalcWork(genesisHeader.Bits)
+		genesisWork := util.CalcWork(genesisHeader.Bits())
 
 		var testsCounter int
 		err := filepath.Walk("../../testdata/dags", func(path string, info os.FileInfo, err error) error {
@@ -108,10 +110,16 @@ func TestGHOSTDAG(t *testing.T) {
 
 					blockID := StringToDomainHash(testBlockData.ID)
 					dagTopology.parentsMap[*blockID] = StringToDomainHashSlice(testBlockData.Parents)
-					blockHeadersStore.dagMap[*blockID] = &externalapi.DomainBlockHeader{
-						ParentHashes: StringToDomainHashSlice(testBlockData.Parents),
-						Bits:         genesisHeader.Bits,
-					}
+					blockHeadersStore.dagMap[*blockID] = blockheader.NewImmutableBlockHeader(
+						constants.BlockVersion,
+						StringToDomainHashSlice(testBlockData.Parents),
+						nil,
+						nil,
+						nil,
+						0,
+						genesisHeader.Bits(),
+						0,
+					)
 
 					err := g.GHOSTDAG(blockID)
 					if err != nil {
@@ -154,7 +162,7 @@ func TestGHOSTDAG(t *testing.T) {
 				dagTopology.parentsMap[genesisHash] = nil
 				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]model.BlockGHOSTDAGData)
 				ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
-				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]*externalapi.DomainBlockHeader)
+				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]externalapi.BlockHeader)
 				blockHeadersStore.dagMap[genesisHash] = genesisHeader
 			}
 
@@ -164,8 +172,8 @@ func TestGHOSTDAG(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if testsCounter != 3 {
-			t.Fatalf("Expected 3 test files, ran %d instead", testsCounter)
+		if testsCounter != 6 {
+			t.Fatalf("Expected 6 test files, ran %d instead", testsCounter)
 		}
 	})
 }
@@ -299,20 +307,20 @@ func (dt *DAGTopologyManagerImpl) SetParents(blockHash *externalapi.DomainHash, 
 }
 
 type blockHeadersStore struct {
-	dagMap map[externalapi.DomainHash]*externalapi.DomainBlockHeader
+	dagMap map[externalapi.DomainHash]externalapi.BlockHeader
 }
 
 func (b *blockHeadersStore) Discard() { panic("unimplemented") }
 
 func (b *blockHeadersStore) Commit(_ model.DBTransaction) error { panic("unimplemented") }
 
-func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader *externalapi.DomainBlockHeader) {
+func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
 	b.dagMap[*blockHash] = blockHeader
 }
 
 func (b *blockHeadersStore) IsStaged() bool { panic("unimplemented") }
 
-func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
+func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	header, ok := b.dagMap[*blockHash]
 	if ok {
 		return header, nil
@@ -325,8 +333,8 @@ func (b *blockHeadersStore) HasBlockHeader(_ model.DBReader, blockHash *external
 	return ok, nil
 }
 
-func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlockHeader, error) {
-	res := make([]*externalapi.DomainBlockHeader, 0, len(blockHashes))
+func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+	res := make([]externalapi.BlockHeader, 0, len(blockHashes))
 	for _, hash := range blockHashes {
 		header, err := b.BlockHeader(nil, hash)
 		if err != nil {
