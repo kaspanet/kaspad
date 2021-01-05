@@ -3,8 +3,6 @@ package ghostdag2
 import (
 	"sort"
 
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-
 	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -116,7 +114,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		myWork.Add(myWork, util.CalcWork(header.Bits()))
 	}
 
-	e := ghostdagmanager.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
+	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
 	gh.dataStore.Stage(blockCandidate, e)
 	return nil
 }
@@ -391,13 +389,13 @@ func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
+func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }

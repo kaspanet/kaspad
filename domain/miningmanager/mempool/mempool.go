@@ -42,7 +42,7 @@ type policy struct {
 	// MaxTxVersion is the transaction version that the mempool should
 	// accept. All transactions above this version are rejected as
 	// non-standard.
-	MaxTxVersion int32
+	MaxTxVersion uint16
 
 	// AcceptNonStd defines whether to accept non-standard transactions. If
 	// true, non-standard transactions will be accepted into the mempool.
@@ -92,7 +92,7 @@ type mempool struct {
 // transactions until they are mined into a block.
 func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmanagermodel.Mempool {
 	policy := policy{
-		MaxTxVersion:    constants.TransactionVersion,
+		MaxTxVersion:    constants.MaxTransactionVersion,
 		AcceptNonStd:    acceptNonStd,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,

@@ -18,7 +18,11 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 	windowHeap := dtm.newSizedUpHeap(windowSize)
 
 	for windowHeap.len() <= windowSize && currentGHOSTDAGData.SelectedParent() != nil {
-		added, err := windowHeap.tryPush(currentGHOSTDAGData.SelectedParent())
+		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentGHOSTDAGData.SelectedParent())
+		if err != nil {
+			return nil, err
+		}
+		added, err := windowHeap.tryPushWithGHOSTDAGData(currentGHOSTDAGData.SelectedParent(), selectedParentGHOSTDAGData)
 		if err != nil {
 			return nil, err
 		}
@@ -55,10 +59,7 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 			}
 		}
 		currentHash = currentGHOSTDAGData.SelectedParent()
-		currentGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
+		currentGHOSTDAGData = selectedParentGHOSTDAGData
 	}
 
 	window := make([]*externalapi.DomainHash, 0, windowSize)

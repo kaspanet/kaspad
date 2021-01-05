@@ -25,7 +25,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						[]byte{0xA1, 0xA2, 0xA3},
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 						0xFFFF,
 						false,
 					},
@@ -35,7 +35,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 		}, {
 			baseUTXOEntry: &utxoEntry{
 				0xFFFF,
-				[]byte{0xA1, 0xA2, 0xA3},
+				&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 				0xFFFF,
 				true,
 			},
@@ -43,7 +43,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						[]byte{0xA1, 0xA2, 0xA3},
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 						0xFFFF,
 						true,
 					},
@@ -56,7 +56,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						[]byte{0xA1, 0xA0, 0xA3}, // Changed
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA0, 0xA3}, Version: 0}, // Changed
 						0xFFFF,
 						true,
 					},
@@ -65,7 +65,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						[]byte{0xA1, 0xA2, 0xA3},
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 						0xFFFF,
 						false, // Changed
 					},
@@ -74,7 +74,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFFF,
-						[]byte{0xA1, 0xA2, 0xA3},
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 						0xFFF0, // Changed
 						true,
 					},
@@ -87,7 +87,7 @@ func TestUTXOEntry_Equal(t *testing.T) {
 				{
 					utxoEntry: &utxoEntry{
 						0xFFF0, // Changed
-						[]byte{0xA1, 0xA2, 0xA3},
+						&externalapi.ScriptPublicKey{Script: []byte{0xA1, 0xA2, 0xA3}, Version: 0},
 						0xFFFF,
 						true,
 					},

@@ -26,7 +26,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 				t.Fatalf("Failed getting virtual block virtualRelations: %v", err)
 			}
 
-			block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{}, nil)
+			block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0}}, nil)
 			if err != nil {
 				t.Fatalf("Consensus failed building a block: %v", err)
 			}
@@ -78,7 +78,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 		// Clear all tips.
 		var virtualSelectedParent *externalapi.DomainHash
 		for {
-			block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{}, nil)
+			block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0}, ExtraData: nil}, nil)
 			if err != nil {
 				t.Fatalf("Failed building a block: %v", err)
 			}

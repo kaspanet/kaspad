@@ -51,7 +51,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 	payloadHash := hashes.PayloadHash(payload)
 
 	return &externalapi.DomainTransaction{
-		Version:      constants.TransactionVersion,
+		Version:      constants.MaxTransactionVersion,
 		Inputs:       []*externalapi.DomainTransactionInput{},
 		Outputs:      txOuts,
 		LockTime:     0,
@@ -85,7 +85,7 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Doma
 		return nil, false, nil
 	}
 
-	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
+	// the ScriptPublicKey for the coinbase is parsed from the coinbase payload
 	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err

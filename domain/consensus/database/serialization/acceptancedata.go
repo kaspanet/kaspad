@@ -55,7 +55,10 @@ func DbAcceptanceDataToDomainAcceptanceData(dbAcceptanceData *DbAcceptanceData) 
 
 			domainTransactionInputUTXOEntries := make([]externalapi.UTXOEntry, len(dbTransactionAcceptanceData.TransactionInputUtxoEntries))
 			for k, transactionInputUTXOEntry := range dbTransactionAcceptanceData.TransactionInputUtxoEntries {
-				domainTransactionInputUTXOEntry := DBUTXOEntryToUTXOEntry(transactionInputUTXOEntry)
+				domainTransactionInputUTXOEntry, err := DBUTXOEntryToUTXOEntry(transactionInputUTXOEntry)
+				if err != nil {
+					return nil, err
+				}
 				domainTransactionInputUTXOEntries[k] = domainTransactionInputUTXOEntry
 
 				// For consistency's sake, we fill up the transaction input's

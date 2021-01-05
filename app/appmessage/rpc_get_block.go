@@ -45,7 +45,7 @@ func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 // BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
-	Version                int32
+	Version                uint16
 	VersionHex             string
 	HashMerkleRoot         string
 	AcceptedIDMerkleRoot   string
@@ -67,7 +67,7 @@ type TransactionVerboseData struct {
 	TxID                      string
 	Hash                      string
 	Size                      uint64
-	Version                   int32
+	Version                   uint16
 	LockTime                  uint64
 	SubnetworkID              string
 	Gas                       uint64
@@ -103,7 +103,6 @@ type TransactionVerboseOutput struct {
 
 // ScriptPubKeyResult holds data about a script public key
 type ScriptPubKeyResult struct {
-	Asm     string
 	Hex     string
 	Type    string
 	Address string

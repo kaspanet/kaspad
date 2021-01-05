@@ -47,7 +47,7 @@ func TestNewErrMissingTxOut(t *testing.T) {
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(3e93deca99d6f1b285bff219220a1e56447bdbf99dfa2ab5b794df883036a54e: ErrNoTxInputs)]"
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(bbf6e84f5a6333948063aa45ea02ff5bb0355e11e41becf20245791f61179db1: ErrNoTxInputs)]"
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")

@@ -379,6 +379,7 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 	tstConsensus := &testConsensus{
 		dagParams:                 dagParams,
 		consensus:                 consensusAsImplementation,
+		database:                  db,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
 			reachabilityManager),

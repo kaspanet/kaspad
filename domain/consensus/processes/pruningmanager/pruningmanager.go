@@ -217,6 +217,7 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	if err != nil {
 		return err
 	}
+	newTips := make([]*externalapi.DomainHash, 0, len(dagTips))
 	virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
 	if err != nil {
 		return err
@@ -232,9 +233,11 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 			if err != nil {
 				return err
 			}
+		} else {
+			newTips = append(newTips, tip)
 		}
 	}
-
+	pm.consensusStateStore.StageTips(newTips)
 	// Add P.Parents
 	parents, err := pm.dagTopologyManager.Parents(pruningPoint)
 	if err != nil {

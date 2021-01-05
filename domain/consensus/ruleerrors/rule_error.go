@@ -179,6 +179,12 @@ var (
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 
 	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
+
+	//ErrBlockVersionIsUnknown indicates that the block version is unknown.
+	ErrBlockVersionIsUnknown = newRuleError("ErrBlockVersionIsUnknown")
+
+	//ErrTransactionVersionIsUnknown indicates that the transaction version is unknown.
+	ErrTransactionVersionIsUnknown = newRuleError("ErrTransactionVersionIsUnknown")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
