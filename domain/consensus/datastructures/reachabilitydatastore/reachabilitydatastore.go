@@ -10,25 +10,33 @@ import (
 )
 
 var reachabilityDataBucket = dbkeys.MakeBucket([]byte("reachability-data"))
+var reachabilityIntervalBucket = dbkeys.MakeBucket([]byte("reachability-interval"))
 var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-reindex-root"))
 
 // reachabilityDataStore represents a store of ReachabilityData
 type reachabilityDataStore struct {
 	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
+	reachabilityIntervalStaging    map[externalapi.DomainHash]*model.ReachabilityInterval
 	reachabilityReindexRootStaging *externalapi.DomainHash
 	reachabilityDataCache          *lrucache.LRUCache
+	reachabilityIntervalCache      *lrucache.LRUCache
 	reachabilityReindexRootCache   *externalapi.DomainHash
 }
 
 // New instantiates a new ReachabilityDataStore
 func New(cacheSize int) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
-		reachabilityDataStaging: make(map[externalapi.DomainHash]model.ReachabilityData),
-		reachabilityDataCache:   lrucache.New(cacheSize),
+		reachabilityDataStaging:     make(map[externalapi.DomainHash]model.ReachabilityData),
+		reachabilityIntervalStaging: make(map[externalapi.DomainHash]*model.ReachabilityInterval),
+		reachabilityDataCache:       lrucache.New(cacheSize),
+		reachabilityIntervalCache:   lrucache.New(cacheSize),
 	}
 }
 
-// StageReachabilityData stages the given reachabilityData for the given blockHash
+func (rds *reachabilityDataStore) StageInterval(blockHash *externalapi.DomainHash, interval *model.ReachabilityInterval) {
+	rds.reachabilityIntervalStaging[*blockHash] = interval.Clone()
+}
+
 func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
 	reachabilityData model.ReachabilityData) {
 
@@ -61,6 +69,7 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 		}
 		rds.reachabilityReindexRootCache = rds.reachabilityReindexRootStaging
 	}
+
 	for hash, reachabilityData := range rds.reachabilityDataStaging {
 		reachabilityDataBytes, err := rds.serializeReachabilityData(reachabilityData)
 		if err != nil {
@@ -71,6 +80,18 @@ func (rds *reachabilityDataStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		rds.reachabilityDataCache.Add(&hash, reachabilityData)
+	}
+
+	for hash, interval := range rds.reachabilityIntervalStaging {
+		intervalBytes, err := rds.serializeInterval(interval)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(rds.reachabilityIntervalBlockHashAsKey(&hash), intervalBytes)
+		if err != nil {
+			return err
+		}
+		rds.reachabilityIntervalCache.Add(&hash, interval)
 	}
 
 	rds.Discard()
@@ -100,6 +121,29 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader,
 	}
 	rds.reachabilityDataCache.Add(blockHash, reachabilityData)
 	return reachabilityData, nil
+}
+
+func (rds *reachabilityDataStore) Interval(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	if interval, ok := rds.reachabilityIntervalStaging[*blockHash]; ok {
+		return interval, nil
+	}
+
+	if interval, ok := rds.reachabilityIntervalCache.Get(blockHash); ok {
+		return interval.(*model.ReachabilityInterval), nil
+	}
+
+	intervalBytes, err := dbContext.Get(rds.reachabilityIntervalBlockHashAsKey(blockHash))
+	if err != nil {
+		return nil, err
+	}
+
+	interval, err := rds.deserializeReachabilityInterval(intervalBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	rds.reachabilityIntervalCache.Add(blockHash, interval)
+	return interval, nil
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
@@ -137,8 +181,26 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 	return reachabilityReindexRoot, nil
 }
 
+func (rds *reachabilityDataStore) reachabilityIntervalBlockHashAsKey(hash *externalapi.DomainHash) model.DBKey {
+	return reachabilityIntervalBucket.Key(hash.ByteSlice())
+}
+
 func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return reachabilityDataBucket.Key(hash.ByteSlice())
+}
+
+func (rds *reachabilityDataStore) serializeInterval(interval *model.ReachabilityInterval) ([]byte, error) {
+	return proto.Marshal(serialization.ReachablityIntervalToDBReachablityInterval(interval))
+}
+
+func (rds *reachabilityDataStore) deserializeReachabilityInterval(intervalBytes []byte) (*model.ReachabilityInterval, error) {
+	dbReachabilityInterval := &serialization.DbReachabilityInterval{}
+	err := proto.Unmarshal(intervalBytes, dbReachabilityInterval)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBReachablityIntervalToReachablityInterval(dbReachabilityInterval), nil
 }
 
 func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData model.ReachabilityData) ([]byte, error) {

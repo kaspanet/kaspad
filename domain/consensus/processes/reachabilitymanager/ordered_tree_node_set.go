@@ -63,12 +63,9 @@ func (rt *reachabilityManager) propagateIntervals(tns orderedTreeNodeSet, interv
 	subtreeSizeMaps []map[externalapi.DomainHash]uint64) error {
 
 	for i, node := range tns {
-		err := rt.stageInterval(node, intervals[i])
-		if err != nil {
-			return err
-		}
+		rt.stageInterval(node, intervals[i])
 		subtreeSizeMap := subtreeSizeMaps[i]
-		err = rt.propagateInterval(node, subtreeSizeMap)
+		err := rt.propagateInterval(node, subtreeSizeMap)
 		if err != nil {
 			return err
 		}

@@ -17,7 +17,6 @@ func ReachablityDataToDBReachablityData(reachabilityData model.ReachabilityData)
 	return &DbReachabilityData{
 		Children:          DomainHashesToDbHashes(reachabilityData.Children()),
 		Parent:            dbParent,
-		Interval:          reachablityIntervalToDBReachablityInterval(reachabilityData.Interval()),
 		FutureCoveringSet: DomainHashesToDbHashes(reachabilityData.FutureCoveringSet()),
 	}
 }
@@ -38,12 +37,10 @@ func DBReachablityDataToReachablityData(dbReachabilityData *DbReachabilityData) 
 		}
 	}
 
-	interval := dbReachablityIntervalToReachablityInterval(dbReachabilityData.Interval)
-
 	futureCoveringSet, err := DbHashesToDomainHashes(dbReachabilityData.FutureCoveringSet)
 	if err != nil {
 		return nil, err
 	}
 
-	return reachabilitydata.New(children, parent, interval, futureCoveringSet), nil
+	return reachabilitydata.New(children, parent, futureCoveringSet), nil
 }

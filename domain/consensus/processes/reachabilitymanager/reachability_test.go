@@ -2,6 +2,8 @@ package reachabilitymanager
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,9 +13,10 @@ import (
 )
 
 type reachabilityDataStoreMock struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
-	recorder                       map[externalapi.DomainHash]struct{}
-	reachabilityReindexRootStaging *externalapi.DomainHash
+	reachabilityDataStaging         map[externalapi.DomainHash]model.ReachabilityData
+	reachabilityIntervalStaging     map[externalapi.DomainHash]*model.ReachabilityInterval
+	reachabilityDataStagingRecorder map[externalapi.DomainHash]struct{}
+	reachabilityReindexRootStaging  *externalapi.DomainHash
 }
 
 func (r *reachabilityDataStoreMock) Discard() {
@@ -24,11 +27,19 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
+func (r *reachabilityDataStoreMock) StageInterval(blockHash *externalapi.DomainHash, interval *model.ReachabilityInterval) {
+	r.reachabilityIntervalStaging[*blockHash] = interval
+}
+
+func (r *reachabilityDataStoreMock) Interval(_ model.DBReader, blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	return r.reachabilityIntervalStaging[*blockHash], nil
+}
+
 func (r *reachabilityDataStoreMock) StageReachabilityData(
 	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
 
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
-	r.recorder[*blockHash] = struct{}{}
+	r.reachabilityDataStagingRecorder[*blockHash] = struct{}{}
 }
 
 func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
@@ -55,12 +66,12 @@ func (r *reachabilityDataStoreMock) ReachabilityReindexRoot(_ model.DBReader) (*
 }
 
 func (r *reachabilityDataStoreMock) isRecorderContainsOnly(nodes ...*externalapi.DomainHash) bool {
-	if len(r.recorder) != len(nodes) {
+	if len(r.reachabilityDataStagingRecorder) != len(nodes) {
 		return false
 	}
 
 	for _, node := range nodes {
-		if _, ok := r.recorder[*node]; !ok {
+		if _, ok := r.reachabilityDataStagingRecorder[*node]; !ok {
 			return false
 		}
 	}
@@ -69,14 +80,15 @@ func (r *reachabilityDataStoreMock) isRecorderContainsOnly(nodes ...*externalapi
 }
 
 func (r *reachabilityDataStoreMock) resetRecorder() {
-	r.recorder = make(map[externalapi.DomainHash]struct{})
+	r.reachabilityDataStagingRecorder = make(map[externalapi.DomainHash]struct{})
 }
 
 func newReachabilityDataStoreMock() *reachabilityDataStoreMock {
 	return &reachabilityDataStoreMock{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReachabilityData),
-		recorder:                       make(map[externalapi.DomainHash]struct{}),
-		reachabilityReindexRootStaging: nil,
+		reachabilityDataStaging:         make(map[externalapi.DomainHash]model.ReachabilityData),
+		reachabilityDataStagingRecorder: make(map[externalapi.DomainHash]struct{}),
+		reachabilityIntervalStaging:     make(map[externalapi.DomainHash]*model.ReachabilityInterval),
+		reachabilityReindexRootStaging:  nil,
 	}
 }
 
@@ -100,16 +112,14 @@ func (th *testHelper) generateHash() *externalapi.DomainHash {
 
 func (th *testHelper) newNode() *externalapi.DomainHash {
 	node := th.generateHash()
-	th.stageData(node, newReachabilityTreeData())
+	th.stageData(node, reachabilitydata.EmptyReachabilityData())
+	th.stageInterval(node, newReachabilityInterval(1, math.MaxUint64-1))
 	return node
 }
 
 func (th *testHelper) newNodeWithInterval(interval *model.ReachabilityInterval) *externalapi.DomainHash {
 	node := th.newNode()
-	err := th.stageInterval(node, interval)
-	if err != nil {
-		th.t.Fatalf("stageInteval: %s", err)
-	}
+	th.stageInterval(node, interval)
 
 	return node
 }
@@ -163,7 +173,7 @@ func (th *testHelper) isReachabilityTreeAncestorOf(node, other *externalapi.Doma
 
 func (th *testHelper) checkIsRecorderContainsOnly(nodes ...*externalapi.DomainHash) {
 	if !th.dataStore.isRecorderContainsOnly(nodes...) {
-		th.t.Fatalf("unexpected nodes on recorder. Want: %v, got: %v", nodes, th.dataStore.recorder)
+		th.t.Fatalf("unexpected nodes on reachabilityDataStagingRecorder. Want: %v, got: %v", nodes, th.dataStore.reachabilityDataStagingRecorder)
 	}
 }
 
@@ -184,10 +194,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
 	root := helper.newNode()
-	err := helper.stageInterval(root, newReachabilityInterval(1, 100))
-	if err != nil {
-		t.Fatalf("stageInterval: %s", err)
-	}
+	helper.stageInterval(root, newReachabilityInterval(1, 100))
 
 	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
@@ -208,7 +215,7 @@ func TestAddChild(t *testing.T) {
 
 	// Expect more than just the node and its parent to be modified but not
 	// all the nodes
-	if len(helper.dataStore.recorder) <= 2 && len(helper.dataStore.recorder) >= 7 {
+	if len(helper.dataStore.reachabilityDataStagingRecorder) <= 2 && len(helper.dataStore.reachabilityDataStagingRecorder) >= 7 {
 		t.Fatalf("TestAddChild: unexpected amount of staged nodes")
 	}
 
@@ -250,10 +257,7 @@ func TestAddChild(t *testing.T) {
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
 	root = helper.newNode()
-	err = helper.stageInterval(root, newReachabilityInterval(1, 100))
-	if err != nil {
-		t.Fatalf("stageInterval: %s", err)
-	}
+	helper.stageInterval(root, newReachabilityInterval(1, 100))
 
 	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
 	childNodes := make([]*externalapi.DomainHash, 6)
@@ -273,7 +277,7 @@ func TestAddChild(t *testing.T) {
 
 	// Expect more than just the node and the root to be modified but not
 	// all the nodes
-	if len(helper.dataStore.recorder) <= 2 && len(helper.dataStore.recorder) >= 7 {
+	if len(helper.dataStore.reachabilityDataStagingRecorder) <= 2 && len(helper.dataStore.reachabilityDataStagingRecorder) >= 7 {
 		t.Fatalf("TestAddChild: unexpected amount of modifiedNodes.")
 	}
 

@@ -3,6 +3,8 @@ package reachabilitymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+	"math"
 )
 
 // reachabilityManager maintains a structure that allows to answer
@@ -33,8 +35,9 @@ func New(
 // AddBlock adds the block with the given blockHash into the reachability tree.
 func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
 	// Allocate a new reachability data
-	newReachabilityData := newReachabilityTreeData()
+	newReachabilityData := reachabilitydata.EmptyReachabilityData()
 	rt.stageData(blockHash, newReachabilityData)
+	rt.stageInterval(blockHash, newReachabilityInterval(1, math.MaxUint64-1))
 
 	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, blockHash)
 	if err != nil {

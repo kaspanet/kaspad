@@ -31,7 +31,6 @@ import (
 type ReachabilityData interface {
 	Children() []*externalapi.DomainHash
 	Parent() *externalapi.DomainHash
-	Interval() *ReachabilityInterval
 	FutureCoveringSet() FutureCoveringTreeNodeSet
 	CloneMutable() MutableReachabilityData
 	Equal(other ReachabilityData) bool
@@ -43,7 +42,6 @@ type MutableReachabilityData interface {
 
 	AddChild(child *externalapi.DomainHash)
 	SetParent(parent *externalapi.DomainHash)
-	SetInterval(interval *ReachabilityInterval)
 	SetFutureCoveringSet(futureCoveringSet FutureCoveringTreeNodeSet)
 }
 

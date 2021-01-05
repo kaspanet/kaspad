@@ -31,12 +31,12 @@ func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHa
 }
 
 func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	interval, err := rt.reachabilityDataStore.Interval(rt.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	return data.Interval(), nil
+	return interval, nil
 }
 
 func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

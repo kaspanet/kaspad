@@ -8,7 +8,6 @@ import (
 type reachabilityData struct {
 	children          []*externalapi.DomainHash
 	parent            *externalapi.DomainHash
-	interval          *model.ReachabilityInterval
 	futureCoveringSet model.FutureCoveringTreeNodeSet
 }
 
@@ -17,7 +16,6 @@ type reachabilityData struct {
 var _ = &reachabilityData{
 	[]*externalapi.DomainHash{},
 	&externalapi.DomainHash{},
-	&model.ReachabilityInterval{},
 	model.FutureCoveringTreeNodeSet{},
 }
 
@@ -29,13 +27,11 @@ func EmptyReachabilityData() model.MutableReachabilityData {
 // New constructs a ReachabilityData object filled with given fields
 func New(children []*externalapi.DomainHash,
 	parent *externalapi.DomainHash,
-	interval *model.ReachabilityInterval,
 	futureCoveringSet model.FutureCoveringTreeNodeSet) model.ReachabilityData {
 
 	return &reachabilityData{
 		children:          children,
 		parent:            parent,
-		interval:          interval,
 		futureCoveringSet: futureCoveringSet,
 	}
 }
@@ -48,10 +44,6 @@ func (rd *reachabilityData) Parent() *externalapi.DomainHash {
 	return rd.parent
 }
 
-func (rd *reachabilityData) Interval() *model.ReachabilityInterval {
-	return rd.interval
-}
-
 func (rd *reachabilityData) FutureCoveringSet() model.FutureCoveringTreeNodeSet {
 	return rd.futureCoveringSet
 }
@@ -60,7 +52,6 @@ func (rd *reachabilityData) CloneMutable() model.MutableReachabilityData {
 	return &reachabilityData{
 		children:          externalapi.CloneHashes(rd.children),
 		parent:            rd.parent,
-		interval:          rd.interval.Clone(),
 		futureCoveringSet: rd.futureCoveringSet.Clone(),
 	}
 }
@@ -71,10 +62,6 @@ func (rd *reachabilityData) AddChild(child *externalapi.DomainHash) {
 
 func (rd *reachabilityData) SetParent(parent *externalapi.DomainHash) {
 	rd.parent = parent
-}
-
-func (rd *reachabilityData) SetInterval(interval *model.ReachabilityInterval) {
-	rd.interval = interval
 }
 
 func (rd *reachabilityData) SetFutureCoveringSet(futureCoveringSet model.FutureCoveringTreeNodeSet) {
@@ -96,10 +83,6 @@ func (rd *reachabilityData) Equal(other model.ReachabilityData) bool {
 	}
 
 	if !rd.parent.Equal(otherReachabilityData.Parent()) {
-		return false
-	}
-
-	if !rd.interval.Equal(otherReachabilityData.Interval()) {
 		return false
 	}
 

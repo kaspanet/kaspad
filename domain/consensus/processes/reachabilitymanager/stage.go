@@ -48,13 +48,6 @@ func (rt *reachabilityManager) stageParent(node, parent *externalapi.DomainHash)
 	return nil
 }
 
-func (rt *reachabilityManager) stageInterval(node *externalapi.DomainHash, interval *model.ReachabilityInterval) error {
-	nodeData, err := rt.reachabilityDataForInsertion(node)
-	if err != nil {
-		return err
-	}
-	nodeData.SetInterval(interval)
-	rt.stageData(node, nodeData)
-
-	return nil
+func (rt *reachabilityManager) stageInterval(node *externalapi.DomainHash, interval *model.ReachabilityInterval) {
+	rt.reachabilityDataStore.StageInterval(node, interval)
 }

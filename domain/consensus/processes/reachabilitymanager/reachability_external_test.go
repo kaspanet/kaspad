@@ -77,11 +77,11 @@ func TestUpdateReindexRoot(t *testing.T) {
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), hash)
+			interval, err := tc.ReachabilityDataStore().Interval(tc.DatabaseContext(), hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.Interval().End - data.Interval().Start + 1
+			return interval.End - interval.Start + 1
 		}
 
 		// Add two blocks on top of the genesis block
@@ -167,11 +167,11 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), hash)
+			interval, err := tc.ReachabilityDataStore().Interval(tc.DatabaseContext(), hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.Interval().End - data.Interval().Start + 1
+			return interval.End - interval.Start + 1
 		}
 
 		// Add three children to the genesis: leftBlock, centerBlock, rightBlock
