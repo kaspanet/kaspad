@@ -181,7 +181,7 @@ func TestGHOSTDAG(t *testing.T) {
 func hashesToStrings(arr []*externalapi.DomainHash) []string {
 	var strArr = make([]string, len(arr))
 	for i, hash := range arr {
-		strArr[i] = hash.String()
+		strArr[i] = string(hash.ByteSlice())
 	}
 	return strArr
 }
