@@ -38,7 +38,7 @@ const (
 	maxTxInPerMessage = (MaxMessagePayload / minTxInPayload) + 1
 
 	// MinTxOutPayload is the minimum payload size for a transaction output.
-	// Value 8 bytes + version 2 bytes + Varint for ScriptPubKey length 1 byte.
+	// Value 8 bytes + version 2 bytes + Varint for ScriptPublicKey length 1 byte.
 	MinTxOutPayload = 11
 
 	// maxTxOutPerMessage is the maximum number of transactions outputs that
@@ -217,7 +217,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 
 	// Deep copy the old TxOut data.
 	for _, oldTxOut := range msg.TxOut {
-		// Deep copy the old ScriptPubKey
+		// Deep copy the old ScriptPublicKey
 		var newScript externalapi.ScriptPublicKey
 		oldScript := oldTxOut.ScriptPubKey
 		oldScriptLen := len(oldScript.Script)

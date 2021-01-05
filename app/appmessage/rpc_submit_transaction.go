@@ -70,8 +70,8 @@ type RPCScriptPublicKey struct {
 // RPCTransactionOutput is a kaspad transaction output representation
 // meant to be used over RPC
 type RPCTransactionOutput struct {
-	Amount       uint64
-	ScriptPubKey *RPCScriptPublicKey
+	Amount          uint64
+	ScriptPublicKey *RPCScriptPublicKey
 }
 
 // RPCOutpoint is a kaspad outpoint representation meant to be used

@@ -66,8 +66,8 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 			return nil, err
 		}
 		outputs[i] = &appmessage.RPCTransactionOutput{
-			Amount:       output.Amount,
-			ScriptPubKey: scriptPubKey,
+			Amount:          output.Amount,
+			ScriptPublicKey: scriptPubKey,
 		}
 	}
 
@@ -120,7 +120,7 @@ func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) 
 	for i, output := range transaction.Outputs {
 		outputs[i] = &RpcTransactionOutput{
 			Amount:       output.Amount,
-			ScriptPubKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(output.ScriptPubKey),
+			ScriptPubKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(output.ScriptPublicKey),
 		}
 	}
 	*x = RpcTransaction{

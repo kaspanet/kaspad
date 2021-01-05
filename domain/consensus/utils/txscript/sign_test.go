@@ -743,7 +743,7 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "short ScriptPubKey",
+		name: "short ScriptPublicKey",
 		inputs: []tstInput{
 			{
 				txout: &externalapi.DomainTransactionOutput{
