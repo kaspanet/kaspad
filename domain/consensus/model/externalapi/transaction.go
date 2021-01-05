@@ -9,7 +9,7 @@ import (
 
 // DomainTransaction represents a Kaspa transaction
 type DomainTransaction struct {
-	Version      int32
+	Version      uint16
 	Inputs       []*DomainTransactionInput
 	Outputs      []*DomainTransactionOutput
 	LockTime     uint64
@@ -223,15 +223,21 @@ func NewDomainOutpoint(id *DomainTransactionID, index uint32) *DomainOutpoint {
 	}
 }
 
+// ScriptPublicKey represents a Kaspad ScriptPublicKey
+type ScriptPublicKey struct {
+	Script  []byte
+	Version uint16
+}
+
 // DomainTransactionOutput represents a Kaspad transaction output
 type DomainTransactionOutput struct {
 	Value           uint64
-	ScriptPublicKey []byte
+	ScriptPublicKey *ScriptPublicKey
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = DomainTransactionOutput{0, []byte{}}
+var _ = DomainTransactionOutput{0, &ScriptPublicKey{Script: []byte{}, Version: 0}}
 
 // Equal returns whether output equals to other
 func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) bool {
@@ -243,7 +249,7 @@ func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) boo
 		return false
 	}
 
-	if !bytes.Equal(output.ScriptPublicKey, other.ScriptPublicKey) {
+	if !bytes.Equal(output.ScriptPublicKey.Script, other.ScriptPublicKey.Script) {
 		return false
 	}
 
@@ -252,8 +258,10 @@ func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) boo
 
 // Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
-	scriptPublicKeyClone := make([]byte, len(output.ScriptPublicKey))
-	copy(scriptPublicKeyClone, output.ScriptPublicKey)
+	scriptPublicKeyClone := &ScriptPublicKey{
+		Script:  make([]byte, len(output.ScriptPublicKey.Script)),
+		Version: output.ScriptPublicKey.Version}
+	copy(scriptPublicKeyClone.Script, output.ScriptPublicKey.Script)
 
 	return &DomainTransactionOutput{
 		Value:           output.Value,

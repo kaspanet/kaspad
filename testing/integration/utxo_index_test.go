@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -132,7 +133,22 @@ func TestUTXOIndex(t *testing.T) {
 			t.Fatalf("Missing entry in UTXOs response: %s:%d",
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index)
 		}
-		if *notificationEntry.UTXOEntry != *foundResponseEntry.UTXOEntry {
+		if notificationEntry.UTXOEntry.Amount != foundResponseEntry.UTXOEntry.Amount {
+			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
+				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
+				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
+		}
+		if notificationEntry.UTXOEntry.BlockBlueScore != foundResponseEntry.UTXOEntry.BlockBlueScore {
+			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
+				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
+				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
+		}
+		if notificationEntry.UTXOEntry.IsCoinbase != foundResponseEntry.UTXOEntry.IsCoinbase {
+			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
+				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
+				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
+		}
+		if *notificationEntry.UTXOEntry.ScriptPublicKey != *foundResponseEntry.UTXOEntry.ScriptPublicKey {
 			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
@@ -164,12 +180,12 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 
 	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(entry.UTXOEntry.Amount-1000, toScript)}
 
-	fromScript, err := hex.DecodeString(entry.UTXOEntry.ScriptPubKey)
+	fromScript, err := hex.DecodeString(entry.UTXOEntry.ScriptPublicKey.Script)
 	if err != nil {
 		t.Fatalf("Error decoding script public key: %s", err)
 	}
 
-	msgTx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
+	msgTx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(miningAddress1PrivateKey)
 	if err != nil {
@@ -181,7 +197,10 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 	}
 
 	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(msgTx), 0,
-		fromScript, txscript.SigHashAll, privateKey)
+		&externalapi.ScriptPublicKey{
+			Script:  fromScript,
+			Version: 0,
+		}, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

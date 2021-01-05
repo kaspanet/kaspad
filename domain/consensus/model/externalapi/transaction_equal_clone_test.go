@@ -71,11 +71,11 @@ func initTestBaseTransaction() *externalapi.DomainTransaction {
 			*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 		[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			[]byte{1, 2}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 			{uint64(0xFFFF),
-				[]byte{1, 3}}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 		1,
 		externalapi.DomainSubnetworkID{0x01},
 		1,
@@ -103,11 +103,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 			[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 2}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 				{uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			1,
 			externalapi.DomainSubnetworkID{0x01},
 			1,
@@ -131,11 +131,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 			[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 3}}, //Changed
+				&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}, //Changed
 				{uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			1,
 			externalapi.DomainSubnetworkID{0x01},
 			1,
@@ -159,11 +159,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 			[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 2}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 				{uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			1,
 			externalapi.DomainSubnetworkID{0x01, 0x02}, //Changed
 			1,
@@ -187,11 +187,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 			[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 2}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 				{uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			1,
 			externalapi.DomainSubnetworkID{0x01},
 			1,
@@ -215,10 +215,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 				*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 				[]byte{1, 2, 3},
 				uint64(0xFFFFFFFF),
-				utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+				utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 			[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 2}}, {uint64(0xFFFF),
-				[]byte{1, 3}}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+				&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 			1,
 			externalapi.DomainSubnetworkID{0x01},
 			1,
@@ -244,11 +244,12 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
+
 				externalapi.DomainSubnetworkID{0x01},
 				1,
 				*externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -272,11 +273,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 					{uint64(0xFFFF),
-						[]byte{1, 3}}},
+						&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -300,10 +301,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -327,10 +328,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -354,10 +355,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				2, //Changed
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -381,15 +382,15 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)},
 					{externalapi.DomainOutpoint{
 						*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 						[]byte{1, 2, 3},
 						uint64(0xFFFFFFFF),
-						utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+						utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -413,11 +414,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}, {uint64(0xFFFFF),
-					[]byte{1, 2, 3}}}, //changed Outputs
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}, {uint64(0xFFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2, 3}, Version: 0}}}, //changed Outputs
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -441,10 +442,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -465,10 +466,10 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFF0), // Changed sequence
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}}, {uint64(0xFFFF),
-					[]byte{1, 3}}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+					&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				1,
@@ -493,11 +494,11 @@ func initTestTransactionToCompare() []*transactionToCompare {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)}},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)}},
 				[]*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-					[]byte{1, 2}},
+					&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}},
 					{uint64(0xFFFF),
-						[]byte{1, 3}}},
+						&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
 				1,
 				externalapi.DomainSubnetworkID{0x01},
 				2, // Changed
@@ -529,10 +530,10 @@ func initTestDomainTransactionForClone() []*externalapi.DomainTransaction {
 					*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 					[]byte{1, 2, 3},
 					uint64(0xFFFFFFFF),
-					utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2)},
+					utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2)},
 			},
 			Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-				[]byte{1, 2}}},
+				&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}},
 			LockTime:     1,
 			SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 			Gas:          1,
@@ -688,7 +689,7 @@ func initTestBaseDomainTransactionInput() *externalapi.DomainTransactionInput {
 		externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 		[]byte{1, 2, 3},
 		uint64(0xFFFFFFFF),
-		utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+		utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 	}
 	return basetxInput
 }
@@ -699,7 +700,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		},
 		expectedResult: true,
 	}, {
@@ -707,7 +708,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, false, 2), // Changed
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, false, 2), // Changed
 		},
 		expectsPanic: true,
 	}, {
@@ -723,7 +724,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFF0), // Changed
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		},
 		expectedResult: false,
 	}, {
@@ -731,7 +732,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3, 4}, // Changed
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		},
 		expectedResult: false,
 	}, {
@@ -739,7 +740,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		},
 		expectedResult: false,
 	}, {
@@ -747,7 +748,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(2 /* Changed */, []byte{0, 1, 2, 3}, true, 2), // Changed
+			utxo.NewUTXOEntry(2 /* Changed */, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2), // Changed
 		},
 		expectedResult: false,
 	}, {
@@ -755,7 +756,7 @@ func initTestDomainTxInputToCompare() []*transactionInputToCompare {
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01, 0x02}), 0xFFFF}, // Changed
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(3 /* Changed */, []byte{0, 1, 2, 3}, true, 3), // Changed
+			utxo.NewUTXOEntry(3 /* Changed */, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 3), // Changed
 		},
 		expectedResult: false,
 	}, {
@@ -772,19 +773,19 @@ func initTestDomainTransactionInputForClone() []*externalapi.DomainTransactionIn
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		}, {
 
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFFF),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		}, {
 
 			externalapi.DomainOutpoint{*externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}), 0xFFFF},
 			[]byte{1, 2, 3},
 			uint64(0xFFFFFFF0),
-			utxo.NewUTXOEntry(1, []byte{0, 1, 2, 3}, true, 2),
+			utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{Script: []byte{0, 1, 2, 3}, Version: 0}, true, 2),
 		}}
 	return txInput
 }
@@ -792,7 +793,7 @@ func initTestDomainTransactionInputForClone() []*externalapi.DomainTransactionIn
 func initTestBaseDomainTransactionOutput() *externalapi.DomainTransactionOutput {
 	basetxOutput := &externalapi.DomainTransactionOutput{
 		0xFFFFFFFF,
-		[]byte{0xFF, 0xFF},
+		&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0},
 	}
 	return basetxOutput
 }
@@ -801,10 +802,10 @@ func initTestDomainTransactionOutputForClone() []*externalapi.DomainTransactionO
 	txInput := []*externalapi.DomainTransactionOutput{
 		{
 			0xFFFFFFFF,
-			[]byte{0xF0, 0xFF},
+			&externalapi.ScriptPublicKey{Script: []byte{0xF0, 0xFF}, Version: 0},
 		}, {
 			0xFFFFFFF1,
-			[]byte{0xFF, 0xFF},
+			&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0},
 		}}
 	return txInput
 }
@@ -816,18 +817,18 @@ func initTestDomainTransactionOutputForEqual() []testDomainTransactionOutputStru
 			transactionOutputToCompareTo: []*transactionOutputToCompare{{
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFFF,
-					[]byte{0xFF, 0xFF}},
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0}},
 				expectedResult: true,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFFF,
-					[]byte{0xF0, 0xFF}, // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{0xF0, 0xFF}, Version: 0}, // Changed
 				},
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFF0, // Changed
-					[]byte{0xFF, 0xFF},
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0},
 				},
 				expectedResult: false,
 			}, {
@@ -835,14 +836,13 @@ func initTestDomainTransactionOutputForEqual() []testDomainTransactionOutputStru
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
-					0xFFFFFFF0,               // Changed
-					[]byte{0xFF, 0xFF, 0x01}, // Changed
-				},
+					0xFFFFFFF0, // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF, 0x01}, Version: 0}}, // Changed
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFF0, // Changed
-					[]byte{},   // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{}, Version: 0}, // Changed
 				},
 				expectedResult: false,
 			}},
@@ -855,30 +855,30 @@ func initTestDomainTransactionOutputForEqual() []testDomainTransactionOutputStru
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFFF,
-					[]byte{0xFF, 0xFF}},
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0}},
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFFF,
-					[]byte{0xF0, 0xFF}, // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{0xF0, 0xFF}, Version: 0}, // Changed
 				},
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFF0, // Changed
-					[]byte{0xFF, 0xFF},
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF}, Version: 0},
 				},
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFF0,
-					[]byte{0xFF, 0xFF, 0x01}, // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{0xFF, 0xFF, 0x01}, Version: 0}, // Changed
 				},
 				expectedResult: false,
 			}, {
 				tx: &externalapi.DomainTransactionOutput{
 					0xFFFFFFF0,
-					[]byte{}, // Changed
+					&externalapi.ScriptPublicKey{Script: []byte{}, Version: 0}, // Changed
 				},
 				expectedResult: false,
 			}},

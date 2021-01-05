@@ -83,7 +83,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 
 	bb.nonceCounter++
 	return blockheader.NewImmutableBlockHeader(
-		constants.BlockVersion,
+		constants.MaxBlockVersion,
 		parentHashes,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,

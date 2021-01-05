@@ -30,7 +30,7 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 		Value:           txToSpend.Outputs[0].Value - 1,
 	}
 	return &externalapi.DomainTransaction{
-		Version: constants.TransactionVersion,
+		Version: constants.MaxTransactionVersion,
 		Inputs:  []*externalapi.DomainTransactionInput{input},
 		Outputs: []*externalapi.DomainTransactionOutput{output},
 		Payload: []byte{},

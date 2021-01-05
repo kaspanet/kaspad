@@ -150,14 +150,14 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 
 	for i := uint32(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &externalapi.DomainTransactionOutput{
-			ScriptPublicKey: []byte{},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{}, Version: 0},
 			Value:           outputValue,
 		})
 	}
 
 	if subnetworkData != nil {
-		return transactionhelper.NewSubnetworkTransaction(constants.TransactionVersion, txIns, txOuts, &subnetworkData.subnetworkID, subnetworkData.gas, subnetworkData.payload)
+		return transactionhelper.NewSubnetworkTransaction(constants.MaxTransactionVersion, txIns, txOuts, &subnetworkData.subnetworkID, subnetworkData.gas, subnetworkData.payload)
 	}
 
-	return transactionhelper.NewNativeTransaction(constants.TransactionVersion, txIns, txOuts)
+	return transactionhelper.NewNativeTransaction(constants.MaxTransactionVersion, txIns, txOuts)
 }

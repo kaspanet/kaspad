@@ -3,7 +3,7 @@ package blockheader
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type blockHeader struct {
-	version              int32
+	version              uint16
 	parentHashes         []*externalapi.DomainHash
 	hashMerkleRoot       *externalapi.DomainHash
 	acceptedIDMerkleRoot *externalapi.DomainHash
@@ -25,7 +25,7 @@ func (bh *blockHeader) SetTimeInMilliseconds(timeInMilliseconds int64) {
 	bh.timeInMilliseconds = timeInMilliseconds
 }
 
-func (bh *blockHeader) Version() int32 {
+func (bh *blockHeader) Version() uint16 {
 	return bh.version
 }
 
@@ -124,7 +124,7 @@ func (bh *blockHeader) ToMutable() externalapi.MutableBlockHeader {
 
 // NewImmutableBlockHeader returns a new immutable header
 func NewImmutableBlockHeader(
-	version int32,
+	version uint16,
 	parentHashes []*externalapi.DomainHash,
 	hashMerkleRoot *externalapi.DomainHash,
 	acceptedIDMerkleRoot *externalapi.DomainHash,

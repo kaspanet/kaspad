@@ -7,6 +7,7 @@ package txscript_test
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -34,9 +35,9 @@ func ExamplePayToAddrScript() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("Script Hex: %x\n", script)
+	fmt.Printf("Script Hex: %x\n", script.Script)
 
-	disasm, err := txscript.DisasmString(script)
+	disasm, err := txscript.DisasmString(script.Version, script.Script)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -61,7 +62,10 @@ func ExampleExtractScriptPubKeyAddress() {
 
 	// Extract and print details from the script.
 	scriptClass, address, err := txscript.ExtractScriptPubKeyAddress(
-		script, &dagconfig.MainnetParams)
+		&externalapi.ScriptPublicKey{
+			Script:  script,
+			Version: 0,
+		}, &dagconfig.MainnetParams)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -30,9 +30,12 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
+		if protoOutput.ScriptPublicKey.Version > 0xFFFF {
+			return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")
+		}
 		outputs[i] = &appmessage.TxOut{
 			Value:        protoOutput.Value,
-			ScriptPubKey: protoOutput.ScriptPubKey,
+			ScriptPubKey: &externalapi.ScriptPublicKey{protoOutput.ScriptPublicKey.Script, uint16(protoOutput.ScriptPublicKey.Version)},
 		}
 	}
 
@@ -52,9 +55,11 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 			return nil, err
 		}
 	}
-
+	if x.Version > 0xffff {
+		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
+	}
 	return &appmessage.MsgTx{
-		Version:      x.Version,
+		Version:      uint16(x.Version),
 		TxIn:         inputs,
 		TxOut:        outputs,
 		LockTime:     x.LockTime,
@@ -81,13 +86,16 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	protoOutputs := make([]*TransactionOutput, len(msgTx.TxOut))
 	for i, output := range msgTx.TxOut {
 		protoOutputs[i] = &TransactionOutput{
-			Value:        output.Value,
-			ScriptPubKey: output.ScriptPubKey,
+			Value: output.Value,
+			ScriptPublicKey: &ScriptPublicKey{
+				Script:  output.ScriptPubKey.Script,
+				Version: uint32(output.ScriptPubKey.Version),
+			},
 		}
 	}
 
 	*x = TransactionMessage{
-		Version:      msgTx.Version,
+		Version:      uint32(msgTx.Version),
 		Inputs:       protoInputs,
 		Outputs:      protoOutputs,
 		LockTime:     msgTx.LockTime,
