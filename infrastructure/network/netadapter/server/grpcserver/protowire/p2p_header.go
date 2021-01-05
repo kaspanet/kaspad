@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) {
@@ -31,7 +32,7 @@ func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
-	if x.Version > 0xffff {
+	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
 	return &appmessage.MsgBlockHeader{

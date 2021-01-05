@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/pkg/errors"
+	"math"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader
@@ -38,7 +39,7 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 	if err != nil {
 		return nil, err
 	}
-	if dbBlockHeader.Version > 0xffff {
+	if dbBlockHeader.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
 

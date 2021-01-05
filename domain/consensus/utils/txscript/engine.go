@@ -39,7 +39,7 @@ const (
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
-	isKnownVersion  bool
+	scriptVersion   uint16
 	scripts         [][]parsedOpcode
 	scriptIdx       int
 	scriptOff       int

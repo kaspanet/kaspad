@@ -3,6 +3,7 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
@@ -72,7 +73,7 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
 
-	if x.Version > 0xffff {
+	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
 
@@ -154,7 +155,7 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 			ScriptPubKey: scriptPubKey,
 		}
 	}
-	if x.Version > 0xffff {
+	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
 	}
 	return &appmessage.TransactionVerboseData{
