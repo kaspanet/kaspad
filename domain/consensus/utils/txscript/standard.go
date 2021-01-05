@@ -265,7 +265,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
 func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
-	if scriptPubKey.Version > constants.MaximumScriptPublicKeyVersion {
+	if scriptPubKey.Version > constants.ScriptPublicKeyVersion {
 		return NonStandardTy, nil, errors.Errorf("Script version is unkown.")
 	}
 	// No valid address if the script doesn't parse.

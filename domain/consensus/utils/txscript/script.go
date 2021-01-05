@@ -206,9 +206,9 @@ func unparseScript(pops []parsedOpcode) ([]byte, error) {
 // script up to the point the failure occurred along with the string '[error]'
 // appended. In addition, the reason the script failed to parse is returned
 // if the caller wants more information about the failure.
-func DisasmString(version uint32, buf []byte) (string, error) {
+func DisasmString(version uint16, buf []byte) (string, error) {
 	// currently, there is only one version exists so it equals to the max version.
-	if version == constants.MaximumScriptPublicKeyVersion {
+	if version == constants.ScriptPublicKeyVersion {
 		var disbuf bytes.Buffer
 		opcodes, err := parseScript(buf)
 		for _, pop := range opcodes {
@@ -288,7 +288,7 @@ func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransact
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
 func CalcSignatureHash(script *externalapi.ScriptPublicKey, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
-	if script.Version > constants.MaximumScriptPublicKeyVersion {
+	if script.Version > constants.ScriptPublicKeyVersion {
 		return nil, errors.Errorf("Script version is unkown.")
 	}
 	parsedScript, err := parseScript(script.Script)

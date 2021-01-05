@@ -5,10 +5,13 @@ import "math"
 const (
 	// BlockVersion represents the current version of blocks mined and the maximum block version
 	// this node is able to validate
-	BlockVersion = 0
+	BlockVersion uint16 = 0
 
 	// TransactionVersion is the current latest supported transaction version.
-	TransactionVersion = 0
+	TransactionVersion uint16 = 0
+
+	// ScriptPublicKeyVersion is the current latest supported public key script version.
+	ScriptPublicKeyVersion uint16 = 0
 
 	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).
 	SompiPerKaspa = 100_000_000
@@ -40,7 +43,4 @@ const (
 	// therefore the granularity of relative time locks in 524288 or 2^19
 	// seconds. Enforced relative lock times are multiples of 524288 milliseconds.
 	SequenceLockTimeGranularity = 19
-
-	// MaximumScriptPublicKeyVersion is the higher known ScriptPublicKey version.
-	MaximumScriptPublicKeyVersion = 0
 )
