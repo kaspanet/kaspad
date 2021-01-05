@@ -315,7 +315,7 @@ func (vm *Engine) Step() (done bool, err error) {
 // Execute will execute all scripts in the script engine and return either nil
 // for successful validation or an error if one occurred.
 func (vm *Engine) Execute() (err error) {
-	if !vm.isKnownVersion {
+	if vm.scriptVersion > constants.MaxScriptPublicKeyVersion {
 		log.Tracef("The version of the scriptPublicKey is higher than the known version - the Execute function returns true.")
 		return nil
 	}
@@ -454,13 +454,11 @@ func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.Domain
 		return nil, scriptError(ErrEvalFalse,
 			"false stack entry at end of script execution")
 	}
-	vm := Engine{flags: flags, sigCache: sigCache}
+	vm := Engine{scriptVersion: scriptPubKey.Version, flags: flags, sigCache: sigCache}
 
-	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
-		vm.isKnownVersion = false
+	if vm.scriptVersion > constants.MaxScriptPublicKeyVersion {
 		return &vm, nil
 	}
-	vm.isKnownVersion = true
 	parsedScriptSig, err := parseScriptAndVerifySize(scriptSig)
 	if err != nil {
 		return nil, err
