@@ -22,8 +22,6 @@ type txSubnetworkData struct {
 	payload      []byte
 }
 
-const curVersion = 0
-
 func TestValidateTransactionInIsolation(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
@@ -152,7 +150,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 
 	for i := uint32(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &externalapi.DomainTransactionOutput{
-			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{}, Version: curVersion},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{}, Version: 0},
 			Value:           outputValue,
 		})
 	}
