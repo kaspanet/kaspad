@@ -123,7 +123,6 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 
 	scriptPubKeyScript := make([]byte, scriptPubKeyLen)
 	_, err = io.ReadFull(r, scriptPubKeyScript)
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
