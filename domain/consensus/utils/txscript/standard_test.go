@@ -18,8 +18,8 @@ import (
 // resulting bytes. It panics if an error occurs. This is only used in the
 // tests as a helper since the only way it can fail is if there is an error in
 // the test source code.
-func mustParseShortForm(script string) []byte {
-	s, err := parseShortForm(script)
+func mustParseShortForm(script string, version uint16) []byte {
+	s, err := parseShortForm(script, version)
 	if err != nil {
 		panic("invalid short form script in test source: err " +
 			err.Error() + ", script: " + script)
@@ -246,8 +246,8 @@ func TestCalcScriptInfo(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		sigScript := mustParseShortForm(test.sigScript)
-		scriptPubKey := mustParseShortForm(test.scriptPubKey)
+		sigScript := mustParseShortForm(test.sigScript, 0)
+		scriptPubKey := mustParseShortForm(test.scriptPubKey, 0)
 
 		si, err := CalcScriptInfo(sigScript, scriptPubKey, test.isP2SH)
 		if e := checkScriptError(err, test.scriptInfoErr); e != nil {
@@ -369,8 +369,8 @@ func TestPayToAddrScript(t *testing.T) {
 			scriptPublicKeyVersion = scriptPublicKey.Version
 		}
 
-		expectedScript := mustParseShortForm(test.expectedScript)
 		expectedVersion := test.expectedVersion
+		expectedScript := mustParseShortForm(test.expectedScript, test.expectedVersion)
 		if !bytes.Equal(scriptPublicKeyScript, expectedScript) {
 			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
 				i, scriptPublicKey, expectedScript)
@@ -492,7 +492,7 @@ func TestScriptClass(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		class := GetScriptClass(script)
 		if class != test.class {
 			t.Errorf("%s: expected %s got %s (script %x)", test.name,

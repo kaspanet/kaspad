@@ -3706,7 +3706,7 @@ func TestPushedData(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		data, err := PushedData(script)
 		if test.valid && err != nil {
 			t.Errorf("TestPushedData failed test #%d: %v\n", i, err)
@@ -3790,11 +3790,11 @@ func TestGetPreciseSigOps(t *testing.T) {
 	}{
 		{
 			name:      "scriptSig doesn't parse",
-			scriptSig: mustParseShortForm("PUSHDATA1 0x02"),
+			scriptSig: mustParseShortForm("PUSHDATA1 0x02", 0),
 		},
 		{
 			name:      "scriptSig isn't push only",
-			scriptSig: mustParseShortForm("1 DUP"),
+			scriptSig: mustParseShortForm("1 DUP", 0),
 			nSigOps:   0,
 		},
 		{
@@ -3805,20 +3805,20 @@ func TestGetPreciseSigOps(t *testing.T) {
 		{
 			name: "No script at the end",
 			// No script at end but still push only.
-			scriptSig: mustParseShortForm("1 1"),
+			scriptSig: mustParseShortForm("1 1", 0),
 			nSigOps:   0,
 		},
 		{
 			name:      "pushed script doesn't parse",
-			scriptSig: mustParseShortForm("DATA_2 PUSHDATA1 0x02"),
+			scriptSig: mustParseShortForm("DATA_2 PUSHDATA1 0x02", 0),
 		},
 	}
 
 	// The signature in the p2sh script is nonsensical for the tests since
 	// this script will never be executed. What matters is that it matches
 	// the right pattern.
-	scriptOnly := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
-		"27f564529c57197f9ae88 EQUAL")
+	scriptOnly := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0"+
+		"27f564529c57197f9ae88 EQUAL", 0)
 	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
 	for _, test := range tests {
 		count := GetPreciseSigOpCount(test.scriptSig, scriptPubKey, true)
@@ -3836,7 +3836,7 @@ func TestIsPayToScriptHash(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := &externalapi.ScriptPublicKey{mustParseShortForm(test.script), 0}
+		script := &externalapi.ScriptPublicKey{mustParseShortForm(test.script, 0), 0}
 		shouldBe := (test.class == ScriptHashTy)
 		p2sh := IsPayToScriptHash(script)
 		if p2sh != shouldBe {
@@ -3870,7 +3870,7 @@ func TestHasCanonicalPushes(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		pops, err := parseScript(script)
 		if err != nil {
 			if test.expected {
@@ -3902,20 +3902,20 @@ func TestIsPushOnlyScript(t *testing.T) {
 	}{
 		{
 			name: "does not parse",
-			script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130" +
-				"b7105cd6a828e03909a67962e0ea1f61d"),
+			script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130"+
+				"b7105cd6a828e03909a67962e0ea1f61d", 0),
 			expectedResult: false,
 			shouldFail:     true,
 		},
 		{
 			name:           "non push only script",
-			script:         mustParseShortForm("0x515293"), //OP_1 OP_2 OP_ADD
+			script:         mustParseShortForm("0x515293", 0), //OP_1 OP_2 OP_ADD
 			expectedResult: false,
 			shouldFail:     false,
 		},
 		{
 			name:           "push only script",
-			script:         mustParseShortForm("0x5152"), //OP_1 OP_2
+			script:         mustParseShortForm("0x5152", 0), //OP_1 OP_2
 			expectedResult: true,
 			shouldFail:     false,
 		},
