@@ -166,7 +166,7 @@ func (csm *consensusStateManager) mergeSetIncrease(
 
 	for queue.Len() > 0 {
 		current := queue.Pop()
-		log.Debugf("Attempting to increment the merge set size increase for block %s", current)
+		log.Tracef("Attempting to increment the merge set size increase for block %s", current)
 
 		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(
 			current, selectedVirtualParents.ToSlice())
@@ -174,7 +174,7 @@ func (csm *consensusStateManager) mergeSetIncrease(
 			return 0, err
 		}
 		if isInPastOfSelectedVirtualParents {
-			log.Debugf("Skipping block %s because it's in the past of one "+
+			log.Tracef("Skipping block %s because it's in the past of one "+
 				"(or more) of the selected virtual parents", current)
 			continue
 		}
