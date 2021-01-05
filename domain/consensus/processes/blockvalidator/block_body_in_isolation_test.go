@@ -119,8 +119,6 @@ func TestCheckBlockSanity(t *testing.T) {
 	})
 }
 
-const version = 0
-
 var unOrderedParentsBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0x00000000,
@@ -182,7 +180,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 					Value: 0x12a05f200, // 5000000000
 					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x51,
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -246,7 +244,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
@@ -259,7 +257,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -315,7 +313,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
@@ -328,7 +326,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -385,7 +383,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -454,7 +452,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -548,7 +546,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
@@ -561,7 +559,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -617,7 +615,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
@@ -630,7 +628,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -687,7 +685,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -761,7 +759,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -856,7 +854,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
@@ -869,7 +867,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -927,7 +925,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
@@ -940,7 +938,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -997,7 +995,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					}, Version: version},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
