@@ -200,17 +200,11 @@ func writeVarBytes(w io.Writer, data []byte) error {
 }
 
 func writeTxOut(w io.Writer, to *externalapi.DomainTransactionOutput) error {
-
 	err := binaryserializer.PutUint64(w, to.Value)
 	if err != nil {
 		return err
 	}
 	err = binaryserializer.PutUint16(w, to.ScriptPublicKey.Version)
-	if err != nil {
-		return err
-	}
-	dataLen := uint64(len(to.ScriptPublicKey.Script))
-	err = binaryserializer.PutUint64(w, dataLen)
 	if err != nil {
 		return err
 	}
