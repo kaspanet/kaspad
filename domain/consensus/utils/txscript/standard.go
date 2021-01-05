@@ -198,7 +198,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.ScriptPublicKeyVersion}, err
+		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
@@ -209,7 +209,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.ScriptPublicKeyVersion}, err
+		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
@@ -264,7 +264,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
 func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
-	if scriptPubKey.Version > constants.ScriptPublicKeyVersion {
+	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
 		return NonStandardTy, nil, errors.Errorf("Script version is unkown.")
 	}
 	// No valid address if the script doesn't parse.

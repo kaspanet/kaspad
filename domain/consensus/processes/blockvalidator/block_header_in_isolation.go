@@ -53,7 +53,7 @@ func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error
 }
 
 func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error {
-	if header.Version() > constants.BlockVersion {
+	if header.Version() > constants.MaxBlockVersion {
 		return errors.Wrapf(
 			ruleerrors.ErrBlockVersionIsUnknown, "The block version is unknown.")
 	}

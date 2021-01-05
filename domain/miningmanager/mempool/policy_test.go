@@ -207,7 +207,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name:       "Transaction version too high",
-			tx:         consensusexternalapi.DomainTransaction{Version: constants.TransactionVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
+			tx:         consensusexternalapi.DomainTransaction{Version: constants.MaxTransactionVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,

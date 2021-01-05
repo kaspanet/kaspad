@@ -92,7 +92,7 @@ type mempool struct {
 // transactions until they are mined into a block.
 func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmanagermodel.Mempool {
 	policy := policy{
-		MaxTxVersion:    constants.TransactionVersion,
+		MaxTxVersion:    constants.MaxTransactionVersion,
 		AcceptNonStd:    acceptNonStd,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,

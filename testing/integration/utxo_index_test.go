@@ -185,7 +185,7 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 		t.Fatalf("Error decoding script public key: %s", err)
 	}
 
-	msgTx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
+	msgTx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(miningAddress1PrivateKey)
 	if err != nil {

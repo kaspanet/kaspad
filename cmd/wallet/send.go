@@ -170,7 +170,7 @@ func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*app
 	outputs := []*externalapi.DomainTransactionOutput{mainOutput, changeOutput}
 
 	domainTransaction := &externalapi.DomainTransaction{
-		Version:      constants.TransactionVersion,
+		Version:      constants.MaxTransactionVersion,
 		Inputs:       inputs,
 		Outputs:      outputs,
 		LockTime:     0,

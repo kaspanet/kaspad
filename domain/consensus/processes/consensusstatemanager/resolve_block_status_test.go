@@ -355,7 +355,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		// We expect the coinbase transaction to pay reward for the selected parent, the
 		// blue block, and not for the red block.
 		expectedCoinbase := &externalapi.DomainTransaction{
-			Version: constants.TransactionVersion,
+			Version: constants.MaxTransactionVersion,
 			Inputs:  nil,
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{

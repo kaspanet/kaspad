@@ -134,7 +134,7 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
 		// error here.
-		disbuf, _ := txscript.DisasmString(constants.ScriptPublicKeyVersion, transactionInput.SignatureScript)
+		disbuf, _ := txscript.DisasmString(constants.MaxScriptPublicKeyVersion, transactionInput.SignatureScript)
 
 		input := &appmessage.TransactionVerboseInput{}
 		input.TxID = transactionInput.PreviousOutpoint.TransactionID.String()

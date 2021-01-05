@@ -240,7 +240,7 @@ func checkTransactionStandard(tx *consensusexternalapi.DomainTransaction, policy
 	// None of the output public key scripts can be a non-standard script or
 	// be "dust".
 	for i, txOut := range tx.Outputs {
-		if txOut.ScriptPublicKey.Version > constants.ScriptPublicKeyVersion {
+		if txOut.ScriptPublicKey.Version > constants.MaxScriptPublicKeyVersion {
 			return txRuleError(RejectNonstandard, "The version of the scriptPublicKey is higher than the known version.")
 		}
 		scriptClass := txscript.GetScriptClass(txOut.ScriptPublicKey.Script)

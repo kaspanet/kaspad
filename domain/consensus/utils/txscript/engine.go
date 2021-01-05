@@ -456,7 +456,7 @@ func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.Domain
 	}
 	vm := Engine{flags: flags, sigCache: sigCache}
 
-	if scriptPubKey.Version > constants.ScriptPublicKeyVersion {
+	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
 		vm.isKnownVersion = false
 		return &vm, nil
 	}
