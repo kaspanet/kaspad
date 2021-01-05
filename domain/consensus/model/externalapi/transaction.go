@@ -258,10 +258,6 @@ func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) boo
 
 // Clone returns a clone of DomainTransactionOutput
 func (output *DomainTransactionOutput) Clone() *DomainTransactionOutput {
-	if output == nil {
-		return nil
-	}
-
 	scriptPublicKeyClone := &ScriptPublicKey{
 		Script:  make([]byte, len(output.ScriptPublicKey.Script)),
 		Version: output.ScriptPublicKey.Version}
