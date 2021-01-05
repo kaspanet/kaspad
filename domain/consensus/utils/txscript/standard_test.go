@@ -323,15 +323,17 @@ func TestPayToAddrScript(t *testing.T) {
 	errUnsupportedAddress := scriptError(ErrUnsupportedAddress, "")
 
 	tests := []struct {
-		in       util.Address
-		expected string
-		err      error
+		in              util.Address
+		expectedScript  string
+		expectedVersion uint16
+		err             error
 	}{
 		// pay-to-pubkey-hash address on mainnet
 		{
 			p2pkhMain,
 			"DUP HASH160 DATA_20 0xe34cce70c86373273efcc54ce7d2a4" +
 				"91bb4a0e8488 CHECKSIG",
+			0,
 			nil,
 		},
 		// pay-to-script-hash address on mainnet
@@ -339,32 +341,44 @@ func TestPayToAddrScript(t *testing.T) {
 			p2shMain,
 			"HASH160 DATA_20 0xe8c300c87986efa84c37c0519929019ef8" +
 				"6eb5b4 EQUAL",
+			0,
 			nil,
 		},
 
 		// Supported address types with nil pointers.
-		{(*util.AddressPubKeyHash)(nil), "", errUnsupportedAddress},
-		{(*util.AddressScriptHash)(nil), "", errUnsupportedAddress},
+		{(*util.AddressPubKeyHash)(nil), "", 0, errUnsupportedAddress},
+		{(*util.AddressScriptHash)(nil), "", 0, errUnsupportedAddress},
 
 		// Unsupported address type.
-		{&bogusAddress{}, "", errUnsupportedAddress},
+		{&bogusAddress{}, "", 0, errUnsupportedAddress},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		scriptPubKey, err := PayToAddrScript(test.in)
+		scriptPublicKey, err := PayToAddrScript(test.in)
 		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
 			continue
 		}
-		expected := mustParseShortForm(test.expected)
-		if scriptPubKey == nil && len(expected) == 0 {
+
+		var scriptPublicKeyScript []byte
+		var scriptPublicKeyVersion uint16
+		if scriptPublicKey != nil {
+			scriptPublicKeyScript = scriptPublicKey.Script
+			scriptPublicKeyVersion = scriptPublicKey.Version
+		}
+
+		expectedScript := mustParseShortForm(test.expectedScript)
+		expectedVersion := test.expectedVersion
+		if !bytes.Equal(scriptPublicKeyScript, expectedScript) {
+			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
+				i, scriptPublicKey, expectedScript)
 			continue
 		}
-		if !bytes.Equal(scriptPubKey.Script, expected) {
-			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
-				i, scriptPubKey, expected)
+		if scriptPublicKeyVersion != expectedVersion {
+			t.Errorf("PayToAddrScript #%d got version: %d\nwant: %d",
+				i, scriptPublicKeyVersion, expectedVersion)
 			continue
 		}
 	}
