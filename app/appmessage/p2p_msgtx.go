@@ -38,7 +38,7 @@ const (
 	maxTxInPerMessage = (MaxMessagePayload / minTxInPayload) + 1
 
 	// MinTxOutPayload is the minimum payload size for a transaction output.
-	// Value 8 bytes + Varint for version length 2 byte +Varint for ScriptPubKey length 1 byte.
+	// Value 8 bytes + version 2 bytes + Varint for ScriptPubKey length 1 byte.
 	MinTxOutPayload = 11
 
 	// maxTxOutPerMessage is the maximum number of transactions outputs that
