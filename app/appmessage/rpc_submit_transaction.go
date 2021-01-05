@@ -61,8 +61,8 @@ type RPCTransactionInput struct {
 	Sequence         uint64
 }
 
-// RPCScriptPubKey is a kaspad ScriptPubKey (in output) representation
-type RPCScriptPubKey struct {
+// RPCScriptPublicKey is a kaspad ScriptPublicKey representation
+type RPCScriptPublicKey struct {
 	Version uint16
 	Script  string
 }
@@ -71,7 +71,7 @@ type RPCScriptPubKey struct {
 // meant to be used over RPC
 type RPCTransactionOutput struct {
 	Amount       uint64
-	ScriptPubKey *RPCScriptPubKey
+	ScriptPubKey *RPCScriptPublicKey
 }
 
 // RPCOutpoint is a kaspad outpoint representation meant to be used
@@ -85,7 +85,7 @@ type RPCOutpoint struct {
 // over RPC
 type RPCUTXOEntry struct {
 	Amount         uint64
-	ScriptPubKey   *RPCScriptPubKey
+	ScriptPubKey   *RPCScriptPublicKey
 	BlockBlueScore uint64
 	IsCoinbase     bool
 }

@@ -251,7 +251,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		scriptPublicKey := hex.EncodeToString(output.ScriptPublicKey.Script)
 		outputs[i] = &RPCTransactionOutput{
 			Amount:       output.Value,
-			ScriptPubKey: &RPCScriptPubKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
+			ScriptPubKey: &RPCScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
 		}
 	}
 	subnetworkID := hex.EncodeToString(transaction.SubnetworkID[:])
