@@ -2,14 +2,15 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 type jsonBlock struct {
@@ -32,10 +33,10 @@ func TestPruning(t *testing.T) {
 			"kaspa-testnet": "1582",
 		},
 		"dag-for-test-pruning.json": {
-			"kaspa-mainnet": "503",
-			"kaspa-simnet":  "503",
-			"kaspa-devnet":  "502",
-			"kaspa-testnet": "503",
+			"kaspa-mainnet": "502",
+			"kaspa-simnet":  "502",
+			"kaspa-devnet":  "503",
+			"kaspa-testnet": "502",
 		},
 	}
 

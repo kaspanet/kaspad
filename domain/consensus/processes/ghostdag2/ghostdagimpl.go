@@ -124,7 +124,7 @@ func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.Doma
 	parentByteArray := parent.ByteArray()
 	selectedParentByteArray := selectedParent.ByteArray()
 	//Check if parentHash is more then selectedParentHash
-	for i := len(parentByteArray) - 1; i >= 0; i-- {
+	for i := 0; i < len(parentByteArray); i++ {
 		switch {
 		case parentByteArray[i] < selectedParentByteArray[i]:
 			return false
