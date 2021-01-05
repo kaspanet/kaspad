@@ -205,13 +205,13 @@ func SignTxOutput(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 	}
 
 	if class == ScriptHashTy {
-		signedScriptPublicKey := &externalapi.ScriptPublicKey{
+		scriptHashPreimageScriptPublicKey := &externalapi.ScriptPublicKey{
 			Script:  sigScript,
 			Version: scriptPublicKey.Version,
 		}
 
 		realSigScript, _, _, err := sign(dagParams, tx, idx,
-			signedScriptPublicKey, hashType, kdb, sdb)
+			scriptHashPreimageScriptPublicKey, hashType, kdb, sdb)
 		if err != nil {
 			return nil, err
 		}
