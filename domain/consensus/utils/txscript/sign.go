@@ -188,29 +188,30 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 }
 
 // SignTxOutput signs output idx of the given tx to resolve the script given in
-// scriptPubKey with a signature type of hashType. Any keys required will be
+// scriptPublicKey with a signature type of hashType. Any keys required will be
 // looked up by calling getKey() with the string of the given address.
 // Any pay-to-script-hash signatures will be similarly looked up by calling
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
 func SignTxOutput(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	scriptPubKey *externalapi.ScriptPublicKey, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
+	scriptPublicKey *externalapi.ScriptPublicKey, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript *externalapi.ScriptPublicKey) ([]byte, error) {
 
 	sigScript, class, _, err := sign(dagParams, tx,
-		idx, scriptPubKey, hashType, kdb, sdb)
+		idx, scriptPublicKey, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Do not merge it!!
-	scriptpubKey := &externalapi.ScriptPublicKey{
-		Script:  sigScript,
-		Version: scriptPubKey.Version,
-	}
+
 	if class == ScriptHashTy {
+		signedScriptPublicKey := &externalapi.ScriptPublicKey{
+			Script:  sigScript,
+			Version: scriptPublicKey.Version,
+		}
+
 		realSigScript, _, _, err := sign(dagParams, tx, idx,
-			scriptpubKey, hashType, kdb, sdb)
+			signedScriptPublicKey, hashType, kdb, sdb)
 		if err != nil {
 			return nil, err
 		}
