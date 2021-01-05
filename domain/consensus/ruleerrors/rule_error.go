@@ -179,14 +179,12 @@ var (
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 
 	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
-	//ErrBlockIsTooMuchInTheFuture indicates that the block timestamp is too much in the future.
-	ErrBlockIsTooMuchInTheFuture = newRuleError("ErrBlockIsTooMuchInTheFuture")
 
 	//ErrBlockVersionIsUnknown indicates that the block version is unknown.
 	ErrBlockVersionIsUnknown = newRuleError("ErrBlockVersionIsUnknown")
 
-	//ErrTxnVersionIsUnknown indicates that the txn version is unknown.
-	ErrTxnVersionIsUnknown = newRuleError("ErrTxnVersionIsUnknown")
+	//ErrTransactionVersionIsUnknown indicates that the transaction version is unknown.
+	ErrTransactionVersionIsUnknown = newRuleError("ErrTransactionVersionIsUnknown")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
