@@ -3,7 +3,6 @@ package difficultymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/bigintpool"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -72,19 +71,14 @@ func (window *blockWindow) remove(n int) {
 	*window = (*window)[:len(*window)-1]
 }
 
-func (window blockWindow) averageTarget(averageTarget *big.Int) {
-	averageTarget.SetInt64(0)
-
-	target := bigintpool.Acquire(0)
-	defer bigintpool.Release(target)
+func (window blockWindow) averageTarget() *big.Int {
+	averageTarget := new(big.Int)
+	targetTmp := new(big.Int)
 	for _, block := range window {
-		util.CompactToBigWithDestination(block.Bits, target)
-		averageTarget.Add(averageTarget, target)
+		util.CompactToBigWithDestination(block.Bits, targetTmp)
+		averageTarget.Add(averageTarget, targetTmp)
 	}
-
-	windowLen := bigintpool.Acquire(int64(len(window)))
-	defer bigintpool.Release(windowLen)
-	averageTarget.Div(averageTarget, windowLen)
+	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
 }
 
 func (window blockWindow) medianTimestamp() (int64, error) {

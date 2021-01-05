@@ -109,7 +109,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData model.BlockGHOSTDAGData) (
+	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
 	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
