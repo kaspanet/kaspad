@@ -144,9 +144,9 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
 	for j, item := range x.TransactionVerboseOutputs {
 		scriptPubKey := &appmessage.ScriptPubKeyResult{
-			Hex:     item.ScriptPubKey.Hex,
-			Type:    item.ScriptPubKey.Type,
-			Address: item.ScriptPubKey.Address,
+			Hex:     item.ScriptPublicKey.Hex,
+			Type:    item.ScriptPublicKey.Type,
+			Address: item.ScriptPublicKey.Address,
 		}
 		outputs[j] = &appmessage.TransactionVerboseOutput{
 			Value:        item.Value,
@@ -191,15 +191,15 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 	}
 	outputs := make([]*TransactionVerboseOutput, len(message.TransactionVerboseOutputs))
 	for j, item := range message.TransactionVerboseOutputs {
-		scriptPubKey := &ScriptPubKeyResult{
+		scriptPubKey := &ScriptPublicKeyResult{
 			Hex:     item.ScriptPubKey.Hex,
 			Type:    item.ScriptPubKey.Type,
 			Address: item.ScriptPubKey.Address,
 		}
 		outputs[j] = &TransactionVerboseOutput{
-			Value:        item.Value,
-			Index:        item.Index,
-			ScriptPubKey: scriptPubKey,
+			Value:           item.Value,
+			Index:           item.Index,
+			ScriptPublicKey: scriptPubKey,
 		}
 	}
 	*x = TransactionVerboseData{

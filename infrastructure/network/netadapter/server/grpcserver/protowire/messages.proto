@@ -157,7 +157,7 @@ message ScriptPublicKey {
 
 message TransactionOutput{
   uint64 value = 1;
-  ScriptPublicKey scriptPubKey = 2;
+  ScriptPublicKey scriptPublicKey = 2;
 }
 // TransactionMessage end
 
@@ -553,10 +553,10 @@ message ScriptSig{
 message TransactionVerboseOutput{
   uint64 value = 1;
   uint32 index = 2;
-  ScriptPubKeyResult scriptPubKey = 3;
+  ScriptPublicKeyResult scriptPublicKey = 3;
 }
 
-message ScriptPubKeyResult{
+message ScriptPublicKeyResult{
   string asm = 1;
   string hex = 2;
   string type = 3;
@@ -697,14 +697,14 @@ message RpcTransactionInput {
   uint64 sequence = 3;
 }
 
-message RpcScriptPubKey {
+message RpcScriptPublicKey {
   uint32 version = 1;
-  string scriptPubKey = 2;
+  string scriptPublicKey = 2;
 }
 
 message RpcTransactionOutput {
   uint64 amount = 1;
-  RpcScriptPubKey scriptPubKey = 2;
+  RpcScriptPublicKey scriptPublicKey = 2;
 }
 
 message RpcOutpoint {
@@ -714,7 +714,7 @@ message RpcOutpoint {
 
 message RpcUtxoEntry {
   uint64 amount = 1;
-  RpcScriptPubKey scriptPubKey = 2;
+  RpcScriptPublicKey scriptPublicKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
 }

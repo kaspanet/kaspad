@@ -61,7 +61,7 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 	}
 	outputs := make([]*appmessage.RPCTransactionOutput, len(x.Outputs))
 	for i, output := range x.Outputs {
-		scriptPubKey, err := ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(output.ScriptPubKey)
+		scriptPubKey, err := ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(output.ScriptPublicKey)
 		if err != nil {
 			return nil, err
 		}
@@ -88,19 +88,19 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 }
 
 // ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey converts from RpcScriptPubKey to RPCScriptPublicKey.
-func ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPubKey) (*appmessage.RPCScriptPublicKey, error) {
+func ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPublicKey) (*appmessage.RPCScriptPublicKey, error) {
 	if toConvert.Version > 0xffff {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
 	version := uint16(toConvert.Version)
-	script := toConvert.ScriptPubKey
+	script := toConvert.ScriptPublicKey
 	return &appmessage.RPCScriptPublicKey{Version: version,
 		Script: script}, nil
 }
 
 // ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey converts from RPCScriptPublicKey to RpcScriptPubKey.
-func ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(toConvert *appmessage.RPCScriptPublicKey) *RpcScriptPubKey {
-	return &RpcScriptPubKey{Version: uint32(toConvert.Version), ScriptPubKey: toConvert.Script}
+func ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(toConvert *appmessage.RPCScriptPublicKey) *RpcScriptPublicKey {
+	return &RpcScriptPublicKey{Version: uint32(toConvert.Version), ScriptPublicKey: toConvert.Script}
 }
 
 func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) {
@@ -119,8 +119,8 @@ func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) 
 	outputs := make([]*RpcTransactionOutput, len(transaction.Outputs))
 	for i, output := range transaction.Outputs {
 		outputs[i] = &RpcTransactionOutput{
-			Amount:       output.Amount,
-			ScriptPubKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(output.ScriptPublicKey),
+			Amount:          output.Amount,
+			ScriptPublicKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(output.ScriptPublicKey),
 		}
 	}
 	*x = RpcTransaction{
