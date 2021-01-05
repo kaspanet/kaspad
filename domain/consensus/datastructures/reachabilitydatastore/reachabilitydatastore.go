@@ -34,7 +34,7 @@ func New(cacheSize int) model.ReachabilityDataStore {
 }
 
 func (rds *reachabilityDataStore) StageInterval(blockHash *externalapi.DomainHash, interval *model.ReachabilityInterval) {
-	rds.reachabilityIntervalStaging[*blockHash] = interval.Clone()
+	rds.reachabilityIntervalStaging[*blockHash] = interval
 }
 
 func (rds *reachabilityDataStore) StageReachabilityData(blockHash *externalapi.DomainHash,
