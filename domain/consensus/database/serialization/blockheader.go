@@ -41,16 +41,6 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 	if dbBlockHeader.Version > 0xffff {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
-	//return &externalapi.DomainBlockHeader{
-	//	Version:              uint16(dbBlockHeader.Version),
-	//	ParentHashes:         parentHashes,
-	//	HashMerkleRoot:       *hashMerkleRoot,
-	//	AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-	//	UTXOCommitment:       *utxoCommitment,
-	//	TimeInMilliseconds:   dbBlockHeader.TimeInMilliseconds,
-	//	Bits:                 dbBlockHeader.Bits,
-	//	Nonce:                dbBlockHeader.Nonce,
-	//}, nil
 
 	return blockheader.NewImmutableBlockHeader(
 		uint16(dbBlockHeader.Version),
