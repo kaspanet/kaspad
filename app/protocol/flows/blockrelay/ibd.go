@@ -13,7 +13,7 @@ import (
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
-	wasIBDNotRunning := flow.TrySetIBDRunning()
+	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
 		return nil

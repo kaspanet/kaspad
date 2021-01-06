@@ -447,6 +447,7 @@ message GetConnectedPeerInfoMessage{
   string userAgent = 8;
   uint32 advertisedProtocolVersion = 9;
   int64 timeConnected = 10;
+  bool isIbdPeer = 11;
 }
 
 message AddPeerRequestMessage{
