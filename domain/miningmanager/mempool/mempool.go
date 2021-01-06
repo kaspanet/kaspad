@@ -857,7 +857,7 @@ func (mp *mempool) ChainedCount() int {
 	return len(mp.chainedTransactions)
 }
 
-// BlockCandidateTransactions returns a slice of all the transactions in the block
+// BlockCandidateTransactions returns a slice of all the candidate transactions for the next block
 // This is safe for concurrent use
 func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
