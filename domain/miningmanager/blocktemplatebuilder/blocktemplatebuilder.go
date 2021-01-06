@@ -105,7 +105,7 @@ func New(consensus consensusexternalapi.Consensus, mempool miningmanagerapi.Memp
 //   -----------------------------------  --
 
 func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
-	mempoolTransactions := btb.mempool.Transactions()
+	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for _, tx := range mempoolTransactions {
 		// Calculate the tx value
