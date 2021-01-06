@@ -11,13 +11,11 @@ import (
 )
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
-var utxoIndexLastVirtualSelectedParentKey = database.MakeBucket().Key([]byte("utxo-index-last-virtual-selected-parent"))
 
 type utxoIndexStore struct {
-	database              database.Database
-	toAdd                 map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove              map[ScriptPublicKeyString]UTXOOutpoints
-	virtualSelectedParent *externalapi.DomainHash
+	database database.Database
+	toAdd    map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	toRemove map[ScriptPublicKeyString]UTXOOutpoints
 }
 
 func newUTXOIndexStore(database database.Database) *utxoIndexStore {
@@ -100,7 +98,6 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 func (uis *utxoIndexStore) discard() {
 	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
 	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
-	uis.virtualSelectedParent = nil
 }
 
 func (uis *utxoIndexStore) commit() error {
@@ -145,11 +142,6 @@ func (uis *utxoIndexStore) commit() error {
 				return err
 			}
 		}
-	}
-
-	err = dbTransaction.Put(utxoIndexLastVirtualSelectedParentKey, uis.virtualSelectedParent.ByteSlice())
-	if err != nil {
-		return err
 	}
 
 	err = dbTransaction.Commit()
@@ -234,6 +226,10 @@ func (uis *utxoIndexStore) stagedData() (
 	return toAddClone, toRemoveClone
 }
 
+func (uis *utxoIndexStore) isAnythingStaged() bool {
+	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0
+}
+
 func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
 	if uis.isAnythingStaged() {
 		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
@@ -265,99 +261,4 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalap
 		utxoOutpointEntryPairs[*outpoint] = utxoEntry
 	}
 	return utxoOutpointEntryPairs, nil
-}
-
-func (uis *utxoIndexStore) getLastVirtualSelectedParent() (*externalapi.DomainHash, bool, error) {
-	if uis.isAnythingStaged() {
-		return nil, false, errors.Errorf("cannot get last virtual selected parent while staging isn't empty")
-	}
-
-	hasLastVirtualSelectedParent, err := uis.database.Has(utxoIndexLastVirtualSelectedParentKey)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if !hasLastVirtualSelectedParent {
-		return nil, false, nil
-	}
-
-	lastVirtualSelectedParentBytes, err := uis.database.Get(utxoIndexLastVirtualSelectedParentKey)
-	if err != nil {
-		return nil, false, err
-	}
-
-	lastVirtualSelectedParent, err := externalapi.NewDomainHashFromByteSlice(lastVirtualSelectedParentBytes)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return lastVirtualSelectedParent, true, nil
-}
-
-func (uis *utxoIndexStore) isAnythingStaged() bool {
-	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0 || uis.virtualSelectedParent != nil
-}
-
-func (uis *utxoIndexStore) replaceUTXOSet(utxoSet []*externalapi.OutpointUTXOPair,
-	virtualSelectedParent *externalapi.DomainHash) error {
-
-	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.replaceUTXOSet")
-	defer onEnd()
-
-	if uis.isAnythingStaged() {
-		return errors.Errorf("cannot replace utxo set while something is staged")
-	}
-
-	err := uis.resetStore()
-	if err != nil {
-		return err
-	}
-
-	uis.virtualSelectedParent = virtualSelectedParent
-	for i, pair := range utxoSet {
-		err := uis.add(pair.Entry.ScriptPublicKey(), pair.Outpoint, pair.Entry)
-		if err != nil {
-			return err
-		}
-		const logInterval = 10_000
-		if i%logInterval == 0 {
-			log.Debugf("Recovered %d UTXO entries out of %d", i+1, len(utxoSet))
-		}
-	}
-
-	return uis.commit()
-}
-
-func (uis *utxoIndexStore) resetStore() error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "utxoIndexStore.resetStore")
-	defer onEnd()
-
-	cursor, err := uis.database.Cursor(utxoIndexBucket)
-	if err != nil {
-		return err
-	}
-
-	keysToDelete := make([]*database.Key, 0)
-	for cursor.Next() {
-		key, err := cursor.Key()
-		if err != nil {
-			return err
-		}
-
-		keysToDelete = append(keysToDelete, key)
-	}
-
-	for _, key := range keysToDelete {
-		err = uis.database.Delete(key)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = uis.database.Delete(utxoIndexLastVirtualSelectedParentKey)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
