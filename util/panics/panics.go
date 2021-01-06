@@ -2,18 +2,17 @@ package panics
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"runtime/debug"
 	"sync/atomic"
 	"time"
-
-	"github.com/kaspanet/kaspad/logs"
 )
 
 const exitHandlerTimeout = 5 * time.Second
 
 // HandlePanic recovers panics and then initiates a clean shutdown.
-func HandlePanic(log *logs.Logger, goroutineName string, goroutineStackTrace []byte) {
+func HandlePanic(log *logger.Logger, goroutineName string, goroutineStackTrace []byte) {
 	err := recover()
 	if err == nil {
 		return
@@ -26,7 +25,7 @@ func HandlePanic(log *logs.Logger, goroutineName string, goroutineStackTrace []b
 var goroutineLastID uint64
 
 // GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and writes them to the log.
-func GoroutineWrapperFunc(log *logs.Logger) func(name string, spawnedFunction func()) {
+func GoroutineWrapperFunc(log *logger.Logger) func(name string, spawnedFunction func()) {
 	return func(name string, f func()) {
 		stackTrace := debug.Stack()
 		go func() {
@@ -36,7 +35,7 @@ func GoroutineWrapperFunc(log *logs.Logger) func(name string, spawnedFunction fu
 }
 
 // AfterFuncWrapperFunc returns a time.AfterFunc wrapper function that handles panics.
-func AfterFuncWrapperFunc(log *logs.Logger) func(name string, d time.Duration, f func()) *time.Timer {
+func AfterFuncWrapperFunc(log *logger.Logger) func(name string, d time.Duration, f func()) *time.Timer {
 	return func(name string, d time.Duration, f func()) *time.Timer {
 		stackTrace := debug.Stack()
 		return time.AfterFunc(d, func() {
@@ -46,13 +45,13 @@ func AfterFuncWrapperFunc(log *logs.Logger) func(name string, d time.Duration, f
 }
 
 // Exit prints the given reason to log and initiates a clean shutdown.
-func Exit(log *logs.Logger, reason string) {
+func Exit(log *logger.Logger, reason string) {
 	exit(log, reason, nil, nil)
 }
 
 // Exit prints the given reason, prints either of the given stack traces (if not nil),
 // waits for them to finish writing, and exits.
-func exit(log *logs.Logger, reason string, currentThreadStackTrace []byte, goroutineStackTrace []byte) {
+func exit(log *logger.Logger, reason string, currentThreadStackTrace []byte, goroutineStackTrace []byte) {
 	exitHandlerDone := make(chan struct{})
 	go func() {
 		log.Criticalf("Exiting: %s", reason)
@@ -76,7 +75,7 @@ func exit(log *logs.Logger, reason string, currentThreadStackTrace []byte, gorou
 	fmt.Print("After os.Exit(1)")
 }
 
-func handleSpawnedFunction(log *logs.Logger, stackTrace []byte, spawnedFunctionName string, spawnedFunction func()) {
+func handleSpawnedFunction(log *logger.Logger, stackTrace []byte, spawnedFunctionName string, spawnedFunction func()) {
 	goroutineID := atomic.AddUint64(&goroutineLastID, 1)
 	goroutineName := fmt.Sprintf("%s %d", spawnedFunctionName, goroutineID)
 	utilLog.Debugf("Started goroutine `%s`", goroutineName)

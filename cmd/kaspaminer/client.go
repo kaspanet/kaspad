@@ -1,81 +1,47 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/domainmessage"
-	"github.com/kaspanet/kaspad/rpc/client"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	"time"
 )
 
+const minerTimeout = 10 * time.Second
+
 type minerClient struct {
-	*client.Client
-	onBlockAdded chan struct{}
+	*rpcclient.RPCClient
+
+	blockAddedNotificationChan chan struct{}
 }
 
-func newMinerClient(connCfg *client.ConnConfig) (*minerClient, error) {
+func newMinerClient(cfg *configFlags) (*minerClient, error) {
+	rpcAddress, err := cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer)
+	if err != nil {
+		return nil, err
+	}
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	if err != nil {
+		return nil, err
+	}
+	rpcClient.SetTimeout(minerTimeout)
+	rpcClient.SetLogger(backendLog, logger.LevelTrace)
+
 	minerClient := &minerClient{
-		onBlockAdded: make(chan struct{}, 1),
-	}
-	notificationHandlers := &client.NotificationHandlers{
-		OnFilteredBlockAdded: func(_ uint64, header *domainmessage.BlockHeader,
-			txs []*util.Tx) {
-			minerClient.onBlockAdded <- struct{}{}
-		},
-	}
-	var err error
-	minerClient.Client, err = client.New(connCfg, notificationHandlers)
-	if err != nil {
-		return nil, errors.Errorf("Error connecting to address %s: %s", connCfg.Host, err)
+		RPCClient:                  rpcClient,
+		blockAddedNotificationChan: make(chan struct{}),
 	}
 
-	if err = minerClient.NotifyBlocks(); err != nil {
-		return nil, errors.Wrapf(err, "error while registering minerClient %s for block notifications", minerClient.Host())
+	err = rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
+		select {
+		case minerClient.blockAddedNotificationChan <- struct{}{}:
+		default:
+		}
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "error requesting block-added notifications")
 	}
+
 	return minerClient, nil
-}
-
-func connectToServer(cfg *configFlags) (*minerClient, error) {
-	cert, err := readCert(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	rpcAddr, err := cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer)
-	if err != nil {
-		return nil, err
-	}
-
-	connCfg := &client.ConnConfig{
-		Host:           rpcAddr,
-		Endpoint:       "ws",
-		User:           cfg.RPCUser,
-		Pass:           cfg.RPCPassword,
-		DisableTLS:     cfg.DisableTLS,
-		RequestTimeout: time.Second * 10,
-		Certificates:   cert,
-	}
-
-	client, err := newMinerClient(connCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Infof("Connected to server %s", client.Host())
-
-	return client, nil
-}
-
-func readCert(cfg *configFlags) ([]byte, error) {
-	if cfg.DisableTLS {
-		return nil, nil
-	}
-
-	cert, err := ioutil.ReadFile(cfg.RPCCert)
-	if err != nil {
-		return nil, errors.Errorf("Error reading certificates file: %s", err)
-	}
-
-	return cert, nil
 }

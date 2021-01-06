@@ -1,0 +1,164 @@
+syntax = "proto3";
+package serialization;
+
+option go_package = "github.com/kaspanet/kaspad/serialization";
+
+message DbBlock {
+  DbBlockHeader header = 1;
+  repeated DbTransaction transactions = 2;
+}
+
+message DbBlockHeader {
+  uint32 version = 1;
+  repeated DbHash parentHashes = 2;
+  DbHash hashMerkleRoot = 3;
+  DbHash acceptedIDMerkleRoot = 4;
+  DbHash utxoCommitment = 5;
+  int64 timeInMilliseconds = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+}
+
+message DbHash {
+  bytes hash = 1;
+}
+
+message DbTransaction {
+  uint32 version = 1;
+  repeated DbTransactionInput inputs = 2;
+  repeated DbTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  DbSubnetworkId subnetworkID = 5;
+  uint64 gas = 6;
+  DbHash payloadHash = 7;
+  bytes payload = 8;
+}
+
+message DbTransactionInput {
+  DbOutpoint previousOutpoint = 1;
+  bytes signatureScript = 2;
+  uint64 sequence = 3;
+}
+
+message DbOutpoint {
+  DbTransactionId transactionID = 1;
+  uint32 index = 2;
+}
+
+message DbTransactionId {
+  bytes transactionId = 1;
+}
+
+message DbTransactionOutput {
+  uint64 value = 1;
+  DbScriptPublicKey scriptPublicKey = 2;
+}
+
+message DbSubnetworkId {
+  bytes subnetworkId = 1;
+}
+
+message DbAcceptanceData {
+  repeated DbBlockAcceptanceData blockAcceptanceData = 1;
+}
+
+message DbBlockAcceptanceData {
+  repeated DbTransactionAcceptanceData transactionAcceptanceData = 1;
+  DbHash blockHash = 2;
+}
+
+message DbTransactionAcceptanceData {
+  DbTransaction transaction = 1;
+  uint64 fee = 2;
+  bool isAccepted = 3;
+  repeated DbUtxoEntry transactionInputUtxoEntries = 4;
+}
+
+message DbBlockRelations {
+  repeated DbHash parents = 1;
+  repeated DbHash children = 2;
+}
+
+message DbBlockStatus {
+  uint32 status = 1;
+}
+
+message DbBlockGhostdagData {
+  uint64 blueScore = 1;
+  bytes blueWork = 2;
+  DbHash selectedParent = 3;
+  repeated DbHash mergeSetBlues = 4;
+  repeated DbHash mergeSetReds = 5;
+  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 6;
+}
+
+message DbBluesAnticoneSizes {
+  DbHash blueHash = 1;
+  uint32 anticoneSize = 2;
+}
+
+message DbMultiset {
+  bytes multiset = 1;
+}
+
+message DbUtxoSet {
+  repeated DbUtxoCollectionItem items = 1;
+}
+
+message DbUtxoCollectionItem {
+  DbOutpoint outpoint = 1;
+  DbUtxoEntry utxoEntry = 2;
+}
+
+message DbScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
+
+message DbUtxoEntry {
+  uint64 amount = 1;
+  DbScriptPublicKey scriptPublicKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message DbReachabilityData {
+  repeated DbHash children = 1;
+  DbHash parent = 2;
+  DbReachabilityInterval interval = 3;
+  repeated DbHash futureCoveringSet = 4;
+}
+
+message DbReachabilityInterval {
+  uint64 start = 1;
+  uint64 end = 2;
+}
+
+message DbUtxoDiff {
+  repeated DbUtxoCollectionItem toAdd = 1;
+  repeated DbUtxoCollectionItem toRemove = 2;
+}
+
+message DbPruningPointUTXOSetBytes {
+  bytes bytes = 1;
+}
+
+message DbHeaderTips {
+  repeated DbHash tips = 1;
+}
+
+message DbTips {
+  repeated DbHash tips = 1;
+}
+
+message DbVirtualDiffParents {
+  repeated DbHash virtualDiffParents = 1;
+}
+
+message DbBlockCount {
+  uint64 count = 1;
+}
+
+message DbBlockHeaderCount {
+  uint64 count = 1;
+}

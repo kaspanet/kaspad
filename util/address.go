@@ -12,10 +12,6 @@ import (
 )
 
 var (
-	// ErrChecksumMismatch describes an error where decoding failed due
-	// to a bad checksum.
-	ErrChecksumMismatch = errors.New("checksum mismatch")
-
 	// ErrUnknownAddressType describes an error where an address can not
 	// decoded as a specific address type due to the string encoding
 	// begining with an identifier byte unknown to any standard or
@@ -46,9 +42,6 @@ const (
 	// Prefix for the dev network.
 	Bech32PrefixKaspaDev
 
-	// Prefix for the regression test network.
-	Bech32PrefixKaspaReg
-
 	// Prefix for the test network.
 	Bech32PrefixKaspaTest
 
@@ -60,7 +53,6 @@ const (
 var stringsToBech32Prefixes = map[string]Bech32Prefix{
 	"kaspa":     Bech32PrefixKaspa,
 	"kaspadev":  Bech32PrefixKaspaDev,
-	"kaspareg":  Bech32PrefixKaspaReg,
 	"kaspatest": Bech32PrefixKaspaTest,
 	"kaspasim":  Bech32PrefixKaspaSim,
 }
@@ -143,7 +135,8 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 		return nil, errors.Errorf("decoded address's prefix could not be parsed: %s", err)
 	}
 	if expectedPrefix != Bech32PrefixUnknown && expectedPrefix != prefix {
-		return nil, errors.Errorf("decoded address is of wrong network: %s", err)
+		return nil, errors.Errorf("decoded address is of wrong network. Expected %s but got %s", expectedPrefix,
+			prefix)
 	}
 
 	// Switch on decoded length to determine the type.

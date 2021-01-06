@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util"
 	"os"
+
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/version"
 
@@ -11,7 +12,7 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/kaspanet/kaspad/signal"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 )
@@ -29,16 +30,12 @@ func main() {
 	// Show version at startup.
 	log.Infof("Version %s", version.Version())
 
-	if cfg.Verbose {
-		enableRPCLogging()
-	}
-
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
 		profiling.Start(cfg.Profile, log)
 	}
 
-	client, err := connectToServer(cfg)
+	client, err := newMinerClient(cfg)
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
@@ -51,7 +48,7 @@ func main() {
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop", func() {
-		err = mineLoop(client, cfg.NumberOfBlocks, cfg.BlockDelay, cfg.MineWhenNotSynced, miningAddr)
+		err = mineLoop(client, cfg.NumberOfBlocks, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
 			panic(errors.Wrap(err, "error in mine loop"))
 		}

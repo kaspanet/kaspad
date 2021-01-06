@@ -321,18 +321,13 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address's prefix could not be parsed",
 		},
 		{
-			"kaspareg:qpm2qsznhks23z7629mms6s4cwef74vcwv4w75h796",
-			util.Bech32PrefixKaspaTest,
-			"decoded address is of wrong network",
-		},
-		{
-			"kaspareg:raskzctpv9skzctpv9skzctpv9skzctpvyn6vmqa89",
-			util.Bech32PrefixKaspaReg,
+			"kaspasim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zaf",
+			util.Bech32PrefixKaspaSim,
 			"unknown address type",
 		},
 		{
-			"kaspareg:raskzcgrjj7l73l",
-			util.Bech32PrefixKaspaReg,
+			"kaspasim:raskzcg58mth0an",
+			util.Bech32PrefixKaspaSim,
 			"decoded address is of unknown size",
 		},
 		{
@@ -360,7 +355,6 @@ func TestParsePrefix(t *testing.T) {
 		expectedError  bool
 	}{
 		{"kaspa", util.Bech32PrefixKaspa, false},
-		{"kaspareg", util.Bech32PrefixKaspaReg, false},
 		{"kaspatest", util.Bech32PrefixKaspaTest, false},
 		{"kaspasim", util.Bech32PrefixKaspaSim, false},
 		{"blabla", util.Bech32PrefixUnknown, true},
@@ -388,7 +382,6 @@ func TestPrefixToString(t *testing.T) {
 		expectedPrefixStr string
 	}{
 		{util.Bech32PrefixKaspa, "kaspa"},
-		{util.Bech32PrefixKaspaReg, "kaspareg"},
 		{util.Bech32PrefixKaspaTest, "kaspatest"},
 		{util.Bech32PrefixKaspaSim, "kaspasim"},
 		{util.Bech32PrefixUnknown, ""},
