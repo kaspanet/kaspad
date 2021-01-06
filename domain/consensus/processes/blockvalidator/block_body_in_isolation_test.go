@@ -1,9 +1,10 @@
 package blockvalidator_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"math"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -21,7 +22,7 @@ func TestChainedTransactions(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -83,7 +84,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestCheckBlockSanity")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

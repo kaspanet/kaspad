@@ -13,7 +13,7 @@ import (
 func TestPastMedianTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
