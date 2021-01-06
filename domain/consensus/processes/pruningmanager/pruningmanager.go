@@ -28,6 +28,7 @@ type pruningManager struct {
 	blockHeaderStore    model.BlockHeaderStore
 	utxoDiffStore       model.UTXODiffStore
 
+	isArchivalNode   bool
 	genesisHash      *externalapi.DomainHash
 	finalityInterval uint64
 	pruningDepth     uint64
@@ -52,6 +53,7 @@ func New(
 	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
 
+	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
@@ -72,6 +74,7 @@ func New(
 		blockHeaderStore:       blockHeaderStore,
 		utxoDiffStore:          utxoDiffStore,
 		headerSelectedTipStore: headerSelectedTipStore,
+		isArchivalNode:         isArchivalNode,
 		genesisHash:            genesisHash,
 		pruningDepth:           pruningDepth,
 		finalityInterval:       finalityInterval,
@@ -212,6 +215,11 @@ func (pm *pruningManager) isInPruningFutureOrInVirtualPast(block *externalapi.Do
 func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.deletePastBlocks")
 	defer onEnd()
+
+	if pm.isArchivalNode {
+		log.Info("Not deleting past blocks because this is an archival node")
+		return nil
+	}
 
 	// Go over all P.Past and P.AC that's not in V.Past
 	queue := pm.dagTraversalManager.NewDownHeap()

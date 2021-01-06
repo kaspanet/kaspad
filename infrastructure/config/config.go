@@ -121,7 +121,7 @@ type Flags struct {
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
-	Archival             bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
+	IsArchivalNode       bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
