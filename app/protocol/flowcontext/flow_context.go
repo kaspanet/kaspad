@@ -48,7 +48,8 @@ type FlowContext struct {
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD uint32
+	ibdPeer      *peerpkg.Peer
+	ibdPeerMutex sync.RWMutex
 
 	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex
