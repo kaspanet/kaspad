@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 )
 
 func (csm *consensusStateManager) calculateMultiset(
@@ -106,12 +105,4 @@ func removeUTXOFromMultiset(multiset model.Multiset, entry externalapi.UTXOEntry
 	multiset.Remove(serializedUTXO)
 
 	return nil
-}
-
-func calcMultisetFromProtoUTXOSet(protoUTXOSet *utxoserialization.ProtoUTXOSet) (model.Multiset, error) {
-	ms := multiset.New()
-	for _, utxo := range protoUTXOSet.Utxos {
-		ms.Add(utxo.EntryOutpointPair)
-	}
-	return ms, nil
 }

@@ -234,6 +234,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		multisetStore,
 		acceptanceDataStore,
 		blockStore,
+		blockHeaderStore,
 		utxoDiffStore,
 		genesisHash,
 		dagParams.FinalityDepth(),
