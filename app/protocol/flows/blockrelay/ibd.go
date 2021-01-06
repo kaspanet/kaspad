@@ -279,8 +279,6 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
 
-	flow.UpdateRecentBlockAddedTimesWithLastBlock()
-
 	return nil
 }
 
