@@ -77,8 +77,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		}
 		if !exists {
 			log.Debugf("Block %s does not have a UTXO diff child, "+
-				"meaning we reached the virtual. Returning the collected "+
-				"UTXO diffs: %s", nextBlockHash, utxoDiffs)
+				"meaning we reached the virtual", nextBlockHash)
 			break
 		}
 
@@ -88,8 +87,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		}
 		if nextBlockHash == nil {
 			log.Debugf("Block %s does not have a UTXO diff child, "+
-				"meaning we reached the virtual. Returning the collected "+
-				"UTXO diffs: %s", nextBlockHash, utxoDiffs)
+				"meaning we reached the virtual", nextBlockHash)
 			break
 		}
 	}

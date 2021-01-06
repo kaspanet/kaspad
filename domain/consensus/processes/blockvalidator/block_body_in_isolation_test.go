@@ -21,7 +21,7 @@ func TestChainedTransactions(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		tc, teardown, err := factory.NewTestConsensus(params, "TestChainedTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
