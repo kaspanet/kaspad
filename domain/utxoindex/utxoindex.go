@@ -231,7 +231,7 @@ func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransactio
 }
 
 // UTXOs returns all the UTXOs for the given scriptPublicKey
-func (ui *UTXOIndex) UTXOs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
+func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
 

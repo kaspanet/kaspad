@@ -82,26 +82,28 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction output back out.
 	txValue := uint64(5000000000)
-	scriptPubKey := []byte{
-		0x41, // OP_DATA_65
-		0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
-		0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
-		0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
-		0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
-		0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
-		0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
-		0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
-		0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
-		0xa6, // 65-byte signature
-		0xac, // OP_CHECKSIG
-	}
+	scriptPubKey := &externalapi.ScriptPublicKey{
+		Script: []byte{
+			0x41, // OP_DATA_65
+			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
+			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
+			0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
+			0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
+			0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
+			0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
+			0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
+			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
+			0xa6, // 65-byte signature
+			0xac, // OP_CHECKSIG
+		},
+		Version: 0}
 	txOut := NewTxOut(txValue, scriptPubKey)
 	if txOut.Value != txValue {
 		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
 			txOut.Value, txValue)
 
 	}
-	if !bytes.Equal(txOut.ScriptPubKey, scriptPubKey) {
+	if !bytes.Equal(txOut.ScriptPubKey.Script, scriptPubKey.Script) {
 		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
 			spew.Sdump(txOut.ScriptPubKey),
 			spew.Sdump(scriptPubKey))
@@ -131,8 +133,8 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txHash1Str := "cf09b7b8ea6c3429515e7e7c8b9531d449f7ca869fad030126495c2c791eacc2"
-	txID1Str := "378b6f83f103241a92b00533746b64800dadedeb1e48c097cf2757eea512ce47"
+	txHash1Str := "4bee9ee495bd93a755de428376bd582a2bb6ec37c041753b711c0606d5745c13"
+	txID1Str := "f868bd20e816256b80eac976821be4589d24d21141bd1cec6e8005d0c16c6881"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Fatalf("NewTxIDFromStr: %v", err)
@@ -153,7 +155,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	txOut := &TxOut{
 		Value: 5000000000,
-		ScriptPubKey: []byte{
+		ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -165,9 +167,9 @@ func TestTxHashAndID(t *testing.T) {
 			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
 			0xa6, // 65-byte signature
 			0xac, // OP_CHECKSIG
-		},
+		}, Version: 0},
 	}
-	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
+	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
@@ -183,14 +185,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "0c60a073b56ff0510307e3efbb5e1881c3b1b97b4f0a69e4220042a15596766b"
+	hash2Str := "cb1bdb4a83d4885535fb3cceb5c96597b7df903db83f0ffcd779d703affd8efd"
 	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "68ec13739c0088c1ebca9d14d9daa4ccb24db4e4be021fa2aaad71e2326091af"
+	id2Str := "ca080073d4ddf5b84443a0964af633f3c70a5b290fd3bc35a7e6f93fd33f9330"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -218,17 +220,17 @@ func TestTxHashAndID(t *testing.T) {
 	txOuts := []*TxOut{
 		{
 			Value: 244623243,
-			ScriptPubKey: []byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
-			},
+			}, Version: 0},
 		},
 		{
 			Value: 44602432,
-			ScriptPubKey: []byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
-			},
+			}, Version: 0},
 		},
 	}
 	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)

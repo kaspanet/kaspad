@@ -18,6 +18,12 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// Attempt to write the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
+	case uint16:
+		err := binaryserializer.PutUint16(w, e)
+		if err != nil {
+			return err
+		}
+		return nil
 	case int32:
 		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {

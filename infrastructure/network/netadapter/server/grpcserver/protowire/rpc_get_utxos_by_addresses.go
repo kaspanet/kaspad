@@ -22,7 +22,11 @@ func (x *KaspadMessage_GetUtxosByAddressesResponse) toAppMessage() (appmessage.M
 	}
 	entries := make([]*appmessage.UTXOsByAddressesEntry, len(x.GetUtxosByAddressesResponse.Entries))
 	for i, entry := range x.GetUtxosByAddressesResponse.Entries {
-		entries[i] = entry.toAppMessage()
+		entryAsAppMessage, err := entry.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		entries[i] = entryAsAppMessage
 	}
 	return &appmessage.GetUTXOsByAddressesResponseMessage{
 		Entries: entries,

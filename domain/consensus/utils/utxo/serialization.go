@@ -86,14 +86,17 @@ func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
 	if err != nil {
 		return err
 	}
-
-	count := uint64(len(entry.ScriptPublicKey()))
+	err = serialization.WriteElement(w, entry.ScriptPublicKey().Version)
+	if err != nil {
+		return err
+	}
+	count := uint64(len(entry.ScriptPublicKey().Script))
 	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.Write(entry.ScriptPublicKey())
+	_, err = w.Write(entry.ScriptPublicKey().Script)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -110,17 +113,20 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 		return nil, err
 	}
 
+	var version uint16
+	err = serialization.ReadElement(r, version)
 	var scriptPubKeyLen uint64
 	err = serialization.ReadElement(r, &scriptPubKeyLen)
 	if err != nil {
 		return nil, err
 	}
 
-	scriptPubKey := make([]byte, scriptPubKeyLen)
-	_, err = io.ReadFull(r, scriptPubKey)
+	scriptPubKeyScript := make([]byte, scriptPubKeyLen)
+	_, err = io.ReadFull(r, scriptPubKeyScript)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	scriptPubKey := externalapi.ScriptPublicKey{scriptPubKeyScript, version}
 
-	return NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
+	return NewUTXOEntry(amount, &scriptPubKey, isCoinbase, blockBlueScore), nil
 }
