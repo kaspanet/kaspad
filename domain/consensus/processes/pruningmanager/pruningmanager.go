@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 )
 
 // pruningManager resolves and manages the current pruning point
@@ -24,6 +25,7 @@ type pruningManager struct {
 	multiSetStore       model.MultisetStore
 	acceptanceDataStore model.AcceptanceDataStore
 	blocksStore         model.BlockStore
+	blockHeaderStore    model.BlockHeaderStore
 	utxoDiffStore       model.UTXODiffStore
 
 	genesisHash      *externalapi.DomainHash
@@ -47,6 +49,7 @@ func New(
 	multiSetStore model.MultisetStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blocksStore model.BlockStore,
+	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
 
 	genesisHash *externalapi.DomainHash,
@@ -66,6 +69,7 @@ func New(
 		multiSetStore:          multiSetStore,
 		acceptanceDataStore:    acceptanceDataStore,
 		blocksStore:            blocksStore,
+		blockHeaderStore:       blockHeaderStore,
 		utxoDiffStore:          utxoDiffStore,
 		headerSelectedTipStore: headerSelectedTipStore,
 		genesisHash:            genesisHash,
@@ -297,19 +301,20 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	return nil
 }
 
-func (pm *pruningManager) savePruningPoint(blockHash *externalapi.DomainHash) error {
+func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(blockHash)
+	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
 	if err != nil {
 		return err
 	}
-	serializedUtxo, err := serializeUTXOSetIterator(utxoIter)
+
+	serializedUtxo, err := pm.calculateAndValidateSerializedUTXOSet(utxoIter, pruningPointHash)
 	if err != nil {
 		return err
 	}
-	pm.pruningStore.StagePruningPoint(blockHash, serializedUtxo)
+	pm.pruningStore.StagePruningPoint(pruningPointHash, serializedUtxo)
 
 	return nil
 }
@@ -396,12 +401,46 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 	return pm.pruningStore.PruningPointCandidate(pm.databaseContext)
 }
 
-func serializeUTXOSetIterator(iter model.ReadOnlyUTXOSetIterator) ([]byte, error) {
+func (pm *pruningManager) calculateAndValidateSerializedUTXOSet(
+	iter model.ReadOnlyUTXOSetIterator, pruningPointHash *externalapi.DomainHash) ([]byte, error) {
+
 	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(iter)
 	if err != nil {
 		return nil, err
 	}
+
+	err = pm.validateUTXOSetFitsCommitment(serializedUtxo, pruningPointHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return proto.Marshal(serializedUtxo)
+}
+
+// validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
+// This is a sanity test, to make sure that kaspad doesn't store, and subsequently sends syncing peers the wrong UTXOSet.
+func (pm *pruningManager) validateUTXOSetFitsCommitment(
+	serializedUtxo *utxoserialization.ProtoUTXOSet, pruningPointHash *externalapi.DomainHash) error {
+
+	utxoSetMultiSet, err := utxoserialization.CalculateMultisetFromProtoUTXOSet(serializedUtxo)
+	if err != nil {
+		return err
+	}
+	utxoSetHash := utxoSetMultiSet.Hash()
+
+	header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, pruningPointHash)
+	if err != nil {
+		return err
+	}
+	expectedUTXOCommitment := header.UTXOCommitment()
+
+	if !expectedUTXOCommitment.Equal(utxoSetHash) {
+		return errors.Errorf("Calculated UTXOSet for next pruning point %s doesn't match it's UTXO commitment\n"+
+			"Calculated UTXOSet hash: %s. Commitment: %s",
+			pruningPointHash, utxoSetHash, expectedUTXOCommitment)
+	}
+
+	return nil
 }
 
 // finalityScore is the number of finality intervals passed since

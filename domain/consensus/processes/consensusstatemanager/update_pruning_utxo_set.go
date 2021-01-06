@@ -51,7 +51,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	utxoSetMultiSet, err := calcMultisetFromProtoUTXOSet(protoUTXOSet)
+	utxoSetMultiSet, err := utxoserialization.CalculateMultisetFromProtoUTXOSet(protoUTXOSet)
 	if err != nil {
 		return err
 	}
