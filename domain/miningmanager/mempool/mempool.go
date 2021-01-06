@@ -125,6 +125,22 @@ func (mp *mempool) GetTransaction(
 	return txDesc.DomainTransaction, true
 }
 
+func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	transactions := make([]*consensusexternalapi.DomainTransaction, 0, len(mp.pool)+len(mp.chainedTransactions))
+	for _, txDesc := range mp.pool {
+		transactions = append(transactions, txDesc.DomainTransaction)
+	}
+
+	for _, txDesc := range mp.chainedTransactions {
+		transactions = append(transactions, txDesc.DomainTransaction)
+	}
+
+	return transactions
+}
+
 // txDescriptor is a descriptor containing a transaction in the mempool along with
 // additional metadata.
 type txDescriptor struct {
@@ -843,7 +859,7 @@ func (mp *mempool) ChainedCount() int {
 
 // Transactions returns a slice of all the transactions in the block
 // This is safe for concurrent use
-func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
+func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 	descs := make([]*consensusexternalapi.DomainTransaction, len(mp.pool))
