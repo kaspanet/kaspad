@@ -216,11 +216,6 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.deletePastBlocks")
 	defer onEnd()
 
-	if pm.isArchivalNode {
-		log.Info("Not deleting past blocks because this is an archival node")
-		return nil
-	}
-
 	// Go over all P.Past and P.AC that's not in V.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
 
@@ -336,12 +331,16 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 		return true, nil
 	}
 
+	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+	if pm.isArchivalNode {
+		return false, nil
+	}
+
 	pm.multiSetStore.Delete(blockHash)
 	pm.acceptanceDataStore.Delete(blockHash)
 	pm.blocksStore.Delete(blockHash)
 	pm.utxoDiffStore.Delete(blockHash)
 
-	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
 }
 
