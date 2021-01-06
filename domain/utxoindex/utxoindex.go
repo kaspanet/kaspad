@@ -7,80 +7,25 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/pkg/errors"
 	"sync"
 )
 
 // UTXOIndex maintains an index between transaction scriptPublicKeys
 // and UTXOs
 type UTXOIndex struct {
-	consensus   externalapi.Consensus
-	store       *utxoIndexStore
-	genesisHash *externalapi.DomainHash
+	consensus externalapi.Consensus
+	store     *utxoIndexStore
 
 	mutex sync.Mutex
 }
 
 // New creates a new UTXO index
-func New(consensus externalapi.Consensus, database database.Database, genesisHash *externalapi.DomainHash) (*UTXOIndex, error) {
+func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex {
 	store := newUTXOIndexStore(database)
-	utxoIndex := &UTXOIndex{
-		consensus:   consensus,
-		store:       store,
-		genesisHash: genesisHash,
+	return &UTXOIndex{
+		consensus: consensus,
+		store:     store,
 	}
-
-	isSynced, err := utxoIndex.isSynced()
-	if err != nil {
-		return nil, err
-	}
-
-	if !isSynced {
-		err := utxoIndex.recover()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return utxoIndex, nil
-}
-
-func (ui *UTXOIndex) recover() error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.recover")
-	defer onEnd()
-
-	// Since the RPC and P2P should be down while initializing the
-	// UTXO index, we can assume that the virtual selected parent
-	// won't be changed while fetching the virtual selected parent.
-	virtualSelectedParent, err := ui.consensus.GetVirtualSelectedParent()
-	if err != nil {
-		return err
-	}
-
-	virtualUTXOSet, err := ui.consensus.GetVirtualUTXOSet()
-	if err != nil {
-		return err
-	}
-
-	return ui.store.replaceUTXOSet(virtualUTXOSet, virtualSelectedParent)
-}
-
-func (ui *UTXOIndex) isSynced() (bool, error) {
-	virtualSelectedParent, err := ui.consensus.GetVirtualSelectedParent()
-	if err != nil {
-		return false, err
-	}
-
-	lastVirtualSelectedParent, hasLastVirtualSelectedParent, err := ui.store.getLastVirtualSelectedParent()
-	if err != nil {
-		return false, err
-	}
-
-	if !hasLastVirtualSelectedParent {
-		return virtualSelectedParent.Equal(ui.genesisHash), nil
-	}
-
-	return virtualSelectedParent.Equal(lastVirtualSelectedParent), nil
 }
 
 // Update updates the UTXO index with the given DAG selected parent chain changes
@@ -92,17 +37,6 @@ func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedParentChainChanges
 	defer ui.mutex.Unlock()
 
 	log.Tracef("Updating UTXO index with chainChanges: %+v", chainChanges)
-	if len(chainChanges.Added) == 0 {
-		if len(chainChanges.Removed) != 0 {
-			return nil, errors.Errorf("len(chainChanges.Added) is 0 while len(chainChanges.Removed) is %d", len(chainChanges.Removed))
-		}
-
-		return nil, nil
-	}
-
-	virtualSelectedParent := chainChanges.Added[len(chainChanges.Added)-1]
-	ui.store.virtualSelectedParent = virtualSelectedParent
-
 	for _, removedBlockHash := range chainChanges.Removed {
 		err := ui.removeBlock(removedBlockHash)
 		if err != nil {
