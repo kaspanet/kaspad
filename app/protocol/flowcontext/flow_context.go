@@ -36,9 +36,6 @@ type FlowContext struct {
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
-	recentBlockAddedTimes      []int64
-	recentBlockAddedTimesMutex sync.Mutex
-
 	timeStarted int64
 
 	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
