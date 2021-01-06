@@ -1,3 +1,10 @@
+// RPC-related types. Request messages, response messages, and dependant types.
+//
+// Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
+//
+// Having received a KaspadMessage, the RPC server will respond with a ResponseMessage (likewise
+// wrapped in a KaspadMessage) respective to the original RequestMessage.
+//
 syntax = "proto3";
 package protowire;
 
