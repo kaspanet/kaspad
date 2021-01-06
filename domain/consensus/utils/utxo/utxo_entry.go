@@ -7,18 +7,18 @@ import (
 
 type utxoEntry struct {
 	amount          uint64
-	scriptPublicKey []byte
+	scriptPublicKey *externalapi.ScriptPublicKey
 	blockBlueScore  uint64
 	isCoinbase      bool
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(amount uint64, scriptPubKey []byte, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
-	scriptPubKeyClone := make([]byte, len(scriptPubKey))
-	copy(scriptPubKeyClone, scriptPubKey)
+func NewUTXOEntry(amount uint64, scriptPubKey *externalapi.ScriptPublicKey, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
+	scriptPubKeyClone := externalapi.ScriptPublicKey{Script: make([]byte, len(scriptPubKey.Script)), Version: scriptPubKey.Version}
+	copy(scriptPubKeyClone.Script, scriptPubKey.Script)
 	return &utxoEntry{
 		amount:          amount,
-		scriptPublicKey: scriptPubKeyClone,
+		scriptPublicKey: &scriptPubKeyClone,
 		blockBlueScore:  blockBlueScore,
 		isCoinbase:      isCoinbase,
 	}
@@ -28,10 +28,10 @@ func (u *utxoEntry) Amount() uint64 {
 	return u.amount
 }
 
-func (u *utxoEntry) ScriptPublicKey() []byte {
-	clone := make([]byte, len(u.scriptPublicKey))
-	copy(clone, u.scriptPublicKey)
-	return clone
+func (u *utxoEntry) ScriptPublicKey() *externalapi.ScriptPublicKey {
+	clone := externalapi.ScriptPublicKey{Script: make([]byte, len(u.scriptPublicKey.Script)), Version: u.scriptPublicKey.Version}
+	copy(clone.Script, u.scriptPublicKey.Script)
+	return &clone
 }
 
 func (u *utxoEntry) BlockBlueScore() uint64 {
@@ -60,7 +60,11 @@ func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
 		return false
 	}
 
-	if !bytes.Equal(u.ScriptPublicKey(), other.ScriptPublicKey()) {
+	if !bytes.Equal(u.ScriptPublicKey().Script, other.ScriptPublicKey().Script) {
+		return false
+	}
+
+	if u.ScriptPublicKey().Version != other.ScriptPublicKey().Version {
 		return false
 	}
 

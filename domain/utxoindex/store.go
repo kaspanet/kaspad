@@ -1,6 +1,7 @@
 package utxoindex
 
 import (
+	"encoding/binary"
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -27,7 +28,8 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	}
 }
 
-func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
+func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
+
 	key := ConvertScriptPublicKeyToString(scriptPublicKey)
 	log.Tracef("Adding outpoint %s:%d to scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -61,7 +63,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey []byte, outpoint *externalapi.Dom
 	return nil
 }
 
-func (uis *utxoIndexStore) remove(scriptPublicKey []byte, outpoint *externalapi.DomainOutpoint) error {
+func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint) error {
 	key := ConvertScriptPublicKeyToString(scriptPublicKey)
 	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -159,8 +161,11 @@ func (uis *utxoIndexStore) commit() error {
 	return nil
 }
 
-func (uis *utxoIndexStore) bucketForScriptPublicKey(scriptPublicKey []byte) *database.Bucket {
-	return utxoIndexBucket.Bucket(scriptPublicKey)
+func (uis *utxoIndexStore) bucketForScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey) *database.Bucket {
+	var scriptPublicKeyBytes = make([]byte, 2+len(scriptPublicKey.Script)) // uint16
+	binary.LittleEndian.PutUint16(scriptPublicKeyBytes[:2], scriptPublicKey.Version)
+	copy(scriptPublicKeyBytes[2:], scriptPublicKey.Script)
+	return utxoIndexBucket.Bucket(scriptPublicKeyBytes)
 }
 
 func (uis *utxoIndexStore) convertOutpointToKey(bucket *database.Bucket, outpoint *externalapi.DomainOutpoint) (*database.Key, error) {
@@ -201,7 +206,7 @@ func (uis *utxoIndexStore) deserializeUTXOEntry(serializedUTXOEntry []byte) (ext
 	if err != nil {
 		return nil, err
 	}
-	return serialization.DBUTXOEntryToUTXOEntry(&dbUTXOEntry), nil
+	return serialization.DBUTXOEntryToUTXOEntry(&dbUTXOEntry)
 }
 
 func (uis *utxoIndexStore) stagedData() (
@@ -229,7 +234,7 @@ func (uis *utxoIndexStore) stagedData() (
 	return toAddClone, toRemoveClone
 }
 
-func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey []byte) (UTXOOutpointEntryPairs, error) {
+func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
 	if uis.isAnythingStaged() {
 		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
 	}

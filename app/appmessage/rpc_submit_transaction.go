@@ -43,7 +43,7 @@ func NewSubmitTransactionResponseMessage(transactionID string) *SubmitTransactio
 // RPCTransaction is a kaspad transaction representation meant to be
 // used over RPC
 type RPCTransaction struct {
-	Version      int32
+	Version      uint16
 	Inputs       []*RPCTransactionInput
 	Outputs      []*RPCTransactionOutput
 	LockTime     uint64
@@ -61,11 +61,17 @@ type RPCTransactionInput struct {
 	Sequence         uint64
 }
 
+// RPCScriptPublicKey is a kaspad ScriptPublicKey representation
+type RPCScriptPublicKey struct {
+	Version uint16
+	Script  string
+}
+
 // RPCTransactionOutput is a kaspad transaction output representation
 // meant to be used over RPC
 type RPCTransactionOutput struct {
-	Amount       uint64
-	ScriptPubKey string
+	Amount          uint64
+	ScriptPublicKey *RPCScriptPublicKey
 }
 
 // RPCOutpoint is a kaspad outpoint representation meant to be used
@@ -78,8 +84,8 @@ type RPCOutpoint struct {
 // RPCUTXOEntry is a kaspad utxo entry representation meant to be used
 // over RPC
 type RPCUTXOEntry struct {
-	Amount         uint64
-	ScriptPubKey   string
-	BlockBlueScore uint64
-	IsCoinbase     bool
+	Amount          uint64
+	ScriptPublicKey *RPCScriptPublicKey
+	BlockBlueScore  uint64
+	IsCoinbase      bool
 }

@@ -2,6 +2,7 @@ package serialization
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // DomainTransactionToDbTransaction converts DomainTransaction to DbTransaction
@@ -17,14 +18,15 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 
 	dbOutputs := make([]*DbTransactionOutput, len(domainTransaction.Outputs))
 	for i, domainTransactionOutput := range domainTransaction.Outputs {
+		dbScriptPublicKey := ScriptPublicKeyToDBScriptPublicKey(domainTransactionOutput.ScriptPublicKey)
 		dbOutputs[i] = &DbTransactionOutput{
 			Value:           domainTransactionOutput.Value,
-			ScriptPublicKey: domainTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: dbScriptPublicKey,
 		}
 	}
 
 	return &DbTransaction{
-		Version:      domainTransaction.Version,
+		Version:      uint32(domainTransaction.Version),
 		Inputs:       dbInputs,
 		Outputs:      dbOutputs,
 		LockTime:     domainTransaction.LockTime,
@@ -61,14 +63,21 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 
 	domainOutputs := make([]*externalapi.DomainTransactionOutput, len(dbTransaction.Outputs))
 	for i, dbTransactionOutput := range dbTransaction.Outputs {
+		scriptPublicKey, err := DBScriptPublicKeyToScriptPublicKey(dbTransactionOutput.ScriptPublicKey)
+		if err != nil {
+			return nil, err
+		}
 		domainOutputs[i] = &externalapi.DomainTransactionOutput{
 			Value:           dbTransactionOutput.Value,
-			ScriptPublicKey: dbTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: scriptPublicKey,
 		}
 	}
 
+	if dbTransaction.Version > 0xFFFF {
+		return nil, errors.Errorf("The transaction version is bigger then uint16.")
+	}
 	return &externalapi.DomainTransaction{
-		Version:      dbTransaction.Version,
+		Version:      uint16(dbTransaction.Version),
 		Inputs:       domainInputs,
 		Outputs:      domainOutputs,
 		LockTime:     dbTransaction.LockTime,

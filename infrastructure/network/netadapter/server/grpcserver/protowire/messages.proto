@@ -126,7 +126,7 @@ message SubnetworkId{
 
 // TransactionMessage start
 message TransactionMessage{
-  int32 version = 1;
+  uint32 version = 1;
   repeated TransactionInput inputs = 2;
   repeated TransactionOutput outputs = 3;
   uint64 lockTime = 4;
@@ -150,10 +150,14 @@ message Outpoint{
 message TransactionId{
   bytes bytes = 1;
 }
+message ScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
 
 message TransactionOutput{
   uint64 value = 1;
-  bytes scriptPubKey = 2;
+  ScriptPublicKey scriptPublicKey = 2;
 }
 // TransactionMessage end
 
@@ -164,7 +168,7 @@ message BlockMessage{
 }
 
 message BlockHeaderMessage{
-  int32 version = 1;
+  uint32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
   Hash acceptedIdMerkleRoot = 4;
@@ -500,7 +504,7 @@ message GetBlockResponseMessage{
 
 message BlockVerboseData{
   string hash = 1;
-  int32 version = 2;
+  uint32 version = 2;
   string versionHex = 3;
   string hashMerkleRoot = 4;
   string acceptedIDMerkleRoot = 5;
@@ -521,7 +525,7 @@ message TransactionVerboseData{
   string txId = 1;
   string hash = 2;
   uint64 size = 3;
-  int32 version = 4;
+  uint32 version = 4;
   uint64 lockTime = 5;
   string subnetworkId = 6;
   uint64 gas = 7;
@@ -549,10 +553,10 @@ message ScriptSig{
 message TransactionVerboseOutput{
   uint64 value = 1;
   uint32 index = 2;
-  ScriptPubKeyResult scriptPubKey = 3;
+  ScriptPublicKeyResult scriptPublicKey = 3;
 }
 
-message ScriptPubKeyResult{
+message ScriptPublicKeyResult{
   string asm = 1;
   string hex = 2;
   string type = 3;
@@ -677,7 +681,7 @@ message UtxosByAddressesEntry {
 }
 
 message RpcTransaction {
-  int32 version = 1;
+  uint32 version = 1;
   repeated RpcTransactionInput inputs = 2;
   repeated RpcTransactionOutput outputs = 3;
   uint64 lockTime = 4;
@@ -693,9 +697,14 @@ message RpcTransactionInput {
   uint64 sequence = 3;
 }
 
+message RpcScriptPublicKey {
+  uint32 version = 1;
+  string scriptPublicKey = 2;
+}
+
 message RpcTransactionOutput {
   uint64 amount = 1;
-  string scriptPubKey = 2;
+  RpcScriptPublicKey scriptPublicKey = 2;
 }
 
 message RpcOutpoint {
@@ -705,7 +714,7 @@ message RpcOutpoint {
 
 message RpcUtxoEntry {
   uint64 amount = 1;
-  string scriptPubKey = 2;
+  RpcScriptPublicKey scriptPublicKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
 }

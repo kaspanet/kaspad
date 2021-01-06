@@ -9,10 +9,10 @@ func initTestCoinbaseDataStructsForClone() []*DomainCoinbaseData {
 
 	tests := []*DomainCoinbaseData{
 		{
-			[]byte{1, 2, 3, 4, 5, 6},
+			&ScriptPublicKey{Script: []byte{1, 2, 3, 4, 5, 6}, Version: 0},
 			[]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 		}, {
-			[]byte{0, 0, 0, 0, 55},
+			&ScriptPublicKey{Script: []byte{0, 0, 0, 0, 55}, Version: 0},
 			[]byte{0xFF, 0xFF, 0xFF, 0xFF,
 				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,

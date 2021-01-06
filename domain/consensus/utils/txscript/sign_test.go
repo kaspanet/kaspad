@@ -46,7 +46,7 @@ func mkGetScript(scripts map[string][]byte) ScriptDB {
 	})
 }
 
-func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScript, scriptPubKey []byte) error {
+func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScript []byte, scriptPubKey *externalapi.ScriptPublicKey) error {
 	tx.Inputs[idx].SignatureScript = sigScript
 	var flags ScriptFlags
 	vm, err := NewEngine(scriptPubKey, tx, idx,
@@ -65,12 +65,12 @@ func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScr
 	return nil
 }
 
-func signAndCheck(msg string, tx *externalapi.DomainTransaction, idx int, scriptPubKey []byte,
+func signAndCheck(msg string, tx *externalapi.DomainTransaction, idx int, scriptPubKey *externalapi.ScriptPublicKey,
 	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
 
 	sigScript, err := SignTxOutput(&dagconfig.TestnetParams, tx, idx,
-		scriptPubKey, hashType, kdb, sdb, nil)
+		scriptPubKey, hashType, kdb, sdb, &externalapi.ScriptPublicKey{Script: nil, Version: 0})
 	if err != nil {
 		return errors.Errorf("failed to sign output %s: %v", msg, err)
 	}
@@ -117,17 +117,20 @@ func TestSignTxOutput(t *testing.T) {
 	}
 	outputs := []*externalapi.DomainTransactionOutput{
 		{
-			Value: 1,
+			Value:           1,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 		{
-			Value: 2,
+			Value:           2,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 		{
-			Value: 3,
+			Value:           3,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 		},
 	}
 	tx := &externalapi.DomainTransaction{
-		Version: 1,
+		Version: 0,
 		Inputs:  inputs,
 		Outputs: outputs,
 	}
@@ -174,7 +177,7 @@ func TestSignTxOutput(t *testing.T) {
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
-				}), mkGetScript(nil), nil)
+				}), mkGetScript(nil), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
 					err)
@@ -187,7 +190,10 @@ func TestSignTxOutput(t *testing.T) {
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
-				}), mkGetScript(nil), sigScript)
+				}), mkGetScript(nil), &externalapi.ScriptPublicKey{
+					Script:  sigScript,
+					Version: scriptPubKey.Version,
+				})
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
 					"second time: %v", msg, err)
@@ -242,7 +248,6 @@ func TestSignTxOutput(t *testing.T) {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
-
 			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
@@ -297,7 +302,7 @@ func TestSignTxOutput(t *testing.T) {
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
-				}), mkGetScript(nil), nil)
+				}), mkGetScript(nil), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
 					err)
@@ -310,7 +315,10 @@ func TestSignTxOutput(t *testing.T) {
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
-				}), mkGetScript(nil), sigScript)
+				}), mkGetScript(nil), &externalapi.ScriptPublicKey{
+					Script:  sigScript,
+					Version: scriptPubKey.Version,
+				})
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
 					"second time: %v", msg, err)
@@ -369,15 +377,14 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixKaspaTest)
+				scriptPubKey.Script, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
+			scriptScriptPubKey, err := PayToAddrScript(scriptAddr)
 			if err != nil {
 				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
@@ -388,7 +395,7 @@ func TestSignTxOutput(t *testing.T) {
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
+					scriptAddr.EncodeAddress(): scriptPubKey.Script,
 				}), nil); err != nil {
 				t.Error(err)
 				break
@@ -437,28 +444,26 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				scriptPubKey, util.Bech32PrefixKaspaTest)
+				scriptPubKey.Script, util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptScriptPubKey, err := PayToAddrScript(
-				scriptAddr)
+			scriptScriptPubKey, err := PayToAddrScript(scriptAddr)
 			if err != nil {
 				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
-
 			_, err = SignTxOutput(&dagconfig.TestnetParams,
 				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
-				}), nil)
+					scriptAddr.EncodeAddress(): scriptPubKey.Script,
+				}), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
 					err)
@@ -472,8 +477,8 @@ func TestSignTxOutput(t *testing.T) {
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey,
-				}), nil)
+					scriptAddr.EncodeAddress(): scriptPubKey.Script,
+				}), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
 					"second time: %v", msg, err)
@@ -515,18 +520,18 @@ var (
 		0xb4, 0xfc, 0x4e, 0x55, 0xd4, 0x88, 0x42, 0xb3, 0xa1, 0x65,
 		0xac, 0x70, 0x7f, 0x3d, 0xa4, 0x39, 0x5e, 0xcb, 0x3b, 0xb0,
 		0xd6, 0x0e, 0x06, 0x92}
-	oldUncompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+	oldUncompressedScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
-		0x53, 0x90, 0x0e, 0x0a, 0x86, 0xc9, 0xfa, 0x88, 0xac}
-	oldCompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
+		0x53, 0x90, 0x0e, 0x0a, 0x86, 0xc9, 0xfa, 0x88, 0xac}, 0}
+	oldCompressedScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
-		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}
-	p2pkhScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x7e, 0x01, 0x76, 0xb6,
+		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}, 0}
+	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x7e, 0x01, 0x76, 0xb6,
 		0x72, 0x08, 0xc0, 0x08, 0x98, 0x85, 0x97, 0x00, 0x4e, 0x1a, 0x8d,
-		0x60, 0x89, 0xfe, 0x42, 0x6f, 0x88, 0xac}
-	shortScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+		0x60, 0x89, 0xfe, 0x42, 0x6f, 0x88, 0xac}, 0}
+	shortScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
-		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}
+		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}, 0}
 )
 
 // Pretend output amounts.
@@ -738,7 +743,7 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "short ScriptPubKey",
+		name: "short ScriptPublicKey",
 		inputs: []tstInput{
 			{
 				txout: &externalapi.DomainTransactionOutput{
@@ -817,7 +822,7 @@ func TestSignatureScript(t *testing.T) {
 nexttest:
 	for i := range sigScriptTests {
 		outputs := []*externalapi.DomainTransactionOutput{
-			{Value: 500, ScriptPublicKey: []byte{OpReturn}},
+			{Value: 500, ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{OpReturn}, 0}},
 		}
 
 		inputs := []*externalapi.DomainTransactionInput{}
@@ -827,7 +832,7 @@ nexttest:
 			})
 		}
 		tx := &externalapi.DomainTransaction{
-			Version: 1,
+			Version: 0,
 			Inputs:  inputs,
 			Outputs: outputs,
 		}

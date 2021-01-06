@@ -30,6 +30,5 @@ func deserializeUTXOEntry(entryBytes []byte) (externalapi.UTXOEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return serialization.DBUTXOEntryToUTXOEntry(dbEntry), nil
+	return serialization.DBUTXOEntryToUTXOEntry(dbEntry)
 }
