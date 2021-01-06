@@ -1,12 +1,15 @@
 package consensus
 
 import (
+	"encoding/json"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/pkg/errors"
+	"io"
 )
 
 type testConsensus struct {
@@ -80,6 +83,50 @@ func (tc *testConsensus) AddHeader(parentHashes []*externalapi.DomainHash, coinb
 	}
 
 	return consensushashing.BlockHash(block), blockInsertionResult, nil
+}
+
+func (tc *testConsensus) MineJSON(r io.Reader) error {
+	// JSONBlock is a json representation of a block in mine format
+	type JSONBlock struct {
+		ID      string   `json:"id"`
+		Parents []string `json:"parents"`
+	}
+
+	parentsMap := make(map[string]*externalapi.DomainHash)
+	parentsMap["0"] = tc.dagParams.GenesisHash
+
+	decoder := json.NewDecoder(r)
+	// read open bracket
+	_, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	// while the array contains values
+	for decoder.More() {
+		var block JSONBlock
+		// decode an array value (Message)
+		err := decoder.Decode(&block)
+		if err != nil {
+			return err
+		}
+		if block.ID == "0" {
+			continue
+		}
+		parentHashes := make([]*externalapi.DomainHash, len(block.Parents))
+		var ok bool
+		for i, parentID := range block.Parents {
+			parentHashes[i], ok = parentsMap[parentID]
+			if !ok {
+				return errors.Errorf("Couldn't find blockID: %s", parentID)
+			}
+		}
+		blockHash, _, err := tc.AddBlock(parentHashes, nil, nil)
+		if err != nil {
+			return err
+		}
+		parentsMap[block.ID] = blockHash
+	}
+	return nil
 }
 
 func (tc *testConsensus) DiscardAllStores() {

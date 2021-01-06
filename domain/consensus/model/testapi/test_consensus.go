@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"io"
 )
 
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
@@ -26,6 +27,7 @@ type TestConsensus interface {
 	AddHeader(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
 
+	MineJSON(r io.Reader) error
 	DiscardAllStores()
 
 	AcceptanceDataStore() model.AcceptanceDataStore
