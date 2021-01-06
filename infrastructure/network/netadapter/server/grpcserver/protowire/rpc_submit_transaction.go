@@ -3,6 +3,7 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
@@ -71,7 +72,7 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 		}
 	}
 
-	if x.Version > 0xffff {
+	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid RPC txn version - bigger then uint16")
 	}
 
@@ -89,7 +90,7 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 
 // ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey converts from RpcScriptPubKey to RPCScriptPublicKey.
 func ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPublicKey) (*appmessage.RPCScriptPublicKey, error) {
-	if toConvert.Version > 0xffff {
+	if toConvert.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
 	version := uint16(toConvert.Version)

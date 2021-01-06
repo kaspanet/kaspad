@@ -3,6 +3,7 @@ package serialization
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
+	"math"
 )
 
 // DomainTransactionToDbTransaction converts DomainTransaction to DbTransaction
@@ -73,7 +74,7 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 		}
 	}
 
-	if dbTransaction.Version > 0xFFFF {
+	if dbTransaction.Version > math.MaxUint16 {
 		return nil, errors.Errorf("The transaction version is bigger then uint16.")
 	}
 	return &externalapi.DomainTransaction{

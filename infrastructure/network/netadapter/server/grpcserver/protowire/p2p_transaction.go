@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {
@@ -30,7 +31,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
-		if protoOutput.ScriptPublicKey.Version > 0xFFFF {
+		if protoOutput.ScriptPublicKey.Version > math.MaxUint16 {
 			return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")
 		}
 		outputs[i] = &appmessage.TxOut{
@@ -55,7 +56,7 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 			return nil, err
 		}
 	}
-	if x.Version > 0xffff {
+	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
 	}
 	return &appmessage.MsgTx{

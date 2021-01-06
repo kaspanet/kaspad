@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
@@ -295,13 +296,13 @@ func CalcSignatureHash(script *externalapi.ScriptPublicKey, hashType SigHashType
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
 	}
-	return calcSignatureHash(parsedScript, hashType, tx, idx)
+	return calcSignatureHash(parsedScript, script.Version, hashType, tx, idx)
 }
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
+func calcSignatureHash(prevScriptPublicKey []parsedOpcode, scriptVersion uint16, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -320,8 +321,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *external
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
 			// above only returns a valid script.
-			sigScript, _ := unparseScript(script)
-			txCopy.Inputs[idx].SignatureScript = sigScript
+			sigScript, _ := unparseScript(prevScriptPublicKey)
+			var version [2]byte
+			binary.LittleEndian.PutUint16(version[:], scriptVersion)
+			txCopy.Inputs[idx].SignatureScript = append(version[:], sigScript...)
 		} else {
 			txCopy.Inputs[i].SignatureScript = nil
 		}
