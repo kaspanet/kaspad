@@ -9,6 +9,7 @@ import (
 // HandleGetConnectedPeerInfo handles the respectively named RPC command
 func HandleGetConnectedPeerInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
 	peers := context.ProtocolManager.Peers()
+	ibdPeer := context.ProtocolManager.IBDPeer()
 	infos := make([]*appmessage.GetConnectedPeerInfoMessage, 0, len(peers))
 	for _, peer := range peers {
 		info := &appmessage.GetConnectedPeerInfoMessage{
@@ -20,6 +21,7 @@ func HandleGetConnectedPeerInfo(context *rpccontext.Context, _ *router.Router, _
 			UserAgent:                 peer.UserAgent(),
 			AdvertisedProtocolVersion: peer.AdvertisedProtocolVersion(),
 			TimeConnected:             peer.TimeConnected().Milliseconds(),
+			IsIBDPeer:                 peer == ibdPeer,
 		}
 		infos = append(infos, info)
 	}
