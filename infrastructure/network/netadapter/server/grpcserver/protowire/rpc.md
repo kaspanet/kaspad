@@ -84,11 +84,12 @@
 
 - [Scalar Value Types](#scalar-value-types)
 
+
+
 <a name="rpc.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## rpc.proto
-
 RPC-related types. Request messages, response messages, and dependant types.
 
 Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
@@ -97,6 +98,7 @@ Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server wi
 likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 **IMPORTANT:** This API is a work in progress and is subject to break between versions.
+
 
 <a name="protowire.RPCError"></a>
 
@@ -667,6 +669,8 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 
 ### ShutDownRequestMessage
 
+ShutDownRequestMessage shuts down this kaspad.
+
 <a name="protowire.ShutDownResponseMessage"></a>
 
 ### ShutDownResponseMessage
@@ -678,6 +682,8 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 <a name="protowire.GetHeadersRequestMessage"></a>
 
 ### GetHeadersRequestMessage
+
+GetHeadersRequestMessage requests headers between the given startHash and the current virtual, up to the given limit.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -698,6 +704,12 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 
 ### NotifyUtxosChangedRequestMessage
 
+NotifyUtxosChangedRequestMessage registers this connection for utxoChanged notifications for the given addresses.
+
+This call is only available when this kaspad was started with `--utxoindex`
+
+See: UtxosChangedNotificationMessage
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
@@ -713,6 +725,10 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 <a name="protowire.UtxosChangedNotificationMessage"></a>
 
 ### UtxosChangedNotificationMessage
+
+UtxosChangedNotificationMessage is sent whenever the UTXO index had been updated.
+
+See: NotifyUtxosChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -808,6 +824,10 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 
 ### GetUtxosByAddressesRequestMessage
 
+GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
+
+This call is only available when this kaspad was started with `--utxoindex`
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
@@ -825,6 +845,9 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 
 ### GetVirtualSelectedParentBlueScoreRequestMessage
 
+GetVirtualSelectedParentBlueScoreRequestMessage requests the blue score of the current selected parent of the virtual
+block.
+
 <a name="protowire.GetVirtualSelectedParentBlueScoreResponseMessage"></a>
 
 ### GetVirtualSelectedParentBlueScoreResponseMessage
@@ -837,6 +860,11 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 <a name="protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage"></a>
 
 ### NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+
+NotifyVirtualSelectedParentBlueScoreChangedRequestMessage registers this connection for
+virtualSelectedParentBlueScoreChanged notifications.
+
+See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 
 <a name="protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage"></a>
 
@@ -855,6 +883,10 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 
 ### VirtualSelectedParentBlueScoreChangedNotificationMessage
 
+VirtualSelectedParentBlueScoreChangedNotificationMessage is sent whenever the blue score of the virtual&#39;s selected
+parent changes.
+
+See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 
 | Field | Type | Label | Description |
