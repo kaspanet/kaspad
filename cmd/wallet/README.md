@@ -10,7 +10,7 @@ It is capable of generating wallet key-pairs, printing a wallet's current balanc
 
 ## Requirements
 
-Latest version of [Go](http://golang.org) (currently 1.13).
+Go 1.14 or later.
 
 ## Installation
 

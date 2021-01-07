@@ -4,7 +4,7 @@ kaspactl is an RPC client for kaspad
 
 ## Requirements
 
-Latest version of [Go](http://golang.org) (currently 1.13).
+Go 1.14 or later.
 
 ## Installation
 

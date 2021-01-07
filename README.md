@@ -18,7 +18,7 @@ Kaspa is the fastest pure proof of work consensus engine in the crypto space. It
 
 ## Requirements
 
-Latest version of [Go](http://golang.org) (currently 1.13).
+Go 1.14 or later.
 
 ## Installation
 
