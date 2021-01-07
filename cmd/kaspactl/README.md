@@ -41,13 +41,13 @@ $ kaspctl --help
 But the minimum configuration needed to run it is:
 
 ```bash
-$ kaspaminer <REQUEST_JSON>
+$ kaspactl <REQUEST_JSON>
 ```
 
 For example:
 
 ```
-$ kaspaminer '{"getBlockDagInfoRequest":{}}'
+$ kaspactl '{"getBlockDagInfoRequest":{}}'
 ```
 
 For a list of all available requests check out the [RPC documentation](infrastructure/network/netadapter/server/grpcserver/protowire/rpc.md)

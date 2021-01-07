@@ -14,7 +14,7 @@ Some things still don't work and APIs are far from finalized. The code is provid
 
 ## What is kaspa
 
-Kaspa is the fastest pure proof of work consensus engine in the crypto space. It is based on PHANTOM consensus, a scalable generalization of Nakamoto consensus.
+Kaspa is an attempt at an Internet speed proof-of-work cryptocurrency, based on a generalization of Nakamoto Consensus, the PHANTOM protocol
 
 ## Requirements
 
