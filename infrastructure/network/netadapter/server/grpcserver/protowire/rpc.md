@@ -148,7 +148,10 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 <a name="protowire.BlockAddedNotificationMessage"></a>
 
 ### BlockAddedNotificationMessage
+BlockAddedNotificationMessage is sent whenever a blocks has been added (NOT accepted)
+into the DAG.
 
+See: NotifyBlockAddedRequestMessage
 
 
 | Field | Type | Label | Description |
@@ -333,33 +336,28 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetBlockTemplateRequestMessage
 
+GetBlockTemplateRequestMessage requests a current block template. Callers are expected to solve the block template and
+submit it using the submitBlock call
+
+See: SubmitBlockRequestMessage
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| payAddress | [string](#string) |  |  |
-
-
-
-
-
+| payAddress | [string](#string) |  | Which kaspa address should the coinbase block reward transaction pay into |
 
 <a name="protowire.GetBlockTemplateResponseMessage"></a>
 
 ### GetBlockTemplateResponseMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blockMessage | [BlockMessage](#protowire.BlockMessage) |  |  |
-| isSynced | [bool](#bool) |  |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
+| isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced.
 
-
-
-
-
+Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad
+isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the
+solving effort would have been wasted. | | error | [RPCError](#protowire.RPCError) | | |
 
 <a name="protowire.GetBlocksRequestMessage"></a>
 
@@ -401,18 +399,16 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetConnectedPeerInfoMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | address | [string](#string) |  |  |
-| lastPingDuration | [int64](#int64) |  |  |
-| isOutbound | [bool](#bool) |  |  |
+| lastPingDuration | [int64](#int64) |  | How long did the last ping/pong exchange take |
+| isOutbound | [bool](#bool) |  | Whether this kaspad initiated the connection |
 | timeOffset | [int64](#int64) |  |  |
 | userAgent | [string](#string) |  |  |
-| advertisedProtocolVersion | [uint32](#uint32) |  |  |
-| timeConnected | [int64](#int64) |  |  |
+| advertisedProtocolVersion | [uint32](#uint32) |  | The protocol version that this peer claims to support |
+| timeConnected | [int64](#int64) |  | The timestamp of when this peer connected to this kaspad |
 
 
 
@@ -423,11 +419,7 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetConnectedPeerInfoRequestMessage
 
-
-
-
-
-
+GetConnectedPeerInfoRequestMessage requests information about all the p2p peers currently connected to this kaspad.
 
 <a name="protowire.GetConnectedPeerInfoResponseMessage"></a>
 
@@ -449,11 +441,9 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetCurrentNetworkRequestMessage
 
+GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
 
-
-
-
-
+Possible networks are: Mainnet, Testnet, Simnet, Devnet
 
 <a name="protowire.GetCurrentNetworkResponseMessage"></a>
 
@@ -508,11 +498,7 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetMempoolEntriesRequestMessage
 
-
-
-
-
-
+GetMempoolEntriesRequestMessage requests information about all the transactions currently in the mempool.
 
 <a name="protowire.GetMempoolEntriesResponseMessage"></a>
 
@@ -534,11 +520,12 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetMempoolEntryRequestMessage
 
+GetMempoolEntryRequestMessage requests information about a specific transaction in the mempool.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txId | [string](#string) |  |  |
+| txId | [string](#string) |  | The transaction&#39;s TransactionID. |
 
 
 
@@ -580,11 +567,8 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetPeerAddressesRequestMessage
 
-
-
-
-
-
+GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the current network. (mainnet, testnet,
+etc.)
 
 <a name="protowire.GetPeerAddressesResponseMessage"></a>
 
@@ -607,11 +591,7 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 ### GetSelectedTipHashRequestMessage
 
-
-
-
-
-
+GetSelectedTipHashRequestMessage requests the hash of the current virtual&#39;s selected parent.
 
 <a name="protowire.GetSelectedTipHashResponseMessage"></a>
 
@@ -752,7 +732,7 @@ wrapped in a KaspadMessage) respective to the original RequestMessage.
 <a name="protowire.MempoolEntry"></a>
 
 ### MempoolEntry
-mempool entries start
+
 
 
 | Field | Type | Label | Description |
@@ -769,11 +749,9 @@ mempool entries start
 
 ### NotifyBlockAddedRequestMessage
 
+NotifyBlockAddedRequestMessage registers this connection for blockAdded notifications.
 
-
-
-
-
+See: BlockAddedNotificationMessage
 
 <a name="protowire.NotifyBlockAddedResponseMessage"></a>
 
@@ -899,6 +877,9 @@ mempool entries start
 
 ### RPCError
 
+RPCError represents a generic non-internal error.
+
+Receivers of any ResponseMessage are expected to check whether its error field is not null.
 
 
 | Field | Type | Label | Description |
@@ -1108,6 +1089,10 @@ mempool entries start
 
 ### SubmitBlockRequestMessage
 
+SubmitBlockRequestMessage requests to submit a block into the DAG. Blocks are generally expected to have been generated
+using the getBlockTemplate call.
+
+See: GetBlockTemplateRequestMessage
 
 
 | Field | Type | Label | Description |

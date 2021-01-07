@@ -12,10 +12,16 @@ option go_package = "github.com/kaspanet/kaspad/protowire";
 
 import "p2p.proto";
 
+// RPCError represents a generic non-internal error.
+//
+// Receivers of any ResponseMessage are expected to check whether its error field is not null.
 message RPCError{
   string message = 1;
 }
 
+// GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
+//
+// Possible networks are: Mainnet, Testnet, Simnet, Devnet
 message GetCurrentNetworkRequestMessage{
 }
 
@@ -24,6 +30,10 @@ message GetCurrentNetworkResponseMessage{
   RPCError error = 1000;
 }
 
+// SubmitBlockRequestMessage requests to submit a block into the DAG.
+// Blocks are generally expected to have been generated using the getBlockTemplate call.
+//
+// See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
   BlockMessage block = 1;
 }
@@ -32,17 +42,31 @@ message SubmitBlockResponseMessage{
   RPCError error = 1000;
 }
 
+// GetBlockTemplateRequestMessage requests a current block template.
+// Callers are expected to solve the block template and submit it using the submitBlock call
+//
+// See: SubmitBlockRequestMessage
 message GetBlockTemplateRequestMessage{
+  // Which kaspa address should the coinbase block reward transaction pay into
   string payAddress = 1;
 }
 
 message GetBlockTemplateResponseMessage{
   BlockMessage blockMessage = 1;
+
+  // Whether kaspad thinks that it's synced.
+  //
+  // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
+  // That is because when kaspad isn't in sync with the rest of the network there's a high
+  // chance the block will never be accepted, thus the solving effort would have been wasted.
   bool isSynced = 2;
 
   RPCError error = 1000;
 }
 
+// NotifyBlockAddedRequestMessage registers this connection for blockAdded notifications.
+//
+// See: BlockAddedNotificationMessage
 message NotifyBlockAddedRequestMessage{
 }
 
@@ -50,10 +74,16 @@ message NotifyBlockAddedResponseMessage{
   RPCError error = 1000;
 }
 
+// BlockAddedNotificationMessage is sent whenever a blocks has been added (NOT accepted)
+// into the DAG.
+//
+// See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
   BlockMessage block = 1;
 }
 
+// GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
+// current network. (mainnet, testnet, etc.)
 message GetPeerAddressesRequestMessage{
 }
 
@@ -67,6 +97,8 @@ message GetPeerAddressesKnownAddressMessage {
   string Addr = 1;
 }
 
+// GetSelectedTipHashRequestMessage requests the hash of the current virtual's
+// selected parent.
 message GetSelectedTipHashRequestMessage{
 }
 
@@ -75,13 +107,10 @@ message GetSelectedTipHashResponseMessage{
   RPCError error = 1000;
 }
 
-// mempool entries start
-message MempoolEntry{
-  uint64 fee = 1;
-  TransactionVerboseData transactionVerboseData = 2;
-}
-
+// GetMempoolEntryRequestMessage requests information about a specific transaction
+// in the mempool.
 message GetMempoolEntryRequestMessage{
+  // The transaction's TransactionID.
   string txId = 1;
 }
 
@@ -91,6 +120,8 @@ message GetMempoolEntryResponseMessage{
   RPCError error = 1000;
 }
 
+// GetMempoolEntriesRequestMessage requests information about all the transactions
+// currently in the mempool.
 message GetMempoolEntriesRequestMessage{
 }
 
@@ -99,8 +130,14 @@ message GetMempoolEntriesResponseMessage{
 
   RPCError error = 1000;
 }
-// mempool entries end
 
+message MempoolEntry{
+  uint64 fee = 1;
+  TransactionVerboseData transactionVerboseData = 2;
+}
+
+// GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
+// currently connected to this kaspad.
 message GetConnectedPeerInfoRequestMessage{
 }
 
@@ -112,11 +149,19 @@ message GetConnectedPeerInfoResponseMessage{
 message GetConnectedPeerInfoMessage{
   string id = 1;
   string address = 2;
+
+  // How long did the last ping/pong exchange take
   int64 lastPingDuration = 3;
+
+  // Whether this kaspad initiated the connection
   bool isOutbound = 6;
   int64 timeOffset = 7;
   string userAgent = 8;
+
+  // The protocol version that this peer claims to support
   uint32 advertisedProtocolVersion = 9;
+
+  // The timestamp of when this peer connected to this kaspad
   int64 timeConnected = 10;
 }
 
