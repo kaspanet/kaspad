@@ -378,7 +378,7 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 
 	tstConsensus := &testConsensus{
 		dagParams:                 dagParams,
-		testParams: 			   &testapi.TestParams{ValidateMining: true},
+		testParams:                &testapi.TestParams{ValidateMining: true},
 		consensus:                 consensusAsImplementation,
 		database:                  db,
 		testConsensusStateManager: testConsensusStateManager,
