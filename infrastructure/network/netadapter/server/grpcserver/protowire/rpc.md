@@ -170,11 +170,8 @@ See: SubmitBlockRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blockMessage | [BlockMessage](#protowire.BlockMessage) |  |  |
-| isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced.
-
-Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad
-isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the
-solving effort would have been wasted. | | error | [RPCError](#protowire.RPCError) | | |
+| isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced. Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the solving effort would have been wasted. |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 <a name="protowire.NotifyBlockAddedRequestMessage"></a>
 

@@ -57,7 +57,6 @@ message GetBlockTemplateResponseMessage{
   BlockMessage blockMessage = 1;
 
   // Whether kaspad thinks that it's synced.
-  //
   // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
   // That is because when kaspad isn't in sync with the rest of the network there's a high
   // chance the block will never be accepted, thus the solving effort would have been wasted.
