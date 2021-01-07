@@ -14,7 +14,7 @@ Some things still don't work and APIs are far from finalized. The code is provid
 
 ## What is kaspa
 
-Kaspa is an attempt at a proof-of-work cryptocurrency that operates in internet speed, with subsecond block times, based on a generalization of Nakamoto Consensus, the PHANTOM protocol.
+Kaspa is an attempt at a proof-of-work cryptocurrency with instant confirmation, with subsecond block times, based on a generalization of Nakamoto Consensus, the PHANTOM protocol.
 
 ## Requirements
 
