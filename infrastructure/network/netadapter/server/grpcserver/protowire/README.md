@@ -10,6 +10,7 @@ protowire
 Documentation
 -------------
 
-To generate `rpc.md` run the following in the protowire directory:
+To generate `rpc.md`:
 
-`docker run --rm -v $(pwd):/out -v $(pwd):/protos pseudomuto/protoc-gen-doc --doc_opt=markdown,rpc.md rpc.proto`
+1. `go get -u github.com/kaspanet/protoc-gen-doc/cmd/protoc-gen-doc`
+2. In the protowire directory: `protoc --doc_out=. --doc_opt=markdown,rpc.md rpc.proto`
