@@ -8,11 +8,16 @@ import (
 	"io"
 )
 
+type TestParams struct {
+	ValidateMining bool
+}
+
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
 type TestConsensus interface {
 	externalapi.Consensus
 
 	DAGParams() *dagconfig.Params
+	TestParams() *TestParams
 	DatabaseContext() model.DBManager
 	Database() database.Database
 

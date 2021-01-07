@@ -15,6 +15,7 @@ import (
 type testConsensus struct {
 	*consensus
 	dagParams *dagconfig.Params
+	testParams *testapi.TestParams
 	database  database.Database
 
 	testBlockBuilder          testapi.TestBlockBuilder
@@ -25,6 +26,10 @@ type testConsensus struct {
 
 func (tc *testConsensus) DAGParams() *dagconfig.Params {
 	return tc.dagParams
+}
+
+func (tc *testConsensus) TestParams() *testapi.TestParams {
+	return tc.testParams
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
