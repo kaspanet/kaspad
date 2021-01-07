@@ -2,8 +2,10 @@
 //
 // Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
 //
-// Having received a KaspadMessage, the RPC server will respond with a ResponseMessage (likewise
-// wrapped in a KaspadMessage) respective to the original RequestMessage.
+// Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server will respond with a
+// ResponseMessage (likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
+//
+// **IMPORTANT:** This API is a work in progress and is subject to break between versions.
 //
 syntax = "proto3";
 package protowire;
@@ -165,8 +167,12 @@ message GetConnectedPeerInfoMessage{
   int64 timeConnected = 10;
 }
 
+// AddPeerRequestMessage adds a peer to kaspad's outgoing connection list.
+// This will, in most cases, result in kaspad connecting to said peer.
 message AddPeerRequestMessage{
   string address = 1;
+
+  // Whether to keep attempting to connect to this peer after disconnection
   bool isPermanent = 2;
 }
 
@@ -174,16 +180,21 @@ message AddPeerResponseMessage{
   RPCError error = 1000;
 }
 
+// SubmitTransactionRequestMessage submits a transaction to the mempool
 message SubmitTransactionRequestMessage{
   RpcTransaction transaction = 1;
 }
 
 message SubmitTransactionResponseMessage{
+  // The transaction ID of the submitted transaction
   string transactionId = 1;
 
   RPCError error = 1000;
 }
 
+// NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection for virtualSelectedParentChainChanged notifications.
+//
+// See: VirtualSelectedParentChainChangedNotificationMessage
 message NotifyVirtualSelectedParentChainChangedRequestMessage{
 }
 
@@ -191,8 +202,15 @@ message NotifyVirtualSelectedParentChainChangedResponseMessage{
   RPCError error = 1000;
 }
 
+// VirtualSelectedParentChainChangedNotificationMessage is sent whenever the DAG's selected parent
+// chain had changed.
+//
+// See: NotifyVirtualSelectedParentChainChangedRequestMessage
 message VirtualSelectedParentChainChangedNotificationMessage{
+  // The chain blocks that were removed, in high-to-low order
   repeated string removedChainBlockHashes = 1;
+
+  // The chain blocks that were added, in low-to-high order
   repeated ChainBlock addedChainBlocks = 2;
 }
 
@@ -206,9 +224,13 @@ message AcceptedBlock{
   repeated string acceptedTransactionIds = 2;
 }
 
+// GetBlockRequestMessage requests information about a specific block
 message GetBlockRequestMessage{
+  // The hash of the requested block
   string hash = 1;
   string subnetworkId = 2;
+
+  // Whether to include transaction data in the response
   bool includeTransactionVerboseData = 3;
 }
 
@@ -279,6 +301,9 @@ message ScriptPublicKeyResult{
   string address = 4;
 }
 
+// GetSubnetworkRequestMessage requests information about a specific subnetwork
+//
+// Currently unimplemented
 message GetSubnetworkRequestMessage{
   string subnetworkId = 1;
 }
@@ -288,17 +313,24 @@ message GetSubnetworkResponseMessage{
   RPCError error = 1000;
 }
 
+// GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected
+// parent chain from some startHash to this kaspad's current virtual
 message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
 }
 
 message GetVirtualSelectedParentChainFromBlockResponseMessage{
+  // The chain blocks that were removed, in high-to-low order
   repeated string removedChainBlockHashes = 1;
+
+  // The chain blocks that were added, in low-to-high order
   repeated ChainBlock addedChainBlocks = 2;
 
   RPCError error = 1000;
 }
 
+// GetBlocksRequestMessage requests blocks between a certain block lowHash up to this
+// kaspad's current virtual.
 message GetBlocksRequestMessage{
   string lowHash = 1;
   bool includeBlockHexes = 2;
@@ -313,6 +345,8 @@ message GetBlocksResponseMessage{
   RPCError error = 1000;
 }
 
+// GetBlockCountRequestMessage requests the current number of blocks in this kaspad.
+// Note that this number may decrease as pruning occurs.
 message GetBlockCountRequestMessage{
 }
 
@@ -322,6 +356,8 @@ message GetBlockCountResponseMessage{
   RPCError error = 1000;
 }
 
+// GetBlockDagInfoRequestMessage requests general information about the current state
+// of this kaspad's DAG.
 message GetBlockDagInfoRequestMessage{
 }
 

@@ -81,10 +81,8 @@
   - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
   - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
   - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
-  
+
 - [Scalar Value Types](#scalar-value-types)
-
-
 
 <a name="rpc.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -95,8 +93,10 @@ RPC-related types. Request messages, response messages, and dependant types.
 
 Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
 
-Having received a KaspadMessage, the RPC server will respond with a ResponseMessage (likewise wrapped in a
-KaspadMessage) respective to the original RequestMessage.
+Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server will respond with a ResponseMessage (
+likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
+
+**IMPORTANT:** This API is a work in progress and is subject to break between versions.
 
 <a name="protowire.RPCError"></a>
 
@@ -143,8 +143,6 @@ See: GetBlockTemplateRequestMessage
 <a name="protowire.SubmitBlockResponseMessage"></a>
 
 ### SubmitBlockResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -307,8 +305,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetConnectedPeerInfoMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
@@ -324,16 +320,17 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### AddPeerRequestMessage
 
+AddPeerRequestMessage adds a peer to kaspad&#39;s outgoing connection list. This will, in most cases, result in kaspad
+connecting to said peer.
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | address | [string](#string) |  |  |
-| isPermanent | [bool](#bool) |  |  |
+| isPermanent | [bool](#bool) |  | Whether to keep attempting to connect to this peer after disconnection |
 
 <a name="protowire.AddPeerResponseMessage"></a>
 
 ### AddPeerResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -343,7 +340,7 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### SubmitTransactionRequestMessage
 
-
+SubmitTransactionRequestMessage submits a transaction to the mempool
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -355,12 +352,17 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| transactionId | [string](#string) |  |  |
+| transactionId | [string](#string) |  | The transaction ID of the submitted transaction |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 <a name="protowire.NotifyVirtualSelectedParentChainChangedRequestMessage"></a>
 
 ### NotifyVirtualSelectedParentChainChangedRequestMessage
+
+NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection for virtualSelectedParentChainChanged
+notifications.
+
+See: VirtualSelectedParentChainChangedNotificationMessage
 
 <a name="protowire.NotifyVirtualSelectedParentChainChangedResponseMessage"></a>
 
@@ -374,10 +376,14 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### VirtualSelectedParentChainChangedNotificationMessage
 
+VirtualSelectedParentChainChangedNotificationMessage is sent whenever the DAG&#39;s selected parent chain had changed.
+
+See: NotifyVirtualSelectedParentChainChangedRequestMessage
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| removedChainBlockHashes | [string](#string) | repeated |  |
-| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated |  |
+| removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
+| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
 
 <a name="protowire.ChainBlock"></a>
 
@@ -401,11 +407,13 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetBlockRequestMessage
 
+GetBlockRequestMessage requests information about a specific block
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| hash | [string](#string) |  |  |
+| hash | [string](#string) |  | The hash of the requested block |
 | subnetworkId | [string](#string) |  |  |
-| includeTransactionVerboseData | [bool](#bool) |  |  |
+| includeTransactionVerboseData | [bool](#bool) |  | Whether to include transaction data in the response |
 
 <a name="protowire.GetBlockResponseMessage"></a>
 
@@ -506,6 +514,10 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetSubnetworkRequestMessage
 
+GetSubnetworkRequestMessage requests information about a specific subnetwork
+
+Currently unimplemented
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | subnetworkId | [string](#string) |  |  |
@@ -523,7 +535,8 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetVirtualSelectedParentChainFromBlockRequestMessage
 
-
+GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected parent chain from some startHash to
+this kaspad&#39;s current virtual
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -538,17 +551,17 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetVirtualSelectedParentChainFromBlockResponseMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| removedChainBlockHashes | [string](#string) | repeated |  |
-| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated |  |
+| removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
+| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 <a name="protowire.GetBlocksRequestMessage"></a>
 
 ### GetBlocksRequestMessage
+
+GetBlocksRequestMessage requests blocks between a certain block lowHash up to this kaspad&#39;s current virtual.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -572,6 +585,9 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetBlockCountRequestMessage
 
+GetBlockCountRequestMessage requests the current number of blocks in this kaspad. Note that this number may decrease as
+pruning occurs.
+
 <a name="protowire.GetBlockCountResponseMessage"></a>
 
 ### GetBlockCountResponseMessage
@@ -585,6 +601,8 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.GetBlockDagInfoRequestMessage"></a>
 
 ### GetBlockDagInfoRequestMessage
+
+GetBlockDagInfoRequestMessage requests general information about the current state of this kaspad&#39;s DAG.
 
 <a name="protowire.GetBlockDagInfoResponseMessage"></a>
 
@@ -621,17 +639,9 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### NotifyFinalityConflictsRequestMessage
 
-
-
-
-
-
-
 <a name="protowire.NotifyFinalityConflictsResponseMessage"></a>
 
 ### NotifyFinalityConflictsResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -641,8 +651,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### FinalityConflictNotificationMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | violatingBlockHash | [string](#string) |  |  |
@@ -650,8 +658,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.FinalityConflictResolvedNotificationMessage"></a>
 
 ### FinalityConflictResolvedNotificationMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -664,8 +670,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.ShutDownResponseMessage"></a>
 
 ### ShutDownResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -694,8 +698,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### NotifyUtxosChangedRequestMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
@@ -703,8 +705,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.NotifyUtxosChangedResponseMessage"></a>
 
 ### NotifyUtxosChangedResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -760,8 +760,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### RpcTransactionInput
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | previousOutpoint | [RpcOutpoint](#protowire.RpcOutpoint) |  |  |
@@ -810,8 +808,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetUtxosByAddressesRequestMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
@@ -819,8 +815,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.GetUtxosByAddressesResponseMessage"></a>
 
 ### GetUtxosByAddressesResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -835,8 +829,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 
 ### GetVirtualSelectedParentBlueScoreResponseMessage
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blueScore | [uint64](#uint64) |  |  |
@@ -849,8 +841,6 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 <a name="protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage"></a>
 
 ### NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
