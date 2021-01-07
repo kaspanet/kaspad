@@ -314,6 +314,7 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 | userAgent | [string](#string) |  |  |
 | advertisedProtocolVersion | [uint32](#uint32) |  | The protocol version that this peer claims to support |
 | timeConnected | [int64](#int64) |  | The timestamp of when this peer connected to this kaspad |
+| isIbdPeer | [bool](#bool) |  | Whether this peer is the IBD peer (if IBD is running) |
 
 <a name="protowire.AddPeerRequestMessage"></a>
 

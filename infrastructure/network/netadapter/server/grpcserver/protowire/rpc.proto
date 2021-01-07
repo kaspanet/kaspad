@@ -164,6 +164,9 @@ message GetConnectedPeerInfoMessage{
 
   // The timestamp of when this peer connected to this kaspad
   int64 timeConnected = 10;
+
+  // Whether this peer is the IBD peer (if IBD is running)
+  bool isIbdPeer = 11;
 }
 
 // AddPeerRequestMessage adds a peer to kaspad's outgoing connection list.
