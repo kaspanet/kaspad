@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
 	"github.com/kaspanet/kaspad/util"
+	"math"
 	"math/rand"
 
 	"testing"
@@ -16,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
+// TestPOW tests the validation of the block's POW. We set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
 func TestPOW(t *testing.T) {
 	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
@@ -56,7 +57,7 @@ func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainB
 	targetDifficulty := util.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := uint64(0)
-	for i := initialNonce; i < 0xFFFFFFFFFFFFFFFF; i++ {
+	for i := initialNonce; i <= math.MaxUint64; i++ {
 		headerForMining.SetNonce(i)
 		if !pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 			block.Header = headerForMining.ToImmutable()
