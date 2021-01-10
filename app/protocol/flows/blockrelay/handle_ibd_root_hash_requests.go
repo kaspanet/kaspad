@@ -35,6 +35,7 @@ func (flow *handleIBDRootHashRequestsFlow) start() error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("Got request for IBD root hash")
 
 		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
 		if err != nil {
@@ -45,5 +46,6 @@ func (flow *handleIBDRootHashRequestsFlow) start() error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("Sent IBD root hash %s", pruningPoint)
 	}
 }
