@@ -13,4 +13,6 @@ type DAGTraversalManager interface {
 	BlueWindow(highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error)
 	NewDownHeap() BlockHeap
 	NewUpHeap() BlockHeap
+	CalculateSelectedParentChainChanges(
+		fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error)
 }

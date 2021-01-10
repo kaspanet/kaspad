@@ -32,19 +32,20 @@ type consensus struct {
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
-	acceptanceDataStore     model.AcceptanceDataStore
-	blockStore              model.BlockStore
-	blockHeaderStore        model.BlockHeaderStore
-	pruningStore            model.PruningStore
-	ghostdagDataStore       model.GHOSTDAGDataStore
-	blockRelationStore      model.BlockRelationStore
-	blockStatusStore        model.BlockStatusStore
-	consensusStateStore     model.ConsensusStateStore
-	headersSelectedTipStore model.HeaderSelectedTipStore
-	multisetStore           model.MultisetStore
-	reachabilityDataStore   model.ReachabilityDataStore
-	utxoDiffStore           model.UTXODiffStore
-	finalityStore           model.FinalityStore
+	acceptanceDataStore       model.AcceptanceDataStore
+	blockStore                model.BlockStore
+	blockHeaderStore          model.BlockHeaderStore
+	pruningStore              model.PruningStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	blockRelationStore        model.BlockRelationStore
+	blockStatusStore          model.BlockStatusStore
+	consensusStateStore       model.ConsensusStateStore
+	headersSelectedTipStore   model.HeaderSelectedTipStore
+	multisetStore             model.MultisetStore
+	reachabilityDataStore     model.ReachabilityDataStore
+	utxoDiffStore             model.UTXODiffStore
+	finalityStore             model.FinalityStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -295,6 +296,14 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 	}
 
 	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
+}
+
+func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {

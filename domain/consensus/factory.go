@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -86,6 +87,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200)
+	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -143,7 +145,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, ghostdagManager, headersSelectedTipStore)
+	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
+		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash
 	finalityManager := finalitymanager.New(
 		dbManager,
@@ -252,7 +255,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStatusStore,
 		blockHeaderStore,
 		blockStore,
-		pruningStore)
+		pruningStore,
+		headersSelectedChainStore)
 
 	blockBuilder := blockbuilder.New(
 		dbManager,
@@ -294,7 +298,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockHeaderStore,
 		headersSelectedTipStore,
-		finalityStore)
+		finalityStore,
+		headersSelectedChainStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
@@ -318,19 +323,20 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager:   reachabilityManager,
 		finalityManager:       finalityManager,
 
-		acceptanceDataStore:     acceptanceDataStore,
-		blockStore:              blockStore,
-		blockHeaderStore:        blockHeaderStore,
-		pruningStore:            pruningStore,
-		ghostdagDataStore:       ghostdagDataStore,
-		blockStatusStore:        blockStatusStore,
-		blockRelationStore:      blockRelationStore,
-		consensusStateStore:     consensusStateStore,
-		headersSelectedTipStore: headersSelectedTipStore,
-		multisetStore:           multisetStore,
-		reachabilityDataStore:   reachabilityDataStore,
-		utxoDiffStore:           utxoDiffStore,
-		finalityStore:           finalityStore,
+		acceptanceDataStore:       acceptanceDataStore,
+		blockStore:                blockStore,
+		blockHeaderStore:          blockHeaderStore,
+		pruningStore:              pruningStore,
+		ghostdagDataStore:         ghostdagDataStore,
+		blockStatusStore:          blockStatusStore,
+		blockRelationStore:        blockRelationStore,
+		consensusStateStore:       consensusStateStore,
+		headersSelectedTipStore:   headersSelectedTipStore,
+		multisetStore:             multisetStore,
+		reachabilityDataStore:     reachabilityDataStore,
+		utxoDiffStore:             utxoDiffStore,
+		finalityStore:             finalityStore,
+		headersSelectedChainStore: headersSelectedChainStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)

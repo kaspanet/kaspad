@@ -128,7 +128,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 
 	for !lowHash.Equal(highHash) {
 		log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-		blockLocator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, 0)
+		blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 		if err != nil {
 			return nil, err
 		}
