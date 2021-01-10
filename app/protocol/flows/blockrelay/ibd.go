@@ -120,7 +120,10 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 }
 
 func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	lowHash := flow.Config().ActiveNetParams.GenesisHash
+	lowHash, err := flow.Domain().Consensus().PruningPoint()
+	if err != nil {
+		return nil, err
+	}
 	highHash, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return nil, err
