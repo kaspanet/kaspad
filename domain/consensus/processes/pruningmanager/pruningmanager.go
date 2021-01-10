@@ -28,6 +28,7 @@ type pruningManager struct {
 	blockHeaderStore    model.BlockHeaderStore
 	utxoDiffStore       model.UTXODiffStore
 
+	isArchivalNode   bool
 	genesisHash      *externalapi.DomainHash
 	finalityInterval uint64
 	pruningDepth     uint64
@@ -52,6 +53,7 @@ func New(
 	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
 
+	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
@@ -72,6 +74,7 @@ func New(
 		blockHeaderStore:       blockHeaderStore,
 		utxoDiffStore:          utxoDiffStore,
 		headerSelectedTipStore: headerSelectedTipStore,
+		isArchivalNode:         isArchivalNode,
 		genesisHash:            genesisHash,
 		pruningDepth:           pruningDepth,
 		finalityInterval:       finalityInterval,
@@ -328,12 +331,16 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 		return true, nil
 	}
 
+	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+	if pm.isArchivalNode {
+		return false, nil
+	}
+
 	pm.multiSetStore.Delete(blockHash)
 	pm.acceptanceDataStore.Delete(blockHash)
 	pm.blocksStore.Delete(blockHash)
 	pm.utxoDiffStore.Delete(blockHash)
 
-	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
 }
 
