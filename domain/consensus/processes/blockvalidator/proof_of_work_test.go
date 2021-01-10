@@ -1,152 +1,81 @@
 package blockvalidator_test
 
 import (
-	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/util"
+
+	"math/rand"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/pkg/errors"
 )
 
-//Set the flag "skip pow" to false (second argument).
-func TestProofOfWork(t *testing.T) {
+// Set the flag "skip pow" to be false (second argument in the function)
+func TestPOW(t *testing.T) {
 	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
+		// First, it checks the validation of the genesis's POW.
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestValidateMedianTime")
+		tc, teardown, err := factory.NewTestConsensus(params, "TestPOW")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
-
-		addBlock := func(blockTime int64, parents []*externalapi.DomainHash, expectedErr error) (*externalapi.DomainBlock, *externalapi.DomainHash) {
-			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
-			if err != nil {
-				t.Fatalf("BuildBlockWithParents: %+v", err)
-			}
-
-			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
-			if !errors.Is(err, expectedErr) {
-				t.Fatalf("expected error %s but got %+v", expectedErr, err)
-			}
-
-			return block, consensushashing.BlockHash(block)
+		defer teardown(false)
+		// Builds and checks block with invalid POW.
+		invalidBlockWrongPOW, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		invalidBlockWrongPOW = solveBlockWithWrongPOW(invalidBlockWrongPOW)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = tc.ValidateAndInsertBlock(invalidBlockWrongPOW)
+		if !errors.Is(err, ruleerrors.ErrInvalidPoW) {
+			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrTimeTooOld, err)
+		}
+		// test on a valid block.
+		validBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		validBlock = solveBlock(validBlock)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = tc.ValidateAndInsertBlock(validBlock)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		pastMedianTime := func(parents ...*externalapi.DomainHash) int64 {
-			var tempHash externalapi.DomainHash
-			tc.BlockRelationStore().StageBlockRelation(&tempHash, &model.BlockRelations{
-				Parents:  parents,
-				Children: nil,
-			})
-			defer tc.BlockRelationStore().Discard()
-
-			err = tc.GHOSTDAGManager().GHOSTDAG(&tempHash)
-			if err != nil {
-				t.Fatalf("GHOSTDAG: %+v", err)
-			}
-			defer tc.GHOSTDAGDataStore().Discard()
-
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(&tempHash)
-			if err != nil {
-				t.Fatalf("PastMedianTime: %+v", err)
-			}
-
-			return pastMedianTime
-		}
-
-		tip := params.GenesisBlock
-		tipHash := params.GenesisHash
-
-		blockTime := tip.Header.TimeInMilliseconds
-
-		for i := 0; i < 100; i++ {
-			blockTime += 1000
-			_, tipHash = addBlock(blockTime, []*externalapi.DomainHash{tipHash}, nil)
-		}
-
-		// Checks that a block is invalid if it has timestamp equals to past median time
-		addBlock(pastMedianTime(tipHash), []*externalapi.DomainHash{tipHash}, ruleerrors.ErrTimeTooOld)
-
-		// Checks that a block is valid if its timestamp is after past median time
-		addBlock(pastMedianTime(tipHash)+1, []*externalapi.DomainHash{tipHash}, nil)
-
-		// Checks that a block is invalid if its timestamp is before past median time
-		addBlock(pastMedianTime(tipHash)-1, []*externalapi.DomainHash{tipHash}, ruleerrors.ErrTimeTooOld)
 	})
 }
 
-//func TestCheckParentsIncest(t *testing.T) {
-//	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-//		factory := consensus.NewFactory()
-//		tc, teardown, err := factory.NewTestConsensus(params, "TestCheckParentsIncest")
-//		if err != nil {
-//			t.Fatalf("Error setting up consensus: %+v", err)
-//		}
-//		defer teardown()
-//
-//		a, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
-//		if err != nil {
-//			t.Fatalf("AddBlock: %+v", err)
-//		}
-//
-//		b, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
-//		if err != nil {
-//			t.Fatalf("AddBlock: %+v", err)
-//		}
-//
-//		c, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
-//		if err != nil {
-//			t.Fatalf("AddBlock: %+v", err)
-//		}
-//
-//		directParentsRelationBlock := &externalapi.DomainBlock{
-//			Header: &externalapi.DomainBlockHeader{
-//				Version:              0,
-//				ParentHashes:         []*externalapi.DomainHash{a, b},
-//				HashMerkleRoot:       externalapi.DomainHash{},
-//				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-//				UTXOCommitment:       externalapi.DomainHash{},
-//				TimeInMilliseconds:   0,
-//				Bits:                 0,
-//				Nonce:                0,
-//			},
-//			Transactions: nil,
-//		}
-//
-//		err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
-//		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
-//			t.Fatalf("unexpected error %+v", err)
-//		}
-//
-//		indirectParentsRelationBlock := &externalapi.DomainBlock{
-//			Header: &externalapi.DomainBlockHeader{
-//				Version:              0,
-//				ParentHashes:         []*externalapi.DomainHash{params.GenesisHash, b},
-//				HashMerkleRoot:       externalapi.DomainHash{},
-//				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-//				UTXOCommitment:       externalapi.DomainHash{},
-//				TimeInMilliseconds:   0,
-//				Bits:                 0,
-//				Nonce:                0,
-//			},
-//			Transactions: nil,
-//		}
-//
-//		err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
-//		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
-//			t.Fatalf("unexpected error %+v", err)
-//		}
-//
-//		// Try to add block with unrelated parents
-//		_, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
-//		if err != nil {
-//			t.Fatalf("AddBlock: %s", err)
-//		}
-//	})
-//}
+// solveBlockWithWrongPOW increments the given block's nonce until it gets wrong POW (for test!).
+func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainBlock {
+	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
+	initialNonce := rand.Uint64()
+	for i := initialNonce; i != initialNonce-1; i++ {
+		headerForMining.SetNonce(i)
+		if !pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
+			return block
+		}
+	}
+
+	panic("Failed to solve block! cannot find a invalid POW for the test")
+}
+
+// solveBlock increments the given block's nonce until it gets valid POW.
+func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
+	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
+	initialNonce := rand.Uint64()
+	for i := initialNonce; i != initialNonce-1; i++ {
+		headerForMining.SetNonce(i)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
+			return block
+		}
+	}
+	panic("Failed to solve block! cannot find a valid POW ")
+}
