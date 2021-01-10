@@ -1,6 +1,9 @@
 package consensusstatemanager_test
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -8,13 +11,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"sort"
-	"testing"
 )
 
 func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, "TestConsensusStateManager_pickVirtualParents")
+		tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestConsensusStateManager_pickVirtualParents")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}

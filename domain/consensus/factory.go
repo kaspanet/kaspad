@@ -46,10 +46,11 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+		externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
-	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 }
 
@@ -61,7 +62,9 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+	externalapi.Consensus, error) {
+
 	dbManager := consensusdatabase.New(db)
 
 	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
@@ -236,6 +239,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStore,
 		blockHeaderStore,
 		utxoDiffStore,
+		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth())
@@ -348,7 +352,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	dataDir, err := ioutil.TempDir("", testName)
@@ -356,17 +360,17 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 		return nil, nil, err
 	}
 
-	return f.NewTestConsensusWithDataDir(dagParams, dataDir)
+	return f.NewTestConsensusWithDataDir(dagParams, dataDir, isArchivalNode)
 }
 
-func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	db, err := ldb.NewLevelDB(dataDir)
 	if err != nil {
 		return nil, nil, err
 	}
-	consensusAsInterface, err := f.NewConsensus(dagParams, db)
+	consensusAsInterface, err := f.NewConsensus(dagParams, db, isArchivalNode)
 	if err != nil {
 		return nil, nil, err
 	}

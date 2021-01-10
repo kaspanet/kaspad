@@ -33,7 +33,7 @@ func TestDifficulty(t *testing.T) {
 		params.DifficultyAdjustmentWindowSize = 264
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

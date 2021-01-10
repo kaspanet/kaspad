@@ -1,8 +1,9 @@
 package transactionvalidator_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -25,7 +26,7 @@ type txSubnetworkData struct {
 func TestValidateTransactionInIsolation(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestValidateTransactionInIsolation")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateTransactionInIsolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

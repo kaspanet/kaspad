@@ -1,6 +1,8 @@
 package blockprocessor_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -9,13 +11,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 func TestBlockStatus(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestBlockStatus")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestBlockStatus")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
