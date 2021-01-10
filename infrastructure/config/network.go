@@ -83,6 +83,11 @@ func (networkFlags *NetworkFlags) ResolveNetwork(parser *flags.Parser) error {
 		return errors.Errorf("Mainnet has not launched yet, use --testnet to run in testnet mode")
 	}
 
+	err := networkFlags.overrideDAGParams()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -160,7 +165,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 			return errors.Errorf("couldn't convert %s to big int", *config.PowMax)
 		}
 
-		genesisTarget := math.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits)
+		genesisTarget := math.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits())
 		if powMax.Cmp(genesisTarget) > 0 {
 			return errors.Errorf("powMax (%s) is smaller than genesis's target (%s)", powMax.Text(16),
 				genesisTarget.Text(16))

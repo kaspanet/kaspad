@@ -12,11 +12,11 @@ import (
 	"fmt"
 	"hash"
 
+	"golang.org/x/crypto/blake2b"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -205,7 +205,7 @@ const (
 	OpSHA1                = 0xa7 // 167
 	OpSHA256              = 0xa8 // 168
 	OpHash160             = 0xa9 // 169
-	OpHash256             = 0xaa // 170
+	OpBlake2b             = 0xaa // 170
 	OpUnknown171          = 0xab // 171
 	OpCheckSig            = 0xac // 172
 	OpCheckSigVerify      = 0xad // 173
@@ -489,7 +489,7 @@ var opcodeArray = [256]opcode{
 	OpSHA1:                {OpSHA1, "OP_SHA1", 1, opcodeSha1},
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
 	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
-	OpHash256:             {OpHash256, "OP_HASH256", 1, opcodeHash256},
+	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
 	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
@@ -1962,17 +1962,17 @@ func opcodeHash160(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeHash256 treats the top item of the data stack as raw bytes and replaces
-// it with sha256(sha256(data)).
+// opcodeBlake2b treats the top item of the data stack as raw bytes and replaces
+// it with blake2b(data).
 //
-// Stack transformation: [... x1] -> [... sha256(sha256(x1))]
-func opcodeHash256(op *parsedOpcode, vm *Engine) error {
+// Stack transformation: [... x1] -> [... blake2b(x1)]
+func opcodeBlake2b(op *parsedOpcode, vm *Engine) error {
 	buf, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
-
-	vm.dstack.PushByteArray(hashes.HashData(buf)[:])
+	hash := blake2b.Sum256(buf)
+	vm.dstack.PushByteArray(hash[:])
 	return nil
 }
 
@@ -2034,7 +2034,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	script := vm.currentScript()
 
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2052,7 +2052,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	var valid bool
-	secpHash := secp256k1.Hash(*sigHash)
+	secpHash := secp256k1.Hash(*sigHash.ByteArray())
 	if vm.sigCache != nil {
 
 		valid = vm.sigCache.Exists(secpHash, signature, pubKey)
@@ -2241,12 +2241,12 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 		if err != nil {
 			return err
 		}
 
-		secpHash := secp256k1.Hash(*sigHash)
+		secpHash := secp256k1.Hash(*sigHash.ByteArray())
 		var valid bool
 		if vm.sigCache != nil {
 			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)

@@ -1,11 +1,12 @@
 package reachabilitymanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
@@ -16,7 +17,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -25,12 +26,12 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *params.GenesisHash {
+		if !reindexRoot.Equal(params.GenesisHash) {
 			t.Fatalf("reindex root is expected to initially be genesis")
 		}
 
 		// Add a block on top of the genesis block
-		chainRootBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chainRootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -39,7 +40,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 		// This should move the reindex root
 		chainRootBlockTipHash := chainRootBlock
 		for i := uint64(0); i < reachabilityReindexWindow; i++ {
-			chainBlock, err := tc.AddBlock([]*externalapi.DomainHash{chainRootBlockTipHash}, nil, nil)
+			chainBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{chainRootBlockTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -51,12 +52,12 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *newReindexRoot == *reindexRoot {
+		if newReindexRoot.Equal(reindexRoot) {
 			t.Fatalf("reindex root is expected to change")
 		}
 
 		// Add another block over genesis
-		_, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -71,7 +72,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -80,16 +81,16 @@ func TestUpdateReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add two blocks on top of the genesis block
-		chain1RootBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chain1RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		chain2RootBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chain2RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -98,12 +99,12 @@ func TestUpdateReindexRoot(t *testing.T) {
 		chain1Tip, chain2Tip := chain1RootBlock, chain2RootBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			var err error
-			chain1Tip, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
+			chain1Tip, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			chain2Tip, err = tc.AddBlock([]*externalapi.DomainHash{chain2Tip}, nil, nil)
+			chain2Tip, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2Tip}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -113,13 +114,13 @@ func TestUpdateReindexRoot(t *testing.T) {
 				t.Fatalf("ReachabilityReindexRoot: %s", err)
 			}
 
-			if *reindexRoot != *params.GenesisHash {
+			if !reindexRoot.Equal(params.GenesisHash) {
 				t.Fatalf("reindex root unexpectedly moved")
 			}
 		}
 
 		// Add another block over chain1. This will move the reindex root to chain1RootBlock
-		_, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1Tip}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -130,7 +131,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *chain1RootBlock {
+		if !reindexRoot.Equal(chain1RootBlock) {
 			t.Fatalf("chain1RootBlock is not the reindex root after reindex")
 		}
 
@@ -159,9 +160,9 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
 		if err != nil {
-			t.Fatalf("NewTestConsensus: %s", err)
+			t.Fatalf("NewTestConsensus: %+v", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -170,21 +171,21 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add three children to the genesis: leftBlock, centerBlock, rightBlock
-		leftBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		leftBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		centerBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		centerBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		rightBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		rightBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -194,7 +195,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		centerTipHash := centerBlock
 		for i := uint64(0); i < reachabilityReindexWindow; i++ {
 			var err error
-			centerTipHash, err = tc.AddBlock([]*externalapi.DomainHash{centerTipHash}, nil, nil)
+			centerTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{centerTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -206,7 +207,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *centerBlock {
+		if !reindexRoot.Equal(centerBlock) {
 			t.Fatalf("centerBlock is not the reindex root after reindex")
 		}
 
@@ -241,12 +242,12 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityData: %s", err)
 		}
 
-		treeChildOfCenterBlock := centerData.TreeNode.Children[0]
+		treeChildOfCenterBlock := centerData.Children()[0]
 		treeChildOfCenterBlockOriginalIntervalSize := intervalSize(treeChildOfCenterBlock)
 		leftTipHash := leftBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			var err error
-			leftTipHash, err = tc.AddBlock([]*externalapi.DomainHash{leftTipHash}, nil, nil)
+			leftTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{leftTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -269,7 +270,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		rightTipHash := rightBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			var err error
-			rightTipHash, err = tc.AddBlock([]*externalapi.DomainHash{rightTipHash}, nil, nil)
+			rightTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{rightTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -295,7 +296,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
@@ -303,7 +304,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		// This will set the reindex root to the child of genesis
 		chainTipHash := params.GenesisHash
 		for i := uint64(0); i < reachabilityReindexWindow+1; i++ {
-			chainTipHash, err = tc.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
+			chainTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -311,14 +312,14 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 		// Add another block above the genesis block. This will trigger an
 		// earlier-than-reindex-root reindex
-		sideBlock, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
 		// Add a block whose parents are the chain tip and the side block.
 		// We expect this not to fail
-		_, err = tc.AddBlock([]*externalapi.DomainHash{sideBlock}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{sideBlock}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}

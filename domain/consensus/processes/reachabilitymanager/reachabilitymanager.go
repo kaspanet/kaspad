@@ -32,12 +32,9 @@ func New(
 
 // AddBlock adds the block with the given blockHash into the reachability tree.
 func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
-	// Allocate a new reachability tree node
-	newTreeNode := newReachabilityTreeNode()
-	err := rt.stageTreeNode(blockHash, newTreeNode)
-	if err != nil {
-		return err
-	}
+	// Allocate a new reachability data
+	newReachabilityData := newReachabilityTreeData()
+	rt.stageData(blockHash, newReachabilityData)
 
 	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, blockHash)
 	if err != nil {

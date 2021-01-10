@@ -3,10 +3,15 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
-func (tc *testConsensus) DatabaseContext() model.DBReader {
+func (tc *testConsensus) DatabaseContext() model.DBManager {
 	return tc.databaseContext
+}
+
+func (tc *testConsensus) Database() database.Database {
+	return tc.database
 }
 
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
@@ -37,8 +42,8 @@ func (tc *testConsensus) GHOSTDAGDataStore() model.GHOSTDAGDataStore {
 	return tc.ghostdagDataStore
 }
 
-func (tc *testConsensus) HeaderTipsStore() model.HeaderTipsStore {
-	return tc.headerTipsStore
+func (tc *testConsensus) HeaderTipsStore() model.HeaderSelectedTipStore {
+	return tc.headersSelectedTipStore
 }
 
 func (tc *testConsensus) MultisetStore() model.MultisetStore {
@@ -93,7 +98,7 @@ func (tc *testConsensus) GHOSTDAGManager() model.GHOSTDAGManager {
 	return tc.ghostdagManager
 }
 
-func (tc *testConsensus) HeaderTipsManager() model.HeaderTipsManager {
+func (tc *testConsensus) HeaderTipsManager() model.HeadersSelectedTipManager {
 	return tc.headerTipsManager
 }
 

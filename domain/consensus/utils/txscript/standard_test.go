@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"testing"
 
@@ -17,8 +18,8 @@ import (
 // resulting bytes. It panics if an error occurs. This is only used in the
 // tests as a helper since the only way it can fail is if there is an error in
 // the test source code.
-func mustParseShortForm(script string) []byte {
-	s, err := parseShortForm(script)
+func mustParseShortForm(script string, version uint16) []byte {
+	s, err := parseShortForm(script, version)
 	if err != nil {
 		panic("invalid short form script in test source: err " +
 			err.Error() + ", script: " + script)
@@ -61,22 +62,28 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		script []byte
+		script *externalapi.ScriptPublicKey
 		addr   util.Address
 		class  ScriptClass
 	}{
 		{
 			name: "standard p2pkh",
-			script: hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd" +
-				"7587509a3056488ac"),
+			script: &externalapi.ScriptPublicKey{
+				Script: hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd" +
+					"7587509a3056488ac"),
+				Version: 0,
+			},
 			addr: newAddressPubKeyHash(hexToBytes("ad06dd6ddee5" +
 				"5cbca9a9e3713bd7587509a30564")),
 			class: PubKeyHashTy,
 		},
 		{
 			name: "standard p2sh",
-			script: hexToBytes("a91463bcc565f9e68ee0189dd5cc67f1b" +
-				"0e5f02f45cb87"),
+			script: &externalapi.ScriptPublicKey{
+				Script: hexToBytes("a91463bcc565f9e68ee0189dd5cc67f1b" +
+					"0e5f02f45cb87"),
+				Version: 0,
+			},
 			addr: newAddressScriptHash(hexToBytes("63bcc565f9e6" +
 				"8ee0189dd5cc67f1b0e5f02f45cb")),
 			class: ScriptHashTy,
@@ -88,19 +95,25 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 
 		{
 			name: "p2pk with uncompressed pk missing OP_CHECKSIG",
-			script: hexToBytes("410411db93e1dcdb8a016b49840f8c53b" +
-				"c1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddf" +
-				"b84ccf9744464f82e160bfa9b8b64f9d4c03f999b864" +
-				"3f656b412a3"),
+			script: &externalapi.ScriptPublicKey{
+				Script: hexToBytes("410411db93e1dcdb8a016b49840f8c53b" +
+					"c1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddf" +
+					"b84ccf9744464f82e160bfa9b8b64f9d4c03f999b864" +
+					"3f656b412a3"),
+				Version: 0,
+			},
 			addr:  nil,
 			class: NonStandardTy,
 		},
 		{
 			name: "valid signature from a sigscript - no addresses",
-			script: hexToBytes("47304402204e45e16932b8af514961a1d" +
-				"3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd41022" +
-				"0181522ec8eca07de4860a4acdd12909d831cc56cbba" +
-				"c4622082221a8768d1d0901"),
+			script: &externalapi.ScriptPublicKey{
+				Script: hexToBytes("47304402204e45e16932b8af514961a1d" +
+					"3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd41022" +
+					"0181522ec8eca07de4860a4acdd12909d831cc56cbba" +
+					"c4622082221a8768d1d0901"),
+				Version: 0,
+			},
 			addr:  nil,
 			class: NonStandardTy,
 		},
@@ -110,27 +123,36 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 		// addresses.
 		{
 			name: "valid sigscript to reedeem p2pk - no addresses",
-			script: hexToBytes("493046022100ddc69738bf2336318e4e0" +
-				"41a5a77f305da87428ab1606f023260017854350ddc0" +
-				"22100817af09d2eec36862d16009852b7e3a0f6dd765" +
-				"98290b7834e1453660367e07a014104cd4240c198e12" +
-				"523b6f9cb9f5bed06de1ba37e96a1bbd13745fcf9d11" +
-				"c25b1dff9a519675d198804ba9962d3eca2d5937d58e" +
-				"5a75a71042d40388a4d307f887d"),
+			script: &externalapi.ScriptPublicKey{
+				Script: hexToBytes("493046022100ddc69738bf2336318e4e0" +
+					"41a5a77f305da87428ab1606f023260017854350ddc0" +
+					"22100817af09d2eec36862d16009852b7e3a0f6dd765" +
+					"98290b7834e1453660367e07a014104cd4240c198e12" +
+					"523b6f9cb9f5bed06de1ba37e96a1bbd13745fcf9d11" +
+					"c25b1dff9a519675d198804ba9962d3eca2d5937d58e" +
+					"5a75a71042d40388a4d307f887d"),
+				Version: 0,
+			},
 			addr:  nil,
 			class: NonStandardTy,
 		},
 		{
-			name:   "empty script",
-			script: []byte{},
-			addr:   nil,
-			class:  NonStandardTy,
+			name: "empty script",
+			script: &externalapi.ScriptPublicKey{
+				Script:  []byte{},
+				Version: 0,
+			},
+			addr:  nil,
+			class: NonStandardTy,
 		},
 		{
-			name:   "script that does not parse",
-			script: []byte{OpData45},
-			addr:   nil,
-			class:  NonStandardTy,
+			name: "script that does not parse",
+			script: &externalapi.ScriptPublicKey{
+				Script:  []byte{OpData45},
+				Version: 0,
+			},
+			addr:  nil,
+			class: NonStandardTy,
 		},
 	}
 
@@ -224,8 +246,8 @@ func TestCalcScriptInfo(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		sigScript := mustParseShortForm(test.sigScript)
-		scriptPubKey := mustParseShortForm(test.scriptPubKey)
+		sigScript := mustParseShortForm(test.sigScript, 0)
+		scriptPubKey := mustParseShortForm(test.scriptPubKey, 0)
 
 		si, err := CalcScriptInfo(sigScript, scriptPubKey, test.isP2SH)
 		if e := checkScriptError(err, test.scriptInfoErr); e != nil {
@@ -301,15 +323,17 @@ func TestPayToAddrScript(t *testing.T) {
 	errUnsupportedAddress := scriptError(ErrUnsupportedAddress, "")
 
 	tests := []struct {
-		in       util.Address
-		expected string
-		err      error
+		in              util.Address
+		expectedScript  string
+		expectedVersion uint16
+		err             error
 	}{
 		// pay-to-pubkey-hash address on mainnet
 		{
 			p2pkhMain,
 			"DUP HASH160 DATA_20 0xe34cce70c86373273efcc54ce7d2a4" +
 				"91bb4a0e8488 CHECKSIG",
+			0,
 			nil,
 		},
 		// pay-to-script-hash address on mainnet
@@ -317,30 +341,44 @@ func TestPayToAddrScript(t *testing.T) {
 			p2shMain,
 			"HASH160 DATA_20 0xe8c300c87986efa84c37c0519929019ef8" +
 				"6eb5b4 EQUAL",
+			0,
 			nil,
 		},
 
 		// Supported address types with nil pointers.
-		{(*util.AddressPubKeyHash)(nil), "", errUnsupportedAddress},
-		{(*util.AddressScriptHash)(nil), "", errUnsupportedAddress},
+		{(*util.AddressPubKeyHash)(nil), "", 0, errUnsupportedAddress},
+		{(*util.AddressScriptHash)(nil), "", 0, errUnsupportedAddress},
 
 		// Unsupported address type.
-		{&bogusAddress{}, "", errUnsupportedAddress},
+		{&bogusAddress{}, "", 0, errUnsupportedAddress},
 	}
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		scriptPubKey, err := PayToAddrScript(test.in)
+		scriptPublicKey, err := PayToAddrScript(test.in)
 		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
 			continue
 		}
 
-		expected := mustParseShortForm(test.expected)
-		if !bytes.Equal(scriptPubKey, expected) {
+		var scriptPublicKeyScript []byte
+		var scriptPublicKeyVersion uint16
+		if scriptPublicKey != nil {
+			scriptPublicKeyScript = scriptPublicKey.Script
+			scriptPublicKeyVersion = scriptPublicKey.Version
+		}
+
+		expectedVersion := test.expectedVersion
+		expectedScript := mustParseShortForm(test.expectedScript, test.expectedVersion)
+		if !bytes.Equal(scriptPublicKeyScript, expectedScript) {
 			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
-				i, scriptPubKey, expected)
+				i, scriptPublicKey, expectedScript)
+			continue
+		}
+		if scriptPublicKeyVersion != expectedVersion {
+			t.Errorf("PayToAddrScript #%d got version: %d\nwant: %d",
+				i, scriptPublicKeyVersion, expectedVersion)
 			continue
 		}
 	}
@@ -454,7 +492,7 @@ func TestScriptClass(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		class := GetScriptClass(script)
 		if class != test.class {
 			t.Errorf("%s: expected %s got %s (script %x)", test.name,

@@ -9,7 +9,7 @@ import (
 
 type blockHeapNode struct {
 	hash         *externalapi.DomainHash
-	ghostdagData model.BlockGHOSTDAGData
+	ghostdagData *model.BlockGHOSTDAGData
 }
 
 func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {
@@ -22,8 +22,8 @@ type baseHeap struct {
 	ghostdagManager model.GHOSTDAGManager
 }
 
-func (h baseHeap) Len() int      { return len(h.slice) }
-func (h baseHeap) Swap(i, j int) { h.slice[i], h.slice[j] = h.slice[j], h.slice[i] }
+func (h *baseHeap) Len() int      { return len(h.slice) }
+func (h *baseHeap) Swap(i, j int) { h.slice[i], h.slice[j] = h.slice[j], h.slice[i] }
 
 func (h *baseHeap) Push(x interface{}) {
 	h.slice = append(h.slice, x.(*blockHeapNode))
@@ -45,7 +45,7 @@ func (h *baseHeap) peek() *blockHeapNode {
 // upHeap extends baseHeap to include Less operation that traverses from bottom to top
 type upHeap struct{ baseHeap }
 
-func (h upHeap) Less(i, j int) bool {
+func (h *upHeap) Less(i, j int) bool {
 	heapNodeI := h.slice[i]
 	heapNodeJ := h.slice[j]
 	return heapNodeI.less(heapNodeJ, h.ghostdagManager)
@@ -54,7 +54,7 @@ func (h upHeap) Less(i, j int) bool {
 // downHeap extends baseHeap to include Less operation that traverses from top to bottom
 type downHeap struct{ baseHeap }
 
-func (h downHeap) Less(i, j int) bool {
+func (h *downHeap) Less(i, j int) bool {
 	heapNodeI := h.slice[i]
 	heapNodeJ := h.slice[j]
 	return !heapNodeI.less(heapNodeJ, h.ghostdagManager)
@@ -68,34 +68,34 @@ type blockHeap struct {
 }
 
 // NewDownHeap initializes and returns a new blockHeap
-func (dtm dagTraversalManager) NewDownHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewDownHeap() model.BlockHeap {
 	h := blockHeap{
 		impl:          &downHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
 	}
 	heap.Init(h.impl)
-	return h
+	return &h
 }
 
 // NewUpHeap initializes and returns a new blockHeap
-func (dtm dagTraversalManager) NewUpHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewUpHeap() model.BlockHeap {
 	h := blockHeap{
 		impl:          &upHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
 	}
 	heap.Init(h.impl)
-	return h
+	return &h
 }
 
 // Pop removes the block with lowest blueWork+hash from this heap and returns it
-func (bh blockHeap) Pop() *externalapi.DomainHash {
+func (bh *blockHeap) Pop() *externalapi.DomainHash {
 	return heap.Pop(bh.impl).(*blockHeapNode).hash
 }
 
 // Push pushes the block onto the heap
-func (bh blockHeap) Push(blockHash *externalapi.DomainHash) error {
+func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
 	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, blockHash)
 	if err != nil {
 		return err
@@ -110,8 +110,18 @@ func (bh blockHeap) Push(blockHash *externalapi.DomainHash) error {
 }
 
 // Len returns the length of this heap
-func (bh blockHeap) Len() int {
+func (bh *blockHeap) Len() int {
 	return bh.impl.Len()
+}
+
+// ToSlice copies this heap to a slice
+func (bh *blockHeap) ToSlice() []*externalapi.DomainHash {
+	length := bh.Len()
+	hashes := make([]*externalapi.DomainHash, length)
+	for i := 0; i < length; i++ {
+		hashes[i] = bh.Pop()
+	}
+	return hashes
 }
 
 // sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their blueWork+hash, capped by a specific size.
@@ -122,7 +132,7 @@ type sizedUpBlockHeap struct {
 }
 
 // newSizedUpHeap initializes and returns a new sizedUpBlockHeap
-func (dtm dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
+func (dtm *dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
 	h := sizedUpBlockHeap{
 		impl:          upHeap{baseHeap{slice: make([]*blockHeapNode, 0, cap), ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
@@ -142,12 +152,8 @@ func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 	return heap.Pop(&sbh.impl).(*blockHeapNode).hash
 }
 
-// tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
-func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
-	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
-	if err != nil {
-		return false, err
-	}
+// tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
+func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash, ghostdagData *model.BlockGHOSTDAGData) (bool, error) {
 	node := &blockHeapNode{
 		hash:         blockHash,
 		ghostdagData: ghostdagData,
@@ -162,4 +168,13 @@ func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, e
 	}
 	heap.Push(&sbh.impl, node)
 	return true, nil
+}
+
+// tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
+func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
+	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+	return sbh.tryPushWithGHOSTDAGData(blockHash, ghostdagData)
 }

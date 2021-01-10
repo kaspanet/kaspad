@@ -2,9 +2,9 @@ package dagtraversalmanager
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // dagTraversalManager exposes methods for travering blocks
@@ -12,9 +12,10 @@ import (
 type dagTraversalManager struct {
 	databaseContext model.DBReader
 
-	dagTopologyManager model.DAGTopologyManager
-	ghostdagDataStore  model.GHOSTDAGDataStore
-	ghostdagManager    model.GHOSTDAGManager
+	dagTopologyManager    model.DAGTopologyManager
+	ghostdagDataStore     model.GHOSTDAGDataStore
+	reachabilityDataStore model.ReachabilityDataStore
+	ghostdagManager       model.GHOSTDAGManager
 }
 
 // selectedParentIterator implements the `model.BlockIterator` API
@@ -45,12 +46,14 @@ func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
 	return &dagTraversalManager{
-		databaseContext:    databaseContext,
-		dagTopologyManager: dagTopologyManager,
-		ghostdagDataStore:  ghostdagDataStore,
-		ghostdagManager:    ghostdagManager,
+		databaseContext:       databaseContext,
+		dagTopologyManager:    dagTopologyManager,
+		ghostdagDataStore:     ghostdagDataStore,
+		reachabilityDataStore: reachabilityDataStore,
+		ghostdagManager:       ghostdagManager,
 	}
 }
 
@@ -100,10 +103,14 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 		return nil, err
 	}
 
+	if highBlockGHOSTDAGData.BlueScore() < blueScore {
+		return nil, errors.Errorf("the given blue score %d is higher than block %s blue score of %d",
+			blueScore, highHash, highBlockGHOSTDAGData.BlueScore())
+	}
+
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
-	iterator := dtm.SelectedParentIterator(highHash)
-	for iterator.Next() {
+	for currentBlockGHOSTDAGData.SelectedParent() != nil {
 		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
@@ -112,7 +119,7 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 		if selectedParentBlockGHOSTDAGData.BlueScore() < blueScore {
 			break
 		}
-		currentHash = selectedParentBlockGHOSTDAGData.SelectedParent()
+		currentHash = currentBlockGHOSTDAGData.SelectedParent()
 		currentBlockGHOSTDAGData = selectedParentBlockGHOSTDAGData
 	}
 

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/reachabilitydata"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -57,11 +59,14 @@ func exponentialFractions(sizes []uint64) []float64 {
 	return fractions
 }
 
-func newReachabilityTreeNode() *model.ReachabilityTreeNode {
+func newReachabilityTreeData() model.ReachabilityData {
 	// Please see the comment above model.ReachabilityTreeNode to understand why
 	// we use these initial values.
 	interval := newReachabilityInterval(1, math.MaxUint64-1)
-	return &model.ReachabilityTreeNode{Interval: interval}
+	data := reachabilitydata.EmptyReachabilityData()
+	data.SetInterval(interval)
+
+	return data
 }
 
 func (rt *reachabilityManager) intervalRangeForChildAllocation(hash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
@@ -317,7 +322,7 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 
 		// We reached a leaf or a pre-calculated subtree.
 		// Push information up
-		for *current != *node {
+		for !current.Equal(node) {
 			current, err = rt.parent(current)
 			if err != nil {
 				return err
@@ -461,7 +466,7 @@ func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAnces
 				return err
 			}
 
-			if currentHasSlackIntervalBefore || *current == *reindexRoot {
+			if currentHasSlackIntervalBefore || current.Equal(reindexRoot) {
 				break
 			}
 
@@ -471,7 +476,7 @@ func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAnces
 			}
 		}
 
-		if *current == *reindexRoot {
+		if current.Equal(reindexRoot) {
 			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
 			// from this node. This is the interval that we'll use for the new
 			// node.
@@ -505,7 +510,7 @@ func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAnces
 	// current node with an interval that is smaller by
 	// slackReachabilityIntervalForReclaiming. This is to make room
 	// for the new node.
-	for *current != *commonAncestor {
+	for !current.Equal(commonAncestor) {
 		currentInterval, err := rt.interval(current)
 		if err != nil {
 			return err
@@ -583,7 +588,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 				return err
 			}
 
-			if currentHasSlackIntervalAfter || *current == *reindexRoot {
+			if currentHasSlackIntervalAfter || current.Equal(reindexRoot) {
 				break
 			}
 
@@ -593,7 +598,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 			}
 		}
 
-		if *current == *reindexRoot {
+		if current.Equal(reindexRoot) {
 			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
 			// from this node. This is the interval that we'll use for the new
 			// node.
@@ -627,7 +632,7 @@ func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAnces
 	// current node with an interval that is smaller by
 	// slackReachabilityIntervalForReclaiming. This is to make room
 	// for the new node.
-	for *current != *commonAncestor {
+	for !current.Equal(commonAncestor) {
 		currentInterval, err := rt.interval(current)
 		if err != nil {
 			return err
@@ -883,7 +888,7 @@ func (rt *reachabilityManager) splitChildrenAroundChild(node, child *externalapi
 	}
 
 	for i, candidateChild := range nodeChildren {
-		if *candidateChild == *child {
+		if candidateChild.Equal(child) {
 			return nodeChildren[:i], nodeChildren[i+1:], nil
 		}
 	}

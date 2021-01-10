@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 func TestNewHashFromStr(t *testing.T) {
@@ -19,9 +18,11 @@ func TestNewHashFromStr(t *testing.T) {
 	}{
 		{"banana", nil, true},
 		{"0000000000000000000000000000000000000000000000000000000000000000",
-			&externalapi.DomainHash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false},
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+			false},
 		{"0101010101010101010101010101010101010101010101010101010101010101",
-			&externalapi.DomainHash{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, false},
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}),
+			false},
 	}
 
 	for _, test := range tests {
@@ -35,7 +36,7 @@ func TestNewHashFromStr(t *testing.T) {
 
 			result := newHashFromStr(test.hexStr)
 
-			if *result != *test.expectedHash {
+			if !result.Equal(test.expectedHash) {
 				t.Errorf("%s: Expected hash: %s, but got %s", test.hexStr, test.expectedHash, result)
 			}
 		}()
@@ -46,7 +47,7 @@ func TestNewHashFromStr(t *testing.T) {
 // It only differs from the one available in hashes package in that it panics on an error
 // since it will only be called from tests.
 func newHashFromStr(hexStr string) *externalapi.DomainHash {
-	hash, err := hashes.FromString(hexStr)
+	hash, err := externalapi.NewDomainHashFromString(hexStr)
 	if err != nil {
 		panic(err)
 	}

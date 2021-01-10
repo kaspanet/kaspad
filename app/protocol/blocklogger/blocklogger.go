@@ -50,7 +50,7 @@ func LogBlock(block *externalapi.DomainBlock) {
 
 	log.Infof("Processed %d %s in the last %s (%d %s, %s)",
 		receivedLogBlocks, blockStr, tDuration, receivedLogTx,
-		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds))
+		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
 
 	receivedLogBlocks = 0
 	receivedLogTx = 0

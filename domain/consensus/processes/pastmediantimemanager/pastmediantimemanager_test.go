@@ -17,12 +17,12 @@ func TestPastMedianTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
-		defer tearDown()
+		defer tearDown(false)
 
 		numBlocks := uint32(300)
 		blockHashes := make([]*externalapi.DomainHash, numBlocks)
 		blockHashes[0] = params.GenesisHash
-		blockTime := params.GenesisBlock.Header.TimeInMilliseconds
+		blockTime := params.GenesisBlock.Header.TimeInMilliseconds()
 		for i := uint32(1); i < numBlocks; i++ {
 			blockTime += 1000
 			block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{blockHashes[i-1]}, nil, nil)
@@ -30,8 +30,10 @@ func TestPastMedianTime(t *testing.T) {
 				t.Fatalf("BuildBlockWithParents: %s", err)
 			}
 
-			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
+			newHeader := block.Header.ToMutable()
+			newHeader.SetTimeInMilliseconds(blockTime)
+			block.Header = newHeader.ToImmutable()
+			_, err = tc.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -68,7 +70,7 @@ func TestPastMedianTime(t *testing.T) {
 			}
 
 			millisecondsSinceGenesis := pastMedianTime -
-				params.GenesisBlock.Header.TimeInMilliseconds
+				params.GenesisBlock.Header.TimeInMilliseconds()
 
 			if millisecondsSinceGenesis != test.expectedMillisecondsSinceGenesis {
 				t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v milliseconds "+

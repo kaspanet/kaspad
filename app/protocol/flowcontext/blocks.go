@@ -17,27 +17,37 @@ import (
 // OnNewBlock updates the mempool after a new block arrival, and
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
-func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
+func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
+	blockInsertionResult *externalapi.BlockInsertionResult) error {
+
 	hash := consensushashing.BlockHash(block)
 	log.Debugf("OnNewBlock start for block %s", hash)
 	defer log.Debugf("OnNewBlock end for block %s", hash)
-	unorphanedBlocks, err := f.UnorphanBlocks(block)
+
+	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
+	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
 
-	newBlocks := append([]*externalapi.DomainBlock{block}, unorphanedBlocks...)
-	for _, newBlock := range newBlocks {
+	newBlocks := []*externalapi.DomainBlock{block}
+	newBlockInsertionResults := []*externalapi.BlockInsertionResult{blockInsertionResult}
+	for _, unorphaningResult := range unorphaningResults {
+		newBlocks = append(newBlocks, unorphaningResult.block)
+		newBlockInsertionResults = append(newBlockInsertionResults, unorphaningResult.blockInsertionResult)
+	}
+
+	for i, newBlock := range newBlocks {
 		blocklogger.LogBlock(block)
 
-		log.Tracef("OnNewBlock: passing block %s transactions to mining manager", hash)
+		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
 		_ = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 
 		if f.onBlockAddedToDAGHandler != nil {
-			log.Tracef("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
-			err := f.onBlockAddedToDAGHandler(newBlock)
+			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
+			blockInsertionResult = newBlockInsertionResults[i]
+			err := f.onBlockAddedToDAGHandler(newBlock, blockInsertionResult)
 			if err != nil {
 				return err
 			}
@@ -89,15 +99,14 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
-	err := f.Domain().Consensus().ValidateAndInsertBlock(block)
+	blockInsertionResult, err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Infof("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
-			return nil
+			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
 		}
 		return err
 	}
-	err = f.OnNewBlock(block)
+	err = f.OnNewBlock(block, blockInsertionResult)
 	if err != nil {
 		return err
 	}

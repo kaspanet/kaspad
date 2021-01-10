@@ -136,7 +136,7 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
-	// conditions would have already been caught by checkTransactionSanity.
+	// conditions would have already been caught by checkTransactionAmountRanges.
 	for _, output := range tx.Outputs {
 		totalSompiOut += output.Value
 	}

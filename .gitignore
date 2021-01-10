@@ -13,6 +13,21 @@ kaspad.db
 *.o
 *.a
 *.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Real binaries, build with `go build .`
+kaspad
+cmd/gencerts/gencerts
+cmd/kaspactl/kaspactl
+cmd/kasminer/kaspaminer
+*.exe
+*.exe~
+
+# Output of the go coverage tool
+*.out
 
 # Folders
 _obj
@@ -31,8 +46,7 @@ _cgo_export.*
 
 _testmain.go
 
-*.exe
- 
+
 # IDE
 .idea
 .vscode

@@ -39,6 +39,9 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 		if err != nil {
 			return err
 		}
+
+		css.virtualUTXOSetCache.Remove(toRemoveOutpoint)
+
 		dbKey, err := utxoKey(toRemoveOutpoint)
 		if err != nil {
 			return err
@@ -55,6 +58,9 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 		if err != nil {
 			return err
 		}
+
+		css.virtualUTXOSetCache.Add(toAddOutpoint, toAddEntry)
+
 		dbKey, err := utxoKey(toAddOutpoint)
 		if err != nil {
 			return err
@@ -79,12 +85,15 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		return nil
 	}
 
+	css.virtualUTXOSetCache.Clear()
 	iterator := css.virtualUTXOSetStaging.Iterator()
 	for iterator.Next() {
 		outpoint, utxoEntry, err := iterator.Get()
 		if err != nil {
 			return err
 		}
+
+		css.virtualUTXOSetCache.Add(outpoint, utxoEntry)
 		dbKey, err := utxoKey(outpoint)
 		if err != nil {
 			return err
@@ -127,6 +136,10 @@ func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContex
 		}
 	}
 
+	if entry, ok := css.virtualUTXOSetCache.Get(outpoint); ok {
+		return entry, nil
+	}
+
 	key, err := utxoKey(outpoint)
 	if err != nil {
 		return nil, err
@@ -137,7 +150,13 @@ func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContex
 		return nil, err
 	}
 
-	return deserializeUTXOEntry(serializedUTXOEntry)
+	entry, err := deserializeUTXOEntry(serializedUTXOEntry)
+	if err != nil {
+		return nil, err
+	}
+
+	css.virtualUTXOSetCache.Add(outpoint, entry)
+	return entry, nil
 }
 
 func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXOSet(outpoint *externalapi.DomainOutpoint) (

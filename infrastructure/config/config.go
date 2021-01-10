@@ -55,7 +55,6 @@ const (
 	DefaultMaxOrphanTxSize  = 100000
 	defaultSigCacheMaxSize  = 100000
 	sampleConfigFilename    = "sample-kaspad.conf"
-	defaultAcceptanceIndex  = false
 	defaultMaxUTXOCacheSize = 5000000000
 )
 
@@ -117,12 +116,11 @@ type Flags struct {
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainFromBlock RPC available"`
-	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
+	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -188,7 +186,6 @@ func defaultFlags() *Flags {
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
-		AcceptanceIndex:      defaultAcceptanceIndex,
 		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
 		ServiceOptions:       &ServiceOptions{},
 	}
@@ -510,16 +507,6 @@ func LoadConfig() (*Config, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, err
 		}
-	}
-
-	// --acceptanceindex and --dropacceptanceindex do not mix.
-	if cfg.AcceptanceIndex && cfg.DropAcceptanceIndex {
-		err := errors.Errorf("%s: the --acceptanceindex and --dropacceptanceindex "+
-			"options may not be activated at the same time",
-			funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, err
 	}
 
 	// Add default port to all listener addresses if needed and remove

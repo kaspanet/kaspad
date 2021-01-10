@@ -5,17 +5,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsExist(blockHash, header)
+	err = v.checkParentHeadersExist(header)
 	if err != nil {
 		return err
 	}
@@ -35,7 +39,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.dagTopologyManager.SetParents(blockHash, header.ParentHashes)
+	err = v.dagTopologyManager.SetParents(blockHash, header.ParentHashes())
 	if err != nil {
 		return err
 	}
@@ -61,8 +65,8 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 	if err != nil {
 		return err
 	}
-	if header.Bits != expectedBits {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits, expectedBits)
+	if header.Bits() != expectedBits {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits(), expectedBits)
 	}
 
 	return nil
@@ -75,9 +79,9 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
-	target := util.CompactToBig(header.Bits)
+	target := util.CompactToBig(header.Bits())
 	if target.Sign() <= 0 {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
 			target)
@@ -91,23 +95,17 @@ func (v *blockValidator) checkProofOfWork(header *externalapi.DomainBlockHeader)
 
 	// The block pow must be valid unless the flag to avoid proof of work checks is set.
 	if !v.skipPoW {
-		valid := pow.CheckProofOfWorkWithTarget(header, target)
+		valid := pow.CheckProofOfWorkWithTarget(header.ToMutable(), target)
 		if !valid {
-			return errors.Wrap(ruleerrors.ErrUnexpectedDifficulty, "block has invalid difficulty")
+			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
 	return nil
 }
 
-func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
-
-	isFullBlock, err := v.blockStore.HasBlock(v.databaseContext, blockHash)
-	if err != nil {
-		return err
-	}
-
-	for _, parent := range header.ParentHashes {
+	for _, parent := range header.ParentHashes() {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
 		if err != nil {
 			return err
@@ -117,14 +115,13 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 			continue
 		}
 
-		if isFullBlock {
-			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-			if err != nil {
-				return err
-			}
-			if parentStatus == externalapi.StatusHeaderOnly {
-				missingParentHashes = append(missingParentHashes, parent)
-			}
+		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if parentStatus == externalapi.StatusInvalid {
+			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 	}
 
@@ -134,7 +131,7 @@ func (v *blockValidator) checkParentsExist(blockHash *externalapi.DomainHash, he
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
 	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
@@ -152,7 +149,7 @@ func (v *blockValidator) checkPruningPointViolation(header *externalapi.DomainBl
 		return err
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes)
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes())
 	if err != nil {
 		return err
 	}

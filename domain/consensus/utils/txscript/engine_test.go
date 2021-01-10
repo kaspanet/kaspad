@@ -26,7 +26,7 @@ func TestBadPC(t *testing.T) {
 	inputs := []*externalapi.DomainTransactionInput{
 		{
 			PreviousOutpoint: externalapi.DomainOutpoint{
-				TransactionID: externalapi.DomainTransactionID([32]byte{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -38,7 +38,7 @@ func TestBadPC(t *testing.T) {
 				}),
 				Index: 0,
 			},
-			SignatureScript: mustParseShortForm(""),
+			SignatureScript: mustParseShortForm("", 0),
 			Sequence:        4294967295,
 		},
 	}
@@ -51,7 +51,7 @@ func TestBadPC(t *testing.T) {
 		Inputs:  inputs,
 		Outputs: outputs,
 	}
-	scriptPubKey := mustParseShortForm("NOP")
+	scriptPubKey := &externalapi.ScriptPublicKey{Script: mustParseShortForm("NOP", 0), Version: 0}
 
 	for _, test := range tests {
 		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
@@ -95,7 +95,7 @@ func TestCheckErrorCondition(t *testing.T) {
 		func() {
 			inputs := []*externalapi.DomainTransactionInput{{
 				PreviousOutpoint: externalapi.DomainOutpoint{
-					TransactionID: externalapi.DomainTransactionID([32]byte{
+					TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -120,7 +120,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Outputs: outputs,
 			}
 
-			scriptPubKey := mustParseShortForm(test.script)
+			scriptPubKey := &externalapi.ScriptPublicKey{Script: mustParseShortForm(test.script, 0), Version: 0}
 
 			vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 			if err != nil {
@@ -223,7 +223,7 @@ func TestDisasmPC(t *testing.T) {
 	// tx with almost empty scripts.
 	inputs := []*externalapi.DomainTransactionInput{{
 		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: externalapi.DomainTransactionID([32]byte{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,
@@ -235,7 +235,7 @@ func TestDisasmPC(t *testing.T) {
 			}),
 			Index: 0,
 		},
-		SignatureScript: mustParseShortForm("OP_2"),
+		SignatureScript: mustParseShortForm("OP_2", 0),
 		Sequence:        4294967295,
 	}}
 	outputs := []*externalapi.DomainTransactionOutput{{
@@ -248,7 +248,7 @@ func TestDisasmPC(t *testing.T) {
 		Outputs: outputs,
 	}
 
-	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
+	scriptPubKey := &externalapi.ScriptPublicKey{Script: mustParseShortForm("OP_DROP NOP TRUE", 0), Version: 0}
 
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
@@ -287,7 +287,7 @@ func TestDisasmScript(t *testing.T) {
 	// tx with almost empty scripts.
 	inputs := []*externalapi.DomainTransactionInput{{
 		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: externalapi.DomainTransactionID([32]byte{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
 				0xfa, 0x20, 0x9c, 0x6a,
@@ -299,7 +299,7 @@ func TestDisasmScript(t *testing.T) {
 			}),
 			Index: 0,
 		},
-		SignatureScript: mustParseShortForm("OP_2"),
+		SignatureScript: mustParseShortForm("OP_2", 0),
 		Sequence:        4294967295,
 	}}
 	outputs := []*externalapi.DomainTransactionOutput{{
@@ -312,8 +312,7 @@ func TestDisasmScript(t *testing.T) {
 		Outputs: outputs,
 	}
 
-	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
-
+	scriptPubKey := &externalapi.ScriptPublicKey{Script: mustParseShortForm("OP_DROP NOP TRUE", 0), Version: 0}
 	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
 		t.Fatalf("failed to create script: %v", err)

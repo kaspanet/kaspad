@@ -18,36 +18,36 @@ import (
 )
 
 func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff model.UTXODiff, acceptanceData model.AcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff model.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
 
-	log.Tracef("verifyUTXO start for block %s", blockHash)
-	defer log.Tracef("verifyUTXO end for block %s", blockHash)
+	log.Debugf("verifyUTXO start for block %s", blockHash)
+	defer log.Debugf("verifyUTXO end for block %s", blockHash)
 
-	log.Tracef("Validating UTXO commitment for block %s", blockHash)
+	log.Debugf("Validating UTXO commitment for block %s", blockHash)
 	err := csm.validateUTXOCommitment(block, blockHash, multiset)
 	if err != nil {
 		return err
 	}
-	log.Tracef("UTXO commitment validation passed for block %s", blockHash)
+	log.Debugf("UTXO commitment validation passed for block %s", blockHash)
 
-	log.Tracef("Validating acceptedIDMerkleRoot for block %s", blockHash)
+	log.Debugf("Validating acceptedIDMerkleRoot for block %s", blockHash)
 	err = csm.validateAcceptedIDMerkleRoot(block, blockHash, acceptanceData)
 	if err != nil {
 		return err
 	}
-	log.Tracef("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
+	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
 	coinbaseTransaction := block.Transactions[0]
-	log.Tracef("Validating coinbase transaction %s for block %s",
+	log.Debugf("Validating coinbase transaction %s for block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
 	err = csm.validateCoinbaseTransaction(blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
 	}
-	log.Tracef("Coinbase transaction validation passed for block %s", blockHash)
+	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 
-	log.Tracef("Validating transactions against past UTXO for block %s", blockHash)
-	err = csm.validateBlockTransactionsAgainstPastUTXO(block, blockHash, pastUTXODiff)
+	log.Debugf("Validating transactions against past UTXO for block %s", blockHash)
+	err = csm.validateBlockTransactionsAgainstPastUTXO(block, pastUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -57,8 +57,9 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 }
 
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
+	pastUTXODiff model.UTXODiff) error {
 
+	blockHash := consensushashing.BlockHash(block)
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
 
@@ -96,16 +97,16 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 }
 
 func (csm *consensusStateManager) validateAcceptedIDMerkleRoot(block *externalapi.DomainBlock,
-	blockHash *externalapi.DomainHash, acceptanceData model.AcceptanceData) error {
+	blockHash *externalapi.DomainHash, acceptanceData externalapi.AcceptanceData) error {
 
 	log.Tracef("validateAcceptedIDMerkleRoot start for block %s", blockHash)
 	defer log.Tracef("validateAcceptedIDMerkleRoot end for block %s", blockHash)
 
 	calculatedAcceptedIDMerkleRoot := calculateAcceptedIDMerkleRoot(acceptanceData)
-	if block.Header.AcceptedIDMerkleRoot != *calculatedAcceptedIDMerkleRoot {
+	if !block.Header.AcceptedIDMerkleRoot().Equal(calculatedAcceptedIDMerkleRoot) {
 		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block %s accepted ID merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
-			blockHash, &block.Header.UTXOCommitment, calculatedAcceptedIDMerkleRoot)
+			blockHash, block.Header.UTXOCommitment(), calculatedAcceptedIDMerkleRoot)
 	}
 
 	return nil
@@ -118,15 +119,15 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	defer log.Tracef("validateUTXOCommitment end for block %s", blockHash)
 
 	multisetHash := multiset.Hash()
-	if block.Header.UTXOCommitment != *multisetHash {
+	if !block.Header.UTXOCommitment().Equal(multisetHash) {
 		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "block %s UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s", blockHash, &block.Header.UTXOCommitment, multisetHash)
+			"header indicates %s, but calculated value is %s", blockHash, block.Header.UTXOCommitment(), multisetHash)
 	}
 
 	return nil
 }
 
-func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData model.AcceptanceData) *externalapi.DomainHash {
+func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.AcceptanceData) *externalapi.DomainHash {
 	log.Tracef("calculateAcceptedIDMerkleRoot start")
 	defer log.Tracef("calculateAcceptedIDMerkleRoot end")
 
@@ -172,7 +173,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s",
 		coinbaseTransactionHash, expectedCoinbaseTransactionHash)
 
-	if *coinbaseTransactionHash != *expectedCoinbaseTransactionHash {
+	if !coinbaseTransactionHash.Equal(expectedCoinbaseTransactionHash) {
 		return errors.Wrap(ruleerrors.ErrBadCoinbaseTransaction, "coinbase transaction is not built as expected")
 	}
 

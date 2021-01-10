@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -95,7 +96,7 @@ func (bb *blockBuilder) newBlockCoinbaseTransaction(
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
 }
 
-func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
+func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 	parentHashes, err := bb.newBlockParentHashes()
 	if err != nil {
 		return nil, err
@@ -118,15 +119,16 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 		return nil, err
 	}
 
-	return &externalapi.DomainBlockHeader{
-		Version:              constants.BlockVersion,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   timeInMilliseconds,
-		Bits:                 bits,
-	}, nil
+	return blockheader.NewImmutableBlockHeader(
+		constants.MaxBlockVersion,
+		parentHashes,
+		hashMerkleRoot,
+		acceptedIDMerkleRoot,
+		utxoCommitment,
+		timeInMilliseconds,
+		bits,
+		0,
+	), nil
 }
 
 func (bb *blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
@@ -182,7 +184,7 @@ func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash,
 	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
 }
 
-func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {

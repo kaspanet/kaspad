@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/bigintpool"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -59,7 +58,7 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 		return 0, err
 	}
 
-	return header.Bits, nil
+	return header.Bits(), nil
 }
 
 // RequiredDifficulty returns the difficulty required for some block
@@ -74,24 +73,13 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// find bluestParent
-	bluestParent := parents[0]
-	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
+	bluestParent, err := dm.ghostdagManager.ChooseSelectedParent(parents...)
 	if err != nil {
 		return 0, err
 	}
-	for i := 1; i < len(parents); i++ {
-		parentGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, parents[i])
-		if err != nil {
-			return 0, err
-		}
-		newBluest, err := dm.ghostdagManager.ChooseSelectedParent(bluestParent, parents[i])
-		if err != nil {
-			return 0, err
-		}
-		if bluestParent != newBluest {
-			bluestParent = newBluest
-			bluestGhostDAG = parentGhostDAG
-		}
+	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
+	if err != nil {
+		return 0, err
 	}
 
 	// Not enough blocks for building a difficulty window.
@@ -100,33 +88,25 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	timestampsWindow, err := dm.blueBlockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, err := dm.blueBlockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {
 		return 0, err
 	}
-	windowMinTimestamp, windowMaxTimeStamp := timestampsWindow.minMaxTimestamps()
+	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
 
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
-	targetsWindow := timestampsWindow[:dm.difficultyAdjustmentWindowSize]
+	targetsWindow.remove(windowsMinIndex)
 
 	// Calculate new target difficulty as:
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
 	// The result uses integer division which means it will be slightly
 	// rounded down.
-	newTarget := bigintpool.Acquire(0)
-	defer bigintpool.Release(newTarget)
-	windowTimeStampDifference := bigintpool.Acquire(windowMaxTimeStamp - windowMinTimestamp)
-	defer bigintpool.Release(windowTimeStampDifference)
-	targetTimePerBlock := bigintpool.Acquire(dm.targetTimePerBlock.Milliseconds())
-	defer bigintpool.Release(targetTimePerBlock)
-	difficultyAdjustmentWindowSize := bigintpool.Acquire(int64(dm.difficultyAdjustmentWindowSize))
-	defer bigintpool.Release(difficultyAdjustmentWindowSize)
-
-	targetsWindow.averageTarget(newTarget)
+	div := new(big.Int)
+	newTarget := targetsWindow.averageTarget()
 	newTarget.
-		Mul(newTarget, windowTimeStampDifference).
-		Div(newTarget, targetTimePerBlock).
-		Div(newTarget, difficultyAdjustmentWindowSize)
+		Mul(newTarget, div.SetInt64(windowMaxTimeStamp-windowMinTimestamp)).
+		Div(newTarget, div.SetInt64(dm.targetTimePerBlock.Milliseconds())).
+		Div(newTarget, div.SetUint64(uint64(dm.difficultyAdjustmentWindowSize)))
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return util.BigToCompact(dm.powMax), nil
 	}

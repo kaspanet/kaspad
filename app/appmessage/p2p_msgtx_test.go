@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
@@ -52,7 +52,7 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutpoint(txID, prevOutIndex)
-	if prevOut.TxID != *txID {
+	if !prevOut.TxID.Equal(txID) {
 		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
@@ -68,7 +68,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction input back out.
 	sigScript := []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62}
-	txIn := NewTxIn(prevOut, sigScript)
+	txIn := NewTxIn(prevOut, sigScript, constants.MaxTxInSequenceNum)
 	if !reflect.DeepEqual(&txIn.PreviousOutpoint, prevOut) {
 		t.Errorf("NewTxIn: wrong prev outpoint - got %v, want %v",
 			spew.Sprint(&txIn.PreviousOutpoint),
@@ -82,26 +82,28 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction output back out.
 	txValue := uint64(5000000000)
-	scriptPubKey := []byte{
-		0x41, // OP_DATA_65
-		0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
-		0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
-		0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
-		0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
-		0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
-		0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
-		0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
-		0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
-		0xa6, // 65-byte signature
-		0xac, // OP_CHECKSIG
-	}
+	scriptPubKey := &externalapi.ScriptPublicKey{
+		Script: []byte{
+			0x41, // OP_DATA_65
+			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
+			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
+			0x81, 0xbe, 0x98, 0x8e, 0x2d, 0xa0, 0xb6, 0xc1,
+			0xc6, 0xa5, 0x9d, 0xc2, 0x26, 0xc2, 0x86, 0x24,
+			0xe1, 0x81, 0x75, 0xe8, 0x51, 0xc9, 0x6b, 0x97,
+			0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
+			0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
+			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
+			0xa6, // 65-byte signature
+			0xac, // OP_CHECKSIG
+		},
+		Version: 0}
 	txOut := NewTxOut(txValue, scriptPubKey)
 	if txOut.Value != txValue {
 		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
 			txOut.Value, txValue)
 
 	}
-	if !bytes.Equal(txOut.ScriptPubKey, scriptPubKey) {
+	if !bytes.Equal(txOut.ScriptPubKey.Script, scriptPubKey.Script) {
 		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
 			spew.Sdump(txOut.ScriptPubKey),
 			spew.Sdump(scriptPubKey))
@@ -131,11 +133,15 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "a3d29c39bfb578235e4813cc8138a9ba10def63acad193a7a880159624840d7f"
+	txHash1Str := "4bee9ee495bd93a755de428376bd582a2bb6ec37c041753b711c0606d5745c13"
+	txID1Str := "f868bd20e816256b80eac976821be4589d24d21141bd1cec6e8005d0c16c6881"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
-		t.Errorf("NewTxIDFromStr: %v", err)
-		return
+		t.Fatalf("NewTxIDFromStr: %v", err)
+	}
+	wantTxHash1, err := transactionid.FromString(txHash1Str)
+	if err != nil {
+		t.Fatalf("NewTxIDFromStr: %v", err)
 	}
 
 	// A coinbase transaction
@@ -149,7 +155,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	txOut := &TxOut{
 		Value: 5000000000,
-		ScriptPubKey: []byte{
+		ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -161,32 +167,32 @@ func TestTxHashAndID(t *testing.T) {
 			0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
 			0xa6, // 65-byte signature
 			0xac, // OP_CHECKSIG
-		},
+		}, Version: 0},
 	}
-	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
+	tx1 := NewSubnetworkMsgTx(0, []*TxIn{txIn}, []*TxOut{txOut}, &subnetworks.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
-	if *tx1Hash != (externalapi.DomainHash)(*wantTxID1) {
+	if *tx1Hash != (externalapi.DomainHash)(*wantTxHash1) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
-			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
+			spew.Sprint(tx1Hash), spew.Sprint(wantTxHash1))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if *tx1ID != *wantTxID1 {
+	if !tx1ID.Equal(wantTxID1) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "c84f3009b337aaa3adeb2ffd41010d5f62dd773ca25b39c908a77da91f87b729"
-	wantHash2, err := hashes.FromString(hash2Str)
+	hash2Str := "cb1bdb4a83d4885535fb3cceb5c96597b7df903db83f0ffcd779d703affd8efd"
+	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "7c919f676109743a1271a88beeb43849a6f9cc653f6082e59a7266f3df4802b9"
+	id2Str := "ca080073d4ddf5b84443a0964af633f3c70a5b290fd3bc35a7e6f93fd33f9330"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
@@ -196,7 +202,7 @@ func TestTxHashAndID(t *testing.T) {
 	txIns := []*TxIn{{
 		PreviousOutpoint: Outpoint{
 			Index: 0,
-			TxID:  externalapi.DomainTransactionID{1, 2, 3},
+			TxID:  *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{1, 2, 3}),
 		},
 		SignatureScript: []byte{
 			0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,
@@ -214,42 +220,42 @@ func TestTxHashAndID(t *testing.T) {
 	txOuts := []*TxOut{
 		{
 			Value: 244623243,
-			ScriptPubKey: []byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
-			},
+			}, Version: 0},
 		},
 		{
 			Value: 44602432,
-			ScriptPubKey: []byte{
+			ScriptPubKey: &externalapi.ScriptPublicKey{Script: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
-			},
+			}, Version: 0},
 		},
 	}
 	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &externalapi.DomainSubnetworkID{1, 2, 3}, 0, payload)
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
-	if *tx2Hash != *wantHash2 {
+	if !tx2Hash.Equal(wantHash2) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
 			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx2ID := tx2.TxID()
-	if *tx2ID != *wantID2 {
+	if !tx2ID.Equal(wantID2) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if *tx2ID == (externalapi.DomainTransactionID)(*tx2Hash) {
+	if tx2ID.Equal((*externalapi.DomainTransactionID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if *tx2ID != (externalapi.DomainTransactionID)(*newTx2Hash) {
-		t.Errorf("tx2ID and newTx2Hash should be the same for transaction with an empty signature")
+	if *tx2ID == (externalapi.DomainTransactionID)(*newTx2Hash) {
+		t.Errorf("tx2ID and newTx2Hash should not be the same even for transaction with an empty signature")
 	}
 }

@@ -2,29 +2,11 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ReachabilityData holds the set of data required to answer
-// reachability queries
-type ReachabilityData struct {
-	TreeNode          *ReachabilityTreeNode
-	FutureCoveringSet FutureCoveringTreeNodeSet
-}
-
-// Clone returns a clone of ReachabilityData
-func (rd *ReachabilityData) Clone() *ReachabilityData {
-	if rd == nil {
-		return nil
-	}
-
-	return &ReachabilityData{
-		TreeNode:          rd.TreeNode.Clone(),
-		FutureCoveringSet: externalapi.CloneHashes(rd.FutureCoveringSet),
-	}
-}
-
-// ReachabilityTreeNode represents a node in the reachability tree
+// MutableReachabilityData represents a node in the reachability tree
 // of some DAG block. It mainly provides the ability to query *tree*
 // reachability with O(1) query time. It does so by managing an
 // index interval for each node and making sure all nodes in its
@@ -39,26 +21,30 @@ func (rd *ReachabilityData) Clone() *ReachabilityData {
 // (e.g., [0, 2^64-1]) should always suffice for any practical use-
 // case, and so reindexing should always succeed unless more than
 // 2^64 blocks are added to the DAG/tree.
-type ReachabilityTreeNode struct {
-	Children []*externalapi.DomainHash
-	Parent   *externalapi.DomainHash
+//
+// In addition, we keep a future covering set for every node.
+// This set allows to query reachability over the entirety of the DAG.
+// See documentation of FutureCoveringTreeNodeSet for additional details.
 
-	// interval is the index interval containing all intervals of
-	// blocks in this node's subtree
-	Interval *ReachabilityInterval
+// ReachabilityData is a read-only version of a block's MutableReachabilityData
+// Use CloneWritable to edit the MutableReachabilityData.
+type ReachabilityData interface {
+	Children() []*externalapi.DomainHash
+	Parent() *externalapi.DomainHash
+	Interval() *ReachabilityInterval
+	FutureCoveringSet() FutureCoveringTreeNodeSet
+	CloneMutable() MutableReachabilityData
+	Equal(other ReachabilityData) bool
 }
 
-// Clone returns a clone of ReachabilityTreeNode
-func (rtn *ReachabilityTreeNode) Clone() *ReachabilityTreeNode {
-	if rtn == nil {
-		return nil
-	}
+// MutableReachabilityData represents a block's MutableReachabilityData, with ability to edit it
+type MutableReachabilityData interface {
+	ReachabilityData
 
-	return &ReachabilityTreeNode{
-		Children: externalapi.CloneHashes(rtn.Children),
-		Parent:   rtn.Parent.Clone(),
-		Interval: rtn.Interval.Clone(),
-	}
+	AddChild(child *externalapi.DomainHash)
+	SetParent(parent *externalapi.DomainHash)
+	SetInterval(interval *ReachabilityInterval)
+	SetFutureCoveringSet(futureCoveringSet FutureCoveringTreeNodeSet)
 }
 
 // ReachabilityInterval represents an interval to be used within the
@@ -69,12 +55,29 @@ type ReachabilityInterval struct {
 	End   uint64
 }
 
-// Clone returns a clone of ReachabilityInterval
-func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
-	if ri == nil {
-		return nil
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ = &ReachabilityInterval{0, 0}
+
+// Equal returns whether ri equals to other
+func (ri *ReachabilityInterval) Equal(other *ReachabilityInterval) bool {
+	if ri == nil || other == nil {
+		return ri == other
 	}
 
+	if ri.Start != other.Start {
+		return false
+	}
+
+	if ri.End != other.End {
+		return false
+	}
+
+	return true
+}
+
+// Clone returns a clone of ReachabilityInterval
+func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
 	return &ReachabilityInterval{
 		Start: ri.Start,
 		End:   ri.End,
@@ -98,3 +101,17 @@ func (ri *ReachabilityInterval) String() string {
 //
 // See insertNode, hasAncestorOf, and isInPast for further details.
 type FutureCoveringTreeNodeSet []*externalapi.DomainHash
+
+// Clone returns a clone of FutureCoveringTreeNodeSet
+func (fctns FutureCoveringTreeNodeSet) Clone() FutureCoveringTreeNodeSet {
+	return externalapi.CloneHashes(fctns)
+}
+
+// If this doesn't compile, it means the type definition has been changed, so it's
+// an indication to update Equal and Clone accordingly.
+var _ FutureCoveringTreeNodeSet = []*externalapi.DomainHash{}
+
+// Equal returns whether fctns equals to other
+func (fctns FutureCoveringTreeNodeSet) Equal(other FutureCoveringTreeNodeSet) bool {
+	return externalapi.HashesEqual(fctns, other)
+}

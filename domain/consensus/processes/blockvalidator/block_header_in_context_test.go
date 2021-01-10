@@ -2,6 +2,7 @@ package blockvalidator_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -20,7 +21,7 @@ func TestValidateMedianTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		addBlock := func(blockTime int64, parents []*externalapi.DomainHash, expectedErr error) (*externalapi.DomainBlock, *externalapi.DomainHash) {
 			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
@@ -28,8 +29,10 @@ func TestValidateMedianTime(t *testing.T) {
 				t.Fatalf("BuildBlockWithParents: %+v", err)
 			}
 
-			block.Header.TimeInMilliseconds = blockTime
-			err = tc.ValidateAndInsertBlock(block)
+			newHeader := block.Header.ToMutable()
+			newHeader.SetTimeInMilliseconds(blockTime)
+			block.Header = newHeader.ToImmutable()
+			_, err = tc.ValidateAndInsertBlock(block)
 			if !errors.Is(err, expectedErr) {
 				t.Fatalf("expected error %s but got %+v", expectedErr, err)
 			}
@@ -62,7 +65,7 @@ func TestValidateMedianTime(t *testing.T) {
 		tip := params.GenesisBlock
 		tipHash := params.GenesisHash
 
-		blockTime := tip.Header.TimeInMilliseconds
+		blockTime := tip.Header.TimeInMilliseconds()
 
 		for i := 0; i < 100; i++ {
 			blockTime += 1000
@@ -87,63 +90,63 @@ func TestCheckParentsIncest(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
-		a, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		a, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		b, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
+		b, _, err := tc.AddBlock([]*externalapi.DomainHash{a}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		c, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		c, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
 		directParentsRelationBlock := &externalapi.DomainBlock{
-			Header: &externalapi.DomainBlockHeader{
-				Version:              0,
-				ParentHashes:         []*externalapi.DomainHash{a, b},
-				HashMerkleRoot:       externalapi.DomainHash{},
-				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-				UTXOCommitment:       externalapi.DomainHash{},
-				TimeInMilliseconds:   0,
-				Bits:                 0,
-				Nonce:                0,
-			},
+			Header: blockheader.NewImmutableBlockHeader(
+				0,
+				[]*externalapi.DomainHash{a, b},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				0,
+				0,
+				0,
+			),
 			Transactions: nil,
 		}
 
-		err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
+		_, err = tc.ValidateAndInsertBlock(directParentsRelationBlock)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
 		indirectParentsRelationBlock := &externalapi.DomainBlock{
-			Header: &externalapi.DomainBlockHeader{
-				Version:              0,
-				ParentHashes:         []*externalapi.DomainHash{params.GenesisHash, b},
-				HashMerkleRoot:       externalapi.DomainHash{},
-				AcceptedIDMerkleRoot: externalapi.DomainHash{},
-				UTXOCommitment:       externalapi.DomainHash{},
-				TimeInMilliseconds:   0,
-				Bits:                 0,
-				Nonce:                0,
-			},
+			Header: blockheader.NewImmutableBlockHeader(
+				0,
+				[]*externalapi.DomainHash{params.GenesisHash, b},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				&externalapi.DomainHash{},
+				0,
+				0,
+				0,
+			),
 			Transactions: nil,
 		}
 
-		err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
+		_, err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
 		// Try to add block with unrelated parents
-		_, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{b, c}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}

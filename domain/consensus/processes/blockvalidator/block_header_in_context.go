@@ -4,23 +4,27 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
 func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
+	defer onEnd()
+
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	isHeadersOnlyBlock, err := v.isHeadersOnlyBlock(blockHash)
+	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if !isHeadersOnlyBlock {
+	if !hasValidatedHeader {
 		err = v.ghostdagManager.GHOSTDAG(blockHash)
 		if err != nil {
 			return err
@@ -60,7 +64,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	return nil
 }
 
-func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
+func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
 	if err != nil {
 		return false, err
@@ -79,10 +83,10 @@ func (v *blockValidator) isHeadersOnlyBlock(blockHash *externalapi.DomainHash) (
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeader) error {
-	for _, parentA := range header.ParentHashes {
-		for _, parentB := range header.ParentHashes {
-			if *parentA == *parentB {
+func (v *blockValidator) checkParentsIncest(header externalapi.BlockHeader) error {
+	for _, parentA := range header.ParentHashes() {
+		for _, parentB := range header.ParentHashes() {
+			if parentA.Equal(parentB) {
 				continue
 			}
 
@@ -103,8 +107,8 @@ func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeade
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeader) error {
-	if len(header.ParentHashes) == 0 {
+func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) error {
+	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
 
@@ -116,9 +120,9 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 		return err
 	}
 
-	if header.TimeInMilliseconds <= pastMedianTime {
+	if header.TimeInMilliseconds() <= pastMedianTime {
 		return errors.Wrapf(ruleerrors.ErrTimeTooOld, "block timestamp of %d is not after expected %d",
-			header.TimeInMilliseconds, pastMedianTime)
+			header.TimeInMilliseconds(), pastMedianTime)
 	}
 
 	return nil
