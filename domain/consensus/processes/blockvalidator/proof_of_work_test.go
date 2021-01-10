@@ -58,7 +58,7 @@ func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainB
 	targetDifficulty := util.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := uint64(0)
-	for i := initialNonce; i <= math.MaxUint64; i++ {
+	for i := initialNonce; i < math.MaxUint64; i++ {
 		headerForMining.SetNonce(i)
 		if !pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 			block.Header = headerForMining.ToImmutable()
