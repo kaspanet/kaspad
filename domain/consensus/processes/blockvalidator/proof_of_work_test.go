@@ -17,8 +17,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TestPOW tests the validation of the block's POW. We set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
+// TestPOW tests the validation of the block's POW.
 func TestPOW(t *testing.T) {
+	// We set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
 	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, "TestPOW")
