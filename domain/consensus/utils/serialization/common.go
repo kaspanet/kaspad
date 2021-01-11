@@ -174,14 +174,6 @@ func ReadElement(r io.Reader, element interface{}) error {
 		*e = rv
 		return nil
 
-	case *uint16:
-		rv, err := binaryserializer.Uint16(r)
-		if err != nil {
-			return err
-		}
-		*e = rv
-		return nil
-
 	case *uint8:
 		rv, err := binaryserializer.Uint8(r)
 		if err != nil {
