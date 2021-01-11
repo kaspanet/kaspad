@@ -161,7 +161,7 @@ func (p *protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxo
 	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
 	if err != nil {
 		if serialization.IsMalformedError(err) {
-			return nil, nil, errors.Wrap(ruleerrors.ErrMalformedUTXO, "malformed utxo")
+			return nil, nil, errors.Wrapf(ruleerrors.ErrMalformedUTXO, "malformed utxo: %s", err)
 		}
 		return nil, nil, err
 	}
