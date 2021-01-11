@@ -22,7 +22,7 @@ func TestPOW(t *testing.T) {
 	// We set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
 	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestPOW")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestPOW")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
