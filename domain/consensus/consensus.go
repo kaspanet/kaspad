@@ -306,17 +306,6 @@ func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
 	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if len(blockLocator) == 0 {
-		return nil, nil, errors.Errorf("empty block locator")
-	}
-
-	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
-}
-
 func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

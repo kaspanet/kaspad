@@ -65,32 +65,6 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 	return locator, nil
 }
 
-// findNextBlockLocatorBoundaries finds the lowest unknown block locator
-// hash and the highest known block locator hash. This is used to create the
-// next block locator to find the highest shared known chain block with a
-// remote kaspad.
-func (sm *syncManager) findNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (
-	lowHash, highHash *externalapi.DomainHash, err error) {
-
-	// Find the most recent locator block hash in the DAG. In case none of
-	// the hashes in the locator are in the DAG, fall back to the genesis block.
-	highestKnownHash := sm.genesisBlockHash
-	lowestUnknownHash := blockLocator[len(blockLocator)-1]
-	for _, hash := range blockLocator {
-		exists, err := sm.blockStatusStore.Exists(sm.databaseContext, hash)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			lowestUnknownHash = hash
-		} else {
-			highestKnownHash = hash
-			break
-		}
-	}
-	return highestKnownHash, lowestUnknownHash, nil
-}
-
 func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
 	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 
