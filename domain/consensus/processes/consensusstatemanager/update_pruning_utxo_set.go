@@ -170,5 +170,5 @@ func (p *protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxo
 }
 
 func protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet *utxoserialization.ProtoUTXOSet) model.ReadOnlyUTXOSetIterator {
-	return &protoUTXOSetIterator{utxoSet: protoUTXOSet}
+	return &protoUTXOSetIterator{utxoSet: protoUTXOSet, index: -1}
 }
