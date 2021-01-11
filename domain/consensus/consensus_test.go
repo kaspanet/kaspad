@@ -54,6 +54,12 @@ func TestConsensus_GetBlockInfo(t *testing.T) {
 			t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should not fail: %v", err)
 		}
 
+		// Create and double process same block. Should fail
+		_, err = consensus.ValidateAndInsertBlock(validBlock)
+		if err == nil {
+			t.Fatalf("consensus.ValidateAndInsertBlock with a block straight from consensus.BuildBlock should fail with ErrDuplicateBlock")
+		}
+
 		info, err = consensus.GetBlockInfo(consensushashing.BlockHash(validBlock))
 		if err != nil {
 			t.Fatalf("Failed to get block info: %v", err)
