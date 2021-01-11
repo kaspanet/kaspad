@@ -2,8 +2,9 @@ package blockvalidator_test
 
 import (
 	"errors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -17,7 +18,7 @@ import (
 func TestValidateMedianTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestValidateMedianTime")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateMedianTime")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -86,7 +87,7 @@ func TestValidateMedianTime(t *testing.T) {
 func TestCheckParentsIncest(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestCheckParentsIncest")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsIncest")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

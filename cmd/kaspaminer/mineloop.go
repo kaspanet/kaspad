@@ -24,7 +24,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool,
+func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
 
 	errChan := make(chan error)
@@ -33,7 +33,18 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop-internalLoop", func() {
+		const windowSize = 10
+		var expectedDurationForWindow time.Duration
+		var windowExpectedEndTime time.Time
+		hasBlockRateTarget := targetBlocksPerSecond != 0
+		if hasBlockRateTarget {
+			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
+			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+		}
+		blockInWindowIndex := 0
+
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+
 			foundBlock := make(chan *externalapi.DomainBlock)
 			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
@@ -42,6 +53,20 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool
 			if err != nil {
 				errChan <- err
 			}
+
+			if hasBlockRateTarget {
+				blockInWindowIndex++
+				if blockInWindowIndex == windowSize-1 {
+					deviation := windowExpectedEndTime.Sub(time.Now())
+					if deviation > 0 {
+						log.Infof("Finished to mine %d blocks %s earlier than expected. Sleeping %s to compensate",
+							windowSize, deviation, deviation)
+						time.Sleep(deviation)
+					}
+					blockInWindowIndex = 0
+				}
+			}
+
 		}
 		doneChan <- struct{}{}
 	})

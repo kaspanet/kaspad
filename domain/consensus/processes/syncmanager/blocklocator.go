@@ -25,7 +25,8 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 	currentHash := highHash
 	step := uint64(1)
 	locator := make(externalapi.BlockLocator, 0)
-	for currentHash != nil {
+	// The loop will break if we reached the limit or if we got to lowHash.
+	for {
 		locator = append(locator, currentHash)
 
 		// Stop if we've reached the limit (if it's set)
@@ -55,7 +56,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 		// Calculate blueScore of previous node to include ensuring the
 		// final node is lowNode.
 		nextBlueScore := currentBlockBlueScore - step
-		if currentBlockBlueScore < step {
+		if currentBlockBlueScore < step || nextBlueScore < lowBlockGHOSTDAGData.BlueScore() {
 			nextBlueScore = lowBlockGHOSTDAGData.BlueScore()
 		}
 

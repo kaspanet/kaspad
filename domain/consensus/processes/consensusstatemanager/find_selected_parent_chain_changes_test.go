@@ -1,18 +1,19 @@
 package consensusstatemanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestCalculateSelectedParentChainChanges(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestCalculateSelectedParentChainChanges")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCalculateSelectedParentChainChanges")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

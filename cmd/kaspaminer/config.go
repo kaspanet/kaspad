@@ -30,12 +30,13 @@ var (
 )
 
 type configFlags struct {
-	ShowVersion       bool   `short:"V" long:"version" description:"Display version information and exit"`
-	RPCServer         string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
-	MiningAddr        string `long:"miningaddr" description:"Address to mine to"`
-	NumberOfBlocks    uint64 `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
-	MineWhenNotSynced bool   `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
-	Profile           string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	ShowVersion           bool    `short:"V" long:"version" description:"Display version information and exit"`
+	RPCServer             string  `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	MiningAddr            string  `long:"miningaddr" description:"Address to mine to"`
+	NumberOfBlocks        uint64  `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
+	MineWhenNotSynced     bool    `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
+	Profile               string  `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	TargetBlocksPerSecond float64 `long:"target-blocks-per-second" description:"Sets a maximum block rate. This flag is for debugging purposes."`
 	config.NetworkFlags
 }
 
