@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheuint64tohash"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
@@ -46,13 +47,9 @@ func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
 	}
 
 	for _, blockHash := range chainChanges.Removed {
-		index, exists, err := hscs.GetIndexByHash(dbContext, blockHash)
+		index, err := hscs.GetIndexByHash(dbContext, blockHash)
 		if err != nil {
 			return err
-		}
-
-		if !exists {
-			return errors.Errorf("couldn't find index of %s", blockHash)
 		}
 
 		hscs.stagingRemovedByIndex[index] = struct{}{}
@@ -147,62 +144,53 @@ func (hscs *headersSelectedChainStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // Get gets the chain block index for the given blockHash
-func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, blockHash *externalapi.DomainHash) (uint64, bool, error) {
+func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, blockHash *externalapi.DomainHash) (uint64, error) {
 	if index, ok := hscs.stagingAddedByHash[*blockHash]; ok {
-		return index, true, nil
+		return index, nil
 	}
 
 	if _, ok := hscs.stagingRemovedByHash[*blockHash]; ok {
-		return 0, false, nil
+		return 0, errors.Wrapf(database.ErrNotFound, "couldn't find block %s", blockHash)
 	}
 
 	if index, ok := hscs.cacheByHash.Get(blockHash); ok {
-		return index.(uint64), true, nil
+		return index.(uint64), nil
 	}
 
 	indexBytes, err := dbContext.Get(hscs.hashAsKey(blockHash))
 	if err != nil {
-		return 0, false, err
+		return 0, err
 	}
 
 	index := hscs.deserializeIndex(indexBytes)
 	hscs.cacheByHash.Add(blockHash, index)
-	return index, true, nil
+	return index, nil
 }
 
-func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, index uint64) (*externalapi.DomainHash, bool, error) {
+func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, index uint64) (*externalapi.DomainHash, error) {
 	if blockHash, ok := hscs.stagingAddedByIndex[index]; ok {
-		return blockHash, true, nil
+		return blockHash, nil
 	}
 
 	if _, ok := hscs.stagingRemovedByIndex[index]; ok {
-		return nil, false, nil
+		return nil, errors.Wrapf(database.ErrNotFound, "couldn't find chain block with index %d", index)
 	}
 
 	if blockHash, ok := hscs.cacheByIndex.Get(index); ok {
-		return blockHash, true, nil
-	}
-
-	has, err := dbContext.Has(hscs.indexAsKey(index))
-	if err != nil {
-		return nil, false, err
-	}
-
-	if !has {
-		return nil, false, nil
+		return blockHash, nil
 	}
 
 	hashBytes, err := dbContext.Get(hscs.indexAsKey(index))
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	blockHash, err := binaryserialization.DeserializeHash(hashBytes)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	hscs.cacheByIndex.Add(index, blockHash)
-	return blockHash, true, nil
+	return blockHash, nil
 }
 
 func (hscs *headersSelectedChainStore) serializeIndex(index uint64) []byte {
@@ -228,17 +216,11 @@ func (hscs *headersSelectedChainStore) highestChainBlockIndex(dbContext model.DB
 		return hscs.cacheHighestChainBlockIndex, true, nil
 	}
 
-	has, err := dbContext.Has(highestChainBlockIndexKey)
-	if err != nil {
-		return 0, false, err
-	}
-
-	if !has {
-		return 0, false, nil
-	}
-
 	indexBytes, err := dbContext.Get(highestChainBlockIndexKey)
 	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return 0, false, nil
+		}
 		return 0, false, err
 	}
 

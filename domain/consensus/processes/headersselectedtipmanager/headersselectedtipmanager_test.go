@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/pkg/errors"
 	"testing"
 )
 
@@ -19,26 +21,18 @@ func TestAddHeaderTip(t *testing.T) {
 
 		checkExpectedSelectedChain := func(expectedSelectedChain []*externalapi.DomainHash) {
 			for i, blockHash := range expectedSelectedChain {
-				chainBlockHash, exists, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), uint64(i))
+				chainBlockHash, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), uint64(i))
 				if err != nil {
 					t.Fatalf("GetHashByIndex: %+v", err)
-				}
-
-				if !exists {
-					t.Fatalf("index %d is expected to exist", i)
 				}
 
 				if !blockHash.Equal(chainBlockHash) {
 					t.Fatalf("chain block %d is expected to be %s but got %s", i, blockHash, chainBlockHash)
 				}
 
-				index, exists, err := tc.HeadersSelectedChainStore().GetIndexByHash(tc.DatabaseContext(), blockHash)
+				index, err := tc.HeadersSelectedChainStore().GetIndexByHash(tc.DatabaseContext(), blockHash)
 				if err != nil {
 					t.Fatalf("GetIndexByHash: %+v", err)
-				}
-
-				if !exists {
-					t.Fatalf("hash %s is expected to exist", blockHash)
 				}
 
 				if uint64(i) != index {
@@ -46,14 +40,11 @@ func TestAddHeaderTip(t *testing.T) {
 				}
 			}
 
-			_, exists, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(),
+			_, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(),
 				uint64(len(expectedSelectedChain)+1))
-			if err != nil {
-				t.Fatalf("GetIndexByHash: %+v", err)
-			}
-
-			if exists {
-				t.Fatalf("index %d is not expected to exist", uint64(len(expectedSelectedChain)+1))
+			if !errors.Is(err, database.ErrNotFound) {
+				t.Fatalf("index %d is not expected to exist, but instead got error: %+v",
+					uint64(len(expectedSelectedChain)+1), err)
 			}
 		}
 
