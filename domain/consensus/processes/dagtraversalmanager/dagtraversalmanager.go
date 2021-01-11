@@ -145,3 +145,53 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 
 	return currentHash, nil
 }
+
+func (dtm *dagTraversalManager) CalculateChainPath(
+	fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
+
+	// Walk down from fromBlockHash until we reach the common selected
+	// parent chain ancestor of fromBlockHash and toBlockHash. Note
+	// that this slice will be empty if fromBlockHash is the selected
+	// parent of toBlockHash
+	var removed []*externalapi.DomainHash
+	current := fromBlockHash
+	for {
+		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(current, toBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		if isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent {
+			break
+		}
+		removed = append(removed, current)
+
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, current)
+		if err != nil {
+			return nil, err
+		}
+		current = currentGHOSTDAGData.SelectedParent()
+	}
+	commonAncestor := current
+
+	// Walk down from the toBlockHash to the common ancestor
+	var added []*externalapi.DomainHash
+	current = toBlockHash
+	for !current.Equal(commonAncestor) {
+		added = append(added, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, current)
+		if err != nil {
+			return nil, err
+		}
+		current = currentGHOSTDAGData.SelectedParent()
+	}
+
+	// Reverse the order of `added` so that it's sorted from low hash to high hash
+	for i, j := 0, len(added)-1; i < j; i, j = i+1, j-1 {
+		added[i], added[j] = added[j], added[i]
+	}
+
+	return &externalapi.SelectedChainPath{
+		Added:   added,
+		Removed: removed,
+	}, nil
+}

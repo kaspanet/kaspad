@@ -95,4 +95,5 @@ func (tc *testConsensus) DiscardAllStores() {
 	tc.PruningStore().Discard()
 	tc.ReachabilityDataStore().Discard()
 	tc.UTXODiffStore().Discard()
+	tc.HeadersSelectedChainStore().Discard()
 }

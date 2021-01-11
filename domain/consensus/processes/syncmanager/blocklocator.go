@@ -98,3 +98,46 @@ func (sm *syncManager) findNextBlockLocatorBoundaries(blockLocator externalapi.B
 	}
 	return highestKnownHash, lowestUnknownHash, nil
 }
+
+func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+
+	if highHash.Equal(sm.genesisBlockHash) && lowHash.Equal(sm.genesisBlockHash) {
+		return externalapi.BlockLocator{sm.genesisBlockHash}, nil
+	}
+
+	lowHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, lowHash)
+	if err != nil {
+		return nil, err
+	}
+
+	highHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, highHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if highHashIndex < lowHashIndex {
+		return nil, errors.Errorf("cannot build block locator while highHash is lower than lowHash")
+	}
+
+	locator := externalapi.BlockLocator{}
+	currentIndex := highHashIndex
+	step := uint64(1)
+	for currentIndex > lowHashIndex {
+		blockHash, err := sm.headersSelectedChainStore.GetHashByIndex(sm.databaseContext, currentIndex)
+		if err != nil {
+			return nil, err
+		}
+
+		locator = append(locator, blockHash)
+		if currentIndex < step {
+			break
+		}
+
+		currentIndex -= step
+		step *= 2
+	}
+
+	locator = append(locator, lowHash)
+	return locator, nil
+}

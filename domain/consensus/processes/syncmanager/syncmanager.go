@@ -15,11 +15,12 @@ type syncManager struct {
 	ghostdagManager     model.GHOSTDAGManager
 	pruningManager      model.PruningManager
 
-	ghostdagDataStore model.GHOSTDAGDataStore
-	blockStatusStore  model.BlockStatusStore
-	blockHeaderStore  model.BlockHeaderStore
-	blockStore        model.BlockStore
-	pruningStore      model.PruningStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	blockStatusStore          model.BlockStatusStore
+	blockHeaderStore          model.BlockHeaderStore
+	blockStore                model.BlockStore
+	pruningStore              model.PruningStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 }
 
 // New instantiates a new SyncManager
@@ -35,16 +36,18 @@ func New(
 	blockStatusStore model.BlockStatusStore,
 	blockHeaderStore model.BlockHeaderStore,
 	blockStore model.BlockStore,
-	pruningStore model.PruningStore) model.SyncManager {
+	pruningStore model.PruningStore,
+	headersSelectedChainStore model.HeadersSelectedChainStore) model.SyncManager {
 
 	return &syncManager{
 		databaseContext:  databaseContext,
 		genesisBlockHash: genesisBlockHash,
 
-		dagTraversalManager: dagTraversalManager,
-		dagTopologyManager:  dagTopologyManager,
-		ghostdagManager:     ghostdagManager,
-		pruningManager:      pruningManager,
+		dagTraversalManager:       dagTraversalManager,
+		dagTopologyManager:        dagTopologyManager,
+		ghostdagManager:           ghostdagManager,
+		pruningManager:            pruningManager,
+		headersSelectedChainStore: headersSelectedChainStore,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
@@ -75,6 +78,15 @@ func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainH
 	defer onEnd()
 
 	return sm.createBlockLocator(lowHash, highHash, limit)
+}
+
+func (sm *syncManager) CreateHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateHeadersSelectedChainBlockLocator")
+	defer onEnd()
+
+	return sm.createHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {

@@ -9,7 +9,7 @@ import (
 // AddBlock submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
-func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 	logger.LogAndMeasureExecutionTime(log, "csm.AddBlock")
 
 	log.Debugf("Resolving whether the block %s is the next virtual selected parent", blockHash)
