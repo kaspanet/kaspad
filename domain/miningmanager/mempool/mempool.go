@@ -876,7 +876,7 @@ func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTr
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) []*consensusexternalapi.DomainTransaction {
+func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
@@ -890,13 +890,13 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	// valid.
 	err := mp.removeBlockTransactionsFromPool(txs)
 	if err != nil {
-		log.Errorf("Failed removing txs from pool: '%s'", err)
+		return nil, errors.Wrapf(err, "Failed removing txs from pool")
 	}
 	acceptedTxs := make([]*consensusexternalapi.DomainTransaction, 0)
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", consensushashing.TransactionID(tx), err)
+			return nil, errors.Wrapf(err, "Failed removing tx from mempool: %s", consensushashing.TransactionID(tx))
 		}
 		mp.removeOrphan(tx, false)
 		acceptedOrphans := mp.processOrphans(tx)
@@ -905,7 +905,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 		}
 	}
 
-	return acceptedTxs
+	return acceptedTxs, nil
 }
 
 func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) {
