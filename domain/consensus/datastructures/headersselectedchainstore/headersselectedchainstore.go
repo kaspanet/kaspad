@@ -79,7 +79,10 @@ func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
 }
 
 func (hscs *headersSelectedChainStore) IsStaged() bool {
-	return len(hscs.stagingAddedByHash) != 0
+	return len(hscs.stagingAddedByHash) != 0 ||
+		len(hscs.stagingRemovedByHash) != 0 ||
+		len(hscs.stagingAddedByIndex) != 0 ||
+		len(hscs.stagingAddedByIndex) != 0
 }
 
 func (hscs *headersSelectedChainStore) Discard() {
