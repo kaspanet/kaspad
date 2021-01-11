@@ -9,8 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var byteOrder = binary.LittleEndian
-
 const uint64Len = 8
 const uint16Len = 2
 const lengthOfscriptPubKeyLength = 1
@@ -25,7 +23,7 @@ func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseDat
 	}
 
 	payload := make([]byte, uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength+scriptLengthOfScriptPubKey+len(coinbaseData.ExtraData))
-	byteOrder.PutUint64(payload[:uint64Len], blueScore)
+	binary.LittleEndian.PutUint64(payload[:uint64Len], blueScore)
 	if len(coinbaseData.ScriptPublicKey.Script) > math.MaxUint8 {
 		return nil, errors.Errorf("script public key is bigger than %d", math.MaxUint8)
 	}
@@ -47,7 +45,7 @@ func (c *coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalap
 			"coinbase payload is less than the minimum length of %d", minLength)
 	}
 
-	blueScore = byteOrder.Uint64(coinbaseTx.Payload[:uint64Len])
+	blueScore = binary.LittleEndian.Uint64(coinbaseTx.Payload[:uint64Len])
 	scriptPubKeyVersion := uint16(coinbaseTx.Payload[uint64Len])
 	scriptPubKeyScriptLength := coinbaseTx.Payload[uint64Len+lengthOfVersionScriptPubKey]
 
