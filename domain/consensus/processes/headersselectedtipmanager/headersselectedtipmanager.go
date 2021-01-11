@@ -42,7 +42,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 	if !hasSelectedTip {
 		h.headersSelectedTipStore.Stage(hash)
 
-		err := h.headersSelectedChainStore.Stage(h.databaseContext, &externalapi.SelectedParentChainChanges{
+		err := h.headersSelectedChainStore.Stage(h.databaseContext, &externalapi.SelectedChainPath{
 			Added:   []*externalapi.DomainHash{hash},
 			Removed: nil,
 		})
@@ -63,7 +63,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
 			h.headersSelectedTipStore.Stage(newHeadersSelectedTip)
 
-			chainChanges, err := h.dagTraversalManager.CalculateSelectedParentChainChanges(headersSelectedTip, newHeadersSelectedTip)
+			chainChanges, err := h.dagTraversalManager.CalculateChainPath(headersSelectedTip, newHeadersSelectedTip)
 			if err != nil {
 				return err
 			}

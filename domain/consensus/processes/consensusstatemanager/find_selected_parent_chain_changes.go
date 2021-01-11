@@ -6,7 +6,7 @@ import (
 )
 
 func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
-	blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 
 	// Calculate chain changes between the given blockHash and the
 	// virtual's selected parent. Note that we explicitly don't
@@ -18,5 +18,5 @@ func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
 	}
 	virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
 
-	return csm.dagTraversalManager.CalculateSelectedParentChainChanges(blockHash, virtualSelectedParent)
+	return csm.dagTraversalManager.CalculateChainPath(blockHash, virtualSelectedParent)
 }

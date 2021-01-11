@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type HeadersSelectedChainStore interface {
 	Store
 	Stage(dbContext DBReader,
-		chainChanges *externalapi.SelectedParentChainChanges) error
+		chainChanges *externalapi.SelectedChainPath) error
 	IsStaged() bool
 	GetIndexByHash(dbContext DBReader, blockHash *externalapi.DomainHash) (uint64, bool, error)
 	GetHashByIndex(dbContext DBReader, index uint64) (*externalapi.DomainHash, bool, error)

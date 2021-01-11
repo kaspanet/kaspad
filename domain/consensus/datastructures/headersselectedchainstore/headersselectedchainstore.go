@@ -39,7 +39,7 @@ func New(cacheSize int) model.HeadersSelectedChainStore {
 
 // Stage stages the given chain changes
 func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
-	chainChanges *externalapi.SelectedParentChainChanges) error {
+	chainChanges *externalapi.SelectedChainPath) error {
 
 	if hscs.IsStaged() {
 		return errors.Errorf("can't stage when there's already staged data")

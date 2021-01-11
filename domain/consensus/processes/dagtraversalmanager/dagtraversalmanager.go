@@ -146,8 +146,8 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	return currentHash, nil
 }
 
-func (dtm *dagTraversalManager) CalculateSelectedParentChainChanges(
-	fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+func (dtm *dagTraversalManager) CalculateChainPath(
+	fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 
 	// Walk down from fromBlockHash until we reach the common selected
 	// parent chain ancestor of fromBlockHash and toBlockHash. Note
@@ -190,7 +190,7 @@ func (dtm *dagTraversalManager) CalculateSelectedParentChainChanges(
 		added[i], added[j] = added[j], added[i]
 	}
 
-	return &externalapi.SelectedParentChainChanges{
+	return &externalapi.SelectedChainPath{
 		Added:   added,
 		Removed: removed,
 	}, nil

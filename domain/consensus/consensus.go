@@ -336,7 +336,7 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 	return s.pruningManager.IsValidPruningPoint(blockHash)
 }
 
-func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
