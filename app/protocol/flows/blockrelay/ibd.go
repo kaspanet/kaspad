@@ -131,7 +131,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 
 	for !lowHash.Equal(highHash) {
 		log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-		blockLocator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, 0)
+		blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 		if err != nil {
 			return nil, err
 		}
@@ -168,6 +168,13 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 		}
 		log.Debugf("The index of the highest hash in the original "+
 			"blockLocator sent to %s is %d", flow.peer, highestHashIndex)
+
+		// If the block locator contains only two adjacent chain blocks, the
+		// syncer will always find the same highest chain block, so to avoid
+		// an endless loop, we explicitly stop the loop in such situation.
+		if len(blockLocator) == 2 && highestHashIndex == 1 {
+			return highestHash, nil
+		}
 
 		locatorHashAboveHighestHash := highestHash
 		if highestHashIndex > 0 {

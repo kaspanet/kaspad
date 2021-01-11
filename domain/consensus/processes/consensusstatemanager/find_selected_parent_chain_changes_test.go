@@ -10,10 +10,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
-func TestCalculateSelectedParentChainChanges(t *testing.T) {
+func TestCalculateChainPath(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCalculateSelectedParentChainChanges")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCalculateChainPath")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
