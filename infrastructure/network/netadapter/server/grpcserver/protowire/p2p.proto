@@ -1,0 +1,237 @@
+syntax = "proto3";
+package protowire;
+
+option go_package = "github.com/kaspanet/kaspad/protowire";
+
+// RequestAddressesMessage start
+message RequestAddressesMessage{
+  bool includeAllSubnetworks = 1;
+  SubnetworkId subnetworkId = 2;
+}
+// RequestAddressesMessage end
+
+// AddressesMessage start
+message AddressesMessage{
+  repeated NetAddress addressList = 1;
+}
+
+message NetAddress{
+  int64 timestamp = 1;
+  uint64 services = 2;
+  bytes ip = 3;
+  uint32 port = 4;
+}
+
+message SubnetworkId{
+  bytes bytes = 1;
+}
+// AddressesMessage end
+
+// TransactionMessage start
+message TransactionMessage{
+  uint32 version = 1;
+  repeated TransactionInput inputs = 2;
+  repeated TransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  SubnetworkId subnetworkId = 5;
+  uint64 gas = 6;
+  Hash payloadHash = 7;
+  bytes payload = 8;
+}
+
+message TransactionInput{
+  Outpoint previousOutpoint = 1;
+  bytes signatureScript = 2;
+  uint64 sequence = 3;
+}
+
+message Outpoint{
+  TransactionId transactionId = 1;
+  uint32 index = 2;
+}
+
+message TransactionId{
+  bytes bytes = 1;
+}
+message ScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
+
+message TransactionOutput{
+  uint64 value = 1;
+  ScriptPublicKey scriptPublicKey = 2;
+}
+// TransactionMessage end
+
+// BlockMessage start
+message BlockMessage{
+  BlockHeaderMessage header = 1;
+  repeated TransactionMessage transactions = 2;
+}
+
+message BlockHeaderMessage{
+  uint32 version = 1;
+  repeated Hash parentHashes = 2;
+  Hash hashMerkleRoot = 3;
+  Hash acceptedIdMerkleRoot = 4;
+  Hash utxoCommitment = 5;
+  int64 timestamp = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+}
+
+message Hash{
+  bytes bytes = 1;
+}
+// BlockMessage end
+
+// GetBlockLocatorMessage start
+message RequestBlockLocatorMessage{
+  Hash lowHash = 1;
+  Hash highHash = 2;
+  uint32 limit = 3;
+}
+// GetBlockLocatorMessage end
+
+// BlockLocatorMessage start
+message BlockLocatorMessage{
+  repeated Hash hashes = 1;
+}
+// BlockLocatorMessage end
+
+// GetBlocksMessage start
+message RequestHeadersMessage{
+  Hash lowHash = 1;
+  Hash highHash = 2;
+}
+// GetBlocksMessage end
+
+// RequestNextIBDBlocksMessage start
+message RequestNextHeadersMessage{
+}
+// RequestNextIBDBlocksMessage end
+
+// DoneIBDBlocksMessage start
+message DoneHeadersMessage{
+}
+// DoneIBDBlocksMessage end
+
+// RequestRelayBlocksMessage start
+message RequestRelayBlocksMessage{
+  repeated Hash hashes = 1;
+}
+// RequestRelayBlocksMessage end
+
+// RequestTransactionsMessage start
+message RequestTransactionsMessage {
+  repeated TransactionId ids = 1;
+}
+// GetTransactionsMessage end
+
+// TransactionNotFoundMessage start
+message TransactionNotFoundMessage{
+  TransactionId id = 1;
+}
+// TransactionsNotFoundMessage end
+
+// InvRelayBlockMessage start
+message InvRelayBlockMessage{
+  Hash hash = 1;
+}
+// InvRelayBlockMessage end
+
+// InvTransactionMessage start
+message InvTransactionsMessage{
+  repeated TransactionId ids = 1;
+}
+// InvTransactionMessage end
+
+// PingMessage start
+message PingMessage{
+  uint64 nonce = 1;
+}
+// PingMessage end
+
+// PongMessage start
+message PongMessage{
+  uint64 nonce = 1;
+}
+// PongMessage end
+
+// VerackMessage start
+message VerackMessage{
+}
+// VerackMessage end
+
+// VersionMessage start
+message VersionMessage{
+  uint32 protocolVersion = 1;
+  uint64 services = 2;
+  int64 timestamp = 3;
+  NetAddress address = 4;
+  bytes id = 5;
+  string userAgent = 6;
+  bool disableRelayTx = 8;
+  SubnetworkId subnetworkId = 9;
+  string network = 10;
+}
+// VersionMessage end
+
+// RejectMessage start
+message RejectMessage{
+  string reason = 1;
+}
+// RejectMessage end
+
+// RequestIBDRootUTXOSetAndBlockMessage start
+message RequestIBDRootUTXOSetAndBlockMessage{
+  Hash ibdRoot = 1;
+}
+// RequestIBDRootUTXOSetAndBlockMessage end
+
+// IBDRootUTXOSetAndBlockMessage start
+message IBDRootUTXOSetAndBlockMessage{
+  bytes utxoSet = 1;
+  BlockMessage block = 2;
+}
+// IBDRootUTXOSetAndBlockMessage end
+
+// RequestIBDBlocksMessage start
+message RequestIBDBlocksMessage{
+  repeated Hash hashes = 1;
+}
+// RequestIBDBlocksMessage end
+
+// IBDRootNotFoundMessage start
+message IBDRootNotFoundMessage{
+}
+// IBDRootNotFoundMessage end
+
+// RequestIBDRootHashMessage start
+message RequestIBDRootHashMessage{
+}
+// RequestIBDRootHashMessage end
+
+// IBDRootHashMessage start
+message IBDRootHashMessage{
+  Hash hash = 1;
+}
+// IBDRootHashMessage end
+
+// IbdBlockLocatorMessage start
+message IbdBlockLocatorMessage {
+  Hash targetHash = 1;
+  repeated Hash blockLocatorHashes = 2;
+}
+// IbdBlockLocatorMessage end
+
+// IbdBlockLocatorHighestHashMessage start
+message IbdBlockLocatorHighestHashMessage {
+  Hash highestHash = 1;
+}
+// IbdBlockLocatorHighestHashMessage end
+
+message BlockHeadersMessage {
+  repeated BlockHeaderMessage blockHeaders = 1;
+}

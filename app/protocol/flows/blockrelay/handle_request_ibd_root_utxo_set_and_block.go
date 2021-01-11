@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"errors"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -39,6 +40,8 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 		}
 		msgRequestIBDRootUTXOSetAndBlock := message.(*appmessage.MsgRequestIBDRootUTXOSetAndBlock)
 
+		log.Debugf("Got request for IBDRoot UTXOSet and Block")
+
 		utxoSet, err := flow.Domain().Consensus().GetPruningPointUTXOSet(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
@@ -50,11 +53,14 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 				continue
 			}
 		}
+		log.Debugf("Got utxo set for pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 
 		block, err := flow.Domain().Consensus().GetBlock(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 		if err != nil {
 			return err
 		}
+
+		log.Debugf("Got pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetAndBlock(utxoSet,
 			appmessage.DomainBlockToMsgBlock(block)))

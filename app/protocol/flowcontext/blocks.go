@@ -1,9 +1,8 @@
 package flowcontext
 
 import (
-	"sync/atomic"
-
 	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
+	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
 
@@ -115,24 +114,45 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 
 // IsIBDRunning returns true if IBD is currently marked as running
 func (f *FlowContext) IsIBDRunning() bool {
-	return atomic.LoadUint32(&f.isInIBD) != 0
+	f.ibdPeerMutex.RLock()
+	defer f.ibdPeerMutex.RUnlock()
+
+	return f.ibdPeer != nil
 }
 
 // TrySetIBDRunning attempts to set `isInIBD`. Returns false
 // if it is already set
-func (f *FlowContext) TrySetIBDRunning() bool {
-	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 0, 1)
-	if succeeded {
-		log.Infof("IBD started")
+func (f *FlowContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
+	f.ibdPeerMutex.Lock()
+	defer f.ibdPeerMutex.Unlock()
+
+	if f.ibdPeer != nil {
+		return false
 	}
-	return succeeded
+	f.ibdPeer = ibdPeer
+	log.Infof("IBD started")
+
+	return true
 }
 
 // UnsetIBDRunning unsets isInIBD
 func (f *FlowContext) UnsetIBDRunning() {
-	succeeded := atomic.CompareAndSwapUint32(&f.isInIBD, 1, 0)
-	if !succeeded {
+	f.ibdPeerMutex.Lock()
+	defer f.ibdPeerMutex.Unlock()
+
+	if f.ibdPeer == nil {
 		panic("attempted to unset isInIBD when it was not set to begin with")
 	}
+
+	f.ibdPeer = nil
 	log.Infof("IBD finished")
+}
+
+// IBDPeer returns the current IBD peer or null if the node is not
+// in IBD
+func (f *FlowContext) IBDPeer() *peerpkg.Peer {
+	f.ibdPeerMutex.RLock()
+	defer f.ibdPeerMutex.RUnlock()
+
+	return f.ibdPeer
 }

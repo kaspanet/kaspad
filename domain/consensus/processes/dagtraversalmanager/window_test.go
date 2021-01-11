@@ -311,7 +311,7 @@ func TestBlueBlockWindow(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.K = 1
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestBlueBlockWindow")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestBlueBlockWindow")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}

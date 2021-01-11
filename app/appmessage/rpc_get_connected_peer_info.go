@@ -46,4 +46,5 @@ type GetConnectedPeerInfoMessage struct {
 	UserAgent                 string
 	AdvertisedProtocolVersion uint32
 	TimeConnected             int64
+	IsIBDPeer                 bool
 }

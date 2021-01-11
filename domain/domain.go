@@ -28,9 +28,9 @@ func (d domain) MiningManager() miningmanager.MiningManager {
 }
 
 // New instantiates a new instance of a Domain object
-func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (Domain, error) {
+func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (Domain, error) {
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, err := consensusFactory.NewConsensus(dagParams, db)
+	consensusInstance, err := consensusFactory.NewConsensus(dagParams, db, isArchivalNode)
 	if err != nil {
 		return nil, err
 	}

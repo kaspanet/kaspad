@@ -8,8 +8,9 @@ import (
 // are intended to be mined into new blocks
 type Mempool interface {
 	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) []*consensusexternalapi.DomainTransaction
-	Transactions() []*consensusexternalapi.DomainTransaction
+	BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction)
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
+	AllTransactions() []*consensusexternalapi.DomainTransaction
 }
