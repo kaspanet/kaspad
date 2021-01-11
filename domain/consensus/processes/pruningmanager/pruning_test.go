@@ -33,10 +33,10 @@ func TestPruning(t *testing.T) {
 			"kaspa-testnet": "1582",
 		},
 		"dag-for-test-pruning.json": {
-			"kaspa-mainnet": "502",
+			"kaspa-mainnet": "503",
 			"kaspa-simnet":  "502",
 			"kaspa-devnet":  "503",
-			"kaspa-testnet": "502",
+			"kaspa-testnet": "503",
 		},
 	}
 
