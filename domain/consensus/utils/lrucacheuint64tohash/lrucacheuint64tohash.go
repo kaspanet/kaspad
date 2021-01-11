@@ -2,8 +2,8 @@ package lrucacheuint64tohash
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-// LRUCache is a least-recently-used cache for any type
-// that's able to be indexed by DomainHash
+// LRUCache is a least-recently-used cache from
+// uint64 to DomainHash
 type LRUCache struct {
 	cache    map[uint64]*externalapi.DomainHash
 	capacity int

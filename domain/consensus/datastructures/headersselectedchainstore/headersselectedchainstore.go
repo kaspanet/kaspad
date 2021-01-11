@@ -25,7 +25,7 @@ type headersSelectedChainStore struct {
 	cacheHighestChainBlockIndex uint64
 }
 
-// New instantiates a new AcceptanceDataStore
+// New instantiates a new HeadersSelectedChainStore
 func New(cacheSize int) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
 		stagingAddedByHash:    make(map[externalapi.DomainHash]uint64),
@@ -37,7 +37,7 @@ func New(cacheSize int) model.HeadersSelectedChainStore {
 	}
 }
 
-// Stage stages the given acceptanceData for the given blockHash
+// Stage stages the given chain changes
 func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
 	chainChanges *externalapi.SelectedParentChainChanges) error {
 
@@ -143,7 +143,7 @@ func (hscs *headersSelectedChainStore) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-// Get gets the acceptanceData associated with the given blockHash
+// Get gets the chain block index for the given blockHash
 func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, blockHash *externalapi.DomainHash) (uint64, bool, error) {
 	if index, ok := hscs.stagingAddedByHash[*blockHash]; ok {
 		return index, true, nil
