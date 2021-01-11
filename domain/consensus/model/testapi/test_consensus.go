@@ -40,6 +40,7 @@ type TestConsensus interface {
 	PruningStore() model.PruningStore
 	ReachabilityDataStore() model.ReachabilityDataStore
 	UTXODiffStore() model.UTXODiffStore
+	HeadersSelectedChainStore() model.HeadersSelectedChainStore
 
 	BlockBuilder() TestBlockBuilder
 	BlockProcessor() model.BlockProcessor

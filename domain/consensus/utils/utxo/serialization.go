@@ -114,7 +114,10 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	}
 
 	var version uint16
-	err = serialization.ReadElement(r, version)
+	err = serialization.ReadElement(r, &version)
+	if err != nil {
+		return nil, err
+	}
 	var scriptPubKeyLen uint64
 	err = serialization.ReadElement(r, &scriptPubKeyLen)
 	if err != nil {

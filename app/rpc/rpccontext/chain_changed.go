@@ -9,7 +9,7 @@ import (
 // ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage converts
 // VirtualSelectedParentChainChanges to VirtualSelectedParentChainChangedNotificationMessage
 func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-	selectedParentChainChanges *externalapi.SelectedParentChainChanges) (*appmessage.VirtualSelectedParentChainChangedNotificationMessage, error) {
+	selectedParentChainChanges *externalapi.SelectedChainPath) (*appmessage.VirtualSelectedParentChainChangedNotificationMessage, error) {
 
 	removedChainBlockHashes := make([]string, len(selectedParentChainChanges.Removed))
 	for i, removed := range selectedParentChainChanges.Removed {
