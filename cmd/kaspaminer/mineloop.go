@@ -64,6 +64,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 						time.Sleep(deviation)
 					}
 					blockInWindowIndex = 0
+					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
 				}
 			}
 
