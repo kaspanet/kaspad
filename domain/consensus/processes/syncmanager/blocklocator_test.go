@@ -110,20 +110,20 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with incompatible blocks
-		locator, err = tc.CreateBlockLocator(sideChainTipHash, tipHash, 0)
+		_, err = tc.CreateBlockLocator(sideChainTipHash, tipHash, 0)
 		expectedErr := "highHash and lowHash are not in the same selected parent chain"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
 		// Check block locator with non exist blocks
-		locator, err = tc.CreateBlockLocator(&externalapi.DomainHash{}, tipHash, 0)
+		_, err = tc.CreateBlockLocator(&externalapi.DomainHash{}, tipHash, 0)
 		expectedErr = "does not exist"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
-		locator, err = tc.CreateBlockLocator(tipHash, &externalapi.DomainHash{}, 0)
+		_, err = tc.CreateBlockLocator(tipHash, &externalapi.DomainHash{}, 0)
 		expectedErr = "does not exist"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
@@ -216,14 +216,14 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with low hash higher than high hash
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(chain[20], chain[19])
+		_, err = tc.CreateHeadersSelectedChainBlockLocator(chain[20], chain[19])
 		expectedErr := "cannot build block locator while highHash is lower than lowHash"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
 		// Check block locator with non chain blocks
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, sideChainTipHash)
+		_, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, sideChainTipHash)
 		if !errors.Is(err, database.ErrNotFound) {
 			t.Fatalf("expected error '%s' but got '%s'", database.ErrNotFound, err)
 		}
