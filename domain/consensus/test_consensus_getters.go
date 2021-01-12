@@ -133,3 +133,7 @@ func (tc *testConsensus) FinalityManager() model.FinalityManager {
 func (tc *testConsensus) FinalityStore() model.FinalityStore {
 	return tc.finalityStore
 }
+
+func (tc *testConsensus) HeadersSelectedChainStore() model.HeadersSelectedChainStore {
+	return tc.headersSelectedChainStore
+}

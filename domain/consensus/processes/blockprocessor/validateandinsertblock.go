@@ -81,7 +81,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
+	var selectedParentChainChanges *externalapi.SelectedChainPath
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when

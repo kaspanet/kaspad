@@ -41,7 +41,10 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 		blocklogger.LogBlock(block)
 
 		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
-		_ = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+		_, err = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+		if err != nil {
+			return err
+		}
 
 		if f.onBlockAddedToDAGHandler != nil {
 			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
