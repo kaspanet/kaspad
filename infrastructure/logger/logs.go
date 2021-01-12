@@ -266,8 +266,8 @@ func callsite(flag uint32) (string, int) {
 }
 
 const (
-	defaultThresholdKB = 10 * 1024
-	defaultMaxRolls    = 3
+	defaultThresholdKB = 100 * 1000 // 100 MB logs by default.
+	defaultMaxRolls    = 8          // keep 8 last logs by default.
 )
 
 // AddLogFile adds a file which the log will write into on a certain
