@@ -159,7 +159,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 			return err
 		}
 		if msgTxNotFound != nil {
-			if msgTxNotFound.ID != expectedID {
+			if !msgTxNotFound.ID.Equal(expectedID) {
 				return protocolerrors.Errorf(true, "expected transaction %s, but got %s",
 					expectedID, msgTxNotFound.ID)
 			}
