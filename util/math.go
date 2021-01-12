@@ -2,6 +2,7 @@ package util
 
 import (
 	"math/big"
+	"time"
 )
 
 var (
@@ -150,4 +151,47 @@ func CalcWork(bits uint32) *big.Int {
 	// (1 << 256) / (difficultyNum + 1)
 	denominator := new(big.Int).Add(difficultyNum, bigOne)
 	return new(big.Int).Div(oneLsh256, denominator)
+}
+
+func getHashrate(target *big.Int, TargetTimePerBlock time.Duration) *big.Int {
+	// From: https://bitcoin.stackexchange.com/a/5557/40800
+	// difficulty = hashrate / (2^256 / max_target / block_rate_in_seconds)
+	// hashrate = difficulty * (2^256 / max_target / block_rate_in_seconds)
+	// difficulty = max_target / target
+	// hashrate = (max_target / target) * (2^256 / max_target / block_rate_in_seconds)
+	// hashrate = 2^256 / (target * block_rate_in_seconds)
+
+	tmp := new(big.Int)
+	divisor := new(big.Int).Set(target)
+	divisor.Mul(divisor, tmp.SetInt64(TargetTimePerBlock.Milliseconds()))
+	divisor.Div(divisor, tmp.SetInt64(int64(time.Second/time.Millisecond))) // Scale it up to seconds.
+	divisor.Div(oneLsh256, divisor)
+	return divisor
+}
+
+// GetHashrateString returns the expected hashrate of the network on a certain difficulty target.
+func GetHashrateString(target *big.Int, TargetTimePerBlock time.Duration) string {
+	hashrate := getHashrate(target, TargetTimePerBlock)
+	in := hashrate.Text(10)
+	var postfix string
+	switch {
+	case len(in) <= 3:
+		return in + " H/s"
+	case len(in) <= 6:
+		postfix = " KH/s"
+	case len(in) <= 9:
+		postfix = " MH/s"
+	case len(in) <= 12:
+		postfix = " GH/s"
+	case len(in) <= 15:
+		postfix = " TH/s"
+	case len(in) <= 18:
+		postfix = " PH/s"
+	case len(in) <= 21:
+		postfix = " EH/s"
+	default:
+		return in + " H/s"
+	}
+	highPrecision := len(in) - ((len(in)-1)/3)*3
+	return in[:highPrecision] + "." + in[highPrecision:highPrecision+2] + postfix
 }

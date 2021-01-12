@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -116,7 +117,8 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	log.Debugf("Block %s validated and inserted", blockHash)
+	hashrate := util.GetHashrateString(util.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock)
+	log.Debugf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)
 
 	var logClosureErr error
 	log.Debugf("%s", logger.NewLogClosure(func() string {
