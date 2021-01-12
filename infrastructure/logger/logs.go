@@ -282,6 +282,7 @@ func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
 // It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFileWithCustomRotator(logFile string, logLevel Level, thresholdKB int64, maxRolls int) error {
 	logDir, _ := filepath.Split(logFile)
+	// if the logDir is empty then `logFile` is in the cwd and there's no need to create any directory.
 	if logDir != "" {
 		err := os.MkdirAll(logDir, 0700)
 		if err != nil {
