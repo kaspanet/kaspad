@@ -19,7 +19,7 @@ func TestUTXOCommitment(t *testing.T) {
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -115,7 +115,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

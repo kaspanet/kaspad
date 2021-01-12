@@ -37,6 +37,12 @@ func (m *Manager) Peers() []*peerpkg.Peer {
 	return m.context.Peers()
 }
 
+// IBDPeer returns the current IBD peer or null if the node is not
+// in IBD
+func (m *Manager) IBDPeer() *peerpkg.Peer {
+	return m.context.IBDPeer()
+}
+
 // AddTransaction adds transaction to the mempool and propagates it.
 func (m *Manager) AddTransaction(tx *externalapi.DomainTransaction) error {
 	return m.context.AddTransaction(tx)

@@ -1,9 +1,10 @@
 package blockvalidator_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"math"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -21,7 +22,7 @@ func TestChainedTransactions(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -83,7 +84,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestCheckBlockSanity")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -121,7 +122,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 var unOrderedParentsBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
-		0x10000000,
+		0x00000000,
 		[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
@@ -137,10 +138,10 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			}),
 		},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-			0xf8, 0x55, 0x7b, 0xd0, 0xda, 0xf2, 0x06, 0x8b,
-			0x3b, 0xb1, 0x93, 0x5a, 0x2c, 0x52, 0x43, 0xf0,
-			0x02, 0xf2, 0xb1, 0x40, 0x81, 0x2c, 0x0c, 0x15,
-			0x8d, 0x04, 0x3d, 0xe2, 0x23, 0x54, 0x98, 0x88,
+			0x33, 0x77, 0x88, 0xd7, 0x8a, 0xd7, 0x49, 0xbf,
+			0xce, 0x97, 0x58, 0x4f, 0x05, 0x4c, 0xbb, 0x18,
+			0xb4, 0xe4, 0x73, 0x6e, 0x1f, 0xcd, 0x57, 0x5d,
+			0x6b, 0xe4, 0xb1, 0x01, 0xea, 0x7f, 0x01, 0xd7,
 		}),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
@@ -160,7 +161,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 	),
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -178,23 +179,23 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x12a05f200, // 5000000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x51,
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
-				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
-				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
-				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
+				0x2e, 0xb5, 0xe8, 0x1c, 0xe2, 0xa7, 0x67, 0x84,
+				0xd1, 0x1a, 0x42, 0x66, 0xcf, 0x12, 0x7f, 0x10,
+				0x9b, 0x6f, 0x84, 0x63, 0xf5, 0x65, 0x5a, 0x65,
+				0xec, 0xed, 0x60, 0xc6, 0x32, 0x7a, 0x9d, 0x08,
 			}),
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -235,7 +236,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x2123e300, // 556000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -244,11 +245,11 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -257,14 +258,14 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -304,7 +305,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -313,11 +314,11 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -326,14 +327,14 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -374,7 +375,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -383,7 +384,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -395,7 +396,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 // exampleValidBlock defines a sample valid block
 var exampleValidBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
-		0x10000000,
+		0x00000000,
 		[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
@@ -411,10 +412,10 @@ var exampleValidBlock = externalapi.DomainBlock{
 			}),
 		},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-			0x33, 0x70, 0xa7, 0x40, 0x9f, 0x2d, 0x87, 0xe1,
-			0x26, 0xaf, 0x0f, 0x5c, 0x7e, 0xc3, 0x84, 0x5e,
-			0x4f, 0x68, 0x42, 0x0a, 0xbf, 0x90, 0xcd, 0xef,
-			0x94, 0x9b, 0xe1, 0x9a, 0xf7, 0xdd, 0xb0, 0xb5,
+			0x8f, 0x2e, 0x67, 0x13, 0x86, 0xf9, 0x4c, 0x2a,
+			0x1d, 0x1a, 0xc1, 0xf0, 0x30, 0x88, 0xfd, 0x48,
+			0x20, 0xf3, 0x50, 0xd1, 0xfb, 0x6d, 0x06, 0x39,
+			0x72, 0xaa, 0x6f, 0x78, 0x22, 0x64, 0x83, 0x19,
 		}),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x8a, 0xb7, 0xd6, 0x73, 0x1b, 0xe6, 0xc5, 0xd3,
@@ -429,7 +430,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 	),
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -448,25 +449,25 @@ var exampleValidBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x12a05f200, // 5000000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
-				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
-				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
-				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
+				0x2e, 0xb5, 0xe8, 0x1c, 0xe2, 0xa7, 0x67, 0x84,
+				0xd1, 0x1a, 0x42, 0x66, 0xcf, 0x12, 0x7f, 0x10,
+				0x9b, 0x6f, 0x84, 0x63, 0xf5, 0x65, 0x5a, 0x65,
+				0xec, 0xed, 0x60, 0xc6, 0x32, 0x7a, 0x9d, 0x08,
 			}),
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -496,7 +497,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -537,7 +538,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x2123e300, // 556000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -546,11 +547,11 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -559,14 +560,14 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -606,7 +607,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -615,11 +616,11 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -628,14 +629,14 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -676,7 +677,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -685,7 +686,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -697,7 +698,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 // blockWithWrongTxOrder defines invalid block 100,000 of the block DAG.
 var blockWithWrongTxOrder = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
-		1,
+		0,
 		[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
@@ -736,7 +737,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 	),
 	Transactions: []*externalapi.DomainTransaction{
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -755,25 +756,26 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x12a05f200, // 5000000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0},
+			Payload:      []byte{9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-				0x31, 0x3d, 0xd5, 0x20, 0x4c, 0xc9, 0x89, 0x20,
-				0x46, 0x22, 0x59, 0xe0, 0x0d, 0x33, 0x27, 0xe6,
-				0x04, 0x20, 0x5f, 0x4e, 0xd5, 0xf4, 0xf9, 0x2f,
-				0x1a, 0xf0, 0x13, 0x0b, 0xe3, 0x92, 0xd8, 0xff,
+				0x2e, 0xb5, 0xe8, 0x1c, 0xe2, 0xa7, 0x67, 0x84,
+				0xd1, 0x1a, 0x42, 0x66, 0xcf, 0x12, 0x7f, 0x10,
+				0x9b, 0x6f, 0x84, 0x63, 0xf5, 0x65, 0x5a, 0x65,
+				0xec, 0xed, 0x60, 0xc6, 0x32, 0x7a, 0x9d, 0x08,
 			}),
 		},
+
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -803,7 +805,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -844,7 +846,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0x2123e300, // 556000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -853,11 +855,11 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xf7, 0xf5, 0x8b, 0x32,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -866,7 +868,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0x52, 0xde, 0x3d, 0x7c,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
@@ -875,7 +877,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			PayloadHash:  *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0xFF, 0xFF}),
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -915,7 +917,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -924,11 +926,11 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xad, 0xbe, 0x7e, 0x10,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 				{
 					Value: 0x11d260c0, // 299000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -937,14 +939,14 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xb3, 0x40, 0x9c, 0xd9,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 		{
-			Version: 1,
+			Version: 0,
 			Inputs: []*externalapi.DomainTransactionInput{
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
@@ -985,7 +987,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			Outputs: []*externalapi.DomainTransactionOutput{
 				{
 					Value: 0xf4240, // 1000000
-					ScriptPublicKey: []byte{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -994,7 +996,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 						0xf2, 0xeb, 0x9e, 0xe0,
 						0x88, // OP_EQUALVERIFY
 						0xac, // OP_CHECKSIG
-					},
+					}, Version: 0},
 				},
 			},
 			LockTime:     0,

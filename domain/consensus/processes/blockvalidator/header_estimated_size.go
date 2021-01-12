@@ -9,7 +9,7 @@ import (
 // it's only used to check block size limit violation.
 func (v *blockValidator) headerEstimatedSerializedSize(header externalapi.BlockHeader) uint64 {
 	size := uint64(0)
-	size += 4 // Version (int32)
+	size += 2 // Version (uint16)
 
 	size += 8                                                               // number of parents (uint64)
 	size += uint64(externalapi.DomainHashSize * len(header.ParentHashes())) // parents

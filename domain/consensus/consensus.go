@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -33,19 +32,20 @@ type consensus struct {
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
-	acceptanceDataStore     model.AcceptanceDataStore
-	blockStore              model.BlockStore
-	blockHeaderStore        model.BlockHeaderStore
-	pruningStore            model.PruningStore
-	ghostdagDataStore       model.GHOSTDAGDataStore
-	blockRelationStore      model.BlockRelationStore
-	blockStatusStore        model.BlockStatusStore
-	consensusStateStore     model.ConsensusStateStore
-	headersSelectedTipStore model.HeaderSelectedTipStore
-	multisetStore           model.MultisetStore
-	reachabilityDataStore   model.ReachabilityDataStore
-	utxoDiffStore           model.UTXODiffStore
-	finalityStore           model.FinalityStore
+	acceptanceDataStore       model.AcceptanceDataStore
+	blockStore                model.BlockStore
+	blockHeaderStore          model.BlockHeaderStore
+	pruningStore              model.PruningStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	blockRelationStore        model.BlockRelationStore
+	blockStatusStore          model.BlockStatusStore
+	consensusStateStore       model.ConsensusStateStore
+	headersSelectedTipStore   model.HeaderSelectedTipStore
+	multisetStore             model.MultisetStore
+	reachabilityDataStore     model.ReachabilityDataStore
+	utxoDiffStore             model.UTXODiffStore
+	finalityStore             model.FinalityStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -298,15 +298,12 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
 }
 
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
+func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(blockLocator) == 0 {
-		return nil, nil, errors.Errorf("empty block locator")
-	}
-
-	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
@@ -328,7 +325,7 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 	return s.pruningManager.IsValidPruningPoint(blockHash)
 }
 
-func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -372,29 +369,4 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 	defer s.lock.Unlock()
 
 	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
-}
-
-func (s *consensus) GetVirtualUTXOSet() ([]*externalapi.OutpointUTXOPair, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "consensus.GetVirtualUTXOSet")
-	defer onEnd()
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	iterator, err := s.consensusStateStore.VirtualUTXOSetIterator(s.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-
-	pairs := make([]*externalapi.OutpointUTXOPair, 0)
-	for iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return nil, err
-		}
-
-		pairs = append(pairs, &externalapi.OutpointUTXOPair{Outpoint: outpoint, Entry: entry})
-	}
-
-	return pairs, nil
 }

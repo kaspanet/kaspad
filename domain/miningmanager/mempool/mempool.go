@@ -42,7 +42,7 @@ type policy struct {
 	// MaxTxVersion is the transaction version that the mempool should
 	// accept. All transactions above this version are rejected as
 	// non-standard.
-	MaxTxVersion int32
+	MaxTxVersion uint16
 
 	// AcceptNonStd defines whether to accept non-standard transactions. If
 	// true, non-standard transactions will be accepted into the mempool.
@@ -92,7 +92,7 @@ type mempool struct {
 // transactions until they are mined into a block.
 func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmanagermodel.Mempool {
 	policy := policy{
-		MaxTxVersion:    constants.TransactionVersion,
+		MaxTxVersion:    constants.MaxTransactionVersion,
 		AcceptNonStd:    acceptNonStd,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,
@@ -123,6 +123,22 @@ func (mp *mempool) GetTransaction(
 	}
 
 	return txDesc.DomainTransaction, true
+}
+
+func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	transactions := make([]*consensusexternalapi.DomainTransaction, 0, len(mp.pool)+len(mp.chainedTransactions))
+	for _, txDesc := range mp.pool {
+		transactions = append(transactions, txDesc.DomainTransaction)
+	}
+
+	for _, txDesc := range mp.chainedTransactions {
+		transactions = append(transactions, txDesc.DomainTransaction)
+	}
+
+	return transactions
 }
 
 // txDescriptor is a descriptor containing a transaction in the mempool along with
@@ -841,9 +857,9 @@ func (mp *mempool) ChainedCount() int {
 	return len(mp.chainedTransactions)
 }
 
-// Transactions returns a slice of all the transactions in the block
+// BlockCandidateTransactions returns a slice of all the candidate transactions for the next block
 // This is safe for concurrent use
-func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
+func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 	descs := make([]*consensusexternalapi.DomainTransaction, len(mp.pool))
@@ -860,7 +876,7 @@ func (mp *mempool) Transactions() []*consensusexternalapi.DomainTransaction {
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) []*consensusexternalapi.DomainTransaction {
+func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
@@ -874,13 +890,13 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	// valid.
 	err := mp.removeBlockTransactionsFromPool(txs)
 	if err != nil {
-		log.Errorf("Failed removing txs from pool: '%s'", err)
+		return nil, errors.Wrapf(err, "Failed removing txs from pool")
 	}
 	acceptedTxs := make([]*consensusexternalapi.DomainTransaction, 0)
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		err := mp.removeDoubleSpends(tx)
 		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", consensushashing.TransactionID(tx), err)
+			return nil, errors.Wrapf(err, "Failed removing tx from mempool: %s", consensushashing.TransactionID(tx))
 		}
 		mp.removeOrphan(tx, false)
 		acceptedOrphans := mp.processOrphans(tx)
@@ -889,7 +905,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 		}
 	}
 
-	return acceptedTxs
+	return acceptedTxs, nil
 }
 
 func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) {

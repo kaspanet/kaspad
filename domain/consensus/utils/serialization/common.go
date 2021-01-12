@@ -18,6 +18,18 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// Attempt to write the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
+	case int16:
+		err := binaryserializer.PutUint16(w, uint16(e))
+		if err != nil {
+			return err
+		}
+		return nil
+	case uint16:
+		err := binaryserializer.PutUint16(w, e)
+		if err != nil {
+			return err
+		}
+		return nil
 	case int32:
 		err := binaryserializer.PutUint32(w, uint32(e))
 		if err != nil {
@@ -115,6 +127,21 @@ func ReadElement(r io.Reader, element interface{}) error {
 	// Attempt to read the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
+	case *int16:
+		rv, err := binaryserializer.Uint16(r)
+		if err != nil {
+			return err
+		}
+		*e = int16(rv)
+		return nil
+
+	case *uint16:
+		rv, err := binaryserializer.Uint16(r)
+		if err != nil {
+			return err
+		}
+		*e = rv
+		return nil
 	case *int32:
 		rv, err := binaryserializer.Uint32(r)
 		if err != nil {

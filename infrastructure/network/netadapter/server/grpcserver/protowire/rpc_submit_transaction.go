@@ -2,10 +2,15 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
-	rpcTransaction := x.SubmitTransactionRequest.Transaction.toAppMessage()
+	rpcTransaction, err := x.SubmitTransactionRequest.Transaction.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
 	return &appmessage.SubmitTransactionRequestMessage{
 		Transaction: rpcTransaction,
 	}, nil
@@ -42,7 +47,7 @@ func (x *KaspadMessage_SubmitTransactionResponse) fromAppMessage(message *appmes
 	return nil
 }
 
-func (x *RpcTransaction) toAppMessage() *appmessage.RPCTransaction {
+func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 	inputs := make([]*appmessage.RPCTransactionInput, len(x.Inputs))
 	for i, input := range x.Inputs {
 		previousOutpoint := &appmessage.RPCOutpoint{
@@ -57,13 +62,22 @@ func (x *RpcTransaction) toAppMessage() *appmessage.RPCTransaction {
 	}
 	outputs := make([]*appmessage.RPCTransactionOutput, len(x.Outputs))
 	for i, output := range x.Outputs {
+		scriptPubKey, err := ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(output.ScriptPublicKey)
+		if err != nil {
+			return nil, err
+		}
 		outputs[i] = &appmessage.RPCTransactionOutput{
-			Amount:       output.Amount,
-			ScriptPubKey: output.ScriptPubKey,
+			Amount:          output.Amount,
+			ScriptPublicKey: scriptPubKey,
 		}
 	}
+
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid RPC txn version - bigger then uint16")
+	}
+
 	return &appmessage.RPCTransaction{
-		Version:      x.Version,
+		Version:      uint16(x.Version),
 		Inputs:       inputs,
 		Outputs:      outputs,
 		LockTime:     x.LockTime,
@@ -71,7 +85,23 @@ func (x *RpcTransaction) toAppMessage() *appmessage.RPCTransaction {
 		Gas:          x.Gas,
 		PayloadHash:  x.PayloadHash,
 		Payload:      x.Payload,
+	}, nil
+}
+
+// ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey converts from RpcScriptPubKey to RPCScriptPublicKey.
+func ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(toConvert *RpcScriptPublicKey) (*appmessage.RPCScriptPublicKey, error) {
+	if toConvert.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
+	version := uint16(toConvert.Version)
+	script := toConvert.ScriptPublicKey
+	return &appmessage.RPCScriptPublicKey{Version: version,
+		Script: script}, nil
+}
+
+// ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey converts from RPCScriptPublicKey to RpcScriptPubKey.
+func ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(toConvert *appmessage.RPCScriptPublicKey) *RpcScriptPublicKey {
+	return &RpcScriptPublicKey{Version: uint32(toConvert.Version), ScriptPublicKey: toConvert.Script}
 }
 
 func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) {
@@ -90,12 +120,12 @@ func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) 
 	outputs := make([]*RpcTransactionOutput, len(transaction.Outputs))
 	for i, output := range transaction.Outputs {
 		outputs[i] = &RpcTransactionOutput{
-			Amount:       output.Amount,
-			ScriptPubKey: output.ScriptPubKey,
+			Amount:          output.Amount,
+			ScriptPublicKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(output.ScriptPublicKey),
 		}
 	}
 	*x = RpcTransaction{
-		Version:      transaction.Version,
+		Version:      uint32(transaction.Version),
 		Inputs:       inputs,
 		Outputs:      outputs,
 		LockTime:     transaction.LockTime,

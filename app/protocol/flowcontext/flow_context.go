@@ -36,9 +36,6 @@ type FlowContext struct {
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
-	recentBlockAddedTimes      []int64
-	recentBlockAddedTimesMutex sync.Mutex
-
 	timeStarted int64
 
 	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
@@ -51,7 +48,8 @@ type FlowContext struct {
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD uint32
+	ibdPeer      *peerpkg.Peer
+	ibdPeerMutex sync.RWMutex
 
 	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex

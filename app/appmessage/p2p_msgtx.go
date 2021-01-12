@@ -38,8 +38,8 @@ const (
 	maxTxInPerMessage = (MaxMessagePayload / minTxInPayload) + 1
 
 	// MinTxOutPayload is the minimum payload size for a transaction output.
-	// Value 8 bytes + Varint for ScriptPubKey length 1 byte.
-	MinTxOutPayload = 9
+	// Value 8 bytes + version 2 bytes + Varint for ScriptPublicKey length 1 byte.
+	MinTxOutPayload = 11
 
 	// maxTxOutPerMessage is the maximum number of transactions outputs that
 	// a transaction which fits into a message could possibly have.
@@ -107,12 +107,12 @@ func NewTxIn(prevOut *Outpoint, signatureScript []byte, sequence uint64) *TxIn {
 // TxOut defines a kaspa transaction output.
 type TxOut struct {
 	Value        uint64
-	ScriptPubKey []byte
+	ScriptPubKey *externalapi.ScriptPublicKey
 }
 
 // NewTxOut returns a new kaspa transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
+func NewTxOut(value uint64, scriptPubKey *externalapi.ScriptPublicKey) *TxOut {
 	return &TxOut{
 		Value:        value,
 		ScriptPubKey: scriptPubKey,
@@ -127,7 +127,7 @@ func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
 // inputs and outputs.
 type MsgTx struct {
 	baseMessage
-	Version      int32
+	Version      uint16
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
@@ -217,20 +217,20 @@ func (msg *MsgTx) Copy() *MsgTx {
 
 	// Deep copy the old TxOut data.
 	for _, oldTxOut := range msg.TxOut {
-		// Deep copy the old ScriptPubKey
-		var newScript []byte
+		// Deep copy the old ScriptPublicKey
+		var newScript externalapi.ScriptPublicKey
 		oldScript := oldTxOut.ScriptPubKey
-		oldScriptLen := len(oldScript)
+		oldScriptLen := len(oldScript.Script)
 		if oldScriptLen > 0 {
-			newScript = make([]byte, oldScriptLen)
-			copy(newScript, oldScript[:oldScriptLen])
+			newScript = externalapi.ScriptPublicKey{Script: make([]byte, oldScriptLen), Version: oldScript.Version}
+			copy(newScript.Script, oldScript.Script[:oldScriptLen])
 		}
 
 		// Create new txOut with the deep copied data and append it to
 		// new Tx.
 		newTxOut := TxOut{
 			Value:        oldTxOut.Value,
-			ScriptPubKey: newScript,
+			ScriptPubKey: &newScript,
 		}
 		newTx.TxOut = append(newTx.TxOut, &newTxOut)
 	}
@@ -269,7 +269,7 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *externalapi.DomainSubnetw
 // The payload hash is calculated automatically according to provided payload.
 // Also, the lock time is set to zero to indicate the transaction is valid
 // immediately as opposed to some time in future.
-func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
+func newMsgTx(version uint16, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte, lockTime uint64) *MsgTx {
 
 	if txIn == nil {
@@ -298,12 +298,12 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externa
 }
 
 // NewNativeMsgTx returns a new tx message in the native subnetwork
-func NewNativeMsgTx(version int32, txIn []*TxIn, txOut []*TxOut) *MsgTx {
+func NewNativeMsgTx(version uint16, txIn []*TxIn, txOut []*TxOut) *MsgTx {
 	return newMsgTx(version, txIn, txOut, &subnetworks.SubnetworkIDNative, 0, nil, 0)
 }
 
 // NewSubnetworkMsgTx returns a new tx message in the specified subnetwork with specified gas and payload
-func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
+func NewSubnetworkMsgTx(version uint16, txIn []*TxIn, txOut []*TxOut, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte) *MsgTx {
 
 	return newMsgTx(version, txIn, txOut, subnetworkID, gas, payload, 0)
@@ -312,12 +312,12 @@ func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkI
 // NewNativeMsgTxWithLocktime returns a new tx message in the native subnetwork with a locktime.
 //
 // See newMsgTx for further documntation of the parameters
-func NewNativeMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
+func NewNativeMsgTxWithLocktime(version uint16, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
 	return newMsgTx(version, txIn, txOut, &subnetworks.SubnetworkIDNative, 0, nil, locktime)
 }
 
 // NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
-func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
+func NewRegistryMsgTx(version uint16, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
 	payload := make([]byte, 8)
 	binary.LittleEndian.PutUint64(payload, gasLimit)
 

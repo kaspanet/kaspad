@@ -120,7 +120,7 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 	}
 
 	return blockheader.NewImmutableBlockHeader(
-		constants.BlockVersion,
+		constants.MaxBlockVersion,
 		parentHashes,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,

@@ -6,7 +6,9 @@ package txscript
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -56,8 +58,8 @@ func isScriptHash(pops []parsedOpcode) bool {
 
 // IsPayToScriptHash returns true if the script is in the standard
 // pay-to-script-hash (P2SH) format, false otherwise.
-func IsPayToScriptHash(script []byte) bool {
-	pops, err := parseScript(script)
+func IsPayToScriptHash(script *externalapi.ScriptPublicKey) bool {
+	pops, err := parseScript(script.Script)
 	if err != nil {
 		return false
 	}
@@ -205,20 +207,24 @@ func unparseScript(pops []parsedOpcode) ([]byte, error) {
 // script up to the point the failure occurred along with the string '[error]'
 // appended. In addition, the reason the script failed to parse is returned
 // if the caller wants more information about the failure.
-func DisasmString(buf []byte) (string, error) {
-	var disbuf bytes.Buffer
-	opcodes, err := parseScript(buf)
-	for _, pop := range opcodes {
-		disbuf.WriteString(pop.print(true))
-		disbuf.WriteByte(' ')
+func DisasmString(version uint16, buf []byte) (string, error) {
+	// currently, there is only one version exists so it equals to the max version.
+	if version == constants.MaxScriptPublicKeyVersion {
+		var disbuf bytes.Buffer
+		opcodes, err := parseScript(buf)
+		for _, pop := range opcodes {
+			disbuf.WriteString(pop.print(true))
+			disbuf.WriteByte(' ')
+		}
+		if disbuf.Len() > 0 {
+			disbuf.Truncate(disbuf.Len() - 1)
+		}
+		if err != nil {
+			disbuf.WriteString("[error]")
+		}
+		return disbuf.String(), err
 	}
-	if disbuf.Len() > 0 {
-		disbuf.Truncate(disbuf.Len() - 1)
-	}
-	if err != nil {
-		disbuf.WriteString("[error]")
-	}
-	return disbuf.String(), err
+	return "", scriptError(ErrPubKeyFormat, "the version of the scriptPublicHash is higher then the known version")
 }
 
 // canonicalPush returns true if the object is either not a push instruction
@@ -282,18 +288,21 @@ func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransact
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func CalcSignatureHash(script []byte, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
-	parsedScript, err := parseScript(script)
+func CalcSignatureHash(script *externalapi.ScriptPublicKey, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
+	if script.Version > constants.MaxScriptPublicKeyVersion {
+		return nil, errors.Errorf("Script version is unkown.")
+	}
+	parsedScript, err := parseScript(script.Script)
 	if err != nil {
 		return nil, errors.Errorf("cannot parse output script: %s", err)
 	}
-	return calcSignatureHash(parsedScript, hashType, tx, idx)
+	return calcSignatureHash(parsedScript, script.Version, hashType, tx, idx)
 }
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
+func calcSignatureHash(prevScriptPublicKey []parsedOpcode, scriptVersion uint16, hashType SigHashType, tx *externalapi.DomainTransaction, idx int) (*externalapi.DomainHash, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -312,8 +321,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *external
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
 			// above only returns a valid script.
-			sigScript, _ := unparseScript(script)
-			txCopy.Inputs[idx].SignatureScript = sigScript
+			sigScript, _ := unparseScript(prevScriptPublicKey)
+			var version [2]byte
+			binary.LittleEndian.PutUint16(version[:], scriptVersion)
+			txCopy.Inputs[idx].SignatureScript = append(version[:], sigScript...)
 		} else {
 			txCopy.Inputs[i].SignatureScript = nil
 		}
@@ -335,7 +346,8 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *external
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
 			txCopy.Outputs[i].Value = 0
-			txCopy.Outputs[i].ScriptPublicKey = nil
+			txCopy.Outputs[i].ScriptPublicKey.Script = nil
+			txCopy.Outputs[i].ScriptPublicKey.Version = 0
 		}
 
 		// Sequence on all other inputs is 0, too.
@@ -424,10 +436,10 @@ func GetSigOpCount(script []byte) int {
 // Pay-To-Script-Hash script in order to find the precise number of signature
 // operations in the transaction. If the script fails to parse, then the count
 // up to the point of failure is returned.
-func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
+func GetPreciseSigOpCount(scriptSig []byte, scriptPubKey *externalapi.ScriptPublicKey, isP2SH bool) int {
 	// Don't check error since parseScript returns the parsed-up-to-error
 	// list of pops.
-	pops, _ := parseScript(scriptPubKey)
+	pops, _ := parseScript(scriptPubKey.Script)
 
 	// Treat non P2SH transactions as normal.
 	if !(isP2SH && isScriptHash(pops)) {

@@ -9,10 +9,11 @@ import (
 )
 
 func Benchmark_serializeUTXO(b *testing.B) {
-	scriptPublicKey, err := hex.DecodeString("76a914ad06dd6ddee55cbca9a9e3713bd7587509a3056488ac")
+	script, err := hex.DecodeString("76a914ad06dd6ddee55cbca9a9e3713bd7587509a3056488ac")
 	if err != nil {
 		b.Fatalf("Error decoding scriptPublicKey string: %s", err)
 	}
+	scriptPublicKey := &externalapi.ScriptPublicKey{script, 0}
 	entry := NewUTXOEntry(5000000000, scriptPublicKey, false, 1432432)
 	outpoint := &externalapi.DomainOutpoint{
 		TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
@@ -33,10 +34,11 @@ func Benchmark_serializeUTXO(b *testing.B) {
 }
 
 func Test_serializeUTXO(t *testing.T) {
-	scriptPublicKey, err := hex.DecodeString("76a914ad06dd6ddee55cbca9a9e3713bd7587509a3056488ac")
+	script, err := hex.DecodeString("76a914ad06dd6ddee55cbca9a9e3713bd7587509a3056488ac")
 	if err != nil {
-		t.Fatalf("Error decoding scriptPublicKey string: %s", err)
+		t.Fatalf("Error decoding scriptPublicKey script string: %s", err)
 	}
+	scriptPublicKey := &externalapi.ScriptPublicKey{Script: script, Version: 0}
 	entry := NewUTXOEntry(5000000000, scriptPublicKey, false, 1432432)
 	outpoint := &externalapi.DomainOutpoint{
 		TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
@@ -55,7 +57,7 @@ func Test_serializeUTXO(t *testing.T) {
 
 	deserializedEntry, deserializedOutpoint, err := DeserializeUTXO(serialized)
 	if err != nil {
-		return
+		t.Fatalf("DeserializeUTXO: %+v", err)
 	}
 
 	if !reflect.DeepEqual(deserializedEntry, entry) {

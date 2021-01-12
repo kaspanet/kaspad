@@ -3,12 +3,14 @@ package serialization
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/pkg/errors"
+	"math"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader
 func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader) *DbBlockHeader {
 	return &DbBlockHeader{
-		Version:              domainBlockHeader.Version(),
+		Version:              uint32(domainBlockHeader.Version()),
 		ParentHashes:         DomainHashesToDbHashes(domainBlockHeader.ParentHashes()),
 		HashMerkleRoot:       DomainHashToDbHash(domainBlockHeader.HashMerkleRoot()),
 		AcceptedIDMerkleRoot: DomainHashToDbHash(domainBlockHeader.AcceptedIDMerkleRoot()),
@@ -37,9 +39,12 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 	if err != nil {
 		return nil, err
 	}
+	if dbBlockHeader.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid header version - bigger then uint16")
+	}
 
 	return blockheader.NewImmutableBlockHeader(
-		dbBlockHeader.Version,
+		uint16(dbBlockHeader.Version),
 		parentHashes,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,

@@ -2034,7 +2034,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	script := vm.currentScript()
 
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2241,7 +2241,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 		if err != nil {
 			return err
 		}

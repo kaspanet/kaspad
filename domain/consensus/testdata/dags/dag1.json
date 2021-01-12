@@ -3,7 +3,7 @@
     "GenesisID": "0",
     "Blocks": [
         {
-            "ID": "1111",
+            "ID": "a1",
             "ExpectedScore": 1,
             "ExpectedSelectedParent": "0",
             "ExpectedReds": [],
@@ -41,13 +41,13 @@
         {
             "ID": "4",
             "ExpectedScore": 2,
-            "ExpectedSelectedParent": "1111",
+            "ExpectedSelectedParent": "a1",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "1111"
+                "a1"
             ],
             "Parents": [
-                "1111"
+                "a1"
             ]
         },
         {
@@ -91,14 +91,14 @@
         {
             "ID": "8",
             "ExpectedScore": 3,
-            "ExpectedSelectedParent": "1111",
+            "ExpectedSelectedParent": "a1",
             "ExpectedReds": [],
             "ExpectedBlues": [
-                "1111",
+                "a1",
                 "2"
             ],
             "Parents": [
-                "1111",
+                "a1",
                 "2"
             ]
         },
@@ -117,7 +117,7 @@
             ]
         },
         {
-            "ID": "10",
+            "ID": "a10",
             "ExpectedScore": 5,
             "ExpectedSelectedParent": "8",
             "ExpectedReds": [],
@@ -147,18 +147,18 @@
         {
             "ID": "12",
             "ExpectedScore": 8,
-            "ExpectedSelectedParent": "10",
+            "ExpectedSelectedParent": "a10",
             "ExpectedReds": [
                 "3",
                 "6"
             ],
             "ExpectedBlues": [
-                "10",
+                "a10",
                 "5",
                 "9"
             ],
             "Parents": [
-                "10",
+                "a10",
                 "9"
             ]
         },
@@ -186,11 +186,11 @@
             ],
             "ExpectedBlues": [
                 "13",
-                "10"
+                "a10"
             ],
             "Parents": [
                 "13",
-                "10"
+                "a10"
             ]
         },
         {
@@ -198,7 +198,7 @@
             "ExpectedScore": 9,
             "ExpectedSelectedParent": "11",
             "ExpectedReds": [
-                "1111",
+                "a1",
                 "8"
             ],
             "ExpectedBlues": [

@@ -13,7 +13,7 @@ import (
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
-	wasIBDNotRunning := flow.TrySetIBDRunning()
+	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
 		return nil
@@ -120,7 +120,10 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) e
 }
 
 func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	lowHash := flow.Config().ActiveNetParams.GenesisHash
+	lowHash, err := flow.Domain().Consensus().PruningPoint()
+	if err != nil {
+		return nil, err
+	}
 	highHash, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return nil, err
@@ -128,7 +131,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 
 	for !lowHash.Equal(highHash) {
 		log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-		blockLocator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, 0)
+		blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 		if err != nil {
 			return nil, err
 		}
@@ -165,6 +168,13 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 		}
 		log.Debugf("The index of the highest hash in the original "+
 			"blockLocator sent to %s is %d", flow.peer, highestHashIndex)
+
+		// If the block locator contains only two adjacent chain blocks, the
+		// syncer will always find the same highest chain block, so to avoid
+		// an endless loop, we explicitly stop the loop in such situation.
+		if len(blockLocator) == 2 && highestHashIndex == 1 {
+			return highestHash, nil
+		}
 
 		locatorHashAboveHighestHash := highestHash
 		if highestHashIndex > 0 {
@@ -278,8 +288,6 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 
 		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 	}
-
-	flow.UpdateRecentBlockAddedTimesWithLastBlock()
 
 	return nil
 }

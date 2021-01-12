@@ -3,10 +3,15 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 func (tc *testConsensus) DatabaseContext() model.DBManager {
 	return tc.databaseContext
+}
+
+func (tc *testConsensus) Database() database.Database {
+	return tc.database
 }
 
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
@@ -127,4 +132,8 @@ func (tc *testConsensus) FinalityManager() model.FinalityManager {
 
 func (tc *testConsensus) FinalityStore() model.FinalityStore {
 	return tc.finalityStore
+}
+
+func (tc *testConsensus) HeadersSelectedChainStore() model.HeadersSelectedChainStore {
+	return tc.headersSelectedChainStore
 }

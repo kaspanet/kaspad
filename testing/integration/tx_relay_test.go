@@ -103,7 +103,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 
 	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
-	tx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {

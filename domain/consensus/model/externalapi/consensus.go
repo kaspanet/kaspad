@@ -18,14 +18,12 @@ type Consensus interface {
 	ValidateAndInsertPruningPoint(newPruningPoint *DomainBlock, serializedUTXOSet []byte) error
 	GetVirtualSelectedParent() (*DomainHash, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
-	FindNextBlockLocatorBoundaries(blockLocator BlockLocator) (lowHash, highHash *DomainHash, err error)
+	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
 	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
 	IsValidPruningPoint(blockHash *DomainHash) (bool, error)
-	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedParentChainChanges, error)
+	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedChainPath, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)
-
-	GetVirtualUTXOSet() ([]*OutpointUTXOPair, error)
 }

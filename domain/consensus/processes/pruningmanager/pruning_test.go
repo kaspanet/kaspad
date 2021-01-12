@@ -2,14 +2,15 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 type jsonBlock struct {
@@ -66,7 +67,7 @@ func TestPruning(t *testing.T) {
 			params.MergeSetSizeLimit = test.MergeSetSizeLimit
 
 			factory := consensus.NewFactory()
-			tc, teardown, err := factory.NewTestConsensus(params, "TestPruning")
+			tc, teardown, err := factory.NewTestConsensus(params, false, "TestPruning")
 			if err != nil {
 				t.Fatalf("Error setting up consensus: %+v", err)
 			}

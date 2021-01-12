@@ -2,6 +2,8 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
@@ -70,9 +72,14 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		}
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
+
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
+	}
+
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
-		Version:                x.Version,
+		Version:                uint16(x.Version),
 		VersionHex:             x.VersionHex,
 		HashMerkleRoot:         x.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   x.AcceptedIDMerkleRoot,
@@ -102,7 +109,7 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	}
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
-		Version:                message.Version,
+		Version:                uint32(message.Version),
 		VersionHex:             message.VersionHex,
 		HashMerkleRoot:         message.HashMerkleRoot,
 		AcceptedIDMerkleRoot:   message.AcceptedIDMerkleRoot,
@@ -138,10 +145,9 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
 	for j, item := range x.TransactionVerboseOutputs {
 		scriptPubKey := &appmessage.ScriptPubKeyResult{
-			Asm:     item.ScriptPubKey.Asm,
-			Hex:     item.ScriptPubKey.Hex,
-			Type:    item.ScriptPubKey.Type,
-			Address: item.ScriptPubKey.Address,
+			Hex:     item.ScriptPublicKey.Hex,
+			Type:    item.ScriptPublicKey.Type,
+			Address: item.ScriptPublicKey.Address,
 		}
 		outputs[j] = &appmessage.TransactionVerboseOutput{
 			Value:        item.Value,
@@ -149,11 +155,14 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 			ScriptPubKey: scriptPubKey,
 		}
 	}
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
+	}
 	return &appmessage.TransactionVerboseData{
 		TxID:                      x.TxId,
 		Hash:                      x.Hash,
 		Size:                      x.Size,
-		Version:                   x.Version,
+		Version:                   uint16(x.Version),
 		LockTime:                  x.LockTime,
 		SubnetworkID:              x.SubnetworkId,
 		Gas:                       x.Gas,
@@ -183,23 +192,22 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 	}
 	outputs := make([]*TransactionVerboseOutput, len(message.TransactionVerboseOutputs))
 	for j, item := range message.TransactionVerboseOutputs {
-		scriptPubKey := &ScriptPubKeyResult{
-			Asm:     item.ScriptPubKey.Asm,
+		scriptPubKey := &ScriptPublicKeyResult{
 			Hex:     item.ScriptPubKey.Hex,
 			Type:    item.ScriptPubKey.Type,
 			Address: item.ScriptPubKey.Address,
 		}
 		outputs[j] = &TransactionVerboseOutput{
-			Value:        item.Value,
-			Index:        item.Index,
-			ScriptPubKey: scriptPubKey,
+			Value:           item.Value,
+			Index:           item.Index,
+			ScriptPublicKey: scriptPubKey,
 		}
 	}
 	*x = TransactionVerboseData{
 		TxId:                      message.TxID,
 		Hash:                      message.Hash,
 		Size:                      message.Size,
-		Version:                   message.Version,
+		Version:                   uint32(message.Version),
 		LockTime:                  message.LockTime,
 		SubnetworkId:              message.SubnetworkID,
 		Gas:                       message.Gas,

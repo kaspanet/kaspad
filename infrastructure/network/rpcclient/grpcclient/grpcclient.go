@@ -24,7 +24,7 @@ type GRPCClient struct {
 
 // Connect connects to the RPC server with the given address
 func Connect(address string) (*GRPCClient, error) {
-	const dialTimeout = 30 * time.Second
+	const dialTimeout = 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 

@@ -129,7 +129,7 @@ func (l Level) String() string {
 
 // NewBackend creates a new logger backend.
 func NewBackend(opts ...BackendOption) *Backend {
-	b := &Backend{flag: defaultFlags}
+	b := &Backend{flag: defaultFlags, toStdout: true}
 	for _, o := range opts {
 		o(b)
 	}
@@ -148,6 +148,7 @@ type Backend struct {
 	rotators []*backendLogRotator
 	mu       sync.Mutex // ensures atomic writes
 	flag     uint32
+	toStdout bool
 }
 
 // BackendOption is a function used to modify the behavior of a Backend.
@@ -266,8 +267,8 @@ func callsite(flag uint32) (string, int) {
 }
 
 const (
-	defaultThresholdKB = 10 * 1024
-	defaultMaxRolls    = 3
+	defaultThresholdKB = 100 * 1000 // 100 MB logs by default.
+	defaultMaxRolls    = 8          // keep 8 last logs by default.
 )
 
 // AddLogFile adds a file which the log will write into on a certain
@@ -281,9 +282,12 @@ func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
 // It'll create the file if it doesn't exist.
 func (b *Backend) AddLogFileWithCustomRotator(logFile string, logLevel Level, thresholdKB int64, maxRolls int) error {
 	logDir, _ := filepath.Split(logFile)
-	err := os.MkdirAll(logDir, 0700)
-	if err != nil {
-		return errors.Errorf("failed to create log directory: %s", err)
+	// if the logDir is empty then `logFile` is in the cwd and there's no need to create any directory.
+	if logDir != "" {
+		err := os.MkdirAll(logDir, 0700)
+		if err != nil {
+			return errors.Errorf("failed to create log directory: %+v", err)
+		}
 	}
 	r, err := rotator.New(logFile, thresholdKB, false, maxRolls)
 	if err != nil {
@@ -348,7 +352,10 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	os.Stdout.Write(bytesToWrite)
+	if b.toStdout {
+		os.Stdout.Write(bytesToWrite)
+	}
+
 	for _, r := range b.rotators {
 		if lvl >= r.logLevel {
 			r.Write(bytesToWrite)
@@ -361,6 +368,11 @@ func (b *Backend) Close() {
 	for _, r := range b.rotators {
 		r.Close()
 	}
+}
+
+// WriteToStdout sets if the backend will print to stdout or not (default: true)
+func (b *Backend) WriteToStdout(stdout bool) {
+	b.toStdout = stdout
 }
 
 // Logger returns a new logger for a particular subsystem that writes to the
