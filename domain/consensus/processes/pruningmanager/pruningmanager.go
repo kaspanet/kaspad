@@ -171,6 +171,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	}
 
 	if !newCandidate.Equal(currentCandidate) {
+		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
 		pm.pruningStore.StagePruningPointCandidate(newCandidate)
 	}
 
@@ -181,6 +182,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
+		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err
@@ -446,6 +448,8 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(
 			"Calculated UTXOSet hash: %s. Commitment: %s",
 			pruningPointHash, utxoSetHash, expectedUTXOCommitment)
 	}
+
+	log.Debugf("Validated the pruning point %s UTXO commitment: %s", pruningPointHash, utxoSetHash)
 
 	return nil
 }

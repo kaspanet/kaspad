@@ -57,7 +57,7 @@ func Test_serializeUTXO(t *testing.T) {
 
 	deserializedEntry, deserializedOutpoint, err := DeserializeUTXO(serialized)
 	if err != nil {
-		return
+		t.Fatalf("DeserializeUTXO: %+v", err)
 	}
 
 	if !reflect.DeepEqual(deserializedEntry, entry) {
