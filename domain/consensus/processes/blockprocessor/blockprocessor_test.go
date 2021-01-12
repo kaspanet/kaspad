@@ -178,7 +178,6 @@ func setupTestContext(dagParams *dagconfig.Params, dbManager model.DBManager) (*
 		dagParams.MaxBlockParents,
 		dagParams.TimestampDeviationTolerance,
 		dagParams.TargetTimePerBlock,
-
 		dbManager,
 		difficultyManager,
 		pastMedianTimeManager,
@@ -189,7 +188,6 @@ func setupTestContext(dagParams *dagconfig.Params, dbManager model.DBManager) (*
 		coinbaseManager,
 		mergeDepthManager,
 		reachabilityManager,
-
 		pruningStore,
 		blockStore,
 		ghostdagDataStore,
@@ -204,7 +202,6 @@ func setupTestContext(dagParams *dagconfig.Params, dbManager model.DBManager) (*
 		dagParams.MaxBlockParents,
 		dagParams.MergeSetSizeLimit,
 		genesisHash,
-
 		ghostdagManager,
 		dagTopologyManager,
 		dagTraversalManager,
@@ -215,7 +212,6 @@ func setupTestContext(dagParams *dagconfig.Params, dbManager model.DBManager) (*
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
-
 		blockStatusStore,
 		ghostdagDataStore,
 		consensusStateStore,
@@ -415,7 +411,6 @@ func SetupCoinbaseData() (*externalapi.DomainCoinbaseData, error) {
 	}
 	return NewCoinbaseData(scriptPublicKey)
 }
-
 func TestBlockProcessor(t *testing.T) {
 	createChain := func(t *testing.T, numOfBlocks int) (model.BlockProcessor, []*externalapi.DomainBlock, func()) {
 		params := &dagconfig.TestnetParams
@@ -481,14 +476,12 @@ func TestBlockProcessor(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error in BuildBlock: %+v", err)
 		}
-
 		// process block
 		_, err = blockProcessor.ValidateAndInsertBlock(block)
 		if err != nil {
 			t.Fatalf("error in ValidateAndInsertBlock: %+v", err)
 		}
 	})
-
 	t.Run("Test create and process 11 blocks", func(t *testing.T) {
 		params := &dagconfig.TestnetParams
 		params.SkipProofOfWork = true
@@ -529,7 +522,6 @@ func TestBlockProcessor(t *testing.T) {
 			}
 		}
 	})
-
 	t.Run("Test create and double process same block", func(t *testing.T) {
 		params := &dagconfig.TestnetParams
 		params.SkipProofOfWork = true
@@ -585,7 +577,6 @@ func TestBlockProcessor(t *testing.T) {
 			}
 		}
 	})
-
 	t.Run("Test add a chain of 100 blocks to a chain of 100 blocks", func(t *testing.T) { //TODO: timeout
 		// create a chain A of 100 blocks
 		_, chainABlocks, teardownChainAFunc := createChain(t, 100)
