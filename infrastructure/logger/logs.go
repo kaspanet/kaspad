@@ -129,7 +129,7 @@ func (l Level) String() string {
 
 // NewBackend creates a new logger backend.
 func NewBackend(opts ...BackendOption) *Backend {
-	b := &Backend{flag: defaultFlags}
+	b := &Backend{flag: defaultFlags, toStdout: true}
 	for _, o := range opts {
 		o(b)
 	}
@@ -148,6 +148,7 @@ type Backend struct {
 	rotators []*backendLogRotator
 	mu       sync.Mutex // ensures atomic writes
 	flag     uint32
+	toStdout bool
 }
 
 // BackendOption is a function used to modify the behavior of a Backend.
@@ -348,7 +349,10 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	os.Stdout.Write(bytesToWrite)
+	if b.toStdout {
+		os.Stdout.Write(bytesToWrite)
+	}
+
 	for _, r := range b.rotators {
 		if lvl >= r.logLevel {
 			r.Write(bytesToWrite)
@@ -361,6 +365,11 @@ func (b *Backend) Close() {
 	for _, r := range b.rotators {
 		r.Close()
 	}
+}
+
+// WriteToStdout sets if the backend will print to stdout or not (default: true)
+func (b *Backend) WriteToStdout(stdout bool) {
+	b.toStdout = stdout
 }
 
 // Logger returns a new logger for a particular subsystem that writes to the
