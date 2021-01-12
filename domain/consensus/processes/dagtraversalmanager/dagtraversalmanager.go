@@ -16,8 +16,6 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
-	finalityStore         model.FinalityStore
-	finalityDepth         uint64
 }
 
 // selectedParentIterator implements the `model.BlockIterator` API
@@ -49,17 +47,13 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	ghostdagManager model.GHOSTDAGManager,
-	finalityStore model.FinalityStore,
-	finalityDepth uint64) model.DAGTraversalManager {
+	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
-		finalityStore:         finalityStore,
-		finalityDepth:         finalityDepth,
 	}
 }
 
@@ -116,19 +110,6 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
-
-	// Use the finality Store to jump `finalityDepth` blue scores down the selected chain.
-	// this should be much faster than stepping through the whole chain.
-	for currentBlockGHOSTDAGData.BlueScore()-blueScore >= dtm.finalityDepth {
-		currentHash, err = dtm.finalityStore.FinalityPoint(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	for currentBlockGHOSTDAGData.SelectedParent() != nil {
 		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent())
