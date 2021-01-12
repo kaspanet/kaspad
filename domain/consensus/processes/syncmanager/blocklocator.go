@@ -8,14 +8,6 @@ import (
 // createBlockLocator creates a block locator for the passed high and low hashes.
 // See the BlockLocator type comments for more details.
 func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
-	// We use the selected parent of the high block, so that the
-	// block locator won't contain it.
-	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
-	if err != nil {
-		return nil, err
-	}
-	highHash = highBlockGHOSTDAGData.SelectedParent()
-
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
 		return nil, err
@@ -71,32 +63,6 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 	}
 
 	return locator, nil
-}
-
-// findNextBlockLocatorBoundaries finds the lowest unknown block locator
-// hash and the highest known block locator hash. This is used to create the
-// next block locator to find the highest shared known chain block with a
-// remote kaspad.
-func (sm *syncManager) findNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (
-	lowHash, highHash *externalapi.DomainHash, err error) {
-
-	// Find the most recent locator block hash in the DAG. In case none of
-	// the hashes in the locator are in the DAG, fall back to the genesis block.
-	highestKnownHash := sm.genesisBlockHash
-	lowestUnknownHash := blockLocator[len(blockLocator)-1]
-	for _, hash := range blockLocator {
-		exists, err := sm.blockStatusStore.Exists(sm.databaseContext, hash)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			lowestUnknownHash = hash
-		} else {
-			highestKnownHash = hash
-			break
-		}
-	}
-	return highestKnownHash, lowestUnknownHash, nil
 }
 
 func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,

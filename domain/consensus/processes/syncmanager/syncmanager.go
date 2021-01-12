@@ -89,13 +89,6 @@ func (sm *syncManager) CreateHeadersSelectedChainBlockLocator(lowHash,
 	return sm.createHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
-func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "FindNextBlockLocatorBoundaries")
-	defer onEnd()
-
-	return sm.findNextBlockLocatorBoundaries(blockLocator)
-}
-
 func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetSyncInfo")
 	defer onEnd()
