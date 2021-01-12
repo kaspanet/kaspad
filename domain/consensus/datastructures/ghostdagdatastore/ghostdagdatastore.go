@@ -13,20 +13,20 @@ var bucket = dbkeys.MakeBucket([]byte("block-ghostdag-data"))
 
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
-	staging map[externalapi.DomainHash]model.BlockGHOSTDAGData
+	staging map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 	cache   *lrucache.LRUCache
 }
 
 // New instantiates a new GHOSTDAGDataStore
 func New(cacheSize int) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
-		staging: make(map[externalapi.DomainHash]model.BlockGHOSTDAGData),
+		staging: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
 		cache:   lrucache.New(cacheSize),
 	}
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData model.BlockGHOSTDAGData) {
+func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	gds.staging[*blockHash] = blockGHOSTDAGData
 }
 
@@ -35,7 +35,7 @@ func (gds *ghostdagDataStore) IsStaged() bool {
 }
 
 func (gds *ghostdagDataStore) Discard() {
-	gds.staging = make(map[externalapi.DomainHash]model.BlockGHOSTDAGData)
+	gds.staging = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
 }
 
 func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
@@ -56,13 +56,13 @@ func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	if blockGHOSTDAGData, ok := gds.staging[*blockHash]; ok {
 		return blockGHOSTDAGData, nil
 	}
 
 	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash); ok {
-		return blockGHOSTDAGData.(model.BlockGHOSTDAGData), nil
+		return blockGHOSTDAGData.(*model.BlockGHOSTDAGData), nil
 	}
 
 	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.hashAsKey(blockHash))
@@ -79,14 +79,14 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externala
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
-func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData model.BlockGHOSTDAGData) ([]byte, error) {
+func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) ([]byte, error) {
 	return proto.Marshal(serialization.BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData))
 }
 
-func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes []byte) (model.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes []byte) (*model.BlockGHOSTDAGData, error) {
 	dbBlockGHOSTDAGData := &serialization.DbBlockGhostdagData{}
 	err := proto.Unmarshal(blockGHOSTDAGDataBytes, dbBlockGHOSTDAGData)
 	if err != nil {

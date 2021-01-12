@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -16,6 +17,11 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	defer onEnd()
 
 	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkBlockVersion(header)
 	if err != nil {
 		return err
 	}
@@ -33,27 +39,34 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	return nil
 }
 
-func (v *blockValidator) checkParentsLimit(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error {
 	hash := consensushashing.HeaderHash(header)
-	if len(header.ParentHashes) == 0 && *hash != *v.genesisHash {
+	if len(header.ParentHashes()) == 0 && !hash.Equal(v.genesisHash) {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.ParentHashes)) > uint64(v.maxBlockParents) {
+	if uint64(len(header.ParentHashes())) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(header.ParentHashes), v.maxBlockParents)
+			"is %d", len(header.ParentHashes()), v.maxBlockParents)
 	}
 	return nil
 }
 
-func (v *blockValidator) checkBlockTimestampInIsolation(header *externalapi.DomainBlockHeader) error {
+func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error {
+	if header.Version() > constants.MaxBlockVersion {
+		return errors.Wrapf(
+			ruleerrors.ErrBlockVersionIsUnknown, "The block version is unknown.")
+	}
+	return nil
+}
 
-	blockTimestamp := header.TimeInMilliseconds
+func (v *blockValidator) checkBlockTimestampInIsolation(header externalapi.BlockHeader) error {
+	blockTimestamp := header.TimeInMilliseconds()
 	now := mstime.Now().UnixMilliseconds()
 	maxCurrentTime := now + int64(v.timestampDeviationTolerance)*v.targetTimePerBlock.Milliseconds()
 	if blockTimestamp > maxCurrentTime {
 		return errors.Wrapf(
-			ruleerrors.ErrBlockIsTooMuchInTheFuture, "The block timestamp is in the future.")
+			ruleerrors.ErrTimeTooMuchInTheFuture, "The block timestamp is in the future.")
 	}
 	return nil
 }

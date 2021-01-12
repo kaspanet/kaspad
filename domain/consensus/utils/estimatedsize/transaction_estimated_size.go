@@ -14,7 +14,7 @@ func TransactionEstimatedSerializedSize(tx *externalapi.DomainTransaction) uint6
 		return 0
 	}
 	size := uint64(0)
-
+	size += 2 // Txn Version
 	size += 8 // number of inputs (uint64)
 	for _, input := range tx.Inputs {
 		size += transactionInputEstimatedSerializedSize(input)
@@ -58,7 +58,8 @@ func outpointEstimatedSerializedSize() uint64 {
 func TransactionOutputEstimatedSerializedSize(output *externalapi.DomainTransactionOutput) uint64 {
 	size := uint64(0)
 	size += 8 // value (uint64)
+	size += 2 //output.ScriptPublicKey.Version (uint 16)
 	size += 8 // length of script public key (uint64)
-	size += uint64(len(output.ScriptPublicKey))
+	size += uint64(len(output.ScriptPublicKey.Script))
 	return size
 }

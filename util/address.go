@@ -135,7 +135,8 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 		return nil, errors.Errorf("decoded address's prefix could not be parsed: %s", err)
 	}
 	if expectedPrefix != Bech32PrefixUnknown && expectedPrefix != prefix {
-		return nil, errors.Errorf("decoded address is of wrong network: %s", err)
+		return nil, errors.Errorf("decoded address is of wrong network. Expected %s but got %s", expectedPrefix,
+			prefix)
 	}
 
 	// Switch on decoded length to determine the type.

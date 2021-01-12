@@ -9,7 +9,7 @@ import (
 
 type blockHeapNode struct {
 	hash         *externalapi.DomainHash
-	ghostdagData model.BlockGHOSTDAGData
+	ghostdagData *model.BlockGHOSTDAGData
 }
 
 func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {
@@ -114,6 +114,16 @@ func (bh *blockHeap) Len() int {
 	return bh.impl.Len()
 }
 
+// ToSlice copies this heap to a slice
+func (bh *blockHeap) ToSlice() []*externalapi.DomainHash {
+	length := bh.Len()
+	hashes := make([]*externalapi.DomainHash, length)
+	for i := 0; i < length; i++ {
+		hashes[i] = bh.Pop()
+	}
+	return hashes
+}
+
 // sizedUpBlockHeap represents a mutable heap of Blocks, sorted by their blueWork+hash, capped by a specific size.
 type sizedUpBlockHeap struct {
 	impl          upHeap
@@ -142,12 +152,8 @@ func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 	return heap.Pop(&sbh.impl).(*blockHeapNode).hash
 }
 
-// tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
-func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
-	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
-	if err != nil {
-		return false, err
-	}
+// tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
+func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash, ghostdagData *model.BlockGHOSTDAGData) (bool, error) {
 	node := &blockHeapNode{
 		hash:         blockHash,
 		ghostdagData: ghostdagData,
@@ -162,4 +168,13 @@ func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, e
 	}
 	heap.Push(&sbh.impl, node)
 	return true, nil
+}
+
+// tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
+func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
+	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
+	if err != nil {
+		return false, err
+	}
+	return sbh.tryPushWithGHOSTDAGData(blockHash, ghostdagData)
 }

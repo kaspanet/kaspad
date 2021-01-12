@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
@@ -12,6 +13,7 @@ type TestConsensus interface {
 
 	DAGParams() *dagconfig.Params
 	DatabaseContext() model.DBManager
+	Database() database.Database
 
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
@@ -19,6 +21,9 @@ type TestConsensus interface {
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block
 	AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
+
+	AddHeader(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
 
 	DiscardAllStores()

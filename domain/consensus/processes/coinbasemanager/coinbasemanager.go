@@ -48,10 +48,10 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	payloadHash := hashes.HashData(payload)
+	payloadHash := hashes.PayloadHash(payload)
 
 	return &externalapi.DomainTransaction{
-		Version:      constants.TransactionVersion,
+		Version:      constants.MaxTransactionVersion,
 		Inputs:       []*externalapi.DomainTransactionInput{},
 		Outputs:      txOuts,
 		LockTime:     0,
@@ -65,7 +65,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
 func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
-	blockAcceptanceData *model.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
+	blockAcceptanceData *externalapi.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
 
 	totalFees := uint64(0)
 	for _, txAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -85,7 +85,7 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Doma
 		return nil, false, nil
 	}
 
-	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
+	// the ScriptPublicKey for the coinbase is parsed from the coinbase payload
 	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err

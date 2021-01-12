@@ -3,7 +3,6 @@ package difficultymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/bigintpool"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -23,13 +22,13 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 		return difficultyBlock{}, err
 	}
 	return difficultyBlock{
-		timeInMilliseconds: header.TimeInMilliseconds,
-		Bits:               header.Bits,
+		timeInMilliseconds: header.TimeInMilliseconds(),
+		Bits:               header.Bits(),
 	}, nil
 }
 
 // blueBlockWindow returns a blockWindow of the given size that contains the
-// blues in the past of startindNode, sorted by GHOSTDAG order.
+// blues in the past of startindNode, the sorting is unspecified.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
 func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
@@ -49,33 +48,37 @@ func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHas
 	return window, nil
 }
 
-func (window blockWindow) minMaxTimestamps() (min, max int64) {
+func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex, maxIndex int) {
 	min = math.MaxInt64
+	minIndex = math.MaxInt64
 	max = 0
-	for _, block := range window {
+	maxIndex = 0
+	for i, block := range window {
 		if block.timeInMilliseconds < min {
 			min = block.timeInMilliseconds
+			minIndex = i
 		}
 		if block.timeInMilliseconds > max {
 			max = block.timeInMilliseconds
+			maxIndex = i
 		}
 	}
 	return
 }
 
-func (window blockWindow) averageTarget(averageTarget *big.Int) {
-	averageTarget.SetInt64(0)
+func (window *blockWindow) remove(n int) {
+	(*window)[n] = (*window)[len(*window)-1]
+	*window = (*window)[:len(*window)-1]
+}
 
-	target := bigintpool.Acquire(0)
-	defer bigintpool.Release(target)
+func (window blockWindow) averageTarget() *big.Int {
+	averageTarget := new(big.Int)
+	targetTmp := new(big.Int)
 	for _, block := range window {
-		util.CompactToBigWithDestination(block.Bits, target)
-		averageTarget.Add(averageTarget, target)
+		util.CompactToBigWithDestination(block.Bits, targetTmp)
+		averageTarget.Add(averageTarget, targetTmp)
 	}
-
-	windowLen := bigintpool.Acquire(int64(len(window)))
-	defer bigintpool.Release(windowLen)
-	averageTarget.Div(averageTarget, windowLen)
+	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
 }
 
 func (window blockWindow) medianTimestamp() (int64, error) {

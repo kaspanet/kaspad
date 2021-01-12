@@ -2,15 +2,16 @@ package reachabilitymanager
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type reachabilityDataStoreMock struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
+	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
 	recorder                       map[externalapi.DomainHash]struct{}
 	reachabilityReindexRootStaging *externalapi.DomainHash
 }
@@ -23,7 +24,9 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+func (r *reachabilityDataStoreMock) StageReachabilityData(
+	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
+
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
 }
@@ -36,7 +39,9 @@ func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
+	model.ReachabilityData, error) {
+
 	return r.reachabilityDataStaging[*blockHash], nil
 }
 
@@ -69,7 +74,7 @@ func (r *reachabilityDataStoreMock) resetRecorder() {
 
 func newReachabilityDataStoreMock() *reachabilityDataStoreMock {
 	return &reachabilityDataStoreMock{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]*model.ReachabilityData),
+		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReachabilityData),
 		recorder:                       make(map[externalapi.DomainHash]struct{}),
 		reachabilityReindexRootStaging: nil,
 	}
@@ -87,19 +92,15 @@ type testHelper struct {
 }
 
 func (th *testHelper) generateHash() *externalapi.DomainHash {
-	var hash externalapi.DomainHash
-	binary.LittleEndian.PutUint64(hash[:], th.hashCounter)
+	var hashArray [externalapi.DomainHashSize]byte
+	binary.LittleEndian.PutUint64(hashArray[:], th.hashCounter)
 	th.hashCounter++
-	return &hash
+	return externalapi.NewDomainHashFromByteArray(&hashArray)
 }
 
 func (th *testHelper) newNode() *externalapi.DomainHash {
 	node := th.generateHash()
-	err := th.stageTreeNode(node, newReachabilityTreeNode())
-	if err != nil {
-		th.t.Fatalf("stageTreeNode: %s", err)
-	}
-
+	th.stageData(node, newReachabilityTreeData())
 	return node
 }
 
@@ -792,7 +793,7 @@ func TestInsertToFutureCoveringSet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("futureCoveringSet: %s", err)
 		}
-		if !reflect.DeepEqual(model.FutureCoveringTreeNodeSet(resultFutureCoveringTreeNodeSet), test.expectedResult) {
+		if !reflect.DeepEqual(resultFutureCoveringTreeNodeSet, test.expectedResult) {
 			t.Errorf("TestInsertToFutureCoveringSet: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, resultFutureCoveringTreeNodeSet)
 		}
@@ -950,7 +951,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			currentTreeNode = childTreeNode
 		}
 
-		originalRemainingInterval := *helper.remainingIntervalAfter(root)
+		originalRemainingInterval := helper.remainingIntervalAfter(root).Clone()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := helper.newNode()
@@ -961,7 +962,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if *helper.remainingIntervalAfter(root) == originalRemainingInterval {
+		if helper.remainingIntervalAfter(root).Equal(originalRemainingInterval) {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}

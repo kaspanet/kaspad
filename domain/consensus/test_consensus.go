@@ -6,11 +6,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 type testConsensus struct {
 	*consensus
 	dagParams *dagconfig.Params
+	database  database.Database
 
 	testBlockBuilder          testapi.TestBlockBuilder
 	testReachabilityManager   testapi.TestReachabilityManager
@@ -30,7 +32,12 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
-	return tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	block, diff, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return block, diff, nil
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
@@ -44,6 +51,28 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	if err != nil {
 		return nil, nil, err
 	}
+
+	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return consensushashing.BlockHash(block), blockInsertionResult, nil
+}
+
+func (tc *testConsensus) AddHeader(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
+
+	// Require write lock because BuildBlockWithParents stages temporary data
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	block, _, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	block.Transactions = nil
 
 	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {

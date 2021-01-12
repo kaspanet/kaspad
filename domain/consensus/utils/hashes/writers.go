@@ -1,7 +1,6 @@
 package hashes
 
 import (
-	"crypto/sha256"
 	"hash"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -10,36 +9,25 @@ import (
 
 // HashWriter is used to incrementally hash data without concatenating all of the data to a single buffer
 // it exposes an io.Writer api and a Finalize function to get the resulting hash.
-// The used hash function is double-sha256.
+// The used hash function is blake2b.
+// This can only be created via one of the domain separated constructors
 type HashWriter struct {
-	inner hash.Hash
+	hash.Hash
 }
 
-// NewHashWriter Returns a new HashWriter
-func NewHashWriter() *HashWriter {
-	return &HashWriter{sha256.New()}
-}
-
-// Write will always return (len(p), nil)
-func (h *HashWriter) Write(p []byte) (n int, err error) {
-	return h.inner.Write(p)
-}
-
-// Finalize returns the resulting double hash
-func (h *HashWriter) Finalize() *externalapi.DomainHash {
-	firstHashInTheSum := h.inner.Sum(nil)
-	sum := externalapi.DomainHash(sha256.Sum256(firstHashInTheSum))
-
-	return &sum
-}
-
-// HashData hashes the given byte slice
-func HashData(data []byte) *externalapi.DomainHash {
-	w := NewHashWriter()
-	_, err := w.Write(data)
+// InfallibleWrite is just like write but doesn't return anything
+func (h HashWriter) InfallibleWrite(p []byte) {
+	// This write can never return an error, this is part of the hash.Hash interface contract.
+	_, err := h.Write(p)
 	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. SHA256's digest should never return an error"))
+		panic(errors.Wrap(err, "this should never happen. hash.Hash interface promises to not return errors."))
 	}
+}
 
-	return w.Finalize()
+// Finalize returns the resulting hash
+func (h HashWriter) Finalize() *externalapi.DomainHash {
+	var sum [externalapi.DomainHashSize]byte
+	// This should prevent `Sum` for allocating an output buffer, by using the DomainHash buffer. we still copy because we don't want to rely on that.
+	copy(sum[:], h.Sum(sum[:0]))
+	return externalapi.NewDomainHashFromByteArray(&sum)
 }

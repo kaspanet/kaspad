@@ -25,7 +25,7 @@ type RelayInvsContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	NetAdapter() *netadapter.NetAdapter
-	OnNewBlock(block *externalapi.DomainBlock) error
+	OnNewBlock(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
@@ -102,7 +102,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Debugf("Processing block %s", inv.Hash)
-		missingParents, err := flow.processBlock(block)
+		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		log.Infof("Accepted block %s via relay", inv.Hash)
-		err = flow.OnNewBlock(block)
+		err = flow.OnNewBlock(block, blockInsertionResult)
 		if err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHas
 
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
-	if *blockHash != *requestHash {
+	if !blockHash.Equal(requestHash) {
 		return nil, false, protocolerrors.Errorf(true, "got unrequested block %s", blockHash)
 	}
 
@@ -199,22 +199,22 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.BlockHash(block)
-	_, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
+			return nil, nil, errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
-			return missingParentsError.MissingParentHashes, nil
+			return missingParentsError.MissingParentHashes, nil, nil
 		}
 		log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
-		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
+		return nil, nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
-	return nil, nil
+	return nil, blockInsertionResult, nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {

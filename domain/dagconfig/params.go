@@ -208,7 +208,7 @@ var MainnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
-	GenesisHash:                    &genesisHash,
+	GenesisHash:                    genesisHash,
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -265,7 +265,7 @@ var TestnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    &testnetGenesisHash,
+	GenesisHash:                    testnetGenesisHash,
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -328,7 +328,7 @@ var SimnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    &simnetGenesisHash,
+	GenesisHash:                    simnetGenesisHash,
 	PowMax:                         simnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
@@ -383,7 +383,7 @@ var DevnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    &devnetGenesisHash,
+	GenesisHash:                    devnetGenesisHash,
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,

@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
@@ -34,6 +35,8 @@ type FlowContext struct {
 	domain            domain.Domain
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
+
+	timeStarted int64
 
 	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
 	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
@@ -69,6 +72,7 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
 		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		timeStarted:                 mstime.Now().UnixMilliseconds(),
 	}
 }
 

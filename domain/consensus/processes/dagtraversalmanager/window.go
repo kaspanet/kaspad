@@ -1,13 +1,11 @@
 package dagtraversalmanager
 
 import (
-	"sort"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // blueBlockWindow returns a blockWindow of the given size that contains the
-// blues in the past of startindNode, sorted by GHOSTDAG order.
+// blues in the past of startindNode, the sorting is unspecified.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
 func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
@@ -20,7 +18,11 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 	windowHeap := dtm.newSizedUpHeap(windowSize)
 
 	for windowHeap.len() <= windowSize && currentGHOSTDAGData.SelectedParent() != nil {
-		added, err := windowHeap.tryPush(currentGHOSTDAGData.SelectedParent())
+		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentGHOSTDAGData.SelectedParent())
+		if err != nil {
+			return nil, err
+		}
+		added, err := windowHeap.tryPushWithGHOSTDAGData(currentGHOSTDAGData.SelectedParent(), selectedParentGHOSTDAGData)
 		if err != nil {
 			return nil, err
 		}
@@ -57,16 +59,8 @@ func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash
 			}
 		}
 		currentHash = currentGHOSTDAGData.SelectedParent()
-		currentGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
+		currentGHOSTDAGData = selectedParentGHOSTDAGData
 	}
-
-	// a heap is not a sorted list, and the interface promises to be sorted so we now need to sort this
-	sort.Slice(windowHeap.impl.slice, func(i, j int) bool {
-		return windowHeap.impl.slice[j].less(windowHeap.impl.slice[i], dtm.ghostdagManager)
-	})
 
 	window := make([]*externalapi.DomainHash, 0, windowSize)
 	for _, b := range windowHeap.impl.slice {

@@ -3,9 +3,12 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"math/big"
 	"strconv"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -21,10 +24,8 @@ import (
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given block.
-// This method must be called with the DAG lock held for reads
-func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
-	hash := consensushashing.BlockHash(block)
-	blockHeader := block.Header
+func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+	hash := consensushashing.HeaderHash(blockHeader)
 
 	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
 	if err != nil {
@@ -32,36 +33,44 @@ func (ctx *Context) BuildBlockVerboseData(block *externalapi.DomainBlock, includ
 	}
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
-		Version:              blockHeader.Version,
-		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
-		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
-		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
-		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
-		ParentHashes:         externalapi.DomainHashesToStrings(blockHeader.ParentHashes),
-		Nonce:                blockHeader.Nonce,
-		Time:                 blockHeader.TimeInMilliseconds,
-		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits, ctx.Config.ActiveNetParams),
+		Version:              blockHeader.Version(),
+		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version()),
+		HashMerkleRoot:       blockHeader.HashMerkleRoot().String(),
+		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot().String(),
+		UTXOCommitment:       blockHeader.UTXOCommitment().String(),
+		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes()),
+		Nonce:                blockHeader.Nonce(),
+		Time:                 blockHeader.TimeInMilliseconds(),
+		Bits:                 strconv.FormatInt(int64(blockHeader.Bits()), 16),
+		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
 		BlueScore:            blockInfo.BlueScore,
+		IsHeaderOnly:         blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
 	}
 
-	txIDs := make([]string, len(block.Transactions))
-	for i, tx := range block.Transactions {
-		txIDs[i] = consensushashing.TransactionID(tx).String()
-	}
-	result.TxIDs = txIDs
-
-	if includeTransactionVerboseData {
-		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
-		for i, tx := range block.Transactions {
-			txID := consensushashing.TransactionID(tx).String()
-			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
-			if err != nil {
-				return nil, err
-			}
-			transactionVerboseData[i] = data
+	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+		block, err := ctx.Domain.Consensus().GetBlock(hash)
+		if err != nil {
+			return nil, err
 		}
-		result.TransactionVerboseData = transactionVerboseData
+
+		txIDs := make([]string, len(block.Transactions))
+		for i, tx := range block.Transactions {
+			txIDs[i] = consensushashing.TransactionID(tx).String()
+		}
+		result.TxIDs = txIDs
+
+		if includeTransactionVerboseData {
+			transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
+			for i, tx := range block.Transactions {
+				txID := consensushashing.TransactionID(tx).String()
+				data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
+				if err != nil {
+					return nil, err
+				}
+				transactionVerboseData[i] = data
+			}
+			result.TransactionVerboseData = transactionVerboseData
+		}
 	}
 
 	return result, nil
@@ -88,7 +97,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 // BuildTransactionVerboseData builds a TransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader *externalapi.DomainBlockHeader, blockHash string) (
+	blockHeader externalapi.BlockHeader, blockHash string) (
 	*appmessage.TransactionVerboseData, error) {
 
 	var payloadHash string
@@ -111,8 +120,8 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	}
 
 	if blockHeader != nil {
-		txReply.Time = uint64(blockHeader.TimeInMilliseconds)
-		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds)
+		txReply.Time = uint64(blockHeader.TimeInMilliseconds())
+		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds())
 		txReply.BlockHash = blockHash
 	}
 
@@ -125,7 +134,7 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
 		// error here.
-		disbuf, _ := txscript.DisasmString(transactionInput.SignatureScript)
+		disbuf, _ := txscript.DisasmString(constants.MaxScriptPublicKeyVersion, transactionInput.SignatureScript)
 
 		input := &appmessage.TransactionVerboseInput{}
 		input.TxID = transactionInput.PreviousOutpoint.TransactionID.String()
@@ -146,9 +155,6 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(tx.Outputs))
 	for i, transactionOutput := range tx.Outputs {
-		// The disassembled string will contain [error] inline if the
-		// script doesn't fully parse, so ignore the error here.
-		disbuf, _ := txscript.DisasmString(transactionOutput.ScriptPublicKey)
 
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
@@ -179,8 +185,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
 			Address: encodedAddr,
-			Asm:     disbuf,
-			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey),
+			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey.Script),
 			Type:    scriptClass.String(),
 		}
 		outputs[i] = output

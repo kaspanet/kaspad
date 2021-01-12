@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {
@@ -25,14 +26,17 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		}
 
 		outpoint := appmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
-		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript)
+		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript, protoInput.Sequence)
 	}
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
+		if protoOutput.ScriptPublicKey.Version > math.MaxUint16 {
+			return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")
+		}
 		outputs[i] = &appmessage.TxOut{
 			Value:        protoOutput.Value,
-			ScriptPubKey: protoOutput.ScriptPubKey,
+			ScriptPubKey: &externalapi.ScriptPublicKey{protoOutput.ScriptPublicKey.Script, uint16(protoOutput.ScriptPublicKey.Version)},
 		}
 	}
 
@@ -52,9 +56,11 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 			return nil, err
 		}
 	}
-
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
+	}
 	return &appmessage.MsgTx{
-		Version:      x.Version,
+		Version:      uint16(x.Version),
 		TxIn:         inputs,
 		TxOut:        outputs,
 		LockTime:     x.LockTime,
@@ -81,13 +87,16 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 	protoOutputs := make([]*TransactionOutput, len(msgTx.TxOut))
 	for i, output := range msgTx.TxOut {
 		protoOutputs[i] = &TransactionOutput{
-			Value:        output.Value,
-			ScriptPubKey: output.ScriptPubKey,
+			Value: output.Value,
+			ScriptPublicKey: &ScriptPublicKey{
+				Script:  output.ScriptPubKey.Script,
+				Version: uint32(output.ScriptPubKey.Version),
+			},
 		}
 	}
 
 	*x = TransactionMessage{
-		Version:      msgTx.Version,
+		Version:      uint32(msgTx.Version),
 		Inputs:       protoInputs,
 		Outputs:      protoOutputs,
 		LockTime:     msgTx.LockTime,

@@ -1,13 +1,13 @@
 package transactionvalidator_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -113,7 +113,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
-					tx.PayloadHash = *hashes.HashData(tx.Payload)
+					tx.PayloadHash = *hashes.PayloadHash(tx.Payload)
 				},
 				ruleerrors.ErrInvalidPayloadHash},
 		}
@@ -150,14 +150,14 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 
 	for i := uint32(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &externalapi.DomainTransactionOutput{
-			ScriptPublicKey: []byte{},
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: []byte{}, Version: 0},
 			Value:           outputValue,
 		})
 	}
 
 	if subnetworkData != nil {
-		return transactionhelper.NewSubnetworkTransaction(constants.TransactionVersion, txIns, txOuts, &subnetworkData.subnetworkID, subnetworkData.gas, subnetworkData.payload)
+		return transactionhelper.NewSubnetworkTransaction(constants.MaxTransactionVersion, txIns, txOuts, &subnetworkData.subnetworkID, subnetworkData.gas, subnetworkData.payload)
 	}
 
-	return transactionhelper.NewNativeTransaction(constants.TransactionVersion, txIns, txOuts)
+	return transactionhelper.NewNativeTransaction(constants.MaxTransactionVersion, txIns, txOuts)
 }

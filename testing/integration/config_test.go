@@ -35,6 +35,7 @@ func setConfig(t *testing.T, harness *appHarness) {
 	harness.config.DataDir = randomDirectory(t)
 	harness.config.Listeners = []string{harness.p2pAddress}
 	harness.config.RPCListeners = []string{harness.rpcAddress}
+	harness.config.UTXOIndex = harness.utxoIndex
 }
 
 func commonConfig() *config.Config {

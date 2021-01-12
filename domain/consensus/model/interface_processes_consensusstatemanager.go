@@ -8,5 +8,6 @@ type ConsensusStateManager interface {
 	PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error
 	UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error
 	RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSetIterator, error)
-	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (UTXODiff, AcceptanceData, Multiset, error)
+	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (UTXODiff, externalapi.AcceptanceData, Multiset, error)
+	GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error)
 }

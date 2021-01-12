@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -95,14 +96,28 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockStore.Block(s.databaseContext, blockHash)
+	block, err := s.blockStore.Block(s.databaseContext, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+		}
+		return nil, err
+	}
+	return block, nil
 }
 
-func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (*externalapi.DomainBlockHeader, error) {
+func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
+	blockHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block header %s does not exist", blockHash)
+		}
+		return nil, err
+	}
+	return blockHeader, nil
 }
 
 func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
@@ -141,16 +156,44 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	return blockInfo, nil
 }
 
-func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.syncManager.GetHashesBetween(lowHash, highHash)
+	err := s.validateBlockHashExists(blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
+}
+
+func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
+	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(lowHash)
+	if err != nil {
+		return nil, err
+	}
+	err = s.validateBlockHashExists(highHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(highHash)
+	if err != nil {
+		return nil, err
+	}
 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
@@ -164,7 +207,7 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 		return nil, err
 	}
 
-	if *expectedPruningPointHash != *pruningPointHash {
+	if !expectedPruningPointHash.Equal(pruningPointHash) {
 		return nil, errors.Wrapf(ruleerrors.ErrWrongPruningPointHash, "expected pruning point %s but got %s",
 			expectedPruningPointHash,
 			pruningPointHash)
@@ -177,6 +220,13 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 	return serializedUTXOSet, nil
 }
 
+func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningStore.PruningPoint(s.databaseContext)
+}
+
 func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -184,7 +234,7 @@ func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.D
 	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
 }
 
-func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error) {
+func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -192,14 +242,20 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainBlock, error)
 	if err != nil {
 		return nil, err
 	}
-	return s.blockStore.Block(s.databaseContext, virtualGHOSTDAGData.SelectedParent())
+	return virtualGHOSTDAGData.SelectedParent(), nil
 }
 
 func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.consensusStateStore.Tips(s.databaseContext)
 }
 
 func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -212,11 +268,16 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
 
 	return &externalapi.VirtualInfo{
 		ParentHashes:   blockRelations.Parents,
 		Bits:           bits,
 		PastMedianTime: pastMedianTime,
+		BlueScore:      virtualGHOSTDAGData.BlueScore(),
 	}, nil
 }
 
@@ -224,12 +285,25 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	err := s.validateBlockHashExists(lowHash)
+	if err != nil {
+		return nil, err
+	}
+	err = s.validateBlockHashExists(highHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
 }
 
 func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	if len(blockLocator) == 0 {
+		return nil, nil, errors.Errorf("empty block locator")
+	}
 
 	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
 }
@@ -239,4 +313,62 @@ func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	defer s.lock.Unlock()
 
 	return s.syncManager.GetSyncInfo()
+}
+
+func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(blockHash)
+	if err != nil {
+		return false, err
+	}
+
+	return s.pruningManager.IsValidPruningPoint(blockHash)
+}
+
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(blockHash)
+}
+
+func (s *consensus) validateBlockHashExists(blockHash *externalapi.DomainHash) error {
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.Errorf("block %s does not exist", blockHash)
+	}
+	return nil
+}
+
+func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(blockHashA)
+	if err != nil {
+		return false, err
+	}
+	err = s.validateBlockHashExists(blockHashB)
+	if err != nil {
+		return false, err
+	}
+
+	return s.dagTopologyManager.IsInSelectedParentChainOf(blockHashA, blockHashB)
+}
+
+func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
 }

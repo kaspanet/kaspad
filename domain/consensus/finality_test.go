@@ -55,9 +55,9 @@ func TestFinality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestFinality: Block #%d failed to get info: %+v", i, err)
 			}
-			if blockInfo.BlockStatus != externalapi.StatusValid {
+			if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
 				t.Fatalf("Block #%d in main chain expected to have status '%s', but got '%s'",
-					i, externalapi.StatusValid, blockInfo.BlockStatus)
+					i, externalapi.StatusUTXOValid, blockInfo.BlockStatus)
 			}
 		}
 
@@ -99,15 +99,15 @@ func TestFinality(t *testing.T) {
 		} else if !blockInfo.Exists {
 			t.Fatalf("TestFinality: Failed getting block info, doesn't exists")
 		}
-		if blockInfo.BlockStatus != externalapi.StatusValid {
+		if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
 			t.Fatalf("TestFinality: Overtaking block in side-chain expected to have status '%s', but got '%s'",
-				externalapi.StatusValid, blockInfo.BlockStatus)
+				externalapi.StatusUTXOValid, blockInfo.BlockStatus)
 		}
 		selectedTip, err := consensus.GetVirtualSelectedParent()
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		if *consensushashing.BlockHash(selectedTip) != *sideChainTipHash {
+		if !selectedTip.Equal(sideChainTipHash) {
 			t.Fatalf("Overtaking block in side-chain is not selectedTip")
 		}
 
@@ -125,7 +125,7 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}
 
-		if *virtualFinality == *params.GenesisHash {
+		if virtualFinality.Equal(params.GenesisHash) {
 			t.Fatalf("virtual's finalityPoint is still genesis after adding finalityInterval + 1 blocks to the main chain")
 		}
 
@@ -145,7 +145,7 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), consensushashing.BlockHash(selectedTip))
+		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), selectedTip)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
@@ -186,7 +186,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		checkViolatingMergeDepth := func(consensus testapi.TestConsensus, parents []*externalapi.DomainHash) (*externalapi.DomainBlock, bool) {
 			block, _, err := consensus.BuildBlockWithParents(parents, nil, nil)
 			if err != nil {
-				t.Fatalf("TestBoundedMergeDepth: BuildBlockWithParents failed: %v", err)
+				t.Fatalf("TestBoundedMergeDepth: BuildBlockWithParents failed: %+v", err)
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
@@ -309,7 +309,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Make sure it's actually blue
 		found := false
 		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if *blue == *kosherizingBlockHash {
+			if blue.Equal(kosherizingBlockHash) {
 				found = true
 				break
 			}
@@ -329,8 +329,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(pointAtBlueKosherizing) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), virtualSelectedParent)
 		}
 
 		// Now let's make the kosherizing block red and try to merge again
@@ -346,8 +346,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *tip {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(tip) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, virtualSelectedParent)
 		}
 
 		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(), model.VirtualBlockHash)
@@ -357,7 +357,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Make sure it's actually blue
 		found = false
 		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if *blue == *kosherizingBlockHash {
+			if blue.Equal(kosherizingBlockHash) {
 				found = true
 				break
 			}
@@ -382,19 +382,19 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
 		}
 
-		if *consensushashing.BlockHash(virtualSelectedParent) != *consensushashing.BlockHash(transitiveBlueKosherizing) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), consensushashing.BlockHash(virtualSelectedParent))
+		if !virtualSelectedParent.Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
+			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), virtualSelectedParent)
 		}
 
 		// Lets validate the status of all the interesting blocks
-		if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusValid {
-			t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusValid, getStatus(consensusReal, pointAtBlueKosherizing))
+		if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusUTXOValid {
+			t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, pointAtBlueKosherizing))
 		}
 		if getStatus(consensusReal, pointAtRedKosherizing) != externalapi.StatusInvalid {
 			t.Fatalf("TestBoundedMergeDepth: pointAtRedKosherizing expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, pointAtRedKosherizing))
 		}
-		if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusValid {
-			t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusValid, getStatus(consensusReal, transitiveBlueKosherizing))
+		if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusUTXOValid {
+			t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, transitiveBlueKosherizing))
 		}
 		if getStatus(consensusReal, mergeDepthViolatingBlockBottom) != externalapi.StatusInvalid {
 			t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingBlockBottom expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingBlockBottom))
@@ -412,8 +412,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			}
 		}
 		for i, b := range selectedChain {
-			if getStatus(consensusReal, b) != externalapi.StatusValid {
-				t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusValid, getStatus(consensusReal, b))
+			if getStatus(consensusReal, b) != externalapi.StatusUTXOValid {
+				t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOValid, getStatus(consensusReal, b))
 			}
 		}
 	})

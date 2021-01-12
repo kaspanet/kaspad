@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	defer bp.discardAllChanges()
-	return bp.validateBlock(block)
+	return bp.validateBlock(block, isPruningPoint)
 }
 
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
@@ -21,16 +21,16 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 		return err
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedOnlyHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
 	if !hasValidatedHeader {
-		log.Tracef("Staging block %s header", blockHash)
+		log.Debugf("Staging block %s header", blockHash)
 		bp.blockHeaderStore.Stage(blockHash, block.Header)
 	} else {
-		log.Tracef("Block %s header is already known, so no need to stage it", blockHash)
+		log.Debugf("Block %s header is already known, so no need to stage it", blockHash)
 	}
 
 	// If any validation until (included) proof-of-work fails, simply
@@ -50,15 +50,19 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock) error {
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block)
+	err = bp.validatePostProofOfWork(block, isPruningPoint)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			bp.discardAllChanges()
-			hash := consensushashing.BlockHash(block)
-			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
-			commitErr := bp.commitAllChanges()
-			if commitErr != nil {
-				return commitErr
+			// If we got ErrMissingParents the block shouldn't be considered as invalid
+			// because it could be added later on when its parents are present.
+			if !errors.As(err, &ruleerrors.ErrMissingParents{}) {
+				hash := consensushashing.BlockHash(block)
+				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
+				commitErr := bp.commitAllChanges()
+				if commitErr != nil {
+					return commitErr
+				}
 			}
 		}
 		return err

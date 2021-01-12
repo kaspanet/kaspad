@@ -64,7 +64,12 @@ var shortFormOps map[string]byte
 //     0x14 is OP_DATA_20)
 //   - Single quoted strings are pushed as data
 //   - Anything else is an error
-func parseShortForm(script string) ([]byte, error) {
+func parseShortForm(script string, version uint16) ([]byte, error) {
+	if version > constants.MaxScriptPublicKeyVersion {
+		return nil, errors.Errorf("unknown version %d (max: %d)",
+			version, constants.MaxScriptPublicKeyVersion)
+	}
+
 	// Only create the short form opcode map once.
 	if shortFormOps == nil {
 		ops := make(map[string]byte)
@@ -213,7 +218,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
-func createSpendingTx(sigScript, scriptPubKey []byte) *externalapi.DomainTransaction {
+func createSpendingTx(sigScript []byte, scriptPubKey *externalapi.ScriptPublicKey) *externalapi.DomainTransaction {
 	outpoint := externalapi.DomainOutpoint{
 		TransactionID: externalapi.DomainTransactionID{},
 		Index:         ^uint32(0),
@@ -282,7 +287,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 			t.Errorf("%s: signature script is not a string", name)
 			continue
 		}
-		scriptSig, err := parseShortForm(scriptSigStr)
+		scriptSig, err := parseShortForm(scriptSigStr, 0)
 		if err != nil {
 			t.Errorf("%s: can't parse signature script: %v", name,
 				err)
@@ -295,12 +300,13 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 			t.Errorf("%s: public key script is not a string", name)
 			continue
 		}
-		scriptPubKey, err := parseShortForm(scriptPubKeyStr)
+		script, err := parseShortForm(scriptPubKeyStr, 0)
 		if err != nil {
 			t.Errorf("%s: can't parse public key script: %v", name,
 				err)
 			continue
 		}
+		scriptPubKey := &externalapi.ScriptPublicKey{Script: script, Version: 0}
 
 		// Extract and parse the script flags from the test fields.
 		flagsStr, ok := test[2].(string)

@@ -67,3 +67,9 @@ func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowconte
 func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
 }
+
+// ShouldMine returns whether it's ok to use block template from this node
+// for mining purposes.
+func (m *Manager) ShouldMine() (bool, error) {
+	return m.context.ShouldMine()
+}

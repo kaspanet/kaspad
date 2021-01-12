@@ -99,7 +99,7 @@ func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
 	for _, h := range hashes {
-		if *h == *hash {
+		if h.Equal(hash) {
 			return true
 		}
 	}
@@ -128,7 +128,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 				return err
 			}
 			for i, parentChild := range parentRelations.Children {
-				if *parentChild == *blockHash {
+				if parentChild.Equal(blockHash) {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
 					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
 					break
@@ -145,7 +145,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		}
 		isBlockAlreadyInChildren := false
 		for _, parentChild := range parentRelations.Children {
-			if *parentChild == *blockHash {
+			if parentChild.Equal(blockHash) {
 				isBlockAlreadyInChildren = true
 				break
 			}
@@ -180,7 +180,7 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
 		selectedParent := ghostdagData.SelectedParent()
 
 		// In case where `blockHash` is an immediate parent of `highHash`
-		if *blockHash == *selectedParent {
+		if blockHash.Equal(selectedParent) {
 			return highHash, nil
 		}
 		highHash = selectedParent

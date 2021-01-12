@@ -26,7 +26,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *params.GenesisHash {
+		if !reindexRoot.Equal(params.GenesisHash) {
 			t.Fatalf("reindex root is expected to initially be genesis")
 		}
 
@@ -52,7 +52,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *newReindexRoot == *reindexRoot {
+		if newReindexRoot.Equal(reindexRoot) {
 			t.Fatalf("reindex root is expected to change")
 		}
 
@@ -81,7 +81,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add two blocks on top of the genesis block
@@ -114,7 +114,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 				t.Fatalf("ReachabilityReindexRoot: %s", err)
 			}
 
-			if *reindexRoot != *params.GenesisHash {
+			if !reindexRoot.Equal(params.GenesisHash) {
 				t.Fatalf("reindex root unexpectedly moved")
 			}
 		}
@@ -131,7 +131,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *chain1RootBlock {
+		if !reindexRoot.Equal(chain1RootBlock) {
 			t.Fatalf("chain1RootBlock is not the reindex root after reindex")
 		}
 
@@ -171,7 +171,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
-			return data.TreeNode.Interval.End - data.TreeNode.Interval.Start + 1
+			return data.Interval().End - data.Interval().Start + 1
 		}
 
 		// Add three children to the genesis: leftBlock, centerBlock, rightBlock
@@ -207,7 +207,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if *reindexRoot != *centerBlock {
+		if !reindexRoot.Equal(centerBlock) {
 			t.Fatalf("centerBlock is not the reindex root after reindex")
 		}
 
@@ -242,7 +242,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("ReachabilityData: %s", err)
 		}
 
-		treeChildOfCenterBlock := centerData.TreeNode.Children[0]
+		treeChildOfCenterBlock := centerData.Children()[0]
 		treeChildOfCenterBlockOriginalIntervalSize := intervalSize(treeChildOfCenterBlock)
 		leftTipHash := leftBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {

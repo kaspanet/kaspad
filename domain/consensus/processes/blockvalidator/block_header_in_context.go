@@ -83,10 +83,10 @@ func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeader) error {
-	for _, parentA := range header.ParentHashes {
-		for _, parentB := range header.ParentHashes {
-			if *parentA == *parentB {
+func (v *blockValidator) checkParentsIncest(header externalapi.BlockHeader) error {
+	for _, parentA := range header.ParentHashes() {
+		for _, parentB := range header.ParentHashes() {
+			if parentA.Equal(parentB) {
 				continue
 			}
 
@@ -107,8 +107,8 @@ func (v *blockValidator) checkParentsIncest(header *externalapi.DomainBlockHeade
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeader) error {
-	if len(header.ParentHashes) == 0 {
+func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) error {
+	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
 
@@ -120,9 +120,9 @@ func (v *blockValidator) validateMedianTime(header *externalapi.DomainBlockHeade
 		return err
 	}
 
-	if header.TimeInMilliseconds <= pastMedianTime {
+	if header.TimeInMilliseconds() <= pastMedianTime {
 		return errors.Wrapf(ruleerrors.ErrTimeTooOld, "block timestamp of %d is not after expected %d",
-			header.TimeInMilliseconds, pastMedianTime)
+			header.TimeInMilliseconds(), pastMedianTime)
 	}
 
 	return nil
