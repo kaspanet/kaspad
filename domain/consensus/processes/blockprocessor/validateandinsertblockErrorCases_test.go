@@ -36,14 +36,10 @@ func TestErrorCasesOnValidateBlock(t *testing.T) {
 			t.Fatalf("Test ValidateAndInsertBlock: Expected an error, because the block is invalid.")
 		}
 		_, err = tc.ValidateAndInsertBlock(blockWithStatusInvalid)
-		if err == nil {
-			t.Fatalf("Test ValidateAndInsertBlock: Expected an error, because the block is invalid.")
-		}
-		if !errors.Is(err, ruleerrors.ErrKnownInvalid) {
+		if err == nil || !errors.Is(err, ruleerrors.ErrKnownInvalid) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrKnownInvalid, err)
 		}
-		errorStr := error.Error(err)
-		if !strings.Contains(errorStr, "is a known invalid block") {
+		if !strings.Contains(err.Error(), "is a known invalid block") {
 			t.Fatalf("Test ValidateAndInsertBlock: Expected an diff error, got: %+v.", err)
 		}
 
@@ -57,14 +53,10 @@ func TestErrorCasesOnValidateBlock(t *testing.T) {
 		}
 		// resend the same block.
 		_, err = tc.ValidateAndInsertBlock(block)
-		if err == nil {
-			t.Fatalf("Test ValidateAndInsertBlock: Expected an error, because the block is invalid.")
-		}
-		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrDuplicateBlock, err)
 		}
-		errorStr = error.Error(err)
-		if !strings.Contains(errorStr, " already exists") {
+		if !strings.Contains(err.Error(), " already exists") {
 			t.Fatalf("Test ValidateAndInsertBlock: Expected an diff error, got: %+v.", err)
 		}
 
@@ -79,14 +71,10 @@ func TestErrorCasesOnValidateBlock(t *testing.T) {
 		}
 		// resend the same header.
 		_, err = tc.ValidateAndInsertBlock(onlyHeader)
-		if err == nil {
-			t.Fatalf("Test ValidateAndInsertBlock: Expected an error, because the block is invalid.")
-		}
-		errorStr = error.Error(err)
-		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrDuplicateBlock, err)
 		}
-		if !strings.Contains(errorStr, "header already exists") {
+		if !strings.Contains(err.Error(), "header already exists") {
 			t.Fatalf("Test ValidateAndInsertBlock: Expected an diff error, got: %+v.", err)
 		}
 
