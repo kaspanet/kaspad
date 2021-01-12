@@ -85,6 +85,23 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		return nil
 	}
 
+	// Clear the existing virtual utxo set in database before adding the new one
+	cursor, err := dbTx.Cursor(utxoSetBucket)
+	if err != nil {
+		return err
+	}
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		err = dbTx.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Now put the new virtualUTXOSet into the database
 	css.virtualUTXOSetCache.Clear()
 	iterator := css.virtualUTXOSetStaging.Iterator()
 	for iterator.Next() {

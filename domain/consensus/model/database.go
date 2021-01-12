@@ -58,6 +58,7 @@ type DBWriter interface {
 // access that requires an open database transaction
 type DBTransaction interface {
 	DBWriter
+	DBReader
 
 	// Rollback rolls back whatever changes were made to the
 	// database within this transaction.
