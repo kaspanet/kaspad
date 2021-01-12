@@ -117,19 +117,6 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 
-	// Use the finality Store to jump `finalityDepth` blue scores down the selected chain.
-	// this should be much faster than stepping through the whole chain.
-	for currentBlockGHOSTDAGData.BlueScore()-blueScore >= dtm.finalityDepth {
-		currentHash, err = dtm.finalityStore.FinalityPoint(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	for currentBlockGHOSTDAGData.SelectedParent() != nil {
 		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {
