@@ -19,11 +19,30 @@ func NewSubmitBlockRequestMessage(block *MsgBlock) *SubmitBlockRequestMessage {
 	}
 }
 
+type RejectReason byte
+
+const (
+	RejectReasonNone RejectReason = iota
+	RejectReasonBlockInvalid
+	RejectReasonIsInIBD
+)
+
+var rejectReasonToString = map[RejectReason]string{
+	RejectReasonNone:         "None",
+	RejectReasonBlockInvalid: "Block is invalid",
+	RejectReasonIsInIBD:      "Node is in IBD",
+}
+
+func (rr RejectReason) String() string {
+	return rejectReasonToString[rr]
+}
+
 // SubmitBlockResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type SubmitBlockResponseMessage struct {
 	baseMessage
-	Error *RPCError
+	RejectReason RejectReason
+	Error        *RPCError
 }
 
 // Command returns the protocol command string for the message

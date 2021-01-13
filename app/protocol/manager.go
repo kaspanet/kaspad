@@ -79,3 +79,7 @@ func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMemp
 func (m *Manager) ShouldMine() (bool, error) {
 	return m.context.ShouldMine()
 }
+
+func (m *Manager) IsIBDRunning() bool {
+	return m.context.IsIBDRunning()
+}
