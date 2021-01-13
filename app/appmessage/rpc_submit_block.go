@@ -23,10 +23,11 @@ func NewSubmitBlockRequestMessage(block *MsgBlock) *SubmitBlockRequestMessage {
 type RejectReason byte
 
 // RejectReason constants
+// Not using iota, since in the .proto file those are hardcoded
 const (
-	RejectReasonNone RejectReason = iota
-	RejectReasonBlockInvalid
-	RejectReasonIsInIBD
+	RejectReasonNone         RejectReason = 0
+	RejectReasonBlockInvalid RejectReason = 1
+	RejectReasonIsInIBD      RejectReason = 2
 )
 
 var rejectReasonToString = map[RejectReason]string{
