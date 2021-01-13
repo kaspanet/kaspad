@@ -3,7 +3,7 @@ package blockrelay
 import (
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
@@ -163,7 +163,7 @@ func (flow *handleRelayInvsFlow) nextBlockLocator(lowHash, highHash *externalapi
 	log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
 	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 	if err != nil {
-		if !database.IsNotFoundError(err) {
+		if errors.Is(model.ErrBlockNotInSelectedParentChain, err) {
 			return nil, err
 		}
 		log.Debugf("Headers selected parent chain moved since findHighestSharedBlockHash - " +
