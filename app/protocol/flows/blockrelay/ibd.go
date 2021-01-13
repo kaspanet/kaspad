@@ -336,8 +336,8 @@ func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *exter
 	}
 
 	switch message := message.(type) {
-	case *appmessage.MsgIBDRootUTXOSetAndBlock:
-		return message.UTXOSet,
+	case *appmessage.MsgIBDRootUTXOSetChunk:
+		return message.Chunk,
 			appmessage.MsgBlockToDomainBlock(message.Block), true, nil
 	case *appmessage.MsgIBDRootNotFound:
 		return nil, nil, false, nil
@@ -345,7 +345,7 @@ func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *exter
 		return nil, nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s",
-				appmessage.CmdIBDRootUTXOSetAndBlock, appmessage.CmdIBDRootNotFound, message.Command(),
+				appmessage.CmdIBDRootUTXOSetChunk, appmessage.CmdIBDRootNotFound, message.Command(),
 			)
 	}
 }

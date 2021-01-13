@@ -52,7 +52,7 @@ const (
 	CmdHeader
 	CmdRequestNextHeaders
 	CmdRequestIBDRootUTXOSetAndBlock
-	CmdIBDRootUTXOSetAndBlock
+	CmdIBDRootUTXOSetChunk
 	CmdRequestIBDBlocks
 	CmdIBDRootNotFound
 	CmdRequestIBDRootHash
@@ -147,7 +147,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdHeader:                        "Header",
 	CmdRequestNextHeaders:            "RequestNextHeaders",
 	CmdRequestIBDRootUTXOSetAndBlock: "RequestPruningUTXOSetAndBlock",
-	CmdIBDRootUTXOSetAndBlock:        "IBDRootUTXOSetAndBlock",
+	CmdIBDRootUTXOSetChunk:           "IBDRootUTXOSetChunk",
 	CmdRequestIBDBlocks:              "RequestIBDBlocks",
 	CmdIBDRootNotFound:               "IBDRootNotFound",
 	CmdRequestIBDRootHash:            "IBDRequestIBDRootHash",

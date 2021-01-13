@@ -190,12 +190,11 @@ message RequestIBDRootUTXOSetAndBlockMessage{
 }
 // RequestIBDRootUTXOSetAndBlockMessage end
 
-// IBDRootUTXOSetAndBlockMessage start
-message IBDRootUTXOSetAndBlockMessage{
-  bytes utxoSet = 1;
-  BlockMessage block = 2;
+// IbdRootUtxoSetChunkMessage start
+message IbdRootUtxoSetChunkMessage{
+  bytes chunk = 1;
 }
-// IBDRootUTXOSetAndBlockMessage end
+// IbdRootUtxoSetChunkMessage end
 
 // RequestIBDBlocksMessage start
 message RequestIBDBlocksMessage{

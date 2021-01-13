@@ -77,23 +77,20 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 				chunk = serializedUTXOSet[offset:]
 			}
 
-			log.Debugf("chunk %d", len(chunk))
-			// Send the chunk
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetChunk(chunk))
+			if err != nil {
+				return err
+			}
 
 			offset += step
 			chunksSent++
 
-			if chunksSent%100 == 0 {
+			// Wait for the peer to request more chunks every `ibdBatchSize` chunks
+			if chunksSent%ibdBatchSize == 0 {
 				// Wait for a "more chunks please" message
 			}
 		}
 
 		// Send a "done with chunks" message
-
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetAndBlock(serializedUTXOSet,
-			appmessage.DomainBlockToMsgBlock(block)))
-		if err != nil {
-			return err
-		}
 	}
 }
