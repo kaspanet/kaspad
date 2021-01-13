@@ -72,7 +72,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 		}
 
 		// Send the UTXO set in `step`-sized chunks
-		const step = 1024 * 1024 * 1024 // 1MB
+		const step = 1024 * 1024 // 1MB
 		offset := 0
 		chunksSent := 0
 		for offset < len(serializedUTXOSet) {
