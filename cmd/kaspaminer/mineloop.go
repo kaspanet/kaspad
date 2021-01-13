@@ -2,6 +2,7 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -126,7 +127,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 }
 
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {

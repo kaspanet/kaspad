@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
@@ -81,7 +81,7 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 //    difficulty is not performed.
 func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
-	target := util.CompactToBig(header.Bits())
+	target := difficulty.CompactToBig(header.Bits())
 	if target.Sign() <= 0 {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
 			target)

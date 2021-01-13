@@ -2,6 +2,7 @@ package util_test
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/big"
 
@@ -81,7 +82,7 @@ func ExampleAmount_unitConversions() {
 // the typical hex notation.
 func ExampleCompactToBig() {
 	bits := uint32(419465580)
-	targetDifficulty := util.CompactToBig(bits)
+	targetDifficulty := difficulty.CompactToBig(bits)
 
 	// Display it in hex.
 	fmt.Printf("%064x\n", targetDifficulty.Bytes())
@@ -101,7 +102,7 @@ func ExampleBigToCompact() {
 		fmt.Println("invalid target difficulty")
 		return
 	}
-	bits := util.BigToCompact(targetDifficulty)
+	bits := difficulty.BigToCompact(targetDifficulty)
 
 	fmt.Println(bits)
 

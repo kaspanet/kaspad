@@ -4,16 +4,14 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 )
 
 func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := rand.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
