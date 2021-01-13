@@ -18,7 +18,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockIsNotPruned")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
