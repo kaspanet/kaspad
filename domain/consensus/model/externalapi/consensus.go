@@ -19,6 +19,7 @@ type Consensus interface {
 	GetVirtualSelectedParent() (*DomainHash, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
 	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
+	CreateHeadersSelectedChainBlockLocatorFromHeadersSelectedTip(lowHash *DomainHash) (BlockLocator, error)
 	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)

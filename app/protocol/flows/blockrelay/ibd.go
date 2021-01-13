@@ -124,16 +124,23 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(targetHash *external
 	if err != nil {
 		return nil, err
 	}
-	highHash, err := flow.Domain().Consensus().GetHeadersSelectedTip()
-	if err != nil {
-		return nil, err
-	}
+	var highHash *externalapi.DomainHash
 
 	for !lowHash.Equal(highHash) {
-		log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-		blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
-		if err != nil {
-			return nil, err
+		var blockLocator externalapi.BlockLocator
+		if highHash == nil {
+			log.Debugf("Sending a blockLocator to %s between %s and headers selected tip", flow.peer, lowHash)
+			blockLocator, err =
+				flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocatorFromHeadersSelectedTip(lowHash)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
+			blockLocator, err = flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(targetHash, blockLocator)
