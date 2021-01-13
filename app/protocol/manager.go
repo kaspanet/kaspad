@@ -79,3 +79,8 @@ func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMemp
 func (m *Manager) ShouldMine() (bool, error) {
 	return m.context.ShouldMine()
 }
+
+// IsIBDRunning returns true if IBD is currently marked as running
+func (m *Manager) IsIBDRunning() bool {
+	return m.context.IsIBDRunning()
+}
