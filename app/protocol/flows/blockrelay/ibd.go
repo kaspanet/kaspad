@@ -1,6 +1,7 @@
 package blockrelay
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -330,6 +331,9 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 }
 
 func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *externalapi.DomainBlock, bool, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveIBDRootUTXOSetAndBlock")
+	defer onEnd()
+
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, nil, false, err
