@@ -1,14 +1,13 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 )
 
 func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
@@ -36,7 +35,7 @@ func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
 
 	solveBlock(block)
 
-	err = harness.rpcClient.SubmitBlock(block)
+	_, err = harness.rpcClient.SubmitBlock(block)
 	if err != nil {
 		t.Fatalf("Error submitting block: %s", err)
 	}

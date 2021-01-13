@@ -115,8 +115,12 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	blockHash := consensushashing.BlockHash(block)
 	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
 
-	err := client.SubmitBlock(block)
+	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if rejectReason == appmessage.RejectReasonIsInIBD {
+			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			return nil
+		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
 	}
 	return nil
