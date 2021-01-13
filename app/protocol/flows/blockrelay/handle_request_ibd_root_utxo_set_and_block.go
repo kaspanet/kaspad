@@ -7,8 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"time"
 )
 
 // HandleRequestIBDRootUTXOSetAndBlockContext is the interface for the context needed for the HandleRequestIBDRootUTXOSetAndBlock flow.
@@ -46,7 +46,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 				"expected: %s, got: %s", appmessage.CmdRequestIBDRootUTXOSetAndBlock, message.Command())
 		}
 
-		start := time.Now()
+		finishMeasuring := logger.LogAndMeasureExecutionTime(log, "handleRequestIBDRootUTXOSetAndBlockFlow")
 		log.Debugf("Got request for IBDRoot UTXOSet and Block")
 
 		serializedUTXOSet, err := flow.Domain().Consensus().GetPruningPointUTXOSet(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
@@ -112,6 +112,6 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 			return err
 		}
 
-		log.Debugf("Finished sending IBD root UTXO set. Took %s", time.Since(start))
+		finishMeasuring()
 	}
 }
