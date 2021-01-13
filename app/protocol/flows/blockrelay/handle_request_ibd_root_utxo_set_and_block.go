@@ -93,7 +93,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 
 			// Wait for the peer to request more chunks every `ibdBatchSize` chunks
 			if chunksSent%ibdBatchSize == 0 {
-				message, err := flow.outgoingRoute.DequeueWithTimeout(common.DefaultTimeout)
+				message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 				if err != nil {
 					return err
 				}
