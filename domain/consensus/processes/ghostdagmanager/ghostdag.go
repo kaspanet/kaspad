@@ -3,7 +3,7 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 	"math/big"
 )
@@ -101,7 +101,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 			if err != nil {
 				return err
 			}
-			newBlockData.blueWork.Add(newBlockData.blueWork, util.CalcWork(header.Bits()))
+			newBlockData.blueWork.Add(newBlockData.blueWork, difficulty.CalcWork(header.Bits()))
 		}
 	} else {
 		// Genesis's blue score is defined to be 0.

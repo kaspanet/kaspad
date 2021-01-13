@@ -1,12 +1,12 @@
 package difficultymanager
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // DifficultyManager provides a method to resolve the
@@ -108,8 +108,8 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 		Div(newTarget, div.SetInt64(dm.targetTimePerBlock.Milliseconds())).
 		Div(newTarget, div.SetUint64(uint64(dm.difficultyAdjustmentWindowSize)))
 	if newTarget.Cmp(dm.powMax) > 0 {
-		return util.BigToCompact(dm.powMax), nil
+		return difficulty.BigToCompact(dm.powMax), nil
 	}
-	newTargetBits := util.BigToCompact(newTarget)
+	newTargetBits := difficulty.BigToCompact(newTarget)
 	return newTargetBits, nil
 }
