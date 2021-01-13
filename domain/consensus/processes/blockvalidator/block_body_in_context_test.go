@@ -41,14 +41,18 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 
 		// Add blocks until the pruning point changes
 		tipHash := params.GenesisHash
-		tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+		anticonePruningBlock, err := tc.BuildUTXOInvalidBlock([]*externalapi.DomainHash{tipHash})
 		if err != nil {
-			t.Fatalf("AddUTXOInvalidHeader: %+v", err)
+			t.Fatalf("BuildUTXOInvalidBlock: %+v", err)
 		}
 
-		beforePruningBlock, err := tc.GetBlock(tipHash)
+		// Add only the header of anticonePruningBlock
+		_, err = tc.ValidateAndInsertBlock(&externalapi.DomainBlock{
+			Header:       anticonePruningBlock.Header,
+			Transactions: nil,
+		})
 		if err != nil {
-			t.Fatalf("beforePruningBlock: %+v", err)
+			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 
 		for {
@@ -67,8 +71,9 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 			}
 		}
 
-		// Check that it's valid to point to a header only block in the anti future of the pruning point.
-		_, err = tc.ValidateAndInsertBlock(beforePruningBlock)
+		// Add anticonePruningBlock's body and Check that it's valid to point to
+		// a header only block in the past of the pruning point.
+		_, err = tc.ValidateAndInsertBlock(anticonePruningBlock)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
