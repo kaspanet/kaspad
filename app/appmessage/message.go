@@ -61,6 +61,7 @@ const (
 	CmdIBDBlockLocatorHighestHash
 	CmdBlockHeaders
 	CmdRequestNextIBDRootUTXOSetChunk
+	CmdDoneIBDRootUTXOSetChunks
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -157,6 +158,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdIBDBlockLocatorHighestHash:     "IBDBlockLocatorHighestHash",
 	CmdBlockHeaders:                   "BlockHeaders",
 	CmdRequestNextIBDRootUTXOSetChunk: "RequestNextIBDRootUTXOSetChunk",
+	CmdDoneIBDRootUTXOSetChunks:       "DoneIBDRootUTXOSetChunks",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

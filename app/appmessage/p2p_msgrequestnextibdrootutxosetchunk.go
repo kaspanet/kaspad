@@ -11,6 +11,6 @@ func (msg *MsgRequestNextIBDRootUTXOSetChunk) Command() MessageCommand {
 }
 
 // NewMsgRequestNextIBDRootUTXOSetChunk returns a new MsgRequestNextIBDRootUTXOSetChunk.
-func NewMsgRequestNextIBDRootUTXOSetChunk(chunk []byte) *MsgRequestNextIBDRootUTXOSetChunk {
+func NewMsgRequestNextIBDRootUTXOSetChunk() *MsgRequestNextIBDRootUTXOSetChunk {
 	return &MsgRequestNextIBDRootUTXOSetChunk{}
 }

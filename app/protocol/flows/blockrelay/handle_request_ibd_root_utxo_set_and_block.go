@@ -101,6 +101,9 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 			}
 		}
 
-		// Send a "done with chunks" message
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
+		if err != nil {
+			return err
+		}
 	}
 }

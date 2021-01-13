@@ -157,6 +157,9 @@ message IbdRootUtxoSetChunkMessage{
 message RequestNextIbdRootUtxoSetChunkMessage {
 }
 
+message DoneIbdRootUtxoSetChunksMessage {
+}
+
 message RequestIBDBlocksMessage{
   repeated Hash hashes = 1;
 }
