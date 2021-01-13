@@ -1,8 +1,9 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"sync"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -296,6 +297,23 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 	}
 
 	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
+}
+
+func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	lowHash, err := s.pruningStore.PruningPoint(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	highHash, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
