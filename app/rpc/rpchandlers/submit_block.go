@@ -16,14 +16,22 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 	msgBlock := submitBlockRequest.Block
 	domainBlock := appmessage.MsgBlockToDomainBlock(msgBlock)
 
+	if context.ProtocolManager.IsIBDRunning() {
+		return &appmessage.SubmitBlockResponseMessage{
+			Error:        appmessage.RPCErrorf("Block not submitted - IBD is running"),
+			RejectReason: appmessage.RejectReasonIsInIBD,
+		}, nil
+	}
+
 	err := context.ProtocolManager.AddBlock(domainBlock)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return nil, err
 		}
-		errorMessage := &appmessage.SubmitBlockResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Block rejected. Reason: %s", err)
-		return errorMessage, nil
+		return &appmessage.SubmitBlockResponseMessage{
+			Error:        appmessage.RPCErrorf("Block rejected. Reason: %s", err),
+			RejectReason: appmessage.RejectReasonBlockInvalid,
+		}, nil
 	}
 
 	log.Infof("Accepted block %s via submitBlock", consensushashing.BlockHash(domainBlock))
