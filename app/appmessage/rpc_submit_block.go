@@ -19,8 +19,10 @@ func NewSubmitBlockRequestMessage(block *MsgBlock) *SubmitBlockRequestMessage {
 	}
 }
 
+// RejectReason describes the reason why a block sent by SubmitBlock was rejected
 type RejectReason byte
 
+// RejectReason constants
 const (
 	RejectReasonNone RejectReason = iota
 	RejectReasonBlockInvalid
