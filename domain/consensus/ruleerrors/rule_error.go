@@ -185,6 +185,9 @@ var (
 
 	//ErrTransactionVersionIsUnknown indicates that the transaction version is unknown.
 	ErrTransactionVersionIsUnknown = newRuleError("ErrTransactionVersionIsUnknown")
+
+	// ErrPrunedBlock indicates that the currently validated block is already pruned.
+	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

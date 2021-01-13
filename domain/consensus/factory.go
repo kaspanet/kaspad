@@ -192,6 +192,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		blockStatusStore,
 		reachabilityDataStore,
+		consensusStateStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
