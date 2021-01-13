@@ -2,6 +2,7 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -64,6 +65,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 						time.Sleep(deviation)
 					}
 					blockInWindowIndex = 0
+					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
 				}
 			}
 
@@ -113,15 +115,19 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	blockHash := consensushashing.BlockHash(block)
 	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
 
-	err := client.SubmitBlock(block)
+	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if rejectReason == appmessage.RejectReasonIsInIBD {
+			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			return nil
+		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
 	}
 	return nil
 }
 
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {

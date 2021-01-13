@@ -24,7 +24,8 @@ func (x *KaspadMessage_SubmitBlockResponse) toAppMessage() (appmessage.Message, 
 		err = &appmessage.RPCError{Message: x.SubmitBlockResponse.Error.Message}
 	}
 	return &appmessage.SubmitBlockResponseMessage{
-		Error: err,
+		RejectReason: appmessage.RejectReason(x.SubmitBlockResponse.RejectReason),
+		Error:        err,
 	}, nil
 }
 
@@ -34,7 +35,8 @@ func (x *KaspadMessage_SubmitBlockResponse) fromAppMessage(message *appmessage.S
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.SubmitBlockResponse = &SubmitBlockResponseMessage{
-		Error: err,
+		RejectReason: SubmitBlockResponseMessage_RejectReason(message.RejectReason),
+		Error:        err,
 	}
 	return nil
 }

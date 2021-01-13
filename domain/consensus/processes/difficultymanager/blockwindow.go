@@ -2,7 +2,7 @@ package difficultymanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -75,7 +75,7 @@ func (window blockWindow) averageTarget() *big.Int {
 	averageTarget := new(big.Int)
 	targetTmp := new(big.Int)
 	for _, block := range window {
-		util.CompactToBigWithDestination(block.Bits, targetTmp)
+		difficulty.CompactToBigWithDestination(block.Bits, targetTmp)
 		averageTarget.Add(averageTarget, targetTmp)
 	}
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))

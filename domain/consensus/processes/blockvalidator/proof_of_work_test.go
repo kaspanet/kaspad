@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/rand"
 
@@ -55,7 +55,7 @@ func TestPOW(t *testing.T) {
 
 // solveBlockWithWrongPOW increments the given block's nonce until it gets wrong POW (for test!).
 func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := uint64(0)
 	for i := initialNonce; i < math.MaxUint64; i++ {
