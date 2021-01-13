@@ -4,18 +4,17 @@ import (
 	"encoding/json"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-	"github.com/kaspanet/kaspad/util"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -72,7 +71,7 @@ func TestGHOSTDAG(t *testing.T) {
 
 		blockGHOSTDAGDataGenesis := model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 		genesisHeader := params.GenesisBlock.Header
-		genesisWork := util.CalcWork(genesisHeader.Bits())
+		genesisWork := difficulty.CalcWork(genesisHeader.Bits())
 
 		var testsCounter int
 		err := filepath.Walk("../../testdata/dags", func(path string, info os.FileInfo, err error) error {

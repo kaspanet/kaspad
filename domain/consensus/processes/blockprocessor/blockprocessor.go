@@ -4,13 +4,15 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"time"
 )
 
 // blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
 type blockProcessor struct {
-	genesisHash     *externalapi.DomainHash
-	databaseContext model.DBManager
+	genesisHash        *externalapi.DomainHash
+	targetTimePerBlock time.Duration
+	databaseContext    model.DBManager
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -45,6 +47,7 @@ type blockProcessor struct {
 // New instantiates a new BlockProcessor
 func New(
 	genesisHash *externalapi.DomainHash,
+	targetTimePerBlock time.Duration,
 	databaseContext model.DBManager,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
@@ -76,6 +79,7 @@ func New(
 
 	return &blockProcessor{
 		genesisHash:           genesisHash,
+		targetTimePerBlock:    targetTimePerBlock,
 		databaseContext:       databaseContext,
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,

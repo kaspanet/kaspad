@@ -1,12 +1,12 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -79,7 +79,7 @@ func New(powMax *big.Int,
 		skipPoW:                    skipPoW,
 		genesisHash:                genesisHash,
 		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
-		powMaxBits:                 util.BigToCompact(powMax),
+		powMaxBits:                 difficulty.BigToCompact(powMax),
 		maxBlockSize:               maxBlockSize,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
