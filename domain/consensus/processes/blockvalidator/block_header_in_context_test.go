@@ -153,3 +153,36 @@ func TestCheckParentsIncest(t *testing.T) {
 		}
 	})
 }
+
+func TestCheckMergeSizeLimit(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.MergeSetSizeLimit = 2 * uint64(params.K)
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsIncest")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		chain1TipHash := params.GenesisHash
+		for i := uint64(0); i < params.MergeSetSizeLimit+2; i++ {
+			chain1TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+		}
+
+		chain2TipHash := params.GenesisHash
+		for i := uint64(0); i < params.MergeSetSizeLimit+1; i++ {
+			chain2TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2TipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+		}
+
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash, chain2TipHash}, nil, nil)
+		if !errors.Is(err, ruleerrors.ErrViolatingMergeLimit) {
+			t.Fatalf("unexpected error: %+v", err)
+		}
+	})
+}
