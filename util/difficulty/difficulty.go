@@ -1,4 +1,4 @@
-package util
+package difficulty
 
 import (
 	"math/big"
@@ -13,26 +13,7 @@ var (
 	// oneLsh256 is 1 shifted left 256 bits. It is defined here to avoid
 	// the overhead of creating it multiple times.
 	oneLsh256 = new(big.Int).Lsh(bigOne, 256)
-
-	// log2FloorMasks defines the masks to use when quickly calculating
-	// floor(log2(x)) in a constant log2(64) = 6 steps, where x is a uint64, using
-	// shifts. They are derived from (2^(2^x) - 1) * (2^(2^x)), for x in 5..0.
-	log2FloorMasks = []uint64{0xffffffff00000000, 0xffff0000, 0xff00, 0xf0, 0xc, 0x2}
 )
-
-// FastLog2Floor calculates and returns floor(log2(x)) in a constant 5 steps.
-func FastLog2Floor(n uint64) uint8 {
-	rv := uint8(0)
-	exponent := uint8(32)
-	for i := 0; i < 6; i++ {
-		if n&log2FloorMasks[i] != 0 {
-			rv += exponent
-			n >>= exponent
-		}
-		exponent >>= 1
-	}
-	return rv
-}
 
 // CompactToBig converts a compact representation of a whole number N to an
 // unsigned 32-bit number. The representation is similar to IEEE754 floating
