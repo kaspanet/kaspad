@@ -39,7 +39,11 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 		if err != nil {
 			return err
 		}
-		msgRequestIBDRootUTXOSetAndBlock := message.(*appmessage.MsgRequestIBDRootUTXOSetAndBlock)
+		msgRequestIBDRootUTXOSetAndBlock, ok := message.(*appmessage.MsgRequestIBDRootUTXOSetAndBlock)
+		if !ok {
+			return protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: %s, got: %s", appmessage.CmdRequestIBDRootUTXOSetAndBlock, message.Command())
+		}
 
 		log.Debugf("Got request for IBDRoot UTXOSet and Block")
 
