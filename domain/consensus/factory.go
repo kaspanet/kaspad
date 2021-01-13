@@ -277,6 +277,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
+		dagParams.TargetTimePerBlock,
 		dbManager,
 		consensusStateManager,
 		pruningManager,

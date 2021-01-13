@@ -1,6 +1,7 @@
 package blocktemplatebuilder
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"sort"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	miningmanagerapi "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -148,7 +148,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
-		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, util.CompactToBig(blk.Header.Bits()))
+		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
 	return blk, nil
 }
