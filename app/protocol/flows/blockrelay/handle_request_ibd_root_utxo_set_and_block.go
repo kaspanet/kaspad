@@ -2,7 +2,6 @@ package blockrelay
 
 import (
 	"errors"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -42,7 +41,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 
 		log.Debugf("Got request for IBDRoot UTXOSet and Block")
 
-		utxoSet, err := flow.Domain().Consensus().GetPruningPointUTXOSet(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+		serializedUTXOSet, err := flow.Domain().Consensus().GetPruningPointUTXOSet(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
 				err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootNotFound())
@@ -53,16 +52,45 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 				continue
 			}
 		}
-		log.Debugf("Got utxo set for pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+		log.Debugf("Retrieved utxo set for pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 
 		block, err := flow.Domain().Consensus().GetBlock(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 		if err != nil {
 			return err
 		}
+		log.Debugf("Retrieved pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 
-		log.Debugf("Got pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDBlock(appmessage.DomainBlockToMsgBlock(block)))
+		if err != nil {
+			return err
+		}
 
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetAndBlock(utxoSet,
+		// Send the UTXO set in `step`-sized chunks
+		const step = 1024 * 1024 * 1024 // 1MB
+		offset := 0
+		chunksSent := 0
+		for offset < len(serializedUTXOSet) {
+			var chunk []byte
+			if offset+step < len(serializedUTXOSet) {
+				chunk = serializedUTXOSet[offset : offset+step]
+			} else {
+				chunk = serializedUTXOSet[offset:]
+			}
+
+			log.Debugf("chunk %d", len(chunk))
+			// Send the chunk
+
+			offset += step
+			chunksSent++
+
+			if chunksSent%100 == 0 {
+				// Wait for a "more chunks please" message
+			}
+		}
+
+		// Send a "done with chunks" message
+
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetAndBlock(serializedUTXOSet,
 			appmessage.DomainBlockToMsgBlock(block)))
 		if err != nil {
 			return err
