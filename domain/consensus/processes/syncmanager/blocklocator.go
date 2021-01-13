@@ -1,7 +1,9 @@
 package syncmanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
@@ -74,11 +76,19 @@ func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
 
 	lowHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, lowHash)
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil, errors.Wrapf(model.ErrBlockNotInSelectedParentChain,
+				"LowHash %s is not in selected parent chain", lowHash)
+		}
 		return nil, err
 	}
 
 	highHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, highHash)
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil, errors.Wrapf(model.ErrBlockNotInSelectedParentChain,
+				"LowHash %s is not in selected parent chain", lowHash)
+		}
 		return nil, err
 	}
 
