@@ -60,6 +60,7 @@ const (
 	CmdIBDBlockLocator
 	CmdIBDBlockLocatorHighestHash
 	CmdBlockHeaders
+	CmdRequestNextIBDRootUTXOSetChunk
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -125,36 +126,37 @@ const (
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
 var ProtocolMessageCommandToString = map[MessageCommand]string{
-	CmdVersion:                       "Version",
-	CmdVerAck:                        "VerAck",
-	CmdRequestAddresses:              "RequestAddresses",
-	CmdAddresses:                     "Addresses",
-	CmdRequestHeaders:                "RequestHeaders",
-	CmdBlock:                         "Block",
-	CmdTx:                            "Tx",
-	CmdPing:                          "Ping",
-	CmdPong:                          "Pong",
-	CmdRequestBlockLocator:           "RequestBlockLocator",
-	CmdBlockLocator:                  "BlockLocator",
-	CmdInvRelayBlock:                 "InvRelayBlock",
-	CmdRequestRelayBlocks:            "RequestRelayBlocks",
-	CmdInvTransaction:                "InvTransaction",
-	CmdRequestTransactions:           "RequestTransactions",
-	CmdIBDBlock:                      "IBDBlock",
-	CmdDoneHeaders:                   "DoneHeaders",
-	CmdTransactionNotFound:           "TransactionNotFound",
-	CmdReject:                        "Reject",
-	CmdHeader:                        "Header",
-	CmdRequestNextHeaders:            "RequestNextHeaders",
-	CmdRequestIBDRootUTXOSetAndBlock: "RequestPruningUTXOSetAndBlock",
-	CmdIBDRootUTXOSetChunk:           "IBDRootUTXOSetChunk",
-	CmdRequestIBDBlocks:              "RequestIBDBlocks",
-	CmdIBDRootNotFound:               "IBDRootNotFound",
-	CmdRequestIBDRootHash:            "IBDRequestIBDRootHash",
-	CmdIBDRootHash:                   "IBDIBDRootHash",
-	CmdIBDBlockLocator:               "IBDBlockLocator",
-	CmdIBDBlockLocatorHighestHash:    "IBDBlockLocatorHighestHash",
-	CmdBlockHeaders:                  "BlockHeaders",
+	CmdVersion:                        "Version",
+	CmdVerAck:                         "VerAck",
+	CmdRequestAddresses:               "RequestAddresses",
+	CmdAddresses:                      "Addresses",
+	CmdRequestHeaders:                 "RequestHeaders",
+	CmdBlock:                          "Block",
+	CmdTx:                             "Tx",
+	CmdPing:                           "Ping",
+	CmdPong:                           "Pong",
+	CmdRequestBlockLocator:            "RequestBlockLocator",
+	CmdBlockLocator:                   "BlockLocator",
+	CmdInvRelayBlock:                  "InvRelayBlock",
+	CmdRequestRelayBlocks:             "RequestRelayBlocks",
+	CmdInvTransaction:                 "InvTransaction",
+	CmdRequestTransactions:            "RequestTransactions",
+	CmdIBDBlock:                       "IBDBlock",
+	CmdDoneHeaders:                    "DoneHeaders",
+	CmdTransactionNotFound:            "TransactionNotFound",
+	CmdReject:                         "Reject",
+	CmdHeader:                         "Header",
+	CmdRequestNextHeaders:             "RequestNextHeaders",
+	CmdRequestIBDRootUTXOSetAndBlock:  "RequestPruningUTXOSetAndBlock",
+	CmdIBDRootUTXOSetChunk:            "IBDRootUTXOSetChunk",
+	CmdRequestIBDBlocks:               "RequestIBDBlocks",
+	CmdIBDRootNotFound:                "IBDRootNotFound",
+	CmdRequestIBDRootHash:             "IBDRequestIBDRootHash",
+	CmdIBDRootHash:                    "IBDIBDRootHash",
+	CmdIBDBlockLocator:                "IBDBlockLocator",
+	CmdIBDBlockLocatorHighestHash:     "IBDBlockLocatorHighestHash",
+	CmdBlockHeaders:                   "BlockHeaders",
+	CmdRequestNextIBDRootUTXOSetChunk: "RequestNextIBDRootUTXOSetChunk",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

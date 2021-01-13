@@ -3,14 +3,11 @@ package protowire;
 
 option go_package = "github.com/kaspanet/kaspad/protowire";
 
-// RequestAddressesMessage start
 message RequestAddressesMessage{
   bool includeAllSubnetworks = 1;
   SubnetworkId subnetworkId = 2;
 }
-// RequestAddressesMessage end
 
-// AddressesMessage start
 message AddressesMessage{
   repeated NetAddress addressList = 1;
 }
@@ -25,9 +22,7 @@ message NetAddress{
 message SubnetworkId{
   bytes bytes = 1;
 }
-// AddressesMessage end
 
-// TransactionMessage start
 message TransactionMessage{
   uint32 version = 1;
   repeated TransactionInput inputs = 2;
@@ -62,9 +57,7 @@ message TransactionOutput{
   uint64 value = 1;
   ScriptPublicKey scriptPublicKey = 2;
 }
-// TransactionMessage end
 
-// BlockMessage start
 message BlockMessage{
   BlockHeaderMessage header = 1;
   repeated TransactionMessage transactions = 2;
@@ -84,87 +77,59 @@ message BlockHeaderMessage{
 message Hash{
   bytes bytes = 1;
 }
-// BlockMessage end
 
-// GetBlockLocatorMessage start
 message RequestBlockLocatorMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
   uint32 limit = 3;
 }
-// GetBlockLocatorMessage end
 
-// BlockLocatorMessage start
 message BlockLocatorMessage{
   repeated Hash hashes = 1;
 }
-// BlockLocatorMessage end
 
-// GetBlocksMessage start
 message RequestHeadersMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
-// GetBlocksMessage end
 
-// RequestNextIBDBlocksMessage start
 message RequestNextHeadersMessage{
 }
-// RequestNextIBDBlocksMessage end
 
-// DoneIBDBlocksMessage start
 message DoneHeadersMessage{
 }
-// DoneIBDBlocksMessage end
 
-// RequestRelayBlocksMessage start
 message RequestRelayBlocksMessage{
   repeated Hash hashes = 1;
 }
-// RequestRelayBlocksMessage end
 
-// RequestTransactionsMessage start
 message RequestTransactionsMessage {
   repeated TransactionId ids = 1;
 }
-// GetTransactionsMessage end
 
-// TransactionNotFoundMessage start
 message TransactionNotFoundMessage{
   TransactionId id = 1;
 }
-// TransactionsNotFoundMessage end
 
-// InvRelayBlockMessage start
 message InvRelayBlockMessage{
   Hash hash = 1;
 }
-// InvRelayBlockMessage end
 
-// InvTransactionMessage start
 message InvTransactionsMessage{
   repeated TransactionId ids = 1;
 }
-// InvTransactionMessage end
 
-// PingMessage start
 message PingMessage{
   uint64 nonce = 1;
 }
-// PingMessage end
 
-// PongMessage start
 message PongMessage{
   uint64 nonce = 1;
 }
-// PongMessage end
 
-// VerackMessage start
 message VerackMessage{
 }
-// VerackMessage end
 
-// VersionMessage start
 message VersionMessage{
   uint32 protocolVersion = 1;
   uint64 services = 2;
@@ -176,60 +141,44 @@ message VersionMessage{
   SubnetworkId subnetworkId = 9;
   string network = 10;
 }
-// VersionMessage end
 
-// RejectMessage start
 message RejectMessage{
   string reason = 1;
 }
-// RejectMessage end
 
-// RequestIBDRootUTXOSetAndBlockMessage start
 message RequestIBDRootUTXOSetAndBlockMessage{
   Hash ibdRoot = 1;
 }
-// RequestIBDRootUTXOSetAndBlockMessage end
 
-// IbdRootUtxoSetChunkMessage start
 message IbdRootUtxoSetChunkMessage{
   bytes chunk = 1;
 }
-// IbdRootUtxoSetChunkMessage end
 
-// RequestIBDBlocksMessage start
+message RequestNextIbdRootUtxoSetChunkMessage {
+}
+
 message RequestIBDBlocksMessage{
   repeated Hash hashes = 1;
 }
-// RequestIBDBlocksMessage end
 
-// IBDRootNotFoundMessage start
 message IBDRootNotFoundMessage{
 }
-// IBDRootNotFoundMessage end
 
-// RequestIBDRootHashMessage start
 message RequestIBDRootHashMessage{
 }
-// RequestIBDRootHashMessage end
 
-// IBDRootHashMessage start
 message IBDRootHashMessage{
   Hash hash = 1;
 }
-// IBDRootHashMessage end
 
-// IbdBlockLocatorMessage start
 message IbdBlockLocatorMessage {
   Hash targetHash = 1;
   repeated Hash blockLocatorHashes = 2;
 }
-// IbdBlockLocatorMessage end
 
-// IbdBlockLocatorHighestHashMessage start
 message IbdBlockLocatorHighestHashMessage {
   Hash highestHash = 1;
 }
-// IbdBlockLocatorHighestHashMessage end
 
 message BlockHeadersMessage {
   repeated BlockHeaderMessage blockHeaders = 1;

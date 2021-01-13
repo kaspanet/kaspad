@@ -3,6 +3,8 @@ package blockrelay
 import (
 	"errors"
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -87,7 +89,15 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 
 			// Wait for the peer to request more chunks every `ibdBatchSize` chunks
 			if chunksSent%ibdBatchSize == 0 {
-				// Wait for a "more chunks please" message
+				message, err := flow.outgoingRoute.DequeueWithTimeout(common.DefaultTimeout)
+				if err != nil {
+					return err
+				}
+				_, ok := message.(*appmessage.MsgRequestNextIBDRootUTXOSetChunk)
+				if !ok {
+					return protocolerrors.Errorf(true, "received unexpected message type. "+
+						"expected: %s, got: %s", appmessage.CmdRequestNextIBDRootUTXOSetChunk, message.Command())
+				}
 			}
 		}
 

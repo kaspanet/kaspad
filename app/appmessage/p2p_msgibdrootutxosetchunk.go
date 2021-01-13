@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgIBDRootUTXOSetChunk represents a kaspa IBDRootUTXOSetAndBlock message
+// MsgIBDRootUTXOSetChunk represents a kaspa IBDRootUTXOSetChunk message
 type MsgIBDRootUTXOSetChunk struct {
 	baseMessage
 	Chunk []byte
