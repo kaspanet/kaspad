@@ -22,67 +22,24 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 
-	// Fetch all the headers if we don't already have them
-	log.Debugf("Downloading headers up to %s", highHash)
+	log.Debugf("Syncing headers up to %s", highHash)
 	err := flow.syncHeaders(highHash)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Finished downloading headers up to %s", highHash)
+	log.Debugf("Finished syncing headers up to %s", highHash)
 
-	// Fetch the UTXO set if we don't already have it
-	log.Debugf("Checking if there's a new pruning point under %s", highHash)
-	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHashMessage())
+	log.Debugf("Syncing the current pruning point UTXO set")
+	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet()
 	if err != nil {
 		return err
 	}
-
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return err
+	if !syncedPruningPointUTXOSetSuccessfully {
+		log.Debugf("Aborting IBD because the pruning point UTXO set failed to sync")
+		return nil
 	}
+	log.Debugf("Finished syncing the current pruning point UTXO set")
 
-	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHashMessage)
-	if !ok {
-		return protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
-	}
-
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
-	if err != nil {
-		return err
-	}
-
-	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-		log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgIBDRootHash.Hash)
-		isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
-		if err != nil {
-			return err
-		}
-
-		if !isValid {
-			log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
-				" peer", msgIBDRootHash.Hash)
-			return nil
-		}
-
-		log.Info("Fetching the pruning point UTXO set")
-		succeed, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
-		if err != nil {
-			return err
-		}
-
-		if !succeed {
-			log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
-			return nil
-		}
-
-		log.Info("Fetched the new pruning point UTXO set")
-	} else {
-		log.Debugf("Already has the block data of the new suggested pruning point %s", msgIBDRootHash.Hash)
-	}
-
-	// Fetch the block bodies
 	log.Debugf("Downloading block bodies up to %s", highHash)
 	err = flow.syncMissingBlockBodies(highHash)
 	if err != nil {
@@ -290,6 +247,59 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 	}
 
 	return nil
+}
+
+func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
+	log.Debugf("Checking if a new pruning point is available")
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHashMessage())
+	if err != nil {
+		return false, err
+	}
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return false, err
+	}
+	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHashMessage)
+	if !ok {
+		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
+	}
+
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
+	if err != nil {
+		return false, err
+	}
+
+	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
+		log.Debugf("Already has the block data of the new suggested pruning point %s", msgIBDRootHash.Hash)
+		return true, nil
+	}
+
+	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgIBDRootHash.Hash)
+	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
+	if err != nil {
+		return false, err
+	}
+
+	if !isValid {
+		log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
+			" peer", msgIBDRootHash.Hash)
+		return false, nil
+	}
+
+	log.Info("Fetching the pruning point UTXO set")
+	succeed, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
+	if err != nil {
+		return false, err
+	}
+
+	if !succeed {
+		log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
+		return false, nil
+	}
+
+	log.Info("Fetched the new pruning point UTXO set")
+	return true, nil
 }
 
 func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
