@@ -29,7 +29,7 @@ message KaspadMessage {
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
     RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
-    IBDRootUTXOSetAndBlockMessage ibdRootUTXOSetAndBlock = 25;
+    IbdRootUtxoSetChunkMessage ibdRootUtxoSetChunk = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     IBDRootNotFoundMessage ibdRootNotFound = 27;
     RequestIBDRootHashMessage requestIBDRootHash = 28;
@@ -37,6 +37,8 @@ message KaspadMessage {
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
     BlockHeadersMessage blockHeaders = 32;
+    RequestNextIbdRootUtxoSetChunkMessage requestNextIbdRootUtxoSetChunk = 33;
+    DoneIbdRootUtxoSetChunksMessage doneIbdRootUtxoSetChunks = 34;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
