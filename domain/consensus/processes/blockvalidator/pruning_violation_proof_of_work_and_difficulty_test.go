@@ -232,7 +232,7 @@ func TestCheckPruningPointViolation(t *testing.T) {
 			}
 		}
 
-		tipHash, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{params.GenesisHash})
+		_, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{params.GenesisHash})
 		if !errors.Is(err, ruleerrors.ErrPruningPointViolation) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
