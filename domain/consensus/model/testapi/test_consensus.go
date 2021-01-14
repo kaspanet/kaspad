@@ -18,13 +18,19 @@ type TestConsensus interface {
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
 
+	BuildHeaderWithParents(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader, error)
+
+	BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error)
+
 	// AddBlock builds a block with given information, solves it, and adds to the DAG.
 	// Returns the hash of the added block
 	AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
 
-	AddHeader(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-		transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
+	AddUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error)
+
+	AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
+		*externalapi.BlockInsertionResult, error)
 
 	DiscardAllStores()
 

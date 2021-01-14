@@ -13,4 +13,9 @@ type TestBlockBuilder interface {
 	// and returns the block together with its past UTXO-diff from the virtual.
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
+
+	BuildUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader, error)
+
+	BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock,
+		error)
 }

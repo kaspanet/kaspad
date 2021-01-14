@@ -44,9 +44,9 @@ func TestBlockStatus(t *testing.T) {
 			checkStatus(tipHash, externalapi.StatusUTXOValid)
 		}
 
-		headerHash, _, err := tc.AddHeader([]*externalapi.DomainHash{tipHash}, nil, nil)
+		headerHash, _, err := tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{tipHash})
 		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
+			t.Fatalf("AddUTXOInvalidHeader: %+v", err)
 		}
 
 		checkStatus(headerHash, externalapi.StatusHeaderOnly)
