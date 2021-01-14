@@ -29,15 +29,19 @@ var (
 	// ErrNoParents indicates that the block is missing parents
 	ErrNoParents = newRuleError("ErrNoParents")
 
-	// ErrDifficultyTooLow indicates the difficulty for the block is lower
-	// than the difficulty required.
-	ErrDifficultyTooLow = newRuleError("ErrDifficultyTooLow")
-
 	// ErrUnexpectedDifficulty indicates specified bits do not align with
 	// the expected value either because it doesn't match the calculated
-	// valued based on difficulty regarted rules or it is out of the valid
-	// range.
+	// valued based on difficulty regarted rules.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
+
+	// ErrTargetTooHigh indicates specified bits do not align with
+	// the expected value either because it is above the valid
+	// range.
+	ErrTargetTooHigh = newRuleError("ErrTargetTooHigh")
+
+	// ErrUnexpectedDifficulty indicates specified bits do not align with
+	// the expected value either because it is negative.
+	ErrNegativeTarget = newRuleError("ErrNegativeTarget")
 
 	// ErrInvalidPoW indicates that the block proof-of-work is invalid.
 	ErrInvalidPoW = newRuleError("ErrInvalidPoW")

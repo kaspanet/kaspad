@@ -131,8 +131,6 @@ func extractRejectCode(err error) (RejectCode, bool) {
 		// Rejected due to being earlier than the last finality point.
 		case ruleerrors.ErrFinalityPointTimeTooOld:
 			code = RejectFinality
-		case ruleerrors.ErrDifficultyTooLow:
-			code = RejectDifficulty
 
 		// Everything else is due to the block or transaction being invalid.
 		default:

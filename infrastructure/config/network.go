@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/math"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 	"math/big"
 	"os"
@@ -165,7 +165,7 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 			return errors.Errorf("couldn't convert %s to big int", *config.PowMax)
 		}
 
-		genesisTarget := math.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits())
+		genesisTarget := difficulty.CompactToBig(networkFlags.ActiveNetParams.GenesisBlock.Header.Bits())
 		if powMax.Cmp(genesisTarget) > 0 {
 			return errors.Errorf("powMax (%s) is smaller than genesis's target (%s)", powMax.Text(16),
 				genesisTarget.Text(16))
