@@ -18,7 +18,7 @@ func TestCheckParentsLimit(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsLimit")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -47,7 +47,7 @@ func TestCheckBlockVersion(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockVersion")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -80,7 +80,7 @@ func TestCheckBlockTimestampInIsolation(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockTimestampInIsolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
