@@ -714,10 +714,10 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			}),
 		},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-			0xac, 0xa4, 0x21, 0xe1, 0xa6, 0xc3, 0xbe, 0x5d,
-			0x52, 0x66, 0xf3, 0x0b, 0x21, 0x87, 0xbc, 0xf3,
-			0xf3, 0x2d, 0xd1, 0x05, 0x64, 0xb5, 0x16, 0x76,
-			0xe4, 0x66, 0x7d, 0x51, 0x53, 0x18, 0x6d, 0xb1,
+			0xaf, 0xba, 0x3c, 0x18, 0x9e, 0x44, 0xac, 0x7c,
+			0xb7, 0xcc, 0x90, 0x0b, 0x75, 0x88, 0x6b, 0x9c,
+			0x3e, 0xc9, 0xea, 0xf1, 0x5c, 0xaf, 0x28, 0x30,
+			0x34, 0x23, 0xf5, 0xeb, 0x18, 0xdf, 0xd1, 0x75,
 		}),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0xa0, 0x69, 0x2d, 0x16, 0xb5, 0xd7, 0xe4, 0xf3,
@@ -1003,4 +1003,34 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 			SubnetworkID: subnetworks.SubnetworkIDNative,
 		},
 	},
+}
+
+func TestCheckBlockHashMerkleRoot(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockHashMerkleRoot")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("BuildBlockWithParents: %+v", err)
+		}
+		blockWithInvalidMerkleRoot := block.Clone()
+		blockWithInvalidMerkleRoot.Transactions[0].Version += 1
+
+		_, err = tc.ValidateAndInsertBlock(blockWithInvalidMerkleRoot)
+		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
+			t.Fatalf("Unexpected error: %+v", err)
+		}
+
+		// Check that a block with invalid merkle root is not marked as invalid
+		// and can be re-added with the right transactions.
+		_, err = tc.ValidateAndInsertBlock(block)
+		if err != nil {
+			t.Fatalf("ValidateAndInsertBlock: %+v", err)
+		}
+	})
 }
