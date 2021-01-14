@@ -17,7 +17,12 @@ func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkBlockTransactionsFinalized(blockHash)
+	err := v.checkBlockIsNotPruned(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkBlockTransactionsFinalized(blockHash)
 	if err != nil {
 		return err
 	}
@@ -28,6 +33,37 @@ func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash
 			return err
 		}
 	}
+	return nil
+}
+
+// checkBlockIsNotPruned Checks we don't add block bodies to pruned blocks
+func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash) error {
+	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
+	if err != nil {
+		return err
+	}
+
+	// If we don't add block body to a header only block it can't be in the past
+	// of the tips, because it'll be a new tip.
+	if !hasValidatedHeader {
+		return nil
+	}
+
+	tips, err := v.consensusStateStore.Tips(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(blockHash, tips)
+	if err != nil {
+		return err
+	}
+
+	// A header only block in the past of one of the tips has to be pruned
+	if isAncestorOfSomeTips {
+		return errors.Wrapf(ruleerrors.ErrPrunedBlock, "cannot add block body to a pruned block %s", blockHash)
+	}
+
 	return nil
 }
 
