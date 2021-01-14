@@ -25,7 +25,6 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-// RequestAddressesMessage start
 type RequestAddressesMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -81,7 +80,6 @@ func (x *RequestAddressesMessage) GetSubnetworkId() *SubnetworkId {
 	return nil
 }
 
-// AddressesMessage start
 type AddressesMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -247,7 +245,6 @@ func (x *SubnetworkId) GetBytes() []byte {
 	return nil
 }
 
-// TransactionMessage start
 type TransactionMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -626,7 +623,6 @@ func (x *TransactionOutput) GetScriptPublicKey() *ScriptPublicKey {
 	return nil
 }
 
-// BlockMessage start
 type BlockMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -832,7 +828,6 @@ func (x *Hash) GetBytes() []byte {
 	return nil
 }
 
-// GetBlockLocatorMessage start
 type RequestBlockLocatorMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -896,7 +891,6 @@ func (x *RequestBlockLocatorMessage) GetLimit() uint32 {
 	return 0
 }
 
-// BlockLocatorMessage start
 type BlockLocatorMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -944,7 +938,6 @@ func (x *BlockLocatorMessage) GetHashes() []*Hash {
 	return nil
 }
 
-// GetBlocksMessage start
 type RequestHeadersMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1000,7 +993,6 @@ func (x *RequestHeadersMessage) GetHighHash() *Hash {
 	return nil
 }
 
-// RequestNextIBDBlocksMessage start
 type RequestNextHeadersMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1039,7 +1031,6 @@ func (*RequestNextHeadersMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{16}
 }
 
-// DoneIBDBlocksMessage start
 type DoneHeadersMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1078,7 +1069,6 @@ func (*DoneHeadersMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{17}
 }
 
-// RequestRelayBlocksMessage start
 type RequestRelayBlocksMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1126,7 +1116,6 @@ func (x *RequestRelayBlocksMessage) GetHashes() []*Hash {
 	return nil
 }
 
-// RequestTransactionsMessage start
 type RequestTransactionsMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1174,7 +1163,6 @@ func (x *RequestTransactionsMessage) GetIds() []*TransactionId {
 	return nil
 }
 
-// TransactionNotFoundMessage start
 type TransactionNotFoundMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1222,7 +1210,6 @@ func (x *TransactionNotFoundMessage) GetId() *TransactionId {
 	return nil
 }
 
-// InvRelayBlockMessage start
 type InvRelayBlockMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1270,7 +1257,6 @@ func (x *InvRelayBlockMessage) GetHash() *Hash {
 	return nil
 }
 
-// InvTransactionMessage start
 type InvTransactionsMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1318,7 +1304,6 @@ func (x *InvTransactionsMessage) GetIds() []*TransactionId {
 	return nil
 }
 
-// PingMessage start
 type PingMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1366,7 +1351,6 @@ func (x *PingMessage) GetNonce() uint64 {
 	return 0
 }
 
-// PongMessage start
 type PongMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1414,7 +1398,6 @@ func (x *PongMessage) GetNonce() uint64 {
 	return 0
 }
 
-// VerackMessage start
 type VerackMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1453,7 +1436,6 @@ func (*VerackMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{25}
 }
 
-// VersionMessage start
 type VersionMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1565,7 +1547,6 @@ func (x *VersionMessage) GetNetwork() string {
 	return ""
 }
 
-// RejectMessage start
 type RejectMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1613,7 +1594,6 @@ func (x *RejectMessage) GetReason() string {
 	return ""
 }
 
-// RequestIBDRootUTXOSetAndBlockMessage start
 type RequestIBDRootUTXOSetAndBlockMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1661,18 +1641,16 @@ func (x *RequestIBDRootUTXOSetAndBlockMessage) GetIbdRoot() *Hash {
 	return nil
 }
 
-// IBDRootUTXOSetAndBlockMessage start
-type IBDRootUTXOSetAndBlockMessage struct {
+type IbdRootUtxoSetChunkMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UtxoSet []byte        `protobuf:"bytes,1,opt,name=utxoSet,proto3" json:"utxoSet,omitempty"`
-	Block   *BlockMessage `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
+	Chunk []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
 }
 
-func (x *IBDRootUTXOSetAndBlockMessage) Reset() {
-	*x = IBDRootUTXOSetAndBlockMessage{}
+func (x *IbdRootUtxoSetChunkMessage) Reset() {
+	*x = IbdRootUtxoSetChunkMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1680,13 +1658,13 @@ func (x *IBDRootUTXOSetAndBlockMessage) Reset() {
 	}
 }
 
-func (x *IBDRootUTXOSetAndBlockMessage) String() string {
+func (x *IbdRootUtxoSetChunkMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IBDRootUTXOSetAndBlockMessage) ProtoMessage() {}
+func (*IbdRootUtxoSetChunkMessage) ProtoMessage() {}
 
-func (x *IBDRootUTXOSetAndBlockMessage) ProtoReflect() protoreflect.Message {
+func (x *IbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1698,26 +1676,94 @@ func (x *IBDRootUTXOSetAndBlockMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IBDRootUTXOSetAndBlockMessage.ProtoReflect.Descriptor instead.
-func (*IBDRootUTXOSetAndBlockMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use IbdRootUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
+func (*IbdRootUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *IBDRootUTXOSetAndBlockMessage) GetUtxoSet() []byte {
+func (x *IbdRootUtxoSetChunkMessage) GetChunk() []byte {
 	if x != nil {
-		return x.UtxoSet
+		return x.Chunk
 	}
 	return nil
 }
 
-func (x *IBDRootUTXOSetAndBlockMessage) GetBlock() *BlockMessage {
-	if x != nil {
-		return x.Block
-	}
-	return nil
+type RequestNextIbdRootUtxoSetChunkMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
 }
 
-// RequestIBDBlocksMessage start
+func (x *RequestNextIbdRootUtxoSetChunkMessage) Reset() {
+	*x = RequestNextIbdRootUtxoSetChunkMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RequestNextIbdRootUtxoSetChunkMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestNextIbdRootUtxoSetChunkMessage) ProtoMessage() {}
+
+func (x *RequestNextIbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestNextIbdRootUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
+func (*RequestNextIbdRootUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{30}
+}
+
+type DoneIbdRootUtxoSetChunksMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *DoneIbdRootUtxoSetChunksMessage) Reset() {
+	*x = DoneIbdRootUtxoSetChunksMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DoneIbdRootUtxoSetChunksMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DoneIbdRootUtxoSetChunksMessage) ProtoMessage() {}
+
+func (x *DoneIbdRootUtxoSetChunksMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DoneIbdRootUtxoSetChunksMessage.ProtoReflect.Descriptor instead.
+func (*DoneIbdRootUtxoSetChunksMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{31}
+}
+
 type RequestIBDBlocksMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1729,7 +1775,7 @@ type RequestIBDBlocksMessage struct {
 func (x *RequestIBDBlocksMessage) Reset() {
 	*x = RequestIBDBlocksMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[30]
+		mi := &file_p2p_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1742,7 +1788,7 @@ func (x *RequestIBDBlocksMessage) String() string {
 func (*RequestIBDBlocksMessage) ProtoMessage() {}
 
 func (x *RequestIBDBlocksMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[30]
+	mi := &file_p2p_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1755,7 +1801,7 @@ func (x *RequestIBDBlocksMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestIBDBlocksMessage.ProtoReflect.Descriptor instead.
 func (*RequestIBDBlocksMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{30}
+	return file_p2p_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *RequestIBDBlocksMessage) GetHashes() []*Hash {
@@ -1765,7 +1811,6 @@ func (x *RequestIBDBlocksMessage) GetHashes() []*Hash {
 	return nil
 }
 
-// IBDRootNotFoundMessage start
 type IBDRootNotFoundMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1775,7 +1820,7 @@ type IBDRootNotFoundMessage struct {
 func (x *IBDRootNotFoundMessage) Reset() {
 	*x = IBDRootNotFoundMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[31]
+		mi := &file_p2p_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1788,7 +1833,7 @@ func (x *IBDRootNotFoundMessage) String() string {
 func (*IBDRootNotFoundMessage) ProtoMessage() {}
 
 func (x *IBDRootNotFoundMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[31]
+	mi := &file_p2p_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1801,10 +1846,9 @@ func (x *IBDRootNotFoundMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IBDRootNotFoundMessage.ProtoReflect.Descriptor instead.
 func (*IBDRootNotFoundMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{31}
+	return file_p2p_proto_rawDescGZIP(), []int{33}
 }
 
-// RequestIBDRootHashMessage start
 type RequestIBDRootHashMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1814,7 +1858,7 @@ type RequestIBDRootHashMessage struct {
 func (x *RequestIBDRootHashMessage) Reset() {
 	*x = RequestIBDRootHashMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[32]
+		mi := &file_p2p_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1827,7 +1871,7 @@ func (x *RequestIBDRootHashMessage) String() string {
 func (*RequestIBDRootHashMessage) ProtoMessage() {}
 
 func (x *RequestIBDRootHashMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[32]
+	mi := &file_p2p_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1840,10 +1884,9 @@ func (x *RequestIBDRootHashMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestIBDRootHashMessage.ProtoReflect.Descriptor instead.
 func (*RequestIBDRootHashMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{32}
+	return file_p2p_proto_rawDescGZIP(), []int{34}
 }
 
-// IBDRootHashMessage start
 type IBDRootHashMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1855,7 +1898,7 @@ type IBDRootHashMessage struct {
 func (x *IBDRootHashMessage) Reset() {
 	*x = IBDRootHashMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[33]
+		mi := &file_p2p_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1868,7 +1911,7 @@ func (x *IBDRootHashMessage) String() string {
 func (*IBDRootHashMessage) ProtoMessage() {}
 
 func (x *IBDRootHashMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[33]
+	mi := &file_p2p_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1881,7 +1924,7 @@ func (x *IBDRootHashMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IBDRootHashMessage.ProtoReflect.Descriptor instead.
 func (*IBDRootHashMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{33}
+	return file_p2p_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *IBDRootHashMessage) GetHash() *Hash {
@@ -1891,7 +1934,6 @@ func (x *IBDRootHashMessage) GetHash() *Hash {
 	return nil
 }
 
-// IbdBlockLocatorMessage start
 type IbdBlockLocatorMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1904,7 +1946,7 @@ type IbdBlockLocatorMessage struct {
 func (x *IbdBlockLocatorMessage) Reset() {
 	*x = IbdBlockLocatorMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[34]
+		mi := &file_p2p_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1917,7 +1959,7 @@ func (x *IbdBlockLocatorMessage) String() string {
 func (*IbdBlockLocatorMessage) ProtoMessage() {}
 
 func (x *IbdBlockLocatorMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[34]
+	mi := &file_p2p_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1930,7 +1972,7 @@ func (x *IbdBlockLocatorMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IbdBlockLocatorMessage.ProtoReflect.Descriptor instead.
 func (*IbdBlockLocatorMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{34}
+	return file_p2p_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *IbdBlockLocatorMessage) GetTargetHash() *Hash {
@@ -1947,7 +1989,6 @@ func (x *IbdBlockLocatorMessage) GetBlockLocatorHashes() []*Hash {
 	return nil
 }
 
-// IbdBlockLocatorHighestHashMessage start
 type IbdBlockLocatorHighestHashMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1959,7 +2000,7 @@ type IbdBlockLocatorHighestHashMessage struct {
 func (x *IbdBlockLocatorHighestHashMessage) Reset() {
 	*x = IbdBlockLocatorHighestHashMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[35]
+		mi := &file_p2p_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1972,7 +2013,7 @@ func (x *IbdBlockLocatorHighestHashMessage) String() string {
 func (*IbdBlockLocatorHighestHashMessage) ProtoMessage() {}
 
 func (x *IbdBlockLocatorHighestHashMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[35]
+	mi := &file_p2p_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1985,7 +2026,7 @@ func (x *IbdBlockLocatorHighestHashMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use IbdBlockLocatorHighestHashMessage.ProtoReflect.Descriptor instead.
 func (*IbdBlockLocatorHighestHashMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{35}
+	return file_p2p_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *IbdBlockLocatorHighestHashMessage) GetHighestHash() *Hash {
@@ -2006,7 +2047,7 @@ type BlockHeadersMessage struct {
 func (x *BlockHeadersMessage) Reset() {
 	*x = BlockHeadersMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[36]
+		mi := &file_p2p_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2019,7 +2060,7 @@ func (x *BlockHeadersMessage) String() string {
 func (*BlockHeadersMessage) ProtoMessage() {}
 
 func (x *BlockHeadersMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[36]
+	mi := &file_p2p_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2032,7 +2073,7 @@ func (x *BlockHeadersMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockHeadersMessage.ProtoReflect.Descriptor instead.
 func (*BlockHeadersMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{36}
+	return file_p2p_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *BlockHeadersMessage) GetBlockHeaders() []*BlockHeaderMessage {
@@ -2232,48 +2273,49 @@ var file_p2p_proto_rawDesc = []byte{
 	0x74, 0x41, 0x6e, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
 	0x12, 0x29, 0x0a, 0x07, 0x69, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61,
-	0x73, 0x68, 0x52, 0x07, 0x69, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x22, 0x68, 0x0a, 0x1d, 0x49,
-	0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x54, 0x58, 0x4f, 0x53, 0x65, 0x74, 0x41, 0x6e, 0x64,
-	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x18, 0x0a, 0x07,
-	0x75, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x75,
-	0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x12, 0x2d, 0x0a, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72,
-	0x65, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x05,
-	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x42, 0x0a, 0x17, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x49, 0x42, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x12, 0x27, 0x0a, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x73, 0x68, 0x52, 0x07, 0x69, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x22, 0x32, 0x0a, 0x1a, 0x49,
+	0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75,
+	0x6e, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x68, 0x75,
+	0x6e, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x22,
+	0x27, 0x0a, 0x25, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4e, 0x65, 0x78, 0x74, 0x49, 0x62,
+	0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75, 0x6e,
+	0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x21, 0x0a, 0x1f, 0x44, 0x6f, 0x6e, 0x65,
+	0x49, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68,
+	0x75, 0x6e, 0x6b, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x42, 0x0a, 0x17, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x42, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x27, 0x0a, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22,
+	0x18, 0x0a, 0x16, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x4e, 0x6f, 0x74, 0x46, 0x6f, 0x75,
+	0x6e, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x39, 0x0a, 0x12, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f,
+	0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x04,
+	0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61, 0x73,
+	0x68, 0x22, 0x8a, 0x01, 0x0a, 0x16, 0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f,
+	0x63, 0x61, 0x74, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x0a,
+	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73,
-	0x68, 0x52, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x18, 0x0a, 0x16, 0x49, 0x42, 0x44,
-	0x52, 0x6f, 0x6f, 0x74, 0x4e, 0x6f, 0x74, 0x46, 0x6f, 0x75, 0x6e, 0x64, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x42,
-	0x44, 0x52, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x22, 0x39, 0x0a, 0x12, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
-	0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x22, 0x8a, 0x01, 0x0a, 0x16,
-	0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
-	0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x0a, 0x74, 0x61, 0x72,
-	0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x3f, 0x0a, 0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
-	0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x02, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
-	0x48, 0x61, 0x73, 0x68, 0x52, 0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74,
-	0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x56, 0x0a, 0x21, 0x49, 0x62, 0x64, 0x42,
-	0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x69, 0x67, 0x68, 0x65,
-	0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x31, 0x0a,
-	0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48,
-	0x61, 0x73, 0x68, 0x52, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68,
-	0x22, 0x58, 0x0a, 0x13, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
-	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x41, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
-	0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
-	0x65, 0x61, 0x64, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x0c, 0x62, 0x6c,
-	0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65,
-	0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
-	0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x68, 0x52, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x3f, 0x0a,
+	0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73,
+	0x68, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x12, 0x62, 0x6c, 0x6f, 0x63,
+	0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x56,
+	0x0a, 0x21, 0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f,
+	0x72, 0x48, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x31, 0x0a, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61,
+	0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65,
+	0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x22, 0x58, 0x0a, 0x13, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x41, 0x0a,
+	0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
+	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x52, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
+	0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b,
+	0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2288,45 +2330,47 @@ func file_p2p_proto_rawDescGZIP() []byte {
 	return file_p2p_proto_rawDescData
 }
 
-var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
+var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_p2p_proto_goTypes = []interface{}{
-	(*RequestAddressesMessage)(nil),              // 0: protowire.RequestAddressesMessage
-	(*AddressesMessage)(nil),                     // 1: protowire.AddressesMessage
-	(*NetAddress)(nil),                           // 2: protowire.NetAddress
-	(*SubnetworkId)(nil),                         // 3: protowire.SubnetworkId
-	(*TransactionMessage)(nil),                   // 4: protowire.TransactionMessage
-	(*TransactionInput)(nil),                     // 5: protowire.TransactionInput
-	(*Outpoint)(nil),                             // 6: protowire.Outpoint
-	(*TransactionId)(nil),                        // 7: protowire.TransactionId
-	(*ScriptPublicKey)(nil),                      // 8: protowire.ScriptPublicKey
-	(*TransactionOutput)(nil),                    // 9: protowire.TransactionOutput
-	(*BlockMessage)(nil),                         // 10: protowire.BlockMessage
-	(*BlockHeaderMessage)(nil),                   // 11: protowire.BlockHeaderMessage
-	(*Hash)(nil),                                 // 12: protowire.Hash
-	(*RequestBlockLocatorMessage)(nil),           // 13: protowire.RequestBlockLocatorMessage
-	(*BlockLocatorMessage)(nil),                  // 14: protowire.BlockLocatorMessage
-	(*RequestHeadersMessage)(nil),                // 15: protowire.RequestHeadersMessage
-	(*RequestNextHeadersMessage)(nil),            // 16: protowire.RequestNextHeadersMessage
-	(*DoneHeadersMessage)(nil),                   // 17: protowire.DoneHeadersMessage
-	(*RequestRelayBlocksMessage)(nil),            // 18: protowire.RequestRelayBlocksMessage
-	(*RequestTransactionsMessage)(nil),           // 19: protowire.RequestTransactionsMessage
-	(*TransactionNotFoundMessage)(nil),           // 20: protowire.TransactionNotFoundMessage
-	(*InvRelayBlockMessage)(nil),                 // 21: protowire.InvRelayBlockMessage
-	(*InvTransactionsMessage)(nil),               // 22: protowire.InvTransactionsMessage
-	(*PingMessage)(nil),                          // 23: protowire.PingMessage
-	(*PongMessage)(nil),                          // 24: protowire.PongMessage
-	(*VerackMessage)(nil),                        // 25: protowire.VerackMessage
-	(*VersionMessage)(nil),                       // 26: protowire.VersionMessage
-	(*RejectMessage)(nil),                        // 27: protowire.RejectMessage
-	(*RequestIBDRootUTXOSetAndBlockMessage)(nil), // 28: protowire.RequestIBDRootUTXOSetAndBlockMessage
-	(*IBDRootUTXOSetAndBlockMessage)(nil),        // 29: protowire.IBDRootUTXOSetAndBlockMessage
-	(*RequestIBDBlocksMessage)(nil),              // 30: protowire.RequestIBDBlocksMessage
-	(*IBDRootNotFoundMessage)(nil),               // 31: protowire.IBDRootNotFoundMessage
-	(*RequestIBDRootHashMessage)(nil),            // 32: protowire.RequestIBDRootHashMessage
-	(*IBDRootHashMessage)(nil),                   // 33: protowire.IBDRootHashMessage
-	(*IbdBlockLocatorMessage)(nil),               // 34: protowire.IbdBlockLocatorMessage
-	(*IbdBlockLocatorHighestHashMessage)(nil),    // 35: protowire.IbdBlockLocatorHighestHashMessage
-	(*BlockHeadersMessage)(nil),                  // 36: protowire.BlockHeadersMessage
+	(*RequestAddressesMessage)(nil),               // 0: protowire.RequestAddressesMessage
+	(*AddressesMessage)(nil),                      // 1: protowire.AddressesMessage
+	(*NetAddress)(nil),                            // 2: protowire.NetAddress
+	(*SubnetworkId)(nil),                          // 3: protowire.SubnetworkId
+	(*TransactionMessage)(nil),                    // 4: protowire.TransactionMessage
+	(*TransactionInput)(nil),                      // 5: protowire.TransactionInput
+	(*Outpoint)(nil),                              // 6: protowire.Outpoint
+	(*TransactionId)(nil),                         // 7: protowire.TransactionId
+	(*ScriptPublicKey)(nil),                       // 8: protowire.ScriptPublicKey
+	(*TransactionOutput)(nil),                     // 9: protowire.TransactionOutput
+	(*BlockMessage)(nil),                          // 10: protowire.BlockMessage
+	(*BlockHeaderMessage)(nil),                    // 11: protowire.BlockHeaderMessage
+	(*Hash)(nil),                                  // 12: protowire.Hash
+	(*RequestBlockLocatorMessage)(nil),            // 13: protowire.RequestBlockLocatorMessage
+	(*BlockLocatorMessage)(nil),                   // 14: protowire.BlockLocatorMessage
+	(*RequestHeadersMessage)(nil),                 // 15: protowire.RequestHeadersMessage
+	(*RequestNextHeadersMessage)(nil),             // 16: protowire.RequestNextHeadersMessage
+	(*DoneHeadersMessage)(nil),                    // 17: protowire.DoneHeadersMessage
+	(*RequestRelayBlocksMessage)(nil),             // 18: protowire.RequestRelayBlocksMessage
+	(*RequestTransactionsMessage)(nil),            // 19: protowire.RequestTransactionsMessage
+	(*TransactionNotFoundMessage)(nil),            // 20: protowire.TransactionNotFoundMessage
+	(*InvRelayBlockMessage)(nil),                  // 21: protowire.InvRelayBlockMessage
+	(*InvTransactionsMessage)(nil),                // 22: protowire.InvTransactionsMessage
+	(*PingMessage)(nil),                           // 23: protowire.PingMessage
+	(*PongMessage)(nil),                           // 24: protowire.PongMessage
+	(*VerackMessage)(nil),                         // 25: protowire.VerackMessage
+	(*VersionMessage)(nil),                        // 26: protowire.VersionMessage
+	(*RejectMessage)(nil),                         // 27: protowire.RejectMessage
+	(*RequestIBDRootUTXOSetAndBlockMessage)(nil),  // 28: protowire.RequestIBDRootUTXOSetAndBlockMessage
+	(*IbdRootUtxoSetChunkMessage)(nil),            // 29: protowire.IbdRootUtxoSetChunkMessage
+	(*RequestNextIbdRootUtxoSetChunkMessage)(nil), // 30: protowire.RequestNextIbdRootUtxoSetChunkMessage
+	(*DoneIbdRootUtxoSetChunksMessage)(nil),       // 31: protowire.DoneIbdRootUtxoSetChunksMessage
+	(*RequestIBDBlocksMessage)(nil),               // 32: protowire.RequestIBDBlocksMessage
+	(*IBDRootNotFoundMessage)(nil),                // 33: protowire.IBDRootNotFoundMessage
+	(*RequestIBDRootHashMessage)(nil),             // 34: protowire.RequestIBDRootHashMessage
+	(*IBDRootHashMessage)(nil),                    // 35: protowire.IBDRootHashMessage
+	(*IbdBlockLocatorMessage)(nil),                // 36: protowire.IbdBlockLocatorMessage
+	(*IbdBlockLocatorHighestHashMessage)(nil),     // 37: protowire.IbdBlockLocatorHighestHashMessage
+	(*BlockHeadersMessage)(nil),                   // 38: protowire.BlockHeadersMessage
 }
 var file_p2p_proto_depIdxs = []int32{
 	3,  // 0: protowire.RequestAddressesMessage.subnetworkId:type_name -> protowire.SubnetworkId
@@ -2357,18 +2401,17 @@ var file_p2p_proto_depIdxs = []int32{
 	2,  // 25: protowire.VersionMessage.address:type_name -> protowire.NetAddress
 	3,  // 26: protowire.VersionMessage.subnetworkId:type_name -> protowire.SubnetworkId
 	12, // 27: protowire.RequestIBDRootUTXOSetAndBlockMessage.ibdRoot:type_name -> protowire.Hash
-	10, // 28: protowire.IBDRootUTXOSetAndBlockMessage.block:type_name -> protowire.BlockMessage
-	12, // 29: protowire.RequestIBDBlocksMessage.hashes:type_name -> protowire.Hash
-	12, // 30: protowire.IBDRootHashMessage.hash:type_name -> protowire.Hash
-	12, // 31: protowire.IbdBlockLocatorMessage.targetHash:type_name -> protowire.Hash
-	12, // 32: protowire.IbdBlockLocatorMessage.blockLocatorHashes:type_name -> protowire.Hash
-	12, // 33: protowire.IbdBlockLocatorHighestHashMessage.highestHash:type_name -> protowire.Hash
-	11, // 34: protowire.BlockHeadersMessage.blockHeaders:type_name -> protowire.BlockHeaderMessage
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	12, // 28: protowire.RequestIBDBlocksMessage.hashes:type_name -> protowire.Hash
+	12, // 29: protowire.IBDRootHashMessage.hash:type_name -> protowire.Hash
+	12, // 30: protowire.IbdBlockLocatorMessage.targetHash:type_name -> protowire.Hash
+	12, // 31: protowire.IbdBlockLocatorMessage.blockLocatorHashes:type_name -> protowire.Hash
+	12, // 32: protowire.IbdBlockLocatorHighestHashMessage.highestHash:type_name -> protowire.Hash
+	11, // 33: protowire.BlockHeadersMessage.blockHeaders:type_name -> protowire.BlockHeaderMessage
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_p2p_proto_init() }
@@ -2726,7 +2769,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IBDRootUTXOSetAndBlockMessage); i {
+			switch v := v.(*IbdRootUtxoSetChunkMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2738,7 +2781,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestIBDBlocksMessage); i {
+			switch v := v.(*RequestNextIbdRootUtxoSetChunkMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2750,7 +2793,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IBDRootNotFoundMessage); i {
+			switch v := v.(*DoneIbdRootUtxoSetChunksMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2762,7 +2805,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestIBDRootHashMessage); i {
+			switch v := v.(*RequestIBDBlocksMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2774,7 +2817,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IBDRootHashMessage); i {
+			switch v := v.(*IBDRootNotFoundMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2786,7 +2829,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IbdBlockLocatorMessage); i {
+			switch v := v.(*RequestIBDRootHashMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2798,7 +2841,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IbdBlockLocatorHighestHashMessage); i {
+			switch v := v.(*IBDRootHashMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2810,6 +2853,30 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IbdBlockLocatorMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IbdBlockLocatorHighestHashMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BlockHeadersMessage); i {
 			case 0:
 				return &v.state
@@ -2828,7 +2895,7 @@ func file_p2p_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_p2p_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   37,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -1,14 +1,16 @@
 package syncmanager_test
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
-	"strings"
-	"testing"
 )
 
 func TestCreateBlockLocator(t *testing.T) {
@@ -224,7 +226,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 
 		// Check block locator with non chain blocks
 		_, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, sideChainTipHash)
-		if !errors.Is(err, database.ErrNotFound) {
+		if !errors.Is(err, model.ErrBlockNotInSelectedParentChain) {
 			t.Fatalf("expected error '%s' but got '%s'", database.ErrNotFound, err)
 		}
 	})
