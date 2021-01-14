@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
@@ -159,10 +161,11 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		invalidBlock.Transactions[0].Version = constants.MaxTransactionVersion + 1 // This should invalidate the block
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			invalidBlock.Header.Version(),
 			invalidBlock.Header.ParentHashes(),
-			&externalapi.DomainHash{}, // Invalid hash merkle root
+			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
 			orphanBlock.Header.AcceptedIDMerkleRoot(),
 			orphanBlock.Header.UTXOCommitment(),
 			orphanBlock.Header.TimeInMilliseconds(),
@@ -171,7 +174,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock)
-		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
+		if !errors.Is(err, ruleerrors.ErrTransactionVersionIsUnknown) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
