@@ -22,41 +22,18 @@ var (
 	// tree nodes not in the selected parent chain. Note that this is not
 	// a constant for testing purposes.
 	defaultReindexSlack uint64 = 1 << 12
-
-	// slackReachabilityIntervalForReclaiming is the slack interval to
-	// reclaim during reachability reindexes earlier than the reindex root.
-	// See reclaimIntervalBeforeChosenChild for further details. Note that
-	// this is not a constant for testing purposes.
-	slackReachabilityIntervalForReclaiming uint64 = 1
 )
 
-// exponentialFractions returns a fraction of each size in sizes
-// as follows:
-//   fraction[i] = 2^size[i] / sum_j(2^size[j])
-// In the code below the above equation is divided by 2^max(size)
-// to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
-// we divide 1 by potentially a very large number, which will
-// result in loss of float precision. This is not a problem - all
-// numbers close to 0 bear effectively the same weight.
-func exponentialFractions(sizes []uint64) []float64 {
-	maxSize := uint64(0)
-	for _, size := range sizes {
-		if size > maxSize {
-			maxSize = size
-		}
+type reindexContext struct {
+	manager *reachabilityManager
+	subTreeSizesCache map[externalapi.DomainHash]uint64
+}
+
+func newReindexContext(rt *reachabilityManager) reindexContext {
+	return reindexContext{
+		manager: rt,
+		subTreeSizesCache: make(map[externalapi.DomainHash]uint64),
 	}
-	fractions := make([]float64, len(sizes))
-	for i, size := range sizes {
-		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
-	}
-	fractionsSum := float64(0)
-	for _, fraction := range fractions {
-		fractionsSum += fraction
-	}
-	for i, fraction := range fractions {
-		fractions[i] = fraction / fractionsSum
-	}
-	return fractions
 }
 
 func newReachabilityTreeData() model.ReachabilityData {
@@ -69,8 +46,8 @@ func newReachabilityTreeData() model.ReachabilityData {
 	return data
 }
 
-func (rt *reachabilityManager) intervalRangeForChildAllocation(hash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	interval, err := rt.interval(hash)
+func (rt *reachabilityManager) intervalRangeForChildAllocation(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	interval, err := rt.interval(node)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +103,22 @@ func (rt *reachabilityManager) remainingIntervalAfter(node *externalapi.DomainHa
 	return newReachabilityInterval(lastChildInterval.End+1, childRange.End), nil
 }
 
+func (rt *reachabilityManager) remainingSlackBefore(node *externalapi.DomainHash) (uint64, error) {
+	interval, err := rt.remainingIntervalBefore(node)
+	if err != nil {
+		return 0, err
+	}
+	return intervalSize(interval), nil
+}
+
+func (rt *reachabilityManager) remainingSlackAfter(node *externalapi.DomainHash) (uint64, error) {
+	interval, err := rt.remainingIntervalAfter(node)
+	if err != nil {
+		return 0, err
+	}
+	return intervalSize(interval), nil
+}
+
 func (rt *reachabilityManager) hasSlackIntervalBefore(node *externalapi.DomainHash) (bool, error) {
 	interval, err := rt.remainingIntervalBefore(node)
 	if err != nil {
@@ -148,14 +141,14 @@ func (rt *reachabilityManager) hasSlackIntervalAfter(node *externalapi.DomainHas
 // remaining interval to allocate, a reindexing is triggered.
 // This method returns a list of model.ReachabilityTreeNodes modified
 // by it.
-func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.DomainHash) error {
+func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHash) error {
 	remaining, err := rt.remainingIntervalAfter(node)
 	if err != nil {
 		return err
 	}
 
 	// Set the parent-child relationship
-	err = rt.addChildAndStage(node, child)
+	err = rt.stageAddChild(node, child)
 	if err != nil {
 		return err
 	}
@@ -165,48 +158,31 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 		return err
 	}
 
-	// Temporarily set the child's interval to be empty, at
-	// the start of node's remaining interval. This is done
-	// so that child-of-node checks (e.g.
-	// FindAncestorOfThisAmongChildrenOfOther) will not fail for node.
-	err = rt.stageInterval(child, newReachabilityInterval(remaining.Start, remaining.Start-1))
-	if err != nil {
-		return err
-	}
-
-	// Handle node not being a descendant of the reindex root.
-	// Note that we check node here instead of child because
-	// at this point we don't yet know child's interval.
-	isReindexRootAncestorOfNode, err := rt.IsReachabilityTreeAncestorOf(reindexRoot, node)
-	if err != nil {
-		return err
-	}
-
-	if !isReindexRootAncestorOfNode {
-		reindexStartTime := time.Now()
-		err := rt.reindexIntervalsEarlierThanReindexRoot(node, reindexRoot)
-		if err != nil {
-			return err
-		}
-		reindexTimeElapsed := time.Since(reindexStartTime)
-		log.Debugf("Reachability reindex triggered for "+
-			"block %s. This block is not a child of the current "+
-			"reindex root %s. Took %dms.",
-			node, reindexRoot, reindexTimeElapsed.Milliseconds())
-		return nil
-	}
-
 	// No allocation space left -- reindex
 	if intervalSize(remaining) == 0 {
-		reindexStartTime := time.Now()
-		err := rt.reindexIntervals(node)
+
+		// Temporarily set the child's interval to be empty, at
+		// the start of node's remaining interval. This is done
+		// so that child-of-node checks (e.g.
+		// FindNextDescendantChainBlock) will not fail for node.
+		err = rt.stageInterval(child, newReachabilityInterval(remaining.Start, remaining.Start-1))
 		if err != nil {
 			return err
 		}
+
+		rc := newReindexContext(rt)
+
+		reindexStartTime := time.Now()
+		err := rc.reindexIntervals(node, root)
+		if err != nil {
+			return err
+		}
+
 		reindexTimeElapsed := time.Since(reindexStartTime)
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Took %dms.",
 			node, reindexTimeElapsed.Milliseconds())
+
 		return nil
 	}
 
@@ -223,35 +199,44 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 // defined by this node and reallocates reachability interval space
 // such that another reindexing is unlikely to occur shortly
 // thereafter. It does this by traversing down the reachability
-// tree until it finds a node with a subreeSize that's greater than
+// tree until it finds a node with a subtree size that's greater than
 // its interval size. See propagateInterval for further details.
-// This method returns a list of model.ReachabilityTreeNodes modified by it.
-func (rt *reachabilityManager) reindexIntervals(node *externalapi.DomainHash) error {
+func (rc *reindexContext) reindexIntervals(node, root *externalapi.DomainHash) error {
+
+	if res, _ := rc.manager.isStrictAncestorOf(node, root); res {
+		// In this case we avoid reindexing the entire subtree and
+		// use slacks along the chain up from parent to reindex root
+		return rc.reindexIntervalsEarlierThanRoot(node, root, node, 1)
+	}
+
 	current := node
 
-	// Initial interval and subtree sizes
-	currentInterval, err := rt.interval(node)
-	if err != nil {
-		return err
-	}
-
-	size := intervalSize(currentInterval)
-	subTreeSizeMap := make(map[externalapi.DomainHash]uint64)
-	err = rt.countSubtrees(current, subTreeSizeMap)
-	if err != nil {
-		return err
-	}
-
-	currentSubtreeSize := subTreeSizeMap[*current]
-
 	// Find the first ancestor that has sufficient interval space
-	for size < currentSubtreeSize {
-		currentParent, err := rt.parent(current)
+	for {
+		currentInterval, err := rc.manager.interval(current)
 		if err != nil {
 			return err
 		}
 
-		if currentParent == nil {
+		currentIntervalSize := intervalSize(currentInterval)
+
+		err = rc.countSubtrees(current)
+		if err != nil {
+			return err
+		}
+
+		currentSubtreeSize := rc.subTreeSizesCache[*current]
+
+		if currentIntervalSize >= currentSubtreeSize {
+			break
+		}
+
+		parent, err := rc.manager.parent(current)
+		if err != nil {
+			return err
+		}
+
+		if parent == nil {
 			// If we ended up here it means that there are more
 			// than 2^64 blocks, which shouldn't ever happen.
 			return errors.Errorf("missing tree " +
@@ -259,23 +244,25 @@ func (rt *reachabilityManager) reindexIntervals(node *externalapi.DomainHash) er
 				"should only ever happen if there are more " +
 				"than 2^64 blocks in the DAG.")
 		}
-		current = currentParent
-		currentInterval, err := rt.interval(current)
-		if err != nil {
-			return err
+
+		if current.Equal(root) {
+			return errors.Errorf("unexpected behavior: reindex root %s is out of capacity" +
+				"during reindexing. Theoretically, this " +
+				"should only ever happen if there are more " +
+				"than 2^64 blocks in the DAG.", root.String())
 		}
 
-		size = intervalSize(currentInterval)
-		err = rt.countSubtrees(current, subTreeSizeMap)
-		if err != nil {
-			return err
+		if res, _ := rc.manager.isStrictAncestorOf(parent, root); res {
+			// In this case we avoid reindexing the entire subtree and
+			// use slacks along the chain up from parent to reindex root
+			return rc.reindexIntervalsEarlierThanRoot(node, root, parent, currentSubtreeSize)
 		}
 
-		currentSubtreeSize = subTreeSizeMap[*current]
+		current = parent
 	}
 
 	// Propagate the interval to the subtree
-	return rt.propagateInterval(current, subTreeSizeMap)
+	return rc.propagateInterval(current)
 }
 
 // countSubtrees counts the size of each subtree under this node,
@@ -298,32 +285,37 @@ func (rt *reachabilityManager) reindexIntervals(node *externalapi.DomainHash) er
 // intermediate updates from leaves via parent chains until all
 // size information is gathered at the root of the operation
 // (i.e. at node).
-func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
+func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
+
+	if _, ok := rc.subTreeSizesCache[*node]; ok {
+		return nil
+	}
+
 	queue := []*externalapi.DomainHash{node}
 	calculatedChildrenCount := make(map[externalapi.DomainHash]uint64)
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
-		currentChildren, err := rt.children(current)
+		children, err := rc.manager.children(current)
 		if err != nil {
 			return err
 		}
 
-		if len(currentChildren) == 0 {
+		if len(children) == 0 {
 			// We reached a leaf
-			subTreeSizeMap[*current] = 1
-		} else if _, ok := subTreeSizeMap[*current]; !ok {
+			rc.subTreeSizesCache[*current] = 1
+		} else if _, ok := rc.subTreeSizesCache[*current]; !ok {
 			// We haven't yet calculated the subtree size of
 			// the current node. Add all its children to the
 			// queue
-			queue = append(queue, currentChildren...)
+			queue = append(queue, children...)
 			continue
 		}
 
 		// We reached a leaf or a pre-calculated subtree.
 		// Push information up
 		for !current.Equal(node) {
-			current, err = rt.parent(current)
+			current, err = rc.manager.parent(current)
 			if err != nil {
 				return err
 			}
@@ -337,12 +329,12 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 
 			calculatedChildrenCount[*current]++
 
-			currentChildren, err := rt.children(current)
+			children, err := rc.manager.children(current)
 			if err != nil {
 				return err
 			}
 
-			if calculatedChildrenCount[*current] != uint64(len(currentChildren)) {
+			if calculatedChildrenCount[*current] != uint64(len(children)) {
 				// Not all subtrees of the current node are ready
 				break
 			}
@@ -350,10 +342,10 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 			// Sum them all together and add 1 to get the sub tree size of
 			// `current`.
 			childSubtreeSizeSum := uint64(0)
-			for _, child := range currentChildren {
-				childSubtreeSizeSum += subTreeSizeMap[*child]
+			for _, child := range children {
+				childSubtreeSizeSum += rc.subTreeSizesCache[*child]
 			}
-			subTreeSizeMap[*current] = childSubtreeSizeSum + 1
+			rc.subTreeSizesCache[*current] = childSubtreeSizeSum + 1
 		}
 	}
 
@@ -364,25 +356,31 @@ func (rt *reachabilityManager) countSubtrees(node *externalapi.DomainHash, subTr
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias. This method returns
 // a list of model.ReachabilityTreeNodes modified by it.
-func (rt *reachabilityManager) propagateInterval(node *externalapi.DomainHash, subTreeSizeMap map[externalapi.DomainHash]uint64) error {
+func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error {
+
+	// Make sure subtrees are counted before propagating
+	err := rc.countSubtrees(node)
+	if err != nil {
+		return err
+	}
 
 	queue := []*externalapi.DomainHash{node}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
 
-		currentChildren, err := rt.children(current)
+		children, err := rc.manager.children(current)
 		if err != nil {
 			return err
 		}
 
-		if len(currentChildren) > 0 {
-			sizes := make([]uint64, len(currentChildren))
-			for i, child := range currentChildren {
-				sizes[i] = subTreeSizeMap[*child]
+		if len(children) > 0 {
+			sizes := make([]uint64, len(children))
+			for i, child := range children {
+				sizes[i] = rc.subTreeSizesCache[*child]
 			}
 
-			interval, err := rt.intervalRangeForChildAllocation(current)
+			interval, err := rc.manager.intervalRangeForChildAllocation(current)
 			if err != nil {
 				return err
 			}
@@ -391,9 +389,10 @@ func (rt *reachabilityManager) propagateInterval(node *externalapi.DomainHash, s
 			if err != nil {
 				return err
 			}
-			for i, child := range currentChildren {
+
+			for i, child := range children {
 				childInterval := intervals[i]
-				err = rt.stageInterval(child, childInterval)
+				err = rc.manager.stageInterval(child, childInterval)
 				if err != nil {
 					return err
 				}
@@ -404,37 +403,30 @@ func (rt *reachabilityManager) propagateInterval(node *externalapi.DomainHash, s
 	return nil
 }
 
-func (rt *reachabilityManager) reindexIntervalsEarlierThanReindexRoot(node,
-	reindexRoot *externalapi.DomainHash) error {
-
-	// Find the common ancestor for both node and the reindex root
-	commonAncestor, err := rt.findCommonAncestorWithReindexRoot(node, reindexRoot)
-	if err != nil {
-		return err
-	}
+func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
+	node, root, common *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	// The chosen child is:
-	// a. A reachability tree child of `commonAncestor`
-	// b. A reachability tree ancestor of `reindexRoot`
-	commonAncestorChosenChild, err := rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, commonAncestor)
+	// a. A reachability tree child of `common`
+	// b. A reachability tree ancestor of `root`
+	chosen, err := rc.manager.FindNextDescendantChainBlock(root, common)
 	if err != nil {
 		return err
 	}
 
-	nodeInterval, err := rt.interval(node)
+	nodeInterval, err := rc.manager.interval(node)
 	if err != nil {
 		return err
 	}
 
-	commonAncestorChosenChildInterval, err := rt.interval(commonAncestorChosenChild)
+	chosenInterval, err := rc.manager.interval(chosen)
 	if err != nil {
 		return err
 	}
 
-	if nodeInterval.End < commonAncestorChosenChildInterval.Start {
+	if nodeInterval.End < chosenInterval.Start {
 		// node is in the subtree before the chosen child
-		return rt.reclaimIntervalBeforeChosenChild(node, commonAncestor,
-			commonAncestorChosenChild, reindexRoot)
+		return rc.reclaimIntervalBefore(node, common, chosen, root, requiredAllocation)
 	}
 
 	// node is either:
@@ -442,98 +434,110 @@ func (rt *reachabilityManager) reindexIntervalsEarlierThanReindexRoot(node,
 	// * the common ancestor
 	// In both cases we reclaim from the "after" subtree. In the
 	// latter case this is arbitrary
-	return rt.reclaimIntervalAfterChosenChild(node, commonAncestor,
-		commonAncestorChosenChild, reindexRoot)
+	return rc.reclaimIntervalAfter(node, common, chosen, root, requiredAllocation)
 }
 
-func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAncestor, commonAncestorChosenChild,
-	reindexRoot *externalapi.DomainHash) error {
+func (rc *reindexContext) reclaimIntervalBefore(
+	node, common, chosen, root *externalapi.DomainHash, requiredAllocation uint64) error {
 
-	current := commonAncestorChosenChild
+	var slackSum uint64 = 0
+	var pathLen uint64 = 0
+	var pathSlackAlloc uint64 = 0
 
-	commonAncestorChosenChildHasSlackIntervalBefore, err := rt.hasSlackIntervalBefore(commonAncestorChosenChild)
-	if err != nil {
-		return err
-	}
-
-	if !commonAncestorChosenChildHasSlackIntervalBefore {
-		// The common ancestor ran out of slack before its chosen child.
-		// Climb up the reachability tree toward the reindex root until
-		// we find a node that has enough slack.
-		for {
-			currentHasSlackIntervalBefore, err := rt.hasSlackIntervalBefore(current)
+	current := chosen
+	for {
+		if current.Equal(root) {
+			previousInterval, err := rc.manager.interval(current)
 			if err != nil {
 				return err
 			}
 
-			if currentHasSlackIntervalBefore || current.Equal(reindexRoot) {
-				break
-			}
-
-			current, err = rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
+			offset := requiredAllocation + rc.manager.reindexSlack * pathLen - slackSum
+			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
 			if err != nil {
 				return err
 			}
+
+			err = rc.propagateInterval(current)
+			if err != nil {
+				return err
+			}
+
+			err = rc.offsetSiblingsBefore(node, common, current, offset)
+			if err != nil {
+				return err
+			}
+
+			pathSlackAlloc = rc.manager.reindexSlack
+			break
 		}
 
-		if current.Equal(reindexRoot) {
-			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
-			// from this node. This is the interval that we'll use for the new
-			// node.
-			originalInterval, err := rt.interval(current)
-			if err != nil {
-				return err
-			}
-
-			err = rt.stageInterval(current, newReachabilityInterval(
-				originalInterval.Start+slackReachabilityIntervalForReclaiming,
-				originalInterval.End,
-			))
-			if err != nil {
-				return err
-			}
-
-			err = rt.countSubtreesAndPropagateInterval(current)
-			if err != nil {
-				return err
-			}
-
-			err = rt.stageInterval(current, originalInterval)
-			if err != nil {
-				return err
-			}
+		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(current)
+		if err != nil {
+			return err
 		}
+		slackSum += slackBeforeCurrent
+
+		if slackSum >= requiredAllocation {
+			previousInterval, err := rc.manager.interval(current)
+			if err != nil {
+				return err
+			}
+
+			offset := slackBeforeCurrent - (slackSum - requiredAllocation)
+
+			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
+			if err != nil {
+				return err
+			}
+
+			err = rc.offsetSiblingsBefore(node, common, current, offset)
+			if err != nil {
+				return err
+			}
+
+			break
+		}
+
+		current, err = rc.manager.FindNextDescendantChainBlock(root, current)
+		if err != nil {
+			return err
+		}
+
+		pathLen++
 	}
 
 	// Go down the reachability tree towards the common ancestor.
 	// On every hop we reindex the reachability subtree before the
-	// current node with an interval that is smaller by
-	// slackReachabilityIntervalForReclaiming. This is to make room
-	// for the new node.
-	for !current.Equal(commonAncestor) {
-		currentInterval, err := rt.interval(current)
+	// current node with an interval that is smaller.
+	// This is to make room for the new node.
+	for {
+		current, err := rc.manager.parent(current)
 		if err != nil {
 			return err
 		}
 
-		err = rt.stageInterval(current, newReachabilityInterval(
-			currentInterval.Start+slackReachabilityIntervalForReclaiming,
-			currentInterval.End,
-		))
+		if current.Equal(common) {
+			break
+		}
+
+		originalInterval, err := rc.manager.interval(current)
 		if err != nil {
 			return err
 		}
 
-		currentParent, err := rt.parent(current)
+		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(current)
 		if err != nil {
 			return err
 		}
 
-		err = rt.reindexIntervalsBeforeNode(currentParent, current)
+		offset := slackBeforeCurrent - pathSlackAlloc
+		err = rc.manager.stageInterval(current, originalInterval.IncreaseStart(offset))
 		if err != nil {
 			return err
 		}
-		current, err = rt.parent(current)
+
+		err = rc.offsetSiblingsBefore(node, common, current, offset)
 		if err != nil {
 			return err
 		}
@@ -542,150 +546,225 @@ func (rt *reachabilityManager) reclaimIntervalBeforeChosenChild(rtn, commonAnces
 	return nil
 }
 
-// reindexIntervalsBeforeNode applies a tight interval to the reachability
-// subtree before `node`. Note that `node` itself is unaffected.
-func (rt *reachabilityManager) reindexIntervalsBeforeNode(rtn, node *externalapi.DomainHash) error {
-
-	childrenBeforeNode, _, err := rt.splitChildrenAroundChild(rtn, node)
+func (rc *reindexContext) offsetSiblingsBefore(node, common, chosen *externalapi.DomainHash, offset uint64) error {
+	parent, err := rc.manager.parent(chosen)
 	if err != nil {
 		return err
 	}
 
-	childrenBeforeNodeSizes, childrenBeforeNodeSubtreeSizeMaps, childrenBeforeNodeSizesSum :=
-		rt.calcReachabilityTreeNodeSizes(childrenBeforeNode)
-
-	// Apply a tight interval
-	nodeInterval, err := rt.interval(node)
+	siblingsBefore, _, err := rc.manager.splitChildren(parent, chosen)
 	if err != nil {
 		return err
 	}
 
-	newIntervalEnd := nodeInterval.Start - 1
-	newInterval := newReachabilityInterval(newIntervalEnd-childrenBeforeNodeSizesSum+1, newIntervalEnd)
-	intervals, err := intervalSplitExact(newInterval, childrenBeforeNodeSizes)
-	if err != nil {
-		return err
-	}
-	return rt.propagateIntervals(childrenBeforeNode, intervals, childrenBeforeNodeSubtreeSizeMaps)
-}
+	if parent.Equal(common) {
+		previousInterval, err := rc.manager.interval(node)
+		if err != nil {
+			return err
+		}
 
-func (rt *reachabilityManager) reclaimIntervalAfterChosenChild(node, commonAncestor, commonAncestorChosenChild,
-	reindexRoot *externalapi.DomainHash) error {
+		err = rc.manager.stageInterval(node, previousInterval.IncreaseEnd(offset))
+		if err != nil {
+			return err
+		}
 
-	current := commonAncestorChosenChild
-	commonAncestorChosenChildHasSlackIntervalAfter, err := rt.hasSlackIntervalAfter(commonAncestorChosenChild)
-	if err != nil {
-		return err
-	}
+		err = rc.propagateInterval(node)
+		if err != nil {
+			return err
+		}
 
-	if !commonAncestorChosenChildHasSlackIntervalAfter {
-		// The common ancestor ran out of slack after its chosen child.
-		// Climb up the reachability tree toward the reindex root until
-		// we find a node that has enough slack.
-		for {
-			currentHasSlackIntervalAfter, err := rt.hasSlackIntervalAfter(commonAncestorChosenChild)
-			if err != nil {
-				return err
-			}
-
-			if currentHasSlackIntervalAfter || current.Equal(reindexRoot) {
+		indexOfNode := -1
+		for i, sibling := range siblingsBefore {
+			if sibling.Equal(node) {
+				indexOfNode = i
 				break
 			}
+		}
+		if indexOfNode < 0 {
+			err = errors.Errorf("node %s is expected to be child of coomon %s", node, common)
+			return err
+		}
+		siblingsBefore = siblingsBefore[indexOfNode+1:]
+	}
 
-			current, err = rt.FindAncestorOfThisAmongChildrenOfOther(reindexRoot, current)
-			if err != nil {
-				return err
-			}
+	for _, sibling := range siblingsBefore {
+		previousInterval, err := rc.manager.interval(sibling)
+		if err != nil {
+			return err
 		}
 
-		if current.Equal(reindexRoot) {
-			// "Deallocate" an interval of slackReachabilityIntervalForReclaiming
-			// from this node. This is the interval that we'll use for the new
-			// node.
-			originalInterval, err := rt.interval(current)
-			if err != nil {
-				return err
-			}
-
-			err = rt.stageInterval(current, newReachabilityInterval(
-				originalInterval.Start,
-				originalInterval.End-slackReachabilityIntervalForReclaiming,
-			))
-			if err != nil {
-				return err
-			}
-
-			err = rt.countSubtreesAndPropagateInterval(current)
-			if err != nil {
-				return err
-			}
-
-			err = rt.stageInterval(current, originalInterval)
-			if err != nil {
-				return err
-			}
+		err = rc.manager.stageInterval(sibling, previousInterval.Increase(offset))
+		if err != nil {
+			return err
 		}
+
+		err = rc.propagateInterval(sibling)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (rc *reindexContext) reclaimIntervalAfter(
+	node, common, chosen, root *externalapi.DomainHash, requiredAllocation uint64) error {
+
+	var slackSum uint64 = 0
+	var pathLen uint64 = 0
+	var pathSlackAlloc uint64 = 0
+
+	current := chosen
+	for {
+		if current.Equal(root) {
+			previousInterval, err := rc.manager.interval(current)
+			if err != nil {
+				return err
+			}
+
+			offset := requiredAllocation + rc.manager.reindexSlack * pathLen - slackSum
+			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
+			if err != nil {
+				return err
+			}
+
+			err = rc.propagateInterval(current)
+			if err != nil {
+				return err
+			}
+
+			err = rc.offsetSiblingsAfter(node, common, current, offset)
+			if err != nil {
+				return err
+			}
+
+			pathSlackAlloc = rc.manager.reindexSlack
+			break
+		}
+
+		slackAfterCurrent, err := rc.manager.remainingSlackAfter(current)
+		if err != nil {
+			return err
+		}
+		slackSum += slackAfterCurrent
+
+		if slackSum >= requiredAllocation {
+			previousInterval, err := rc.manager.interval(current)
+			if err != nil {
+				return err
+			}
+
+			offset := slackAfterCurrent - (slackSum - requiredAllocation)
+
+			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
+			if err != nil {
+				return err
+			}
+
+			err = rc.offsetSiblingsAfter(node, common, current, offset)
+			if err != nil {
+				return err
+			}
+
+			break
+		}
+
+		current, err = rc.manager.FindNextDescendantChainBlock(root, current)
+		if err != nil {
+			return err
+		}
+
+		pathLen++
 	}
 
 	// Go down the reachability tree towards the common ancestor.
 	// On every hop we reindex the reachability subtree after the
-	// current node with an interval that is smaller by
-	// slackReachabilityIntervalForReclaiming. This is to make room
-	// for the new node.
-	for !current.Equal(commonAncestor) {
-		currentInterval, err := rt.interval(current)
+	// current node with an interval that is smaller.
+	// This is to make room for the new node.
+
+	for {
+		current, err := rc.manager.parent(current)
 		if err != nil {
 			return err
 		}
 
-		err = rt.stageInterval(current, newReachabilityInterval(
-			currentInterval.Start,
-			currentInterval.End-slackReachabilityIntervalForReclaiming,
-		))
+		if current.Equal(common) {
+			break
+		}
+
+		originalInterval, err := rc.manager.interval(current)
 		if err != nil {
 			return err
 		}
 
-		currentParent, err := rt.parent(current)
+		slackAfterCurrent, err := rc.manager.remainingSlackAfter(current)
 		if err != nil {
 			return err
 		}
 
-		err = rt.reindexIntervalsAfterNode(currentParent, current)
+		offset := slackAfterCurrent - pathSlackAlloc
+		err = rc.manager.stageInterval(current, originalInterval.DecreaseEnd(offset))
 		if err != nil {
 			return err
 		}
-		current = currentParent
+
+		err = rc.offsetSiblingsAfter(node, common, current, offset)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// reindexIntervalsAfterNode applies a tight interval to the reachability
-// subtree after `node`. Note that `node` itself is unaffected.
-func (rt *reachabilityManager) reindexIntervalsAfterNode(rtn, node *externalapi.DomainHash) error {
-
-	_, childrenAfterNode, err := rt.splitChildrenAroundChild(rtn, node)
+func (rc *reindexContext) offsetSiblingsAfter(node, common, chosen *externalapi.DomainHash, offset uint64) error {
+	parent, err := rc.manager.parent(chosen)
 	if err != nil {
 		return err
 	}
 
-	childrenAfterNodeSizes, childrenAfterNodeSubtreeSizeMaps, childrenAfterNodeSizesSum :=
-		rt.calcReachabilityTreeNodeSizes(childrenAfterNode)
-
-	// Apply a tight interval
-	nodeInterval, err := rt.interval(node)
+	_, siblingsAfter, err := rc.manager.splitChildren(parent, chosen)
 	if err != nil {
 		return err
 	}
 
-	newIntervalStart := nodeInterval.End + 1
-	newInterval := newReachabilityInterval(newIntervalStart, newIntervalStart+childrenAfterNodeSizesSum-1)
-	intervals, err := intervalSplitExact(newInterval, childrenAfterNodeSizes)
-	if err != nil {
-		return err
+	for i, sibling := range siblingsAfter {
+		if sibling.Equal(node) || (node.Equal(common) && i == len(siblingsAfter) - 1) {
+			previousInterval, err := rc.manager.interval(sibling)
+			if err != nil {
+				return err
+			}
+
+			err = rc.manager.stageInterval(sibling, previousInterval.DecreaseStart(offset))
+			if err != nil {
+				return err
+			}
+
+			err = rc.propagateInterval(sibling)
+			if err != nil {
+				return err
+			}
+
+			break
+		}
+
+		previousInterval, err := rc.manager.interval(sibling)
+		if err != nil {
+			return err
+		}
+
+		err = rc.manager.stageInterval(sibling, previousInterval.Decrease(offset))
+		if err != nil {
+			return err
+		}
+
+		err = rc.propagateInterval(sibling)
+		if err != nil {
+			return err
+		}
 	}
-	return rt.propagateIntervals(childrenAfterNode, intervals, childrenAfterNodeSubtreeSizeMaps)
+
+	return nil
 }
 
 // IsReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
@@ -705,15 +784,22 @@ func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externa
 	return intervalContains(nodeInterval, otherInterval), nil
 }
 
-// findCommonAncestorWithReindexRoot finds the most recent reachability
+func (rt *reachabilityManager) isStrictAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
+	if node.Equal(other) {
+		return false, nil
+	}
+	return rt.IsReachabilityTreeAncestorOf(node, other)
+}
+
+// findCommonAncestor finds the most recent reachability
 // tree ancestor common to both node and the given reindex root. Note
 // that we assume that almost always the chain between the reindex root
 // and the common ancestor is longer than the chain between node and the
 // common ancestor.
-func (rt *reachabilityManager) findCommonAncestorWithReindexRoot(node, reindexRoot *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	currentThis := node
 	for {
-		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(currentThis, reindexRoot)
+		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(currentThis, root)
 		if err != nil {
 			return nil, err
 		}
@@ -796,7 +882,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return nil, false, err
 	}
 	if !isAncestorOf {
-		commonAncestor, err := rt.findCommonAncestorWithReindexRoot(newTreeNode, reindexRoot)
+		commonAncestor, err := rt.findCommonAncestor(newTreeNode, reindexRoot)
 		if err != nil {
 			return nil, false, err
 		}
@@ -804,7 +890,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return commonAncestor, true, nil
 	}
 
-	reindexRootChosenChild, err := rt.FindAncestorOfThisAmongChildrenOfOther(newTreeNode, reindexRoot)
+	reindexRootChosenChild, err := rt.FindNextDescendantChainBlock(newTreeNode, reindexRoot)
 	if err != nil {
 		return nil, false, err
 	}
@@ -823,7 +909,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return nil, false, nil
 	}
 
-	err = rt.concentrateIntervalAroundReindexRootChosenChild(reindexRoot, reindexRootChosenChild)
+	err = rt.concentrateInterval(reindexRoot, reindexRootChosenChild)
 	if err != nil {
 		return nil, false, err
 	}
@@ -831,44 +917,44 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 	return reindexRootChosenChild, true, nil
 }
 
-// FindAncestorOfThisAmongChildrenOfOther finds the reachability tree child
-// of node that is the ancestor of node.
-func (rt *reachabilityManager) FindAncestorOfThisAmongChildrenOfOther(this, other *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	otherChildren, err := rt.children(other)
+// NextDescendantChainBlock finds the reachability tree child
+// of 'parent' which is the ancestor of 'descendant'.
+func (rt *reachabilityManager) FindNextDescendantChainBlock(descendant, parent *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	children, err := rt.children(parent)
 	if err != nil {
 		return nil, err
 	}
 
-	ancestor, ok := rt.findAncestorOfNode(otherChildren, this)
+	ancestor, ok := rt.findAncestorOfNode(children, descendant)
 	if !ok {
-		return nil, errors.Errorf("node is not an ancestor of this")
+		return nil, errors.Errorf("parent is not an ancestor of descendant")
 	}
 
 	return ancestor, nil
 }
 
-func (rt *reachabilityManager) concentrateIntervalAroundReindexRootChosenChild(reindexRoot,
-	reindexRootChosenChild *externalapi.DomainHash) error {
+func (rt *reachabilityManager) concentrateInterval(root, chosen *externalapi.DomainHash) error {
+	rc := newReindexContext(rt)
 
 	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
-		rt.splitChildrenAroundChild(reindexRoot, reindexRootChosenChild)
+		rt.splitChildren(root, chosen)
 	if err != nil {
 		return err
 	}
 
 	reindexRootChildNodesBeforeChosenSizesSum, err :=
-		rt.tightenIntervalsBeforeReindexRootChosenChild(reindexRoot, reindexRootChildNodesBeforeChosen)
+		rc.tightenIntervalsBefore(root, reindexRootChildNodesBeforeChosen)
 	if err != nil {
 		return err
 	}
 
 	reindexRootChildNodesAfterChosenSizesSum, err :=
-		rt.tightenIntervalsAfterReindexRootChosenChild(reindexRoot, reindexRootChildNodesAfterChosen)
+		rc.tightenIntervalsAfter(root, reindexRootChildNodesAfterChosen)
 	if err != nil {
 		return err
 	}
 
-	err = rt.expandIntervalInReindexRootChosenChild(reindexRoot, reindexRootChosenChild,
+	err = rc.expandIntervalToChosen(root, chosen,
 		reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
 	if err != nil {
 		return err
@@ -877,160 +963,144 @@ func (rt *reachabilityManager) concentrateIntervalAroundReindexRootChosenChild(r
 	return nil
 }
 
-// splitChildrenAroundChild splits `node` into two slices: the nodes that are before
+// splitChildren splits `node` into two slices: the nodes that are before
 // `child` and the nodes that are after.
-func (rt *reachabilityManager) splitChildrenAroundChild(node, child *externalapi.DomainHash) (
-	nodesBeforeChild, nodesAfterChild []*externalapi.DomainHash, err error) {
+func (rt *reachabilityManager) splitChildren(node, pivot *externalapi.DomainHash) (
+	nodesBeforePivot, nodesAfterPivot []*externalapi.DomainHash, err error) {
 
-	nodeChildren, err := rt.children(node)
+	children, err := rt.children(node)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for i, candidateChild := range nodeChildren {
-		if candidateChild.Equal(child) {
-			return nodeChildren[:i], nodeChildren[i+1:], nil
+	for i, child := range children {
+		if child.Equal(pivot) {
+			return children[:i], children[i+1:], nil
 		}
 	}
-	return nil, nil, errors.Errorf("child not a child of node")
+	return nil, nil, errors.Errorf("pivot not a pivot of node")
 }
 
-func (rt *reachabilityManager) tightenIntervalsBeforeReindexRootChosenChild(
-	reindexRoot *externalapi.DomainHash,
-	reindexRootChildNodesBeforeChosen []*externalapi.DomainHash) (reindexRootChildNodesBeforeChosenSizesSum uint64,
+func (rc *reindexContext) tightenIntervalsBefore(
+	root *externalapi.DomainHash,
+	nodesBeforeChosen []*externalapi.DomainHash) (sizesSum uint64,
 	err error) {
 
-	reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps, reindexRootChildNodesBeforeChosenSizesSum :=
-		rt.calcReachabilityTreeNodeSizes(reindexRootChildNodesBeforeChosen)
+	reindexRootChildNodesBeforeChosenSizes, sizesSum :=
+		rc.calcReachabilityTreeNodeSizes(nodesBeforeChosen)
 
-	reindexRootInterval, err := rt.interval(reindexRoot)
+	reindexRootInterval, err := rc.manager.interval(root)
 	if err != nil {
 		return 0, err
 	}
 
 	intervalBeforeReindexRootStart := newReachabilityInterval(
-		reindexRootInterval.Start+rt.reindexSlack,
-		reindexRootInterval.Start+rt.reindexSlack+reindexRootChildNodesBeforeChosenSizesSum-1,
+		reindexRootInterval.Start+rc.manager.reindexSlack,
+		reindexRootInterval.Start+rc.manager.reindexSlack+sizesSum-1,
 	)
 
-	err = rt.propagateChildIntervals(intervalBeforeReindexRootStart, reindexRootChildNodesBeforeChosen,
-		reindexRootChildNodesBeforeChosenSizes, reindexRootChildNodesBeforeChosenSubtreeSizeMaps)
+	err = rc.propagateChildIntervals(
+		intervalBeforeReindexRootStart, nodesBeforeChosen, reindexRootChildNodesBeforeChosenSizes)
 	if err != nil {
 		return 0, err
 	}
-	return reindexRootChildNodesBeforeChosenSizesSum, nil
+	return sizesSum, nil
 }
 
-func (rt *reachabilityManager) tightenIntervalsAfterReindexRootChosenChild(
-	reindexRoot *externalapi.DomainHash,
-	reindexRootChildNodesAfterChosen []*externalapi.DomainHash) (reindexRootChildNodesAfterChosenSizesSum uint64,
-	err error) {
+func (rc *reindexContext) tightenIntervalsAfter(
+	root *externalapi.DomainHash, nodesAfterChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps,
-		reindexRootChildNodesAfterChosenSizesSum :=
-		rt.calcReachabilityTreeNodeSizes(reindexRootChildNodesAfterChosen)
+	reindexRootChildNodesAfterChosenSizes, sizesSum :=
+		rc.calcReachabilityTreeNodeSizes(nodesAfterChosen)
 
-	reindexRootInterval, err := rt.interval(reindexRoot)
+	reindexRootInterval, err := rc.manager.interval(root)
 	if err != nil {
 		return 0, err
 	}
 
 	intervalAfterReindexRootEnd := newReachabilityInterval(
-		reindexRootInterval.End-rt.reindexSlack-reindexRootChildNodesAfterChosenSizesSum,
-		reindexRootInterval.End-rt.reindexSlack-1,
+		reindexRootInterval.End-rc.manager.reindexSlack-sizesSum,
+		reindexRootInterval.End-rc.manager.reindexSlack-1,
 	)
 
-	err = rt.propagateChildIntervals(intervalAfterReindexRootEnd, reindexRootChildNodesAfterChosen,
-		reindexRootChildNodesAfterChosenSizes, reindexRootChildNodesAfterChosenSubtreeSizeMaps)
+	err = rc.propagateChildIntervals(
+		intervalAfterReindexRootEnd, nodesAfterChosen, reindexRootChildNodesAfterChosenSizes)
 	if err != nil {
 		return 0, err
 	}
-	return reindexRootChildNodesAfterChosenSizesSum, nil
+	return sizesSum, nil
 }
 
-func (rt *reachabilityManager) expandIntervalInReindexRootChosenChild(reindexRoot,
-	reindexRootChosenChild *externalapi.DomainHash, reindexRootChildNodesBeforeChosenSizesSum uint64,
-	reindexRootChildNodesAfterChosenSizesSum uint64) error {
+func (rc *reindexContext) expandIntervalToChosen(
+	root, chosen *externalapi.DomainHash,
+	sizesSumBefore, sizesSumAfter uint64) error {
 
-	reindexRootInterval, err := rt.interval(reindexRoot)
+	rootInterval, err := rc.manager.interval(root)
 	if err != nil {
 		return err
 	}
 
-	newReindexRootChildInterval := newReachabilityInterval(
-		reindexRootInterval.Start+reindexRootChildNodesBeforeChosenSizesSum+rt.reindexSlack,
-		reindexRootInterval.End-reindexRootChildNodesAfterChosenSizesSum-rt.reindexSlack-1,
+	newChosenInterval := newReachabilityInterval(
+		rootInterval.Start+sizesSumBefore+rc.manager.reindexSlack,
+		rootInterval.End-sizesSumAfter-rc.manager.reindexSlack-1,
 	)
 
-	reindexRootChosenChildInterval, err := rt.interval(reindexRootChosenChild)
+	currentChosenInterval, err := rc.manager.interval(chosen)
 	if err != nil {
 		return err
 	}
 
-	if !intervalContains(newReindexRootChildInterval, reindexRootChosenChildInterval) {
+	if !intervalContains(newChosenInterval, currentChosenInterval) {
 		// New interval doesn't contain the previous one, propagation is required
 
 		// We assign slack on both sides as an optimization. Were we to
 		// assign a tight interval, the next time the reindex root moves we
-		// would need to propagate intervals again. That is to say, When we
-		// DO allocate slack, next time
-		// expandIntervalInReindexRootChosenChild is called (next time the
-		// reindex root moves), newReindexRootChildInterval is likely to
-		// contain reindexRootChosenChild.Interval.
-		err := rt.stageInterval(reindexRootChosenChild, newReachabilityInterval(
-			newReindexRootChildInterval.Start+rt.reindexSlack,
-			newReindexRootChildInterval.End-rt.reindexSlack,
+		// would need to propagate intervals again. That is to say, when we
+		// do allocate slack, next time
+		// expandIntervalToChosen is called (next time the
+		// reindex root moves), newChosenInterval is likely to
+		// contain chosen.Interval.
+		err := rc.manager.stageInterval(chosen, newReachabilityInterval(
+			newChosenInterval.Start+rc.manager.reindexSlack,
+			newChosenInterval.End-rc.manager.reindexSlack,
 		))
 		if err != nil {
 			return err
 		}
 
-		err = rt.countSubtreesAndPropagateInterval(reindexRootChosenChild)
+		err = rc.propagateInterval(chosen)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = rt.stageInterval(reindexRootChosenChild, newReindexRootChildInterval)
+	err = rc.manager.stageInterval(chosen, newChosenInterval)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (rt *reachabilityManager) countSubtreesAndPropagateInterval(node *externalapi.DomainHash) error {
-	subtreeSizeMap := make(map[externalapi.DomainHash]uint64)
-	err := rt.countSubtrees(node, subtreeSizeMap)
-	if err != nil {
-		return err
-	}
-
-	return rt.propagateInterval(node, subtreeSizeMap)
-}
-
-func (rt *reachabilityManager) calcReachabilityTreeNodeSizes(treeNodes []*externalapi.DomainHash) (
-	sizes []uint64, subtreeSizeMaps []map[externalapi.DomainHash]uint64, sum uint64) {
+func (rc *reindexContext) calcReachabilityTreeNodeSizes(treeNodes []*externalapi.DomainHash) (
+	sizes []uint64, sum uint64) {
 
 	sizes = make([]uint64, len(treeNodes))
-	subtreeSizeMaps = make([]map[externalapi.DomainHash]uint64, len(treeNodes))
 	sum = 0
 	for i, node := range treeNodes {
-		subtreeSizeMap := make(map[externalapi.DomainHash]uint64)
-		err := rt.countSubtrees(node, subtreeSizeMap)
+		err := rc.countSubtrees(node)
 		if err != nil {
-			return nil, nil, 0
+			return nil, 0
 		}
 
-		subtreeSize := subtreeSizeMap[*node]
+		subtreeSize := rc.subTreeSizesCache[*node]
 		sizes[i] = subtreeSize
-		subtreeSizeMaps[i] = subtreeSizeMap
 		sum += subtreeSize
 	}
-	return sizes, subtreeSizeMaps, sum
+	return sizes, sum
 }
 
-func (rt *reachabilityManager) propagateChildIntervals(interval *model.ReachabilityInterval,
-	childNodes []*externalapi.DomainHash, sizes []uint64, subtreeSizeMaps []map[externalapi.DomainHash]uint64) error {
+func (rc *reindexContext) propagateChildIntervals(
+	interval *model.ReachabilityInterval, childNodes []*externalapi.DomainHash, sizes []uint64) error {
 
 	childIntervalSizes, err := intervalSplitExact(interval, sizes)
 	if err != nil {
@@ -1039,13 +1109,12 @@ func (rt *reachabilityManager) propagateChildIntervals(interval *model.Reachabil
 
 	for i, child := range childNodes {
 		childInterval := childIntervalSizes[i]
-		err := rt.stageInterval(child, childInterval)
+		err := rc.manager.stageInterval(child, childInterval)
 		if err != nil {
 			return err
 		}
 
-		childSubtreeSizeMap := subtreeSizeMaps[i]
-		err = rt.propagateInterval(child, childSubtreeSizeMap)
+		err = rc.propagateInterval(child)
 		if err != nil {
 			return err
 		}

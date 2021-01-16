@@ -899,7 +899,7 @@ func TestReindexIntervalErrors(t *testing.T) {
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
 	// Create a treeNode and give it size = 100
-	treeNode := helper.newNodeWithInterval(newReachabilityInterval(0, 99))
+	treeNode := helper.newNodeWithInterval(newReachabilityInterval(1, 100))
 
 	// Add a chain of 100 child treeNodes to treeNode
 	var err error
@@ -978,19 +978,19 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	treeNodeB2 := helper.newNodeWithInterval(newReachabilityInterval(150, 199))
 	treeNodeC := helper.newNodeWithInterval(newReachabilityInterval(100, 149))
 
-	err := helper.addChildAndStage(treeNodeA, treeNodeB1)
+	err := helper.stageAddChild(treeNodeA, treeNodeB1)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeA, treeNodeB2)
+	err = helper.stageAddChild(treeNodeA, treeNodeB2)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeB2, treeNodeC)
+	err = helper.stageAddChild(treeNodeB2, treeNodeC)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
 	str, err := manager.String(treeNodeA)

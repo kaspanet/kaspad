@@ -1,6 +1,7 @@
 package reachabilitymanager_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -56,10 +57,14 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("reindex root is expected to change")
 		}
 
-		// Add another block over genesis
-		_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
+		// Add enough blocks over genesis to trigger reindex
+		slackSize := tc.ReachabilityManager().ReachabilityReindexSlack()
+		blocksToAdd := uint64(math.Log2(float64(slackSize))) + 2
+		for i := uint64(0); i < blocksToAdd; i++ {
+			_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
 		}
 	})
 }

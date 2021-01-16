@@ -111,6 +111,35 @@ func intervalSplitWithExponentialBias(ri *model.ReachabilityInterval, sizes []ui
 	return intervalSplitExact(ri, biasedSizes)
 }
 
+// exponentialFractions returns a fraction of each size in sizes
+// as follows:
+//   fraction[i] = 2^size[i] / sum_j(2^size[j])
+// In the code below the above equation is divided by 2^max(size)
+// to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
+// we divide 1 by potentially a very large number, which will
+// result in loss of float precision. This is not a problem - all
+// numbers close to 0 bear effectively the same weight.
+func exponentialFractions(sizes []uint64) []float64 {
+	maxSize := uint64(0)
+	for _, size := range sizes {
+		if size > maxSize {
+			maxSize = size
+		}
+	}
+	fractions := make([]float64, len(sizes))
+	for i, size := range sizes {
+		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
+	}
+	fractionsSum := float64(0)
+	for _, fraction := range fractions {
+		fractionsSum += fraction
+	}
+	for i, fraction := range fractions {
+		fractions[i] = fraction / fractionsSum
+	}
+	return fractions
+}
+
 // intervalContains returns true if ri contains other.
 func intervalContains(ri *model.ReachabilityInterval, other *model.ReachabilityInterval) bool {
 	return ri.Start <= other.Start && other.End <= ri.End
