@@ -115,6 +115,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {
+	//return nil
 	block, err := v.blockStore.Block(v.databaseContext, blockHash)
 	if err != nil {
 		return err

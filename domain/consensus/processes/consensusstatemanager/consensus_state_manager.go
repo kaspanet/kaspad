@@ -25,7 +25,6 @@ type consensusStateManager struct {
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
 
-	headersSelectedTipStore model.HeaderSelectedTipStore
 	blockStatusStore        model.BlockStatusStore
 	ghostdagDataStore       model.GHOSTDAGDataStore
 	consensusStateStore     model.ConsensusStateStore
@@ -35,9 +34,9 @@ type consensusStateManager struct {
 	blockRelationStore      model.BlockRelationStore
 	acceptanceDataStore     model.AcceptanceDataStore
 	blockHeaderStore        model.BlockHeaderStore
+	headersSelectedTipStore model.HeaderSelectedTipStore
 	pruningStore            model.PruningStore
-
-	stores []model.Store
+	stores                  []model.Store
 }
 
 // New instantiates a new ConsensusStateManager
@@ -91,30 +90,29 @@ func New(
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,
 
-		multisetStore:           multisetStore,
-		blockStore:              blockStore,
+		headersSelectedTipStore: headersSelectedTipStore,
 		blockStatusStore:        blockStatusStore,
 		ghostdagDataStore:       ghostdagDataStore,
 		consensusStateStore:     consensusStateStore,
+		multisetStore:           multisetStore,
+		blockStore:              blockStore,
 		utxoDiffStore:           utxoDiffStore,
 		blockRelationStore:      blockRelationStore,
 		acceptanceDataStore:     acceptanceDataStore,
 		blockHeaderStore:        blockHeaderStore,
-		headersSelectedTipStore: headersSelectedTipStore,
 		pruningStore:            pruningStore,
 
 		stores: []model.Store{
-			consensusStateStore,
-			acceptanceDataStore,
-			blockStore,
+			headersSelectedTipStore,
 			blockStatusStore,
-			blockRelationStore,
-			multisetStore,
 			ghostdagDataStore,
 			consensusStateStore,
+			multisetStore,
+			blockStore,
 			utxoDiffStore,
+			blockRelationStore,
+			acceptanceDataStore,
 			blockHeaderStore,
-			headersSelectedTipStore,
 			pruningStore,
 		},
 	}

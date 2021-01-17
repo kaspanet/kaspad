@@ -1,16 +1,21 @@
 package pruningstore
 
 import (
+	"runtime"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
 var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
 var pruningSerializedUTXOSetKey = database.MakeBucket(nil).Key([]byte("pruning-utxo-set"))
+
+var log, _ = logger.Get(logger.SubsystemTags.BDAG)
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
@@ -80,6 +85,10 @@ func (ps *pruningStore) Discard() {
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
+	stats := runtime.MemStats{}
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Starting pruningStore.Commit, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+
 	if ps.pruningPointStaging != nil {
 		pruningPointBytes, err := ps.serializeHash(ps.pruningPointStaging)
 		if err != nil {
@@ -114,6 +123,9 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 	}
+
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Finished pruningStore.Commit, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	ps.Discard()
 	return nil

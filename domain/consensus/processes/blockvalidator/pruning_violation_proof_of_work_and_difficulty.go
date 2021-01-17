@@ -54,6 +54,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 }
 
 func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
+	//return nil
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.

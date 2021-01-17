@@ -1,6 +1,9 @@
 package consensusstatestore
 
 import (
+	"fmt"
+	"runtime"
+
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -85,6 +88,11 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		return nil
 	}
 
+	stats := runtime.MemStats{}
+	runtime.ReadMemStats(&stats)
+
+	fmt.Printf("committing virtual utxo set, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+
 	// Clear the existing virtual utxo set in database before adding the new one
 	cursor, err := dbTx.Cursor(utxoSetBucket)
 	if err != nil {
@@ -100,6 +108,9 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 			return err
 		}
 	}
+
+	runtime.ReadMemStats(&stats)
+	fmt.Printf("After clearing the utxoset from DB, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	// Now put the new virtualUTXOSet into the database
 	css.virtualUTXOSetCache.Clear()

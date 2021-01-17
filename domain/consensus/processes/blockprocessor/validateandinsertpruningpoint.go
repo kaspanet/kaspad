@@ -5,10 +5,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
+	"runtime"
 )
 
 func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
+	stats := runtime.MemStats{}
+	runtime.ReadMemStats(&stats)
+	log.Debugf("validateAndInsertPruningPoint: used memory: %d bytes. total memory: %d bytes", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 	isValidPruningPoint, err := bp.pruningManager.IsValidPruningPoint(newPruningPointHash)
@@ -21,12 +25,17 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 			newPruningPointHash)
 	}
 
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Validated pruning point: used memory: %d bytes. total memory: %d bytes", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+
 	// We have to validate the pruning point block before we set the new pruning point in consensusStateManager.
 	log.Infof("Validating the new pruning point %s", newPruningPointHash)
 	err = bp.validateBlockAndDiscardChanges(newPruningPoint, true)
 	if err != nil {
 		return err
 	}
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Validated+Discarded pruning point: used memory: %d bytes. total memory: %d bytes", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
 	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint, serializedUTXOSet)

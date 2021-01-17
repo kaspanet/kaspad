@@ -1,18 +1,17 @@
 package blockrelay
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"time"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
+	"runtime"
+	"time"
 )
 
 func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
@@ -344,6 +343,14 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 	if err != nil {
 		return false, err
 	}
+
+	stats := runtime.MemStats{}
+	runtime.ReadMemStats(&stats)
+
+	log.Debugf("Fetching pruning + UTXO set, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	runtime.GC()
+	runtime.ReadMemStats(&stats)
+	log.Debugf("After GC, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	utxoSet, block, found, err := flow.receiveIBDRootUTXOSetAndBlock()
 	if err != nil {

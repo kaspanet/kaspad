@@ -108,6 +108,7 @@ func (v *blockValidator) checkParentsIncest(header externalapi.BlockHeader) erro
 }
 
 func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) error {
+	//return nil
 	if len(header.ParentHashes()) == 0 {
 		return nil
 	}

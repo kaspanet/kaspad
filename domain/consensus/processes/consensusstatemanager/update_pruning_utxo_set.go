@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
+	"runtime"
 )
 
 func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
@@ -18,6 +19,7 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	defer onEnd()
 
 	err := csm.updatePruningPoint(newPruningPoint, serializedUTXOSet)
+	runtime.GC() // Clear out all the used memory in `updatePruningPoint`
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
@@ -45,11 +47,25 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 			"it violates finality", newPruningPointHash)
 	}
 
+	before := runtime.MemStats{}
+	runtime.ReadMemStats(&before)
+
 	protoUTXOSet := &utxoserialization.ProtoUTXOSet{}
 	err = proto.Unmarshal(serializedUTXOSet, protoUTXOSet)
 	if err != nil {
 		return err
 	}
+
+	var size int
+	for _, utxo := range protoUTXOSet.Utxos {
+		size += len(utxo.EntryOutpointPair)
+	}
+	after := runtime.MemStats{}
+	runtime.ReadMemStats(&after)
+
+	log.Debugf("updatePruningPoint: utxoSize before deserializing: %d bytes. after, at least %d bytes.", len(serializedUTXOSet), size)
+	log.Debugf("updatePruningPoint: before: used memory: %d bytes. total memory: %d bytes", before.Alloc, before.HeapIdle-before.HeapReleased+before.HeapInuse)
+	log.Debugf("updatePruningPoint: after: used memory: %d bytes. total memory: %d bytes", after.Alloc, after.HeapIdle-after.HeapReleased+after.HeapInuse)
 
 	utxoSetMultiSet, err := utxoserialization.CalculateMultisetFromProtoUTXOSet(protoUTXOSet)
 	if err != nil {
@@ -92,6 +108,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	if err != nil {
 		return err
 	}
+	protoUTXOSet = nil
 
 	log.Debugf("Deleting all the existing virtual diff parents")
 	csm.consensusStateStore.StageVirtualDiffParents(nil)
@@ -137,7 +154,10 @@ func (csm *consensusStateManager) commitSetPruningPointUTXOSetAll() error {
 		return err
 	}
 
+	stats := runtime.MemStats{}
 	for _, store := range csm.stores {
+		runtime.ReadMemStats(&stats)
+		log.Debugf("Committing store: %T, used memory: %d bytes, total: %d bytes\n", store, stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 		err = store.Commit(dbTx)
 		if err != nil {
 			return err
