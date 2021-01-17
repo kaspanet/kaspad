@@ -1,6 +1,8 @@
 package handshake
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -48,7 +50,7 @@ func SendVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *sendVersionFlow) start() error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "sendVersionFlow.start")
+	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("sendVersionFlow with %s", flow.peer.Address()))
 	defer onEnd()
 
 	// Version message.
