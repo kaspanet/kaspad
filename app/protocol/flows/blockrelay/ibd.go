@@ -1,7 +1,6 @@
 package blockrelay
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"time"
 
@@ -414,21 +413,8 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 		switch message := message.(type) {
 		case *appmessage.MsgIBDRootUTXOSetChunk:
 			receivedUTXOCount += len(message.OutpointAndUTXOEntryPairs)
-			domainOutpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, len(message.OutpointAndUTXOEntryPairs))
-			for i, outpointAndUTXOEntryPair := range message.OutpointAndUTXOEntryPairs {
-				domainOutpointAndUTXOEntryPairs[i] = &externalapi.OutpointAndUTXOEntryPair{
-					Outpoint: &externalapi.DomainOutpoint{
-						TransactionID: outpointAndUTXOEntryPair.Outpoint.TxID,
-						Index:         outpointAndUTXOEntryPair.Outpoint.Index,
-					},
-					UTXOEntry: utxo.NewUTXOEntry(
-						outpointAndUTXOEntryPair.UTXOEntry.Amount,
-						outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
-						outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
-						outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore,
-					),
-				}
-			}
+			domainOutpointAndUTXOEntryPairs :=
+				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
 			err := flow.Domain().Consensus().InsertPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {

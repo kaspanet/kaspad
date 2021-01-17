@@ -3,6 +3,7 @@ package appmessage
 import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -267,4 +268,25 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		PayloadHash:  payloadHash,
 		Payload:      payload,
 	}
+}
+
+func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
+	outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) []*externalapi.OutpointAndUTXOEntryPair {
+
+	domainOutpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, len(outpointAndUTXOEntryPairs))
+	for i, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		domainOutpointAndUTXOEntryPairs[i] = &externalapi.OutpointAndUTXOEntryPair{
+			Outpoint: &externalapi.DomainOutpoint{
+				TransactionID: outpointAndUTXOEntryPair.Outpoint.TxID,
+				Index:         outpointAndUTXOEntryPair.Outpoint.Index,
+			},
+			UTXOEntry: utxo.NewUTXOEntry(
+				outpointAndUTXOEntryPair.UTXOEntry.Amount,
+				outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
+				outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
+				outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore,
+			),
+		}
+	}
+	return domainOutpointAndUTXOEntryPairs
 }
