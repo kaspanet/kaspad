@@ -51,12 +51,7 @@ func (c *LRUCache) Remove(key *externalapi.DomainOutpoint) {
 
 // Clear clears the cache
 func (c *LRUCache) Clear() {
-	keys := make([]externalapi.DomainOutpoint, len(c.cache))
-	for outpoint := range c.cache {
-		keys = append(keys, outpoint)
-	}
-
-	for _, key := range keys {
+	for key := range c.cache {
 		delete(c.cache, key)
 	}
 }
