@@ -35,7 +35,7 @@ func Connect(address string) (*GRPCClient, error) {
 
 	grpcClient := protowire.NewRPCClient(gRPCConnection)
 	stream, err := grpcClient.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
-		grpc.MaxCallRecvMsgSize(grpcserver.MaxMessageSize), grpc.MaxCallSendMsgSize(grpcserver.MaxMessageSize))
+		grpc.MaxCallRecvMsgSize(grpcserver.RPCMaxMessageSize), grpc.MaxCallSendMsgSize(grpcserver.RPCMaxMessageSize))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
