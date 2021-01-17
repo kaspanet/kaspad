@@ -6,7 +6,15 @@ import (
 )
 
 func dbBucketToDatabaseBucket(bucket model.DBBucket) *database.Bucket {
+	if bucket, ok := bucket.(dbBucket); ok {
+		return bucket.bucket
+	}
 	return database.MakeBucket(bucket.Path())
+}
+
+// MakeBucket creates a new Bucket using the given path of buckets.
+func MakeBucket(path []byte) model.DBBucket {
+	return &dbBucket{bucket: database.MakeBucket(path)}
 }
 
 type dbBucket struct {
@@ -26,5 +34,5 @@ func (d dbBucket) Path() []byte {
 }
 
 func newDBBucket(bucket *database.Bucket) model.DBBucket {
-	return &dbBucket{bucket: bucket}
+	return dbBucket{bucket: bucket}
 }
