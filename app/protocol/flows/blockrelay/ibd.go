@@ -401,7 +401,7 @@ func (flow *handleRelayInvsFlow) receiveIBDRootUTXOSetAndBlock() ([]byte, *exter
 
 		switch message := message.(type) {
 		case *appmessage.MsgIBDRootUTXOSetChunk:
-			serializedUTXOSet = append(serializedUTXOSet, message.Chunk...)
+			serializedUTXOSet = append(serializedUTXOSet, message.OutpointAndUTXOEntryPairs...)
 		case *appmessage.MsgDoneIBDRootUTXOSetChunks:
 			receivedAllChunks = true
 		default:

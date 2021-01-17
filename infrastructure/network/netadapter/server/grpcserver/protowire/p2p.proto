@@ -151,7 +151,19 @@ message RequestIBDRootUTXOSetAndBlockMessage{
 }
 
 message IbdRootUtxoSetChunkMessage{
-  bytes chunk = 1;
+  repeated OutpointAndUtxoEntryPair outpointAndUtxoEntryPairs = 1;
+}
+
+message OutpointAndUtxoEntryPair{
+  Outpoint outpoint = 1;
+  UtxoEntry utxoEntry = 2;
+}
+
+message UtxoEntry {
+  uint64 amount = 1;
+  ScriptPublicKey scriptPublicKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
 }
 
 message RequestNextIbdRootUtxoSetChunkMessage {
