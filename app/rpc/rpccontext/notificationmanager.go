@@ -229,7 +229,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
 		listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
 		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
-			notification.Added = ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
+			notification.Added = append(notification.Added, ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)...);
 		}
 		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
 			for outpoint := range removedOutpoints {
