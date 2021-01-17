@@ -2,8 +2,10 @@ package blockvalidator_test
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -126,5 +128,62 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
+	})
+}
+
+func TestIsFinalizedTransaction(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestIsFinalizedTransaction")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		block1, err := tc.GetBlock(block1Hash)
+		if err != nil {
+			t.Fatalf("Error getting block1: %+v", err)
+		}
+
+		checkForLockTimeAndSequence := func(lockTime, sequence uint64, shouldPass bool) {
+			tx, err := testutils.CreateTransaction(block1.Transactions[0])
+			if err != nil {
+				t.Fatalf("Error creating tx: %+v", err)
+			}
+
+			tx.LockTime = lockTime
+			tx.Inputs[0].Sequence = sequence
+
+			_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{tx})
+			if (shouldPass && err != nil) || (!shouldPass && !errors.Is(err, ruleerrors.ErrUnfinalizedTx)) {
+				t.Fatalf("Unexpected error: %+v", err)
+			}
+		}
+
+		// The next block blue score is 2, so we check if we see the expected
+		// behaviour when the lock time blue score is higher, lower or equal
+		// to it.
+		checkForLockTimeAndSequence(3, 0, false)
+		checkForLockTimeAndSequence(2, 0, false)
+		checkForLockTimeAndSequence(1, 0, true)
+
+		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(model.VirtualBlockHash)
+		if err != nil {
+			t.Fatalf("PastMedianTime: %+v", err)
+		}
+		checkForLockTimeAndSequence(uint64(pastMedianTime)+1, 0, false)
+		checkForLockTimeAndSequence(uint64(pastMedianTime), 0, false)
+		checkForLockTimeAndSequence(uint64(pastMedianTime)-1, 0, true)
+
+		// We check that if the transaction is marked as finalized it'll pass for any lock time.
+		checkForLockTimeAndSequence(uint64(pastMedianTime), constants.MaxTxInSequenceNum, true)
+		checkForLockTimeAndSequence(2, constants.MaxTxInSequenceNum, true)
 	})
 }
