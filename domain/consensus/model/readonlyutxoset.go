@@ -14,3 +14,10 @@ type ReadOnlyUTXOSetIterator interface {
 	Next() bool
 	Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error)
 }
+
+// ReadOnlyUTXOSetIteratorWithLen is an iterator over all entries in a ReadOnlyUTXOSet
+// just like ReadOnlyUTXOSetIterator but with the length pre-known.
+type ReadOnlyUTXOSetIteratorWithLen interface {
+	ReadOnlyUTXOSetIterator
+	Len() int
+}

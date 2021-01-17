@@ -272,12 +272,11 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 	return outpoint, utxoEntry, nil
 }
 
-func (css *consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+func (css *consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIteratorWithLen) error {
 	if css.virtualUTXODiffStaging != nil {
 		return errors.New("cannot stage virtual UTXO set while virtual UTXO diff is staged")
 	}
-
-	utxoMap := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+	utxoMap := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, virtualUTXOSetIterator.Len())
 	for virtualUTXOSetIterator.Next() {
 		outpoint, entry, err := virtualUTXOSetIterator.Get()
 		if err != nil {

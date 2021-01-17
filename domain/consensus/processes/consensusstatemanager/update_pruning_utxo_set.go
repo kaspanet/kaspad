@@ -169,16 +169,28 @@ func (csm *consensusStateManager) commitSetPruningPointUTXOSetAll() error {
 
 type protoUTXOSetIterator struct {
 	utxoSet *utxoserialization.ProtoUTXOSet
-	index   int
+	started bool
 }
 
 func (p *protoUTXOSetIterator) Next() bool {
-	p.index++
-	return p.index < len(p.utxoSet.Utxos)
+	if len(p.utxoSet.Utxos) == 0 {
+		return false
+	}
+	if !p.started {
+		p.started = true
+	} else {
+		// Allow the GC to clear whatever we already read.
+		p.utxoSet.Utxos[0] = nil
+		p.utxoSet.Utxos = p.utxoSet.Utxos[1:]
+	}
+	return true
+}
+func (p *protoUTXOSetIterator) Len() int {
+	return len(p.utxoSet.Utxos)
 }
 
 func (p *protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
-	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
+	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[0].EntryOutpointPair)
 	if err != nil {
 		if serialization.IsMalformedError(err) {
 			return nil, nil, errors.Wrapf(ruleerrors.ErrMalformedUTXO, "malformed utxo: %s", err)
@@ -189,6 +201,6 @@ func (p *protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxo
 	return outpoint, entry, nil
 }
 
-func protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet *utxoserialization.ProtoUTXOSet) model.ReadOnlyUTXOSetIterator {
-	return &protoUTXOSetIterator{utxoSet: protoUTXOSet, index: -1}
+func protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet *utxoserialization.ProtoUTXOSet) model.ReadOnlyUTXOSetIteratorWithLen {
+	return &protoUTXOSetIterator{utxoSet: protoUTXOSet, started: false}
 }
