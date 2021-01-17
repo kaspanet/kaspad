@@ -57,13 +57,13 @@ func newUTXODiff() *immutableUTXODiff {
 
 // NewUTXODiffFromCollections returns a new UTXODiff with the given toAdd and toRemove collections
 func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTXODiff, error) {
-	add, ok := toAdd.(utxoCollection)
+	add, ok := toAdd.(Collection)
 	if !ok {
-		return nil, errors.New("toAdd is not of type utxoCollection")
+		return nil, errors.New("toAdd is not of type Collection")
 	}
-	remove, ok := toRemove.(utxoCollection)
+	remove, ok := toRemove.(Collection)
 	if !ok {
-		return nil, errors.New("toRemove is not of type utxoCollection")
+		return nil, errors.New("toRemove is not of type Collection")
 	}
 	return &immutableUTXODiff{
 		mutableUTXODiff: &mutableUTXODiff{

@@ -10,36 +10,39 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-type utxoCollection map[externalapi.DomainOutpoint]externalapi.UTXOEntry
+// Collection is a map between outpoints and utxo entries.
+type Collection map[externalapi.DomainOutpoint]externalapi.UTXOEntry
 
 // NewUTXOCollection creates a UTXO-Collection from the given map from outpoint to UTXOEntry
 func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry) model.UTXOCollection {
-	return utxoCollection(utxoMap)
+	return Collection(utxoMap)
 }
 
 // Get returns the model.UTXOEntry represented by provided outpoint,
 // and a boolean value indicating if said model.UTXOEntry is in the set or not
-func (uc utxoCollection) Get(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool) {
+func (uc Collection) Get(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool) {
 	entry, ok := uc[*outpoint]
 	return entry, ok
 }
 
 // Contains returns a boolean value indicating whether a UTXO entry is in the set
-func (uc utxoCollection) Contains(outpoint *externalapi.DomainOutpoint) bool {
+func (uc Collection) Contains(outpoint *externalapi.DomainOutpoint) bool {
 	_, ok := uc[*outpoint]
 	return ok
 }
 
-func (uc utxoCollection) Len() int {
+// Len returns the amount of entries in the collection.
+func (uc Collection) Len() int {
 	return len(uc)
 }
 
-func (uc utxoCollection) Clone() utxoCollection {
+// Clone clones the collection to a new one.
+func (uc Collection) Clone() Collection {
 	if uc == nil {
 		return nil
 	}
 
-	clone := make(utxoCollection, len(uc))
+	clone := make(Collection, len(uc))
 	for outpoint, entry := range uc {
 		clone[outpoint] = entry
 	}
@@ -47,7 +50,7 @@ func (uc utxoCollection) Clone() utxoCollection {
 	return clone
 }
 
-func (uc utxoCollection) String() string {
+func (uc Collection) String() string {
 	utxoStrings := make([]string, len(uc))
 
 	i := 0
@@ -64,24 +67,24 @@ func (uc utxoCollection) String() string {
 }
 
 // add adds a new UTXO entry to this collection
-func (uc utxoCollection) add(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) {
+func (uc Collection) add(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) {
 	uc[*outpoint] = entry
 }
 
 // addMultiple adds multiple UTXO entries to this collection
-func (uc utxoCollection) addMultiple(collectionToAdd utxoCollection) {
+func (uc Collection) addMultiple(collectionToAdd Collection) {
 	for outpoint, entry := range collectionToAdd {
 		uc[outpoint] = entry
 	}
 }
 
 // remove removes a UTXO entry from this collection if it exists
-func (uc utxoCollection) remove(outpoint *externalapi.DomainOutpoint) {
+func (uc Collection) remove(outpoint *externalapi.DomainOutpoint) {
 	delete(uc, *outpoint)
 }
 
 // removeMultiple removes multiple UTXO entries from this collection if it exists
-func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
+func (uc Collection) removeMultiple(collectionToRemove Collection) {
 	for outpoint := range collectionToRemove {
 		delete(uc, outpoint)
 	}
@@ -89,7 +92,7 @@ func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
 
 // containsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
 // is in the set and its blue score is equal to the given blue score.
-func (uc utxoCollection) containsWithBlueScore(outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
+func (uc Collection) containsWithBlueScore(outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
 	entry, ok := uc.Get(outpoint)
 	return ok && entry.BlockBlueScore() == blueScore
 }

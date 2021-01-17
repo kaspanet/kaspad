@@ -16,7 +16,8 @@ type utxoCollectionIterator struct {
 	pairs []utxoOutpointEntryPair
 }
 
-func (uc utxoCollection) Iterator() model.ReadOnlyUTXOSetIterator {
+// Iterator returns an iterator over the collection.
+func (uc Collection) Iterator() model.ReadOnlyUTXOSetIterator {
 	pairs := make([]utxoOutpointEntryPair, len(uc))
 	i := 0
 	for outpoint, entry := range uc {

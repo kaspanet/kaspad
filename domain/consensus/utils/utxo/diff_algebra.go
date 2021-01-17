@@ -6,7 +6,7 @@ import (
 )
 
 // checkIntersection checks if there is an intersection between two utxoCollections
-func checkIntersection(collection1 utxoCollection, collection2 utxoCollection) bool {
+func checkIntersection(collection1 Collection, collection2 Collection) bool {
 	for outpoint := range collection1 {
 		if collection2.Contains(&outpoint) {
 			return true
@@ -19,7 +19,7 @@ func checkIntersection(collection1 utxoCollection, collection2 utxoCollection) b
 // checkIntersectionWithRule checks if there is an intersection between two utxoCollections satisfying arbitrary rule
 // returns the first outpoint in the two collections' intersection satsifying the rule, and a boolean indicating whether
 // such outpoint exists
-func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoCollection,
+func checkIntersectionWithRule(collection1 Collection, collection2 Collection,
 	extraRule func(*externalapi.DomainOutpoint, externalapi.UTXOEntry, externalapi.UTXOEntry) bool) (
 	*externalapi.DomainOutpoint, bool) {
 
@@ -44,16 +44,16 @@ func minInt(a, b int) int {
 
 // intersectionWithRemainderHavingBlueScore calculates an intersection between two utxoCollections
 // having same blue score, returns the result and the remainder from collection1
-func intersectionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
-	result = make(utxoCollection, minInt(len(collection1), len(collection2)))
-	remainder = make(utxoCollection, len(collection1))
+func intersectionWithRemainderHavingBlueScore(collection1, collection2 Collection) (result, remainder Collection) {
+	result = make(Collection, minInt(len(collection1), len(collection2)))
+	remainder = make(Collection, len(collection1))
 	intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
 	return
 }
 
 // intersectionWithRemainderHavingBlueScoreInPlace calculates an intersection between two utxoCollections
 // having same blue score, puts it into result and into remainder from collection1
-func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder Collection) {
 	for outpoint, utxoEntry := range collection1 {
 		if collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
@@ -65,8 +65,8 @@ func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, r
 
 // subtractionHavingBlueScore calculates a subtraction between collection1 and collection2
 // having same blue score, returns the result
-func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result utxoCollection) {
-	result = make(utxoCollection, len(collection1))
+func subtractionHavingBlueScore(collection1, collection2 Collection) (result Collection) {
+	result = make(Collection, len(collection1))
 
 	subtractionHavingBlueScoreInPlace(collection1, collection2, result)
 	return
@@ -74,7 +74,7 @@ func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result
 
 // subtractionHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
 // having same blue score, puts it into result
-func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
+func subtractionHavingBlueScoreInPlace(collection1, collection2, result Collection) {
 	for outpoint, utxoEntry := range collection1 {
 		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
@@ -84,9 +84,9 @@ func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoColl
 
 // subtractionWithRemainderHavingBlueScore calculates a subtraction between collection1 and collection2
 // having same blue score, returns the result and the remainder from collection1
-func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
-	result = make(utxoCollection, len(collection1))
-	remainder = make(utxoCollection, len(collection1))
+func subtractionWithRemainderHavingBlueScore(collection1, collection2 Collection) (result, remainder Collection) {
+	result = make(Collection, len(collection1))
+	remainder = make(Collection, len(collection1))
 
 	subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
 	return
@@ -94,7 +94,7 @@ func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollec
 
 // subtractionWithRemainderHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
 // having same blue score, puts it into result and into remainder from collection1
-func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder Collection) {
 	for outpoint, utxoEntry := range collection1 {
 		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
 			result.add(&outpoint, utxoEntry)
@@ -175,13 +175,13 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	}
 
 	result := &mutableUTXODiff{
-		toAdd:    make(utxoCollection, len(this.toRemove)+len(other.toAdd)),
-		toRemove: make(utxoCollection, len(this.toAdd)+len(other.toRemove)),
+		toAdd:    make(Collection, len(this.toRemove)+len(other.toAdd)),
+		toRemove: make(Collection, len(this.toAdd)+len(other.toRemove)),
 	}
 
 	// All transactions in this.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
-	inBothToAdd := make(utxoCollection, len(this.toAdd))
+	inBothToAdd := make(Collection, len(this.toAdd))
 	subtractionWithRemainderHavingBlueScoreInPlace(this.toAdd, other.toAdd, result.toRemove, inBothToAdd)
 	// If they are in other.toRemove - base utxoSet is not the same
 	if checkIntersection(inBothToAdd, this.toRemove) != checkIntersection(inBothToAdd, other.toRemove) {
@@ -223,13 +223,13 @@ func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 			"withDiffInPlace: outpoint %s both in this.toAdd and in other.toAdd", offendingOutpoint)
 	}
 
-	intersection := make(utxoCollection, minInt(len(other.toRemove), len(this.toAdd)))
+	intersection := make(Collection, minInt(len(other.toRemove), len(this.toAdd)))
 	// If not exists neither in toAdd nor in toRemove - add to toRemove
 	intersectionWithRemainderHavingBlueScoreInPlace(other.toRemove, this.toAdd, intersection, this.toRemove)
 	// If already exists in toAdd with the same blueScore - remove from toAdd
 	this.toAdd.removeMultiple(intersection)
 
-	intersection = make(utxoCollection, minInt(len(other.toAdd), len(this.toRemove)))
+	intersection = make(Collection, minInt(len(other.toAdd), len(this.toRemove)))
 	// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
 	intersectionWithRemainderHavingBlueScoreInPlace(other.toAdd, this.toRemove, intersection, this.toAdd)
 	// If already exists in toRemove with the same blueScore - remove from toRemove

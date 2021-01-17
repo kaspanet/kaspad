@@ -11,8 +11,8 @@ import (
 )
 
 type mutableUTXODiff struct {
-	toAdd    utxoCollection
-	toRemove utxoCollection
+	toAdd    Collection
+	toRemove Collection
 
 	immutableReferences []*immutableUTXODiff
 }
@@ -24,8 +24,8 @@ func NewMutableUTXODiff() model.MutableUTXODiff {
 
 func newMutableUTXODiff() *mutableUTXODiff {
 	return &mutableUTXODiff{
-		toAdd:    utxoCollection{},
-		toRemove: utxoCollection{},
+		toAdd:    Collection{},
+		toRemove: Collection{},
 	}
 }
 
