@@ -17,13 +17,11 @@ type gRPCServer struct {
 	server             *grpc.Server
 }
 
-// MaxMessageSize is the max size allowed for a message
-const MaxMessageSize = 10 * 1024 * 1024 // 10MB
-
 // newGRPCServer creates a gRPC server
-func newGRPCServer(listeningAddresses []string) *gRPCServer {
+func newGRPCServer(listeningAddresses []string, maxMessageSize int) *gRPCServer {
+	log.Debugf("Created new GRPC server with maxMessageSize %d", maxMessageSize)
 	return &gRPCServer{
-		server:             grpc.NewServer(grpc.MaxRecvMsgSize(MaxMessageSize), grpc.MaxSendMsgSize(MaxMessageSize)),
+		server:             grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
 		listeningAddresses: listeningAddresses,
 	}
 }
@@ -39,8 +37,6 @@ func (s *gRPCServer) Start() error {
 			return err
 		}
 	}
-
-	log.Debugf("Server started with MaxMessageSize %d", MaxMessageSize)
 
 	return nil
 }
