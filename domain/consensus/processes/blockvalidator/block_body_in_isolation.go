@@ -28,6 +28,11 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 		return err
 	}
 
+	err = v.checkBlockHashMerkleRoot(block)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkBlockSize(block)
 	if err != nil {
 		return err
@@ -59,11 +64,6 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 	}
 
 	err = v.checkTransactionsInIsolation(block)
-	if err != nil {
-		return err
-	}
-
-	err = v.checkBlockHashMerkleRoot(block)
 	if err != nil {
 		return err
 	}

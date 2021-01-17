@@ -1,6 +1,8 @@
 package blockprocessor_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"strings"
 	"testing"
 
@@ -84,10 +86,11 @@ func TestBlockStatus(t *testing.T) {
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
+		invalidBlock.Transactions[0].Version = constants.MaxTransactionVersion + 1 // This should invalidate the block
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			disqualifiedBlock.Header.Version(),
 			disqualifiedBlock.Header.ParentHashes(),
-			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{}), // This should invalidate the block
+			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
 			disqualifiedBlock.Header.AcceptedIDMerkleRoot(),
 			disqualifiedBlock.Header.UTXOCommitment(),
 			disqualifiedBlock.Header.TimeInMilliseconds(),
