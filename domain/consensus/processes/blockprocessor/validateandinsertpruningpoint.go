@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)

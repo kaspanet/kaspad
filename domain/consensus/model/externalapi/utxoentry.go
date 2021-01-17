@@ -11,3 +11,8 @@ type UTXOEntry interface {
 	IsCoinbase() bool
 	Equal(other UTXOEntry) bool
 }
+
+type OutpointAndUTXOEntryPair struct {
+	Outpoint  *DomainOutpoint
+	UTXOEntry UTXOEntry
+}

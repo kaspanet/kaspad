@@ -229,11 +229,19 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (s *consensus) InsertPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
+	// TODO
+	return nil
+}
+
+func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {
