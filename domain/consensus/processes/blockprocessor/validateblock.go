@@ -53,13 +53,14 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 	err = bp.validatePostProofOfWork(block, isPruningPoint)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			bp.discardAllChanges()
 			// If we got ErrMissingParents the block shouldn't be considered as invalid
 			// because it could be added later on when its parents are present, and if
 			// we get ErrBadMerkleRoot we shouldn't mark the block as invalid because
 			// later on we can get the block with transactions that fits the merkle
 			// root.
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) && !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
+				// Discard all changes so we save only the block status
+				bp.discardAllChanges()
 				hash := consensushashing.BlockHash(block)
 				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
 				commitErr := bp.commitAllChanges()
