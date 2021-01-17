@@ -11,7 +11,7 @@ import (
 
 // Test configuration
 const(
-	numBlocksExponent = 10
+	numBlocksExponent = 14
 	logLevel = "warn"
 	validateMining = false
 )
