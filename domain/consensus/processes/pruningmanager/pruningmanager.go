@@ -310,12 +310,12 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
+	utxoIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
 	if err != nil {
 		return err
 	}
 
-	serializedUtxo, err := pm.calculateAndValidateSerializedUTXOSet(utxoIter, pruningPointHash)
+	serializedUtxo, err := pm.calculateAndValidateSerializedUTXOSet(utxoIterator, pruningPointHash)
 	if err != nil {
 		return err
 	}
