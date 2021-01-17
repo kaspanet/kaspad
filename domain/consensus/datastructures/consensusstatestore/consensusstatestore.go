@@ -3,6 +3,7 @@ package consensusstatestore
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
 )
 
@@ -11,7 +12,7 @@ type consensusStateStore struct {
 	tipsStaging               []*externalapi.DomainHash
 	virtualDiffParentsStaging []*externalapi.DomainHash
 	virtualUTXODiffStaging    model.UTXODiff
-	virtualUTXOSetStaging     model.UTXOCollection
+	virtualUTXOSetStaging     utxo.Collection
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
 

@@ -114,15 +114,8 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 
 	// Now put the new virtualUTXOSet into the database
 	css.virtualUTXOSetCache.Clear()
-	iterator := css.virtualUTXOSetStaging.Iterator()
-	for iterator.Next() {
-		outpoint, utxoEntry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		css.virtualUTXOSetCache.Add(outpoint, utxoEntry)
-		dbKey, err := utxoKey(outpoint)
+	for outpoint, utxoEntry := range css.virtualUTXOSetStaging {
+		dbKey, err := utxoKey(&outpoint)
 		if err != nil {
 			return err
 		}
@@ -134,6 +127,7 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		if err != nil {
 			return err
 		}
+		delete(css.virtualUTXOSetStaging, outpoint)
 	}
 
 	// Note: we don't discard the staging here since that's
@@ -295,7 +289,7 @@ func (css *consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model
 		}
 		utxoMap[*outpoint] = entry
 	}
-	css.virtualUTXOSetStaging = utxo.NewUTXOCollection(utxoMap)
+	css.virtualUTXOSetStaging = utxoMap
 
 	return nil
 }
