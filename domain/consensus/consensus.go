@@ -233,8 +233,7 @@ func (s *consensus) InsertPruningPointUTXOs(outpointAndUTXOEntryPairs []*externa
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// TODO
-	return nil
+	return s.pruningManager.InsertPruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
 func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {

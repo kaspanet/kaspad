@@ -456,3 +456,9 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(utxoSetIterator model.Re
 func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
+
+func (pm *pruningManager) InsertPruningPointUTXOs(
+	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+
+	return pm.pruningStore.InsertPruningPointUTXOs(outpointAndUTXOEntryPairs)
+}

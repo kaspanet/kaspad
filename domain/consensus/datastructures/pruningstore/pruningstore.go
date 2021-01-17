@@ -201,3 +201,11 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 
 	return dbContext.Has(pruningBlockHashKey)
 }
+
+func (ps *pruningStore) InsertPruningPointUTXOs(
+	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+
+	// Don't bother with staging here. Write directly to the database.
+
+	return nil
+}
