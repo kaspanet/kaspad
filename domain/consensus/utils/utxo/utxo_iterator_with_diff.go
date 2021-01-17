@@ -40,6 +40,11 @@ func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODif
 	}, nil
 }
 
+func (r *readOnlyUTXOIteratorWithDiff) First() {
+	r.baseIterator.First()
+	r.toAddIterator.First()
+}
+
 func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
 	for r.baseIterator.Next() { // keep looping until we reach an outpoint/entry pair that is not in r.diff.toRemove
 		r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()

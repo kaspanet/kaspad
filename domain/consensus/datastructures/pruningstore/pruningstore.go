@@ -16,7 +16,7 @@ var pruningSerializedUTXOSetKey = dbkeys.MakeBucket().Key([]byte("pruning-utxo-s
 type pruningStore struct {
 	pruningPointStaging          *externalapi.DomainHash
 	pruningPointCandidateStaging *externalapi.DomainHash
-	serializedUTXOSetStaging     []byte
+	utxoSetIteratorStaging       model.ReadOnlyUTXOSetIterator
 	pruningPointCandidateCache   *externalapi.DomainHash
 	pruningPointCache            *externalapi.DomainHash
 }
@@ -65,18 +65,20 @@ func New() model.PruningStore {
 }
 
 // Stage stages the pruning state
-func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte) {
+func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash,
+	pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
+
 	ps.pruningPointStaging = pruningPointBlockHash
-	ps.serializedUTXOSetStaging = pruningPointUTXOSetBytes
+	ps.utxoSetIteratorStaging = pruningPointUTXOSetIterator
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.serializedUTXOSetStaging != nil
+	return ps.pruningPointStaging != nil || ps.utxoSetIteratorStaging != nil
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
-	ps.serializedUTXOSetStaging = nil
+	ps.utxoSetIteratorStaging = nil
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -104,8 +106,8 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
 	}
 
-	if ps.serializedUTXOSetStaging != nil {
-		utxoSetBytes, err := ps.serializeUTXOSetBytes(ps.serializedUTXOSetStaging)
+	if ps.utxoSetIteratorStaging != nil {
+		utxoSetBytes, err := ps.serializeUTXOSetBytes(ps.utxoSetIteratorStaging)
 		if err != nil {
 			return err
 		}
@@ -144,8 +146,8 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.Dom
 
 // PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
 func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) ([]byte, error) {
-	if ps.serializedUTXOSetStaging != nil {
-		return ps.serializedUTXOSetStaging, nil
+	if ps.utxoSetIteratorStaging != nil {
+		return ps.utxoSetIteratorStaging, nil
 	}
 
 	dbPruningPointUTXOSetBytes, err := dbContext.Get(pruningSerializedUTXOSetKey)

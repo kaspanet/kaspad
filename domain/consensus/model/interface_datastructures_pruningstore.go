@@ -5,7 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // PruningStore represents a store for the current pruning state
 type PruningStore interface {
 	Store
-	StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte)
+	StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetIterator ReadOnlyUTXOSetIterator)
 	StagePruningPointCandidate(candidate *externalapi.DomainHash)
 	IsStaged() bool
 	PruningPointCandidate(dbContext DBReader) (*externalapi.DomainHash, error)

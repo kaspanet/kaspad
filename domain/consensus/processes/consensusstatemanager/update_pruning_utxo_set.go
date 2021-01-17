@@ -152,6 +152,10 @@ type protoUTXOSetIterator struct {
 	index   int
 }
 
+func (p *protoUTXOSetIterator) First() {
+	p.index = -1
+}
+
 func (p *protoUTXOSetIterator) Next() bool {
 	p.index++
 	return p.index < len(p.utxoSet.Utxos)
