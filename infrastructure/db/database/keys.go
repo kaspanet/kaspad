@@ -1,11 +1,10 @@
 package database
 
 import (
-	"bytes"
 	"encoding/hex"
 )
 
-var bucketSeparator = []byte("/")
+var bucketSeparator = byte('/')
 
 // Key is a helper type meant to combine prefix
 // and suffix into a single database key.
@@ -48,23 +47,25 @@ func newKey(bucket *Bucket, suffix []byte) *Key {
 // and sub-buckets that can be used to create database
 // keys and prefix-based cursors.
 type Bucket struct {
-	path [][]byte
+	path []byte
 }
 
 // MakeBucket creates a new Bucket using the given path
 // of buckets.
-func MakeBucket(path ...[]byte) *Bucket {
+func MakeBucket(path []byte) *Bucket {
+	if len(path) > 0 {
+		path = append(path, bucketSeparator)
+	}
 	return &Bucket{path: path}
 }
 
 // Bucket returns the sub-bucket of the current bucket
 // defined by bucketBytes.
 func (b *Bucket) Bucket(bucketBytes []byte) *Bucket {
-	newPath := make([][]byte, len(b.path)+1)
-	copy(newPath, b.path)
-	copy(newPath[len(b.path):], [][]byte{bucketBytes})
-
-	return MakeBucket(newPath...)
+	newPath := make([]byte, 0, len(b.path)+len(bucketBytes)+1) // +1 for the separator in MakeBucket
+	newPath = append(newPath, b.path...)
+	newPath = append(newPath, bucketBytes...)
+	return MakeBucket(newPath)
 }
 
 // Key returns a key in the current bucket with the
@@ -75,11 +76,5 @@ func (b *Bucket) Key(suffix []byte) *Key {
 
 // Path returns the full path of the current bucket.
 func (b *Bucket) Path() []byte {
-	bucketPath := bytes.Join(b.path, bucketSeparator)
-
-	bucketPathWithFinalSeparator := make([]byte, len(bucketPath)+len(bucketSeparator))
-	copy(bucketPathWithFinalSeparator, bucketPath)
-	copy(bucketPathWithFinalSeparator[len(bucketPath):], bucketSeparator)
-
-	return bucketPathWithFinalSeparator
+	return b.path
 }
