@@ -42,7 +42,10 @@ func TestNoAttack(t *testing.T) {
 	}
 	//fmt.Printf("passed %ds\n", time.Since(now).Seconds())
 
-	// Do whatever you want with TestConsensus.
+	err =  tc.ReachabilityManager().ValidateIntervals(tc.DAGParams().GenesisHash)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 
@@ -70,16 +73,10 @@ func TestAttack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-
-	//1. consensus.NewFactory().NewConsensus(parar)
-	//2. tc.DAGTopologyManager().Children(params.GenesisHash)
-	//3. heap := tc.DAGTraversalManager().NewDownHeap()
-	//4. blocks := make([]*externalapi.DomainBlock)
-	//5. con.ValidateAndInsertBlock()
-
-
-
 	//fmt.Printf("passed %ds\n", time.Since(now).Seconds())
 
-	// Do whatever you want with TestConsensus.
+	err =  tc.ReachabilityManager().ValidateIntervals(tc.DAGParams().GenesisHash)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

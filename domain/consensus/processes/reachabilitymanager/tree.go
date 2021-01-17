@@ -387,3 +387,69 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 }
 
 
+/*
+
+Test helper functions
+
+ */
+
+// Helper function (for testing purposes) to validate that all tree intervals are
+// allocated correctly and as expected
+func (rt *reachabilityManager) validateIntervals(node *externalapi.DomainHash) error {
+	queue := []*externalapi.DomainHash{node}
+	for len(queue) > 0 {
+		var current *externalapi.DomainHash
+		current, queue = queue[0], queue[1:]
+
+		children, err := rt.children(current)
+		if err != nil {
+			return err
+		}
+
+		if len(children) > 0 {
+			queue = append(queue, children...)
+		}
+
+		parentInterval, err := rt.interval(current)
+		if err != nil {
+			return err
+		}
+
+		for i, child := range children {
+			currentChildInterval, err := rt.interval(child)
+			if err != nil {
+				return err
+			}
+
+			if i > 0 {
+				previousChildInterval, err := rt.interval(children[i-1])
+				if err != nil {
+					return err
+				}
+
+				if previousChildInterval.End + 1 != currentChildInterval.Start {
+					err := errors.Errorf("Child intervals are expected be right after each other")
+					return err
+				}
+			}
+
+			if currentChildInterval.Start > currentChildInterval.End {
+				err := errors.Errorf("Interval allocation is empty")
+				return err
+			}
+
+			if currentChildInterval.Start < parentInterval.Start {
+				err := errors.Errorf("Child interval to the left of parent")
+				return err
+			}
+
+			if currentChildInterval.End >= parentInterval.End {
+				err := errors.Errorf("Child interval to the right of parent")
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+

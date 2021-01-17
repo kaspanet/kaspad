@@ -246,6 +246,11 @@ func TestAddChild(t *testing.T) {
 		}
 	}
 
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Scenario 2: test addChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
@@ -306,6 +311,11 @@ func TestAddChild(t *testing.T) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
 	}
+
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
@@ -333,6 +343,11 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 
 	if !helper.isReachabilityTreeAncestorOf(root, root) {
 		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is expected to be an ancestor of root")
+	}
+
+	err := manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -2,6 +2,7 @@ package reachabilitymanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 )
 
@@ -19,6 +20,10 @@ func (t *testReachabilityManager) SetReachabilityReindexSlack(reindexSlack uint6
 
 func (t *testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uint64) {
 	t.reachabilityManager.reindexWindow = reindexWindow
+}
+
+func (t *testReachabilityManager) ValidateIntervals(node *externalapi.DomainHash) error  {
+	return t.reachabilityManager.validateIntervals(node)
 }
 
 // NewTestReachabilityManager creates an instance of a TestReachabilityManager
