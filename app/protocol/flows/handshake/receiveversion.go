@@ -1,8 +1,6 @@
 package handshake
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -44,8 +42,10 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("receiveVersionFlow with %s", flow.peer.Address()))
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveVersionFlow.start")
 	defer onEnd()
+
+	log.Debugf("Starting receiveVersionFlow with %s", flow.peer.Address())
 
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
