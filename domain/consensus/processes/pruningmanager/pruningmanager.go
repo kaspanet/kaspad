@@ -411,13 +411,15 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 }
 
 func (pm *pruningManager) calculateAndValidateSerializedUTXOSet(
-	iter model.ReadOnlyUTXOSetIterator, pruningPointHash *externalapi.DomainHash) ([]byte, error) {
+	iterator model.ReadOnlyUTXOSetIterator, pruningPointHash *externalapi.DomainHash) ([]byte, error) {
 
-	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(iter)
+	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(iterator)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO: This is an assert that takes ~30 seconds to run
+	// It must be removed before launching testnet
 	err = pm.validateUTXOSetFitsCommitment(serializedUtxo, pruningPointHash)
 	if err != nil {
 		return nil, err
