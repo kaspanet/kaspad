@@ -113,8 +113,11 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader)
 		}
 		if !parentHeaderExists {
 			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-			isNotFoundError := database.IsNotFoundError(err)
-			if !isNotFoundError {
+			if err != nil {
+				if !database.IsNotFoundError(err) {
+					return err
+				}
+
 				if err != nil {
 					return err
 				}
