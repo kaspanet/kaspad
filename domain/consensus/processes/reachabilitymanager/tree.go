@@ -264,10 +264,10 @@ Internal reachabilityManager API
  */
 
 // addChild adds child to this tree node. If this node has no
-// remaining interval to allocate, a reindexing is triggered.
-// This method returns a list of model.ReachabilityTreeNodes modified
-// by it.
-func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHash) error {
+// remaining interval to allocate, a reindexing is triggered. When a reindexing
+// is triggered, the reindex root point is used within the
+// reindex algorithm's logic
+func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.DomainHash) error {
 	remaining, err := rt.remainingIntervalAfter(node)
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHas
 		rc := newReindexContext(rt)
 
 		reindexStartTime := time.Now()
-		err := rc.reindexIntervals(child, root)
+		err := rc.reindexIntervals(child, reindexRoot)
 		if err != nil {
 			return err
 		}
@@ -305,13 +305,6 @@ func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHas
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Took %dms.",
 			node, reindexTimeElapsed.Milliseconds())
-
-		// Temp validation
-		allocatedInterval, err := rt.interval(child)
-		if intervalSize(allocatedInterval) == 0 {
-			err = errors.Errorf("Interval allocation is empty")
-			return err
-		}
 
 		return nil
 	}

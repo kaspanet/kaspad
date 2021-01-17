@@ -185,15 +185,14 @@ Functions for handling reindex triggered by adding child block
  */
 
 // reindexIntervals traverses the reachability subtree that's
-// defined by this node and reallocates reachability interval space
+// defined by the new child node and reallocates reachability interval space
 // such that another reindexing is unlikely to occur shortly
 // thereafter. It does this by traversing down the reachability
 // tree until it finds a node with a subtree size that's greater than
 // its interval size. See propagateInterval for further details.
-func (rc *reindexContext) reindexIntervals(child, root *externalapi.DomainHash) error {
-	current := child
-
-	// Find the first ancestor that has sufficient interval space
+func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.DomainHash) error {
+	current := newChild
+	// Search for the first ancestor with sufficient interval space
 	for {
 		currentInterval, err := rc.manager.interval(current)
 		if err != nil {
@@ -209,6 +208,7 @@ func (rc *reindexContext) reindexIntervals(child, root *externalapi.DomainHash) 
 
 		currentSubtreeSize := rc.subTreeSizesCache[*current]
 
+		// Current has sufficient space, break and propagate
 		if currentIntervalSize >= currentSubtreeSize {
 			break
 		}
@@ -227,17 +227,21 @@ func (rc *reindexContext) reindexIntervals(child, root *externalapi.DomainHash) 
 				"than 2^64 blocks in the DAG.")
 		}
 
-		if current.Equal(root) {
+		if current.Equal(reindexRoot) {
 			return errors.Errorf("unexpected behavior: reindex root %s is out of capacity" +
 				"during reindexing. Theoretically, this " +
 				"should only ever happen if there are more " +
-				"than 2^64 blocks in the DAG.", root.String())
+				"than ~2^50 blocks in the DAG.", reindexRoot.String())
 		}
 
-		if res, _ := rc.manager.isStrictAncestorOf(parent, root); res {
-			// In this case we avoid reindexing the entire subtree and
-			// use slacks along the chain up from parent to reindex root
-			return rc.reindexIntervalsEarlierThanRoot(current, root, parent, currentSubtreeSize)
+		if res, _ := rc.manager.isStrictAncestorOf(parent, reindexRoot); res {
+			// In this case parent is guaranteed to have sufficient interval space,
+			// however we avoid reindexing the entire subtree above parent
+			// (which includes root and thus majority of blocks mined since)
+			// and use slacks along the chain up from parent to reindex root
+			// Note we set requiredAllocation=currentSubtreeSize in order to double the
+			// current interval capacity
+			return rc.reindexIntervalsEarlierThanRoot(current, reindexRoot, parent, currentSubtreeSize)
 		}
 
 		current = parent
@@ -247,47 +251,56 @@ func (rc *reindexContext) reindexIntervals(child, root *externalapi.DomainHash) 
 	return rc.propagateInterval(current)
 }
 
+// Reindex algorithm for the case where the new child node is not in reindex root's subtree.
+// The function is expected to allocate `requiredAllocation` to be added to interval
+// of `allocationNode`. `commonAncestor` is guaranteed to be a direct parent of `allocationNode` and
+// an ancestor of `reindexRoot`.
 func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
-	node, root, common *externalapi.DomainHash, requiredAllocation uint64) error {
+	allocationNode, reindexRoot, commonAncestor *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	// The chosen child is:
-	// a. A reachability tree child of `common`
-	// b. A reachability tree ancestor of `root`
-	chosen, err := rc.manager.FindNextDescendantChainBlock(root, common)
+	// a. A reachability tree child of `commonAncestor`
+	// b. A reachability tree ancestor of `reindexRoot` or `reindexRoot` itself
+	chosenChild, err := rc.manager.FindNextDescendantChainBlock(reindexRoot, commonAncestor)
 	if err != nil {
 		return err
 	}
 
-	nodeInterval, err := rc.manager.interval(node)
+	nodeInterval, err := rc.manager.interval(allocationNode)
 	if err != nil {
 		return err
 	}
 
-	chosenInterval, err := rc.manager.interval(chosen)
+	chosenInterval, err := rc.manager.interval(chosenChild)
 	if err != nil {
 		return err
 	}
 
 	if nodeInterval.Start < chosenInterval.Start {
-		// node is in the subtree before the chosen child
-		return rc.reclaimIntervalBefore(node, common, chosen, root, requiredAllocation)
+		// allocationNode is in the subtree before the chosen child
+		return rc.reclaimIntervalBefore(allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
 	}
 
-	// node is in the subtree after the chosen child
-	return rc.reclaimIntervalAfter(node, common, chosen, root, requiredAllocation)
+	// allocationNode is in the subtree after the chosen child
+	return rc.reclaimIntervalAfter(allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
 }
 
 func (rc *reindexContext) reclaimIntervalBefore(
-	node, common, chosen, root *externalapi.DomainHash, requiredAllocation uint64) error {
+	allocationNode, commonAncestor, chosenChild, reindexRoot *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	var slackSum uint64 = 0
 	var pathLen uint64 = 0
 	var pathSlackAlloc uint64 = 0
 
 	var err error
-	current := chosen
+	current := chosenChild
+
+	// Walk up the chain from common ancestor's chosen child towards reindex root
 	for {
-		if current.Equal(root) {
+		if current.Equal(reindexRoot) {
+			// Reached reindex root. In this case, since we reached (the unlimited) root,
+			// we also re-allocate new slack for the chain we just traversed
+
 			previousInterval, err := rc.manager.interval(current)
 			if err != nil {
 				return err
@@ -304,11 +317,12 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(node, common, current, offset)
+			err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
 			if err != nil {
 				return err
 			}
 
+			// Set the slack for each chain block to be reserved below during the chain walk down
 			pathSlackAlloc = rc.manager.reindexSlack
 			break
 		}
@@ -325,6 +339,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
+			// Set offset to be just enough to satisfy required allocation
 			offset := slackBeforeCurrent - (slackSum - requiredAllocation)
 
 			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
@@ -332,7 +347,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(node, common, current, offset)
+			err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
 			if err != nil {
 				return err
 			}
@@ -340,7 +355,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			break
 		}
 
-		current, err = rc.manager.FindNextDescendantChainBlock(root, current)
+		current, err = rc.manager.FindNextDescendantChainBlock(reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -348,17 +363,17 @@ func (rc *reindexContext) reclaimIntervalBefore(
 		pathLen++
 	}
 
-	// Go down the reachability tree towards the common ancestor.
+	// Go back down the reachability tree towards the common ancestor.
 	// On every hop we reindex the reachability subtree before the
 	// current node with an interval that is smaller.
-	// This is to make room for the new node.
+	// This is to make room for the required allocation.
 	for {
 		current, err = rc.manager.parent(current)
 		if err != nil {
 			return err
 		}
 
-		if current.Equal(common) {
+		if current.Equal(commonAncestor) {
 			break
 		}
 
@@ -378,7 +393,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			return err
 		}
 
-		err = rc.offsetSiblingsBefore(node, common, current, offset)
+		err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
 		if err != nil {
 			return err
 		}
@@ -387,42 +402,44 @@ func (rc *reindexContext) reclaimIntervalBefore(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsBefore(node, common, chosen *externalapi.DomainHash, offset uint64) error {
-	parent, err := rc.manager.parent(chosen)
+func (rc *reindexContext) offsetSiblingsBefore(
+	allocationNode, commonAncestor, current *externalapi.DomainHash, offset uint64) error {
+
+	parent, err := rc.manager.parent(current)
 	if err != nil {
 		return err
 	}
 
-	siblingsBefore, _, err := rc.manager.splitChildren(parent, chosen)
+	siblingsBefore, _, err := rc.manager.splitChildren(parent, current)
 	if err != nil {
 		return err
 	}
 
-	if parent.Equal(common) {
-		previousInterval, err := rc.manager.interval(node)
+	if parent.Equal(commonAncestor) {
+		previousInterval, err := rc.manager.interval(allocationNode)
 		if err != nil {
 			return err
 		}
 
-		err = rc.manager.stageInterval(node, previousInterval.IncreaseEnd(offset))
+		err = rc.manager.stageInterval(allocationNode, previousInterval.IncreaseEnd(offset))
 		if err != nil {
 			return err
 		}
 
-		err = rc.propagateInterval(node)
+		err = rc.propagateInterval(allocationNode)
 		if err != nil {
 			return err
 		}
 
 		indexOfNode := -1
 		for i, sibling := range siblingsBefore {
-			if sibling.Equal(node) {
+			if sibling.Equal(allocationNode) {
 				indexOfNode = i
 				break
 			}
 		}
 		if indexOfNode < 0 {
-			err = errors.Errorf("node %s is expected to be child of coomon %s", node.String(), common.String())
+			err = errors.Errorf("node %s is expected to be child of coomon %s", allocationNode.String(), commonAncestor.String())
 			return err
 		}
 		siblingsBefore = siblingsBefore[indexOfNode+1:]
@@ -449,16 +466,21 @@ func (rc *reindexContext) offsetSiblingsBefore(node, common, chosen *externalapi
 }
 
 func (rc *reindexContext) reclaimIntervalAfter(
-	node, common, chosen, root *externalapi.DomainHash, requiredAllocation uint64) error {
+	allocationNode, commonAncestor, chosenChild, reindexRoot *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	var slackSum uint64 = 0
 	var pathLen uint64 = 0
 	var pathSlackAlloc uint64 = 0
-	var err error
 
-	current := chosen
+	var err error
+	current := chosenChild
+
+	// Walk up the chain from common ancestor's chosen child towards reindex root
 	for {
-		if current.Equal(root) {
+		if current.Equal(reindexRoot) {
+			// Reached reindex root. In this case, since we reached (the unlimited) root,
+			// we also re-allocate new slack for the chain we just traversed
+
 			previousInterval, err := rc.manager.interval(current)
 			if err != nil {
 				return err
@@ -475,11 +497,12 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(node, common, current, offset)
+			err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
 			if err != nil {
 				return err
 			}
 
+			// Set the slack for each chain block to be reserved below during the chain walk down
 			pathSlackAlloc = rc.manager.reindexSlack
 			break
 		}
@@ -496,6 +519,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
+			// Set offset to be just enough to satisfy required allocation
 			offset := slackAfterCurrent - (slackSum - requiredAllocation)
 
 			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
@@ -503,7 +527,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(node, common, current, offset)
+			err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
 			if err != nil {
 				return err
 			}
@@ -511,7 +535,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			break
 		}
 
-		current, err = rc.manager.FindNextDescendantChainBlock(root, current)
+		current, err = rc.manager.FindNextDescendantChainBlock(reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -519,18 +543,17 @@ func (rc *reindexContext) reclaimIntervalAfter(
 		pathLen++
 	}
 
-	// Go down the reachability tree towards the common ancestor.
-	// On every hop we reindex the reachability subtree after the
+	// Go back down the reachability tree towards the common ancestor.
+	// On every hop we reindex the reachability subtree before the
 	// current node with an interval that is smaller.
-	// This is to make room for the new node.
-
+	// This is to make room for the required allocation.
 	for {
 		current, err = rc.manager.parent(current)
 		if err != nil {
 			return err
 		}
 
-		if current.Equal(common) {
+		if current.Equal(commonAncestor) {
 			break
 		}
 
@@ -550,7 +573,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			return err
 		}
 
-		err = rc.offsetSiblingsAfter(node, common, current, offset)
+		err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
 		if err != nil {
 			return err
 		}
@@ -559,19 +582,21 @@ func (rc *reindexContext) reclaimIntervalAfter(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsAfter(node, common, chosen *externalapi.DomainHash, offset uint64) error {
-	parent, err := rc.manager.parent(chosen)
+func (rc *reindexContext) offsetSiblingsAfter(
+	allocationNode, commonAncestor, current *externalapi.DomainHash, offset uint64) error {
+
+	parent, err := rc.manager.parent(current)
 	if err != nil {
 		return err
 	}
 
-	_, siblingsAfter, err := rc.manager.splitChildren(parent, chosen)
+	_, siblingsAfter, err := rc.manager.splitChildren(parent, current)
 	if err != nil {
 		return err
 	}
 
 	for _, sibling := range siblingsAfter {
-		if sibling.Equal(node) {
+		if sibling.Equal(allocationNode) {
 			previousInterval, err := rc.manager.interval(sibling)
 			if err != nil {
 				return err
@@ -617,27 +642,23 @@ Functions for handling reindex triggered by moving reindex root
 
 */
 
-func (rc *reindexContext) concentrateInterval(root, chosen *externalapi.DomainHash) error {
-	reindexRootChildNodesBeforeChosen, reindexRootChildNodesAfterChosen, err :=
-		rc.manager.splitChildren(root, chosen)
+func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *externalapi.DomainHash) error {
+	siblingsBeforeChosen, siblingsAfterChosen, err := rc.manager.splitChildren(reindexRoot, chosenChild)
 	if err != nil {
 		return err
 	}
 
-	reindexRootChildNodesBeforeChosenSizesSum, err :=
-		rc.tightenIntervalsBefore(root, reindexRootChildNodesBeforeChosen)
+	siblingsBeforeSizesSum, err := rc.tightenIntervalsBefore(reindexRoot, siblingsBeforeChosen)
 	if err != nil {
 		return err
 	}
 
-	reindexRootChildNodesAfterChosenSizesSum, err :=
-		rc.tightenIntervalsAfter(root, reindexRootChildNodesAfterChosen)
+	siblingsAfterSizesSum, err := rc.tightenIntervalsAfter(reindexRoot, siblingsAfterChosen)
 	if err != nil {
 		return err
 	}
 
-	err = rc.expandIntervalToChosen(root, chosen,
-		reindexRootChildNodesBeforeChosenSizesSum, reindexRootChildNodesAfterChosenSizesSum)
+	err = rc.expandIntervalToChosen(reindexRoot, chosenChild, siblingsBeforeSizesSum, siblingsAfterSizesSum)
 	if err != nil {
 		return err
 	}
@@ -646,60 +667,55 @@ func (rc *reindexContext) concentrateInterval(root, chosen *externalapi.DomainHa
 }
 
 func (rc *reindexContext) tightenIntervalsBefore(
-	root *externalapi.DomainHash,
-	nodesBeforeChosen []*externalapi.DomainHash) (sizesSum uint64,
-	err error) {
+	reindexRoot *externalapi.DomainHash, siblingsBeforeChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	reindexRootChildNodesBeforeChosenSizes, sizesSum :=
-		rc.calcReachabilityTreeNodeSizes(nodesBeforeChosen)
+	siblingSubtreeSizes, sizesSum := rc.calcReachabilityTreeNodeSizes(siblingsBeforeChosen)
 
-	reindexRootInterval, err := rc.manager.interval(root)
+	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
 		return 0, err
 	}
 
-	intervalBeforeReindexRootStart := newReachabilityInterval(
-		reindexRootInterval.Start+rc.manager.reindexSlack,
-		reindexRootInterval.Start+rc.manager.reindexSlack+sizesSum-1,
+	intervalBeforeChosen := newReachabilityInterval(
+		rootInterval.Start+rc.manager.reindexSlack,
+		rootInterval.Start+rc.manager.reindexSlack+sizesSum-1,
 	)
 
-	err = rc.propagateChildIntervals(
-		intervalBeforeReindexRootStart, nodesBeforeChosen, reindexRootChildNodesBeforeChosenSizes)
+	err = rc.propagateChildIntervals(intervalBeforeChosen, siblingsBeforeChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
+
 	return sizesSum, nil
 }
 
 func (rc *reindexContext) tightenIntervalsAfter(
-	root *externalapi.DomainHash, nodesAfterChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
+	reindexRoot *externalapi.DomainHash, siblingsAfterChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	reindexRootChildNodesAfterChosenSizes, sizesSum :=
-		rc.calcReachabilityTreeNodeSizes(nodesAfterChosen)
+	siblingSubtreeSizes, sizesSum := rc.calcReachabilityTreeNodeSizes(siblingsAfterChosen)
 
-	reindexRootInterval, err := rc.manager.interval(root)
+	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
 		return 0, err
 	}
 
-	intervalAfterReindexRootEnd := newReachabilityInterval(
-		reindexRootInterval.End-rc.manager.reindexSlack-sizesSum,
-		reindexRootInterval.End-rc.manager.reindexSlack-1,
+	intervalAfterChosen := newReachabilityInterval(
+		rootInterval.End-rc.manager.reindexSlack-sizesSum,
+		rootInterval.End-rc.manager.reindexSlack-1,
 	)
 
-	err = rc.propagateChildIntervals(
-		intervalAfterReindexRootEnd, nodesAfterChosen, reindexRootChildNodesAfterChosenSizes)
+	err = rc.propagateChildIntervals(intervalAfterChosen, siblingsAfterChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
+
 	return sizesSum, nil
 }
 
 func (rc *reindexContext) expandIntervalToChosen(
-	root, chosen *externalapi.DomainHash,
-	sizesSumBefore, sizesSumAfter uint64) error {
+	reindexRoot, chosenChild *externalapi.DomainHash, sizesSumBefore, sizesSumAfter uint64) error {
 
-	rootInterval, err := rc.manager.interval(root)
+	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
 		return err
 	}
@@ -709,7 +725,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		rootInterval.End-sizesSumAfter-rc.manager.reindexSlack-1,
 	)
 
-	currentChosenInterval, err := rc.manager.interval(chosen)
+	currentChosenInterval, err := rc.manager.interval(chosenChild)
 	if err != nil {
 		return err
 	}
@@ -724,7 +740,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		// expandIntervalToChosen is called (next time the
 		// reindex root moves), newChosenInterval is likely to
 		// contain chosen.Interval.
-		err := rc.manager.stageInterval(chosen, newReachabilityInterval(
+		err := rc.manager.stageInterval(chosenChild, newReachabilityInterval(
 			newChosenInterval.Start+rc.manager.reindexSlack,
 			newChosenInterval.End-rc.manager.reindexSlack,
 		))
@@ -732,16 +748,17 @@ func (rc *reindexContext) expandIntervalToChosen(
 			return err
 		}
 
-		err = rc.propagateInterval(chosen)
+		err = rc.propagateInterval(chosenChild)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = rc.manager.stageInterval(chosen, newChosenInterval)
+	err = rc.manager.stageInterval(chosenChild, newChosenInterval)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -766,13 +783,13 @@ func (rc *reindexContext) calcReachabilityTreeNodeSizes(treeNodes []*externalapi
 func (rc *reindexContext) propagateChildIntervals(
 	interval *model.ReachabilityInterval, childNodes []*externalapi.DomainHash, sizes []uint64) error {
 
-	childIntervalSizes, err := intervalSplitExact(interval, sizes)
+	childIntervals, err := intervalSplitExact(interval, sizes)
 	if err != nil {
 		return err
 	}
 
 	for i, child := range childNodes {
-		childInterval := childIntervalSizes[i]
+		childInterval := childIntervals[i]
 		err := rc.manager.stageInterval(child, childInterval)
 		if err != nil {
 			return err

@@ -100,5 +100,12 @@ func TestArbitraryDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
 		"../../testdata/dags/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
 		numBlocksExponent)
-	LoadJsonDAG(t, fileName, "TestNoAttack", true, true)
+	LoadJsonDAG(t, fileName, "TestArbitraryDAG", true, true)
+}
+
+func TestArbitraryAttackDAG(t *testing.T) {
+	fileName := fmt.Sprintf(
+		"../../testdata/dags/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		numBlocksExponent)
+	LoadJsonDAG(t, fileName, "TestArbitraryAttackDAG", true, true)
 }
