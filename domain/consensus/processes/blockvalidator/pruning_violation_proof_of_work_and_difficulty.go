@@ -117,14 +117,8 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader)
 				if !database.IsNotFoundError(err) {
 					return err
 				}
-
-				if err != nil {
-					return err
-				}
-
-				if parentStatus == externalapi.StatusInvalid {
-					return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
-				}
+			} else if parentStatus == externalapi.StatusInvalid {
+				return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 			}
 
 			missingParentHashes = append(missingParentHashes, parent)
