@@ -121,7 +121,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockIsNotPruned")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentHeadersExist")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -211,7 +211,7 @@ func TestCheckPruningPointViolation(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockIsNotPruned")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckPruningPointViolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
