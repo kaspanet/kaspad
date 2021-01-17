@@ -18,12 +18,13 @@ var (
 )
 
 // Struct used during reindex operations. Represents a temporary context
-// for caching subtree information during the *current* reindex only
+// for caching subtree information during the *current* reindex operation only
 type reindexContext struct {
 	manager *reachabilityManager
 	subTreeSizesCache map[externalapi.DomainHash]uint64
 }
 
+// Creates a new empty reindex context
 func newReindexContext(rt *reachabilityManager) reindexContext {
 	return reindexContext{
 		manager: rt,
@@ -189,15 +190,8 @@ Functions for handling reindex triggered by adding child block
 // thereafter. It does this by traversing down the reachability
 // tree until it finds a node with a subtree size that's greater than
 // its interval size. See propagateInterval for further details.
-func (rc *reindexContext) reindexIntervals(node, root *externalapi.DomainHash) error {
-
-	if res, _ := rc.manager.isStrictAncestorOf(node, root); res {
-		// In this case we avoid reindexing the entire subtree and
-		// use slacks along the chain up from parent to reindex root
-		return rc.reindexIntervalsEarlierThanRoot(node, root, node, 1)
-	}
-
-	current := node
+func (rc *reindexContext) reindexIntervals(child, root *externalapi.DomainHash) error {
+	current := child
 
 	// Find the first ancestor that has sufficient interval space
 	for {
@@ -274,16 +268,12 @@ func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
 		return err
 	}
 
-	if nodeInterval.End < chosenInterval.Start {
+	if nodeInterval.Start < chosenInterval.Start {
 		// node is in the subtree before the chosen child
 		return rc.reclaimIntervalBefore(node, common, chosen, root, requiredAllocation)
 	}
 
-	// node is either:
-	// * in the subtree after the chosen child
-	// * the common ancestor
-	// In both cases we reclaim from the "after" subtree. In the
-	// latter case this is arbitrary
+	// node is in the subtree after the chosen child
 	return rc.reclaimIntervalAfter(node, common, chosen, root, requiredAllocation)
 }
 
@@ -580,8 +570,8 @@ func (rc *reindexContext) offsetSiblingsAfter(node, common, chosen *externalapi.
 		return err
 	}
 
-	for i, sibling := range siblingsAfter {
-		if sibling.Equal(node) || (node.Equal(common) && i == len(siblingsAfter) - 1) {
+	for _, sibling := range siblingsAfter {
+		if sibling.Equal(node) {
 			previousInterval, err := rc.manager.interval(sibling)
 			if err != nil {
 				return err

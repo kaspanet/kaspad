@@ -284,12 +284,10 @@ func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHas
 		return err
 	}
 
-	// No allocation space left -- reindex
+	// No allocation space left at parent -- reindex
 	if intervalSize(remaining) == 0 {
 
-		// Temporarily set the child's interval to the empty remaining interval.
-		// This is done so that child-of-node checks (e.g.
-		// FindNextDescendantChainBlock) will not fail for node.
+		// Initially set the child's interval to the empty remaining interval.
 		err = rt.stageInterval(child, remaining)
 		if err != nil {
 			return err
@@ -298,7 +296,7 @@ func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHas
 		rc := newReindexContext(rt)
 
 		reindexStartTime := time.Now()
-		err := rc.reindexIntervals(node, root)
+		err := rc.reindexIntervals(child, root)
 		if err != nil {
 			return err
 		}
@@ -307,6 +305,13 @@ func (rt *reachabilityManager) addChild(node, child, root *externalapi.DomainHas
 		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Took %dms.",
 			node, reindexTimeElapsed.Milliseconds())
+
+		// Temp validation
+		allocatedInterval, err := rt.interval(child)
+		if intervalSize(allocatedInterval) == 0 {
+			err = errors.Errorf("Interval allocation is empty")
+			return err
+		}
 
 		return nil
 	}
@@ -393,10 +398,10 @@ Test helper functions
 
  */
 
-// Helper function (for testing purposes) to validate that all tree intervals are
-// allocated correctly and as expected
-func (rt *reachabilityManager) validateIntervals(node *externalapi.DomainHash) error {
-	queue := []*externalapi.DomainHash{node}
+// Helper function (for testing purposes) to validate that all tree intervals
+// under a specified subtree root are allocated correctly and as expected
+func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) error {
+	queue := []*externalapi.DomainHash{root}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
@@ -451,5 +456,27 @@ func (rt *reachabilityManager) validateIntervals(node *externalapi.DomainHash) e
 	}
 
 	return nil
+}
+
+// Helper function (for testing purposes) to get all nodes under a specified subtree root
+func (rt *reachabilityManager) getAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error)  {
+	queue := []*externalapi.DomainHash{root}
+	nodes := []*externalapi.DomainHash{root}
+	for len(queue) > 0 {
+		var current *externalapi.DomainHash
+		current, queue = queue[0], queue[1:]
+
+		children, err := rt.children(current)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(children) > 0 {
+			queue = append(queue, children...)
+			nodes = append(nodes, children...)
+		}
+	}
+
+	return nodes, nil
 }
 

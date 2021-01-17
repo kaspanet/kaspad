@@ -22,8 +22,12 @@ func (t *testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uin
 	t.reachabilityManager.reindexWindow = reindexWindow
 }
 
-func (t *testReachabilityManager) ValidateIntervals(node *externalapi.DomainHash) error  {
-	return t.reachabilityManager.validateIntervals(node)
+func (t *testReachabilityManager) ValidateIntervals(root *externalapi.DomainHash) error  {
+	return t.reachabilityManager.validateIntervals(root)
+}
+
+func (t *testReachabilityManager) GetAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error)  {
+	return t.reachabilityManager.getAllNodes(root)
 }
 
 // NewTestReachabilityManager creates an instance of a TestReachabilityManager

@@ -11,5 +11,6 @@ type TestReachabilityManager interface {
 	SetReachabilityReindexWindow(reindexWindow uint64)
 	SetReachabilityReindexSlack(reindexSlack uint64)
 	ReachabilityReindexSlack() uint64
-	ValidateIntervals(node *externalapi.DomainHash) error
+	ValidateIntervals(root *externalapi.DomainHash) error
+	GetAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 }
