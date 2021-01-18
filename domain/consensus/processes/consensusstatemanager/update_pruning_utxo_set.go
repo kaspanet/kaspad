@@ -20,7 +20,7 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 
 	err := csm.updatePruningPoint(newPruningPoint, *serializedUTXOSet)
 	*serializedUTXOSet = nil // remove all references to serializedUTXOSet.
-	runtime.GC() // Clear out all the used memory in `updatePruningPoint`
+	runtime.GC()             // Clear out all the used memory in `updatePruningPoint`
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
