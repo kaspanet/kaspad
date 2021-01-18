@@ -229,6 +229,13 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
+func (s *consensus) ClearCandidatePruningPointUTXOs() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.ClearCandidatePruningPointUTXOs()
+}
+
 func (s *consensus) InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()

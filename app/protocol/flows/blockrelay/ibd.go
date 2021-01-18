@@ -401,6 +401,11 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertIBDRootUTXOSet")
 	defer onEnd()
 
+	err := flow.Domain().Consensus().ClearCandidatePruningPointUTXOs()
+	if err != nil {
+		return err
+	}
+
 	receivedAllChunks := false
 	receivedChunkCount := 0
 	receivedUTXOCount := 0

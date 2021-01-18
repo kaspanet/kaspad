@@ -457,6 +457,21 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
 
+func (pm *pruningManager) ClearCandidatePruningPointUTXOs() error {
+	dbTx, err := pm.databaseContext.Begin()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = pm.pruningStore.ClearCandidatePruningPointUTXOs(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
+}
+
 func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 

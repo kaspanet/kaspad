@@ -204,6 +204,25 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 
 var candidatePruningPointUTXOsBucket = dbkeys.MakeBucket([]byte("candidate-pruning-point-utxos"))
 
+func (ps *pruningStore) ClearCandidatePruningPointUTXOs(dbTx model.DBTransaction) error {
+	cursor, err := dbTx.Cursor(candidatePruningPointUTXOsBucket)
+	if err != nil {
+		return err
+	}
+
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		err = dbTx.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ps *pruningStore) InsertCandidatePruningPointUTXOs(dbTx model.DBTransaction,
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 

@@ -13,5 +13,6 @@ type PruningStore interface {
 	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader) (bool, error)
 	PruningPointSerializedUTXOSet(dbContext DBReader) ([]byte, error)
+	ClearCandidatePruningPointUTXOs(dbTx DBTransaction) error
 	InsertCandidatePruningPointUTXOs(dbTx DBTransaction, outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
 }
