@@ -53,7 +53,7 @@ type Bucket struct {
 // MakeBucket creates a new Bucket using the given path
 // of buckets.
 func MakeBucket(path []byte) *Bucket {
-	if len(path) > 0 {
+	if len(path) > 0 && path[len(path)-1] != bucketSeparator {
 		path = append(path, bucketSeparator)
 	}
 	return &Bucket{path: path}
