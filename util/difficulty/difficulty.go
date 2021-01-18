@@ -1,7 +1,8 @@
-package math
+package difficulty
 
 import (
 	"math/big"
+	"time"
 )
 
 var (
@@ -12,26 +13,7 @@ var (
 	// oneLsh256 is 1 shifted left 256 bits. It is defined here to avoid
 	// the overhead of creating it multiple times.
 	oneLsh256 = new(big.Int).Lsh(bigOne, 256)
-
-	// log2FloorMasks defines the masks to use when quickly calculating
-	// floor(log2(x)) in a constant log2(64) = 6 steps, where x is a uint64, using
-	// shifts. They are derived from (2^(2^x) - 1) * (2^(2^x)), for x in 5..0.
-	log2FloorMasks = []uint64{0xffffffff00000000, 0xffff0000, 0xff00, 0xf0, 0xc, 0x2}
 )
-
-// FastLog2Floor calculates and returns floor(log2(x)) in a constant 5 steps.
-func FastLog2Floor(n uint64) uint8 {
-	rv := uint8(0)
-	exponent := uint8(32)
-	for i := 0; i < 6; i++ {
-		if n&log2FloorMasks[i] != 0 {
-			rv += exponent
-			n >>= exponent
-		}
-		exponent >>= 1
-	}
-	return rv
-}
 
 // CompactToBig converts a compact representation of a whole number N to an
 // unsigned 32-bit number. The representation is similar to IEEE754 floating
@@ -150,4 +132,47 @@ func CalcWork(bits uint32) *big.Int {
 	// (1 << 256) / (difficultyNum + 1)
 	denominator := new(big.Int).Add(difficultyNum, bigOne)
 	return new(big.Int).Div(oneLsh256, denominator)
+}
+
+func getHashrate(target *big.Int, TargetTimePerBlock time.Duration) *big.Int {
+	// From: https://bitcoin.stackexchange.com/a/5557/40800
+	// difficulty = hashrate / (2^256 / max_target / block_rate_in_seconds)
+	// hashrate = difficulty * (2^256 / max_target / block_rate_in_seconds)
+	// difficulty = max_target / target
+	// hashrate = (max_target / target) * (2^256 / max_target / block_rate_in_seconds)
+	// hashrate = 2^256 / (target * block_rate_in_seconds)
+
+	tmp := new(big.Int)
+	divisor := new(big.Int).Set(target)
+	divisor.Mul(divisor, tmp.SetInt64(TargetTimePerBlock.Milliseconds()))
+	divisor.Div(divisor, tmp.SetInt64(int64(time.Second/time.Millisecond))) // Scale it up to seconds.
+	divisor.Div(oneLsh256, divisor)
+	return divisor
+}
+
+// GetHashrateString returns the expected hashrate of the network on a certain difficulty target.
+func GetHashrateString(target *big.Int, TargetTimePerBlock time.Duration) string {
+	hashrate := getHashrate(target, TargetTimePerBlock)
+	in := hashrate.Text(10)
+	var postfix string
+	switch {
+	case len(in) <= 3:
+		return in + " H/s"
+	case len(in) <= 6:
+		postfix = " KH/s"
+	case len(in) <= 9:
+		postfix = " MH/s"
+	case len(in) <= 12:
+		postfix = " GH/s"
+	case len(in) <= 15:
+		postfix = " TH/s"
+	case len(in) <= 18:
+		postfix = " PH/s"
+	case len(in) <= 21:
+		postfix = " EH/s"
+	default:
+		return in + " H/s"
+	}
+	highPrecision := len(in) - ((len(in)-1)/3)*3
+	return in[:highPrecision] + "." + in[highPrecision:highPrecision+2] + postfix
 }

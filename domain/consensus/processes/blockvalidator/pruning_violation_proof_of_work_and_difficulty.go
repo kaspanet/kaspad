@@ -5,8 +5,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
@@ -81,15 +82,15 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 //    difficulty is not performed.
 func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
-	target := util.CompactToBig(header.Bits())
+	target := difficulty.CompactToBig(header.Bits())
 	if target.Sign() <= 0 {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is too low",
+		return errors.Wrapf(ruleerrors.ErrNegativeTarget, "block target difficulty of %064x is too low",
 			target)
 	}
 
 	// The target difficulty must be less than the maximum allowed.
 	if target.Cmp(v.powMax) > 0 {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block target difficulty of %064x is "+
+		return errors.Wrapf(ruleerrors.ErrTargetTooHigh, "block target difficulty of %064x is "+
 			"higher than max of %064x", target, v.powMax)
 	}
 
@@ -111,17 +112,17 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader)
 			return err
 		}
 		if !parentHeaderExists {
+			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+			if err != nil {
+				if !database.IsNotFoundError(err) {
+					return err
+				}
+			} else if parentStatus == externalapi.StatusInvalid {
+				return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
+			}
+
 			missingParentHashes = append(missingParentHashes, parent)
 			continue
-		}
-
-		parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
-		if err != nil {
-			return err
-		}
-
-		if parentStatus == externalapi.StatusInvalid {
-			return errors.Wrapf(ruleerrors.ErrInvalidAncestorBlock, "parent %s is invalid", parent)
 		}
 	}
 

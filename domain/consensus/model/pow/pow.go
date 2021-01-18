@@ -1,14 +1,14 @@
 package pow
 
 import (
-	"math/big"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
+
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 // CheckProofOfWorkWithTarget check's if the block has a valid PoW according to the provided target
@@ -24,7 +24,7 @@ func CheckProofOfWorkWithTarget(header externalapi.MutableBlockHeader, target *b
 // CheckProofOfWorkByBits check's if the block has a valid PoW according to its Bits field
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
 func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader) bool {
-	return CheckProofOfWorkWithTarget(header, util.CompactToBig(header.Bits()))
+	return CheckProofOfWorkWithTarget(header, difficulty.CompactToBig(header.Bits()))
 }
 
 func calcPowValue(header externalapi.MutableBlockHeader) *big.Int {

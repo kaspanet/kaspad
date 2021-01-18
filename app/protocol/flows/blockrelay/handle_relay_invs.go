@@ -31,7 +31,7 @@ type RelayInvsContext interface {
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
-	TrySetIBDRunning() bool
+	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
 	UnsetIBDRunning()
 }
 

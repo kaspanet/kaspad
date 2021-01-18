@@ -2,6 +2,7 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -24,7 +25,7 @@ var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool,
+func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
 
 	errChan := make(chan error)
@@ -33,7 +34,18 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop-internalLoop", func() {
+		const windowSize = 10
+		var expectedDurationForWindow time.Duration
+		var windowExpectedEndTime time.Time
+		hasBlockRateTarget := targetBlocksPerSecond != 0
+		if hasBlockRateTarget {
+			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
+			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+		}
+		blockInWindowIndex := 0
+
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+
 			foundBlock := make(chan *externalapi.DomainBlock)
 			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
 			block := <-foundBlock
@@ -42,6 +54,21 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, mineWhenNotSynced bool
 			if err != nil {
 				errChan <- err
 			}
+
+			if hasBlockRateTarget {
+				blockInWindowIndex++
+				if blockInWindowIndex == windowSize-1 {
+					deviation := windowExpectedEndTime.Sub(time.Now())
+					if deviation > 0 {
+						log.Infof("Finished to mine %d blocks %s earlier than expected. Sleeping %s to compensate",
+							windowSize, deviation, deviation)
+						time.Sleep(deviation)
+					}
+					blockInWindowIndex = 0
+					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+				}
+			}
+
 		}
 		doneChan <- struct{}{}
 	})
@@ -88,15 +115,19 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	blockHash := consensushashing.BlockHash(block)
 	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
 
-	err := client.SubmitBlock(block)
+	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if rejectReason == appmessage.RejectReasonIsInIBD {
+			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			return nil
+		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
 	}
 	return nil
 }
 
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits())
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
 	initialNonce := random.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {

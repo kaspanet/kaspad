@@ -49,3 +49,22 @@ jobs:
       - name: Test
         shell: bash
         run: ./build_and_test.sh
+
+  coverage:
+    runs-on: ubuntu-20.04
+    name: Produce code coverage
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+
+      - name: Create coverage file
+        # Because of https://github.com/golang/go/issues/27333 this seem to "fail" even though nothing is wrong, so ignore the failure
+        run: go test -json -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./... || true
+
+      - name: Upload coverage file
+        run: bash <(curl -s https://codecov.io/bash)

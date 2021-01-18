@@ -1,6 +1,7 @@
 package difficultymanager_test
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 )
 
 func TestDifficulty(t *testing.T) {
@@ -33,7 +33,7 @@ func TestDifficulty(t *testing.T) {
 		params.DifficultyAdjustmentWindowSize = 264
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -213,7 +213,7 @@ func TestDifficulty(t *testing.T) {
 }
 
 func compareBits(a uint32, b uint32) int {
-	aTarget := util.CompactToBig(a)
-	bTarget := util.CompactToBig(b)
+	aTarget := difficulty.CompactToBig(a)
+	bTarget := difficulty.CompactToBig(b)
 	return aTarget.Cmp(bTarget)
 }

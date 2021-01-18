@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -46,10 +47,11 @@ import (
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+		externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
-	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 }
 
@@ -61,7 +63,9 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+	externalapi.Consensus, error) {
+
 	dbManager := consensusdatabase.New(db)
 
 	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
@@ -86,6 +90,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200)
+	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -143,7 +148,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, ghostdagManager, headersSelectedTipStore)
+	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
+		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash
 	finalityManager := finalitymanager.New(
 		dbManager,
@@ -186,6 +192,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		blockStatusStore,
 		reachabilityDataStore,
+		consensusStateStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
@@ -234,7 +241,9 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		multisetStore,
 		acceptanceDataStore,
 		blockStore,
+		blockHeaderStore,
 		utxoDiffStore,
+		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth())
@@ -251,7 +260,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStatusStore,
 		blockHeaderStore,
 		blockStore,
-		pruningStore)
+		pruningStore,
+		headersSelectedChainStore)
 
 	blockBuilder := blockbuilder.New(
 		dbManager,
@@ -268,6 +278,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
+		dagParams.TargetTimePerBlock,
 		dbManager,
 		consensusStateManager,
 		pruningManager,
@@ -293,7 +304,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore,
 		blockHeaderStore,
 		headersSelectedTipStore,
-		finalityStore)
+		finalityStore,
+		headersSelectedChainStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
@@ -317,19 +329,20 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager:   reachabilityManager,
 		finalityManager:       finalityManager,
 
-		acceptanceDataStore:     acceptanceDataStore,
-		blockStore:              blockStore,
-		blockHeaderStore:        blockHeaderStore,
-		pruningStore:            pruningStore,
-		ghostdagDataStore:       ghostdagDataStore,
-		blockStatusStore:        blockStatusStore,
-		blockRelationStore:      blockRelationStore,
-		consensusStateStore:     consensusStateStore,
-		headersSelectedTipStore: headersSelectedTipStore,
-		multisetStore:           multisetStore,
-		reachabilityDataStore:   reachabilityDataStore,
-		utxoDiffStore:           utxoDiffStore,
-		finalityStore:           finalityStore,
+		acceptanceDataStore:       acceptanceDataStore,
+		blockStore:                blockStore,
+		blockHeaderStore:          blockHeaderStore,
+		pruningStore:              pruningStore,
+		ghostdagDataStore:         ghostdagDataStore,
+		blockStatusStore:          blockStatusStore,
+		blockRelationStore:        blockRelationStore,
+		consensusStateStore:       consensusStateStore,
+		headersSelectedTipStore:   headersSelectedTipStore,
+		multisetStore:             multisetStore,
+		reachabilityDataStore:     reachabilityDataStore,
+		utxoDiffStore:             utxoDiffStore,
+		finalityStore:             finalityStore,
+		headersSelectedChainStore: headersSelectedChainStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
@@ -347,7 +360,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	dataDir, err := ioutil.TempDir("", testName)
@@ -355,17 +368,17 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string)
 		return nil, nil, err
 	}
 
-	return f.NewTestConsensusWithDataDir(dagParams, dataDir)
+	return f.NewTestConsensusWithDataDir(dagParams, dataDir, isArchivalNode)
 }
 
-func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
+func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 
 	db, err := ldb.NewLevelDB(dataDir)
 	if err != nil {
 		return nil, nil, err
 	}
-	consensusAsInterface, err := f.NewConsensus(dagParams, db)
+	consensusAsInterface, err := f.NewConsensus(dagParams, db, isArchivalNode)
 	if err != nil {
 		return nil, nil, err
 	}

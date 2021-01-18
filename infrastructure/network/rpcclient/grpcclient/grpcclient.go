@@ -24,7 +24,7 @@ type GRPCClient struct {
 
 // Connect connects to the RPC server with the given address
 func Connect(address string) (*GRPCClient, error) {
-	const dialTimeout = 30 * time.Second
+	const dialTimeout = 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
@@ -35,7 +35,7 @@ func Connect(address string) (*GRPCClient, error) {
 
 	grpcClient := protowire.NewRPCClient(gRPCConnection)
 	stream, err := grpcClient.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
-		grpc.MaxCallRecvMsgSize(grpcserver.MaxMessageSize), grpc.MaxCallSendMsgSize(grpcserver.MaxMessageSize))
+		grpc.MaxCallRecvMsgSize(grpcserver.RPCMaxMessageSize), grpc.MaxCallSendMsgSize(grpcserver.RPCMaxMessageSize))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}

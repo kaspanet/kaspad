@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -81,7 +82,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
+	var selectedParentChainChanges *externalapi.SelectedChainPath
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when
@@ -116,10 +117,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	log.Debugf("Block %s validated and inserted", blockHash)
+	log.Debug(logger.NewLogClosure(func() string {
+		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock)
+		return fmt.Sprintf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)
+	}))
 
 	var logClosureErr error
-	log.Debugf("%s", logger.NewLogClosure(func() string {
+	log.Debug(logger.NewLogClosure(func() string {
 		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
 		if err != nil {
 			logClosureErr = err

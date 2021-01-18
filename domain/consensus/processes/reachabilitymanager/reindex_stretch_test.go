@@ -25,7 +25,7 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 	logger.SetLogLevels(logLevel)
 	params := dagconfig.SimnetParams
 	params.SkipProofOfWork = true
-	tc, teardown, err := consensus.NewFactory().NewTestConsensus(&params, testName)
+	tc, teardown, err := consensus.NewFactory().NewTestConsensus(&params, false, testName)
 	if err != nil {
 		t.Fatalf("Error setting up consensus: %+v", err)
 	}

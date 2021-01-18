@@ -68,19 +68,40 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
-func (tc *testConsensus) AddHeader(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
+func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
+	*externalapi.BlockInsertionResult, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
-	block, _, err := tc.testBlockBuilder.BuildBlockWithParents(parentHashes, coinbaseData, transactions)
+	header, err := tc.testBlockBuilder.BuildUTXOInvalidHeader(parentHashes)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	block.Transactions = nil
+	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
+		Header:       header,
+		Transactions: nil,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return consensushashing.HeaderHash(header), blockInsertionResult, nil
+}
+
+func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
+	*externalapi.BlockInsertionResult, error) {
+
+	// Require write lock because BuildBlockWithParents stages temporary data
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	block, err := tc.testBlockBuilder.BuildUTXOInvalidBlock(parentHashes)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block)
 	if err != nil {
@@ -134,6 +155,22 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 	return nil
 }
 
+func (tc *testConsensus) BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	// Require write lock because BuildBlockWithParents stages temporary data
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	return tc.testBlockBuilder.BuildUTXOInvalidBlock(parentHashes)
+}
+
+func (tc *testConsensus) BuildHeaderWithParents(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader, error) {
+	// Require write lock because BuildUTXOInvalidHeader stages temporary data
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	return tc.testBlockBuilder.BuildUTXOInvalidHeader(parentHashes)
+}
+
 func (tc *testConsensus) DiscardAllStores() {
 	tc.AcceptanceDataStore().Discard()
 	tc.BlockHeaderStore().Discard()
@@ -147,4 +184,5 @@ func (tc *testConsensus) DiscardAllStores() {
 	tc.PruningStore().Discard()
 	tc.ReachabilityDataStore().Discard()
 	tc.UTXODiffStore().Discard()
+	tc.HeadersSelectedChainStore().Discard()
 }

@@ -14,7 +14,8 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(params, false,
+			"TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
@@ -78,7 +79,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -173,7 +174,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
@@ -327,7 +328,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}

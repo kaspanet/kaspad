@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 
@@ -79,7 +80,7 @@ func (a *ComponentManager) Stop() {
 func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database, interrupt chan<- struct{}) (
 	*ComponentManager, error) {
 
-	domain, err := domain.New(cfg.ActiveNetParams, db)
+	domain, err := domain.New(cfg.ActiveNetParams, db, cfg.IsArchivalNode)
 	if err != nil {
 		return nil, err
 	}
