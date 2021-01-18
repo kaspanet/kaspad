@@ -51,6 +51,8 @@ func (flow *sendVersionFlow) start() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "sendVersionFlow.start")
 	defer onEnd()
 
+	log.Debugf("Starting sendVersionFlow with %s", flow.peer.Address())
+
 	// Version message.
 	localAddress := flow.AddressManager().BestLocalAddress(flow.peer.Connection().NetAddress())
 	subnetworkID := flow.Config().SubnetworkID

@@ -18,9 +18,11 @@ type p2pServer struct {
 	gRPCServer
 }
 
+const p2pMaxMessageSize = 10 * 1024 * 1024 // 10MB
+
 // NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
-	gRPCServer := newGRPCServer(listeningAddresses)
+	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize)
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}
 	protowire.RegisterP2PServer(gRPCServer.server, p2pServer)
 	return p2pServer, nil
@@ -48,7 +50,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 
 	client := protowire.NewP2PClient(gRPCClientConnection)
 	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
-		grpc.MaxCallRecvMsgSize(MaxMessageSize), grpc.MaxCallSendMsgSize(MaxMessageSize))
+		grpc.MaxCallRecvMsgSize(p2pMaxMessageSize), grpc.MaxCallSendMsgSize(p2pMaxMessageSize))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
