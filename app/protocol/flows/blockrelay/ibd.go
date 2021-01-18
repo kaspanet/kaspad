@@ -1,6 +1,7 @@
 package blockrelay
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"time"
 
@@ -340,6 +341,13 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 }
 
 func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
+	defer func() {
+		err := flow.Domain().Consensus().ClearCandidatePruningPointUTXOs()
+		if err != nil {
+			panic(fmt.Sprintf("failed to clear candidate pruning point data: %s", err))
+		}
+	}()
+
 	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
 	if err != nil {
 		return false, err
@@ -400,11 +408,6 @@ func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock
 func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertIBDRootUTXOSet")
 	defer onEnd()
-
-	err := flow.Domain().Consensus().ClearCandidatePruningPointUTXOs()
-	if err != nil {
-		return err
-	}
 
 	receivedAllChunks := false
 	receivedChunkCount := 0
