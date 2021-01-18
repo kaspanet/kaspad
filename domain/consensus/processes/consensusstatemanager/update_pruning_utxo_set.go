@@ -44,7 +44,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 			"it violates finality", newPruningPointHash)
 	}
 
-	utxoSetMultiset, err := csm.pruningStore.GetCandidatePruningPointMultiset(csm.databaseContext)
+	utxoSetMultiset, err := csm.pruningStore.CandidatePruningPointMultiset(csm.databaseContext)
 	if err != nil {
 		return err
 	}

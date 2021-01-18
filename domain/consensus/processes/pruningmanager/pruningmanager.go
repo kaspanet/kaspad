@@ -486,7 +486,7 @@ func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	candidateMultiset, err := pm.pruningStore.GetCandidatePruningPointMultiset(dbTx)
+	candidateMultiset, err := pm.pruningStore.CandidatePruningPointMultiset(dbTx)
 	if err != nil {
 		return err
 	}
