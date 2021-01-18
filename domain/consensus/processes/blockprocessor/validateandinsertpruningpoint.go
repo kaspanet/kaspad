@@ -29,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 	}
 
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
-	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint, serializedUTXOSet)
+	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint)
 	if err != nil {
 		return err
 	}

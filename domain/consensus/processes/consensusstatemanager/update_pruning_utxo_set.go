@@ -1,7 +1,6 @@
 package consensusstatemanager
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -13,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
-	err := csm.updatePruningPoint(newPruningPoint, serializedUTXOSet)
+	err := csm.updatePruningPoint(newPruningPoint)
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
@@ -26,7 +25,7 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	return csm.commitSetPruningPointUTXOSetAll()
 }
 
-func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	log.Debugf("updatePruningPoint start")
 	defer log.Debugf("updatePruningPoint end")
 
@@ -45,17 +44,10 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 			"it violates finality", newPruningPointHash)
 	}
 
-	protoUTXOSet := &utxoserialization.ProtoUTXOSet{}
-	err = proto.Unmarshal(serializedUTXOSet, protoUTXOSet)
+	utxoSetMultiset, err := csm.pruningStore.GetCandidatePruningPointMultiset(csm.databaseContext)
 	if err != nil {
 		return err
 	}
-
-	utxoSetMultiSet, err := utxoserialization.CalculateMultisetFromProtoUTXOSet(protoUTXOSet)
-	if err != nil {
-		return err
-	}
-	log.Debugf("Calculated multiset for given UTXO set: %s", utxoSetMultiSet.Hash())
 
 	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, newPruningPointHash)
 	if err != nil {
@@ -64,9 +56,9 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	log.Debugf("The UTXO commitment of the pruning point: %s",
 		newPruningPointHeader.UTXOCommitment())
 
-	if !newPruningPointHeader.UTXOCommitment().Equal(utxoSetMultiSet.Hash()) {
+	if !newPruningPointHeader.UTXOCommitment().Equal(utxoSetMultiset.Hash()) {
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
-			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *utxoSetMultiSet.Hash())
+			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *utxoSetMultiset.Hash())
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
@@ -121,7 +113,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusUTXOValid)
 
 	log.Debugf("Staging the new pruning point multiset")
-	csm.multisetStore.Stage(newPruningPointHash, utxoSetMultiSet)
+	csm.multisetStore.Stage(newPruningPointHash, utxoSetMultiset)
 	return nil
 }
 
