@@ -9,5 +9,5 @@ type ReachabilityManager interface {
 	IsReachabilityTreeAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsDAGAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	UpdateReindexRoot(selectedTip *externalapi.DomainHash) error
-	FindNextDescendantChainBlock(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error)
+	FindNextAncestor(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error)
 }

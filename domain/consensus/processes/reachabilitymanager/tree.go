@@ -149,7 +149,7 @@ func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externa
 
 // NextDescendantChainBlock finds the reachability tree child
 // of 'ancestor' which is also an ancestor of 'descendant'.
-func (rt *reachabilityManager) FindNextDescendantChainBlock(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) FindNextAncestor(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	childrenOfAncestor, err := rt.children(ancestor)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (rt *reachabilityManager) FindNextDescendantChainBlock(descendant, ancestor
 
 	nextAncestor, ok := rt.findAncestorOfNode(childrenOfAncestor, descendant)
 	if !ok {
-		return nil, errors.Errorf("parent is not an ancestor of descendant")
+		return nil, errors.Errorf("ancestor is not an ancestor of descendant")
 	}
 
 	return nextAncestor, nil
@@ -176,17 +176,17 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
-		currentChildren, err := rt.children(current)
+		children, err := rt.children(current)
 		if err != nil {
 			return "", err
 		}
 
-		if len(currentChildren) == 0 {
+		if len(children) == 0 {
 			continue
 		}
 
 		line := ""
-		for _, child := range currentChildren {
+		for _, child := range children {
 			childInterval, err := rt.interval(child)
 			if err != nil {
 				return "", err
@@ -220,18 +220,18 @@ func (rt *reachabilityManager) isStrictAncestorOf(node, other *externalapi.Domai
 // and the common ancestor is longer than the chain between node and the
 // common ancestor.
 func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	currentThis := node
+	current := node
 	for {
-		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(currentThis, root)
+		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(current, root)
 		if err != nil {
 			return nil, err
 		}
 
 		if isAncestorOf {
-			return currentThis, nil
+			return current, nil
 		}
 
-		currentThis, err = rt.parent(currentThis)
+		current, err = rt.parent(current)
 		if err != nil {
 			return nil, err
 		}
@@ -356,7 +356,7 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return commonAncestor, true, nil
 	}
 
-	reindexRootChosenChild, err := rt.FindNextDescendantChainBlock(newTreeNode, reindexRoot)
+	reindexRootChosenChild, err := rt.FindNextAncestor(newTreeNode, reindexRoot)
 	if err != nil {
 		return nil, false, err
 	}
@@ -366,12 +366,12 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 		return nil, false, err
 	}
 
-	reindexRootChosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, reindexRootChosenChild)
+	chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, reindexRootChosenChild)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if newTreeNodeGHOSTDAGData.BlueScore()-reindexRootChosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
+	if newTreeNodeGHOSTDAGData.BlueScore()-chosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
 		return nil, false, nil
 	}
 

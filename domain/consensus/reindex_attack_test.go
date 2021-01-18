@@ -72,7 +72,7 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 			blocks = append(blocks, newBlock)
 
 			// Validate intervals every 'validation frequency' blocks
-			if i%validationFreq == 0 {
+			if i%validationFreq == 0 || i == numBlocksToAdd-1 {
 				err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 				if err != nil {
 					t.Fatal(err)

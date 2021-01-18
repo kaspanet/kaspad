@@ -261,7 +261,7 @@ func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
 	// The chosen child is:
 	// a. A reachability tree child of `commonAncestor`
 	// b. A reachability tree ancestor of `reindexRoot` or `reindexRoot` itself
-	chosenChild, err := rc.manager.FindNextDescendantChainBlock(reindexRoot, commonAncestor)
+	chosenChild, err := rc.manager.FindNextAncestor(reindexRoot, commonAncestor)
 	if err != nil {
 		return err
 	}
@@ -355,7 +355,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			break
 		}
 
-		current, err = rc.manager.FindNextDescendantChainBlock(reindexRoot, current)
+		current, err = rc.manager.FindNextAncestor(reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -535,7 +535,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			break
 		}
 
-		current, err = rc.manager.FindNextDescendantChainBlock(reindexRoot, current)
+		current, err = rc.manager.FindNextAncestor(reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -597,17 +597,17 @@ func (rc *reindexContext) offsetSiblingsAfter(
 
 	for _, sibling := range siblingsAfter {
 		if sibling.Equal(allocationNode) {
-			previousInterval, err := rc.manager.interval(sibling)
+			previousInterval, err := rc.manager.interval(allocationNode)
 			if err != nil {
 				return err
 			}
 
-			err = rc.manager.stageInterval(sibling, previousInterval.DecreaseStart(offset))
+			err = rc.manager.stageInterval(allocationNode, previousInterval.DecreaseStart(offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.propagateInterval(sibling)
+			err = rc.propagateInterval(allocationNode)
 			if err != nil {
 				return err
 			}
