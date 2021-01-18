@@ -1,17 +1,19 @@
 package consensusstatestore
 
 import (
-	"fmt"
 	"runtime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 var utxoSetBucket = database.MakeBucket([]byte("virtual-utxo-set"))
+
+var log, _ = logger.Get(logger.SubsystemTags.SCRP)
 
 func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	serializedOutpoint, err := serializeOutpoint(outpoint)
@@ -91,7 +93,7 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 	stats := runtime.MemStats{}
 	runtime.ReadMemStats(&stats)
 
-	fmt.Printf("committing virtual utxo set, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	log.Debugf("committing virtual utxo set, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	// Clear the existing virtual utxo set in database before adding the new one
 	cursor, err := dbTx.Cursor(utxoSetBucket)
@@ -110,7 +112,7 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 	}
 
 	runtime.ReadMemStats(&stats)
-	fmt.Printf("After clearing the utxoset from DB, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	log.Debugf("After clearing the utxoset from DB, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	// Now put the new virtualUTXOSet into the database
 	css.virtualUTXOSetCache.Clear()
@@ -129,6 +131,12 @@ func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) e
 		}
 		delete(css.virtualUTXOSetStaging, outpoint)
 	}
+
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Finished commitVirtualUTXOSet, running GC used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	runtime.GC() // Clear out all the used memory in this function.
+	runtime.ReadMemStats(&stats)
+	log.Debugf("Finished commitVirtualUTXOSet, after GC used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
 
 	// Note: we don't discard the staging here since that's
 	// being done at the end of Commit()

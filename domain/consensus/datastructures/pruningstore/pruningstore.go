@@ -122,6 +122,11 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+
+		runtime.ReadMemStats(&stats)
+		log.Debugf("pruningStore.Commit Staged UTXO set, used memory: %d bytes, total: %d bytes\n", stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+		ps.serializedUTXOSetStaging = nil
+		runtime.GC() // Clear out all the used memory by pruningSerializedUTXOSetKey.
 	}
 
 	runtime.ReadMemStats(&stats)
