@@ -6,8 +6,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 	"testing"
 	"time"
 )
@@ -120,6 +123,18 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
+		serializedFakeUTXOSet, err := makeSerializedFakeUTXOSet()
+		if err != nil {
+			t.Fatalf("makeSerializedFakeUTXOSet: %+v", err)
+		}
+
+		// Check that ValidateAndInsertPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
+		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock, serializedFakeUTXOSet)
+		if !errors.Is(err, ruleerrors.ErrBadPruningPointUTXOSet) {
+			t.Fatalf("Unexpected error: %+v", err)
+		}
+
+		// Check that ValidateAndInsertPruningPoint works given the right arguments.
 		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock, pruningPointUTXOSet)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertPruningPoint: %+v", err)
@@ -160,5 +175,45 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 		if !externalapi.HashesEqual(synceeTips, syncerTips) {
 			t.Fatalf("Syncee's tips are %s while syncer's are %s", synceeTips, syncerTips)
 		}
+
+		synceePruningPoint, err := tcSyncee.PruningPoint()
+		if err != nil {
+			t.Fatalf("PruningPoint: %+v", err)
+		}
+
+		if !synceePruningPoint.Equal(pruningPoint) {
+			t.Fatalf("The syncee pruning point has not changed as exepcted")
+		}
 	})
+}
+
+type fakeUTXOSetIterator struct {
+	nextCalled bool
+}
+
+func (f *fakeUTXOSetIterator) Next() bool {
+	if f.nextCalled {
+		return false
+	}
+	f.nextCalled = true
+	return true
+}
+
+func (f *fakeUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+	return &externalapi.DomainOutpoint{
+			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}),
+			Index:         0,
+		}, utxo.NewUTXOEntry(1000, &externalapi.ScriptPublicKey{
+			Script:  []byte{1, 2, 3},
+			Version: 0,
+		}, false, 2000), nil
+}
+
+func makeSerializedFakeUTXOSet() ([]byte, error) {
+	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(&fakeUTXOSetIterator{})
+	if err != nil {
+		return nil, err
+	}
+
+	return proto.Marshal(serializedUtxo)
 }
