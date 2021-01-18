@@ -22,11 +22,11 @@ func (t *testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uin
 	t.reachabilityManager.reindexWindow = reindexWindow
 }
 
-func (t *testReachabilityManager) ValidateIntervals(root *externalapi.DomainHash) error  {
+func (t *testReachabilityManager) ValidateIntervals(root *externalapi.DomainHash) error {
 	return t.reachabilityManager.validateIntervals(root)
 }
 
-func (t *testReachabilityManager) GetAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error)  {
+func (t *testReachabilityManager) GetAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	return t.reachabilityManager.getAllNodes(root)
 }
 

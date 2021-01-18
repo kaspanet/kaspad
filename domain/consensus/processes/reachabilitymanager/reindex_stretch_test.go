@@ -13,10 +13,10 @@ import (
 )
 
 // Test configuration
-const(
+const (
 	numBlocksExponent = 12
-	logLevel = "warn"
-	validateMining = false
+	logLevel          = "warn"
+	validateMining    = false
 )
 
 func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, useSmallReindexSlack bool) {

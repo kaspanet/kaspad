@@ -14,9 +14,9 @@ import (
 
 type testConsensus struct {
 	*consensus
-	dagParams *dagconfig.Params
+	dagParams  *dagconfig.Params
 	testParams *testapi.TestParams
-	database  database.Database
+	database   database.Database
 
 	testBlockBuilder          testapi.TestBlockBuilder
 	testReachabilityManager   testapi.TestReachabilityManager

@@ -20,24 +20,23 @@ var (
 // reindexContext is a struct used during reindex operations. It represents a temporary context
 // for caching subtree information during the *current* reindex operation only
 type reindexContext struct {
-	manager *reachabilityManager
+	manager           *reachabilityManager
 	subTreeSizesCache map[externalapi.DomainHash]uint64
 }
 
 // newReindexContext creates a new empty reindex context
 func newReindexContext(rt *reachabilityManager) reindexContext {
 	return reindexContext{
-		manager: rt,
+		manager:           rt,
 		subTreeSizesCache: make(map[externalapi.DomainHash]uint64),
 	}
 }
-
 
 /*
 
 Core (BFS) algorithms used during reindexing
 
- */
+*/
 
 // countSubtrees counts the size of each subtree under this node,
 // and populates the provided subTreeSizeMap with the results.
@@ -176,12 +175,11 @@ func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error 
 	return nil
 }
 
-
 /*
 
 Functions for handling reindex triggered by adding child block
 
- */
+*/
 
 // reindexIntervals traverses the reachability subtree that's
 // defined by the new child node and reallocates reachability interval space
@@ -227,9 +225,9 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 		}
 
 		if current.Equal(reindexRoot) {
-			return errors.Errorf("unexpected behavior: reindex root %s is out of capacity" +
-				"during reindexing. Theoretically, this " +
-				"should only ever happen if there are more " +
+			return errors.Errorf("unexpected behavior: reindex root %s is out of capacity"+
+				"during reindexing. Theoretically, this "+
+				"should only ever happen if there are more "+
 				"than ~2^50 blocks in the DAG.", reindexRoot.String())
 		}
 
@@ -305,7 +303,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
-			offset := requiredAllocation + rc.manager.reindexSlack * pathLen - slackSum
+			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
 			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
 			if err != nil {
 				return err
@@ -485,7 +483,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
-			offset := requiredAllocation + rc.manager.reindexSlack * pathLen - slackSum
+			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
 			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
 			if err != nil {
 				return err
@@ -632,8 +630,6 @@ func (rc *reindexContext) offsetSiblingsAfter(
 
 	return nil
 }
-
-
 
 /*
 

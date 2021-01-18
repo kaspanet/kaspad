@@ -23,12 +23,11 @@ func newReachabilityTreeData() model.ReachabilityData {
 	return data
 }
 
-
 /*
 
 Interval helper functions
 
- */
+*/
 
 func (rt *reachabilityManager) intervalRangeForChildAllocation(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
 	interval, err := rt.interval(node)
@@ -123,12 +122,11 @@ func (rt *reachabilityManager) hasSlackIntervalAfter(node *externalapi.DomainHas
 	return intervalSize(interval) > 0, nil
 }
 
-
 /*
 
 ReachabilityManager API functions
 
- */
+*/
 
 // IsReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
 // of the other node. Note that we use the graph theory convention
@@ -200,12 +198,11 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 	return strings.Join(lines, "\n"), nil
 }
 
-
 /*
 
 Tree helper functions
 
- */
+*/
 
 func (rt *reachabilityManager) isStrictAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
 	if node.Equal(other) {
@@ -256,12 +253,11 @@ func (rt *reachabilityManager) splitChildren(node, pivot *externalapi.DomainHash
 	return nil, nil, errors.Errorf("pivot not a pivot of node")
 }
 
-
 /*
 
 Internal reachabilityManager API
 
- */
+*/
 
 // addChild adds child to this tree node. If this node has no
 // remaining interval to allocate, a reindexing is triggered. When a reindexing
@@ -384,12 +380,11 @@ func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *ex
 	return reindexRootChosenChild, true, nil
 }
 
-
 /*
 
 Test helper functions
 
- */
+*/
 
 // Helper function (for testing purposes) to validate that all tree intervals
 // under a specified subtree root are allocated correctly and as expected
@@ -430,7 +425,7 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 					return err
 				}
 
-				if siblingInterval.End + 1 != childInterval.Start {
+				if siblingInterval.End+1 != childInterval.Start {
 					err := errors.Errorf("Child intervals are expected be right after each other")
 					return err
 				}
@@ -452,7 +447,7 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 }
 
 // Helper function (for testing purposes) to get all nodes under a specified subtree root
-func (rt *reachabilityManager) getAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error)  {
+func (rt *reachabilityManager) getAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	queue := []*externalapi.DomainHash{root}
 	nodes := []*externalapi.DomainHash{root}
 	for len(queue) > 0 {
@@ -472,4 +467,3 @@ func (rt *reachabilityManager) getAllNodes(root *externalapi.DomainHash) ([]*ext
 
 	return nodes, nil
 }
-

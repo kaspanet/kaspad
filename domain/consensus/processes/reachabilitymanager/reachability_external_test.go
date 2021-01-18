@@ -67,7 +67,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			}
 		}
 
-		err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -162,7 +162,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 				intervalSize(chain1RootBlock), expectedChain1RootIntervalSize)
 		}
 
-		err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -248,7 +248,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			//	expectedCenterInterval, intervalSize(centerBlock))
 		}
 
-		err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -282,7 +282,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				//t.Fatalf("the interval of centerBlock's child unexpectedly changed")
 			}
 
-			err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -310,13 +310,13 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				//t.Fatalf("the interval of centerBlock's child unexpectedly changed")
 			}
 
-			err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -359,7 +359,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		err =  tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
