@@ -457,12 +457,17 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
 
-func (pm *pruningManager) ClearCandidatePruningPointUTXOs() error {
+func (pm *pruningManager) ClearCandidatePruningPointData() error {
 	dbTx, err := pm.databaseContext.Begin()
 	if err != nil {
 		return err
 	}
 	defer dbTx.RollbackUnlessClosed()
+
+	err = pm.pruningStore.ClearCandidatePruningPointMultiset(dbTx)
+	if err != nil {
+		return err
+	}
 
 	err = pm.pruningStore.ClearCandidatePruningPointUTXOs(dbTx)
 	if err != nil {
@@ -480,6 +485,22 @@ func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 		return err
 	}
 	defer dbTx.RollbackUnlessClosed()
+
+	candidateMultiset, err := pm.pruningStore.GetCandidatePruningPointMultiset(dbTx)
+	if err != nil {
+		return err
+	}
+	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		serializedUTXO, err := utxo.SerializeUTXO(outpointAndUTXOEntryPair.UTXOEntry, outpointAndUTXOEntryPair.Outpoint)
+		if err != nil {
+			return err
+		}
+		candidateMultiset.Add(serializedUTXO)
+	}
+	err = pm.pruningStore.UpdateCandidatePruningPointMultiset(dbTx, candidateMultiset)
+	if err != nil {
+		return err
+	}
 
 	err = pm.pruningStore.InsertCandidatePruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
 	if err != nil {

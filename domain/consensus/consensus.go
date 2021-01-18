@@ -233,7 +233,7 @@ func (s *consensus) ClearCandidatePruningPointUTXOs() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.ClearCandidatePruningPointUTXOs()
+	return s.pruningManager.ClearCandidatePruningPointData()
 }
 
 func (s *consensus) InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {

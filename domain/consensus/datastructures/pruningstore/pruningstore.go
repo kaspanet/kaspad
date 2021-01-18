@@ -260,3 +260,39 @@ func (ps *pruningStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) 
 func (ps *pruningStore) serializeUTXOEntry(entry externalapi.UTXOEntry) ([]byte, error) {
 	return proto.Marshal(serialization.UTXOEntryToDBUTXOEntry(entry))
 }
+
+var candidatePruningPointMultiset = dbkeys.MakeBucket().Key([]byte("candidate-pruning-point-multiset"))
+
+func (ps *pruningStore) ClearCandidatePruningPointMultiset(dbTx model.DBTransaction) error {
+	return dbTx.Delete(candidatePruningPointMultiset)
+}
+
+func (ps *pruningStore) GetCandidatePruningPointMultiset(dbContext model.DBReader) (model.Multiset, error) {
+	multisetBytes, err := dbContext.Get(candidatePruningPointMultiset)
+	if err != nil {
+		return nil, err
+	}
+	return ps.deserializeMultiset(multisetBytes)
+}
+
+func (ps *pruningStore) UpdateCandidatePruningPointMultiset(dbTx model.DBTransaction, multiset model.Multiset) error {
+	multisetBytes, err := ps.serializeMultiset(multiset)
+	if err != nil {
+		return err
+	}
+	return dbTx.Put(candidatePruningPointMultiset, multisetBytes)
+}
+
+func (ps *pruningStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {
+	return proto.Marshal(serialization.MultisetToDBMultiset(multiset))
+}
+
+func (ps *pruningStore) deserializeMultiset(multisetBytes []byte) (model.Multiset, error) {
+	dbMultiset := &serialization.DbMultiset{}
+	err := proto.Unmarshal(multisetBytes, dbMultiset)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBMultisetToMultiset(dbMultiset)
+}
