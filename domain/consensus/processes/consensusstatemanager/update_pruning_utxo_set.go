@@ -140,7 +140,7 @@ func (csm *consensusStateManager) overwriteVirtualUTXOSetAndCommitPruningPointUT
 	defer onEnd()
 
 	log.Debugf("Starting to overwrite virtual UTXO set and to commit pruning point utxo set")
-	err := csm.consensusStateStore.BeginOverwritingVirtualUTXOSet()
+	err := csm.consensusStateStore.StartOverwritingVirtualUTXOSet()
 	if err != nil {
 		return err
 	}
@@ -165,4 +165,22 @@ func (csm *consensusStateManager) overwriteVirtualUTXOSetAndCommitPruningPointUT
 
 	log.Debugf("Finishing to overwrite virtual UTXO set and to commit pruning point utxo set")
 	return csm.consensusStateStore.FinishOverwritingVirtualUTXOSet()
+}
+
+func (csm *consensusStateManager) RecoverUTXOIfRequired() error {
+	hadStartedOverwritingVirtualUTXOSet, err := csm.consensusStateStore.HadStartedOverwritingVirtualUTXOSet()
+	if err != nil {
+		return err
+	}
+	if !hadStartedOverwritingVirtualUTXOSet {
+		return nil
+	}
+
+	log.Warnf("Uncommitted UTXO set detected. Attempting to recover...")
+	err = csm.overwriteVirtualUTXOSetAndCommitPruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
+	log.Warnf("Uncommitted UTXO set successfully committed")
+	return nil
 }

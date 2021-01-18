@@ -10,4 +10,5 @@ type ConsensusStateManager interface {
 	RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (ReadOnlyUTXOSetIterator, error)
 	CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (UTXODiff, externalapi.AcceptanceData, Multiset, error)
 	GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error)
+	RecoverUTXOIfRequired() error
 }

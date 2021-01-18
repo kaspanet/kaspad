@@ -8,8 +8,12 @@ import (
 
 var overwritingVirtualUTXOSetKey = dbkeys.MakeBucket().Key([]byte("overwriting-virtual-utxo-set"))
 
-func (css *consensusStateStore) BeginOverwritingVirtualUTXOSet() error {
+func (css *consensusStateStore) StartOverwritingVirtualUTXOSet() error {
 	return css.databaseContext.Put(overwritingVirtualUTXOSetKey, []byte{0})
+}
+
+func (css *consensusStateStore) HadStartedOverwritingVirtualUTXOSet() (bool, error) {
+	return css.databaseContext.Has(overwritingVirtualUTXOSetKey)
 }
 
 func (css *consensusStateStore) OverwriteVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
