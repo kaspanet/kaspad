@@ -60,23 +60,35 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 			t.Fatal(err)
 		}
 
-		numBlocksToAdd := len(blocks) // Double the size of the DAG with arbitrary blocks
-		validationFreq := int(math.Max(1, float64(numBlocksToAdd/100)))
+		numChainsToAdd := len(blocks) // Multiply the size of the DAG with arbitrary blocks
+		maxBlocksInChain := 20
+		validationFreq := int(math.Max(1, float64(numChainsToAdd/200)))
 
 		rand.Seed(33233)
 
-		for i := 0; i < numBlocksToAdd; i++ {
+		for i := 0; i < numChainsToAdd; i++ {
 			randomIndex := rand.Intn(len(blocks))
 			randomParent := blocks[randomIndex]
 			newBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{randomParent}, nil, nil)
 			blocks = append(blocks, newBlock)
-
-			// Validate intervals every 'validation frequency' blocks
-			if i%validationFreq == 0 || i == numBlocksToAdd-1 {
-				err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
-				if err != nil {
-					t.Fatal(err)
+			// Every 4 blocks (on average) add a random-length chain
+			if rand.Intn(4) == 0 {
+				numBlocksInChain := rand.Intn(maxBlocksInChain)
+				chainBlock := newBlock
+				for j := 0; j < numBlocksInChain; j++ {
+					chainBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{chainBlock}, nil, nil)
+					blocks = append(blocks, chainBlock)
 				}
+			}
+			// Normally, validate intervals for new chain only
+			validationRoot := newBlock
+			// However every 'validation frequency' blocks validate intervals for entire DAG
+			if i%validationFreq == 0 || i == numChainsToAdd-1 {
+				validationRoot = params.GenesisHash
+			}
+			err = tc.ReachabilityManager().ValidateIntervals(validationRoot)
+			if err != nil {
+				t.Fatal(err)
 			}
 		}
 	}
