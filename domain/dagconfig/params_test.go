@@ -5,6 +5,7 @@
 package dagconfig
 
 import (
+	"math"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -84,6 +85,22 @@ func TestSkipProofOfWork(t *testing.T) {
 		if params.SkipProofOfWork {
 			t.Errorf("SkipProofOfWork is enabled for %s. This option should be "+
 				"used only for tests.", params.Name)
+		}
+	}
+}
+
+func TestCoinbasePayloadScriptPublicKeyMaxLength(t *testing.T) {
+	allParams := []Params{
+		MainnetParams,
+		TestnetParams,
+		SimnetParams,
+		DevnetParams,
+	}
+
+	for _, params := range allParams {
+		if params.CoinbasePayloadScriptPublicKeyMaxLength > math.MaxUint8 {
+			t.Errorf("%s: CoinbasePayloadScriptPublicKeyMaxLength is expected to be smaller then math.MaxUint(%d), but it %d",
+				params.Name, math.MaxUint8, params.CoinbasePayloadScriptPublicKeyMaxLength)
 		}
 	}
 }

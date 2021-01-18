@@ -3,14 +3,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
+	"os"
+	"time"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math/big"
-	"os"
-	"time"
 )
 
 // NetworkFlags holds the network configuration, that is which network is selected.
@@ -156,6 +158,10 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.CoinbasePayloadScriptPublicKeyMaxLength != nil {
+		if *config.CoinbasePayloadScriptPublicKeyMaxLength > math.MaxUint8 {
+			return errors.Errorf("config.CoinbasePayloadScriptPublicKeyMaxLength (%d) is larger then math.MaxUint8(%d)",
+				config.CoinbasePayloadScriptPublicKeyMaxLength, math.MaxUint8)
+		}
 		networkFlags.ActiveNetParams.CoinbasePayloadScriptPublicKeyMaxLength = *config.CoinbasePayloadScriptPublicKeyMaxLength
 	}
 

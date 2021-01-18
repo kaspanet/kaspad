@@ -2,7 +2,6 @@ package coinbasemanager
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -24,9 +23,6 @@ func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseDat
 
 	payload := make([]byte, uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength+scriptLengthOfScriptPubKey+len(coinbaseData.ExtraData))
 	binary.LittleEndian.PutUint64(payload[:uint64Len], blueScore)
-	if len(coinbaseData.ScriptPublicKey.Script) > math.MaxUint8 {
-		return nil, errors.Errorf("script public key is bigger than %d", math.MaxUint8)
-	}
 
 	payload[uint64Len] = uint8(coinbaseData.ScriptPublicKey.Version)
 	payload[uint64Len+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
