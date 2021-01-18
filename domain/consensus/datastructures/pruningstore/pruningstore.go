@@ -10,9 +10,12 @@ import (
 
 var pruningBlockHashKey = dbkeys.MakeBucket().Key([]byte("pruning-block-hash"))
 var candidatePruningPointHashKey = dbkeys.MakeBucket().Key([]byte("candidate-pruning-point-hash"))
+var pruningPointUTXOSetBucket = dbkeys.MakeBucket([]byte("pruning-point-utxo-set"))
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
+	databaseContext model.DBManager
+
 	pruningPointStaging          *externalapi.DomainHash
 	pruningPointCache            *externalapi.DomainHash
 	pruningPointCandidateStaging *externalapi.DomainHash
@@ -20,8 +23,10 @@ type pruningStore struct {
 }
 
 // New instantiates a new PruningStore
-func New() model.PruningStore {
-	return &pruningStore{}
+func New(databaseContext model.DBManager) model.PruningStore {
+	return &pruningStore{
+		databaseContext: databaseContext,
+	}
 }
 
 func (ps *pruningStore) StagePruningPointCandidate(candidate *externalapi.DomainHash) {

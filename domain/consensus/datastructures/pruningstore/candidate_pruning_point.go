@@ -169,3 +169,43 @@ func (ps *pruningStore) deserializeMultiset(multisetBytes []byte) (model.Multise
 
 	return serialization.DBMultisetToMultiset(dbMultiset)
 }
+
+func (ps *pruningStore) CommitCandidatePruningPointUTXOSet() error {
+	// Delete all the old UTXOs from the database
+	deleteCursor, err := ps.databaseContext.Cursor(pruningPointUTXOSetBucket)
+	if err != nil {
+		return err
+	}
+	for deleteCursor.Next() {
+		key, err := deleteCursor.Key()
+		if err != nil {
+			return err
+		}
+		err = ps.databaseContext.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Insert all the new UTXOs into the database
+	insertCursor, err := ps.databaseContext.Cursor(candidatePruningPointUTXOsBucket)
+	if err != nil {
+		return err
+	}
+	for insertCursor.Next() {
+		key, err := insertCursor.Key()
+		if err != nil {
+			return err
+		}
+		serializedUTXOEntry, err := insertCursor.Value()
+		if err != nil {
+			return err
+		}
+		err = ps.databaseContext.Put(key, serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

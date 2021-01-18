@@ -60,9 +60,8 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	newTips := []*externalapi.DomainHash{newPruningPointHash}
-
 	log.Debugf("Staging the the pruning point as the only DAG tip")
+	newTips := []*externalapi.DomainHash{newPruningPointHash}
 	csm.consensusStateStore.StageTips(newTips)
 
 	log.Debugf("Setting the pruning point as the only virtual parent")
@@ -97,8 +96,14 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Debugf("Staging the new pruning point and its UTXO set")
+	log.Debugf("Staging the new pruning point")
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
+
+	log.Debugf("Committing the new pruning point UTXO set")
+	err = csm.pruningStore.CommitCandidatePruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
