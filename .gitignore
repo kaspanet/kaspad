@@ -60,4 +60,3 @@ coverage.txt
 
 testdbs/
 coverage.tmp
-testdata/dags/*.json

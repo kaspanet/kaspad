@@ -9,6 +9,8 @@ import (
 )
 
 type TestParams struct {
+	// ValidateMining indicates if blocks built by the test require complete validation of UTXO/GHOSTDAG etc.
+	// The flag is set to true by default
 	ValidateMining bool
 }
 

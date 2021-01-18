@@ -17,14 +17,14 @@ var (
 	defaultReindexSlack uint64 = 1 << 12
 )
 
-// Struct used during reindex operations. Represents a temporary context
+// reindexContext is a struct used during reindex operations. It represents a temporary context
 // for caching subtree information during the *current* reindex operation only
 type reindexContext struct {
 	manager *reachabilityManager
 	subTreeSizesCache map[externalapi.DomainHash]uint64
 }
 
-// Creates a new empty reindex context
+// newReindexContext creates a new empty reindex context
 func newReindexContext(rt *reachabilityManager) reindexContext {
 	return reindexContext{
 		manager: rt,
@@ -250,10 +250,10 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 	return rc.propagateInterval(current)
 }
 
-// Reindex algorithm for the case where the new child node is not in reindex root's subtree.
-// The function is expected to allocate `requiredAllocation` to be added to interval
-// of `allocationNode`. `commonAncestor` is guaranteed to be a direct parent of `allocationNode` and
-// an ancestor of `reindexRoot`.
+// reindexIntervalsEarlierThanRoot implements the reindex algorithm for the case where the
+// new child node is not in reindex root's subtree. The function is expected to allocate
+// `requiredAllocation` to be added to interval of `allocationNode`. `commonAncestor` is
+// expected to be a direct parent of `allocationNode` and an ancestor of `reindexRoot`.
 func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
 	allocationNode, reindexRoot, commonAncestor *externalapi.DomainHash, requiredAllocation uint64) error {
 

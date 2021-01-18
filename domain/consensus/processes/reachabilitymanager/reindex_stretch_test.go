@@ -1,4 +1,4 @@
-package consensus_test
+package reachabilitymanager_test
 
 import (
 	"fmt"
@@ -14,12 +14,14 @@ import (
 
 // Test configuration
 const(
-	numBlocksExponent = 14
+	numBlocksExponent = 12
 	logLevel = "warn"
 	validateMining = false
 )
 
 func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, useSmallReindexSlack bool) {
+	t.Parallel()
+
 	logger.SetLogLevels(logLevel)
 	params := dagconfig.SimnetParams
 	params.SkipProofOfWork = true
@@ -62,18 +64,18 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 
 		numChainsToAdd := len(blocks) // Multiply the size of the DAG with arbitrary blocks
 		maxBlocksInChain := 20
-		validationFreq := int(math.Max(1, float64(numChainsToAdd/200)))
+		validationFreq := int(math.Max(1, float64(numChainsToAdd/100)))
 
-		rand.Seed(33233)
+		randSource := rand.New(rand.NewSource(33233))
 
 		for i := 0; i < numChainsToAdd; i++ {
-			randomIndex := rand.Intn(len(blocks))
+			randomIndex := randSource.Intn(len(blocks))
 			randomParent := blocks[randomIndex]
 			newBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{randomParent}, nil, nil)
 			blocks = append(blocks, newBlock)
 			// Every 4 blocks (on average) add a random-length chain
-			if rand.Intn(4) == 0 {
-				numBlocksInChain := rand.Intn(maxBlocksInChain)
+			if randSource.Intn(8) == 0 {
+				numBlocksInChain := randSource.Intn(maxBlocksInChain)
 				chainBlock := newBlock
 				for j := 0; j < numBlocksInChain; j++ {
 					chainBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{chainBlock}, nil, nil)
@@ -96,28 +98,28 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 
 func TestNoAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/dags/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestNoAttack", false, false)
 }
 
 func TestAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/dags/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestAttack", false, false)
 }
 
 func TestArbitraryDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/dags/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestArbitraryDAG", true, true)
 }
 
 func TestArbitraryAttackDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/dags/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestArbitraryAttackDAG", true, true)
 }
