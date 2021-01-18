@@ -147,7 +147,7 @@ func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externa
 	return intervalContains(nodeInterval, otherInterval), nil
 }
 
-// NextDescendantChainBlock finds the reachability tree child
+// FindNextAncestor finds the reachability tree child
 // of 'ancestor' which is also an ancestor of 'descendant'.
 func (rt *reachabilityManager) FindNextAncestor(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	childrenOfAncestor, err := rt.children(ancestor)
@@ -408,40 +408,40 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 			queue = append(queue, children...)
 		}
 
-		parentInterval, err := rt.interval(current)
+		currentInterval, err := rt.interval(current)
 		if err != nil {
 			return err
 		}
 
+		if currentInterval.Start > currentInterval.End {
+			err := errors.Errorf("Interval allocation is empty")
+			return err
+		}
+
 		for i, child := range children {
-			currentChildInterval, err := rt.interval(child)
+			childInterval, err := rt.interval(child)
 			if err != nil {
 				return err
 			}
 
 			if i > 0 {
-				previousChildInterval, err := rt.interval(children[i-1])
+				siblingInterval, err := rt.interval(children[i-1])
 				if err != nil {
 					return err
 				}
 
-				if previousChildInterval.End + 1 != currentChildInterval.Start {
+				if siblingInterval.End + 1 != childInterval.Start {
 					err := errors.Errorf("Child intervals are expected be right after each other")
 					return err
 				}
 			}
 
-			if currentChildInterval.Start > currentChildInterval.End {
-				err := errors.Errorf("Interval allocation is empty")
-				return err
-			}
-
-			if currentChildInterval.Start < parentInterval.Start {
+			if childInterval.Start < currentInterval.Start {
 				err := errors.Errorf("Child interval to the left of parent")
 				return err
 			}
 
-			if currentChildInterval.End >= parentInterval.End {
+			if childInterval.End >= currentInterval.End {
 				err := errors.Errorf("Child interval to the right of parent")
 				return err
 			}
