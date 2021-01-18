@@ -14,23 +14,13 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
-	err := csm.consensusStateStore.BeginOverwritingVirtualUTXOSet()
-	if err != nil {
-		return err
-	}
-
-	err = csm.updatePruningPoint(newPruningPoint)
+	err := csm.updatePruningPoint(newPruningPoint)
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
 	}
 
-	err = csm.commitSetPruningPointUTXOSetAll()
-	if err != nil {
-		return err
-	}
-
-	return csm.consensusStateStore.FinishOverwritingVirtualUTXOSet()
+	return csm.commitSetPruningPointUTXOSetAll()
 }
 
 func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock) error {
@@ -86,17 +76,6 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	pruningPointUTXOSetIterator, err := csm.pruningStore.CandidatePruningPointUTXOIterator(csm.databaseContext)
-	if err != nil {
-		return err
-	}
-
-	log.Debugf("Overwriting the virtual UTXO set")
-	err = csm.consensusStateStore.OverwriteVirtualUTXOSet(pruningPointUTXOSetIterator)
-	if err != nil {
-		return err
-	}
-
 	log.Debugf("Deleting all the existing virtual diff parents")
 	csm.consensusStateStore.StageVirtualDiffParents(nil)
 
@@ -108,12 +87,6 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 
 	log.Debugf("Staging the new pruning point")
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
-
-	log.Debugf("Committing the new pruning point UTXO set")
-	err = csm.pruningStore.CommitCandidatePruningPointUTXOSet()
-	if err != nil {
-		return err
-	}
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
@@ -154,5 +127,42 @@ func (csm *consensusStateManager) commitSetPruningPointUTXOSetAll() error {
 		}
 	}
 
-	return dbTx.Commit()
+	err = dbTx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return csm.overwriteVirtualUTXOSetAndCommitPruningPointUTXOSet()
+}
+
+func (csm *consensusStateManager) overwriteVirtualUTXOSetAndCommitPruningPointUTXOSet() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "overwriteVirtualUTXOSetAndCommitPruningPointUTXOSet")
+	defer onEnd()
+
+	log.Debugf("Starting to overwrite virtual UTXO set and to commit pruning point utxo set")
+	err := csm.consensusStateStore.BeginOverwritingVirtualUTXOSet()
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Getting an iterator into the candidate pruning point utxo set")
+	pruningPointUTXOSetIterator, err := csm.pruningStore.CandidatePruningPointUTXOIterator(csm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Overwriting the virtual UTXO set")
+	err = csm.consensusStateStore.OverwriteVirtualUTXOSet(pruningPointUTXOSetIterator)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Committing the new pruning point UTXO set")
+	err = csm.pruningStore.CommitCandidatePruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Finishing to overwrite virtual UTXO set and to commit pruning point utxo set")
+	return csm.consensusStateStore.FinishOverwritingVirtualUTXOSet()
 }
