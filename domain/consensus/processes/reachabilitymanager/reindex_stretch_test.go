@@ -31,8 +31,6 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 	}
 	defer teardown(false)
 
-	tc.TestParams().ValidateMining = validateMining
-
 	if useSmallReindexSlack {
 		tc.ReachabilityManager().SetReachabilityReindexSlack(10)
 	}
@@ -71,17 +69,17 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 		for i := 0; i < numChainsToAdd; i++ {
 			randomIndex := randSource.Intn(len(blocks))
 			randomParent := blocks[randomIndex]
-			newBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{randomParent}, nil, nil)
+			newBlock, _, err := tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{randomParent})
 			if err != nil {
 				t.Fatal(err)
 			}
 			blocks = append(blocks, newBlock)
-			// Every 4 blocks (on average) add a random-length chain
+			// Add a random-length chain every few blocks
 			if randSource.Intn(8) == 0 {
 				numBlocksInChain := randSource.Intn(maxBlocksInChain)
 				chainBlock := newBlock
 				for j := 0; j < numBlocksInChain; j++ {
-					chainBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{chainBlock}, nil, nil)
+					chainBlock, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{chainBlock})
 					if err != nil {
 						t.Fatal(err)
 					}

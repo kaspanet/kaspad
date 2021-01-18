@@ -8,19 +8,11 @@ import (
 	"io"
 )
 
-// TestParams defines possible test parameters
-type TestParams struct {
-	// ValidateMining indicates if blocks built by the test require complete validation of UTXO/GHOSTDAG etc.
-	// The flag is set to true by default
-	ValidateMining bool
-}
-
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
 type TestConsensus interface {
 	externalapi.Consensus
 
 	DAGParams() *dagconfig.Params
-	TestParams() *TestParams
 	DatabaseContext() model.DBManager
 	Database() database.Database
 

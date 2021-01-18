@@ -14,9 +14,8 @@ import (
 
 type testConsensus struct {
 	*consensus
-	dagParams  *dagconfig.Params
-	testParams *testapi.TestParams
-	database   database.Database
+	dagParams *dagconfig.Params
+	database  database.Database
 
 	testBlockBuilder          testapi.TestBlockBuilder
 	testReachabilityManager   testapi.TestReachabilityManager
@@ -26,10 +25,6 @@ type testConsensus struct {
 
 func (tc *testConsensus) DAGParams() *dagconfig.Params {
 	return tc.dagParams
-}
-
-func (tc *testConsensus) TestParams() *testapi.TestParams {
-	return tc.testParams
 }
 
 func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
@@ -146,7 +141,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 				return errors.Errorf("Couldn't find blockID: %s", parentID)
 			}
 		}
-		blockHash, _, err := tc.AddBlock(parentHashes, nil, nil)
+		blockHash, _, err := tc.AddUTXOInvalidHeader(parentHashes)
 		if err != nil {
 			return err
 		}
