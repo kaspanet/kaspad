@@ -19,4 +19,5 @@ type PruningStore interface {
 	CandidatePruningPointMultiset(dbContext DBReader) (Multiset, error)
 	UpdateCandidatePruningPointMultiset(dbTx DBTransaction, multiset Multiset) error
 	CommitCandidatePruningPointUTXOSet() error
+	PruningPointUTXOs(dbContext DBReader, offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error)
 }

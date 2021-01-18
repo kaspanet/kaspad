@@ -200,7 +200,9 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
-func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi.DomainHash) ([]byte, error) {
+func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
+	offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -215,11 +217,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 			pruningPointHash)
 	}
 
-	serializedUTXOSet, err := s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+	pruningPointUTXOs, err := s.pruningStore.PruningPointUTXOs(s.databaseContext, offset, limit)
 	if err != nil {
 		return nil, err
 	}
-	return serializedUTXOSet, nil
+	return pruningPointUTXOs, nil
 }
 
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {

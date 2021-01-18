@@ -171,3 +171,33 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 
 	return dbContext.Has(pruningBlockHashKey)
 }
+
+func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
+	offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	cursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
+
+	offsetIndex := 0
+	for pruningPointUTXOIterator.Next() && offset < offsetIndex {
+		offsetIndex++
+	}
+
+	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, limit)
+	limitIndex := 0
+	for pruningPointUTXOIterator.Next() && limitIndex < limit {
+		outpoint, utxoEntry, err := pruningPointUTXOIterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		outpointAndUTXOEntryPairs[limitIndex] = &externalapi.OutpointAndUTXOEntryPair{
+			Outpoint:  outpoint,
+			UTXOEntry: utxoEntry,
+		}
+		limitIndex++
+	}
+	return outpointAndUTXOEntryPairs, nil
+}

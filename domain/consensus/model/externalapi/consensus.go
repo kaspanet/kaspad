@@ -13,7 +13,7 @@ type Consensus interface {
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) ([]*DomainHash, error)
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
-	GetPruningPointUTXOSet(expectedPruningPointHash *DomainHash) ([]byte, error)
+	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, offset int, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
 	ClearCandidatePruningPointData() error
 	InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error

@@ -290,3 +290,24 @@ func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
 	}
 	return domainOutpointAndUTXOEntryPairs
 }
+
+func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
+	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) []*OutpointAndUTXOEntryPair {
+
+	domainOutpointAndUTXOEntryPairs := make([]*OutpointAndUTXOEntryPair, len(outpointAndUTXOEntryPairs))
+	for i, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		domainOutpointAndUTXOEntryPairs[i] = &OutpointAndUTXOEntryPair{
+			Outpoint: &Outpoint{
+				TxID:  outpointAndUTXOEntryPair.Outpoint.TransactionID,
+				Index: outpointAndUTXOEntryPair.Outpoint.Index,
+			},
+			UTXOEntry: &UTXOEntry{
+				Amount:          outpointAndUTXOEntryPair.UTXOEntry.Amount(),
+				ScriptPublicKey: outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey(),
+				IsCoinbase:      outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase(),
+				BlockBlueScore:  outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore(),
+			},
+		}
+	}
+	return domainOutpointAndUTXOEntryPairs
+}

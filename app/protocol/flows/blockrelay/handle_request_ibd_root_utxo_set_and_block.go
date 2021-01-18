@@ -49,19 +49,6 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 		finishMeasuring := logger.LogAndMeasureExecutionTime(log, "handleRequestIBDRootUTXOSetAndBlockFlow")
 		log.Debugf("Got request for IBDRoot UTXOSet and Block")
 
-		serializedUTXOSet, err := flow.Domain().Consensus().GetPruningPointUTXOSet(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
-		if err != nil {
-			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
-				err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootNotFound())
-				if err != nil {
-					return err
-				}
-
-				continue
-			}
-		}
-		log.Debugf("Retrieved utxo set for pruning block %s", msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
-
 		block, err := flow.Domain().Consensus().GetBlock(msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
 		if err != nil {
 			return err
@@ -74,18 +61,38 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 		}
 
 		// Send the UTXO set in `step`-sized chunks
-		const step = 1024 * 1024 // 1MB
+		const step = 1000
 		offset := 0
 		chunksSent := 0
-		for offset < len(serializedUTXOSet) {
-			var chunk []byte
-			if offset+step < len(serializedUTXOSet) {
-				chunk = serializedUTXOSet[offset : offset+step]
-			} else {
-				chunk = serializedUTXOSet[offset:]
+		for {
+			pruningPointUTXOs, err := flow.Domain().Consensus().GetPruningPointUTXOs(
+				msgRequestIBDRootUTXOSetAndBlock.IBDRoot, offset, step)
+			if err != nil {
+				if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
+					err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootNotFound())
+					if err != nil {
+						return err
+					}
+					break
+				}
+			}
+			if len(pruningPointUTXOs) == 0 {
+				log.Debugf("Finished sending UTXOs for pruning block %s",
+					msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+
+				err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
+				if err != nil {
+					return err
+				}
+				break
 			}
 
-			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetChunk(chunk))
+			log.Debugf("Retrieved %d UTXOs for pruning block %s",
+				len(pruningPointUTXOs), msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+
+			outpointAndUTXOEntryPairs :=
+				appmessage.DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(pruningPointUTXOs)
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetChunk(outpointAndUTXOEntryPairs))
 			if err != nil {
 				return err
 			}
@@ -105,11 +112,6 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 						"expected: %s, got: %s", appmessage.CmdRequestNextIBDRootUTXOSetChunk, message.Command())
 				}
 			}
-		}
-
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
-		if err != nil {
-			return err
 		}
 
 		finishMeasuring()
