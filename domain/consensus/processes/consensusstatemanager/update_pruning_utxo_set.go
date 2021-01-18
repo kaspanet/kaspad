@@ -14,13 +14,23 @@ func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalap
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
-	err := csm.updatePruningPoint(newPruningPoint)
+	err := csm.consensusStateStore.BeginOverwritingVirtualUTXOSet()
+	if err != nil {
+		return err
+	}
+
+	err = csm.updatePruningPoint(newPruningPoint)
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
 		return err
 	}
 
-	return csm.commitSetPruningPointUTXOSetAll()
+	err = csm.commitSetPruningPointUTXOSetAll()
+	if err != nil {
+		return err
+	}
+
+	return csm.consensusStateStore.FinishOverwritingVirtualUTXOSet()
 }
 
 func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalapi.DomainBlock) error {
