@@ -342,7 +342,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 
 func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
-		err := flow.Domain().Consensus().ClearCandidatePruningPointUTXOs()
+		err := flow.Domain().Consensus().ClearCandidatePruningPointData()
 		if err != nil {
 			panic(fmt.Sprintf("failed to clear candidate pruning point data: %s", err))
 		}

@@ -229,7 +229,7 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) ClearCandidatePruningPointUTXOs() error {
+func (s *consensus) ClearCandidatePruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
