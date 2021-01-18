@@ -202,10 +202,42 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 	return dbContext.Has(pruningBlockHashKey)
 }
 
-func (ps *pruningStore) InsertPruningPointUTXOs(
+var candidatePruningPointUTXOsBucket = dbkeys.MakeBucket([]byte("candidate-pruning-point-utxos"))
+
+func (ps *pruningStore) InsertCandidatePruningPointUTXOs(dbTx model.DBTransaction,
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 
-	// Don't bother with staging here. Write directly to the database.
+	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		key, err := ps.candidatePruningPointUTXOKey(outpointAndUTXOEntryPair.Outpoint)
+		if err != nil {
+			return err
+		}
+		serializedUTXOEntry, err := ps.serializeUTXOEntry(outpointAndUTXOEntryPair.UTXOEntry)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(key, serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
+}
+
+func (ps *pruningStore) candidatePruningPointUTXOKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
+	serializedOutpoint, err := ps.serializeOutpoint(outpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	return candidatePruningPointUTXOsBucket.Key(serializedOutpoint), nil
+}
+
+func (ps *pruningStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
+	return proto.Marshal(serialization.DomainOutpointToDbOutpoint(outpoint))
+}
+
+func (ps *pruningStore) serializeUTXOEntry(entry externalapi.UTXOEntry) ([]byte, error) {
+	return proto.Marshal(serialization.UTXOEntryToDBUTXOEntry(entry))
 }

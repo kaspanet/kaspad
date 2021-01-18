@@ -15,7 +15,7 @@ type Consensus interface {
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
 	GetPruningPointUTXOSet(expectedPruningPointHash *DomainHash) ([]byte, error)
 	PruningPoint() (*DomainHash, error)
-	InsertPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
+	InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertPruningPoint(newPruningPoint *DomainBlock) error
 	GetVirtualSelectedParent() (*DomainHash, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)

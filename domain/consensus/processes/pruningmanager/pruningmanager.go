@@ -11,7 +11,7 @@ import (
 
 // pruningManager resolves and manages the current pruning point
 type pruningManager struct {
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	dagTraversalManager    model.DAGTraversalManager
 	dagTopologyManager     model.DAGTopologyManager
@@ -36,7 +36,7 @@ type pruningManager struct {
 
 // New instantiates a new PruningManager
 func New(
-	databaseContext model.DBReader,
+	databaseContext model.DBManager,
 
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
@@ -457,8 +457,19 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
 
-func (pm *pruningManager) InsertPruningPointUTXOs(
+func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 
-	return pm.pruningStore.InsertPruningPointUTXOs(outpointAndUTXOEntryPairs)
+	dbTx, err := pm.databaseContext.Begin()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	err = pm.pruningStore.InsertCandidatePruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
 }

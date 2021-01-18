@@ -229,11 +229,11 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) InsertPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+func (s *consensus) InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.InsertPruningPointUTXOs(outpointAndUTXOEntryPairs)
+	return s.pruningManager.InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
 func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {

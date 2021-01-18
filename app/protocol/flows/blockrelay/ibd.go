@@ -416,7 +416,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
-			err := flow.Domain().Consensus().InsertPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
+			err := flow.Domain().Consensus().InsertCandidatePruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
 				return err
 			}
