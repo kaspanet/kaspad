@@ -4,25 +4,38 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
-func TestBlockBuilderErrorCases(t *testing.T) {
+func TestBuildBlockErrorCases(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
 		tests := []struct {
-			name          string
-			preparation   func(testConsensus testapi.TestConsensus) error
-			coinbaseData  *externalapi.DomainCoinbaseData
-			transactions  []*externalapi.DomainTransaction
-			expectedError error
-		}{}
+			name              string
+			coinbaseData      *externalapi.DomainCoinbaseData
+			transactions      []*externalapi.DomainTransaction
+			expectedErrorType error
+		}{
+			{
+				"scriptPublicKey too long",
+				&externalapi.DomainCoinbaseData{
+					ScriptPublicKey: &externalapi.ScriptPublicKey{
+						Script:  make([]byte, params.CoinbasePayloadScriptPublicKeyMaxLength+1),
+						Version: 0,
+					},
+					ExtraData: nil,
+				},
+				nil,
+				ruleerrors.ErrBadCoinbasePayloadLen,
+			},
+		}
 
 		for _, test := range tests {
 			func() {
@@ -33,21 +46,13 @@ func TestBlockBuilderErrorCases(t *testing.T) {
 				}
 				defer teardown(false)
 
-				if test.preparation != nil {
-					err := test.preparation(consensus)
-					if err != nil {
-						t.Errorf("%s: Error during preparation: %+v", test.name, err)
-						return
-					}
-				}
-
-				_, err = consensus.BuildBlock(test.coinbaseData, test.transactions)
+				_, err = consensus.BlockBuilder().BuildBlock(test.coinbaseData, test.transactions)
 				if err == nil {
-					t.Errorf("%s: No error from BuildBlock")
+					t.Errorf("%s: No error from BuildBlock", test.name)
 					return
 				}
-				if !errors.Is(test.expectedError, err) {
-					t.Errorf("%s: Expected error '%s', but got '%s'", test.name, test.expectedError, err)
+				if test.expectedErrorType != nil && !errors.Is(err, test.expectedErrorType) {
+					t.Errorf("%s: Expected error '%s', but got '%s'", test.name, test.expectedErrorType, err)
 				}
 			}()
 		}
