@@ -14,11 +14,12 @@ import (
 	"runtime"
 )
 
-func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (csm *consensusStateManager) UpdatePruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet *[]byte) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPoint")
 	defer onEnd()
 
-	err := csm.updatePruningPoint(newPruningPoint, serializedUTXOSet)
+	err := csm.updatePruningPoint(newPruningPoint, *serializedUTXOSet)
+	*serializedUTXOSet = nil // remove all references to serializedUTXOSet.
 	runtime.GC() // Clear out all the used memory in `updatePruningPoint`
 	if err != nil {
 		csm.discardSetPruningPointUTXOSetChanges()
@@ -179,6 +180,9 @@ func (p *protoUTXOSetIterator) Next() bool {
 	if !p.started {
 		p.started = true
 	} else {
+		if len(p.utxoSet.Utxos) == 1 {
+			return false
+		}
 		// Allow the GC to clear whatever we already read.
 		p.utxoSet.Utxos[0] = nil
 		p.utxoSet.Utxos = p.utxoSet.Utxos[1:]

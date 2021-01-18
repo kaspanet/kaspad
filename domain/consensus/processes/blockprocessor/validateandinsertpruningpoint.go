@@ -8,7 +8,7 @@ import (
 	"runtime"
 )
 
-func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet *[]byte) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
 	stats := runtime.MemStats{}
 	runtime.ReadMemStats(&stats)

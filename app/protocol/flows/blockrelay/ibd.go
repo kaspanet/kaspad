@@ -361,7 +361,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, nil
 	}
 
-	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, utxoSet)
+	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block, &utxoSet)
 	if err != nil {
 		// TODO: Find a better way to deal with finality conflicts.
 		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
