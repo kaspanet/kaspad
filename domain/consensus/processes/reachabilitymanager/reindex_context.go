@@ -128,8 +128,7 @@ func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
 
 // propagateInterval propagates the new interval using a BFS traversal.
 // Subtree intervals are recursively allocated according to subtree sizes and
-// the allocation rule in splitWithExponentialBias. This method returns
-// a list of model.ReachabilityTreeNodes modified by it.
+// the allocation rule in splitWithExponentialBias.
 func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error {
 
 	// Make sure subtrees are counted before propagating
@@ -669,7 +668,7 @@ func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *external
 func (rc *reindexContext) tightenIntervalsBefore(
 	reindexRoot *externalapi.DomainHash, siblingsBeforeChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	siblingSubtreeSizes, sizesSum := rc.calcReachabilityTreeNodeSizes(siblingsBeforeChosen)
+	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(siblingsBeforeChosen)
 
 	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
@@ -681,7 +680,7 @@ func (rc *reindexContext) tightenIntervalsBefore(
 		rootInterval.Start+rc.manager.reindexSlack+sizesSum-1,
 	)
 
-	err = rc.propagateChildIntervals(intervalBeforeChosen, siblingsBeforeChosen, siblingSubtreeSizes)
+	err = rc.propagateChildrenIntervals(intervalBeforeChosen, siblingsBeforeChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
@@ -692,7 +691,7 @@ func (rc *reindexContext) tightenIntervalsBefore(
 func (rc *reindexContext) tightenIntervalsAfter(
 	reindexRoot *externalapi.DomainHash, siblingsAfterChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	siblingSubtreeSizes, sizesSum := rc.calcReachabilityTreeNodeSizes(siblingsAfterChosen)
+	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(siblingsAfterChosen)
 
 	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
@@ -704,7 +703,7 @@ func (rc *reindexContext) tightenIntervalsAfter(
 		rootInterval.End-rc.manager.reindexSlack-1,
 	)
 
-	err = rc.propagateChildIntervals(intervalAfterChosen, siblingsAfterChosen, siblingSubtreeSizes)
+	err = rc.propagateChildrenIntervals(intervalAfterChosen, siblingsAfterChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
@@ -762,12 +761,12 @@ func (rc *reindexContext) expandIntervalToChosen(
 	return nil
 }
 
-func (rc *reindexContext) calcReachabilityTreeNodeSizes(treeNodes []*externalapi.DomainHash) (
+func (rc *reindexContext) countChildrenSubtrees(children []*externalapi.DomainHash) (
 	sizes []uint64, sum uint64) {
 
-	sizes = make([]uint64, len(treeNodes))
+	sizes = make([]uint64, len(children))
 	sum = 0
-	for i, node := range treeNodes {
+	for i, node := range children {
 		err := rc.countSubtrees(node)
 		if err != nil {
 			return nil, 0
@@ -780,15 +779,15 @@ func (rc *reindexContext) calcReachabilityTreeNodeSizes(treeNodes []*externalapi
 	return sizes, sum
 }
 
-func (rc *reindexContext) propagateChildIntervals(
-	interval *model.ReachabilityInterval, childNodes []*externalapi.DomainHash, sizes []uint64) error {
+func (rc *reindexContext) propagateChildrenIntervals(
+	interval *model.ReachabilityInterval, children []*externalapi.DomainHash, sizes []uint64) error {
 
 	childIntervals, err := intervalSplitExact(interval, sizes)
 	if err != nil {
 		return err
 	}
 
-	for i, child := range childNodes {
+	for i, child := range children {
 		childInterval := childIntervals[i]
 		err := rc.manager.stageInterval(child, childInterval)
 		if err != nil {
