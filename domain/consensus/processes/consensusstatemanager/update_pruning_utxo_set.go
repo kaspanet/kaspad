@@ -5,9 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -79,8 +77,13 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
+	pruningPointUTXOSetIterator, err := csm.pruningStore.CandidatePruningPointUTXOIterator(csm.databaseContext)
+	if err != nil {
+		return err
+	}
+
 	log.Debugf("Staging the virtual UTXO set")
-	err = csm.consensusStateStore.StageVirtualUTXOSet(protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet))
+	err = csm.consensusStateStore.StageVirtualUTXOSet(pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}
@@ -95,7 +98,7 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 	}
 
 	log.Debugf("Staging the new pruning point and its UTXO set")
-	csm.pruningStore.StagePruningPoint(newPruningPointHash, serializedUTXOSet)
+	csm.pruningStore.StagePruningPoint(newPruningPointHash)
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
@@ -137,34 +140,4 @@ func (csm *consensusStateManager) commitSetPruningPointUTXOSetAll() error {
 	}
 
 	return dbTx.Commit()
-}
-
-type protoUTXOSetIterator struct {
-	utxoSet *utxoserialization.ProtoUTXOSet
-	index   int
-}
-
-func (p *protoUTXOSetIterator) First() {
-	p.index = -1
-}
-
-func (p *protoUTXOSetIterator) Next() bool {
-	p.index++
-	return p.index < len(p.utxoSet.Utxos)
-}
-
-func (p *protoUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
-	entry, outpoint, err := utxo.DeserializeUTXO(p.utxoSet.Utxos[p.index].EntryOutpointPair)
-	if err != nil {
-		if serialization.IsMalformedError(err) {
-			return nil, nil, errors.Wrapf(ruleerrors.ErrMalformedUTXO, "malformed utxo: %s", err)
-		}
-		return nil, nil, err
-	}
-
-	return outpoint, entry, nil
-}
-
-func protoUTXOSetToReadOnlyUTXOSetIterator(protoUTXOSet *utxoserialization.ProtoUTXOSet) model.ReadOnlyUTXOSetIterator {
-	return &protoUTXOSetIterator{utxoSet: protoUTXOSet, index: -1}
 }
