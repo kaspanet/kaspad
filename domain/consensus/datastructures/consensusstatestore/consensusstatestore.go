@@ -8,10 +8,11 @@ import (
 
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
+	databaseContext model.DBManager
+
 	tipsStaging               []*externalapi.DomainHash
 	virtualDiffParentsStaging []*externalapi.DomainHash
 	virtualUTXODiffStaging    model.UTXODiff
-	virtualUTXOSetStaging     model.UTXOCollection
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
 
@@ -20,8 +21,9 @@ type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New(utxoSetCacheSize int) model.ConsensusStateStore {
+func New(databaseContext model.DBManager, utxoSetCacheSize int) model.ConsensusStateStore {
 	return &consensusStateStore{
+		databaseContext:     databaseContext,
 		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize),
 	}
 }
@@ -30,7 +32,6 @@ func (css *consensusStateStore) Discard() {
 	css.tipsStaging = nil
 	css.virtualUTXODiffStaging = nil
 	css.virtualDiffParentsStaging = nil
-	css.virtualUTXOSetStaging = nil
 }
 
 func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
@@ -44,11 +45,6 @@ func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	}
 
 	err = css.commitVirtualUTXODiff(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = css.commitVirtualUTXOSet(dbTx)
 	if err != nil {
 		return err
 	}

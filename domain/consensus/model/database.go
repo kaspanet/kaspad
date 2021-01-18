@@ -77,6 +77,7 @@ type DBTransaction interface {
 // DBManager defines the interface of a database that can begin
 // transactions and read data.
 type DBManager interface {
+	DBWriter
 	DBReader
 
 	// Begin begins a new database transaction.

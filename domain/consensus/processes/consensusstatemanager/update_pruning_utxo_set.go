@@ -82,8 +82,8 @@ func (csm *consensusStateManager) updatePruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Debugf("Staging the virtual UTXO set")
-	err = csm.consensusStateStore.StageVirtualUTXOSet(pruningPointUTXOSetIterator)
+	log.Debugf("Overwriting the virtual UTXO set")
+	err = csm.consensusStateStore.OverwriteVirtualUTXOSet(pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}
