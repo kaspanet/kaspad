@@ -2,16 +2,16 @@ package utxodiffstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/pkg/errors"
 )
 
-var utxoDiffBucket = dbkeys.MakeBucket([]byte("utxo-diffs"))
-var utxoDiffChildBucket = dbkeys.MakeBucket([]byte("utxo-diff-children"))
+var utxoDiffBucket = database.MakeBucket([]byte("utxo-diffs"))
+var utxoDiffChildBucket = database.MakeBucket([]byte("utxo-diff-children"))
 
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
