@@ -387,16 +387,13 @@ func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock
 		return nil, err
 	}
 
-	var block *externalapi.DomainBlock
-	switch message := message.(type) {
-	case *appmessage.MsgIBDBlock:
-		block = appmessage.MsgBlockToDomainBlock(message.MsgBlock)
-	default:
+	ibdBlockMessage, ok := message.(*appmessage.MsgIBDBlock)
+	if !ok {
 		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s or %s, got: %s",
-			appmessage.CmdIBDBlock, appmessage.CmdIBDRootNotFound, message.Command(),
-		)
+			"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
 	}
+	block := appmessage.MsgBlockToDomainBlock(ibdBlockMessage.MsgBlock)
+
 	log.Debugf("Received IBD root block %s", consensushashing.BlockHash(block))
 
 	return block, nil
