@@ -152,7 +152,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	}
 
 	log.Debugf("Importing the virtual UTXO set")
-	err = csm.consensusStateStore.ImportVirtualUTXOSet(pruningPointUTXOSetIterator)
+	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}

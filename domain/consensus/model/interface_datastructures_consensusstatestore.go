@@ -20,6 +20,6 @@ type ConsensusStateStore interface {
 
 	StartImportingPruningPointUTXOSet() error
 	HadStartedImportingPruningPointUTXOSet() (bool, error)
-	ImportVirtualUTXOSet(virtualUTXOSetIterator ReadOnlyUTXOSetIterator) error
+	ImportPruningPointUTXOSetIntoVirtualUTXOSet(pruningPointUTXOSetIterator ReadOnlyUTXOSetIterator) error
 	FinishImportingPruningPointUTXOSet() error
 }

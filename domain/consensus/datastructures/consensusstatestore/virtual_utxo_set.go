@@ -16,7 +16,7 @@ func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet() (bool, 
 	return css.databaseContext.Has(importingPruningPointUTXOSetKey)
 }
 
-func (css *consensusStateStore) ImportVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
 	if css.virtualUTXODiffStaging != nil {
 		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
 	}
@@ -41,9 +41,9 @@ func (css *consensusStateStore) ImportVirtualUTXOSet(virtualUTXOSetIterator mode
 	}
 
 	// Insert all the new UTXOs into the database
-	virtualUTXOSetIterator.First()
-	for virtualUTXOSetIterator.Next() {
-		outpoint, entry, err := virtualUTXOSetIterator.Get()
+	pruningPointUTXOSetIterator.First()
+	for pruningPointUTXOSetIterator.Next() {
+		outpoint, entry, err := pruningPointUTXOSetIterator.Get()
 		if err != nil {
 			return err
 		}
