@@ -133,6 +133,9 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointUTXOSetIteratorStaging.First()
 		for ps.pruningPointUTXOSetIteratorStaging.Next() {
 			outpoint, entry, err := ps.pruningPointUTXOSetIteratorStaging.Get()
+			if err != nil {
+				return err
+			}
 			serializedOutpoint, err := ps.serializeOutpoint(outpoint)
 			if err != nil {
 				return err

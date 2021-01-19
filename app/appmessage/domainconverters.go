@@ -270,6 +270,8 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 	}
 }
 
+// OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs converts
+// OutpointAndUTXOEntryPairs to domain OutpointAndUTXOEntryPairs
 func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
 	outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) []*externalapi.OutpointAndUTXOEntryPair {
 
@@ -291,6 +293,8 @@ func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
 	return domainOutpointAndUTXOEntryPairs
 }
 
+// DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs converts
+// domain OutpointAndUTXOEntryPairs to OutpointAndUTXOEntryPairs
 func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) []*OutpointAndUTXOEntryPair {
 

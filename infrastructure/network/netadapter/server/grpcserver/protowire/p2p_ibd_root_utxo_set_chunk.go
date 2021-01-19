@@ -10,12 +10,12 @@ import (
 func (x *KaspadMessage_IbdRootUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
 	outpointAndUTXOEntryPairs := make([]*appmessage.OutpointAndUTXOEntryPair, len(x.IbdRootUtxoSetChunk.OutpointAndUtxoEntryPairs))
 	for i, outpointAndUTXOEntryPair := range x.IbdRootUtxoSetChunk.OutpointAndUtxoEntryPairs {
-		transactionId, err := outpointAndUTXOEntryPair.Outpoint.TransactionId.toDomain()
+		transactionID, err := outpointAndUTXOEntryPair.Outpoint.TransactionId.toDomain()
 		if err != nil {
 			return nil, err
 		}
 		outpoint := &appmessage.Outpoint{
-			TxID:  *transactionId,
+			TxID:  *transactionID,
 			Index: outpointAndUTXOEntryPair.Outpoint.Index,
 		}
 		if outpointAndUTXOEntryPair.UtxoEntry.ScriptPublicKey.Version > math.MaxUint16 {
@@ -44,9 +44,9 @@ func (x *KaspadMessage_IbdRootUtxoSetChunk) toAppMessage() (appmessage.Message, 
 func (x *KaspadMessage_IbdRootUtxoSetChunk) fromAppMessage(message *appmessage.MsgIBDRootUTXOSetChunk) error {
 	outpointAndUTXOEntryPairs := make([]*OutpointAndUtxoEntryPair, len(message.OutpointAndUTXOEntryPairs))
 	for i, outpointAndUTXOEntryPair := range message.OutpointAndUTXOEntryPairs {
-		transactionId := domainTransactionIDToProto(&outpointAndUTXOEntryPair.Outpoint.TxID)
+		transactionID := domainTransactionIDToProto(&outpointAndUTXOEntryPair.Outpoint.TxID)
 		outpoint := &Outpoint{
-			TransactionId: transactionId,
+			TransactionId: transactionID,
 			Index:         outpointAndUTXOEntryPair.Outpoint.Index,
 		}
 		scriptPublicKey := &ScriptPublicKey{

@@ -27,6 +27,7 @@ type OutpointAndUTXOEntryPair struct {
 	UTXOEntry *UTXOEntry
 }
 
+// UTXOEntry houses details about an individual transaction output in a UTXO
 type UTXOEntry struct {
 	Amount          uint64
 	ScriptPublicKey *externalapi.ScriptPublicKey

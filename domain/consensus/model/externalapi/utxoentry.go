@@ -12,6 +12,8 @@ type UTXOEntry interface {
 	Equal(other UTXOEntry) bool
 }
 
+// OutpointAndUTXOEntryPair is an outpoint along with its
+// respective UTXO entry
 type OutpointAndUTXOEntryPair struct {
 	Outpoint  *DomainOutpoint
 	UTXOEntry UTXOEntry
