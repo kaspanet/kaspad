@@ -353,17 +353,17 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, err
 	}
 
-	block, found, err := flow.receiveIBDRootBlock()
+	block, err := flow.receiveIBDRootBlock()
 	if err != nil {
 		return false, err
-	}
-	if !found {
-		return false, nil
 	}
 
-	err = flow.receiveAndInsertIBDRootUTXOSet()
+	receivedAll, err := flow.receiveAndInsertIBDRootUTXOSet()
 	if err != nil {
 		return false, err
+	}
+	if !receivedAll {
+		return false, nil
 	}
 
 	err = flow.Domain().Consensus().ValidateAndInsertImportedPruningPoint(block)
@@ -378,34 +378,31 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock, bool, error) {
+func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveIBDRootBlock")
 	defer onEnd()
 
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	var block *externalapi.DomainBlock
 	switch message := message.(type) {
 	case *appmessage.MsgIBDBlock:
 		block = appmessage.MsgBlockToDomainBlock(message.MsgBlock)
-	case *appmessage.MsgIBDRootNotFound:
-		return nil, false, nil
 	default:
-		return nil, false,
-			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s or %s, got: %s",
-				appmessage.CmdIBDBlock, appmessage.CmdIBDRootNotFound, message.Command(),
-			)
+		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s or %s, got: %s",
+			appmessage.CmdIBDBlock, appmessage.CmdIBDRootNotFound, message.Command(),
+		)
 	}
 	log.Debugf("Received IBD root block %s", consensushashing.BlockHash(block))
 
-	return block, true, nil
+	return block, nil
 }
 
-func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
+func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertIBDRootUTXOSet")
 	defer onEnd()
 
@@ -415,7 +412,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 	for !receivedAllChunks {
 		message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		switch message := message.(type) {
@@ -426,12 +423,16 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 
 			err := flow.Domain().Consensus().InsertImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
-				return err
+				return false, err
 			}
 		case *appmessage.MsgDoneIBDRootUTXOSetChunks:
 			receivedAllChunks = true
+		case *appmessage.MsgIBDRootNotFound:
+			log.Debugf("Could not receive the next UTXO chunk. " +
+				"This is likely to have happened because the IBD root moved")
+			return false, nil
 		default:
-			return protocolerrors.Errorf(true, "received unexpected message type. "+
+			return false, protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s",
 				appmessage.CmdIBDRootUTXOSetChunk, appmessage.CmdDoneIBDRootUTXOSetChunks, message.Command(),
 			)
@@ -445,13 +446,13 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 			requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextIBDRootUTXOSetChunk()
 			err := flow.outgoingRoute.Enqueue(requestNextIBDRootUTXOSetChunkMessage)
 			if err != nil {
-				return err
+				return false, err
 			}
 		}
 	}
 	log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
 
-	return nil
+	return true, nil
 }
 
 func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
