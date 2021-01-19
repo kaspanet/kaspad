@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -489,7 +490,10 @@ func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 
 	candidateMultiset, err := pm.pruningStore.CandidatePruningPointMultiset(dbTx)
 	if err != nil {
-		return err
+		if !database.IsNotFoundError(err) {
+			return err
+		}
+		candidateMultiset = multiset.New()
 	}
 	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
 		serializedUTXO, err := utxo.SerializeUTXO(outpointAndUTXOEntryPair.UTXOEntry, outpointAndUTXOEntryPair.Outpoint)
