@@ -1,7 +1,6 @@
 package blockbuilder_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -16,6 +15,12 @@ import (
 func TestBuildBlockErrorCases(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
+		testConsensus, teardown, err := factory.NewTestConsensus(
+			params, false, "TestBlockBuilderErrorCases")
+		if err != nil {
+			t.Fatalf("Error initializing consensus for: %+v", err)
+		}
+		defer teardown(false)
 
 		tests := []struct {
 			name              string
@@ -38,23 +43,14 @@ func TestBuildBlockErrorCases(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			func() {
-				consensus, teardown, err := factory.NewTestConsensus(
-					params, false, fmt.Sprintf("TestBlockBuilderErrorCases-%s", test.name))
-				if err != nil {
-					t.Fatalf("Error initializing consensus for %s: %+v", test.name, err)
-				}
-				defer teardown(false)
-
-				_, err = consensus.BlockBuilder().BuildBlock(test.coinbaseData, test.transactions)
-				if err == nil {
-					t.Errorf("%s: No error from BuildBlock", test.name)
-					return
-				}
-				if test.expectedErrorType != nil && !errors.Is(err, test.expectedErrorType) {
-					t.Errorf("%s: Expected error '%s', but got '%s'", test.name, test.expectedErrorType, err)
-				}
-			}()
+			_, err = testConsensus.BlockBuilder().BuildBlock(test.coinbaseData, test.transactions)
+			if err == nil {
+				t.Errorf("%s: No error from BuildBlock", test.name)
+				return
+			}
+			if test.expectedErrorType != nil && !errors.Is(err, test.expectedErrorType) {
+				t.Errorf("%s: Expected error '%s', but got '%s'", test.name, test.expectedErrorType, err)
+			}
 		}
 	})
 }
