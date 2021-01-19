@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	log.Info("Checking that the given pruning point is the expected pruning point")
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
@@ -29,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertPruningPoint(newPruningPoint *externa
 	}
 
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
-	err = bp.consensusStateManager.UpdatePruningPoint(newPruningPoint)
+	err = bp.consensusStateManager.UpdatePruningPointViaImportedPruningPoint(newPruningPoint)
 	if err != nil {
 		return err
 	}

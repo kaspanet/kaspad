@@ -18,8 +18,8 @@ type ConsensusStateStore interface {
 	StageTips(tipHashes []*externalapi.DomainHash)
 	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
 
-	StartOverwritingVirtualUTXOSet() error
-	HadStartedOverwritingVirtualUTXOSet() (bool, error)
-	OverwriteVirtualUTXOSet(virtualUTXOSetIterator ReadOnlyUTXOSetIterator) error
-	FinishOverwritingVirtualUTXOSet() error
+	StartImportingPruningPointUTXOSet() error
+	HadStartedImportingPruningPointUTXOSet() (bool, error)
+	ImportVirtualUTXOSet(virtualUTXOSetIterator ReadOnlyUTXOSetIterator) error
+	FinishImportingPruningPointUTXOSet() error
 }

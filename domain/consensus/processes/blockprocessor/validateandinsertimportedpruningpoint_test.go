@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestValidateAndInsertPruningPoint(t *testing.T) {
+func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 3
@@ -95,9 +95,9 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
-		err = tcSyncee.InsertCandidatePruningPointUTXOs(pruningPointUTXOs)
+		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
 		if err != nil {
-			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
+			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
 		}
 
 		tip, err := tcSyncer.GetBlock(tipHash)
@@ -105,8 +105,8 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 			t.Fatalf("GetBlock: %+v", err)
 		}
 
-		// Check that ValidateAndInsertPruningPoint fails for invalid pruning point
-		err = tcSyncee.ValidateAndInsertPruningPoint(tip)
+		// Check that ValidateAndInsertImportedPruningPoint fails for invalid pruning point
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(tip)
 		if !errors.Is(err, ruleerrors.ErrUnexpectedPruningPoint) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -119,40 +119,40 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 		invalidPruningPointBlock := pruningPointBlock.Clone()
 		invalidPruningPointBlock.Transactions[0].Version += 1
 
-		// Check that ValidateAndInsertPruningPoint fails for invalid block
-		err = tcSyncee.ValidateAndInsertPruningPoint(invalidPruningPointBlock)
+		// Check that ValidateAndInsertImportedPruningPoint fails for invalid block
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(invalidPruningPointBlock)
 		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		err = tcSyncee.ClearCandidatePruningPointData()
+		err = tcSyncee.ClearImportedPruningPointData()
 		if err != nil {
-			t.Fatalf("ClearCandidatePruningPointData: %+v", err)
+			t.Fatalf("ClearImportedPruningPointData: %+v", err)
 		}
-		err = tcSyncee.InsertCandidatePruningPointUTXOs(makeFakeUTXOs())
+		err = tcSyncee.InsertImportedPruningPointUTXOs(makeFakeUTXOs())
 		if err != nil {
-			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
+			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
 		}
 
-		// Check that ValidateAndInsertPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
-		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock)
+		// Check that ValidateAndInsertImportedPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
 		if !errors.Is(err, ruleerrors.ErrBadPruningPointUTXOSet) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		err = tcSyncee.ClearCandidatePruningPointData()
+		err = tcSyncee.ClearImportedPruningPointData()
 		if err != nil {
-			t.Fatalf("ClearCandidatePruningPointData: %+v", err)
+			t.Fatalf("ClearImportedPruningPointData: %+v", err)
 		}
-		err = tcSyncee.InsertCandidatePruningPointUTXOs(pruningPointUTXOs)
+		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
 		if err != nil {
-			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
+			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
 		}
 
-		// Check that ValidateAndInsertPruningPoint works given the right arguments.
-		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock)
+		// Check that ValidateAndInsertImportedPruningPoint works given the right arguments.
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
 		if err != nil {
-			t.Fatalf("ValidateAndInsertPruningPoint: %+v", err)
+			t.Fatalf("ValidateAndInsertImportedPruningPoint: %+v", err)
 		}
 
 		virtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()

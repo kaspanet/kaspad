@@ -87,7 +87,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when
 		// processing the pruning point since it was already handled
-		// in consensusStateManager.UpdatePruningPoint
+		// in consensusStateManager.UpdatePruningPointViaImportedPruningPoint
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
 			selectedParentChainChanges, err = bp.consensusStateManager.AddBlock(blockHash)

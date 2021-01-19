@@ -231,25 +231,25 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) ClearCandidatePruningPointData() error {
+func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.ClearCandidatePruningPointData()
+	return s.pruningManager.ClearImportedPruningPointData()
 }
 
-func (s *consensus) InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+func (s *consensus) InsertImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.InsertCandidatePruningPointUTXOs(outpointAndUTXOEntryPairs)
+	return s.pruningManager.InsertImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
-func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint)
+	return s.blockProcessor.ValidateAndInsertImportedPruningPoint(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {

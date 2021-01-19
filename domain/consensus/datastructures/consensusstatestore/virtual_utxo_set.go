@@ -6,19 +6,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-var overwritingVirtualUTXOSetKey = dbkeys.MakeBucket().Key([]byte("overwriting-virtual-utxo-set"))
+var importingPruningPointUTXOSetKey = dbkeys.MakeBucket().Key([]byte("importing-pruning-point-utxo-set"))
 
-func (css *consensusStateStore) StartOverwritingVirtualUTXOSet() error {
-	return css.databaseContext.Put(overwritingVirtualUTXOSetKey, []byte{0})
+func (css *consensusStateStore) StartImportingPruningPointUTXOSet() error {
+	return css.databaseContext.Put(importingPruningPointUTXOSetKey, []byte{0})
 }
 
-func (css *consensusStateStore) HadStartedOverwritingVirtualUTXOSet() (bool, error) {
-	return css.databaseContext.Has(overwritingVirtualUTXOSetKey)
+func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet() (bool, error) {
+	return css.databaseContext.Has(importingPruningPointUTXOSetKey)
 }
 
-func (css *consensusStateStore) OverwriteVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+func (css *consensusStateStore) ImportVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
 	if css.virtualUTXODiffStaging != nil {
-		return errors.New("cannot overwrite virtual UTXO set while virtual UTXO diff is staged")
+		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
 	}
 
 	// Clear the cache
@@ -66,6 +66,6 @@ func (css *consensusStateStore) OverwriteVirtualUTXOSet(virtualUTXOSetIterator m
 	return nil
 }
 
-func (css *consensusStateStore) FinishOverwritingVirtualUTXOSet() error {
-	return css.databaseContext.Delete(overwritingVirtualUTXOSetKey)
+func (css *consensusStateStore) FinishImportingPruningPointUTXOSet() error {
+	return css.databaseContext.Delete(importingPruningPointUTXOSetKey)
 }

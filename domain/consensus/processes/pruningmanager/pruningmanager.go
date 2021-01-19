@@ -459,19 +459,19 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
 
-func (pm *pruningManager) ClearCandidatePruningPointData() error {
+func (pm *pruningManager) ClearImportedPruningPointData() error {
 	dbTx, err := pm.databaseContext.Begin()
 	if err != nil {
 		return err
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	err = pm.pruningStore.ClearCandidatePruningPointMultiset(dbTx)
+	err = pm.pruningStore.ClearImportedPruningPointMultiset(dbTx)
 	if err != nil {
 		return err
 	}
 
-	err = pm.pruningStore.ClearCandidatePruningPointUTXOs(dbTx)
+	err = pm.pruningStore.ClearImportedPruningPointUTXOs(dbTx)
 	if err != nil {
 		return err
 	}
@@ -479,7 +479,7 @@ func (pm *pruningManager) ClearCandidatePruningPointData() error {
 	return dbTx.Commit()
 }
 
-func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
+func (pm *pruningManager) InsertImportedPruningPointUTXOs(
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 
 	dbTx, err := pm.databaseContext.Begin()
@@ -488,26 +488,26 @@ func (pm *pruningManager) InsertCandidatePruningPointUTXOs(
 	}
 	defer dbTx.RollbackUnlessClosed()
 
-	candidateMultiset, err := pm.pruningStore.CandidatePruningPointMultiset(dbTx)
+	importedMultiset, err := pm.pruningStore.ImportedPruningPointMultiset(dbTx)
 	if err != nil {
 		if !database.IsNotFoundError(err) {
 			return err
 		}
-		candidateMultiset = multiset.New()
+		importedMultiset = multiset.New()
 	}
 	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
 		serializedUTXO, err := utxo.SerializeUTXO(outpointAndUTXOEntryPair.UTXOEntry, outpointAndUTXOEntryPair.Outpoint)
 		if err != nil {
 			return err
 		}
-		candidateMultiset.Add(serializedUTXO)
+		importedMultiset.Add(serializedUTXO)
 	}
-	err = pm.pruningStore.UpdateCandidatePruningPointMultiset(dbTx, candidateMultiset)
+	err = pm.pruningStore.UpdateImportedPruningPointMultiset(dbTx, importedMultiset)
 	if err != nil {
 		return err
 	}
 
-	err = pm.pruningStore.InsertCandidatePruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
+	err = pm.pruningStore.InsertImportedPruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
 	if err != nil {
 		return err
 	}

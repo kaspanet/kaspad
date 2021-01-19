@@ -342,7 +342,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 
 func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
-		err := flow.Domain().Consensus().ClearCandidatePruningPointData()
+		err := flow.Domain().Consensus().ClearImportedPruningPointData()
 		if err != nil {
 			panic(fmt.Sprintf("failed to clear candidate pruning point data: %s", err))
 		}
@@ -366,7 +366,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		return false, err
 	}
 
-	err = flow.Domain().Consensus().ValidateAndInsertPruningPoint(block)
+	err = flow.Domain().Consensus().ValidateAndInsertImportedPruningPoint(block)
 	if err != nil {
 		// TODO: Find a better way to deal with finality conflicts.
 		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
@@ -424,7 +424,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() error {
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
-			err := flow.Domain().Consensus().InsertCandidatePruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
+			err := flow.Domain().Consensus().InsertImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
 				return err
 			}
