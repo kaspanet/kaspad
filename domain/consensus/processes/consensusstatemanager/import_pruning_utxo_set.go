@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) UpdatePruningPointViaImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UpdatePruningPointViaImportedPruningPoint")
+func (csm *consensusStateManager) ImportPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ImportPruningPoint")
 	defer onEnd()
 
-	err := csm.updatePruningPointViaImportedPruningPoint(newPruningPoint)
+	err := csm.importPruningPoint(newPruningPoint)
 	if err != nil {
 		csm.discardImportedPruningPointUTXOSetChanges()
 		return err
@@ -23,9 +23,9 @@ func (csm *consensusStateManager) UpdatePruningPointViaImportedPruningPoint(newP
 	return csm.commitImportedPruningPointUTXOSetAll()
 }
 
-func (csm *consensusStateManager) updatePruningPointViaImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
-	log.Debugf("updatePruningPointViaImportedPruningPoint start")
-	defer log.Debugf("updatePruningPointViaImportedPruningPoint end")
+func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	log.Debugf("importPruningPoint start")
+	defer log.Debugf("importPruningPoint end")
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 
@@ -42,7 +42,7 @@ func (csm *consensusStateManager) updatePruningPointViaImportedPruningPoint(newP
 			"it violates finality", newPruningPointHash)
 	}
 
-	utxoSetMultiset, err := csm.pruningStore.ImportedPruningPointMultiset(csm.databaseContext)
+	importedPruningPointMultiset, err := csm.pruningStore.ImportedPruningPointMultiset(csm.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -54,9 +54,9 @@ func (csm *consensusStateManager) updatePruningPointViaImportedPruningPoint(newP
 	log.Debugf("The UTXO commitment of the pruning point: %s",
 		newPruningPointHeader.UTXOCommitment())
 
-	if !newPruningPointHeader.UTXOCommitment().Equal(utxoSetMultiset.Hash()) {
+	if !newPruningPointHeader.UTXOCommitment().Equal(importedPruningPointMultiset.Hash()) {
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
-			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *utxoSetMultiset.Hash())
+			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *importedPruningPointMultiset.Hash())
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
@@ -76,7 +76,7 @@ func (csm *consensusStateManager) updatePruningPointViaImportedPruningPoint(newP
 		return err
 	}
 
-	log.Debugf("Deleting all the existing virtual diff parents")
+	log.Debugf("Deleting all existing virtual diff parents")
 	csm.consensusStateStore.StageVirtualDiffParents(nil)
 
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
@@ -104,7 +104,7 @@ func (csm *consensusStateManager) updatePruningPointViaImportedPruningPoint(newP
 	csm.blockStatusStore.Stage(newPruningPointHash, externalapi.StatusUTXOValid)
 
 	log.Debugf("Staging the new pruning point multiset")
-	csm.multisetStore.Stage(newPruningPointHash, utxoSetMultiset)
+	csm.multisetStore.Stage(newPruningPointHash, importedPruningPointMultiset)
 	return nil
 }
 
@@ -139,31 +139,31 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	onEnd := logger.LogAndMeasureExecutionTime(log, "importVirtualUTXOSetAndPruningPointUTXOSet")
 	defer onEnd()
 
-	log.Debugf("Starting to overwrite virtual UTXO set and to commit pruning point utxo set")
+	log.Debugf("Starting to import virtual UTXO set and pruning point utxo set")
 	err := csm.consensusStateStore.StartImportingPruningPointUTXOSet()
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Getting an iterator into the candidate pruning point utxo set")
+	log.Debugf("Getting an iterator into the imported pruning point utxo set")
 	pruningPointUTXOSetIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Overwriting the virtual UTXO set")
+	log.Debugf("Importing the virtual UTXO set")
 	err = csm.consensusStateStore.ImportVirtualUTXOSet(pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Committing the new pruning point UTXO set")
+	log.Debugf("Importing the new pruning point UTXO set")
 	err = csm.pruningStore.CommitImportedPruningPointUTXOSet()
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Finishing to overwrite virtual UTXO set and to commit pruning point utxo set")
+	log.Debugf("Finishing to import virtual UTXO set and pruning point UTXO set")
 	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet()
 }
 
