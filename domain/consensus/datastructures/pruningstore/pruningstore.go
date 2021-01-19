@@ -182,13 +182,13 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
 
 	offsetIndex := 0
-	for pruningPointUTXOIterator.Next() && offset < offsetIndex {
+	for offset < offsetIndex && pruningPointUTXOIterator.Next() {
 		offsetIndex++
 	}
 
 	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, limit)
 	limitIndex := 0
-	for pruningPointUTXOIterator.Next() && limitIndex < limit {
+	for limitIndex < limit && pruningPointUTXOIterator.Next() {
 		outpoint, utxoEntry, err := pruningPointUTXOIterator.Get()
 		if err != nil {
 			return nil, err
