@@ -2,15 +2,15 @@ package reachabilitydatastore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var reachabilityDataBucket = dbkeys.MakeBucket([]byte("reachability-data"))
-var reachabilityReindexRootKey = dbkeys.MakeBucket().Key([]byte("reachability-reindex-root"))
+var reachabilityDataBucket = database.MakeBucket([]byte("reachability-data"))
+var reachabilityReindexRootKey = database.MakeBucket(nil).Key([]byte("reachability-reindex-root"))
 
 // reachabilityDataStore represents a store of ReachabilityData
 type reachabilityDataStore struct {

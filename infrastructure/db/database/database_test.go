@@ -18,7 +18,7 @@ func TestDatabasePut(t *testing.T) {
 
 func testDatabasePut(t *testing.T, db database.Database, testName string) {
 	// Put value1 into the database
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value1 := []byte("value1")
 	err := db.Put(key, value1)
 	if err != nil {
@@ -65,7 +65,7 @@ func TestDatabaseGet(t *testing.T) {
 
 func testDatabaseGet(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
@@ -87,7 +87,7 @@ func testDatabaseGet(t *testing.T, db database.Database, testName string) {
 
 	// Try getting a non-existent value and make sure
 	// the returned error is ErrNotFound
-	_, err = db.Get(database.MakeBucket().Key([]byte("doesn't exist")))
+	_, err = db.Get(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("%s: Get "+
 			"unexpectedly succeeded", testName)
@@ -104,7 +104,7 @@ func TestDatabaseHas(t *testing.T) {
 
 func testDatabaseHas(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
@@ -124,7 +124,7 @@ func testDatabaseHas(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Make sure that Has returns false for a non-existent value
-	exists, err = db.Has(database.MakeBucket().Key([]byte("doesn't exist")))
+	exists, err = db.Has(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err != nil {
 		t.Fatalf("%s: Has "+
 			"unexpectedly failed: %s", testName, err)
@@ -141,7 +141,7 @@ func TestDatabaseDelete(t *testing.T) {
 
 func testDatabaseDelete(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {

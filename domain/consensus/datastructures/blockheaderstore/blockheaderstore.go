@@ -2,15 +2,15 @@ package blockheaderstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-headers"))
-var countKey = dbkeys.MakeBucket().Key([]byte("block-headers-count"))
+var bucket = database.MakeBucket([]byte("block-headers"))
+var countKey = database.MakeBucket(nil).Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
