@@ -175,7 +175,7 @@ type Params struct {
 	MaxMassAcceptedByBlock uint64
 
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
-	CoinbasePayloadScriptPublicKeyMaxLength uint64
+	CoinbasePayloadScriptPublicKeyMaxLength uint8
 
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy uint64

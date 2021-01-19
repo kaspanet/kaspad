@@ -11,7 +11,7 @@ import (
 type coinbaseManager struct {
 	subsidyReductionInterval                uint64
 	baseSubsidy                             uint64
-	coinbasePayloadScriptPublicKeyMaxLength uint64
+	coinbasePayloadScriptPublicKeyMaxLength uint8
 
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -129,7 +129,7 @@ func New(
 
 	subsidyReductionInterval uint64,
 	baseSubsidy uint64,
-	coinbasePayloadScriptPublicKeyMaxLength uint64,
+	coinbasePayloadScriptPublicKeyMaxLength uint8,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore) model.CoinbaseManager {

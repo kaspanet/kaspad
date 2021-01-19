@@ -3,14 +3,15 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"os"
+	"time"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math/big"
-	"os"
-	"time"
 )
 
 // NetworkFlags holds the network configuration, that is which network is selected.
@@ -33,7 +34,7 @@ type overrideDAGParamsConfig struct {
 	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
 	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`
 	MassPerSigOp                            *uint64      `json:"massPerSigOp"`
-	CoinbasePayloadScriptPublicKeyMaxLength *uint64      `json:"coinbasePayloadScriptPublicKeyMaxLength"`
+	CoinbasePayloadScriptPublicKeyMaxLength *uint8       `json:"coinbasePayloadScriptPublicKeyMaxLength"`
 	PowMax                                  *string      `json:"powMax"`
 	BlockCoinbaseMaturity                   *uint64      `json:"blockCoinbaseMaturity"`
 	SubsidyReductionInterval                *uint64      `json:"subsidyReductionInterval"`

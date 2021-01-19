@@ -9,5 +9,5 @@ import (
 type TransactionValidator interface {
 	ValidateTransactionInIsolation(transaction *externalapi.DomainTransaction) error
 	ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
-		povTransactionHash *externalapi.DomainHash, selectedParentMedianTime int64) error
+		povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error
 }
