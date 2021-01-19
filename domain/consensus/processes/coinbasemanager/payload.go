@@ -2,7 +2,6 @@ package coinbasemanager
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -17,16 +16,13 @@ const lengthOfVersionScriptPubKey = uint16Len
 // serializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData) ([]byte, error) {
 	scriptLengthOfScriptPubKey := len(coinbaseData.ScriptPublicKey.Script)
-	if uint64(scriptLengthOfScriptPubKey) > c.coinbasePayloadScriptPublicKeyMaxLength {
+	if scriptLengthOfScriptPubKey > int(c.coinbasePayloadScriptPublicKeyMaxLength) {
 		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
 			"longer than the max allowed length of %d", c.coinbasePayloadScriptPublicKeyMaxLength)
 	}
 
 	payload := make([]byte, uint64Len+lengthOfVersionScriptPubKey+lengthOfscriptPubKeyLength+scriptLengthOfScriptPubKey+len(coinbaseData.ExtraData))
 	binary.LittleEndian.PutUint64(payload[:uint64Len], blueScore)
-	if len(coinbaseData.ScriptPublicKey.Script) > math.MaxUint8 {
-		return nil, errors.Errorf("script public key is bigger than %d", math.MaxUint8)
-	}
 
 	payload[uint64Len] = uint8(coinbaseData.ScriptPublicKey.Version)
 	payload[uint64Len+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
@@ -49,7 +45,7 @@ func (c *coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalap
 	scriptPubKeyVersion := uint16(coinbaseTx.Payload[uint64Len])
 	scriptPubKeyScriptLength := coinbaseTx.Payload[uint64Len+lengthOfVersionScriptPubKey]
 
-	if uint64(scriptPubKeyScriptLength) > c.coinbasePayloadScriptPublicKeyMaxLength {
+	if scriptPubKeyScriptLength > c.coinbasePayloadScriptPublicKeyMaxLength {
 		return 0, nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
 			"longer than the max allowed length of %d", c.coinbasePayloadScriptPublicKeyMaxLength)
 	}
