@@ -7,10 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"google.golang.org/protobuf/proto"
 	"testing"
 	"time"
 )
@@ -93,9 +91,13 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOSet, err := tcSyncer.GetPruningPointUTXOSet(pruningPoint)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
 		if err != nil {
-			t.Fatalf("GetPruningPointUTXOSet: %+v", err)
+			t.Fatalf("GetPruningPointUTXOs: %+v", err)
+		}
+		err = tcSyncee.InsertCandidatePruningPointUTXOs(pruningPointUTXOs)
+		if err != nil {
+			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
 		}
 
 		tip, err := tcSyncer.GetBlock(tipHash)
@@ -104,7 +106,7 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 		}
 
 		// Check that ValidateAndInsertPruningPoint fails for invalid pruning point
-		err = tcSyncee.ValidateAndInsertPruningPoint(tip, pruningPointUTXOSet)
+		err = tcSyncee.ValidateAndInsertPruningPoint(tip)
 		if !errors.Is(err, ruleerrors.ErrUnexpectedPruningPoint) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -118,24 +120,37 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 		invalidPruningPointBlock.Transactions[0].Version += 1
 
 		// Check that ValidateAndInsertPruningPoint fails for invalid block
-		err = tcSyncee.ValidateAndInsertPruningPoint(invalidPruningPointBlock, pruningPointUTXOSet)
+		err = tcSyncee.ValidateAndInsertPruningPoint(invalidPruningPointBlock)
 		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		serializedFakeUTXOSet, err := makeSerializedFakeUTXOSet()
+		err = tcSyncee.ClearCandidatePruningPointData()
 		if err != nil {
-			t.Fatalf("makeSerializedFakeUTXOSet: %+v", err)
+			t.Fatalf("ClearCandidatePruningPointData: %+v", err)
+		}
+		err = tcSyncee.InsertCandidatePruningPointUTXOs(makeFakeUTXOs())
+		if err != nil {
+			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
 		}
 
 		// Check that ValidateAndInsertPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
-		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock, serializedFakeUTXOSet)
+		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock)
 		if !errors.Is(err, ruleerrors.ErrBadPruningPointUTXOSet) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
+		err = tcSyncee.ClearCandidatePruningPointData()
+		if err != nil {
+			t.Fatalf("ClearCandidatePruningPointData: %+v", err)
+		}
+		err = tcSyncee.InsertCandidatePruningPointUTXOs(pruningPointUTXOs)
+		if err != nil {
+			t.Fatalf("InsertCandidatePruningPointUTXOs: %+v", err)
+		}
+
 		// Check that ValidateAndInsertPruningPoint works given the right arguments.
-		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock, pruningPointUTXOSet)
+		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertPruningPoint: %+v", err)
 		}
@@ -187,33 +202,37 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 	})
 }
 
-type fakeUTXOSetIterator struct {
-	nextCalled bool
-}
-
-func (f *fakeUTXOSetIterator) Next() bool {
-	if f.nextCalled {
-		return false
+func makeFakeUTXOs() []*externalapi.OutpointAndUTXOEntryPair {
+	return []*externalapi.OutpointAndUTXOEntryPair{
+		{
+			Outpoint: &externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID{},
+				Index:         0,
+			},
+			UTXOEntry: utxo.NewUTXOEntry(
+				0,
+				&externalapi.ScriptPublicKey{
+					Script:  nil,
+					Version: 0,
+				},
+				false,
+				0,
+			),
+		},
+		{
+			Outpoint: &externalapi.DomainOutpoint{
+				TransactionID: externalapi.DomainTransactionID{},
+				Index:         1,
+			},
+			UTXOEntry: utxo.NewUTXOEntry(
+				2,
+				&externalapi.ScriptPublicKey{
+					Script:  nil,
+					Version: 0,
+				},
+				true,
+				3,
+			),
+		},
 	}
-	f.nextCalled = true
-	return true
-}
-
-func (f *fakeUTXOSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
-	return &externalapi.DomainOutpoint{
-			TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{0x01}),
-			Index:         0,
-		}, utxo.NewUTXOEntry(1000, &externalapi.ScriptPublicKey{
-			Script:  []byte{1, 2, 3},
-			Version: 0,
-		}, false, 2000), nil
-}
-
-func makeSerializedFakeUTXOSet() ([]byte, error) {
-	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(&fakeUTXOSetIterator{})
-	if err != nil {
-		return nil, err
-	}
-
-	return proto.Marshal(serializedUtxo)
 }
