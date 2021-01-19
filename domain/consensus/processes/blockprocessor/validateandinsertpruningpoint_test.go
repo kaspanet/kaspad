@@ -58,6 +58,17 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 			return consensushashing.BlockHash(block)
 		}
 
+		// make 2 blocks on the side.
+		side, _, err := tcSyncee.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, &externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{}, ExtraData: []byte{1,2}}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// make 2 blocks on the side.
+		_, _, err = tcSyncee.AddBlock([]*externalapi.DomainHash{side}, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		tipHash := params.GenesisHash
 		for i := 0; i < finalityDepth-2; i++ {
 			tipHash = addBlock([]*externalapi.DomainHash{tipHash})
@@ -183,6 +194,37 @@ func TestValidateAndInsertPruningPoint(t *testing.T) {
 
 		if !synceePruningPoint.Equal(pruningPoint) {
 			t.Fatalf("The syncee pruning point has not changed as exepcted")
+		}
+
+		pruningPointOld := pruningPoint
+
+		// Add blocks until the pruning point changes
+		for {
+			block, _, err := tcSyncer.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("BuildBlockWithParents: %+v", err)
+			}
+
+			_, err = tcSyncer.ValidateAndInsertBlock(block)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlock: %+v", err)
+			}
+
+			_, err = tcSyncee.ValidateAndInsertBlock(block)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlock: %+v", err)
+			}
+
+			tipHash = consensushashing.BlockHash(block)
+
+			pruningPoint, err := tcSyncer.PruningPoint()
+			if err != nil {
+				t.Fatalf("PruningPoint: %+v", err)
+			}
+
+			if !pruningPoint.Equal(pruningPointOld) {
+				break
+			}
 		}
 	})
 }
