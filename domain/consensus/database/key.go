@@ -6,6 +6,9 @@ import (
 )
 
 func dbKeyToDatabaseKey(key model.DBKey) *database.Key {
+	if key, ok := key.(dbKey); ok {
+		return key.key
+	}
 	return dbBucketToDatabaseBucket(key.Bucket()).Key(key.Suffix())
 }
 
