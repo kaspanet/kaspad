@@ -2,19 +2,18 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheuint64tohash"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
-var bucketChainBlockHashByIndex = dbkeys.MakeBucket([]byte("chain-block-hash-by-index"))
-var bucketChainBlockIndexByHash = dbkeys.MakeBucket([]byte("chain-block-index-by-hash"))
-var highestChainBlockIndexKey = dbkeys.MakeBucket().Key([]byte("highest-chain-block-index"))
+var bucketChainBlockHashByIndex = database.MakeBucket([]byte("chain-block-hash-by-index"))
+var bucketChainBlockIndexByHash = database.MakeBucket([]byte("chain-block-index-by-hash"))
+var highestChainBlockIndexKey = database.MakeBucket(nil).Key([]byte("highest-chain-block-index"))
 
 type headersSelectedChainStore struct {
 	stagingAddedByHash          map[externalapi.DomainHash]uint64

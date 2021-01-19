@@ -2,13 +2,13 @@ package consensusstatestore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents"))
+var virtualDiffParentsKey = database.MakeBucket(nil).Key([]byte("virtual-diff-parents"))
 
 func (css *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if css.virtualDiffParentsStaging != nil {

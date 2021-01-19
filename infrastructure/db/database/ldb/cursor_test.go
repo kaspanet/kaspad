@@ -95,7 +95,7 @@ func TestCursorSanity(t *testing.T) {
 	validateCurrentCursorKeyAndValue(t, "TestCursorSanity", cursor, expectedKey, expectedValue)
 
 	// Seek to a non-existant key
-	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
+	err = cursor.Seek(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("TestCursorSanity: Seek " +
 			"unexpectedly succeeded")
@@ -155,7 +155,7 @@ func TestCursorCloseErrors(t *testing.T) {
 		{
 			name: "Seek",
 			function: func(cursor database.Cursor) error {
-				return cursor.Seek(database.MakeBucket().Key([]byte{}))
+				return cursor.Seek(database.MakeBucket(nil).Key([]byte{}))
 			},
 		},
 		{
@@ -186,7 +186,7 @@ func TestCursorCloseErrors(t *testing.T) {
 			defer teardownFunc()
 
 			// Open a new cursor
-			cursor, err := ldb.Cursor(database.MakeBucket())
+			cursor, err := ldb.Cursor(database.MakeBucket(nil))
 			if err != nil {
 				t.Fatalf("TestCursorCloseErrors: ldb.Cursor "+
 					"unexpectedly failed: %s", err)
