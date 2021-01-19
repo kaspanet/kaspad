@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/big"
 	"os"
 	"time"
@@ -35,7 +34,7 @@ type overrideDAGParamsConfig struct {
 	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
 	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`
 	MassPerSigOp                            *uint64      `json:"massPerSigOp"`
-	CoinbasePayloadScriptPublicKeyMaxLength *uint64      `json:"coinbasePayloadScriptPublicKeyMaxLength"`
+	CoinbasePayloadScriptPublicKeyMaxLength *uint8       `json:"coinbasePayloadScriptPublicKeyMaxLength"`
 	PowMax                                  *string      `json:"powMax"`
 	BlockCoinbaseMaturity                   *uint64      `json:"blockCoinbaseMaturity"`
 	SubsidyReductionInterval                *uint64      `json:"subsidyReductionInterval"`
@@ -158,10 +157,6 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 	}
 
 	if config.CoinbasePayloadScriptPublicKeyMaxLength != nil {
-		if *config.CoinbasePayloadScriptPublicKeyMaxLength > math.MaxUint8 {
-			return errors.Errorf("config.CoinbasePayloadScriptPublicKeyMaxLength (%d) is larger then math.MaxUint8(%d)",
-				config.CoinbasePayloadScriptPublicKeyMaxLength, math.MaxUint8)
-		}
 		networkFlags.ActiveNetParams.CoinbasePayloadScriptPublicKeyMaxLength = *config.CoinbasePayloadScriptPublicKeyMaxLength
 	}
 
