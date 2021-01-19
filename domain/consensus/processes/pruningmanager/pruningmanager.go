@@ -323,6 +323,7 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	}
 
 	pm.pruningStore.StagePruningPoint(pruningPointHash)
+	pm.pruningStore.StagePruningPointUTXOSetIterator(utxoSetIterator)
 
 	return nil
 }
