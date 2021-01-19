@@ -21,7 +21,7 @@ type pruningStore struct {
 	pruningPointCandidateStaging *externalapi.DomainHash
 	pruningPointCandidateCache   *externalapi.DomainHash
 
-	pruningPointUTXOSetIteratorStaging model.ReadOnlyUTXOSetIterator
+	pruningPointUTXOSetStaging model.ReadOnlyUTXOSetIterator
 }
 
 // New instantiates a new PruningStore
@@ -74,17 +74,17 @@ func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.Dom
 	ps.pruningPointStaging = pruningPointBlockHash
 }
 
-func (ps *pruningStore) StagePruningPointUTXOSetIterator(pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
-	ps.pruningPointUTXOSetIteratorStaging = pruningPointUTXOSetIterator
+func (ps *pruningStore) StagePruningPointUTXOSet(pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
+	ps.pruningPointUTXOSetStaging = pruningPointUTXOSetIterator
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.pruningPointUTXOSetIteratorStaging != nil
+	return ps.pruningPointStaging != nil || ps.pruningPointUTXOSetStaging != nil
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
-	ps.pruningPointUTXOSetIteratorStaging = nil
+	ps.pruningPointUTXOSetStaging = nil
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -112,7 +112,7 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
 	}
 
-	if ps.pruningPointUTXOSetIteratorStaging != nil {
+	if ps.pruningPointUTXOSetStaging != nil {
 		// Delete all the old UTXOs from the database
 		deleteCursor, err := dbTx.Cursor(pruningPointUTXOSetBucket)
 		if err != nil {
@@ -130,9 +130,9 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		}
 
 		// Insert all the new UTXOs into the database
-		ps.pruningPointUTXOSetIteratorStaging.First()
-		for ps.pruningPointUTXOSetIteratorStaging.Next() {
-			outpoint, entry, err := ps.pruningPointUTXOSetIteratorStaging.Get()
+		ps.pruningPointUTXOSetStaging.First()
+		for ps.pruningPointUTXOSetStaging.Next() {
+			outpoint, entry, err := ps.pruningPointUTXOSetStaging.Get()
 			if err != nil {
 				return err
 			}
