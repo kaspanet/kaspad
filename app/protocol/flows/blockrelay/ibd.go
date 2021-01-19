@@ -430,8 +430,8 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 			return false, nil
 		default:
 			return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s or %s, got: %s",
-				appmessage.CmdIBDRootUTXOSetChunk, appmessage.CmdDoneIBDRootUTXOSetChunks, message.Command(),
+				"expected: %s or %s or %s, got: %s", appmessage.CmdIBDRootUTXOSetChunk,
+				appmessage.CmdDoneIBDRootUTXOSetChunks, appmessage.CmdIBDRootNotFound, message.Command(),
 			)
 		}
 
