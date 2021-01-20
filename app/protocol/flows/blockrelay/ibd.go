@@ -281,7 +281,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		}
 
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Debugf("Skipping block header %s as it is a duplicate")
+			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
