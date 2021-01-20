@@ -182,7 +182,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 		),
 
 		m.registerFlow("HandleIBDRootHashRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestIBDRootHash}, isStopping, errChan,
+			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointHash}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBDRootHashRequests(m.context, incomingRoute, outgoingRoute)
 			},

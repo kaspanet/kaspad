@@ -179,7 +179,7 @@ message RequestIBDBlocksMessage{
 message UnexpectedPruningPointMessage{
 }
 
-message RequestIBDRootHashMessage{
+message RequestPruningPointHashMessage{
 }
 
 message IBDRootHashMessage{
