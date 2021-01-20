@@ -403,10 +403,9 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertIBDRootUTXOSet")
 	defer onEnd()
 
-	receivedAllChunks := false
 	receivedChunkCount := 0
 	receivedUTXOCount := 0
-	for !receivedAllChunks {
+	for {
 		message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 		if err != nil {
 			return false, err
@@ -422,34 +421,35 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 			if err != nil {
 				return false, err
 			}
+
+			receivedChunkCount++
+			if receivedChunkCount%ibdBatchSize == 0 {
+				log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
+					receivedChunkCount, receivedUTXOCount)
+
+				requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextIBDRootUTXOSetChunk()
+				err := flow.outgoingRoute.Enqueue(requestNextIBDRootUTXOSetChunkMessage)
+				if err != nil {
+					return false, err
+				}
+			}
+
 		case *appmessage.MsgDoneIBDRootUTXOSetChunks:
-			receivedAllChunks = true
+			log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
+			return true, nil
+
 		case *appmessage.MsgIBDRootNotFound:
 			log.Debugf("Could not receive the next UTXO chunk. " +
 				"This is likely to have happened because the IBD root moved")
 			return false, nil
+
 		default:
 			return false, protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s or %s, got: %s", appmessage.CmdIBDRootUTXOSetChunk,
 				appmessage.CmdDoneIBDRootUTXOSetChunks, appmessage.CmdIBDRootNotFound, message.Command(),
 			)
 		}
-
-		receivedChunkCount++
-		if !receivedAllChunks && receivedChunkCount%ibdBatchSize == 0 {
-			log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
-				receivedChunkCount, receivedUTXOCount)
-
-			requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextIBDRootUTXOSetChunk()
-			err := flow.outgoingRoute.Enqueue(requestNextIBDRootUTXOSetChunkMessage)
-			if err != nil {
-				return false, err
-			}
-		}
 	}
-	log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
-
-	return true, nil
 }
 
 func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
