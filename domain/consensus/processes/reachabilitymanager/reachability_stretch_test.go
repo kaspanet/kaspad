@@ -17,10 +17,9 @@ import (
 const (
 	numBlocksExponent = 12
 	logLevel          = "warn"
-	validateMining    = false
 )
 
-func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, useSmallReindexSlack bool) {
+func runJsonDAGTest(t *testing.T, fileName, testName string, addArbitraryBlocks, useSmallReindexSlack bool) {
 	t.Parallel()
 
 	logger.SetLogLevels(logLevel)
@@ -111,26 +110,26 @@ func TestNoAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
 		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
-	LoadJsonDAG(t, fileName, "TestNoAttack", false, false)
+	runJsonDAGTest(t, fileName, "TestNoAttack", false, false)
 }
 
 func TestAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
 		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
-	LoadJsonDAG(t, fileName, "TestAttack", false, false)
+	runJsonDAGTest(t, fileName, "TestAttack", false, false)
 }
 
 func TestArbitraryDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
 		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
-	LoadJsonDAG(t, fileName, "TestArbitraryDAG", true, true)
+	runJsonDAGTest(t, fileName, "TestArbitraryDAG", true, true)
 }
 
 func TestArbitraryAttackDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
 		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
-	LoadJsonDAG(t, fileName, "TestArbitraryAttackDAG", true, true)
+	runJsonDAGTest(t, fileName, "TestArbitraryAttackDAG", true, true)
 }

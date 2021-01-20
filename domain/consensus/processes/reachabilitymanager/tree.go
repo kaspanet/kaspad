@@ -284,6 +284,9 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 	if intervalSize(remaining) == 0 {
 
 		// Initially set the child's interval to the empty remaining interval.
+		// This is done since in some cases, the underlying algorithm will
+		// allocate space around this point and call intervalIncreaseEnd or
+		// intervalDecreaseStart making for intervalSize > 0
 		err = rt.stageInterval(child, remaining)
 		if err != nil {
 			return err
