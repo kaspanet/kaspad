@@ -358,7 +358,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externala
 		return false, err
 	}
 
-	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet()
+	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet(pruningPointHash)
 	if err != nil {
 		return false, err
 	}
@@ -399,7 +399,9 @@ func (flow *handleRelayInvsFlow) receivePruningPointBlock() (*externalapi.Domain
 	return block, nil
 }
 
-func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet() (bool, error) {
+func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
+	pruningPointHash *externalapi.DomainHash) (bool, error) {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertPruningPointUTXOSet")
 	defer onEnd()
 
@@ -439,8 +441,8 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet() (bool, er
 			return true, nil
 
 		case *appmessage.MsgUnexpectedPruningPoint:
-			log.Debugf("Could not receive the next UTXO chunk. " +
-				"This is likely to have happened because the pruning point moved")
+			log.Debugf("Could not receive the next UTXO chunk because the pruning point %s "+
+				"is no longer the pruning point of peer %s", pruningPointHash, flow.peer)
 			return false, nil
 
 		default:
