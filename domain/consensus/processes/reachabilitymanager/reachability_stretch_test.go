@@ -40,17 +40,18 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer f.Close()
 
 	gzipReader, err := gzip.NewReader(f)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//now := time.Now()
+	defer gzipReader.Close()
+
 	err = tc.MineJSON(gzipReader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//fmt.Printf("passed %ds\n", time.Since(now).Seconds())
 
 	err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 	if err != nil {

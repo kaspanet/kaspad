@@ -225,19 +225,30 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 		}
 
 		if current.Equal(reindexRoot) {
+			// Reindex root is expected to hold enough capacity as long as there are less
+			// than ~2^52 blocks in the DAG, which should never happen in our lifetimes
+			// even if block rate per second is above 100. The calculation follows from the allocation of
+			// 2^12 (which equals 2^64/2^52) for slack per chain block below the reindex root.
 			return errors.Errorf("unexpected behavior: reindex root %s is out of capacity"+
 				"during reindexing. Theoretically, this "+
 				"should only ever happen if there are more "+
-				"than ~2^50 blocks in the DAG.", reindexRoot.String())
+				"than ~2^52 blocks in the DAG.", reindexRoot.String())
 		}
 
-		if res, _ := rc.manager.isStrictAncestorOf(parent, reindexRoot); res {
+		isParentStrictAncestorOfRoot, err := rc.manager.isStrictAncestorOf(parent, reindexRoot)
+		if err != nil {
+			return err
+		}
+
+		if isParentStrictAncestorOfRoot {
 			// In this case parent is guaranteed to have sufficient interval space,
 			// however we avoid reindexing the entire subtree above parent
 			// (which includes root and thus majority of blocks mined since)
-			// and use slacks along the chain up from parent to reindex root
-			// Note we set requiredAllocation=currentSubtreeSize in order to double the
+			// and use slacks along the chain up from parent to reindex root.
+			// Notes:
+			// 1. we set requiredAllocation=currentSubtreeSize in order to double the
 			// current interval capacity
+			// 2. it might be the case that current is the `newChild` itself
 			return rc.reindexIntervalsEarlierThanRoot(current, reindexRoot, parent, currentSubtreeSize)
 		}
 

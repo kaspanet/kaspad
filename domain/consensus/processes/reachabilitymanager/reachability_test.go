@@ -914,7 +914,7 @@ func TestReindexIntervalErrors(t *testing.T) {
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
 	// Create a treeNode and give it size = 100
-	treeNode := helper.newNodeWithInterval(newReachabilityInterval(1, 100))
+	treeNode := helper.newNodeWithInterval(newReachabilityInterval(0, 99))
 
 	// Add a chain of 100 child treeNodes to treeNode
 	var err error

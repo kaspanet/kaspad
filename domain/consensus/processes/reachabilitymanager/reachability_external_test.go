@@ -58,7 +58,8 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("reindex root is expected to change")
 		}
 
-		// Add enough blocks over genesis to trigger reindex
+		// Add enough blocks over genesis to test also the case where the first
+		// level (genesis in this case) runs out of slack
 		slackSize := tc.ReachabilityManager().ReachabilityReindexSlack()
 		blocksToAdd := uint64(math.Log2(float64(slackSize))) + 2
 		for i := uint64(0); i < blocksToAdd; i++ {

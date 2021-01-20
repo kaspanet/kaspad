@@ -107,8 +107,8 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 }
 
 func (tc *testConsensus) MineJSON(r io.Reader) error {
-	// JSONBlock is a json representation of a block in mine format
-	type JSONBlock struct {
+	// jsonBlock is a json representation of a block in mine format
+	type jsonBlock struct {
 		ID      string   `json:"id"`
 		Parents []string `json:"parents"`
 	}
@@ -124,7 +124,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 	}
 	// while the array contains values
 	for decoder.More() {
-		var block JSONBlock
+		var block jsonBlock
 		// decode an array value (Message)
 		err := decoder.Decode(&block)
 		if err != nil {
