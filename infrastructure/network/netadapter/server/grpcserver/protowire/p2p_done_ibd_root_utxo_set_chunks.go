@@ -2,11 +2,11 @@ package protowire
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-func (x *KaspadMessage_DoneIbdRootUtxoSetChunks) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.MsgDoneIBDRootUTXOSetChunks{}, nil
+func (x *KaspadMessage_DonePruningPointUtxoSetChunks) toAppMessage() (appmessage.Message, error) {
+	return &appmessage.MsgDonePruningPointUTXOSetChunks{}, nil
 }
 
-func (x *KaspadMessage_DoneIbdRootUtxoSetChunks) fromAppMessage(_ *appmessage.MsgDoneIBDRootUTXOSetChunks) error {
-	x.DoneIbdRootUtxoSetChunks = &DoneIbdRootUtxoSetChunksMessage{}
+func (x *KaspadMessage_DonePruningPointUtxoSetChunks) fromAppMessage(_ *appmessage.MsgDonePruningPointUTXOSetChunks) error {
+	x.DonePruningPointUtxoSetChunks = &DonePruningPointUtxoSetChunksMessage{}
 	return nil
 }

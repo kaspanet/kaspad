@@ -169,7 +169,7 @@ message UtxoEntry {
 message RequestNextPruningPointUtxoSetChunkMessage {
 }
 
-message DoneIbdRootUtxoSetChunksMessage {
+message DonePruningPointUtxoSetChunksMessage {
 }
 
 message RequestIBDBlocksMessage{

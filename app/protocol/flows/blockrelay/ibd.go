@@ -434,7 +434,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 				}
 			}
 
-		case *appmessage.MsgDoneIBDRootUTXOSetChunks:
+		case *appmessage.MsgDonePruningPointUTXOSetChunks:
 			log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
 			return true, nil
 
@@ -446,7 +446,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 		default:
 			return false, protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s or %s, got: %s", appmessage.CmdPruningPointUTXOSetChunk,
-				appmessage.CmdDoneIBDRootUTXOSetChunks, appmessage.CmdUnexpectedPruningPoint, message.Command(),
+				appmessage.CmdDonePruningPointUTXOSetChunks, appmessage.CmdUnexpectedPruningPoint, message.Command(),
 			)
 		}
 	}

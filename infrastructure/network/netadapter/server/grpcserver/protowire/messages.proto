@@ -38,7 +38,7 @@ message KaspadMessage {
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
     BlockHeadersMessage blockHeaders = 32;
     RequestNextPruningPointUtxoSetChunkMessage requestNextPruningPointUtxoSetChunk = 33;
-    DoneIbdRootUtxoSetChunksMessage doneIbdRootUtxoSetChunks = 34;
+    DonePruningPointUtxoSetChunksMessage donePruningPointUtxoSetChunks = 34;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

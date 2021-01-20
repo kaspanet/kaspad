@@ -115,7 +115,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) sendIBDRootUTXOSet(
 			log.Debugf("Finished sending UTXOs for pruning block %s",
 				msgRequestIBDRootUTXOSetAndBlock.PruningPointHash)
 
-			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
+			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 		}
 
 		offset += step
