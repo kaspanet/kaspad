@@ -348,7 +348,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		}
 	}()
 
-	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootUTXOSetAndBlock(ibdRootHash))
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointUTXOSetAndBlock(ibdRootHash))
 	if err != nil {
 		return false, err
 	}

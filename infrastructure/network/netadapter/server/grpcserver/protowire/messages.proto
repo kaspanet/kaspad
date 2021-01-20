@@ -28,7 +28,7 @@ message KaspadMessage {
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
-    RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
+    RequestPruningPointUTXOSetAndBlockMessage requestPruningPointUTXOSetAndBlock = 24;
     IbdRootUtxoSetChunkMessage ibdRootUtxoSetChunk = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     UnexpectedPruningPointMessage unexpectedPruningPoint = 27;

@@ -146,8 +146,8 @@ message RejectMessage{
   string reason = 1;
 }
 
-message RequestIBDRootUTXOSetAndBlockMessage{
-  Hash ibdRoot = 1;
+message RequestPruningPointUTXOSetAndBlockMessage{
+  Hash pruningPointHash = 1;
 }
 
 message IbdRootUtxoSetChunkMessage{

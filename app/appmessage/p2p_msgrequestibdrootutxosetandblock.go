@@ -4,23 +4,20 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// MsgRequestIBDRootUTXOSetAndBlock implements the Message interface and represents a kaspa
-// RequestIBDRootUTXOSetAndBlock message. It is used to request the UTXO set and block body
-// of the IBD root block.
-type MsgRequestIBDRootUTXOSetAndBlock struct {
+// MsgRequestPruningPointUTXOSetAndBlock represents a kaspa RequestPruningPointUTXOSetAndBlock message
+type MsgRequestPruningPointUTXOSetAndBlock struct {
 	baseMessage
-	IBDRoot *externalapi.DomainHash
+	PruningPointHash *externalapi.DomainHash
 }
 
-// Command returns the protocol command string for the message. This is part
-// of the Message interface implementation.
-func (msg *MsgRequestIBDRootUTXOSetAndBlock) Command() MessageCommand {
-	return CmdRequestIBDRootUTXOSetAndBlock
+// Command returns the protocol command string for the message
+func (msg *MsgRequestPruningPointUTXOSetAndBlock) Command() MessageCommand {
+	return CmdRequestPruningPointUTXOSetAndBlock
 }
 
-// NewMsgRequestIBDRootUTXOSetAndBlock returns a new MsgRequestIBDRootUTXOSetAndBlock.
-func NewMsgRequestIBDRootUTXOSetAndBlock(ibdRoot *externalapi.DomainHash) *MsgRequestIBDRootUTXOSetAndBlock {
-	return &MsgRequestIBDRootUTXOSetAndBlock{
-		IBDRoot: ibdRoot,
+// NewMsgRequestPruningPointUTXOSetAndBlock returns a new MsgRequestPruningPointUTXOSetAndBlock
+func NewMsgRequestPruningPointUTXOSetAndBlock(pruningPointHash *externalapi.DomainHash) *MsgRequestPruningPointUTXOSetAndBlock {
+	return &MsgRequestPruningPointUTXOSetAndBlock{
+		PruningPointHash: pruningPointHash,
 	}
 }
