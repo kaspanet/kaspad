@@ -41,7 +41,6 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(prun
 	}
 
 	// Insert all the new UTXOs into the database
-	pruningPointUTXOSetIterator.First()
 	for pruningPointUTXOSetIterator.Next() {
 		outpoint, entry, err := pruningPointUTXOSetIterator.Get()
 		if err != nil {
