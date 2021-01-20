@@ -97,7 +97,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) sendIBDRootUTXOSet(
 			msgRequestIBDRootUTXOSetAndBlock.IBDRoot, offset, step)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
-				return flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootNotFound())
+				return flow.outgoingRoute.Enqueue(appmessage.NewMsgUnexpectedPruningPoint())
 			}
 		}
 

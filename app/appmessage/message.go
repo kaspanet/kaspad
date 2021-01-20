@@ -54,7 +54,7 @@ const (
 	CmdRequestIBDRootUTXOSetAndBlock
 	CmdIBDRootUTXOSetChunk
 	CmdRequestIBDBlocks
-	CmdIBDRootNotFound
+	CmdUnexpectedPruningPoint
 	CmdRequestIBDRootHash
 	CmdIBDRootHash
 	CmdIBDBlockLocator
@@ -151,7 +151,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdRequestIBDRootUTXOSetAndBlock:  "RequestPruningUTXOSetAndBlock",
 	CmdIBDRootUTXOSetChunk:            "IBDRootUTXOSetChunk",
 	CmdRequestIBDBlocks:               "RequestIBDBlocks",
-	CmdIBDRootNotFound:                "IBDRootNotFound",
+	CmdUnexpectedPruningPoint:         "UnexpectedPruningPoint",
 	CmdRequestIBDRootHash:             "IBDRequestIBDRootHash",
 	CmdIBDRootHash:                    "IBDIBDRootHash",
 	CmdIBDBlockLocator:                "IBDBlockLocator",

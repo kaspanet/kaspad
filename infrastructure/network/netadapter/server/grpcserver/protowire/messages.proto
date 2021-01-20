@@ -31,7 +31,7 @@ message KaspadMessage {
     RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
     IbdRootUtxoSetChunkMessage ibdRootUtxoSetChunk = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
-    IBDRootNotFoundMessage ibdRootNotFound = 27;
+    UnexpectedPruningPointMessage unexpectedPruningPoint = 27;
     RequestIBDRootHashMessage requestIBDRootHash = 28;
     IBDRootHashMessage ibdRootHash = 29;
     IbdBlockLocatorMessage ibdBlockLocator = 30;

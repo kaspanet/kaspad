@@ -176,7 +176,7 @@ message RequestIBDBlocksMessage{
   repeated Hash hashes = 1;
 }
 
-message IBDRootNotFoundMessage{
+message UnexpectedPruningPointMessage{
 }
 
 message RequestIBDRootHashMessage{
