@@ -225,7 +225,7 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
 
 	offsetIndex := 0
-	for offset < offsetIndex && pruningPointUTXOIterator.Next() {
+	for offsetIndex < offset && pruningPointUTXOIterator.Next() {
 		offsetIndex++
 	}
 

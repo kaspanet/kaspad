@@ -76,16 +76,6 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 					break
 				}
 			}
-			if len(pruningPointUTXOs) == 0 {
-				log.Debugf("Finished sending UTXOs for pruning block %s",
-					msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
-
-				err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
-				if err != nil {
-					return err
-				}
-				break
-			}
 
 			log.Debugf("Retrieved %d UTXOs for pruning block %s",
 				len(pruningPointUTXOs), msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
@@ -95,6 +85,17 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) start() error {
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetChunk(outpointAndUTXOEntryPairs))
 			if err != nil {
 				return err
+			}
+
+			if len(pruningPointUTXOs) < step {
+				log.Debugf("Finished sending UTXOs for pruning block %s",
+					msgRequestIBDRootUTXOSetAndBlock.IBDRoot)
+
+				err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDRootUTXOSetChunks())
+				if err != nil {
+					return err
+				}
+				break
 			}
 
 			offset += step
