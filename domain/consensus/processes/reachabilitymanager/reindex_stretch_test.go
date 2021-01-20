@@ -1,6 +1,7 @@
 package reachabilitymanager_test
 
 import (
+	"compress/gzip"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -39,8 +40,13 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	gzipReader, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
 	//now := time.Now()
-	err = tc.MineJSON(f)
+	err = tc.MineJSON(gzipReader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,28 +108,28 @@ func LoadJsonDAG(t *testing.T, fileName, testName string, addArbitraryBlocks, us
 
 func TestNoAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestNoAttack", false, false)
 }
 
 func TestAttack(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestAttack", false, false)
 }
 
 func TestArbitraryDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/noattack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestArbitraryDAG", true, true)
 }
 
 func TestArbitraryAttackDAG(t *testing.T) {
 	fileName := fmt.Sprintf(
-		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json",
+		"../../testdata/reachability/attack-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
 		numBlocksExponent)
 	LoadJsonDAG(t, fileName, "TestArbitraryAttackDAG", true, true)
 }
