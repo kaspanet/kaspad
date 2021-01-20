@@ -1,15 +1,15 @@
 package acceptancedatastore
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"google.golang.org/protobuf/proto"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("acceptance-data"))
+var bucket = database.MakeBucket([]byte("acceptance-data"))
 
 // acceptanceDataStore represents a store of AcceptanceData
 type acceptanceDataStore struct {

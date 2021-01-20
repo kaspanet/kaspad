@@ -1,14 +1,14 @@
 package consensusstatestore
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 )
 
-var utxoSetBucket = dbkeys.MakeBucket([]byte("virtual-utxo-set"))
+var utxoSetBucket = database.MakeBucket([]byte("virtual-utxo-set"))
 
 func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	serializedOutpoint, err := serializeOutpoint(outpoint)

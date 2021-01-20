@@ -67,7 +67,7 @@ func populateDatabaseForTest(t *testing.T, db database.Database, testName string
 	// Prepare a list of key/value pairs
 	entries := make([]keyValuePair, 10)
 	for i := 0; i < 10; i++ {
-		key := database.MakeBucket().Key([]byte(fmt.Sprintf("key%d", i)))
+		key := database.MakeBucket(nil).Key([]byte(fmt.Sprintf("key%d", i)))
 		value := []byte("value")
 		entries[i] = keyValuePair{key: key, value: value}
 	}

@@ -2,13 +2,13 @@ package consensusstatestore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var tipsKey = dbkeys.MakeBucket().Key([]byte("tips"))
+var tipsKey = database.MakeBucket(nil).Key([]byte("tips"))
 
 func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	if css.tipsStaging != nil {

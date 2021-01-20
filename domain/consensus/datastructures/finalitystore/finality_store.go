@@ -1,13 +1,13 @@
 package finalitystore
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("finality-points"))
+var bucket = database.MakeBucket([]byte("finality-points"))
 
 type finalityStore struct {
 	staging  map[externalapi.DomainHash]*externalapi.DomainHash
