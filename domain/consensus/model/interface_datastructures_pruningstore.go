@@ -13,12 +13,12 @@ type PruningStore interface {
 	HasPruningPointCandidate(dbContext DBReader) (bool, error)
 	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader) (bool, error)
-	ClearImportedPruningPointUTXOs(dbTx DBTransaction) error
+	ClearImportedPruningPointUTXOs(dbContext DBWriter) error
 	InsertImportedPruningPointUTXOs(dbTx DBTransaction, outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
 	ImportedPruningPointUTXOIterator(dbContext DBReader) (ReadOnlyUTXOSetIterator, error)
-	ClearImportedPruningPointMultiset(dbTx DBTransaction) error
+	ClearImportedPruningPointMultiset(dbContext DBWriter) error
 	ImportedPruningPointMultiset(dbContext DBReader) (Multiset, error)
 	UpdateImportedPruningPointMultiset(dbTx DBTransaction, multiset Multiset) error
-	CommitImportedPruningPointUTXOSet() error
+	CommitImportedPruningPointUTXOSet(dbContext DBWriter) error
 	PruningPointUTXOs(dbContext DBReader, offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error)
 }

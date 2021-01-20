@@ -8,15 +8,17 @@ import (
 
 var importingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("importing-pruning-point-utxo-set"))
 
-func (css *consensusStateStore) StartImportingPruningPointUTXOSet() error {
-	return css.databaseContext.Put(importingPruningPointUTXOSetKey, []byte{0})
+func (css *consensusStateStore) StartImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Put(importingPruningPointUTXOSetKey, []byte{0})
 }
 
-func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet() (bool, error) {
-	return css.databaseContext.Has(importingPruningPointUTXOSetKey)
+func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
+	return dbContext.Has(importingPruningPointUTXOSetKey)
 }
 
-func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext model.DBWriter,
+	pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+
 	if css.virtualUTXODiffStaging != nil {
 		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
 	}
@@ -25,7 +27,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(prun
 	css.virtualUTXOSetCache.Clear()
 
 	// Delete all the old UTXOs from the database
-	deleteCursor, err := css.databaseContext.Cursor(utxoSetBucket)
+	deleteCursor, err := dbContext.Cursor(utxoSetBucket)
 	if err != nil {
 		return err
 	}
@@ -34,7 +36,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(prun
 		if err != nil {
 			return err
 		}
-		err = css.databaseContext.Delete(key)
+		err = dbContext.Delete(key)
 		if err != nil {
 			return err
 		}
@@ -56,7 +58,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(prun
 			return err
 		}
 
-		err = css.databaseContext.Put(key, serializedUTXOEntry)
+		err = dbContext.Put(key, serializedUTXOEntry)
 		if err != nil {
 			return err
 		}
@@ -65,6 +67,6 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(prun
 	return nil
 }
 
-func (css *consensusStateStore) FinishImportingPruningPointUTXOSet() error {
-	return css.databaseContext.Delete(importingPruningPointUTXOSetKey)
+func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Delete(importingPruningPointUTXOSetKey)
 }

@@ -140,7 +140,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	defer onEnd()
 
 	log.Debugf("Starting to import virtual UTXO set and pruning point utxo set")
-	err := csm.consensusStateStore.StartImportingPruningPointUTXOSet()
+	err := csm.consensusStateStore.StartImportingPruningPointUTXOSet(csm.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -152,23 +152,23 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	}
 
 	log.Debugf("Importing the virtual UTXO set")
-	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(pruningPointUTXOSetIterator)
+	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(csm.databaseContext, pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Importing the new pruning point UTXO set")
-	err = csm.pruningStore.CommitImportedPruningPointUTXOSet()
+	err = csm.pruningStore.CommitImportedPruningPointUTXOSet(csm.databaseContext)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Finishing to import virtual UTXO set and pruning point UTXO set")
-	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet()
+	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet(csm.databaseContext)
 }
 
 func (csm *consensusStateManager) RecoverUTXOIfRequired() error {
-	hadStartedImportingPruningPointUTXOSet, err := csm.consensusStateStore.HadStartedImportingPruningPointUTXOSet()
+	hadStartedImportingPruningPointUTXOSet, err := csm.consensusStateStore.HadStartedImportingPruningPointUTXOSet(csm.databaseContext)
 	if err != nil {
 		return err
 	}

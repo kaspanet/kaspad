@@ -460,23 +460,11 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 }
 
 func (pm *pruningManager) ClearImportedPruningPointData() error {
-	dbTx, err := pm.databaseContext.Begin()
+	err := pm.pruningStore.ClearImportedPruningPointMultiset(pm.databaseContext)
 	if err != nil {
 		return err
 	}
-	defer dbTx.RollbackUnlessClosed()
-
-	err = pm.pruningStore.ClearImportedPruningPointMultiset(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = pm.pruningStore.ClearImportedPruningPointUTXOs(dbTx)
-	if err != nil {
-		return err
-	}
-
-	return dbTx.Commit()
+	return pm.pruningStore.ClearImportedPruningPointUTXOs(pm.databaseContext)
 }
 
 func (pm *pruningManager) InsertImportedPruningPointUTXOs(

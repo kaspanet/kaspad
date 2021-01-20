@@ -14,8 +14,6 @@ var pruningPointUTXOSetBucket = database.MakeBucket([]byte("pruning-point-utxo-s
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
-	databaseContext model.DBManager
-
 	pruningPointStaging          *externalapi.DomainHash
 	pruningPointCache            *externalapi.DomainHash
 	pruningPointCandidateStaging *externalapi.DomainHash
@@ -25,10 +23,8 @@ type pruningStore struct {
 }
 
 // New instantiates a new PruningStore
-func New(databaseContext model.DBManager) model.PruningStore {
-	return &pruningStore{
-		databaseContext: databaseContext,
-	}
+func New() model.PruningStore {
+	return &pruningStore{}
 }
 
 func (ps *pruningStore) StagePruningPointCandidate(candidate *externalapi.DomainHash) {

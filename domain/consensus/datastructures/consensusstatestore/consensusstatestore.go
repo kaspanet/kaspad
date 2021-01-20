@@ -8,8 +8,6 @@ import (
 
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
-	databaseContext model.DBManager
-
 	tipsStaging               []*externalapi.DomainHash
 	virtualDiffParentsStaging []*externalapi.DomainHash
 	virtualUTXODiffStaging    model.UTXODiff
@@ -21,9 +19,8 @@ type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New(databaseContext model.DBManager, utxoSetCacheSize int) model.ConsensusStateStore {
+func New(utxoSetCacheSize int) model.ConsensusStateStore {
 	return &consensusStateStore{
-		databaseContext:     databaseContext,
 		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize),
 	}
 }
