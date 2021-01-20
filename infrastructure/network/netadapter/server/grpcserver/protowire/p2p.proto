@@ -182,7 +182,7 @@ message UnexpectedPruningPointMessage{
 message RequestPruningPointHashMessage{
 }
 
-message IBDRootHashMessage{
+message PruningPointHashMessage{
   Hash hash = 1;
 }
 

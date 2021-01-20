@@ -297,10 +297,10 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	msgIBDRootHash, ok := message.(*appmessage.MsgIBDRootHashMessage)
+	msgIBDRootHash, ok := message.(*appmessage.MsgPruningPointHashMessage)
 	if !ok {
 		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDRootHash, message.Command())
+			"expected: %s, got: %s", appmessage.CmdPruningPointHash, message.Command())
 	}
 
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)

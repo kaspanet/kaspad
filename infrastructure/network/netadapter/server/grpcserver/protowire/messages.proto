@@ -33,7 +33,7 @@ message KaspadMessage {
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     UnexpectedPruningPointMessage unexpectedPruningPoint = 27;
     RequestPruningPointHashMessage requestPruningPointHash = 28;
-    IBDRootHashMessage ibdRootHash = 29;
+    PruningPointHashMessage pruningPointHash = 29;
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
     BlockHeadersMessage blockHeaders = 32;

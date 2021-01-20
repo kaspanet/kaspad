@@ -56,7 +56,7 @@ const (
 	CmdRequestIBDBlocks
 	CmdUnexpectedPruningPoint
 	CmdRequestPruningPointHash
-	CmdIBDRootHash
+	CmdPruningPointHash
 	CmdIBDBlockLocator
 	CmdIBDBlockLocatorHighestHash
 	CmdBlockHeaders
@@ -153,7 +153,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdRequestIBDBlocks:               "RequestIBDBlocks",
 	CmdUnexpectedPruningPoint:         "UnexpectedPruningPoint",
 	CmdRequestPruningPointHash:        "RequestPruningPointHashHash",
-	CmdIBDRootHash:                    "IBDIBDRootHash",
+	CmdPruningPointHash:               "PruningPointHash",
 	CmdIBDBlockLocator:                "IBDBlockLocator",
 	CmdIBDBlockLocatorHighestHash:     "IBDBlockLocatorHighestHash",
 	CmdBlockHeaders:                   "BlockHeaders",

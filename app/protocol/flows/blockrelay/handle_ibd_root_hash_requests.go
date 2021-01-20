@@ -42,7 +42,7 @@ func (flow *handleIBDRootHashRequestsFlow) start() error {
 			return err
 		}
 
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootHashMessage(pruningPoint))
+		err = flow.outgoingRoute.Enqueue(appmessage.NewPruningPointHashMessage(pruningPoint))
 		if err != nil {
 			return err
 		}
