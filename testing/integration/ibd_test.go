@@ -1,10 +1,11 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
@@ -140,7 +141,7 @@ func TestIBDWithPruning(t *testing.T) {
 
 	if synceeBlockCountResponse.BlockCount != syncerBlockCountResponse.BlockCount+synceeOnlyBlocks+1 {
 		t.Fatalf("Because the syncee haven't pruned any of its old blocks, its expected "+
-			"block count shoulder be greater than the syncer by synceeOnlyBlocks(%d)+genesis, but instead "+
+			"block count is expected to be greater than the syncer by synceeOnlyBlocks(%d)+genesis, but instead "+
 			"we got syncer block count of %d and syncee block count of %d", synceeOnlyBlocks,
 			syncerBlockCountResponse.BlockCount,
 			synceeBlockCountResponse.BlockCount)
@@ -148,7 +149,7 @@ func TestIBDWithPruning(t *testing.T) {
 
 	if synceeBlockCountResponse.HeaderCount != syncerBlockCountResponse.HeaderCount+synceeOnlyBlocks {
 		t.Fatalf("Because the syncer haven't synced from the syncee, its expected "+
-			"block count shoulder be smaller by synceeOnlyBlocks(%d), but instead "+
+			"block count is expected to be smaller by synceeOnlyBlocks(%d), but instead "+
 			"we got syncer headers count of %d and syncee headers count of %d", synceeOnlyBlocks,
 			syncerBlockCountResponse.HeaderCount,
 			synceeBlockCountResponse.HeaderCount)
