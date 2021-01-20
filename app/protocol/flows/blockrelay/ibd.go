@@ -281,9 +281,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		}
 		log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 
-		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
-		}
+		return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
 	}
 
 	return nil
@@ -472,7 +470,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("IBD Block %s is a duplicate", blockHash)
+					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
 					continue
 				}
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)

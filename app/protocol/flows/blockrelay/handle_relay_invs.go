@@ -110,6 +110,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
 			}
 			return err
