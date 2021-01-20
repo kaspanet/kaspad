@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"testing"
 	"time"
-	"google.golang.org/protobuf/proto"
 )
 
 func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*externalapi.DomainHash, t *testing.T) *externalapi.DomainHash {
@@ -271,9 +270,13 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOSet, err := tcSyncer.GetPruningPointUTXOSet(pruningPoint)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
 		if err != nil {
-			t.Fatalf("GetPruningPointUTXOSet: %+v", err)
+			t.Fatalf("GetPruningPointUTXOs: %+v", err)
+		}
+		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
+		if err != nil {
+			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
 		}
 
 		// Check that ValidateAndInsertPruningPoint works.
@@ -281,7 +284,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
-		err = tcSyncee.ValidateAndInsertPruningPoint(pruningPointBlock, pruningPointUTXOSet)
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertPruningPoint: %+v", err)
 		}

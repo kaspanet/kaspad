@@ -1,12 +1,12 @@
 package consensusstatestore
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/pkg/errors"
 )
 
-var importingPruningPointUTXOSetKey = dbkeys.MakeBucket().Key([]byte("importing-pruning-point-utxo-set"))
+var importingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("importing-pruning-point-utxo-set"))
 
 func (css *consensusStateStore) StartImportingPruningPointUTXOSet() error {
 	return css.databaseContext.Put(importingPruningPointUTXOSetKey, []byte{0})

@@ -2,14 +2,14 @@ package pruningstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var importedPruningPointUTXOsBucket = dbkeys.MakeBucket([]byte("imported-pruning-point-utxos"))
-var importedPruningPointMultiset = dbkeys.MakeBucket().Key([]byte("imported-pruning-point-multiset"))
+var importedPruningPointUTXOsBucket = database.MakeBucket([]byte("imported-pruning-point-utxos"))
+var importedPruningPointMultiset = database.MakeBucket(nil).Key([]byte("imported-pruning-point-multiset"))
 
 func (ps *pruningStore) ClearImportedPruningPointUTXOs(dbTx model.DBTransaction) error {
 	cursor, err := dbTx.Cursor(importedPruningPointUTXOsBucket)
