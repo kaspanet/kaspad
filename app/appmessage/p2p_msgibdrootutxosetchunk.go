@@ -2,20 +2,20 @@ package appmessage
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-// MsgIBDRootUTXOSetChunk represents a kaspa IBDRootUTXOSetChunk message
-type MsgIBDRootUTXOSetChunk struct {
+// MsgPruningPointUTXOSetChunk represents a kaspa PruningPointUTXOSetChunk message
+type MsgPruningPointUTXOSetChunk struct {
 	baseMessage
 	OutpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair
 }
 
 // Command returns the protocol command string for the message
-func (msg *MsgIBDRootUTXOSetChunk) Command() MessageCommand {
-	return CmdIBDRootUTXOSetChunk
+func (msg *MsgPruningPointUTXOSetChunk) Command() MessageCommand {
+	return CmdPruningPointUTXOSetChunk
 }
 
-// NewMsgIBDRootUTXOSetChunk returns a new MsgIBDRootUTXOSetChunk.
-func NewMsgIBDRootUTXOSetChunk(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) *MsgIBDRootUTXOSetChunk {
-	return &MsgIBDRootUTXOSetChunk{
+// NewMsgPruningPointUTXOSetChunk returns a new MsgPruningPointUTXOSetChunk.
+func NewMsgPruningPointUTXOSetChunk(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) *MsgPruningPointUTXOSetChunk {
+	return &MsgPruningPointUTXOSetChunk{
 		OutpointAndUTXOEntryPairs: outpointAndUTXOEntryPairs,
 	}
 }

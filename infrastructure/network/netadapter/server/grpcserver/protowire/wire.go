@@ -202,8 +202,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgIBDRootUTXOSetChunk:
-		payload := new(KaspadMessage_IbdRootUtxoSetChunk)
+	case *appmessage.MsgPruningPointUTXOSetChunk:
+		payload := new(KaspadMessage_PruningPointUtxoSetChunk)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

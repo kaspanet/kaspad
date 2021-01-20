@@ -150,7 +150,7 @@ message RequestPruningPointUTXOSetAndBlockMessage{
   Hash pruningPointHash = 1;
 }
 
-message IbdRootUtxoSetChunkMessage{
+message PruningPointUtxoSetChunkMessage{
   repeated OutpointAndUtxoEntryPair outpointAndUtxoEntryPairs = 1;
 }
 

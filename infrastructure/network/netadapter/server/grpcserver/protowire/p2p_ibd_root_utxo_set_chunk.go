@@ -7,9 +7,9 @@ import (
 	"math"
 )
 
-func (x *KaspadMessage_IbdRootUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
-	outpointAndUTXOEntryPairs := make([]*appmessage.OutpointAndUTXOEntryPair, len(x.IbdRootUtxoSetChunk.OutpointAndUtxoEntryPairs))
-	for i, outpointAndUTXOEntryPair := range x.IbdRootUtxoSetChunk.OutpointAndUtxoEntryPairs {
+func (x *KaspadMessage_PruningPointUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
+	outpointAndUTXOEntryPairs := make([]*appmessage.OutpointAndUTXOEntryPair, len(x.PruningPointUtxoSetChunk.OutpointAndUtxoEntryPairs))
+	for i, outpointAndUTXOEntryPair := range x.PruningPointUtxoSetChunk.OutpointAndUtxoEntryPairs {
 		transactionID, err := outpointAndUTXOEntryPair.Outpoint.TransactionId.toDomain()
 		if err != nil {
 			return nil, err
@@ -36,12 +36,12 @@ func (x *KaspadMessage_IbdRootUtxoSetChunk) toAppMessage() (appmessage.Message, 
 			UTXOEntry: utxoEntry,
 		}
 	}
-	return &appmessage.MsgIBDRootUTXOSetChunk{
+	return &appmessage.MsgPruningPointUTXOSetChunk{
 		OutpointAndUTXOEntryPairs: outpointAndUTXOEntryPairs,
 	}, nil
 }
 
-func (x *KaspadMessage_IbdRootUtxoSetChunk) fromAppMessage(message *appmessage.MsgIBDRootUTXOSetChunk) error {
+func (x *KaspadMessage_PruningPointUtxoSetChunk) fromAppMessage(message *appmessage.MsgPruningPointUTXOSetChunk) error {
 	outpointAndUTXOEntryPairs := make([]*OutpointAndUtxoEntryPair, len(message.OutpointAndUTXOEntryPairs))
 	for i, outpointAndUTXOEntryPair := range message.OutpointAndUTXOEntryPairs {
 		transactionID := domainTransactionIDToProto(&outpointAndUTXOEntryPair.Outpoint.TxID)
@@ -64,7 +64,7 @@ func (x *KaspadMessage_IbdRootUtxoSetChunk) fromAppMessage(message *appmessage.M
 			UtxoEntry: utxoEntry,
 		}
 	}
-	x.IbdRootUtxoSetChunk = &IbdRootUtxoSetChunkMessage{
+	x.PruningPointUtxoSetChunk = &PruningPointUtxoSetChunkMessage{
 		OutpointAndUtxoEntryPairs: outpointAndUTXOEntryPairs,
 	}
 	return nil

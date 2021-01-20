@@ -106,7 +106,7 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) sendIBDRootUTXOSet(
 
 		outpointAndUTXOEntryPairs :=
 			appmessage.DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(pruningPointUTXOs)
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgIBDRootUTXOSetChunk(outpointAndUTXOEntryPairs))
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgPruningPointUTXOSetChunk(outpointAndUTXOEntryPairs))
 		if err != nil {
 			return err
 		}

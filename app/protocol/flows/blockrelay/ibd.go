@@ -412,7 +412,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 		}
 
 		switch message := message.(type) {
-		case *appmessage.MsgIBDRootUTXOSetChunk:
+		case *appmessage.MsgPruningPointUTXOSetChunk:
 			receivedUTXOCount += len(message.OutpointAndUTXOEntryPairs)
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
@@ -445,7 +445,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 
 		default:
 			return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s or %s or %s, got: %s", appmessage.CmdIBDRootUTXOSetChunk,
+				"expected: %s or %s or %s, got: %s", appmessage.CmdPruningPointUTXOSetChunk,
 				appmessage.CmdDoneIBDRootUTXOSetChunks, appmessage.CmdUnexpectedPruningPoint, message.Command(),
 			)
 		}

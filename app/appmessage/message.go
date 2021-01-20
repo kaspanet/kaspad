@@ -52,7 +52,7 @@ const (
 	CmdHeader
 	CmdRequestNextHeaders
 	CmdRequestPruningPointUTXOSetAndBlock
-	CmdIBDRootUTXOSetChunk
+	CmdPruningPointUTXOSetChunk
 	CmdRequestIBDBlocks
 	CmdUnexpectedPruningPoint
 	CmdRequestPruningPointHash
@@ -149,7 +149,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdHeader:                             "Header",
 	CmdRequestNextHeaders:                 "RequestNextHeaders",
 	CmdRequestPruningPointUTXOSetAndBlock: "RequestPruningPointUTXOSetAndBlock",
-	CmdIBDRootUTXOSetChunk:                "IBDRootUTXOSetChunk",
+	CmdPruningPointUTXOSetChunk:           "PruningPointUTXOSetChunk",
 	CmdRequestIBDBlocks:                   "RequestIBDBlocks",
 	CmdUnexpectedPruningPoint:             "UnexpectedPruningPoint",
 	CmdRequestPruningPointHash:            "RequestPruningPointHashHash",
