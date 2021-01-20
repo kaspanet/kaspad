@@ -29,6 +29,7 @@ type RelayInvsContext interface {
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
+	GetOrphanRoots(orphanHash *externalapi.DomainHash) ([]*externalapi.DomainHash, bool, error)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
 	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
@@ -71,7 +72,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if blockInfo.Exists {
+		if blockInfo.Exists && blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 			if blockInfo.BlockStatus == externalapi.StatusInvalid {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
@@ -81,7 +82,11 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		if flow.IsOrphan(inv.Hash) {
-			log.Debugf("Block %s is a known orphan. continuing...", inv.Hash)
+			log.Debugf("Block %s is a known orphan. Requesting its missing ancestors", inv.Hash)
+			err := flow.AddOrphanRootsToQueue(inv.Hash)
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -107,7 +112,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if len(missingParents) > 0 {
-			log.Debugf("Block %s contains orphans: %s", inv.Hash, missingParents)
+			log.Debugf("Block %s is orphan and has missing parents: %s", inv.Hash, missingParents)
 			err := flow.processOrphan(block, missingParents)
 			if err != nil {
 				return err
@@ -238,9 +243,10 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 	}
 	if isBlockInOrphanResolutionRange {
 		log.Debugf("Block %s is within orphan resolution range. "+
-			"Adding it to the orphan set and requesting its missing parents", blockHash)
-		flow.addToOrphanSetAndRequestMissingParents(block, missingParents)
-		return nil
+			"Adding it to the orphan set", blockHash)
+		flow.AddOrphan(block)
+		log.Debugf("Requesting block %s missing ancestors", blockHash)
+		return flow.AddOrphanRootsToQueue(blockHash)
 	}
 
 	// Start IBD unless we already are in IBD
@@ -277,13 +283,25 @@ func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *exter
 	return false, nil
 }
 
-func (flow *handleRelayInvsFlow) addToOrphanSetAndRequestMissingParents(
-	block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) {
-
-	flow.AddOrphan(block)
-	invMessages := make([]*appmessage.MsgInvRelayBlock, len(missingParents))
-	for i, missingParent := range missingParents {
-		invMessages[i] = appmessage.NewMsgInvBlock(missingParent)
+func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.DomainHash) error {
+	orphanRoots, orphanExists, err := flow.GetOrphanRoots(orphan)
+	if err != nil {
+		return err
 	}
+
+	if !orphanExists {
+		log.Infof("Orphan block %s was missing from the orphan pool while requesting for its roots. This "+
+			"probably happened because it was randomly evicted immediately after it was added.", orphan)
+	}
+
+	log.Infof("Block %s has %d missing ancestors. Adding them to the invs queue...", orphan, len(orphanRoots))
+
+	invMessages := make([]*appmessage.MsgInvRelayBlock, len(orphanRoots))
+	for i, root := range orphanRoots {
+		log.Debugf("Adding block %s missing ancestor %s to the invs queue", orphan, root)
+		invMessages[i] = appmessage.NewMsgInvBlock(root)
+	}
+
 	flow.invsQueue = append(invMessages, flow.invsQueue...)
+	return nil
 }
