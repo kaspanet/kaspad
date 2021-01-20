@@ -289,7 +289,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 
 func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 	log.Debugf("Checking if a new pruning point is available")
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDRootHashMessage())
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointHashMessage())
 	if err != nil {
 		return false, err
 	}
@@ -297,36 +297,36 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	msgIBDRootHash, ok := message.(*appmessage.MsgPruningPointHashMessage)
+	msgPruningPointHash, ok := message.(*appmessage.MsgPruningPointHashMessage)
 	if !ok {
 		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdPruningPointHash, message.Command())
 	}
 
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgIBDRootHash.Hash)
+	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgPruningPointHash.Hash)
 	if err != nil {
 		return false, err
 	}
 
 	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		log.Debugf("Already has the block data of the new suggested pruning point %s", msgIBDRootHash.Hash)
+		log.Debugf("Already has the block data of the new suggested pruning point %s", msgPruningPointHash.Hash)
 		return true, nil
 	}
 
-	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgIBDRootHash.Hash)
-	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgIBDRootHash.Hash)
+	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgPruningPointHash.Hash)
+	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgPruningPointHash.Hash)
 	if err != nil {
 		return false, err
 	}
 
 	if !isValid {
 		log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
-			" peer", msgIBDRootHash.Hash)
+			" peer", msgPruningPointHash.Hash)
 		return false, nil
 	}
 
 	log.Info("Fetching the pruning point UTXO set")
-	succeed, err := flow.fetchMissingUTXOSet(msgIBDRootHash.Hash)
+	succeed, err := flow.fetchMissingUTXOSet(msgPruningPointHash.Hash)
 	if err != nil {
 		return false, err
 	}
@@ -340,7 +340,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.DomainHash) (succeed bool, err error) {
+func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
 		err := flow.Domain().Consensus().ClearImportedPruningPointData()
 		if err != nil {
@@ -348,17 +348,17 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		}
 	}()
 
-	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointUTXOSetAndBlock(ibdRootHash))
+	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointUTXOSetAndBlock(pruningPointHash))
 	if err != nil {
 		return false, err
 	}
 
-	block, err := flow.receiveIBDRootBlock()
+	block, err := flow.receivePruningPointBlock()
 	if err != nil {
 		return false, err
 	}
 
-	receivedAll, err := flow.receiveAndInsertIBDRootUTXOSet()
+	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet()
 	if err != nil {
 		return false, err
 	}
@@ -372,14 +372,14 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(ibdRootHash *externalapi.Do
 		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
 			return false, nil
 		}
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with IBD root UTXO set")
+		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with pruning point UTXO set")
 	}
 
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveIBDRootBlock")
+func (flow *handleRelayInvsFlow) receivePruningPointBlock() (*externalapi.DomainBlock, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receivePruningPointBlock")
 	defer onEnd()
 
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
@@ -394,13 +394,13 @@ func (flow *handleRelayInvsFlow) receiveIBDRootBlock() (*externalapi.DomainBlock
 	}
 	block := appmessage.MsgBlockToDomainBlock(ibdBlockMessage.MsgBlock)
 
-	log.Debugf("Received IBD root block %s", consensushashing.BlockHash(block))
+	log.Debugf("Received pruning point block %s", consensushashing.BlockHash(block))
 
 	return block, nil
 }
 
-func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertIBDRootUTXOSet")
+func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet() (bool, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertPruningPointUTXOSet")
 	defer onEnd()
 
 	receivedChunkCount := 0
@@ -427,8 +427,8 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 				log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
 					receivedChunkCount, receivedUTXOCount)
 
-				requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextPruningPointUTXOSetChunk()
-				err := flow.outgoingRoute.Enqueue(requestNextIBDRootUTXOSetChunkMessage)
+				requestNextPruningPointUTXOSetChunkMessage := appmessage.NewMsgRequestNextPruningPointUTXOSetChunk()
+				err := flow.outgoingRoute.Enqueue(requestNextPruningPointUTXOSetChunkMessage)
 				if err != nil {
 					return false, err
 				}
@@ -440,7 +440,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 
 		case *appmessage.MsgUnexpectedPruningPoint:
 			log.Debugf("Could not receive the next UTXO chunk. " +
-				"This is likely to have happened because the IBD root moved")
+				"This is likely to have happened because the pruning point moved")
 			return false, nil
 
 		default:

@@ -10,7 +10,7 @@ func (msg *MsgRequestPruningPointHashMessage) Command() MessageCommand {
 	return CmdRequestPruningPointHash
 }
 
-// NewMsgRequestIBDRootHashMessage returns a new kaspa RequestPruningPointHash message
-func NewMsgRequestIBDRootHashMessage() *MsgRequestPruningPointHashMessage {
+// NewMsgRequestPruningPointHashMessage returns a new kaspa RequestPruningPointHash message
+func NewMsgRequestPruningPointHashMessage() *MsgRequestPruningPointHashMessage {
 	return &MsgRequestPruningPointHashMessage{}
 }
