@@ -84,54 +84,6 @@ func (ri *ReachabilityInterval) Clone() *ReachabilityInterval {
 	}
 }
 
-// Increase returns a ReachabilityInterval with offset added to start and end
-func (ri *ReachabilityInterval) Increase(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start + offset,
-		End:   ri.End + offset,
-	}
-}
-
-// Decrease returns a ReachabilityInterval with offset subtracted from start and end
-func (ri *ReachabilityInterval) Decrease(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start - offset,
-		End:   ri.End - offset,
-	}
-}
-
-// IncreaseStart returns a ReachabilityInterval with offset added to start
-func (ri *ReachabilityInterval) IncreaseStart(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start + offset,
-		End:   ri.End,
-	}
-}
-
-// DecreaseStart returns a ReachabilityInterval with offset reduced from start
-func (ri *ReachabilityInterval) DecreaseStart(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start - offset,
-		End:   ri.End,
-	}
-}
-
-// IncreaseEnd returns a ReachabilityInterval with offset added to end
-func (ri *ReachabilityInterval) IncreaseEnd(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start,
-		End:   ri.End + offset,
-	}
-}
-
-// DecreaseEnd returns a ReachabilityInterval with offset subtracted from end
-func (ri *ReachabilityInterval) DecreaseEnd(offset uint64) *ReachabilityInterval {
-	return &ReachabilityInterval{
-		Start: ri.Start,
-		End:   ri.End - offset,
-	}
-}
-
 func (ri *ReachabilityInterval) String() string {
 	return fmt.Sprintf("[%d,%d]", ri.Start, ri.End)
 }

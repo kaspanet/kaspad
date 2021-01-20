@@ -304,7 +304,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			}
 
 			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
-			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
+			err = rc.manager.stageInterval(current, intervalIncreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
@@ -339,7 +339,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			// Set offset to be just enough to satisfy required allocation
 			offset := slackBeforeCurrent - (slackSum - requiredAllocation)
 
-			err = rc.manager.stageInterval(current, previousInterval.IncreaseStart(offset))
+			err = rc.manager.stageInterval(current, intervalIncreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
@@ -385,7 +385,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 		}
 
 		offset := slackBeforeCurrent - pathSlackAlloc
-		err = rc.manager.stageInterval(current, originalInterval.IncreaseStart(offset))
+		err = rc.manager.stageInterval(current, intervalIncreaseStart(originalInterval, offset))
 		if err != nil {
 			return err
 		}
@@ -418,7 +418,7 @@ func (rc *reindexContext) offsetSiblingsBefore(
 			return err
 		}
 
-		err = rc.manager.stageInterval(allocationNode, previousInterval.IncreaseEnd(offset))
+		err = rc.manager.stageInterval(allocationNode, intervalIncreaseEnd(previousInterval, offset))
 		if err != nil {
 			return err
 		}
@@ -448,7 +448,7 @@ func (rc *reindexContext) offsetSiblingsBefore(
 			return err
 		}
 
-		err = rc.manager.stageInterval(sibling, previousInterval.Increase(offset))
+		err = rc.manager.stageInterval(sibling, intervalIncrease(previousInterval, offset))
 		if err != nil {
 			return err
 		}
@@ -484,7 +484,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			}
 
 			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
-			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
+			err = rc.manager.stageInterval(current, intervalDecreaseEnd(previousInterval, offset))
 			if err != nil {
 				return err
 			}
@@ -519,7 +519,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			// Set offset to be just enough to satisfy required allocation
 			offset := slackAfterCurrent - (slackSum - requiredAllocation)
 
-			err = rc.manager.stageInterval(current, previousInterval.DecreaseEnd(offset))
+			err = rc.manager.stageInterval(current, intervalDecreaseEnd(previousInterval, offset))
 			if err != nil {
 				return err
 			}
@@ -565,7 +565,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 		}
 
 		offset := slackAfterCurrent - pathSlackAlloc
-		err = rc.manager.stageInterval(current, originalInterval.DecreaseEnd(offset))
+		err = rc.manager.stageInterval(current, intervalDecreaseEnd(originalInterval, offset))
 		if err != nil {
 			return err
 		}
@@ -599,7 +599,7 @@ func (rc *reindexContext) offsetSiblingsAfter(
 				return err
 			}
 
-			err = rc.manager.stageInterval(allocationNode, previousInterval.DecreaseStart(offset))
+			err = rc.manager.stageInterval(allocationNode, intervalDecreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
@@ -617,7 +617,7 @@ func (rc *reindexContext) offsetSiblingsAfter(
 			return err
 		}
 
-		err = rc.manager.stageInterval(sibling, previousInterval.Decrease(offset))
+		err = rc.manager.stageInterval(sibling, intervalDecrease(previousInterval, offset))
 		if err != nil {
 			return err
 		}

@@ -16,6 +16,54 @@ func intervalSize(ri *model.ReachabilityInterval) uint64 {
 	return ri.End - ri.Start + 1
 }
 
+// intervalIncrease returns a ReachabilityInterval with offset added to start and end
+func intervalIncrease(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start + offset,
+		End:   ri.End + offset,
+	}
+}
+
+// intervalDecrease returns a ReachabilityInterval with offset subtracted from start and end
+func intervalDecrease(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start - offset,
+		End:   ri.End - offset,
+	}
+}
+
+// intervalIncreaseStart returns a ReachabilityInterval with offset added to start
+func intervalIncreaseStart(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start + offset,
+		End:   ri.End,
+	}
+}
+
+// intervalDecreaseStart returns a ReachabilityInterval with offset reduced from start
+func intervalDecreaseStart(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start - offset,
+		End:   ri.End,
+	}
+}
+
+// intervalIncreaseEnd returns a ReachabilityInterval with offset added to end
+func intervalIncreaseEnd(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start,
+		End:   ri.End + offset,
+	}
+}
+
+// intervalDecreaseEnd returns a ReachabilityInterval with offset subtracted from end
+func intervalDecreaseEnd(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start,
+		End:   ri.End - offset,
+	}
+}
+
 // intervalSplitInHalf splits this interval by a fraction of 0.5.
 // See splitFraction for further details.
 func intervalSplitInHalf(ri *model.ReachabilityInterval) (
