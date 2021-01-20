@@ -75,6 +75,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.D
 	}
 
 	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
+
 	bb.nonceCounter++
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -97,6 +98,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 		return nil, err
 	}
 
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
 	acceptedIDMerkleRoot, err := bb.calculateAcceptedIDMerkleRoot(acceptanceData)
 	if err != nil {
 		return nil, err
@@ -106,7 +108,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	return blockheader.NewImmutableBlockHeader(
 		header.Version(),
 		header.ParentHashes(),
-		header.HashMerkleRoot(),
+		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,
 		header.TimeInMilliseconds(),
