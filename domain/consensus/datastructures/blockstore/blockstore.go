@@ -2,15 +2,15 @@ package blockstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("blocks"))
-var countKey = dbkeys.MakeBucket().Key([]byte("blocks-count"))
+var bucket = database.MakeBucket([]byte("blocks"))
+var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
 
 // blockStore represents a store of blocks
 type blockStore struct {

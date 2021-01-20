@@ -20,14 +20,14 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Put",
 			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Put(database.MakeBucket().Key([]byte("key")), []byte("value"))
+				return dbTx.Put(database.MakeBucket(nil).Key([]byte("key")), []byte("value"))
 			},
 			shouldReturnError: true,
 		},
 		{
 			name: "Get",
 			function: func(dbTx *LevelDBTransaction) error {
-				_, err := dbTx.Get(database.MakeBucket().Key([]byte("key")))
+				_, err := dbTx.Get(database.MakeBucket(nil).Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -35,7 +35,7 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Has",
 			function: func(dbTx *LevelDBTransaction) error {
-				_, err := dbTx.Has(database.MakeBucket().Key([]byte("key")))
+				_, err := dbTx.Has(database.MakeBucket(nil).Key([]byte("key")))
 				return err
 			},
 			shouldReturnError: true,
@@ -43,7 +43,7 @@ func TestTransactionCloseErrors(t *testing.T) {
 		{
 			name: "Delete",
 			function: func(dbTx *LevelDBTransaction) error {
-				return dbTx.Delete(database.MakeBucket().Key([]byte("key")))
+				return dbTx.Delete(database.MakeBucket(nil).Key([]byte("key")))
 			},
 			shouldReturnError: true,
 		},

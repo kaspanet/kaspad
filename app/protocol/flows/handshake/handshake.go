@@ -82,7 +82,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 
 	err := context.AddToPeers(peer)
 	if err != nil {
-		if errors.As(err, &common.ErrPeerWithSameIDExists) {
+		if errors.Is(err, common.ErrPeerWithSameIDExists) {
 			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
 		return nil, err
