@@ -109,6 +109,9 @@ func (flow *handleRelayInvsFlow) start() error {
 		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
+			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+				continue
+			}
 			return err
 		}
 		if len(missingParents) > 0 {
