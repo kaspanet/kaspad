@@ -163,8 +163,8 @@ func newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterat
 	return &utxoSetIterator{cursor: cursor}
 }
 
-func (u utxoSetIterator) First() {
-	u.cursor.First()
+func (u utxoSetIterator) First() bool {
+	return u.cursor.First()
 }
 
 func (u utxoSetIterator) Next() bool {

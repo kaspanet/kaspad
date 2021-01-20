@@ -11,7 +11,7 @@ type ReadOnlyUTXOSet interface {
 // ReadOnlyUTXOSetIterator is an iterator over all entries in a
 // ReadOnlyUTXOSet
 type ReadOnlyUTXOSetIterator interface {
-	First()
+	First() bool
 	Next() bool
 	Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error)
 }

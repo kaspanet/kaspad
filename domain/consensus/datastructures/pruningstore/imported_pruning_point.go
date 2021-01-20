@@ -68,8 +68,8 @@ func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) model.Re
 	return &utxoSetIterator{pruningStore: ps, cursor: cursor}
 }
 
-func (u utxoSetIterator) First() {
-	u.cursor.First()
+func (u utxoSetIterator) First() bool {
+	return u.cursor.First()
 }
 
 func (u utxoSetIterator) Next() bool {

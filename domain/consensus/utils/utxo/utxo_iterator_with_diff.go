@@ -40,9 +40,19 @@ func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODif
 	}, nil
 }
 
-func (r *readOnlyUTXOIteratorWithDiff) First() {
-	r.baseIterator.First()
+func (r *readOnlyUTXOIteratorWithDiff) First() bool {
+	baseNotEmpty := r.baseIterator.First()
 	r.toAddIterator.First()
+
+	if !baseNotEmpty {
+		return false
+	}
+
+	r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()
+	if r.diff.mutableUTXODiff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore()) {
+		return r.Next()
+	}
+	return true
 }
 
 func (r *readOnlyUTXOIteratorWithDiff) Next() bool {

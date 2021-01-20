@@ -126,8 +126,7 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		}
 
 		// Insert all the new UTXOs into the database
-		ps.pruningPointUTXOSetStaging.First()
-		for ps.pruningPointUTXOSetStaging.Next() {
+		for ok := ps.pruningPointUTXOSetStaging.First(); ok; ok = ps.pruningPointUTXOSetStaging.Next() {
 			outpoint, entry, err := ps.pruningPointUTXOSetStaging.Get()
 			if err != nil {
 				return err
