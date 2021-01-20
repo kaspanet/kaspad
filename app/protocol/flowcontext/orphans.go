@@ -4,6 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -159,4 +161,50 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externa
 
 	log.Infof("Unorphaned block %s", orphanHash)
 	return blockInsertionResult, true, nil
+}
+
+// GetOrphanRoots returns the roots of the missing ancestors DAG of the given orphan
+func (f *FlowContext) GetOrphanRoots(orphan *externalapi.DomainHash) ([]*externalapi.DomainHash, bool, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GetOrphanRoots")
+	defer onEnd()
+
+	f.orphansMutex.RLock()
+	defer f.orphansMutex.RUnlock()
+
+	_, ok := f.orphans[*orphan]
+	if !ok {
+		return nil, false, nil
+	}
+
+	queue := []*externalapi.DomainHash{orphan}
+	addedToQueueSet := hashset.New()
+	addedToQueueSet.Add(orphan)
+
+	roots := []*externalapi.DomainHash{}
+	for len(queue) > 0 {
+		var current *externalapi.DomainHash
+		current, queue = queue[0], queue[1:]
+
+		block, ok := f.orphans[*current]
+		if !ok {
+			blockInfo, err := f.domain.Consensus().GetBlockInfo(current)
+			if err != nil {
+				return nil, false, err
+			}
+
+			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+				roots = append(roots, current)
+			}
+			continue
+		}
+
+		for _, parent := range block.Header.ParentHashes() {
+			if !addedToQueueSet.Contains(parent) {
+				queue = append(queue, parent)
+				addedToQueueSet.Add(parent)
+			}
+		}
+	}
+
+	return roots, true, nil
 }
