@@ -427,7 +427,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertIBDRootUTXOSet() (bool, error) 
 				log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
 					receivedChunkCount, receivedUTXOCount)
 
-				requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextIBDRootUTXOSetChunk()
+				requestNextIBDRootUTXOSetChunkMessage := appmessage.NewMsgRequestNextPruningPointUTXOSetChunk()
 				err := flow.outgoingRoute.Enqueue(requestNextIBDRootUTXOSetChunkMessage)
 				if err != nil {
 					return false, err

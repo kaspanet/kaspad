@@ -166,7 +166,7 @@ message UtxoEntry {
   bool isCoinbase = 4;
 }
 
-message RequestNextIbdRootUtxoSetChunkMessage {
+message RequestNextPruningPointUtxoSetChunkMessage {
 }
 
 message DoneIbdRootUtxoSetChunksMessage {

@@ -168,7 +168,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 
 		m.registerFlow("HandleRequestIBDRootUTXOSetAndBlock", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointUTXOSetAndBlock,
-				appmessage.CmdRequestNextIBDRootUTXOSetChunk}, isStopping, errChan,
+				appmessage.CmdRequestNextPruningPointUTXOSetChunk}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRequestIBDRootUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
 			},

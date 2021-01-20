@@ -1,16 +1,16 @@
 package appmessage
 
-// MsgRequestNextIBDRootUTXOSetChunk represents a kaspa RequestNextIBDRootUTXOSetChunk message
-type MsgRequestNextIBDRootUTXOSetChunk struct {
+// MsgRequestNextPruningPointUTXOSetChunk represents a kaspa RequestNextPruningPointUTXOSetChunk message
+type MsgRequestNextPruningPointUTXOSetChunk struct {
 	baseMessage
 }
 
 // Command returns the protocol command string for the message
-func (msg *MsgRequestNextIBDRootUTXOSetChunk) Command() MessageCommand {
-	return CmdRequestNextIBDRootUTXOSetChunk
+func (msg *MsgRequestNextPruningPointUTXOSetChunk) Command() MessageCommand {
+	return CmdRequestNextPruningPointUTXOSetChunk
 }
 
-// NewMsgRequestNextIBDRootUTXOSetChunk returns a new MsgRequestNextIBDRootUTXOSetChunk.
-func NewMsgRequestNextIBDRootUTXOSetChunk() *MsgRequestNextIBDRootUTXOSetChunk {
-	return &MsgRequestNextIBDRootUTXOSetChunk{}
+// NewMsgRequestNextPruningPointUTXOSetChunk returns a new MsgRequestNextPruningPointUTXOSetChunk.
+func NewMsgRequestNextPruningPointUTXOSetChunk() *MsgRequestNextPruningPointUTXOSetChunk {
+	return &MsgRequestNextPruningPointUTXOSetChunk{}
 }

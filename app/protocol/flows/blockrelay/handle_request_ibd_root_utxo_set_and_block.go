@@ -127,10 +127,10 @@ func (flow *handleRequestIBDRootUTXOSetAndBlockFlow) sendIBDRootUTXOSet(
 			if err != nil {
 				return err
 			}
-			_, ok := message.(*appmessage.MsgRequestNextIBDRootUTXOSetChunk)
+			_, ok := message.(*appmessage.MsgRequestNextPruningPointUTXOSetChunk)
 			if !ok {
 				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdRequestNextIBDRootUTXOSetChunk, message.Command())
+					"expected: %s, got: %s", appmessage.CmdRequestNextPruningPointUTXOSetChunk, message.Command())
 			}
 		}
 	}
