@@ -317,7 +317,7 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	}
 
 	// TODO: This is an assert that takes ~30 seconds to run
-	// It must be removed before launching testnet
+	// It must be removed or optimized before launching testnet
 	err = pm.validateUTXOSetFitsCommitment(utxoSetIterator, pruningPointHash)
 	if err != nil {
 		return err
