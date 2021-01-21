@@ -20,7 +20,7 @@ func (csm *consensusStateManager) ImportPruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	return csm.commitImportedPruningPointUTXOSetAll()
+	return csm.applyImportedPruningPointUTXOSet()
 }
 
 func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
@@ -114,7 +114,7 @@ func (csm *consensusStateManager) discardImportedPruningPointUTXOSetChanges() {
 	}
 }
 
-func (csm *consensusStateManager) commitImportedPruningPointUTXOSetAll() error {
+func (csm *consensusStateManager) applyImportedPruningPointUTXOSet() error {
 	dbTx, err := csm.databaseContext.Begin()
 	if err != nil {
 		return err
