@@ -24,6 +24,14 @@ func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXOD
 }
 
 func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) error {
+	hadStartedImportingPruningPointUTXOSet, err := css.HadStartedImportingPruningPointUTXOSet(dbTx)
+	if err != nil {
+		return err
+	}
+	if hadStartedImportingPruningPointUTXOSet {
+		return errors.New("cannot commit virtual UTXO diff after starting to import the pruning point UTXO set")
+	}
+
 	if css.virtualUTXODiffStaging == nil {
 		return nil
 	}
