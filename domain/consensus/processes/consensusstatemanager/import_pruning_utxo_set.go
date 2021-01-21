@@ -137,6 +137,13 @@ func (csm *consensusStateManager) applyImportedPruningPointUTXOSet() error {
 		}
 	}
 
+	log.Debugf("Starting to import virtual UTXO set and pruning point utxo set")
+	err = csm.consensusStateStore.StartImportingPruningPointUTXOSet(dbTx)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Committing all staged data for imported pruning point")
 	err = dbTx.Commit()
 	if err != nil {
 		return err
@@ -148,12 +155,6 @@ func (csm *consensusStateManager) applyImportedPruningPointUTXOSet() error {
 func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "importVirtualUTXOSetAndPruningPointUTXOSet")
 	defer onEnd()
-
-	log.Debugf("Starting to import virtual UTXO set and pruning point utxo set")
-	err := csm.consensusStateStore.StartImportingPruningPointUTXOSet(csm.databaseContext)
-	if err != nil {
-		return err
-	}
 
 	log.Debugf("Getting an iterator into the imported pruning point utxo set")
 	pruningPointUTXOSetIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
