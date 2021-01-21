@@ -23,6 +23,15 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
 	}
 
+	hadStartedImportingPruningPointUTXOSet, err := css.HadStartedImportingPruningPointUTXOSet(dbContext)
+	if err != nil {
+		return err
+	}
+	if !hadStartedImportingPruningPointUTXOSet {
+		return errors.New("cannot import pruning point UTXO set " +
+			"without calling StartImportingPruningPointUTXOSet first")
+	}
+
 	// Clear the cache
 	css.virtualUTXOSetCache.Clear()
 
