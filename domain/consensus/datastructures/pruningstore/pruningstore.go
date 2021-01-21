@@ -229,8 +229,7 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	}
 
 	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0, limit)
-	limitIndex := 0
-	for limitIndex < limit && pruningPointUTXOIterator.Next() {
+	for len(outpointAndUTXOEntryPairs) < limit && pruningPointUTXOIterator.Next() {
 		outpoint, utxoEntry, err := pruningPointUTXOIterator.Get()
 		if err != nil {
 			return nil, err
@@ -239,7 +238,6 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 		})
-		limitIndex++
 	}
 	return outpointAndUTXOEntryPairs, nil
 }
