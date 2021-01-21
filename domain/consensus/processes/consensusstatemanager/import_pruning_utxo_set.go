@@ -106,11 +106,6 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
 	log.Debugf("Validating that the pruning point is UTXO valid")
-	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPointClone, utxo.NewUTXODiff())
-	if err != nil {
-		return err
-	}
-
 	newPruningPointSelectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(newPruningPointHash)
 	if err != nil {
 		return err
