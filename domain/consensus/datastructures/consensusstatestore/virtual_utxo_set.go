@@ -44,7 +44,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 	if err != nil {
 		return err
 	}
-	for deleteCursor.Next() {
+	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
 		key, err := deleteCursor.Key()
 		if err != nil {
 			return err

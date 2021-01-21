@@ -17,7 +17,7 @@ func (ps *pruningStore) ClearImportedPruningPointUTXOs(dbContext model.DBWriter)
 		return err
 	}
 
-	for cursor.Next() {
+	for ok := cursor.First(); ok; ok = cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 	if err != nil {
 		return err
 	}
-	for deleteCursor.Next() {
+	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
 		key, err := deleteCursor.Key()
 		if err != nil {
 			return err
@@ -191,7 +191,7 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 	if err != nil {
 		return err
 	}
-	for insertCursor.Next() {
+	for ok := insertCursor.First(); ok; ok = insertCursor.Next() {
 		importedPruningPointUTXOSetKey, err := insertCursor.Key()
 		if err != nil {
 			return err
