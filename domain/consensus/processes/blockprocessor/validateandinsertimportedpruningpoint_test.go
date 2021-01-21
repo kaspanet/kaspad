@@ -96,9 +96,9 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
-		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
+		err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
 		if err != nil {
-			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
+			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
 		}
 
 		tip, err := tcSyncer.GetBlock(tipHash)
@@ -130,9 +130,9 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ClearImportedPruningPointData: %+v", err)
 		}
-		err = tcSyncee.InsertImportedPruningPointUTXOs(makeFakeUTXOs())
+		err = tcSyncee.AppendImportedPruningPointUTXOs(makeFakeUTXOs())
 		if err != nil {
-			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
+			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
 		}
 
 		// Check that ValidateAndInsertImportedPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
@@ -145,9 +145,9 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ClearImportedPruningPointData: %+v", err)
 		}
-		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
+		err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
 		if err != nil {
-			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
+			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
 		}
 
 		// Check that ValidateAndInsertImportedPruningPoint works given the right arguments.
@@ -274,9 +274,9 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
-		err = tcSyncee.InsertImportedPruningPointUTXOs(pruningPointUTXOs)
+		err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
 		if err != nil {
-			t.Fatalf("InsertImportedPruningPointUTXOs: %+v", err)
+			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
 		}
 
 		// Check that ValidateAndInsertPruningPoint works.

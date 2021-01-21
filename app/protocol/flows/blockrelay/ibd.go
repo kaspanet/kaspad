@@ -419,7 +419,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
-			err := flow.Domain().Consensus().InsertImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
+			err := flow.Domain().Consensus().AppendImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
 				return false, err
 			}

@@ -237,11 +237,11 @@ func (s *consensus) ClearImportedPruningPointData() error {
 	return s.pruningManager.ClearImportedPruningPointData()
 }
 
-func (s *consensus) InsertImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.InsertImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
+	return s.pruningManager.AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
 func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {

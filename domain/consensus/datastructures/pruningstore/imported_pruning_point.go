@@ -30,7 +30,7 @@ func (ps *pruningStore) ClearImportedPruningPointUTXOs(dbContext model.DBWriter)
 	return nil
 }
 
-func (ps *pruningStore) InsertImportedPruningPointUTXOs(dbTx model.DBTransaction,
+func (ps *pruningStore) AppendImportedPruningPointUTXOs(dbTx model.DBTransaction,
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 
 	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {

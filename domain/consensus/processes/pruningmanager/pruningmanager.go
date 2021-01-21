@@ -467,7 +467,7 @@ func (pm *pruningManager) ClearImportedPruningPointData() error {
 	return pm.pruningStore.ClearImportedPruningPointUTXOs(pm.databaseContext)
 }
 
-func (pm *pruningManager) InsertImportedPruningPointUTXOs(
+func (pm *pruningManager) AppendImportedPruningPointUTXOs(
 	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
 
 	dbTx, err := pm.databaseContext.Begin()
@@ -495,7 +495,7 @@ func (pm *pruningManager) InsertImportedPruningPointUTXOs(
 		return err
 	}
 
-	err = pm.pruningStore.InsertImportedPruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
+	err = pm.pruningStore.AppendImportedPruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
 	if err != nil {
 		return err
 	}
