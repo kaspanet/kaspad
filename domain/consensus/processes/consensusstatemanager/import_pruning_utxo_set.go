@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -96,8 +97,8 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 
 	// Clone the pruningPoint block here because validateBlockTransactionsAgainstPastUTXO
 	// assumes that the block UTXOEntries are pre-filled during further validations
-	pruningPointClone := newPruningPoint.Clone()
-	err = csm.populateTransactionWithUTXOEntriesFromUTXOSet(pruningPointClone, importedPruningPointUTXOIterator)
+	newPruningPointClone := newPruningPoint.Clone()
+	err = csm.populateTransactionWithUTXOEntriesFromUTXOSet(newPruningPointClone, importedPruningPointUTXOIterator)
 	if err != nil {
 		return err
 	}
@@ -105,9 +106,34 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
 	log.Debugf("Validating that the pruning point is UTXO valid")
-	err = csm.validateBlockTransactionsAgainstPastUTXO(pruningPointClone, utxo.NewUTXODiff())
+	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPointClone, utxo.NewUTXODiff())
 	if err != nil {
 		return err
+	}
+
+	newPruningPointSelectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(newPruningPointHash)
+	if err != nil {
+		return err
+	}
+	log.Tracef("The past median time of pruning block %s is %d",
+		newPruningPointHash, newPruningPointSelectedParentMedianTime)
+
+	for i, transaction := range newPruningPointClone.Transactions {
+		transactionID := consensushashing.TransactionID(transaction)
+		log.Tracef("Validating transaction %s in pruning block %s against "+
+			"the pruning point's past UTXO", transactionID, newPruningPointHash)
+		if i == transactionhelper.CoinbaseTransactionIndex {
+			log.Tracef("Skipping transaction %s because it is the coinbase", transactionID)
+			continue
+		}
+		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+			transaction, newPruningPointHash, newPruningPointSelectedParentMedianTime)
+		if err != nil {
+			return err
+		}
+		log.Tracef("Validation against the pruning point's past UTXO "+
+			"passed for transaction %s", transactionID)
 	}
 
 	log.Debugf("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
