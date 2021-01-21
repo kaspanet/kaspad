@@ -60,12 +60,11 @@ func (ps *pruningStore) ImportedPruningPointUTXOIterator(dbContext model.DBReade
 }
 
 type utxoSetIterator struct {
-	pruningStore *pruningStore
-	cursor       model.DBCursor
+	cursor model.DBCursor
 }
 
 func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
-	return &utxoSetIterator{pruningStore: ps, cursor: cursor}
+	return &utxoSetIterator{cursor: cursor}
 }
 
 func (u utxoSetIterator) First() bool {
@@ -87,12 +86,12 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 		return nil, nil, err
 	}
 
-	outpoint, err = u.pruningStore.deserializeOutpoint(key.Suffix())
+	outpoint, err = deserializeOutpoint(key.Suffix())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	utxoEntry, err = u.pruningStore.deserializeUTXOEntry(utxoEntryBytes)
+	utxoEntry, err = deserializeUTXOEntry(utxoEntryBytes)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -117,7 +116,7 @@ func (ps *pruningStore) serializeUTXOEntry(entry externalapi.UTXOEntry) ([]byte,
 	return proto.Marshal(serialization.UTXOEntryToDBUTXOEntry(entry))
 }
 
-func (ps *pruningStore) deserializeOutpoint(outpointBytes []byte) (*externalapi.DomainOutpoint, error) {
+func deserializeOutpoint(outpointBytes []byte) (*externalapi.DomainOutpoint, error) {
 	dbOutpoint := &serialization.DbOutpoint{}
 	err := proto.Unmarshal(outpointBytes, dbOutpoint)
 	if err != nil {
@@ -127,7 +126,7 @@ func (ps *pruningStore) deserializeOutpoint(outpointBytes []byte) (*externalapi.
 	return serialization.DbOutpointToDomainOutpoint(dbOutpoint)
 }
 
-func (ps *pruningStore) deserializeUTXOEntry(entryBytes []byte) (externalapi.UTXOEntry, error) {
+func deserializeUTXOEntry(entryBytes []byte) (externalapi.UTXOEntry, error) {
 	dbEntry := &serialization.DbUtxoEntry{}
 	err := proto.Unmarshal(entryBytes, dbEntry)
 	if err != nil {
