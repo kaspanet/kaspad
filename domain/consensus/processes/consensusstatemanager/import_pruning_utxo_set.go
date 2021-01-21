@@ -88,14 +88,24 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	log.Debugf("Staging the new pruning point")
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
 
+	log.Debugf("Populating the pruning point with UTXO entries")
+	importedPruningPointUTXOIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	// Clone the pruningPoint block here because validateBlockTransactionsAgainstPastUTXO
+	// assumes that the block UTXOEntries are pre-filled during further validations
+	pruningPointClone := newPruningPoint.Clone()
+	err = csm.populateTransactionWithUTXOEntriesFromUTXOSet(pruningPointClone, importedPruningPointUTXOIterator)
+	if err != nil {
+		return err
+	}
+
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
 	log.Debugf("Validating that the pruning point is UTXO valid")
-
-	// validateBlockTransactionsAgainstPastUTXO pre-fills the block's transactions inputs, which
-	// are assumed to not be pre-filled during further validations.
-	// Therefore - clone newPruningPoint before passing it to validateBlockTransactionsAgainstPastUTXO
-	err = csm.validateBlockTransactionsAgainstPastUTXO(newPruningPoint.Clone(), utxo.NewUTXODiff())
+	err = csm.validateBlockTransactionsAgainstPastUTXO(pruningPointClone, utxo.NewUTXODiff())
 	if err != nil {
 		return err
 	}
