@@ -325,12 +325,12 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
+			err = rc.offsetSiblingsBefore(allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
 
-			// Set the slack for each chain block to be reserved below during the chain walk down
+			// Set the slack for each chain block to be reserved below during the chain walk-down
 			pathSlackAlloc = rc.manager.reindexSlack
 			break
 		}
@@ -355,7 +355,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
+			err = rc.offsetSiblingsBefore(allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -401,7 +401,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			return err
 		}
 
-		err = rc.offsetSiblingsBefore(allocationNode, commonAncestor, current, offset)
+		err = rc.offsetSiblingsBefore(allocationNode, current, offset)
 		if err != nil {
 			return err
 		}
@@ -410,8 +410,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsBefore(
-	allocationNode, commonAncestor, current *externalapi.DomainHash, offset uint64) error {
+func (rc *reindexContext) offsetSiblingsBefore(allocationNode, current *externalapi.DomainHash, offset uint64) error {
 
 	parent, err := rc.manager.parent(current)
 	if err != nil {
@@ -423,37 +422,29 @@ func (rc *reindexContext) offsetSiblingsBefore(
 		return err
 	}
 
-	if parent.Equal(commonAncestor) {
-		previousInterval, err := rc.manager.interval(allocationNode)
-		if err != nil {
-			return err
-		}
-
-		err = rc.manager.stageInterval(allocationNode, intervalIncreaseEnd(previousInterval, offset))
-		if err != nil {
-			return err
-		}
-
-		err = rc.propagateInterval(allocationNode)
-		if err != nil {
-			return err
-		}
-
-		indexOfNode := -1
-		for i, sibling := range siblingsBefore {
-			if sibling.Equal(allocationNode) {
-				indexOfNode = i
-				break
+	// Iterate over the slice in reverse order in order to break if reaching `allocationNode`
+	for i := len(siblingsBefore) - 1; i >= 0; i-- {
+		sibling := siblingsBefore[i]
+		if sibling.Equal(allocationNode) {
+			// We reached our final destination, allocate `offset` to `allocationNode` by increasing end and break
+			previousInterval, err := rc.manager.interval(allocationNode)
+			if err != nil {
+				return err
 			}
-		}
-		if indexOfNode < 0 {
-			err = errors.Errorf("node %s is expected to be child of coomon %s", allocationNode.String(), commonAncestor.String())
-			return err
-		}
-		siblingsBefore = siblingsBefore[indexOfNode+1:]
-	}
 
-	for _, sibling := range siblingsBefore {
+			err = rc.manager.stageInterval(allocationNode, intervalIncreaseEnd(previousInterval, offset))
+			if err != nil {
+				return err
+			}
+
+			err = rc.propagateInterval(allocationNode)
+			if err != nil {
+				return err
+			}
+
+			break
+		}
+
 		previousInterval, err := rc.manager.interval(sibling)
 		if err != nil {
 			return err
@@ -505,12 +496,12 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
+			err = rc.offsetSiblingsAfter(allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
 
-			// Set the slack for each chain block to be reserved below during the chain walk down
+			// Set the slack for each chain block to be reserved below during the chain walk-down
 			pathSlackAlloc = rc.manager.reindexSlack
 			break
 		}
@@ -535,7 +526,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
+			err = rc.offsetSiblingsAfter(allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -581,7 +572,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			return err
 		}
 
-		err = rc.offsetSiblingsAfter(allocationNode, commonAncestor, current, offset)
+		err = rc.offsetSiblingsAfter(allocationNode, current, offset)
 		if err != nil {
 			return err
 		}
@@ -590,8 +581,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsAfter(
-	allocationNode, commonAncestor, current *externalapi.DomainHash, offset uint64) error {
+func (rc *reindexContext) offsetSiblingsAfter(allocationNode, current *externalapi.DomainHash, offset uint64) error {
 
 	parent, err := rc.manager.parent(current)
 	if err != nil {
@@ -605,6 +595,7 @@ func (rc *reindexContext) offsetSiblingsAfter(
 
 	for _, sibling := range siblingsAfter {
 		if sibling.Equal(allocationNode) {
+			// We reached our final destination, allocate `offset` to `allocationNode` by decreasing start and break
 			previousInterval, err := rc.manager.interval(allocationNode)
 			if err != nil {
 				return err
