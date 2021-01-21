@@ -9,6 +9,9 @@ func dbKeyToDatabaseKey(key model.DBKey) *database.Key {
 	if key, ok := key.(dbKey); ok {
 		return key.key
 	}
+	if key, ok := key.(*dbKey); ok {
+		return key.key
+	}
 	return dbBucketToDatabaseBucket(key.Bucket()).Key(key.Suffix())
 }
 
@@ -29,5 +32,5 @@ func (d dbKey) Suffix() []byte {
 }
 
 func newDBKey(key *database.Key) model.DBKey {
-	return &dbKey{key: key}
+	return dbKey{key: key}
 }
