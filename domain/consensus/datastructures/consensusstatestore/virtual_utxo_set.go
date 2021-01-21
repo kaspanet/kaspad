@@ -16,6 +16,10 @@ func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet(dbContext
 	return dbContext.Has(importingPruningPointUTXOSetKey)
 }
 
+func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Delete(importingPruningPointUTXOSetKey)
+}
+
 func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext model.DBWriter,
 	pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
 
@@ -74,8 +78,4 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 	}
 
 	return nil
-}
-
-func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
-	return dbContext.Delete(importingPruningPointUTXOSetKey)
 }
