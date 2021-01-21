@@ -89,7 +89,7 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 
 	// Build a Multiset
 	ms := multiset.New()
-	for utxoSetIterator.Next() {
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
 		outpoint, entry, err := utxoSetIterator.Get()
 		if err != nil {
 			t.Fatalf("Error getting from UTXOSet iterator: %+v", err)

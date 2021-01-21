@@ -146,31 +146,43 @@ message RejectMessage{
   string reason = 1;
 }
 
-message RequestIBDRootUTXOSetAndBlockMessage{
-  Hash ibdRoot = 1;
+message RequestPruningPointUTXOSetAndBlockMessage{
+  Hash pruningPointHash = 1;
 }
 
-message IbdRootUtxoSetChunkMessage{
-  bytes chunk = 1;
+message PruningPointUtxoSetChunkMessage{
+  repeated OutpointAndUtxoEntryPair outpointAndUtxoEntryPairs = 1;
 }
 
-message RequestNextIbdRootUtxoSetChunkMessage {
+message OutpointAndUtxoEntryPair{
+  Outpoint outpoint = 1;
+  UtxoEntry utxoEntry = 2;
 }
 
-message DoneIbdRootUtxoSetChunksMessage {
+message UtxoEntry {
+  uint64 amount = 1;
+  ScriptPublicKey scriptPublicKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message RequestNextPruningPointUtxoSetChunkMessage {
+}
+
+message DonePruningPointUtxoSetChunksMessage {
 }
 
 message RequestIBDBlocksMessage{
   repeated Hash hashes = 1;
 }
 
-message IBDRootNotFoundMessage{
+message UnexpectedPruningPointMessage{
 }
 
-message RequestIBDRootHashMessage{
+message RequestPruningPointHashMessage{
 }
 
-message IBDRootHashMessage{
+message PruningPointHashMessage{
   Hash hash = 1;
 }
 

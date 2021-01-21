@@ -19,22 +19,25 @@ func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	return utxoSetBucket.Key(serializedOutpoint), nil
 }
 
-func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXODiff) error {
-	if css.virtualUTXOSetStaging != nil {
-		return errors.New("cannot stage virtual UTXO diff while virtual UTXO set is staged")
-	}
-
+func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXODiff) {
 	css.virtualUTXODiffStaging = virtualUTXODiff
-	return nil
 }
 
 func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) error {
+	hadStartedImportingPruningPointUTXOSet, err := css.HadStartedImportingPruningPointUTXOSet(dbTx)
+	if err != nil {
+		return err
+	}
+	if hadStartedImportingPruningPointUTXOSet {
+		return errors.New("cannot commit virtual UTXO diff after starting to import the pruning point UTXO set")
+	}
+
 	if css.virtualUTXODiffStaging == nil {
 		return nil
 	}
 
 	toRemoveIterator := css.virtualUTXODiffStaging.ToRemove().Iterator()
-	for toRemoveIterator.Next() {
+	for ok := toRemoveIterator.First(); ok; ok = toRemoveIterator.Next() {
 		toRemoveOutpoint, _, err := toRemoveIterator.Get()
 		if err != nil {
 			return err
@@ -53,7 +56,7 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	}
 
 	toAddIterator := css.virtualUTXODiffStaging.ToAdd().Iterator()
-	for toAddIterator.Next() {
+	for ok := toAddIterator.First(); ok; ok = toAddIterator.Next() {
 		toAddOutpoint, toAddEntry, err := toAddIterator.Get()
 		if err != nil {
 			return err
@@ -80,62 +83,8 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	return nil
 }
 
-func (css *consensusStateStore) commitVirtualUTXOSet(dbTx model.DBTransaction) error {
-	if css.virtualUTXOSetStaging == nil {
-		return nil
-	}
-
-	// Clear the existing virtual utxo set in database before adding the new one
-	cursor, err := dbTx.Cursor(utxoSetBucket)
-	if err != nil {
-		return err
-	}
-	for cursor.Next() {
-		key, err := cursor.Key()
-		if err != nil {
-			return err
-		}
-		err = dbTx.Delete(key)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Now put the new virtualUTXOSet into the database
-	css.virtualUTXOSetCache.Clear()
-	iterator := css.virtualUTXOSetStaging.Iterator()
-	for iterator.Next() {
-		outpoint, utxoEntry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		css.virtualUTXOSetCache.Add(outpoint, utxoEntry)
-		dbKey, err := utxoKey(outpoint)
-		if err != nil {
-			return err
-		}
-		serializedEntry, err := serializeUTXOEntry(utxoEntry)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(dbKey, serializedEntry)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Note: we don't discard the staging here since that's
-	// being done at the end of Commit()
-	return nil
-}
-
 func (css *consensusStateStore) UTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (
 	externalapi.UTXOEntry, error) {
-
-	if css.virtualUTXOSetStaging != nil {
-		return css.utxoByOutpointFromStagedVirtualUTXOSet(outpoint)
-	}
 
 	return css.utxoByOutpointFromStagedVirtualUTXODiff(dbContext, outpoint)
 }
@@ -176,20 +125,7 @@ func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContex
 	return entry, nil
 }
 
-func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXOSet(outpoint *externalapi.DomainOutpoint) (
-	externalapi.UTXOEntry, error) {
-	if utxoEntry, ok := css.virtualUTXOSetStaging.Get(outpoint); ok {
-		return utxoEntry, nil
-	}
-
-	return nil, errors.Errorf("outpoint was not found")
-}
-
 func (css *consensusStateStore) HasUTXOByOutpoint(dbContext model.DBReader, outpoint *externalapi.DomainOutpoint) (bool, error) {
-	if css.virtualUTXOSetStaging != nil {
-		return css.hasUTXOByOutpointFromStagedVirtualUTXOSet(outpoint), nil
-	}
-
 	return css.hasUTXOByOutpointFromStagedVirtualUTXODiff(dbContext, outpoint)
 }
 
@@ -213,10 +149,6 @@ func (css *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbCon
 	return dbContext.Has(key)
 }
 
-func (css *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXOSet(outpoint *externalapi.DomainOutpoint) bool {
-	return css.virtualUTXOSetStaging.Contains(outpoint)
-}
-
 func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
 	cursor, err := dbContext.Cursor(utxoSetBucket)
 	if err != nil {
@@ -237,6 +169,10 @@ type utxoSetIterator struct {
 
 func newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
 	return &utxoSetIterator{cursor: cursor}
+}
+
+func (u utxoSetIterator) First() bool {
+	return u.cursor.First()
 }
 
 func (u utxoSetIterator) Next() bool {
@@ -265,26 +201,4 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 	}
 
 	return outpoint, utxoEntry, nil
-}
-
-func (css *consensusStateStore) StageVirtualUTXOSet(virtualUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
-	if css.virtualUTXODiffStaging != nil {
-		return errors.New("cannot stage virtual UTXO set while virtual UTXO diff is staged")
-	}
-
-	utxoMap := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
-	for virtualUTXOSetIterator.Next() {
-		outpoint, entry, err := virtualUTXOSetIterator.Get()
-		if err != nil {
-			return err
-		}
-
-		if _, exists := utxoMap[*outpoint]; exists {
-			return errors.Errorf("outpoint %s is found more than once in the given iterator", outpoint)
-		}
-		utxoMap[*outpoint] = entry
-	}
-	css.virtualUTXOSetStaging = utxo.NewUTXOCollection(utxoMap)
-
-	return nil
 }

@@ -1594,16 +1594,16 @@ func (x *RejectMessage) GetReason() string {
 	return ""
 }
 
-type RequestIBDRootUTXOSetAndBlockMessage struct {
+type RequestPruningPointUTXOSetAndBlockMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	IbdRoot *Hash `protobuf:"bytes,1,opt,name=ibdRoot,proto3" json:"ibdRoot,omitempty"`
+	PruningPointHash *Hash `protobuf:"bytes,1,opt,name=pruningPointHash,proto3" json:"pruningPointHash,omitempty"`
 }
 
-func (x *RequestIBDRootUTXOSetAndBlockMessage) Reset() {
-	*x = RequestIBDRootUTXOSetAndBlockMessage{}
+func (x *RequestPruningPointUTXOSetAndBlockMessage) Reset() {
+	*x = RequestPruningPointUTXOSetAndBlockMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1611,13 +1611,13 @@ func (x *RequestIBDRootUTXOSetAndBlockMessage) Reset() {
 	}
 }
 
-func (x *RequestIBDRootUTXOSetAndBlockMessage) String() string {
+func (x *RequestPruningPointUTXOSetAndBlockMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RequestIBDRootUTXOSetAndBlockMessage) ProtoMessage() {}
+func (*RequestPruningPointUTXOSetAndBlockMessage) ProtoMessage() {}
 
-func (x *RequestIBDRootUTXOSetAndBlockMessage) ProtoReflect() protoreflect.Message {
+func (x *RequestPruningPointUTXOSetAndBlockMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1629,28 +1629,28 @@ func (x *RequestIBDRootUTXOSetAndBlockMessage) ProtoReflect() protoreflect.Messa
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RequestIBDRootUTXOSetAndBlockMessage.ProtoReflect.Descriptor instead.
-func (*RequestIBDRootUTXOSetAndBlockMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use RequestPruningPointUTXOSetAndBlockMessage.ProtoReflect.Descriptor instead.
+func (*RequestPruningPointUTXOSetAndBlockMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *RequestIBDRootUTXOSetAndBlockMessage) GetIbdRoot() *Hash {
+func (x *RequestPruningPointUTXOSetAndBlockMessage) GetPruningPointHash() *Hash {
 	if x != nil {
-		return x.IbdRoot
+		return x.PruningPointHash
 	}
 	return nil
 }
 
-type IbdRootUtxoSetChunkMessage struct {
+type PruningPointUtxoSetChunkMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Chunk []byte `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	OutpointAndUtxoEntryPairs []*OutpointAndUtxoEntryPair `protobuf:"bytes,1,rep,name=outpointAndUtxoEntryPairs,proto3" json:"outpointAndUtxoEntryPairs,omitempty"`
 }
 
-func (x *IbdRootUtxoSetChunkMessage) Reset() {
-	*x = IbdRootUtxoSetChunkMessage{}
+func (x *PruningPointUtxoSetChunkMessage) Reset() {
+	*x = PruningPointUtxoSetChunkMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1658,13 +1658,13 @@ func (x *IbdRootUtxoSetChunkMessage) Reset() {
 	}
 }
 
-func (x *IbdRootUtxoSetChunkMessage) String() string {
+func (x *PruningPointUtxoSetChunkMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IbdRootUtxoSetChunkMessage) ProtoMessage() {}
+func (*PruningPointUtxoSetChunkMessage) ProtoMessage() {}
 
-func (x *IbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
+func (x *PruningPointUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1676,26 +1676,29 @@ func (x *IbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IbdRootUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
-func (*IbdRootUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use PruningPointUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
+func (*PruningPointUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *IbdRootUtxoSetChunkMessage) GetChunk() []byte {
+func (x *PruningPointUtxoSetChunkMessage) GetOutpointAndUtxoEntryPairs() []*OutpointAndUtxoEntryPair {
 	if x != nil {
-		return x.Chunk
+		return x.OutpointAndUtxoEntryPairs
 	}
 	return nil
 }
 
-type RequestNextIbdRootUtxoSetChunkMessage struct {
+type OutpointAndUtxoEntryPair struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Outpoint  *Outpoint  `protobuf:"bytes,1,opt,name=outpoint,proto3" json:"outpoint,omitempty"`
+	UtxoEntry *UtxoEntry `protobuf:"bytes,2,opt,name=utxoEntry,proto3" json:"utxoEntry,omitempty"`
 }
 
-func (x *RequestNextIbdRootUtxoSetChunkMessage) Reset() {
-	*x = RequestNextIbdRootUtxoSetChunkMessage{}
+func (x *OutpointAndUtxoEntryPair) Reset() {
+	*x = OutpointAndUtxoEntryPair{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1703,13 +1706,13 @@ func (x *RequestNextIbdRootUtxoSetChunkMessage) Reset() {
 	}
 }
 
-func (x *RequestNextIbdRootUtxoSetChunkMessage) String() string {
+func (x *OutpointAndUtxoEntryPair) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RequestNextIbdRootUtxoSetChunkMessage) ProtoMessage() {}
+func (*OutpointAndUtxoEntryPair) ProtoMessage() {}
 
-func (x *RequestNextIbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
+func (x *OutpointAndUtxoEntryPair) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1721,19 +1724,38 @@ func (x *RequestNextIbdRootUtxoSetChunkMessage) ProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RequestNextIbdRootUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
-func (*RequestNextIbdRootUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use OutpointAndUtxoEntryPair.ProtoReflect.Descriptor instead.
+func (*OutpointAndUtxoEntryPair) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{30}
 }
 
-type DoneIbdRootUtxoSetChunksMessage struct {
+func (x *OutpointAndUtxoEntryPair) GetOutpoint() *Outpoint {
+	if x != nil {
+		return x.Outpoint
+	}
+	return nil
+}
+
+func (x *OutpointAndUtxoEntryPair) GetUtxoEntry() *UtxoEntry {
+	if x != nil {
+		return x.UtxoEntry
+	}
+	return nil
+}
+
+type UtxoEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Amount          uint64           `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	ScriptPublicKey *ScriptPublicKey `protobuf:"bytes,2,opt,name=scriptPublicKey,proto3" json:"scriptPublicKey,omitempty"`
+	BlockBlueScore  uint64           `protobuf:"varint,3,opt,name=blockBlueScore,proto3" json:"blockBlueScore,omitempty"`
+	IsCoinbase      bool             `protobuf:"varint,4,opt,name=isCoinbase,proto3" json:"isCoinbase,omitempty"`
 }
 
-func (x *DoneIbdRootUtxoSetChunksMessage) Reset() {
-	*x = DoneIbdRootUtxoSetChunksMessage{}
+func (x *UtxoEntry) Reset() {
+	*x = UtxoEntry{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1741,13 +1763,13 @@ func (x *DoneIbdRootUtxoSetChunksMessage) Reset() {
 	}
 }
 
-func (x *DoneIbdRootUtxoSetChunksMessage) String() string {
+func (x *UtxoEntry) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DoneIbdRootUtxoSetChunksMessage) ProtoMessage() {}
+func (*UtxoEntry) ProtoMessage() {}
 
-func (x *DoneIbdRootUtxoSetChunksMessage) ProtoReflect() protoreflect.Message {
+func (x *UtxoEntry) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1759,9 +1781,113 @@ func (x *DoneIbdRootUtxoSetChunksMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DoneIbdRootUtxoSetChunksMessage.ProtoReflect.Descriptor instead.
-func (*DoneIbdRootUtxoSetChunksMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use UtxoEntry.ProtoReflect.Descriptor instead.
+func (*UtxoEntry) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *UtxoEntry) GetAmount() uint64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *UtxoEntry) GetScriptPublicKey() *ScriptPublicKey {
+	if x != nil {
+		return x.ScriptPublicKey
+	}
+	return nil
+}
+
+func (x *UtxoEntry) GetBlockBlueScore() uint64 {
+	if x != nil {
+		return x.BlockBlueScore
+	}
+	return 0
+}
+
+func (x *UtxoEntry) GetIsCoinbase() bool {
+	if x != nil {
+		return x.IsCoinbase
+	}
+	return false
+}
+
+type RequestNextPruningPointUtxoSetChunkMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RequestNextPruningPointUtxoSetChunkMessage) Reset() {
+	*x = RequestNextPruningPointUtxoSetChunkMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[32]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RequestNextPruningPointUtxoSetChunkMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestNextPruningPointUtxoSetChunkMessage) ProtoMessage() {}
+
+func (x *RequestNextPruningPointUtxoSetChunkMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[32]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestNextPruningPointUtxoSetChunkMessage.ProtoReflect.Descriptor instead.
+func (*RequestNextPruningPointUtxoSetChunkMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{32}
+}
+
+type DonePruningPointUtxoSetChunksMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *DonePruningPointUtxoSetChunksMessage) Reset() {
+	*x = DonePruningPointUtxoSetChunksMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[33]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DonePruningPointUtxoSetChunksMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DonePruningPointUtxoSetChunksMessage) ProtoMessage() {}
+
+func (x *DonePruningPointUtxoSetChunksMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[33]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DonePruningPointUtxoSetChunksMessage.ProtoReflect.Descriptor instead.
+func (*DonePruningPointUtxoSetChunksMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{33}
 }
 
 type RequestIBDBlocksMessage struct {
@@ -1775,7 +1901,7 @@ type RequestIBDBlocksMessage struct {
 func (x *RequestIBDBlocksMessage) Reset() {
 	*x = RequestIBDBlocksMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[32]
+		mi := &file_p2p_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1788,7 +1914,7 @@ func (x *RequestIBDBlocksMessage) String() string {
 func (*RequestIBDBlocksMessage) ProtoMessage() {}
 
 func (x *RequestIBDBlocksMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[32]
+	mi := &file_p2p_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1801,7 +1927,7 @@ func (x *RequestIBDBlocksMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestIBDBlocksMessage.ProtoReflect.Descriptor instead.
 func (*RequestIBDBlocksMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{32}
+	return file_p2p_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *RequestIBDBlocksMessage) GetHashes() []*Hash {
@@ -1811,92 +1937,14 @@ func (x *RequestIBDBlocksMessage) GetHashes() []*Hash {
 	return nil
 }
 
-type IBDRootNotFoundMessage struct {
+type UnexpectedPruningPointMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *IBDRootNotFoundMessage) Reset() {
-	*x = IBDRootNotFoundMessage{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[33]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *IBDRootNotFoundMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*IBDRootNotFoundMessage) ProtoMessage() {}
-
-func (x *IBDRootNotFoundMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[33]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use IBDRootNotFoundMessage.ProtoReflect.Descriptor instead.
-func (*IBDRootNotFoundMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{33}
-}
-
-type RequestIBDRootHashMessage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *RequestIBDRootHashMessage) Reset() {
-	*x = RequestIBDRootHashMessage{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[34]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RequestIBDRootHashMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RequestIBDRootHashMessage) ProtoMessage() {}
-
-func (x *RequestIBDRootHashMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[34]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RequestIBDRootHashMessage.ProtoReflect.Descriptor instead.
-func (*RequestIBDRootHashMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{34}
-}
-
-type IBDRootHashMessage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Hash *Hash `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-}
-
-func (x *IBDRootHashMessage) Reset() {
-	*x = IBDRootHashMessage{}
+func (x *UnexpectedPruningPointMessage) Reset() {
+	*x = UnexpectedPruningPointMessage{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_p2p_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1904,13 +1952,13 @@ func (x *IBDRootHashMessage) Reset() {
 	}
 }
 
-func (x *IBDRootHashMessage) String() string {
+func (x *UnexpectedPruningPointMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IBDRootHashMessage) ProtoMessage() {}
+func (*UnexpectedPruningPointMessage) ProtoMessage() {}
 
-func (x *IBDRootHashMessage) ProtoReflect() protoreflect.Message {
+func (x *UnexpectedPruningPointMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_p2p_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1922,12 +1970,90 @@ func (x *IBDRootHashMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use IBDRootHashMessage.ProtoReflect.Descriptor instead.
-func (*IBDRootHashMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use UnexpectedPruningPointMessage.ProtoReflect.Descriptor instead.
+func (*UnexpectedPruningPointMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *IBDRootHashMessage) GetHash() *Hash {
+type RequestPruningPointHashMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RequestPruningPointHashMessage) Reset() {
+	*x = RequestPruningPointHashMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[36]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RequestPruningPointHashMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestPruningPointHashMessage) ProtoMessage() {}
+
+func (x *RequestPruningPointHashMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[36]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestPruningPointHashMessage.ProtoReflect.Descriptor instead.
+func (*RequestPruningPointHashMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{36}
+}
+
+type PruningPointHashMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Hash *Hash `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+}
+
+func (x *PruningPointHashMessage) Reset() {
+	*x = PruningPointHashMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_p2p_proto_msgTypes[37]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PruningPointHashMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PruningPointHashMessage) ProtoMessage() {}
+
+func (x *PruningPointHashMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_p2p_proto_msgTypes[37]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PruningPointHashMessage.ProtoReflect.Descriptor instead.
+func (*PruningPointHashMessage) Descriptor() ([]byte, []int) {
+	return file_p2p_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *PruningPointHashMessage) GetHash() *Hash {
 	if x != nil {
 		return x.Hash
 	}
@@ -1946,7 +2072,7 @@ type IbdBlockLocatorMessage struct {
 func (x *IbdBlockLocatorMessage) Reset() {
 	*x = IbdBlockLocatorMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[36]
+		mi := &file_p2p_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1959,7 +2085,7 @@ func (x *IbdBlockLocatorMessage) String() string {
 func (*IbdBlockLocatorMessage) ProtoMessage() {}
 
 func (x *IbdBlockLocatorMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[36]
+	mi := &file_p2p_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1972,7 +2098,7 @@ func (x *IbdBlockLocatorMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IbdBlockLocatorMessage.ProtoReflect.Descriptor instead.
 func (*IbdBlockLocatorMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{36}
+	return file_p2p_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *IbdBlockLocatorMessage) GetTargetHash() *Hash {
@@ -2000,7 +2126,7 @@ type IbdBlockLocatorHighestHashMessage struct {
 func (x *IbdBlockLocatorHighestHashMessage) Reset() {
 	*x = IbdBlockLocatorHighestHashMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[37]
+		mi := &file_p2p_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2013,7 +2139,7 @@ func (x *IbdBlockLocatorHighestHashMessage) String() string {
 func (*IbdBlockLocatorHighestHashMessage) ProtoMessage() {}
 
 func (x *IbdBlockLocatorHighestHashMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[37]
+	mi := &file_p2p_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2026,7 +2152,7 @@ func (x *IbdBlockLocatorHighestHashMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use IbdBlockLocatorHighestHashMessage.ProtoReflect.Descriptor instead.
 func (*IbdBlockLocatorHighestHashMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{37}
+	return file_p2p_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *IbdBlockLocatorHighestHashMessage) GetHighestHash() *Hash {
@@ -2047,7 +2173,7 @@ type BlockHeadersMessage struct {
 func (x *BlockHeadersMessage) Reset() {
 	*x = BlockHeadersMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[38]
+		mi := &file_p2p_proto_msgTypes[40]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2060,7 +2186,7 @@ func (x *BlockHeadersMessage) String() string {
 func (*BlockHeadersMessage) ProtoMessage() {}
 
 func (x *BlockHeadersMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[38]
+	mi := &file_p2p_proto_msgTypes[40]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2073,7 +2199,7 @@ func (x *BlockHeadersMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockHeadersMessage.ProtoReflect.Descriptor instead.
 func (*BlockHeadersMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{38}
+	return file_p2p_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *BlockHeadersMessage) GetBlockHeaders() []*BlockHeaderMessage {
@@ -2268,54 +2394,82 @@ var file_p2p_proto_rawDesc = []byte{
 	0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x22,
 	0x27, 0x0a, 0x0d, 0x52, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
 	0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x22, 0x51, 0x0a, 0x24, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x54, 0x58, 0x4f, 0x53, 0x65,
-	0x74, 0x41, 0x6e, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x12, 0x29, 0x0a, 0x07, 0x69, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61,
-	0x73, 0x68, 0x52, 0x07, 0x69, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x22, 0x32, 0x0a, 0x1a, 0x49,
-	0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75,
-	0x6e, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x68, 0x75,
-	0x6e, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x63, 0x68, 0x75, 0x6e, 0x6b, 0x22,
-	0x27, 0x0a, 0x25, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4e, 0x65, 0x78, 0x74, 0x49, 0x62,
-	0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75, 0x6e,
-	0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x21, 0x0a, 0x1f, 0x44, 0x6f, 0x6e, 0x65,
-	0x49, 0x62, 0x64, 0x52, 0x6f, 0x6f, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68,
-	0x75, 0x6e, 0x6b, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x42, 0x0a, 0x17, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x42, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x27, 0x0a, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73,
-	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
-	0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22,
-	0x18, 0x0a, 0x16, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x4e, 0x6f, 0x74, 0x46, 0x6f, 0x75,
-	0x6e, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x1b, 0x0a, 0x19, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x39, 0x0a, 0x12, 0x49, 0x42, 0x44, 0x52, 0x6f, 0x6f,
-	0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x04,
-	0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61, 0x73,
-	0x68, 0x22, 0x8a, 0x01, 0x0a, 0x16, 0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f,
-	0x63, 0x61, 0x74, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x0a,
-	0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73,
-	0x68, 0x52, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x3f, 0x0a,
-	0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73,
-	0x68, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x12, 0x62, 0x6c, 0x6f, 0x63,
-	0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x56,
-	0x0a, 0x21, 0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f,
-	0x72, 0x48, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x12, 0x31, 0x0a, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61,
-	0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65,
-	0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x22, 0x58, 0x0a, 0x13, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
-	0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x41, 0x0a,
-	0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
-	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x52, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
-	0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b,
-	0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x22, 0x68, 0x0a, 0x29, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x55,
+	0x54, 0x58, 0x4f, 0x53, 0x65, 0x74, 0x41, 0x6e, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x3b, 0x0a, 0x10, 0x70, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67,
+	0x50, 0x6f, 0x69, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68,
+	0x52, 0x10, 0x70, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x48, 0x61,
+	0x73, 0x68, 0x22, 0x84, 0x01, 0x0a, 0x1f, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f,
+	0x69, 0x6e, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75, 0x6e, 0x6b, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x61, 0x0a, 0x19, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69,
+	0x6e, 0x74, 0x41, 0x6e, 0x64, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x50, 0x61,
+	0x69, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x6e,
+	0x64, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x50, 0x61, 0x69, 0x72, 0x52, 0x19,
+	0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x6e, 0x64, 0x55, 0x74, 0x78, 0x6f, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x50, 0x61, 0x69, 0x72, 0x73, 0x22, 0x7f, 0x0a, 0x18, 0x4f, 0x75, 0x74,
+	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x41, 0x6e, 0x64, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72,
+	0x79, 0x50, 0x61, 0x69, 0x72, 0x12, 0x2f, 0x0a, 0x08, 0x6f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e,
+	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x4f, 0x75, 0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x08, 0x6f, 0x75,
+	0x74, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x32, 0x0a, 0x09, 0x75, 0x74, 0x78, 0x6f, 0x45, 0x6e,
+	0x74, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x55, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52,
+	0x09, 0x75, 0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x22, 0xb1, 0x01, 0x0a, 0x09, 0x55,
+	0x74, 0x78, 0x6f, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75,
+	0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
+	0x12, 0x44, 0x0a, 0x0f, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x63,
+	0x4b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62, 0x6c,
+	0x69, 0x63, 0x4b, 0x65, 0x79, 0x52, 0x0f, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x50, 0x75, 0x62,
+	0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x26, 0x0a, 0x0e, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x42,
+	0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0e,
+	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x12, 0x1e,
+	0x0a, 0x0a, 0x69, 0x73, 0x43, 0x6f, 0x69, 0x6e, 0x62, 0x61, 0x73, 0x65, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x0a, 0x69, 0x73, 0x43, 0x6f, 0x69, 0x6e, 0x62, 0x61, 0x73, 0x65, 0x22, 0x2c,
+	0x0a, 0x2a, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4e, 0x65, 0x78, 0x74, 0x50, 0x72, 0x75,
+	0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74,
+	0x43, 0x68, 0x75, 0x6e, 0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x26, 0x0a, 0x24,
+	0x44, 0x6f, 0x6e, 0x65, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74,
+	0x55, 0x74, 0x78, 0x6f, 0x53, 0x65, 0x74, 0x43, 0x68, 0x75, 0x6e, 0x6b, 0x73, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x22, 0x42, 0x0a, 0x17, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49,
+	0x42, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
+	0x27, 0x0a, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68,
+	0x52, 0x06, 0x68, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x1f, 0x0a, 0x1d, 0x55, 0x6e, 0x65, 0x78,
+	0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69,
+	0x6e, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x20, 0x0a, 0x1e, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74,
+	0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x3e, 0x0a, 0x17, 0x50,
+	0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x23, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
+	0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x22, 0x8a, 0x01, 0x0a, 0x16,
+	0x49, 0x62, 0x64, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x0a, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74,
+	0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x0a, 0x74, 0x61, 0x72,
+	0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x3f, 0x0a, 0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x18, 0x02, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
+	0x48, 0x61, 0x73, 0x68, 0x52, 0x12, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74,
+	0x6f, 0x72, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x22, 0x56, 0x0a, 0x21, 0x49, 0x62, 0x64, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x48, 0x69, 0x67, 0x68, 0x65,
+	0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x31, 0x0a,
+	0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x48,
+	0x61, 0x73, 0x68, 0x52, 0x0b, 0x68, 0x69, 0x67, 0x68, 0x65, 0x73, 0x74, 0x48, 0x61, 0x73, 0x68,
+	0x22, 0x58, 0x0a, 0x13, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x41, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x0c, 0x62, 0x6c,
+	0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65,
+	0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2330,47 +2484,49 @@ func file_p2p_proto_rawDescGZIP() []byte {
 	return file_p2p_proto_rawDescData
 }
 
-var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
+var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_p2p_proto_goTypes = []interface{}{
-	(*RequestAddressesMessage)(nil),               // 0: protowire.RequestAddressesMessage
-	(*AddressesMessage)(nil),                      // 1: protowire.AddressesMessage
-	(*NetAddress)(nil),                            // 2: protowire.NetAddress
-	(*SubnetworkId)(nil),                          // 3: protowire.SubnetworkId
-	(*TransactionMessage)(nil),                    // 4: protowire.TransactionMessage
-	(*TransactionInput)(nil),                      // 5: protowire.TransactionInput
-	(*Outpoint)(nil),                              // 6: protowire.Outpoint
-	(*TransactionId)(nil),                         // 7: protowire.TransactionId
-	(*ScriptPublicKey)(nil),                       // 8: protowire.ScriptPublicKey
-	(*TransactionOutput)(nil),                     // 9: protowire.TransactionOutput
-	(*BlockMessage)(nil),                          // 10: protowire.BlockMessage
-	(*BlockHeaderMessage)(nil),                    // 11: protowire.BlockHeaderMessage
-	(*Hash)(nil),                                  // 12: protowire.Hash
-	(*RequestBlockLocatorMessage)(nil),            // 13: protowire.RequestBlockLocatorMessage
-	(*BlockLocatorMessage)(nil),                   // 14: protowire.BlockLocatorMessage
-	(*RequestHeadersMessage)(nil),                 // 15: protowire.RequestHeadersMessage
-	(*RequestNextHeadersMessage)(nil),             // 16: protowire.RequestNextHeadersMessage
-	(*DoneHeadersMessage)(nil),                    // 17: protowire.DoneHeadersMessage
-	(*RequestRelayBlocksMessage)(nil),             // 18: protowire.RequestRelayBlocksMessage
-	(*RequestTransactionsMessage)(nil),            // 19: protowire.RequestTransactionsMessage
-	(*TransactionNotFoundMessage)(nil),            // 20: protowire.TransactionNotFoundMessage
-	(*InvRelayBlockMessage)(nil),                  // 21: protowire.InvRelayBlockMessage
-	(*InvTransactionsMessage)(nil),                // 22: protowire.InvTransactionsMessage
-	(*PingMessage)(nil),                           // 23: protowire.PingMessage
-	(*PongMessage)(nil),                           // 24: protowire.PongMessage
-	(*VerackMessage)(nil),                         // 25: protowire.VerackMessage
-	(*VersionMessage)(nil),                        // 26: protowire.VersionMessage
-	(*RejectMessage)(nil),                         // 27: protowire.RejectMessage
-	(*RequestIBDRootUTXOSetAndBlockMessage)(nil),  // 28: protowire.RequestIBDRootUTXOSetAndBlockMessage
-	(*IbdRootUtxoSetChunkMessage)(nil),            // 29: protowire.IbdRootUtxoSetChunkMessage
-	(*RequestNextIbdRootUtxoSetChunkMessage)(nil), // 30: protowire.RequestNextIbdRootUtxoSetChunkMessage
-	(*DoneIbdRootUtxoSetChunksMessage)(nil),       // 31: protowire.DoneIbdRootUtxoSetChunksMessage
-	(*RequestIBDBlocksMessage)(nil),               // 32: protowire.RequestIBDBlocksMessage
-	(*IBDRootNotFoundMessage)(nil),                // 33: protowire.IBDRootNotFoundMessage
-	(*RequestIBDRootHashMessage)(nil),             // 34: protowire.RequestIBDRootHashMessage
-	(*IBDRootHashMessage)(nil),                    // 35: protowire.IBDRootHashMessage
-	(*IbdBlockLocatorMessage)(nil),                // 36: protowire.IbdBlockLocatorMessage
-	(*IbdBlockLocatorHighestHashMessage)(nil),     // 37: protowire.IbdBlockLocatorHighestHashMessage
-	(*BlockHeadersMessage)(nil),                   // 38: protowire.BlockHeadersMessage
+	(*RequestAddressesMessage)(nil),                    // 0: protowire.RequestAddressesMessage
+	(*AddressesMessage)(nil),                           // 1: protowire.AddressesMessage
+	(*NetAddress)(nil),                                 // 2: protowire.NetAddress
+	(*SubnetworkId)(nil),                               // 3: protowire.SubnetworkId
+	(*TransactionMessage)(nil),                         // 4: protowire.TransactionMessage
+	(*TransactionInput)(nil),                           // 5: protowire.TransactionInput
+	(*Outpoint)(nil),                                   // 6: protowire.Outpoint
+	(*TransactionId)(nil),                              // 7: protowire.TransactionId
+	(*ScriptPublicKey)(nil),                            // 8: protowire.ScriptPublicKey
+	(*TransactionOutput)(nil),                          // 9: protowire.TransactionOutput
+	(*BlockMessage)(nil),                               // 10: protowire.BlockMessage
+	(*BlockHeaderMessage)(nil),                         // 11: protowire.BlockHeaderMessage
+	(*Hash)(nil),                                       // 12: protowire.Hash
+	(*RequestBlockLocatorMessage)(nil),                 // 13: protowire.RequestBlockLocatorMessage
+	(*BlockLocatorMessage)(nil),                        // 14: protowire.BlockLocatorMessage
+	(*RequestHeadersMessage)(nil),                      // 15: protowire.RequestHeadersMessage
+	(*RequestNextHeadersMessage)(nil),                  // 16: protowire.RequestNextHeadersMessage
+	(*DoneHeadersMessage)(nil),                         // 17: protowire.DoneHeadersMessage
+	(*RequestRelayBlocksMessage)(nil),                  // 18: protowire.RequestRelayBlocksMessage
+	(*RequestTransactionsMessage)(nil),                 // 19: protowire.RequestTransactionsMessage
+	(*TransactionNotFoundMessage)(nil),                 // 20: protowire.TransactionNotFoundMessage
+	(*InvRelayBlockMessage)(nil),                       // 21: protowire.InvRelayBlockMessage
+	(*InvTransactionsMessage)(nil),                     // 22: protowire.InvTransactionsMessage
+	(*PingMessage)(nil),                                // 23: protowire.PingMessage
+	(*PongMessage)(nil),                                // 24: protowire.PongMessage
+	(*VerackMessage)(nil),                              // 25: protowire.VerackMessage
+	(*VersionMessage)(nil),                             // 26: protowire.VersionMessage
+	(*RejectMessage)(nil),                              // 27: protowire.RejectMessage
+	(*RequestPruningPointUTXOSetAndBlockMessage)(nil),  // 28: protowire.RequestPruningPointUTXOSetAndBlockMessage
+	(*PruningPointUtxoSetChunkMessage)(nil),            // 29: protowire.PruningPointUtxoSetChunkMessage
+	(*OutpointAndUtxoEntryPair)(nil),                   // 30: protowire.OutpointAndUtxoEntryPair
+	(*UtxoEntry)(nil),                                  // 31: protowire.UtxoEntry
+	(*RequestNextPruningPointUtxoSetChunkMessage)(nil), // 32: protowire.RequestNextPruningPointUtxoSetChunkMessage
+	(*DonePruningPointUtxoSetChunksMessage)(nil),       // 33: protowire.DonePruningPointUtxoSetChunksMessage
+	(*RequestIBDBlocksMessage)(nil),                    // 34: protowire.RequestIBDBlocksMessage
+	(*UnexpectedPruningPointMessage)(nil),              // 35: protowire.UnexpectedPruningPointMessage
+	(*RequestPruningPointHashMessage)(nil),             // 36: protowire.RequestPruningPointHashMessage
+	(*PruningPointHashMessage)(nil),                    // 37: protowire.PruningPointHashMessage
+	(*IbdBlockLocatorMessage)(nil),                     // 38: protowire.IbdBlockLocatorMessage
+	(*IbdBlockLocatorHighestHashMessage)(nil),          // 39: protowire.IbdBlockLocatorHighestHashMessage
+	(*BlockHeadersMessage)(nil),                        // 40: protowire.BlockHeadersMessage
 }
 var file_p2p_proto_depIdxs = []int32{
 	3,  // 0: protowire.RequestAddressesMessage.subnetworkId:type_name -> protowire.SubnetworkId
@@ -2400,18 +2556,22 @@ var file_p2p_proto_depIdxs = []int32{
 	7,  // 24: protowire.InvTransactionsMessage.ids:type_name -> protowire.TransactionId
 	2,  // 25: protowire.VersionMessage.address:type_name -> protowire.NetAddress
 	3,  // 26: protowire.VersionMessage.subnetworkId:type_name -> protowire.SubnetworkId
-	12, // 27: protowire.RequestIBDRootUTXOSetAndBlockMessage.ibdRoot:type_name -> protowire.Hash
-	12, // 28: protowire.RequestIBDBlocksMessage.hashes:type_name -> protowire.Hash
-	12, // 29: protowire.IBDRootHashMessage.hash:type_name -> protowire.Hash
-	12, // 30: protowire.IbdBlockLocatorMessage.targetHash:type_name -> protowire.Hash
-	12, // 31: protowire.IbdBlockLocatorMessage.blockLocatorHashes:type_name -> protowire.Hash
-	12, // 32: protowire.IbdBlockLocatorHighestHashMessage.highestHash:type_name -> protowire.Hash
-	11, // 33: protowire.BlockHeadersMessage.blockHeaders:type_name -> protowire.BlockHeaderMessage
-	34, // [34:34] is the sub-list for method output_type
-	34, // [34:34] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	12, // 27: protowire.RequestPruningPointUTXOSetAndBlockMessage.pruningPointHash:type_name -> protowire.Hash
+	30, // 28: protowire.PruningPointUtxoSetChunkMessage.outpointAndUtxoEntryPairs:type_name -> protowire.OutpointAndUtxoEntryPair
+	6,  // 29: protowire.OutpointAndUtxoEntryPair.outpoint:type_name -> protowire.Outpoint
+	31, // 30: protowire.OutpointAndUtxoEntryPair.utxoEntry:type_name -> protowire.UtxoEntry
+	8,  // 31: protowire.UtxoEntry.scriptPublicKey:type_name -> protowire.ScriptPublicKey
+	12, // 32: protowire.RequestIBDBlocksMessage.hashes:type_name -> protowire.Hash
+	12, // 33: protowire.PruningPointHashMessage.hash:type_name -> protowire.Hash
+	12, // 34: protowire.IbdBlockLocatorMessage.targetHash:type_name -> protowire.Hash
+	12, // 35: protowire.IbdBlockLocatorMessage.blockLocatorHashes:type_name -> protowire.Hash
+	12, // 36: protowire.IbdBlockLocatorHighestHashMessage.highestHash:type_name -> protowire.Hash
+	11, // 37: protowire.BlockHeadersMessage.blockHeaders:type_name -> protowire.BlockHeaderMessage
+	38, // [38:38] is the sub-list for method output_type
+	38, // [38:38] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_p2p_proto_init() }
@@ -2757,7 +2917,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestIBDRootUTXOSetAndBlockMessage); i {
+			switch v := v.(*RequestPruningPointUTXOSetAndBlockMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2769,7 +2929,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IbdRootUtxoSetChunkMessage); i {
+			switch v := v.(*PruningPointUtxoSetChunkMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2781,7 +2941,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestNextIbdRootUtxoSetChunkMessage); i {
+			switch v := v.(*OutpointAndUtxoEntryPair); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2793,7 +2953,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DoneIbdRootUtxoSetChunksMessage); i {
+			switch v := v.(*UtxoEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2805,7 +2965,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestIBDBlocksMessage); i {
+			switch v := v.(*RequestNextPruningPointUtxoSetChunkMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2817,7 +2977,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IBDRootNotFoundMessage); i {
+			switch v := v.(*DonePruningPointUtxoSetChunksMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2829,7 +2989,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestIBDRootHashMessage); i {
+			switch v := v.(*RequestIBDBlocksMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2841,7 +3001,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IBDRootHashMessage); i {
+			switch v := v.(*UnexpectedPruningPointMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2853,7 +3013,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IbdBlockLocatorMessage); i {
+			switch v := v.(*RequestPruningPointHashMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2865,7 +3025,7 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IbdBlockLocatorHighestHashMessage); i {
+			switch v := v.(*PruningPointHashMessage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2877,6 +3037,30 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IbdBlockLocatorMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IbdBlockLocatorHighestHashMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_p2p_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BlockHeadersMessage); i {
 			case 0:
 				return &v.state
@@ -2895,7 +3079,7 @@ func file_p2p_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_p2p_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   39,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
