@@ -30,7 +30,7 @@ func (uc utxoCollection) Iterator() model.ReadOnlyUTXOSetIterator {
 }
 
 func (uci *utxoCollectionIterator) First() bool {
-	uci.index = -1
+	uci.index = 0
 	return len(uci.pairs) > 0
 }
 

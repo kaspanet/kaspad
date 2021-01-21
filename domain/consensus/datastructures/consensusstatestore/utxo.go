@@ -37,7 +37,7 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	}
 
 	toRemoveIterator := css.virtualUTXODiffStaging.ToRemove().Iterator()
-	for toRemoveIterator.Next() {
+	for ok := toRemoveIterator.First(); ok; ok = toRemoveIterator.Next() {
 		toRemoveOutpoint, _, err := toRemoveIterator.Get()
 		if err != nil {
 			return err
@@ -56,7 +56,7 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	}
 
 	toAddIterator := css.virtualUTXODiffStaging.ToAdd().Iterator()
-	for toAddIterator.Next() {
+	for ok := toAddIterator.First(); ok; ok = toAddIterator.Next() {
 		toAddOutpoint, toAddEntry, err := toAddIterator.Get()
 		if err != nil {
 			return err

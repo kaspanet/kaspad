@@ -420,10 +420,8 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 func (pm *pruningManager) validateUTXOSetFitsCommitment(utxoSetIterator model.ReadOnlyUTXOSetIterator,
 	pruningPointHash *externalapi.DomainHash) error {
 
-	defer utxoSetIterator.First()
-
 	utxoSetMultiset := multiset.New()
-	for utxoSetIterator.Next() {
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
 		outpoint, entry, err := utxoSetIterator.Get()
 		if err != nil {
 			return err
