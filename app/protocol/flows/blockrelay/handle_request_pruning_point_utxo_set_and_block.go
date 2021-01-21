@@ -41,21 +41,27 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) start() error {
 			return err
 		}
 
-		finishMeasuring := logger.LogAndMeasureExecutionTime(log, "handleRequestPruningPointUTXOSetAndBlockFlow")
-		log.Debugf("Got request for PruningPointHash UTXOSet and Block")
-
-		err = flow.sendPruningPointBlock(msgRequestPruningPointUTXOSetAndBlock)
+		err = flow.handleRequestPruningPointUTXOSetAndBlockMessage(msgRequestPruningPointUTXOSetAndBlock)
 		if err != nil {
 			return err
 		}
-
-		err = flow.sendPruningPointUTXOSet(msgRequestPruningPointUTXOSetAndBlock)
-		if err != nil {
-			return err
-		}
-
-		finishMeasuring()
 	}
+}
+
+func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) handleRequestPruningPointUTXOSetAndBlockMessage(
+	msgRequestPruningPointUTXOSetAndBlock *appmessage.MsgRequestPruningPointUTXOSetAndBlock) error {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "handleRequestPruningPointUTXOSetAndBlockFlow")
+	defer onEnd()
+
+	log.Debugf("Got request for PruningPointHash UTXOSet and Block")
+
+	err := flow.sendPruningPointBlock(msgRequestPruningPointUTXOSetAndBlock)
+	if err != nil {
+		return err
+	}
+
+	return flow.sendPruningPointUTXOSet(msgRequestPruningPointUTXOSetAndBlock)
 }
 
 func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) waitForRequestPruningPointUTXOSetAndBlockMessages() (
