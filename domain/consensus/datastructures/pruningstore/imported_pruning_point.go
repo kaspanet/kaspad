@@ -38,7 +38,7 @@ func (ps *pruningStore) AppendImportedPruningPointUTXOs(dbTx model.DBTransaction
 		if err != nil {
 			return err
 		}
-		serializedUTXOEntry, err := ps.serializeUTXOEntry(outpointAndUTXOEntryPair.UTXOEntry)
+		serializedUTXOEntry, err := serializeUTXOEntry(outpointAndUTXOEntryPair.UTXOEntry)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry
 }
 
 func (ps *pruningStore) importedPruningPointUTXOKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
-	serializedOutpoint, err := ps.serializeOutpoint(outpoint)
+	serializedOutpoint, err := serializeOutpoint(outpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -108,11 +108,11 @@ func (ps *pruningStore) importedPruningPointUTXOKey(outpoint *externalapi.Domain
 	return importedPruningPointUTXOsBucket.Key(serializedOutpoint), nil
 }
 
-func (ps *pruningStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
+func serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	return proto.Marshal(serialization.DomainOutpointToDbOutpoint(outpoint))
 }
 
-func (ps *pruningStore) serializeUTXOEntry(entry externalapi.UTXOEntry) ([]byte, error) {
+func serializeUTXOEntry(entry externalapi.UTXOEntry) ([]byte, error) {
 	return proto.Marshal(serialization.UTXOEntryToDBUTXOEntry(entry))
 }
 

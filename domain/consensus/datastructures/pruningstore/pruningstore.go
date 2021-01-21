@@ -131,12 +131,12 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 			if err != nil {
 				return err
 			}
-			serializedOutpoint, err := ps.serializeOutpoint(outpoint)
+			serializedOutpoint, err := serializeOutpoint(outpoint)
 			if err != nil {
 				return err
 			}
 			key := pruningPointUTXOSetBucket.Key(serializedOutpoint)
-			serializedUTXOEntry, err := ps.serializeUTXOEntry(entry)
+			serializedUTXOEntry, err := serializeUTXOEntry(entry)
 			if err != nil {
 				return err
 			}
