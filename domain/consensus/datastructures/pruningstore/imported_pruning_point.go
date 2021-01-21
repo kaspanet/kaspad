@@ -67,15 +67,15 @@ func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) model.Re
 	return &utxoSetIterator{cursor: cursor}
 }
 
-func (u utxoSetIterator) First() bool {
+func (u *utxoSetIterator) First() bool {
 	return u.cursor.First()
 }
 
-func (u utxoSetIterator) Next() bool {
+func (u *utxoSetIterator) Next() bool {
 	return u.cursor.Next()
 }
 
-func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	key, err := u.cursor.Key()
 	if err != nil {
 		panic(err)
