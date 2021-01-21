@@ -192,15 +192,18 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 		return err
 	}
 	for insertCursor.Next() {
-		key, err := insertCursor.Key()
+		importedPruningPointUTXOSetKey, err := insertCursor.Key()
 		if err != nil {
 			return err
 		}
+		pruningPointUTXOSetKey := pruningPointUTXOSetBucket.Key(importedPruningPointUTXOSetKey.Suffix())
+
 		serializedUTXOEntry, err := insertCursor.Value()
 		if err != nil {
 			return err
 		}
-		err = dbContext.Put(key, serializedUTXOEntry)
+
+		err = dbContext.Put(pruningPointUTXOSetKey, serializedUTXOEntry)
 		if err != nil {
 			return err
 		}
