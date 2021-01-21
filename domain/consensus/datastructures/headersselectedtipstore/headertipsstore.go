@@ -2,13 +2,13 @@ package headersselectedtipstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var headerSelectedTipKey = dbkeys.MakeBucket().Key([]byte("headers-selected-tip"))
+var headerSelectedTipKey = database.MakeBucket(nil).Key([]byte("headers-selected-tip"))
 
 type headerSelectedTipStore struct {
 	staging *externalapi.DomainHash

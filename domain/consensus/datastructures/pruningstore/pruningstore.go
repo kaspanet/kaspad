@@ -2,15 +2,15 @@ package pruningstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var pruningBlockHashKey = dbkeys.MakeBucket().Key([]byte("pruning-block-hash"))
-var candidatePruningPointHashKey = dbkeys.MakeBucket().Key([]byte("candidate-pruning-point-hash"))
-var pruningSerializedUTXOSetKey = dbkeys.MakeBucket().Key([]byte("pruning-utxo-set"))
+var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
+var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
+var pruningSerializedUTXOSetKey = database.MakeBucket(nil).Key([]byte("pruning-utxo-set"))
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {

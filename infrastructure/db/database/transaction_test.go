@@ -33,7 +33,7 @@ func testTransactionPut(t *testing.T, db database.Database, testName string) {
 	}()
 
 	// Put value1 into the transaction
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value1 := []byte("value1")
 	err = dbTx.Put(key, value1)
 	if err != nil {
@@ -75,7 +75,7 @@ func TestTransactionGet(t *testing.T) {
 
 func testTransactionGet(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key1 := database.MakeBucket().Key([]byte("key1"))
+	key1 := database.MakeBucket(nil).Key([]byte("key1"))
 	value1 := []byte("value1")
 	err := db.Put(key1, value1)
 	if err != nil {
@@ -111,7 +111,7 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 
 	// Try getting a non-existent value and make sure
 	// the returned error is ErrNotFound
-	_, err = dbTx.Get(database.MakeBucket().Key([]byte("doesn't exist")))
+	_, err = dbTx.Get(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("%s: Get "+
 			"unexpectedly succeeded", testName)
@@ -122,7 +122,7 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Put a new value into the database outside of the transaction
-	key2 := database.MakeBucket().Key([]byte("key2"))
+	key2 := database.MakeBucket(nil).Key([]byte("key2"))
 	value2 := []byte("value2")
 	err = db.Put(key2, value2)
 	if err != nil {
@@ -141,7 +141,7 @@ func testTransactionGet(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Put a new value into the transaction
-	key3 := database.MakeBucket().Key([]byte("key3"))
+	key3 := database.MakeBucket(nil).Key([]byte("key3"))
 	value3 := []byte("value3")
 	err = dbTx.Put(key3, value3)
 	if err != nil {
@@ -167,7 +167,7 @@ func TestTransactionHas(t *testing.T) {
 
 func testTransactionHas(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key1 := database.MakeBucket().Key([]byte("key1"))
+	key1 := database.MakeBucket(nil).Key([]byte("key1"))
 	value1 := []byte("value1")
 	err := db.Put(key1, value1)
 	if err != nil {
@@ -201,7 +201,7 @@ func testTransactionHas(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Make sure that Has returns false for a non-existent value
-	exists, err = dbTx.Has(database.MakeBucket().Key([]byte("doesn't exist")))
+	exists, err = dbTx.Has(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err != nil {
 		t.Fatalf("%s: Has "+
 			"unexpectedly failed: %s", testName, err)
@@ -212,7 +212,7 @@ func testTransactionHas(t *testing.T, db database.Database, testName string) {
 	}
 
 	// Put a new value into the database outside of the transaction
-	key2 := database.MakeBucket().Key([]byte("key2"))
+	key2 := database.MakeBucket(nil).Key([]byte("key2"))
 	value2 := []byte("value2")
 	err = db.Put(key2, value2)
 	if err != nil {
@@ -238,7 +238,7 @@ func TestTransactionDelete(t *testing.T) {
 
 func testTransactionDelete(t *testing.T, db database.Database, testName string) {
 	// Put a value into the database
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err := db.Put(key, value)
 	if err != nil {
@@ -327,7 +327,7 @@ func testTransactionCommit(t *testing.T, db database.Database, testName string) 
 	}()
 
 	// Put a value into the transaction
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err = dbTx.Put(key, value)
 	if err != nil {
@@ -388,7 +388,7 @@ func testTransactionRollback(t *testing.T, db database.Database, testName string
 	}()
 
 	// Put a value into the transaction
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err = dbTx.Put(key, value)
 	if err != nil {
@@ -448,7 +448,7 @@ func testTransactionRollbackUnlessClosed(t *testing.T, db database.Database, tes
 	}()
 
 	// Put a value into the transaction
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	value := []byte("value")
 	err = dbTx.Put(key, value)
 	if err != nil {

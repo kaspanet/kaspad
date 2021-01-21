@@ -44,6 +44,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			panic(err)
 		}
 		if isBanned {
+			log.Infof("Peer %s is banned. Disconnecting...", netConnection)
 			netConnection.Disconnect()
 			return
 		}
@@ -87,6 +88,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 				panic(err)
 			}
 		}
+		log.Debugf("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
 		netConnection.Disconnect()
 		return
 	}

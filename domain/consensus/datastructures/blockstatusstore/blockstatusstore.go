@@ -2,14 +2,14 @@ package blockstatusstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
+var bucket = database.MakeBucket([]byte("block-statuses"))
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {

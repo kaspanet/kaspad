@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"path/filepath"
 	"testing"
 
@@ -22,6 +23,7 @@ type appHarness struct {
 	config                  *config.Config
 	database                database.Database
 	utxoIndex               bool
+	overrideDAGParams       *dagconfig.Params
 }
 
 type harnessParams struct {
@@ -30,6 +32,7 @@ type harnessParams struct {
 	miningAddress           string
 	miningAddressPrivateKey string
 	utxoIndex               bool
+	overrideDAGParams       *dagconfig.Params
 }
 
 // setupHarness creates a single appHarness with given parameters
@@ -40,6 +43,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		miningAddress:           params.miningAddress,
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
 		utxoIndex:               params.utxoIndex,
+		overrideDAGParams:       params.overrideDAGParams,
 	}
 
 	setConfig(t, harness)
