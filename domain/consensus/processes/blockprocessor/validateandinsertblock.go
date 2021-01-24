@@ -117,6 +117,11 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
+	err = bp.pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	if err != nil {
+		return nil, err
+	}
+
 	log.Debug(logger.NewLogClosure(func() string {
 		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock)
 		return fmt.Sprintf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)

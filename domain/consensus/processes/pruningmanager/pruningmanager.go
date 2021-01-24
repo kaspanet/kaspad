@@ -498,3 +498,42 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(
 
 	return dbTx.Commit()
 }
+
+func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
+	hadStartedSavingNewPruningPointUTXOSet, err := pm.pruningStore.HadStartedSavingNewPruningPointUTXOSet(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	if !hadStartedSavingNewPruningPointUTXOSet {
+		return nil
+	}
+
+	log.Debugf("Pruning point UTXO set update is required")
+	return pm.updatePruningPointUTXOSet()
+}
+
+func (pm *pruningManager) updatePruningPointUTXOSet() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
+	defer onEnd()
+
+	log.Debugf("Getting the pruning point")
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Restoring the pruning point UTXO set")
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Updating the pruning point UTXO set")
+	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Finishing updating the pruning point UTXO set")
+	return pm.pruningStore.FinishSavingNewPruningPointUTXOSet(pm.databaseContext)
+}
