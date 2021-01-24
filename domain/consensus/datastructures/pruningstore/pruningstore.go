@@ -106,7 +106,10 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 	}
 
 	if ps.startSavingNewPruningPointUTXOSetStaging {
-		return dbTx.Put(savingNewPruningPointUTXOSetKey, []byte{0})
+		err := dbTx.Put(savingNewPruningPointUTXOSetKey, []byte{0})
+		if err != nil {
+			return err
+		}
 	}
 
 	ps.Discard()
