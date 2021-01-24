@@ -11,6 +11,7 @@ import (
 var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
 var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
 var pruningPointUTXOSetBucket = database.MakeBucket([]byte("pruning-point-utxo-set"))
+var savingNewPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("saving-new-pruning-point-utxo-set"))
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
@@ -18,6 +19,8 @@ type pruningStore struct {
 	pruningPointCache            *externalapi.DomainHash
 	pruningPointCandidateStaging *externalapi.DomainHash
 	pruningPointCandidateCache   *externalapi.DomainHash
+
+	startSavingNewPruningPointUTXOSetStaging bool
 }
 
 // New instantiates a new PruningStore
@@ -69,11 +72,12 @@ func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.Dom
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil
+	return ps.pruningPointStaging != nil || ps.startSavingNewPruningPointUTXOSetStaging
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
+	ps.startSavingNewPruningPointUTXOSetStaging = false
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -99,6 +103,10 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
+	}
+
+	if ps.startSavingNewPruningPointUTXOSetStaging {
+		return dbTx.Put(savingNewPruningPointUTXOSetKey, []byte{0})
 	}
 
 	ps.Discard()
@@ -237,4 +245,16 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 		})
 	}
 	return outpointAndUTXOEntryPairs, nil
+}
+
+func (ps *pruningStore) StageStartSavingNewPruningPointUTXOSet() {
+	ps.startSavingNewPruningPointUTXOSetStaging = true
+}
+
+func (ps *pruningStore) HadStartedSavingNewPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
+	return dbContext.Has(savingNewPruningPointUTXOSetKey)
+}
+
+func (ps *pruningStore) FinishSavingNewPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Delete(savingNewPruningPointUTXOSetKey)
 }
