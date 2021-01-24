@@ -21,9 +21,9 @@ func (f fakeReceiveAddressesContext) AddressManager() *addressmanager.AddressMan
 	return nil
 }
 
-func checkFlowError(t *testing.T, err error, isProtocolError bool, shouldBan bool) {
+func checkFlowError(t *testing.T, err error, isProtocolError bool, shouldBan bool, contains string) {
 	pErr := &protocolerrors.ProtocolError{}
-	if !errors.As(err, &pErr) {
+	if errors.As(err, &pErr) != isProtocolError {
 		t.Fatalf("Unexepcted error %+v", err)
 	}
 
@@ -31,7 +31,7 @@ func checkFlowError(t *testing.T, err error, isProtocolError bool, shouldBan boo
 		t.Fatalf("Exepcted shouldBan %t but got %t", shouldBan, pErr.ShouldBan)
 	}
 
-	if !strings.Contains(err.Error(), "address count exceeded") {
+	if !strings.Contains(err.Error(), contains) {
 		t.Fatalf("Unexpected error: %+v", err)
 	}
 }
@@ -51,6 +51,7 @@ func TestReceiveAddressesErrors(t *testing.T) {
 			t.Fatalf("DequeueWithTimeout: %+v", err)
 		}
 
+		// Sending addressmanager.GetAddressesMax+1 addresses should trigger a ban
 		err = incomingRoute.Enqueue(appmessage.NewMsgAddresses(make([]*appmessage.NetAddress,
 			addressmanager.GetAddressesMax+1)))
 		if err != nil {
@@ -59,9 +60,9 @@ func TestReceiveAddressesErrors(t *testing.T) {
 
 		select {
 		case err := <-errChan:
-			checkFlowError(t, err, true, true)
+			checkFlowError(t, err, true, true, "address count exceeded")
 		case <-time.After(time.Second):
-			t.Fatalf("timed out")
+			t.Fatalf("timed out after %s", time.Second)
 		}
 	})
 }
