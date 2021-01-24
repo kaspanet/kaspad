@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 )
@@ -19,8 +20,10 @@ func LogAndMeasureExecutionTime(log *Logger, functionName string) (onEnd func())
 
 // LogMemoryStats logs memory stats for `functionName`
 func LogMemoryStats(log *Logger, functionName string) {
-	stats := runtime.MemStats{}
-	runtime.ReadMemStats(&stats)
-	log.Debugf("%s: used memory: %d bytes, total: %d bytes", functionName,
-		stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	log.Debug(NewLogClosure(func() string {
+		stats := runtime.MemStats{}
+		runtime.ReadMemStats(&stats)
+		return fmt.Sprintf("%s: used memory: %d bytes, total: %d bytes", functionName,
+			stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	}))
 }
