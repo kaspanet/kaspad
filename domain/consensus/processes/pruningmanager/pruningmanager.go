@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
-	"runtime"
 )
 
 // pruningManager resolves and manages the current pruning point
@@ -523,8 +522,8 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
 	defer onEnd()
 
-	runtime.GC()
-	defer runtime.GC()
+	logger.LogMemoryStats(log, "updatePruningPointUTXOSet start")
+	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
 
 	log.Debugf("Getting the pruning point")
 	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
