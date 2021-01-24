@@ -311,20 +311,15 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
-	if err != nil {
-		return err
-	}
-
 	// TODO: This is an assert that takes ~30 seconds to run
 	// It must be removed or optimized before launching testnet
-	err = pm.validateUTXOSetFitsCommitment(utxoSetIterator, pruningPointHash)
+	err := pm.validateUTXOSetFitsCommitment(pruningPointHash)
 	if err != nil {
 		return err
 	}
 
 	pm.pruningStore.StagePruningPoint(pruningPointHash)
-	pm.pruningStore.StagePruningPointUTXOSet(utxoSetIterator)
+	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet()
 
 	return nil
 }
@@ -417,8 +412,11 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 
 // validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
 // This is a sanity test, to make sure that kaspad doesn't store, and subsequently sends syncing peers the wrong UTXOSet.
-func (pm *pruningManager) validateUTXOSetFitsCommitment(utxoSetIterator model.ReadOnlyUTXOSetIterator,
-	pruningPointHash *externalapi.DomainHash) error {
+func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *externalapi.DomainHash) error {
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
+	if err != nil {
+		return err
+	}
 
 	utxoSetMultiset := multiset.New()
 	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
@@ -499,4 +497,52 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(
 	}
 
 	return dbTx.Commit()
+}
+
+func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
+	hadStartedUpdatingPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	if !hadStartedUpdatingPruningPointUTXOSet {
+		return nil
+	}
+
+	log.Debugf("Pruning point UTXO set update is required")
+	err = pm.updatePruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
+	log.Debugf("Pruning point UTXO set updated")
+
+	return nil
+}
+
+func (pm *pruningManager) updatePruningPointUTXOSet() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
+	defer onEnd()
+
+	logger.LogMemoryStats(log, "updatePruningPointUTXOSet start")
+	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
+
+	log.Debugf("Getting the pruning point")
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Restoring the pruning point UTXO set")
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Updating the pruning point UTXO set")
+	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Finishing updating the pruning point UTXO set")
+	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }
