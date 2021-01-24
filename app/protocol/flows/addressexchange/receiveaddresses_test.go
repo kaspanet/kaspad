@@ -48,13 +48,13 @@ func TestReceiveAddressesErrors(t *testing.T) {
 
 		_, err := outgoingRoute.DequeueWithTimeout(time.Second)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("DequeueWithTimeout: %+v", err)
 		}
 
 		err = incomingRoute.Enqueue(appmessage.NewMsgAddresses(make([]*appmessage.NetAddress,
 			addressmanager.GetAddressesMax+1)))
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Enqueue: %+v", err)
 		}
 
 		select {
