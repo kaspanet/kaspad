@@ -311,20 +311,14 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
-	if err != nil {
-		return err
-	}
-
 	// TODO: This is an assert that takes ~30 seconds to run
 	// It must be removed or optimized before launching testnet
-	err = pm.validateUTXOSetFitsCommitment(utxoSetIterator, pruningPointHash)
+	err := pm.validateUTXOSetFitsCommitment(pruningPointHash)
 	if err != nil {
 		return err
 	}
 
 	pm.pruningStore.StagePruningPoint(pruningPointHash)
-	pm.pruningStore.StagePruningPointUTXOSet(utxoSetIterator)
 
 	return nil
 }
@@ -417,8 +411,11 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 
 // validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
 // This is a sanity test, to make sure that kaspad doesn't store, and subsequently sends syncing peers the wrong UTXOSet.
-func (pm *pruningManager) validateUTXOSetFitsCommitment(utxoSetIterator model.ReadOnlyUTXOSetIterator,
-	pruningPointHash *externalapi.DomainHash) error {
+func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *externalapi.DomainHash) error {
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
+	if err != nil {
+		return err
+	}
 
 	utxoSetMultiset := multiset.New()
 	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {

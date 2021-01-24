@@ -18,8 +18,6 @@ type pruningStore struct {
 	pruningPointCache            *externalapi.DomainHash
 	pruningPointCandidateStaging *externalapi.DomainHash
 	pruningPointCandidateCache   *externalapi.DomainHash
-
-	pruningPointUTXOSetStaging model.ReadOnlyUTXOSetIterator
 }
 
 // New instantiates a new PruningStore
@@ -70,17 +68,12 @@ func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.Dom
 	ps.pruningPointStaging = pruningPointBlockHash
 }
 
-func (ps *pruningStore) StagePruningPointUTXOSet(pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) {
-	ps.pruningPointUTXOSetStaging = pruningPointUTXOSetIterator
-}
-
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.pruningPointUTXOSetStaging != nil
+	return ps.pruningPointStaging != nil
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
-	ps.pruningPointUTXOSetStaging = nil
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -108,46 +101,50 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
 	}
 
-	if ps.pruningPointUTXOSetStaging != nil {
-		// Delete all the old UTXOs from the database
-		deleteCursor, err := dbTx.Cursor(pruningPointUTXOSetBucket)
+	ps.Discard()
+	return nil
+}
+
+func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
+	utxoSetIterator model.ReadOnlyUTXOSetIterator) error {
+
+	// Delete all the old UTXOs from the database
+	deleteCursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
+	if err != nil {
+		return err
+	}
+	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
+		key, err := deleteCursor.Key()
 		if err != nil {
 			return err
 		}
-		for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
-			key, err := deleteCursor.Key()
-			if err != nil {
-				return err
-			}
-			err = dbTx.Delete(key)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Insert all the new UTXOs into the database
-		for ok := ps.pruningPointUTXOSetStaging.First(); ok; ok = ps.pruningPointUTXOSetStaging.Next() {
-			outpoint, entry, err := ps.pruningPointUTXOSetStaging.Get()
-			if err != nil {
-				return err
-			}
-			serializedOutpoint, err := serializeOutpoint(outpoint)
-			if err != nil {
-				return err
-			}
-			key := pruningPointUTXOSetBucket.Key(serializedOutpoint)
-			serializedUTXOEntry, err := serializeUTXOEntry(entry)
-			if err != nil {
-				return err
-			}
-			err = dbTx.Put(key, serializedUTXOEntry)
-			if err != nil {
-				return err
-			}
+		err = dbContext.Delete(key)
+		if err != nil {
+			return err
 		}
 	}
 
-	ps.Discard()
+	// Insert all the new UTXOs into the database
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
+		outpoint, entry, err := utxoSetIterator.Get()
+		if err != nil {
+			return err
+		}
+		serializedOutpoint, err := serializeOutpoint(outpoint)
+		if err != nil {
+			return err
+		}
+		key := pruningPointUTXOSetBucket.Key(serializedOutpoint)
+		serializedUTXOEntry, err := serializeUTXOEntry(entry)
+		if err != nil {
+			return err
+		}
+		err = dbContext.Put(key, serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
