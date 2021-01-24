@@ -509,7 +509,13 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	}
 
 	log.Debugf("Pruning point UTXO set update is required")
-	return pm.updatePruningPointUTXOSet()
+	err = pm.updatePruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
+	log.Debugf("Pruning point UTXO set updated")
+
+	return nil
 }
 
 func (pm *pruningManager) updatePruningPointUTXOSet() error {
