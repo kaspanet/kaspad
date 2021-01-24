@@ -365,6 +365,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
+	err = pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	if err != nil {
+		return nil, err
+	}
 
 	return c, nil
 }
