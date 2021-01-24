@@ -319,7 +319,7 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	}
 
 	pm.pruningStore.StagePruningPoint(pruningPointHash)
-	pm.pruningStore.StageStartSavingNewPruningPointUTXOSet()
+	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet()
 
 	return nil
 }
@@ -500,7 +500,7 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(
 }
 
 func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
-	hadStartedSavingNewPruningPointUTXOSet, err := pm.pruningStore.HadStartedSavingNewPruningPointUTXOSet(pm.databaseContext)
+	hadStartedSavingNewPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -535,5 +535,5 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	}
 
 	log.Debugf("Finishing updating the pruning point UTXO set")
-	return pm.pruningStore.FinishSavingNewPruningPointUTXOSet(pm.databaseContext)
+	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }

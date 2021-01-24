@@ -13,9 +13,9 @@ type PruningStore interface {
 	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader) (bool, error)
 
-	StageStartSavingNewPruningPointUTXOSet()
-	HadStartedSavingNewPruningPointUTXOSet(dbContext DBWriter) (bool, error)
-	FinishSavingNewPruningPointUTXOSet(dbContext DBWriter) error
+	StageStartUpdatingPruningPointUTXOSet()
+	HadStartedUpdatingPruningPointUTXOSet(dbContext DBWriter) (bool, error)
+	FinishUpdatingPruningPointUTXOSet(dbContext DBWriter) error
 	UpdatePruningPointUTXOSet(dbContext DBWriter, utxoSetIterator ReadOnlyUTXOSetIterator) error
 
 	ClearImportedPruningPointUTXOs(dbContext DBWriter) error

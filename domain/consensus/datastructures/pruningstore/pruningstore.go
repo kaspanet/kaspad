@@ -11,7 +11,7 @@ import (
 var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
 var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
 var pruningPointUTXOSetBucket = database.MakeBucket([]byte("pruning-point-utxo-set"))
-var savingNewPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("saving-new-pruning-point-utxo-set"))
+var updatingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("updating-pruning-point-utxo-set"))
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
@@ -20,7 +20,7 @@ type pruningStore struct {
 	pruningPointCandidateStaging *externalapi.DomainHash
 	pruningPointCandidateCache   *externalapi.DomainHash
 
-	startSavingNewPruningPointUTXOSetStaging bool
+	startUpdatingPruningPointUTXOSetStaging bool
 }
 
 // New instantiates a new PruningStore
@@ -72,12 +72,12 @@ func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.Dom
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.startSavingNewPruningPointUTXOSetStaging
+	return ps.pruningPointStaging != nil || ps.startUpdatingPruningPointUTXOSetStaging
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
-	ps.startSavingNewPruningPointUTXOSetStaging = false
+	ps.startUpdatingPruningPointUTXOSetStaging = false
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -105,8 +105,8 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
 	}
 
-	if ps.startSavingNewPruningPointUTXOSetStaging {
-		err := dbTx.Put(savingNewPruningPointUTXOSetKey, []byte{0})
+	if ps.startUpdatingPruningPointUTXOSetStaging {
+		err := dbTx.Put(updatingPruningPointUTXOSetKey, []byte{0})
 		if err != nil {
 			return err
 		}
@@ -250,14 +250,14 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	return outpointAndUTXOEntryPairs, nil
 }
 
-func (ps *pruningStore) StageStartSavingNewPruningPointUTXOSet() {
-	ps.startSavingNewPruningPointUTXOSetStaging = true
+func (ps *pruningStore) StageStartUpdatingPruningPointUTXOSet() {
+	ps.startUpdatingPruningPointUTXOSetStaging = true
 }
 
-func (ps *pruningStore) HadStartedSavingNewPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
-	return dbContext.Has(savingNewPruningPointUTXOSetKey)
+func (ps *pruningStore) HadStartedUpdatingPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
+	return dbContext.Has(updatingPruningPointUTXOSetKey)
 }
 
-func (ps *pruningStore) FinishSavingNewPruningPointUTXOSet(dbContext model.DBWriter) error {
-	return dbContext.Delete(savingNewPruningPointUTXOSetKey)
+func (ps *pruningStore) FinishUpdatingPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Delete(updatingPruningPointUTXOSetKey)
 }
