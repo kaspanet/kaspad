@@ -501,11 +501,11 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(
 }
 
 func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
-	hadStartedSavingNewPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
+	hadStartedUpdatingPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
 	if err != nil {
 		return err
 	}
-	if !hadStartedSavingNewPruningPointUTXOSet {
+	if !hadStartedUpdatingPruningPointUTXOSet {
 		return nil
 	}
 
