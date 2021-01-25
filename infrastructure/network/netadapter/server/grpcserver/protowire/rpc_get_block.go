@@ -1,15 +1,15 @@
 package protowire
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetBlockRequestMessage{
 		Hash:                          x.GetBlockRequest.Hash,
-		SubnetworkID:                  x.GetBlockRequest.SubnetworkId,
 		IncludeTransactionVerboseData: x.GetBlockRequest.IncludeTransactionVerboseData,
 	}, nil
 }
@@ -17,7 +17,6 @@ func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, erro
 func (x *KaspadMessage_GetBlockRequest) fromAppMessage(message *appmessage.GetBlockRequestMessage) error {
 	x.GetBlockRequest = &GetBlockRequestMessage{
 		Hash:                          message.Hash,
-		SubnetworkId:                  message.SubnetworkID,
 		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil

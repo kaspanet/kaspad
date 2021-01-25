@@ -11,12 +11,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func parseCommand(args []string, requestDescriptions map[string]*requestDescription) (*protowire.KaspadMessage, error) {
-	commandName, parameters := args[0], args[1]
+func parseCommand(args []string, requestDescs []*requestDescription) (*protowire.KaspadMessage, error) {
+	commandName, parameters := args[0], args[1:]
 
-	requestDesc, ok := requestDescriptions[commandName]
-	if !ok {
-		return nil, errors.Errorf("unknown command: %s", commandName)
+	var requestDesc *requestDescription
+	for _, rd := range requestDescs {
+		if rd.name == commandName {
+			requestDesc = rd
+			break
+		}
+	}
+	if requestDesc == nil {
+		return nil, errors.Errorf("unknown command: %s. Use --list-commands to list all commands", commandName)
 	}
 	if len(parameters) != len(requestDesc.parameters) {
 		return nil, errors.Errorf("command '%s' expects %d parameters but got %d",
@@ -25,9 +31,9 @@ func parseCommand(args []string, requestDescriptions map[string]*requestDescript
 
 	payloadValue := reflect.New(requestDesc.typeof)
 	for i, parameterDesc := range requestDesc.parameters {
-		field := payloadValue.FieldByName(parameterDesc.name)
-		arg := args[i]
-		err := setField(field, parameterDesc, arg)
+		field := payloadValue.Elem().FieldByName(parameterDesc.name)
+		parameter := parameters[i]
+		err := setField(field, parameterDesc, parameter)
 		if err != nil {
 			return nil, err
 		}

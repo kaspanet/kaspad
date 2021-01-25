@@ -10,17 +10,29 @@ import (
 )
 
 var requestTypes = []reflect.Type{
-	reflect.TypeOf(appmessage.GetCurrentNetworkRequestMessage{}),
-	reflect.TypeOf(appmessage.SubmitBlockRequestMessage{}),
-	reflect.TypeOf(appmessage.GetBlockTemplateRequestMessage{}),
+	reflect.TypeOf(appmessage.AddPeerRequestMessage{}),
+	reflect.TypeOf(appmessage.GetConnectedPeerInfoRequestMessage{}),
 	reflect.TypeOf(appmessage.GetPeerAddressesRequestMessage{}),
-	reflect.TypeOf(appmessage.GetPeerAddressesKnownAddressMessage{}),
+	reflect.TypeOf(appmessage.GetCurrentNetworkRequestMessage{}),
+
+	reflect.TypeOf(appmessage.GetBlockRequestMessage{}),
+	reflect.TypeOf(appmessage.GetBlocksRequestMessage{}),
+	reflect.TypeOf(appmessage.GetHeadersRequestMessage{}),
+	reflect.TypeOf(appmessage.GetBlockCountRequestMessage{}),
+	reflect.TypeOf(appmessage.GetBlockDAGInfoRequestMessage{}),
 	reflect.TypeOf(appmessage.GetSelectedTipHashRequestMessage{}),
+	reflect.TypeOf(appmessage.GetVirtualSelectedParentBlueScoreRequestMessage{}),
+	reflect.TypeOf(appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage{}),
+	reflect.TypeOf(appmessage.ResolveFinalityConflictRequestMessage{}),
+
+	reflect.TypeOf(appmessage.GetBlockTemplateRequestMessage{}),
+	reflect.TypeOf(appmessage.SubmitBlockRequestMessage{}),
+
 	reflect.TypeOf(appmessage.GetMempoolEntryRequestMessage{}),
 	reflect.TypeOf(appmessage.GetMempoolEntriesRequestMessage{}),
-	reflect.TypeOf(appmessage.GetConnectedPeerInfoRequestMessage{}),
-	reflect.TypeOf(appmessage.AddPeerRequestMessage{}),
 	reflect.TypeOf(appmessage.SubmitTransactionRequestMessage{}),
+
+	reflect.TypeOf(appmessage.GetUTXOsByAddressesRequestMessage{}),
 }
 
 type requestDescription struct {
@@ -34,27 +46,26 @@ type parameterDescription struct {
 	typeof reflect.Type
 }
 
-func requestDescriptions() map[string]*requestDescription {
-	requestDescriptions := make(map[string]*requestDescription, len(requestTypes))
+func requestDescriptions() []*requestDescription {
+	requestDescriptions := make([]*requestDescription, len(requestTypes))
 
-	for _, requestType := range requestTypes {
+	for i, requestType := range requestTypes {
 		name := strings.TrimSuffix(requestType.Name(), "RequestMessage")
 		numFields := requestType.NumField()
 
-		parameters := make([]*parameterDescription, numFields)
+		var parameters []*parameterDescription
 		for i := 0; i < numFields; i++ {
 			field := requestType.Field(i)
 
-			if unicode.IsUpper(rune(field.Name[0])) { // Only exported fields are of interest
+			if !unicode.IsUpper(rune(field.Name[0])) { // Only exported fields are of interest
 				continue
 			}
 			parameters = append(parameters, &parameterDescription{
 				name:   field.Name,
 				typeof: field.Type,
 			})
-			fmt.Printf("\t%s: %s\n", field.Name, field.Type.Name())
 		}
-		requestDescriptions[name] = &requestDescription{
+		requestDescriptions[i] = &requestDescription{
 			name:       name,
 			parameters: parameters,
 			typeof:     requestType,
