@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"reflect"
 	"strconv"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
@@ -29,9 +29,9 @@ func parseCommand(args []string, requestDescs []*requestDescription) (*protowire
 			commandName, len(requestDesc.parameters), len(parameters))
 	}
 
-	payloadValue := reflect.New(requestDesc.typeof)
+	request := reflect.New(unwrapRequestType(requestDesc.typeof))
 	for i, parameterDesc := range requestDesc.parameters {
-		field := payloadValue.Elem().FieldByName(parameterDesc.name)
+		field := request.Elem().FieldByName(parameterDesc.name)
 		parameter := parameters[i]
 		err := setField(field, parameterDesc, parameter)
 		if err != nil {
@@ -39,8 +39,12 @@ func parseCommand(args []string, requestDescs []*requestDescription) (*protowire
 		}
 	}
 
-	message := payloadValue.Interface().(appmessage.Message)
-	return protowire.FromAppMessage(message)
+	requestWrapper := reflect.New(requestDesc.typeof)
+	requestWrapper.Elem().Field(0).Set(request)
+
+	kaspadMessage := reflect.New(reflect.TypeOf(protowire.KaspadMessage{}))
+	kaspadMessage.Elem().FieldByName("Payload").Set(requestWrapper)
+	return kaspadMessage.Interface().(*protowire.KaspadMessage), nil
 }
 
 func setField(field reflect.Value, parameterDesc *parameterDescription, valueStr string) error {
@@ -60,86 +64,88 @@ func stringToValue(field reflect.Value, parameterDesc *parameterDescription, val
 	case reflect.Bool:
 		value, err = strconv.ParseBool(valueStr)
 		if err != nil {
-			return reflect.Value{}, nil
+			return reflect.Value{}, errors.WithStack(err)
 		}
 	case reflect.Int8:
 		var valueInt64 int64
 		valueInt64, err = strconv.ParseInt(valueStr, 10, 8)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = int8(valueInt64)
 	case reflect.Int16:
 		var valueInt64 int64
 		valueInt64, err = strconv.ParseInt(valueStr, 10, 16)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = int16(valueInt64)
 	case reflect.Int32:
 		var valueInt64 int64
 		valueInt64, err = strconv.ParseInt(valueStr, 10, 32)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = int32(valueInt64)
 	case reflect.Int64:
 		value, err = strconv.ParseInt(valueStr, 10, 64)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 	case reflect.Uint8:
 		var valueUInt64 uint64
 		valueUInt64, err = strconv.ParseUint(valueStr, 10, 8)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = uint8(valueUInt64)
 	case reflect.Uint16:
 		var valueUInt64 uint64
 		valueUInt64, err = strconv.ParseUint(valueStr, 10, 16)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = uint16(valueUInt64)
 	case reflect.Uint32:
 		var valueUInt64 uint64
 		valueUInt64, err = strconv.ParseUint(valueStr, 10, 32)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = uint32(valueUInt64)
 	case reflect.Uint64:
 		value, err = strconv.ParseUint(valueStr, 10, 64)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 	case reflect.Float32:
 		var valueFloat64 float64
 		valueFloat64, err = strconv.ParseFloat(valueStr, 32)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 		value = float32(valueFloat64)
 	case reflect.Float64:
 		value, err = strconv.ParseFloat(valueStr, 64)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
 	case reflect.String:
 		value = valueStr
 	case reflect.Struct:
-		fieldInterface := field.Interface()
-		err := json.Unmarshal([]byte(valueStr), fieldInterface)
+		pointer := reflect.New(field.Type()) // create pointer to this type
+		fieldInterface := pointer.Interface().(proto.Message)
+		err := protojson.Unmarshal([]byte(valueStr), fieldInterface)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
-		value = fieldInterface
+		value = fieldInterface.ProtoReflect().Interface()
 	case reflect.Ptr:
-		valuePointedTo, err := stringToValue(reflect.Indirect(field), parameterDesc, valueStr)
+		valuePointedTo, err := stringToValue(reflect.New(field.Type().Elem()).Elem(), parameterDesc, valueStr)
 		if err != nil {
-			return reflect.Value{}, err
+			return reflect.Value{}, errors.WithStack(err)
 		}
+
 		valueDirect := valuePointedTo.Interface()
 		value = &valueDirect
 

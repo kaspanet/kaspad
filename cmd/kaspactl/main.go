@@ -39,7 +39,7 @@ func main() {
 		go postCommand(cfg, client, responseChan)
 	}
 
-	timeout := time.Duration(cfg.Timeout) * time.Second
+	timeout := time.Duration(cfg.Timeout) * time.Second * 10000 // TODO: remove the * 10000
 	select {
 	case responseString := <-responseChan:
 		fmt.Println(responseString)
@@ -58,12 +58,12 @@ func printAllCommands() {
 func postCommand(cfg *configFlags, client *grpcclient.GRPCClient, responseChan chan string) {
 	message, err := parseCommand(cfg.CommandAndParameters, requestDescriptions())
 	if err != nil {
-		printErrorAndExit(err.Error())
+		printErrorAndExit(fmt.Sprintf("error parsing command: %+v", err))
 	}
 
 	response, err := client.Post(message)
 	if err != nil {
-		printErrorAndExit(err.Error())
+		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
 	responseBytes, err := protojson.Marshal(response)
 	if err != nil {
