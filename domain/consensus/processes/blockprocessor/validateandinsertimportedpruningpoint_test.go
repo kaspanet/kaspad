@@ -669,7 +669,6 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Get pruning point UTXOs in a loop
-		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
 		step := 100
 		var fromOutpoint *externalapi.DomainOutpoint
 		for {
@@ -677,7 +676,6 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Error getting pruning point UTXOs: %+v", err)
 			}
-			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
 			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 
 			if len(outpointAndUTXOEntryPairs) < step {
