@@ -337,6 +337,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 
 	rc := newReindexContext(rt)
 
+	// Iterate from reindexRootAncestor towards newReindexRoot
 	for {
 		chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
 		if err != nil {
@@ -345,7 +346,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 
 		isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
 
-		// concentrateInterval from ancestor to it's chosen child
+		// Concentrate interval from current ancestor to it's chosen child
 		err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
 		if err != nil {
 			return err
@@ -358,11 +359,14 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 		reindexRootAncestor = chosenChild
 	}
 
-	// Update reindex root store
+	// Update reindex root data store
 	rt.stageReindexRoot(newReindexRoot)
 	return nil
 }
 
+// findNextReindexRoot finds the new reindex root based on the current one and the new selected tip.
+// The function also returns an ancestor of current and new reindex roots (possibly current root itself).
+// This ancestor should be used as a starting point for concentrating the interval towards the new root.
 func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedTip *externalapi.DomainHash) (
 	reindexRootAncestor, newReindexRoot *externalapi.DomainHash, err error) {
 
@@ -379,6 +383,7 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		return nil, nil, err
 	}
 
+	// Test if current root is ancestor of selected tip - if not, this is a reorg case
 	if !isCurrentAncestorOfTip {
 		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, currentReindexRoot)
 		if err != nil {
@@ -388,9 +393,11 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		// We have reindex root out of selected tip chain, however we switch chains only after a sufficient
 		// threshold of reindexSlack score in order to address possible alternating reorg attacks
 		if selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
+			// Return current - this indicates no change
 			return currentReindexRoot, currentReindexRoot, nil
 		}
 
+		// The common ancestor is where we start concentrating the interval from
 		commonAncestor, err := rt.findCommonAncestor(selectedTip, currentReindexRoot)
 		if err != nil {
 			return nil, nil, err
@@ -400,6 +407,8 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		newReindexRoot = commonAncestor
 	}
 
+	// Iterate from ancestor towards selected tip until passing the reindexWindow threshold,
+	// for finding the new reindex root
 	for {
 		chosenChild, err := rt.FindNextAncestor(selectedTip, newReindexRoot)
 		if err != nil {

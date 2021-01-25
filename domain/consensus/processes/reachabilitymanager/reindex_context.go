@@ -728,6 +728,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		return err
 	}
 
+	// Propagate interval only if chosenChild is the final reindex root
 	if isFinalReindexRoot && !intervalContains(newChosenInterval, currentChosenInterval) {
 		// New interval doesn't contain the previous one, propagation is required
 
