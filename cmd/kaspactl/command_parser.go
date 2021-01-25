@@ -139,15 +139,18 @@ func stringToValue(field reflect.Value, parameterDesc *parameterDescription, val
 		if err != nil {
 			return reflect.Value{}, errors.WithStack(err)
 		}
-		value = fieldInterface.ProtoReflect().Interface()
+		// Unpointer the value once it's ready
+		fieldInterfaceValue := reflect.ValueOf(fieldInterface)
+		value = fieldInterfaceValue.Elem().Interface()
 	case reflect.Ptr:
 		valuePointedTo, err := stringToValue(reflect.New(field.Type().Elem()).Elem(), parameterDesc, valueStr)
 		if err != nil {
 			return reflect.Value{}, errors.WithStack(err)
 		}
+		pointer := reflect.New(valuePointedTo.Type())
+		pointer.Elem().Set(valuePointedTo)
 
-		valueDirect := valuePointedTo.Interface()
-		value = &valueDirect
+		value = pointer.Interface()
 
 	case reflect.Slice:
 	case reflect.Func:
