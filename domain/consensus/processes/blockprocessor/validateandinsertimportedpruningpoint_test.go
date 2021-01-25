@@ -534,7 +534,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + acceptingBlock.coinbase
 		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+1 {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
-				"Want: %d, got: %d", len(allOutpointAndUTXOEntryPairs), len(outputs)+1)
+				"Want: %d, got: %d", len(outputs)+1, len(allOutpointAndUTXOEntryPairs))
 		}
 	})
 }

@@ -10,10 +10,10 @@ import (
 // if setDifficultyToMinumum = true - will modify the net params to have minimal difficulty, like in SimNet
 func ForAllNets(t *testing.T, skipPow bool, testFunc func(*testing.T, *dagconfig.Params)) {
 	allParams := []dagconfig.Params{
-		dagconfig.MainnetParams,
+		//dagconfig.MainnetParams,
 		dagconfig.TestnetParams,
-		dagconfig.SimnetParams,
-		dagconfig.DevnetParams,
+		//dagconfig.SimnetParams,
+		//dagconfig.DevnetParams,
 	}
 
 	for _, params := range allParams {
