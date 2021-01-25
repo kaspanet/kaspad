@@ -29,6 +29,11 @@ func (uc utxoCollection) Iterator() model.ReadOnlyUTXOSetIterator {
 	return &utxoCollectionIterator{index: -1, pairs: pairs}
 }
 
+func (uci *utxoCollectionIterator) First() bool {
+	uci.index = 0
+	return len(uci.pairs) > 0
+}
+
 func (uci *utxoCollectionIterator) Next() bool {
 	uci.index++
 	return uci.index < len(uci.pairs)

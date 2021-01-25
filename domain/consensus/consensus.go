@@ -199,7 +199,9 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
-func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi.DomainHash) ([]byte, error) {
+func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -214,11 +216,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 			pruningPointHash)
 	}
 
-	serializedUTXOSet, err := s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+	pruningPointUTXOs, err := s.pruningStore.PruningPointUTXOs(s.databaseContext, fromOutpoint, limit)
 	if err != nil {
 		return nil, err
 	}
-	return serializedUTXOSet, nil
+	return pruningPointUTXOs, nil
 }
 
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
@@ -228,11 +230,25 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
+	return s.pruningManager.ClearImportedPruningPointData()
+}
+
+func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
+}
+
+func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.blockProcessor.ValidateAndInsertImportedPruningPoint(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {

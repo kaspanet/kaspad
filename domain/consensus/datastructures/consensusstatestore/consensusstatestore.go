@@ -11,7 +11,6 @@ type consensusStateStore struct {
 	tipsStaging               []*externalapi.DomainHash
 	virtualDiffParentsStaging []*externalapi.DomainHash
 	virtualUTXODiffStaging    model.UTXODiff
-	virtualUTXOSetStaging     model.UTXOCollection
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
 
@@ -30,7 +29,6 @@ func (css *consensusStateStore) Discard() {
 	css.tipsStaging = nil
 	css.virtualUTXODiffStaging = nil
 	css.virtualDiffParentsStaging = nil
-	css.virtualUTXOSetStaging = nil
 }
 
 func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
@@ -44,11 +42,6 @@ func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
 	}
 
 	err = css.commitVirtualUTXODiff(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = css.commitVirtualUTXOSet(dbTx)
 	if err != nil {
 		return err
 	}

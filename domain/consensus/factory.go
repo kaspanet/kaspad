@@ -357,6 +357,19 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		}
 	}
 
+	err = consensusStateManager.RecoverUTXOIfRequired()
+	if err != nil {
+		return nil, err
+	}
+	err = pruningManager.ClearImportedPruningPointData()
+	if err != nil {
+		return nil, err
+	}
+	err = pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	if err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 

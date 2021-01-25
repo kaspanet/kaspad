@@ -10,7 +10,7 @@ func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) ([]*D
 	items := make([]*DbUtxoCollectionItem, utxoCollection.Len())
 	i := 0
 	utxoIterator := utxoCollection.Iterator()
-	for utxoIterator.Next() {
+	for ok := utxoIterator.First(); ok; ok = utxoIterator.Next() {
 		outpoint, entry, err := utxoIterator.Get()
 		if err != nil {
 			return nil, err

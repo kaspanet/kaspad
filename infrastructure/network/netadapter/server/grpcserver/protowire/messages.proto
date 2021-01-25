@@ -28,17 +28,17 @@ message KaspadMessage {
     VersionMessage version = 20;
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
-    RequestIBDRootUTXOSetAndBlockMessage requestIBDRootUTXOSetAndBlock = 24;
-    IbdRootUtxoSetChunkMessage ibdRootUtxoSetChunk = 25;
+    RequestPruningPointUTXOSetAndBlockMessage requestPruningPointUTXOSetAndBlock = 24;
+    PruningPointUtxoSetChunkMessage pruningPointUtxoSetChunk = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
-    IBDRootNotFoundMessage ibdRootNotFound = 27;
-    RequestIBDRootHashMessage requestIBDRootHash = 28;
-    IBDRootHashMessage ibdRootHash = 29;
+    UnexpectedPruningPointMessage unexpectedPruningPoint = 27;
+    RequestPruningPointHashMessage requestPruningPointHash = 28;
+    PruningPointHashMessage pruningPointHash = 29;
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
     BlockHeadersMessage blockHeaders = 32;
-    RequestNextIbdRootUtxoSetChunkMessage requestNextIbdRootUtxoSetChunk = 33;
-    DoneIbdRootUtxoSetChunksMessage doneIbdRootUtxoSetChunks = 34;
+    RequestNextPruningPointUtxoSetChunkMessage requestNextPruningPointUtxoSetChunk = 33;
+    DonePruningPointUtxoSetChunksMessage donePruningPointUtxoSetChunks = 34;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
