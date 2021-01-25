@@ -546,5 +546,21 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
 				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
 		}
+
+		// Make sure all spendingTransaction.Outputs are in the returned UTXOs
+		spendingTransactionID := consensushashing.TransactionID(spendingTransaction)
+		for i := range outputs {
+			found := false
+			for _, outpointAndUTXOEntryPair := range allOutpointAndUTXOEntryPairs {
+				outpoint := outpointAndUTXOEntryPair.Outpoint
+				if outpoint.TransactionID == *spendingTransactionID && outpoint.Index == uint32(i) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("Outpoint %s:%d not found amongst the returned UTXOs", spendingTransactionID, i)
+			}
+		}
 	})
 }
