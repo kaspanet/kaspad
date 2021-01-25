@@ -568,7 +568,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 	params := dagconfig.DevnetParams
 
-	// This is done to reduce the pruning depth to 202 blocks
+	// This is done to reduce the pruning depth to 200 blocks
 	finalityDepth := 100
 	params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
 	params.K = 0
