@@ -20,7 +20,7 @@ type gRPCServer struct {
 
 // newGRPCServer creates a gRPC server
 func newGRPCServer(listeningAddresses []string, maxMessageSize int, name string) *gRPCServer {
-	log.Debugf("Created new GRPC server with maxMessageSize %d", maxMessageSize)
+	log.Debugf("Created new %s GRPC server with maxMessageSize %d", name, maxMessageSize)
 	return &gRPCServer{
 		server:             grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
 		listeningAddresses: listeningAddresses,
@@ -49,10 +49,10 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 		return errors.Wrapf(err, "%s error listening on %s", s.name, listenAddr)
 	}
 
-	spawn(s.name+" gRPCServer.listenOn-Serve", func() {
+	spawn(fmt.Sprintf("%s.gRPCServer.listenOn-Serve", s.name), func() {
 		err := s.server.Serve(listener)
 		if err != nil {
-			panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))
+			panics.Exit(log, fmt.Sprintf("error serving %s on %s: %+v", s.name, listenAddr, err))
 		}
 	})
 
