@@ -4,58 +4,60 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
 var requestTypes = []reflect.Type{
-	reflect.TypeOf(protowire.GetCurrentNetworkRequestMessage{}),
-	reflect.TypeOf(protowire.SubmitBlockRequestMessage{}),
-	reflect.TypeOf(protowire.GetBlockTemplateRequestMessage{}),
-	reflect.TypeOf(protowire.GetPeerAddressesRequestMessage{}),
-	reflect.TypeOf(protowire.GetPeerAddressesKnownAddressMessage{}),
-	reflect.TypeOf(protowire.GetSelectedTipHashRequestMessage{}),
-	reflect.TypeOf(protowire.GetMempoolEntryRequestMessage{}),
-	reflect.TypeOf(protowire.GetMempoolEntriesRequestMessage{}),
-	reflect.TypeOf(protowire.GetConnectedPeerInfoRequestMessage{}),
-	reflect.TypeOf(protowire.AddPeerRequestMessage{}),
-	reflect.TypeOf(protowire.SubmitTransactionRequestMessage{}),
+	reflect.TypeOf(appmessage.GetCurrentNetworkRequestMessage{}),
+	reflect.TypeOf(appmessage.SubmitBlockRequestMessage{}),
+	reflect.TypeOf(appmessage.GetBlockTemplateRequestMessage{}),
+	reflect.TypeOf(appmessage.GetPeerAddressesRequestMessage{}),
+	reflect.TypeOf(appmessage.GetPeerAddressesKnownAddressMessage{}),
+	reflect.TypeOf(appmessage.GetSelectedTipHashRequestMessage{}),
+	reflect.TypeOf(appmessage.GetMempoolEntryRequestMessage{}),
+	reflect.TypeOf(appmessage.GetMempoolEntriesRequestMessage{}),
+	reflect.TypeOf(appmessage.GetConnectedPeerInfoRequestMessage{}),
+	reflect.TypeOf(appmessage.AddPeerRequestMessage{}),
+	reflect.TypeOf(appmessage.SubmitTransactionRequestMessage{}),
 }
 
 type requestDescription struct {
 	name       string
-	parameters []*parameter
+	parameters []*parameterDescription
+	typeof     reflect.Type
 }
 
-type parameter struct {
+type parameterDescription struct {
 	name   string
 	typeof reflect.Type
 }
 
-func requestDescriptions() []*requestDescription {
-	requestDescriptions := make([]*requestDescription, len(requestTypes))
+func requestDescriptions() map[string]*requestDescription {
+	requestDescriptions := make(map[string]*requestDescription, len(requestTypes))
 
-	for i, requestType := range requestTypes {
+	for _, requestType := range requestTypes {
 		name := strings.TrimSuffix(requestType.Name(), "RequestMessage")
 		numFields := requestType.NumField()
 
-		parameters := make([]*parameter, numFields)
+		parameters := make([]*parameterDescription, numFields)
 		for i := 0; i < numFields; i++ {
 			field := requestType.Field(i)
 
-			if field.Tag.Get("protobuf") == "" {
-				// fields that do not have the protobuf tag are not part of the message
+			if unicode.IsUpper(rune(field.Name[0])) { // Only exported fields are of interest
 				continue
 			}
-			parameters = append(parameters, &parameter{
+			parameters = append(parameters, &parameterDescription{
 				name:   field.Name,
 				typeof: field.Type,
 			})
 			fmt.Printf("\t%s: %s\n", field.Name, field.Type.Name())
 		}
-		requestDescriptions[i] = &requestDescription{
+		requestDescriptions[name] = &requestDescription{
 			name:       name,
 			parameters: parameters,
+			typeof:     requestType,
 		}
 	}
 

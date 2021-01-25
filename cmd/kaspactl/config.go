@@ -35,7 +35,7 @@ func parseConfig() (*configFlags, error) {
 	}
 
 	if len(args) != 1 {
-		return nil, errors.New("the last parameter must be the request in JSON format")
+		return nil, errors.New("the last parameterDescription must be the request in JSON format")
 	}
 	cfg.RequestJSON = args[0]
 
