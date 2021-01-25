@@ -317,71 +317,95 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 	return rt.stageInterval(child, allocated)
 }
 
-func (rt *reachabilityManager) updateReindexRoot(newTreeNode *externalapi.DomainHash) error {
+func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.DomainHash) error {
 
-	nextReindexRoot, err := rt.reindexRoot()
+	currentReindexRoot, err := rt.reindexRoot()
 	if err != nil {
 		return err
 	}
 
-	for {
-		candidateReindexRoot, found, err := rt.maybeMoveReindexRoot(nextReindexRoot, newTreeNode)
-		if err != nil {
-			return err
-		}
-		if !found {
-			break
-		}
-		nextReindexRoot = candidateReindexRoot
-	}
-
-	rt.stageReindexRoot(nextReindexRoot)
-	return nil
-}
-
-func (rt *reachabilityManager) maybeMoveReindexRoot(reindexRoot, newTreeNode *externalapi.DomainHash) (
-	newReindexRoot *externalapi.DomainHash, found bool, err error) {
-
-	isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(reindexRoot, newTreeNode)
+	reindexRootAncestor, newReindexRoot, err := rt.findNextReindexRoot(currentReindexRoot, selectedTip)
 	if err != nil {
-		return nil, false, err
-	}
-	if !isAncestorOf {
-		commonAncestor, err := rt.findCommonAncestor(newTreeNode, reindexRoot)
-		if err != nil {
-			return nil, false, err
-		}
-
-		return commonAncestor, true, nil
+		return err
 	}
 
-	reindexRootChosenChild, err := rt.FindNextAncestor(newTreeNode, reindexRoot)
-	if err != nil {
-		return nil, false, err
-	}
-
-	newTreeNodeGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, newTreeNode)
-	if err != nil {
-		return nil, false, err
-	}
-
-	chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, reindexRootChosenChild)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if newTreeNodeGHOSTDAGData.BlueScore()-chosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
-		return nil, false, nil
+	if currentReindexRoot.Equal(newReindexRoot) {
+		return nil
 	}
 
 	rc := newReindexContext(rt)
-	err = rc.concentrateInterval(reindexRoot, reindexRootChosenChild)
-	if err != nil {
-		return nil, false, err
+
+	for  {
+		chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
+		if err != nil {
+			return err
+		}
+
+		isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
+
+		err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
+		if err != nil {
+			return err
+		}
+
+		if isFinalReindexRoot {
+			break
+		}
+
+		reindexRootAncestor = chosenChild
 	}
 
-	return reindexRootChosenChild, true, nil
+	rt.stageReindexRoot(newReindexRoot)
+	return nil
 }
+
+func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedTip *externalapi.DomainHash) (
+	reindexRootAncestor, newReindexRoot *externalapi.DomainHash, err error) {
+
+	reindexRootAncestor = currentReindexRoot
+	newReindexRoot = currentReindexRoot
+
+	isCurrentAncestorOfTip, err := rt.IsReachabilityTreeAncestorOf(currentReindexRoot, selectedTip)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !isCurrentAncestorOfTip {
+		commonAncestor, err := rt.findCommonAncestor(selectedTip, currentReindexRoot)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		reindexRootAncestor = commonAncestor
+		newReindexRoot = commonAncestor
+	}
+
+	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, selectedTip)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for {
+		chosenChild, err := rt.FindNextAncestor(selectedTip, newReindexRoot)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, chosenChild)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if selectedTipGHOSTDAGData.BlueScore()-chosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
+			break
+		}
+
+		newReindexRoot = chosenChild
+	}
+
+	return reindexRootAncestor, newReindexRoot, nil
+}
+
 
 /*
 

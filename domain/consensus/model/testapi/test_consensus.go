@@ -33,7 +33,7 @@ type TestConsensus interface {
 	AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
 		*externalapi.BlockInsertionResult, error)
 
-	MineJSON(r io.Reader) error
+	MineJSON(r io.Reader) ([]*externalapi.DomainHash, error)
 	DiscardAllStores()
 
 	AcceptanceDataStore() model.AcceptanceDataStore

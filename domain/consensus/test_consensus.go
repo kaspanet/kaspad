@@ -106,12 +106,15 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
-func (tc *testConsensus) MineJSON(r io.Reader) error {
+func (tc *testConsensus) MineJSON(r io.Reader) ([]*externalapi.DomainHash, error) {
 	// jsonBlock is a json representation of a block in mine format
 	type jsonBlock struct {
 		ID      string   `json:"id"`
 		Parents []string `json:"parents"`
 	}
+
+	tipSet := map[externalapi.DomainHash]*externalapi.DomainHash{}
+	tipSet[*tc.dagParams.GenesisHash] = tc.dagParams.GenesisHash
 
 	parentsMap := make(map[string]*externalapi.DomainHash)
 	parentsMap["0"] = tc.dagParams.GenesisHash
@@ -120,7 +123,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 	// read open bracket
 	_, err := decoder.Token()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// while the array contains values
 	for decoder.More() {
@@ -128,7 +131,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 		// decode an array value (Message)
 		err := decoder.Decode(&block)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if block.ID == "0" {
 			continue
@@ -138,16 +141,25 @@ func (tc *testConsensus) MineJSON(r io.Reader) error {
 		for i, parentID := range block.Parents {
 			parentHashes[i], ok = parentsMap[parentID]
 			if !ok {
-				return errors.Errorf("Couldn't find blockID: %s", parentID)
+				return nil, errors.Errorf("Couldn't find blockID: %s", parentID)
 			}
+			delete(tipSet, *parentHashes[i])
 		}
 		blockHash, _, err := tc.AddUTXOInvalidHeader(parentHashes)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		parentsMap[block.ID] = blockHash
+		tipSet[*blockHash] = blockHash
 	}
-	return nil
+
+	tips := make([]*externalapi.DomainHash, len(tipSet))
+	i := 0
+	for _, v := range tipSet {
+		tips[i] = v
+		i++
+	}
+	return tips, nil
 }
 
 func (tc *testConsensus) BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {

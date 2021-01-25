@@ -639,7 +639,7 @@ Functions for handling reindex triggered by moving reindex root
 
 */
 
-func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *externalapi.DomainHash) error {
+func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *externalapi.DomainHash, isFinalReindexRoot bool) error {
 	siblingsBeforeChosen, siblingsAfterChosen, err := rc.manager.splitChildren(reindexRoot, chosenChild)
 	if err != nil {
 		return err
@@ -655,7 +655,8 @@ func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *external
 		return err
 	}
 
-	err = rc.expandIntervalToChosen(reindexRoot, chosenChild, siblingsBeforeSizesSum, siblingsAfterSizesSum)
+	err = rc.expandIntervalToChosen(
+		reindexRoot, chosenChild, siblingsBeforeSizesSum, siblingsAfterSizesSum, isFinalReindexRoot)
 	if err != nil {
 		return err
 	}
@@ -710,7 +711,7 @@ func (rc *reindexContext) tightenIntervalsAfter(
 }
 
 func (rc *reindexContext) expandIntervalToChosen(
-	reindexRoot, chosenChild *externalapi.DomainHash, sizesSumBefore, sizesSumAfter uint64) error {
+	reindexRoot, chosenChild *externalapi.DomainHash, sizesSumBefore, sizesSumAfter uint64, isFinalReindexRoot bool) error {
 
 	rootInterval, err := rc.manager.interval(reindexRoot)
 	if err != nil {
@@ -727,7 +728,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		return err
 	}
 
-	if !intervalContains(newChosenInterval, currentChosenInterval) {
+	if isFinalReindexRoot && !intervalContains(newChosenInterval, currentChosenInterval) {
 		// New interval doesn't contain the previous one, propagation is required
 
 		// We assign slack on both sides as an optimization. Were we to
@@ -736,7 +737,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		// do allocate slack, next time
 		// expandIntervalToChosen is called (next time the
 		// reindex root moves), newChosenInterval is likely to
-		// contain chosen.Interval.
+		// contain currentChosenInterval.
 		err := rc.manager.stageInterval(chosenChild, newReachabilityInterval(
 			newChosenInterval.Start+rc.manager.reindexSlack,
 			newChosenInterval.End-rc.manager.reindexSlack,
