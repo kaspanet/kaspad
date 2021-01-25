@@ -335,7 +335,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 
 	rc := newReindexContext(rt)
 
-	for  {
+	for {
 		chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
 		if err != nil {
 			return err
@@ -365,12 +365,26 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 	reindexRootAncestor = currentReindexRoot
 	newReindexRoot = currentReindexRoot
 
+	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, selectedTip)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	isCurrentAncestorOfTip, err := rt.IsReachabilityTreeAncestorOf(currentReindexRoot, selectedTip)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if !isCurrentAncestorOfTip {
+		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, currentReindexRoot)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
+			return currentReindexRoot, currentReindexRoot, nil
+		}
+
 		commonAncestor, err := rt.findCommonAncestor(selectedTip, currentReindexRoot)
 		if err != nil {
 			return nil, nil, err
@@ -378,11 +392,6 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 
 		reindexRootAncestor = commonAncestor
 		newReindexRoot = commonAncestor
-	}
-
-	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, selectedTip)
-	if err != nil {
-		return nil, nil, err
 	}
 
 	for {
@@ -405,7 +414,6 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 
 	return reindexRootAncestor, newReindexRoot, nil
 }
-
 
 /*
 

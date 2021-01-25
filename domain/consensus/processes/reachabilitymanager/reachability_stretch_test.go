@@ -39,7 +39,7 @@ func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) []*ex
 	}
 	fileName := fmt.Sprintf(
 		"../../testdata/reachability/%s-dag-blocks--2^%d-delay-factor--1-k--18.json.gz",
-		filePrefix ,  numBlocksExponent)
+		filePrefix, numBlocksExponent)
 
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -75,7 +75,7 @@ func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
 		t.Fatal(err)
 	}
 
-	numChainsToAdd := len(blocks) // Multiply the size of the DAG with arbitrary blocks
+	numChainsToAdd := len(blocks)/2 // Multiply the size of the DAG with arbitrary blocks
 	maxBlocksInChain := 20
 	validationFreq := int(math.Max(1, float64(numChainsToAdd/100)))
 
@@ -114,28 +114,83 @@ func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
 	}
 }
 
-func addReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*externalapi.DomainHash)  {
+func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*externalapi.DomainHash) {
 	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reorgTip := tips[0]
+	chainTip, reorgTip := tips[0], tips[0]
 	for _, block := range tips {
 		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !isRootAncestorOfTip {
+		if isRootAncestorOfTip {
+			chainTip = block
+		} else {
 			reorgTip = block
-			break
 		}
 	}
 
-	//print(reorgTip)
-	current := reorgTip
-	for i := 0; i < 1500; i++ {
-		current, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{current})
+	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), chainTip)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), reorgTip)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if chainTipGHOSTDAGData.BlueScore() > reorgTipGHOSTDAGData.BlueScore() {
+		blueScoreDiff := int(chainTipGHOSTDAGData.BlueScore() - reorgTipGHOSTDAGData.BlueScore())
+		for i := 0; i < blueScoreDiff+5; i++ {
+			reorgTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{reorgTip})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	} else {
+		blueScoreDiff := int(reorgTipGHOSTDAGData.BlueScore() - chainTipGHOSTDAGData.BlueScore())
+		for i := 0; i < blueScoreDiff+5; i++ {
+			chainTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{chainTip})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	err = tc.ReachabilityManager().ValidateIntervals(tc.DAGParams().GenesisHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 200; i++ {
+		if i%2 == 0 {
+			for j := 0; j < 10; j++ {
+				chainTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{chainTip})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+		} else {
+			for j := 0; j < 10; j++ {
+				reorgTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{reorgTip})
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+		err = tc.ReachabilityManager().ValidateIntervals(tc.DAGParams().GenesisHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for i := 0; i < int(tc.ReachabilityManager().ReachabilityReindexSlack())+10; i++ {
+		reorgTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{reorgTip})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,32 +214,34 @@ func TestAttack(t *testing.T) {
 	buildJsonDAG(t, tc, true)
 }
 
-func TestNoAttackArbitraryDAG(t *testing.T) {
-	tc, teardown := initializeTest(t, "TestNoAttackArbitraryDAG")
+func TestNoAttackFuzzy(t *testing.T) {
+	tc, teardown := initializeTest(t, "TestNoAttackFuzzy")
 	defer teardown(false)
 	tc.ReachabilityManager().SetReachabilityReindexSlack(10)
 	buildJsonDAG(t, tc, false)
 	addArbitraryBlocks(t, tc)
 }
 
-func TestAttackArbitraryDAG(t *testing.T) {
-	tc, teardown := initializeTest(t, "TestAttackArbitraryDAG")
+func TestAttackFuzzy(t *testing.T) {
+	tc, teardown := initializeTest(t, "TestAttackFuzzy")
 	defer teardown(false)
 	tc.ReachabilityManager().SetReachabilityReindexSlack(10)
 	buildJsonDAG(t, tc, true)
 	addArbitraryBlocks(t, tc)
 }
 
-func TestNoAttackReorgDAG(t *testing.T) {
-	tc, teardown := initializeTest(t, "TestNoAttackReorgDAG")
+func TestNoAttackAlternateReorg(t *testing.T) {
+	tc, teardown := initializeTest(t, "TestNoAttackAlternateReorg")
 	defer teardown(false)
+	tc.ReachabilityManager().SetReachabilityReindexSlack(256)
 	tips := buildJsonDAG(t, tc, false)
-	addReorgBlocks(t, tc, tips)
+	addAlternatingReorgBlocks(t, tc, tips)
 }
 
-func TestAttackReorgDAG(t *testing.T) {
-	tc, teardown := initializeTest(t, "TestAttackReorgDAG")
+func TestAttackAlternateReorg(t *testing.T) {
+	tc, teardown := initializeTest(t, "TestAttackAlternateReorg")
 	defer teardown(false)
+	tc.ReachabilityManager().SetReachabilityReindexSlack(256)
 	tips := buildJsonDAG(t, tc, true)
-	addReorgBlocks(t, tc, tips)
+	addAlternatingReorgBlocks(t, tc, tips)
 }
