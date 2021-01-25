@@ -324,11 +324,13 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 		return err
 	}
 
+	// First, find the new root
 	reindexRootAncestor, newReindexRoot, err := rt.findNextReindexRoot(currentReindexRoot, selectedTip)
 	if err != nil {
 		return err
 	}
 
+	// No update to root, return
 	if currentReindexRoot.Equal(newReindexRoot) {
 		return nil
 	}
@@ -343,6 +345,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 
 		isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
 
+		// concentrateInterval from ancestor to it's chosen child
 		err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
 		if err != nil {
 			return err
@@ -355,6 +358,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 		reindexRootAncestor = chosenChild
 	}
 
+	// Update reindex root store
 	rt.stageReindexRoot(newReindexRoot)
 	return nil
 }
@@ -381,6 +385,8 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 			return nil, nil, err
 		}
 
+		// We have reindex root out of selected tip chain, however we switch chains only after a sufficient
+		// threshold of reindexSlack score in order to address possible alternating reorg attacks
 		if selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
 			return currentReindexRoot, currentReindexRoot, nil
 		}

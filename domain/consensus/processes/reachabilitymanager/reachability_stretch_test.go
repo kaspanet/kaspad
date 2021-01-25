@@ -67,15 +67,15 @@ func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) []*ex
 }
 
 func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
-	// After loading json, add arbitrary blocks all over the DAG to stretch reindex logic,
-	// and validate intervals post each addition
+	// After loading json, add arbitrary blocks all over the DAG to stretch
+	// reindex logic, and validate intervals post each addition
 
 	blocks, err := tc.ReachabilityManager().GetAllNodes(tc.DAGParams().GenesisHash)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	numChainsToAdd := len(blocks)/2 // Multiply the size of the DAG with arbitrary blocks
+	numChainsToAdd := len(blocks) / 2 // Multiply the size of the DAG with arbitrary blocks
 	maxBlocksInChain := 20
 	validationFreq := int(math.Max(1, float64(numChainsToAdd/100)))
 
@@ -115,11 +115,15 @@ func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
 }
 
 func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*externalapi.DomainHash) {
+	// Create alternating reorgs to test the cases where
+	// reindex root is out of current virtual's chain
+
 	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// Find a tip which does not have reindex root on it's chain (in json attack file such a tip exists)
 	chainTip, reorgTip := tips[0], tips[0]
 	for _, block := range tips {
 		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)
@@ -143,6 +147,8 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		t.Fatal(err)
 	}
 
+	// Get both chains close to each other (we care about blue score and not
+	// blue work because we have SkipProofOfWork=true)
 	if chainTipGHOSTDAGData.BlueScore() > reorgTipGHOSTDAGData.BlueScore() {
 		blueScoreDiff := int(chainTipGHOSTDAGData.BlueScore() - reorgTipGHOSTDAGData.BlueScore())
 		for i := 0; i < blueScoreDiff+5; i++ {
@@ -166,6 +172,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		t.Fatal(err)
 	}
 
+	// Alternate between the chains 200 times
 	for i := 0; i < 200; i++ {
 		if i%2 == 0 {
 			for j := 0; j < 10; j++ {
@@ -189,6 +196,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		}
 	}
 
+	// Since current logic switches reindex root chain with reindex slack threshold - at last make the switch happen
 	for i := 0; i < int(tc.ReachabilityManager().ReachabilityReindexSlack())+10; i++ {
 		reorgTip, _, err = tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{reorgTip})
 		if err != nil {
