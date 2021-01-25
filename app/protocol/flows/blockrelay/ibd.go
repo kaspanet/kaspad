@@ -308,6 +308,10 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
 		return false, err
 	}
 
+	if !blockInfo.Exists {
+		return false, errors.Errorf("The pruning point header is missing")
+	}
+
 	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
 		log.Debugf("Already has the block data of the new suggested pruning point %s", msgPruningPointHash.Hash)
 		return true, nil

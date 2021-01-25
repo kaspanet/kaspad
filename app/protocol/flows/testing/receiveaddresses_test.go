@@ -1,16 +1,13 @@
-package addressexchange_test
+package testing
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/pkg/errors"
-	"strings"
 	"testing"
 	"time"
 )
@@ -19,21 +16,6 @@ type fakeReceiveAddressesContext struct{}
 
 func (f fakeReceiveAddressesContext) AddressManager() *addressmanager.AddressManager {
 	return nil
-}
-
-func checkFlowError(t *testing.T, err error, isProtocolError bool, shouldBan bool, contains string) {
-	pErr := &protocolerrors.ProtocolError{}
-	if errors.As(err, &pErr) != isProtocolError {
-		t.Fatalf("Unexepcted error %+v", err)
-	}
-
-	if pErr.ShouldBan != shouldBan {
-		t.Fatalf("Exepcted shouldBan %t but got %t", shouldBan, pErr.ShouldBan)
-	}
-
-	if !strings.Contains(err.Error(), contains) {
-		t.Fatalf("Unexpected error: %+v", err)
-	}
 }
 
 func TestReceiveAddressesErrors(t *testing.T) {
