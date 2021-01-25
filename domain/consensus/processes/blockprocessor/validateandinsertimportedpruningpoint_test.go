@@ -94,7 +94,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
@@ -272,7 +272,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
@@ -527,14 +527,14 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		// Get pruning point UTXOs in a loop
 		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
 		step := 100
-		offset := 0
+		var fromOutpoint *externalapi.DomainOutpoint
 		for {
-			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, offset, step)
+			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
 			if err != nil {
 				t.Fatalf("Error getting pruning point UTXOs: %+v", err)
 			}
 			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
-			offset += step
+			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 
 			if len(outpointAndUTXOEntryPairs) < step {
 				break
@@ -673,14 +673,14 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		// Get pruning point UTXOs in a loop
 		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
 		step := 100
-		offset := 0
+		var fromOutpoint *externalapi.DomainOutpoint
 		for {
-			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, offset, step)
+			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
 			if err != nil {
 				b.Fatalf("Error getting pruning point UTXOs: %+v", err)
 			}
 			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
-			offset += step
+			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
 
 			if len(outpointAndUTXOEntryPairs) < step {
 				break
