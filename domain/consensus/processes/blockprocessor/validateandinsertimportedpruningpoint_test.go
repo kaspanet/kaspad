@@ -564,3 +564,129 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		}
 	})
 }
+
+func BenchmarkGetPruningPointUTXOs(b *testing.B) {
+	params := dagconfig.DevnetParams
+
+	// This is done to reduce the pruning depth to 202 blocks
+	finalityDepth := 100
+	params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
+	params.K = 0
+
+	params.SkipProofOfWork = true
+	params.BlockCoinbaseMaturity = 0
+
+	factory := consensus.NewFactory()
+	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestGetPruningPointUTXOs")
+	if err != nil {
+		b.Fatalf("Error setting up testConsensus: %+v", err)
+	}
+	defer teardown(false)
+
+	// Create a block whose coinbase we could spend
+	scriptPublicKey, redeemScript := testutils.OpTrueScript()
+	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey}
+	blockWithSpendableCoinbase, err := testConsensus.BuildBlock(coinbaseData, nil)
+	if err != nil {
+		b.Fatalf("Error building block with spendable coinbase: %+v", err)
+	}
+	_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase)
+	if err != nil {
+		b.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
+	}
+
+	addBlockWithLotsOfOutputs := func(b *testing.B, transactionToSpend *externalapi.DomainTransaction) *externalapi.DomainBlock {
+		// Create a transaction that adds a lot of UTXOs to the UTXO set
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
+		if err != nil {
+			b.Fatalf("Error creating signature script: %+v", err)
+		}
+		input := &externalapi.DomainTransactionInput{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: *consensushashing.TransactionID(transactionToSpend),
+				Index:         0,
+			},
+			SignatureScript: signatureScript,
+			Sequence:        constants.MaxTxInSequenceNum,
+		}
+		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		for i := 0; i < len(outputs); i++ {
+			outputs[i] = &externalapi.DomainTransactionOutput{
+				ScriptPublicKey: scriptPublicKey,
+				Value:           10000,
+			}
+		}
+		transaction := &externalapi.DomainTransaction{
+			Version: constants.MaxTransactionVersion,
+			Inputs:  []*externalapi.DomainTransactionInput{input},
+			Outputs: outputs,
+			Payload: []byte{},
+		}
+
+		// Create a block that includes the above transaction
+		block, err := testConsensus.BuildBlock(coinbaseData, []*externalapi.DomainTransaction{transaction})
+		if err != nil {
+			b.Fatalf("Error building block: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(block)
+		if err != nil {
+			b.Fatalf("Error validating and inserting block: %+v", err)
+		}
+
+		return block
+	}
+
+	// Add finalityDepth blocks, each containing lots of outputs
+	tip := blockWithSpendableCoinbase
+	for i := 0; i < finalityDepth; i++ {
+		tip = addBlockWithLotsOfOutputs(b, tip.Transactions[0])
+	}
+
+	// Add enough blocks to move the pruning point
+	for {
+		block, err := testConsensus.BuildBlock(coinbaseData, nil)
+		if err != nil {
+			b.Fatalf("Error building block: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(block)
+		if err != nil {
+			b.Fatalf("Error validating and inserting block: %+v", err)
+		}
+
+		pruningPoint, err := testConsensus.PruningPoint()
+		if err != nil {
+			b.Fatalf("Error getting the pruning point: %+v", err)
+		}
+		if !pruningPoint.Equal(params.GenesisHash) {
+			break
+		}
+	}
+	pruningPoint, err := testConsensus.PruningPoint()
+	if err != nil {
+		b.Fatalf("Error getting the pruning point: %+v", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		b.ResetTimer()
+		b.StartTimer()
+
+		// Get pruning point UTXOs in a loop
+		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
+		step := 100
+		offset := 0
+		for {
+			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, offset, step)
+			if err != nil {
+				b.Fatalf("Error getting pruning point UTXOs: %+v", err)
+			}
+			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
+			offset += step
+
+			if len(outpointAndUTXOEntryPairs) < step {
+				break
+			}
+		}
+
+		b.StopTimer()
+	}
+}
