@@ -419,8 +419,8 @@ func makeFakeUTXOs() []*externalapi.OutpointAndUTXOEntryPair {
 
 func TestGetPruningPointUTXOs(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		// This is done to reduce the pruning depth to 6 blocks
-		finalityDepth := 3
+		// This is done to reduce the pruning depth to 8 blocks
+		finalityDepth := 4
 		params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
 		params.K = 0
 
@@ -432,6 +432,22 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
 		defer teardown(false)
+
+		// Create a block that accepts the genesis coinbase so that we won't have script problems down the line
+		emptyCoinbase := &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  nil,
+				Version: 0,
+			},
+		}
+		blockAboveGeneis, err := testConsensus.BuildBlock(emptyCoinbase, nil)
+		if err != nil {
+			t.Fatalf("Error building block above genesis: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGeneis)
+		if err != nil {
+			t.Fatalf("Error validating and inserting block above genesis: %+v", err)
+		}
 
 		// Create a block whose coinbase we could spend
 		scriptPublicKey, redeemScript := testutils.OpTrueScript()
@@ -475,12 +491,6 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		}
 
 		// Create a block with that includes the above transaction
-		emptyCoinbase := &externalapi.DomainCoinbaseData{
-			ScriptPublicKey: &externalapi.ScriptPublicKey{
-				Script:  nil,
-				Version: 0,
-			},
-		}
 		includingBlock, err := testConsensus.BuildBlock(emptyCoinbase, []*externalapi.DomainTransaction{spendingTransaction})
 		if err != nil {
 			t.Fatalf("Error building including block: %+v", err)
@@ -531,10 +541,10 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			}
 		}
 
-		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + acceptingBlock.coinbase
-		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+1 {
+		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 2 coinbase outputs
+		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+2 {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
-				"Want: %d, got: %d", len(outputs)+1, len(allOutpointAndUTXOEntryPairs))
+				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
 		}
 	})
 }
