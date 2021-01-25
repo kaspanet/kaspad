@@ -25,5 +25,5 @@ type PruningStore interface {
 	ImportedPruningPointMultiset(dbContext DBReader) (Multiset, error)
 	UpdateImportedPruningPointMultiset(dbTx DBTransaction, multiset Multiset) error
 	CommitImportedPruningPointUTXOSet(dbContext DBWriter) error
-	PruningPointUTXOs(dbContext DBReader, offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error)
+	PruningPointUTXOs(dbContext DBReader, fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error)
 }

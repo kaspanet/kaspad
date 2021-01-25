@@ -223,18 +223,26 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 }
 
 func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
-	offset int, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
 
 	cursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
 	if err != nil {
 		return nil, err
 	}
-	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
 
-	offsetIndex := 0
-	for offsetIndex < offset && pruningPointUTXOIterator.Next() {
-		offsetIndex++
+	if fromOutpoint != nil {
+		serializedFromOutpoint, err := serializeOutpoint(fromOutpoint)
+		if err != nil {
+			return nil, err
+		}
+		seekKey := pruningPointUTXOSetBucket.Key(serializedFromOutpoint)
+		err = cursor.Seek(seekKey)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
 
 	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0, limit)
 	for len(outpointAndUTXOEntryPairs) < limit && pruningPointUTXOIterator.Next() {

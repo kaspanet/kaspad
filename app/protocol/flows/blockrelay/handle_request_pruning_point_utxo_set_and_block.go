@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -96,11 +97,11 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSe
 
 	// Send the UTXO set in `step`-sized chunks
 	const step = 1000
-	offset := 0
+	var fromOutpoint *externalapi.DomainOutpoint
 	chunksSent := 0
 	for {
 		pruningPointUTXOs, err := flow.Domain().Consensus().GetPruningPointUTXOs(
-			msgRequestPruningPointUTXOSetAndBlock.PruningPointHash, offset, step)
+			msgRequestPruningPointUTXOSetAndBlock.PruningPointHash, fromOutpoint, step)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
 				return flow.outgoingRoute.Enqueue(appmessage.NewMsgUnexpectedPruningPoint())
@@ -124,7 +125,7 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSe
 			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 		}
 
-		offset += step
+		fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
 		chunksSent++
 
 		// Wait for the peer to request more chunks every `ibdBatchSize` chunks
