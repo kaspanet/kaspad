@@ -140,7 +140,8 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 	}
 
 	if reorgTip == nil {
-		t.Fatal(errors.Errorf("DAG from jsom file is expected to contain a tip disagreeing with main chain"))
+		t.Fatal(errors.Errorf("DAG from jsom file is expected to contain a tip " +
+			"disagreeing with reindex root chain"))
 	}
 
 	if chainTip == nil {
