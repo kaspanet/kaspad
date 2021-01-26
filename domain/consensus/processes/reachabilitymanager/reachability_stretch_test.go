@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 	"math"
 	"math/rand"
 	"os"
@@ -125,7 +126,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 
 	// Try finding two tips; one which has reindex root on it's chain (chainTip), and one which
 	// does not (reorgTip). The latter is expected to exist in json attack files.
-	chainTip, reorgTip := tips[0], tips[0]
+	var chainTip, reorgTip *externalapi.DomainHash
 	for _, block := range tips {
 		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)
 		if err != nil {
@@ -136,6 +137,14 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		} else {
 			reorgTip = block
 		}
+	}
+
+	if reorgTip == nil {
+		t.Fatal(errors.Errorf("DAG from jsom file is expected to contain a tip disagreeing with main chain"))
+	}
+
+	if chainTip == nil {
+		t.Fatal(errors.Errorf("reindex root is not on any header tip chain, this is unexpected behavior"))
 	}
 
 	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), chainTip)
@@ -237,14 +246,6 @@ func TestAttackFuzzy(t *testing.T) {
 	tc.ReachabilityManager().SetReachabilityReindexSlack(10)
 	buildJsonDAG(t, tc, true)
 	addArbitraryBlocks(t, tc)
-}
-
-func TestNoAttackAlternateReorg(t *testing.T) {
-	tc, teardown := initializeTest(t, "TestNoAttackAlternateReorg")
-	defer teardown(false)
-	tc.ReachabilityManager().SetReachabilityReindexSlack(256)
-	tips := buildJsonDAG(t, tc, false)
-	addAlternatingReorgBlocks(t, tc, tips)
 }
 
 func TestAttackAlternateReorg(t *testing.T) {
