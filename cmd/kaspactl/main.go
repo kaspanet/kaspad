@@ -1,11 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -86,22 +85,17 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 }
 
 func prettifyResponse(response string) string {
-	responseRegex, err := regexp.Compile("Response\":({.*})}$")
+	kaspadMessage := &protowire.KaspadMessage{}
+	err := protojson.Unmarshal([]byte(response), kaspadMessage)
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error compiling response regex: %s", err))
+		printErrorAndExit(fmt.Sprintf("error parsing the response from the RPC server: %s", err))
 	}
-	responseMatches := responseRegex.FindStringSubmatch(response)
-	if len(responseMatches) != 2 {
-		printErrorAndExit(fmt.Sprintf("unexpected amount of matches for the response regex"))
-	}
-	unwrappedResponse := responseMatches[1]
 
-	var prettyResponse bytes.Buffer
-	err = json.Indent(&prettyResponse, []byte(unwrappedResponse), "", "    ")
+	prettyResponse, err := json.MarshalIndent(kaspadMessage.Payload, "", "    ")
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error prettifying the response from the RPC server: %s", err))
 	}
-	return prettyResponse.String()
+	return string(prettyResponse)
 }
 
 func printErrorAndExit(message string) {
