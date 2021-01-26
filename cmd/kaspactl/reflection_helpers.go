@@ -23,7 +23,7 @@ func unwrapCommandValue(commandValueWrapped reflect.Value) reflect.Value {
 }
 
 // isFieldExported returns true if the given field is exported.
-// Currently the only way to check this is to check if the first run in the field's name is upper case.
+// Currently the only way to check this is to check if the first rune in the field's name is upper case.
 func isFieldExported(field reflect.StructField) bool {
 	return unicode.IsUpper(rune(field.Name[0]))
 }
