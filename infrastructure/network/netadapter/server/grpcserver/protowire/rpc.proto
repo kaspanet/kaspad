@@ -236,7 +236,6 @@ message AcceptedBlock{
 message GetBlockRequestMessage{
   // The hash of the requested block
   string hash = 1;
-  string subnetworkId = 2;
 
   // Whether to include transaction data in the response
   bool includeTransactionVerboseData = 3;
