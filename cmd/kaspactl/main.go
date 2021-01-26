@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -44,7 +45,7 @@ func main() {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	select {
 	case responseString := <-responseChan:
-		prettyResponseString := prettifyJSON(responseString)
+		prettyResponseString := prettifyResponse(responseString)
 		fmt.Println(prettyResponseString)
 	case <-time.After(timeout):
 		printErrorAndExit(fmt.Sprintf("timeout of %s has been exceeded", timeout))
@@ -84,13 +85,23 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 	doneChan <- responseString
 }
 
-func prettifyJSON(jsonString string) string {
-	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, []byte(jsonString), "", "    ")
+func prettifyResponse(response string) string {
+	responseRegex, err := regexp.Compile("Response\":({.*})}$")
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("error compiling response regex: %s", err))
+	}
+	responseMatches := responseRegex.FindStringSubmatch(response)
+	if len(responseMatches) != 2 {
+		printErrorAndExit(fmt.Sprintf("unexpected amount of matches for the response regex"))
+	}
+	unwrappedResponse := responseMatches[1]
+
+	var prettyResponse bytes.Buffer
+	err = json.Indent(&prettyResponse, []byte(unwrappedResponse), "", "    ")
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error prettifying the response from the RPC server: %s", err))
 	}
-	return prettyJSON.String()
+	return prettyResponse.String()
 }
 
 func printErrorAndExit(message string) {
