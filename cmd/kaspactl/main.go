@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"os"
 	"time"
 
@@ -85,17 +85,12 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 }
 
 func prettifyResponse(response string) string {
-	kaspadMessage := &protowire.KaspadMessage{}
-	err := protojson.Unmarshal([]byte(response), kaspadMessage)
-	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error parsing the response from the RPC server: %s", err))
-	}
-
-	prettyResponse, err := json.MarshalIndent(kaspadMessage.Payload, "", "    ")
+	var prettyResponse bytes.Buffer
+	err := json.Indent(&prettyResponse, []byte(response), "", "    ")
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error prettifying the response from the RPC server: %s", err))
 	}
-	return string(prettyResponse)
+	return prettyResponse.String()
 }
 
 func printErrorAndExit(message string) {
