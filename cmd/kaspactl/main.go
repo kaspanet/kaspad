@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -42,7 +44,8 @@ func main() {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	select {
 	case responseString := <-responseChan:
-		fmt.Println(responseString)
+		prettyResponseString := prettifyJSON(responseString)
+		fmt.Println(prettyResponseString)
 	case <-time.After(timeout):
 		printErrorAndExit(fmt.Sprintf("timeout of %s has been exceeded", timeout))
 	}
@@ -79,6 +82,15 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
 	doneChan <- responseString
+}
+
+func prettifyJSON(jsonString string) string {
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, []byte(jsonString), "", "\t")
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("error prettifying the response from the RPC server: %s", err))
+	}
+	return prettyJSON.String()
 }
 
 func printErrorAndExit(message string) {
