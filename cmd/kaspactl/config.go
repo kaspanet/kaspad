@@ -26,8 +26,9 @@ func parseConfig() (*configFlags, error) {
 		Timeout:   defaultTimeout,
 	}
 	parser := flags.NewParser(cfg, flags.HelpFlag)
-	parser.Usage = "kaspactl [OPTIONS] [Command].\nCommand can be supplied only if --json is not used"
-	args, err := parser.Parse()
+	parser.Usage = "kaspactl [OPTIONS] [COMMAND] [COMMAND PARAMETERS].\n\nCommand can be supplied only if --json is not used." +
+		"\n\nUse `kaspactl --list-commands` to get a list of all commands and their parameters"
+	remainingArgs, err := parser.Parse()
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func parseConfig() (*configFlags, error) {
 		return nil, err
 	}
 
-	cfg.CommandAndParameters = args
+	cfg.CommandAndParameters = remainingArgs
 	if len(cfg.CommandAndParameters) == 0 && cfg.RequestJSON == "" ||
 		len(cfg.CommandAndParameters) > 0 && cfg.RequestJSON != "" {
 
