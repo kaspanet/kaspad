@@ -32,7 +32,7 @@ func initializeTest(t *testing.T, testName string) (tc testapi.TestConsensus, te
 	return tc, teardown
 }
 
-func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) []*externalapi.DomainHash {
+func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) (tips []*externalapi.DomainHash) {
 	filePrefix := "noattack"
 	if attackJson {
 		filePrefix = "attack"
@@ -53,7 +53,7 @@ func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) []*ex
 	}
 	defer gzipReader.Close()
 
-	tips, err := tc.MineJSON(gzipReader)
+	tips, err = tc.MineJSON(gzipReader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,14 +116,15 @@ func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
 
 func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*externalapi.DomainHash) {
 	// Create alternating reorgs to test the cases where
-	// reindex root is out of current virtual's chain
+	// reindex root is out of current header selected tip chain
 
 	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Find a tip which does not have reindex root on it's chain (in json attack file such a tip exists)
+	// Try finding two tips; one which has reindex root on it's chain (chainTip), and one which
+	// does not (reorgTip). The latter is expected to exist in json attack files.
 	chainTip, reorgTip := tips[0], tips[0]
 	for _, block := range tips {
 		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)

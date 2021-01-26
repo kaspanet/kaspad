@@ -235,8 +235,8 @@ func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.Domain
 	}
 }
 
-// splitChildren splits `node` into two slices: the nodes that are before
-// `child` and the nodes that are after.
+// splitChildren splits `node` children into two slices: the nodes that are before
+// `pivot` and the nodes that are after.
 func (rt *reachabilityManager) splitChildren(node, pivot *externalapi.DomainHash) (
 	nodesBeforePivot, nodesAfterPivot []*externalapi.DomainHash, err error) {
 
@@ -365,7 +365,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 }
 
 // findNextReindexRoot finds the new reindex root based on the current one and the new selected tip.
-// The function also returns an ancestor of current and new reindex roots (possibly current root itself).
+// The function also returns the common ancestor between the current and new reindex roots (possibly current root itself).
 // This ancestor should be used as a starting point for concentrating the interval towards the new root.
 func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedTip *externalapi.DomainHash) (
 	reindexRootAncestor, newReindexRoot *externalapi.DomainHash, err error) {
@@ -391,13 +391,15 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		}
 
 		// We have reindex root out of selected tip chain, however we switch chains only after a sufficient
-		// threshold of reindexSlack score in order to address possible alternating reorg attacks
+		// threshold of reindexSlack score in order to address possible alternating reorg attacks.
+		// The reindexSlack constant is used as an heuristic for a large enough constant on the one hand, but
+		// one which will not harm performance on the other hand - given the available slack at the chain split point
 		if selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
 			// Return current - this indicates no change
 			return currentReindexRoot, currentReindexRoot, nil
 		}
 
-		// The common ancestor is where we start concentrating the interval from
+		// The common ancestor is where we should start concentrating the interval from
 		commonAncestor, err := rt.findCommonAncestor(selectedTip, currentReindexRoot)
 		if err != nil {
 			return nil, nil, err

@@ -106,7 +106,7 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
-func (tc *testConsensus) MineJSON(r io.Reader) ([]*externalapi.DomainHash, error) {
+func (tc *testConsensus) MineJSON(r io.Reader) (tips []*externalapi.DomainHash, err error) {
 	// jsonBlock is a json representation of a block in mine format
 	type jsonBlock struct {
 		ID      string   `json:"id"`
@@ -121,7 +121,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) ([]*externalapi.DomainHash, error
 
 	decoder := json.NewDecoder(r)
 	// read open bracket
-	_, err := decoder.Token()
+	_, err = decoder.Token()
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (tc *testConsensus) MineJSON(r io.Reader) ([]*externalapi.DomainHash, error
 		tipSet[*blockHash] = blockHash
 	}
 
-	tips := make([]*externalapi.DomainHash, len(tipSet))
+	tips = make([]*externalapi.DomainHash, len(tipSet))
 	i := 0
 	for _, v := range tipSet {
 		tips[i] = v
