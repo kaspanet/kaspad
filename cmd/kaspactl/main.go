@@ -39,7 +39,7 @@ func main() {
 		go postCommand(cfg, client, responseChan)
 	}
 
-	timeout := time.Duration(cfg.Timeout) * time.Second * 10000 // TODO: remove the * 10000
+	timeout := time.Duration(cfg.Timeout) * time.Second
 	select {
 	case responseString := <-responseChan:
 		fmt.Println(responseString)
@@ -58,7 +58,7 @@ func printAllCommands() {
 func postCommand(cfg *configFlags, client *grpcclient.GRPCClient, responseChan chan string) {
 	message, err := parseCommand(cfg.CommandAndParameters, commandDescriptions())
 	if err != nil {
-		printErrorAndExit(fmt.Sprintf("error parsing command: %+v", err))
+		printErrorAndExit(fmt.Sprintf("error parsing command: %s", err))
 	}
 
 	response, err := client.Post(message)

@@ -35,20 +35,16 @@ func parseCommand(args []string, commandDescs []*commandDescription) (*protowire
 		if err != nil {
 			return nil, err
 		}
-		err = setField(commandValue, parameterValue, parameterDesc)
-		if err != nil {
-			return nil, err
-		}
+		setField(commandValue, parameterValue, parameterDesc)
 	}
 
 	return generateKaspadMessage(commandValue, commandDesc)
 }
 
-func setField(commandValue reflect.Value, parameterValue reflect.Value, parameterDesc *parameterDescription) error {
+func setField(commandValue reflect.Value, parameterValue reflect.Value, parameterDesc *parameterDescription) {
 	parameterField := commandValue.Elem().FieldByName(parameterDesc.name)
 
 	parameterField.Set(parameterValue)
-	return nil
 }
 
 func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflect.Value, error) {
@@ -149,7 +145,7 @@ func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflec
 
 		value = pointer.Interface()
 
-	// Int and uint are not supported because their size is unexpected
+	// Int and uint are not supported because their size is platform-dependant
 	case reflect.Int:
 	case reflect.Uint:
 	// Other types are not supported simply because they are not used in any command right now
