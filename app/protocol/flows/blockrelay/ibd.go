@@ -2,8 +2,9 @@ package blockrelay
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 
@@ -279,9 +280,13 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
 		}
-		log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 
-		return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
+		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+		} else {
+			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
+			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+		}
 	}
 
 	return nil
@@ -497,6 +502,10 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 
 			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
+				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
+					continue
+				}
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
 			err = flow.OnNewBlock(block, blockInsertionResult)
