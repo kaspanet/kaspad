@@ -6,7 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -92,7 +94,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
@@ -270,7 +272,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, 0, 1000)
+		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
 		}
@@ -412,5 +414,273 @@ func makeFakeUTXOs() []*externalapi.OutpointAndUTXOEntryPair {
 				3,
 			),
 		},
+	}
+}
+
+func TestGetPruningPointUTXOs(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		// This is done to reduce the pruning depth to 8 blocks
+		finalityDepth := 4
+		params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
+		params.K = 0
+
+		params.BlockCoinbaseMaturity = 0
+
+		factory := consensus.NewFactory()
+		testConsensus, teardown, err := factory.NewTestConsensus(params, false, "TestGetPruningPointUTXOs")
+		if err != nil {
+			t.Fatalf("Error setting up testConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		// Create a block that accepts the genesis coinbase so that we won't have script problems down the line
+		emptyCoinbase := &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  nil,
+				Version: 0,
+			},
+		}
+		blockAboveGeneis, err := testConsensus.BuildBlock(emptyCoinbase, nil)
+		if err != nil {
+			t.Fatalf("Error building block above genesis: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGeneis)
+		if err != nil {
+			t.Fatalf("Error validating and inserting block above genesis: %+v", err)
+		}
+
+		// Create a block whose coinbase we could spend
+		scriptPublicKey, redeemScript := testutils.OpTrueScript()
+		coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey}
+		blockWithSpendableCoinbase, err := testConsensus.BuildBlock(coinbaseData, nil)
+		if err != nil {
+			t.Fatalf("Error building block with spendable coinbase: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase)
+		if err != nil {
+			t.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
+		}
+
+		// Create a transaction that adds a lot of UTXOs to the UTXO set
+		transactionToSpend := blockWithSpendableCoinbase.Transactions[0]
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
+		if err != nil {
+			t.Fatalf("Error creating signature script: %+v", err)
+		}
+		input := &externalapi.DomainTransactionInput{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: *consensushashing.TransactionID(transactionToSpend),
+				Index:         0,
+			},
+			SignatureScript: signatureScript,
+			Sequence:        constants.MaxTxInSequenceNum,
+		}
+
+		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		for i := 0; i < len(outputs); i++ {
+			outputs[i] = &externalapi.DomainTransactionOutput{
+				ScriptPublicKey: scriptPublicKey,
+				Value:           10000,
+			}
+		}
+		spendingTransaction := &externalapi.DomainTransaction{
+			Version: constants.MaxTransactionVersion,
+			Inputs:  []*externalapi.DomainTransactionInput{input},
+			Outputs: outputs,
+			Payload: []byte{},
+		}
+
+		// Create a block with that includes the above transaction
+		includingBlock, err := testConsensus.BuildBlock(emptyCoinbase, []*externalapi.DomainTransaction{spendingTransaction})
+		if err != nil {
+			t.Fatalf("Error building including block: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(includingBlock)
+		if err != nil {
+			t.Fatalf("Error validating and inserting including block: %+v", err)
+		}
+
+		// Add enough blocks to move the pruning point
+		for {
+			block, err := testConsensus.BuildBlock(emptyCoinbase, nil)
+			if err != nil {
+				t.Fatalf("Error building block: %+v", err)
+			}
+			_, err = testConsensus.ValidateAndInsertBlock(block)
+			if err != nil {
+				t.Fatalf("Error validating and inserting block: %+v", err)
+			}
+
+			pruningPoint, err := testConsensus.PruningPoint()
+			if err != nil {
+				t.Fatalf("Error getting the pruning point: %+v", err)
+			}
+			if !pruningPoint.Equal(params.GenesisHash) {
+				break
+			}
+		}
+		pruningPoint, err := testConsensus.PruningPoint()
+		if err != nil {
+			t.Fatalf("Error getting the pruning point: %+v", err)
+		}
+
+		// Get pruning point UTXOs in a loop
+		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
+		step := 100
+		var fromOutpoint *externalapi.DomainOutpoint
+		for {
+			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
+			if err != nil {
+				t.Fatalf("Error getting pruning point UTXOs: %+v", err)
+			}
+			allOutpointAndUTXOEntryPairs = append(allOutpointAndUTXOEntryPairs, outpointAndUTXOEntryPairs...)
+			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
+
+			if len(outpointAndUTXOEntryPairs) < step {
+				break
+			}
+		}
+
+		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 2 coinbase outputs
+		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+2 {
+			t.Fatalf("Returned an unexpected amount of UTXOs. "+
+				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
+		}
+
+		// Make sure all spendingTransaction.Outputs are in the returned UTXOs
+		spendingTransactionID := consensushashing.TransactionID(spendingTransaction)
+		for i := range outputs {
+			found := false
+			for _, outpointAndUTXOEntryPair := range allOutpointAndUTXOEntryPairs {
+				outpoint := outpointAndUTXOEntryPair.Outpoint
+				if outpoint.TransactionID == *spendingTransactionID && outpoint.Index == uint32(i) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("Outpoint %s:%d not found amongst the returned UTXOs", spendingTransactionID, i)
+			}
+		}
+	})
+}
+
+func BenchmarkGetPruningPointUTXOs(b *testing.B) {
+	params := dagconfig.DevnetParams
+
+	// This is done to reduce the pruning depth to 200 blocks
+	finalityDepth := 100
+	params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
+	params.K = 0
+
+	params.SkipProofOfWork = true
+	params.BlockCoinbaseMaturity = 0
+
+	factory := consensus.NewFactory()
+	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestGetPruningPointUTXOs")
+	if err != nil {
+		b.Fatalf("Error setting up testConsensus: %+v", err)
+	}
+	defer teardown(false)
+
+	// Create a block whose coinbase we could spend
+	scriptPublicKey, redeemScript := testutils.OpTrueScript()
+	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey}
+	blockWithSpendableCoinbase, err := testConsensus.BuildBlock(coinbaseData, nil)
+	if err != nil {
+		b.Fatalf("Error building block with spendable coinbase: %+v", err)
+	}
+	_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase)
+	if err != nil {
+		b.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
+	}
+
+	addBlockWithLotsOfOutputs := func(b *testing.B, transactionToSpend *externalapi.DomainTransaction) *externalapi.DomainBlock {
+		// Create a transaction that adds a lot of UTXOs to the UTXO set
+		signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
+		if err != nil {
+			b.Fatalf("Error creating signature script: %+v", err)
+		}
+		input := &externalapi.DomainTransactionInput{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: *consensushashing.TransactionID(transactionToSpend),
+				Index:         0,
+			},
+			SignatureScript: signatureScript,
+			Sequence:        constants.MaxTxInSequenceNum,
+		}
+		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		for i := 0; i < len(outputs); i++ {
+			outputs[i] = &externalapi.DomainTransactionOutput{
+				ScriptPublicKey: scriptPublicKey,
+				Value:           10000,
+			}
+		}
+		transaction := &externalapi.DomainTransaction{
+			Version: constants.MaxTransactionVersion,
+			Inputs:  []*externalapi.DomainTransactionInput{input},
+			Outputs: outputs,
+			Payload: []byte{},
+		}
+
+		// Create a block that includes the above transaction
+		block, err := testConsensus.BuildBlock(coinbaseData, []*externalapi.DomainTransaction{transaction})
+		if err != nil {
+			b.Fatalf("Error building block: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(block)
+		if err != nil {
+			b.Fatalf("Error validating and inserting block: %+v", err)
+		}
+
+		return block
+	}
+
+	// Add finalityDepth blocks, each containing lots of outputs
+	tip := blockWithSpendableCoinbase
+	for i := 0; i < finalityDepth; i++ {
+		tip = addBlockWithLotsOfOutputs(b, tip.Transactions[0])
+	}
+
+	// Add enough blocks to move the pruning point
+	for {
+		block, err := testConsensus.BuildBlock(coinbaseData, nil)
+		if err != nil {
+			b.Fatalf("Error building block: %+v", err)
+		}
+		_, err = testConsensus.ValidateAndInsertBlock(block)
+		if err != nil {
+			b.Fatalf("Error validating and inserting block: %+v", err)
+		}
+
+		pruningPoint, err := testConsensus.PruningPoint()
+		if err != nil {
+			b.Fatalf("Error getting the pruning point: %+v", err)
+		}
+		if !pruningPoint.Equal(params.GenesisHash) {
+			break
+		}
+	}
+	pruningPoint, err := testConsensus.PruningPoint()
+	if err != nil {
+		b.Fatalf("Error getting the pruning point: %+v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Get pruning point UTXOs in a loop
+		step := 100
+		var fromOutpoint *externalapi.DomainOutpoint
+		for {
+			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
+			if err != nil {
+				b.Fatalf("Error getting pruning point UTXOs: %+v", err)
+			}
+			fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
+
+			if len(outpointAndUTXOEntryPairs) < step {
+				break
+			}
+		}
 	}
 }

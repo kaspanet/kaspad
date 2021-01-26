@@ -8,4 +8,5 @@ type PruningManager interface {
 	IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
+	UpdatePruningPointUTXOSetIfRequired() error
 }
