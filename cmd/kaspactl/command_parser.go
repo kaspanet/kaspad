@@ -146,21 +146,22 @@ func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflec
 		value = pointer.Interface()
 
 	// Int and uint are not supported because their size is platform-dependant
-	case reflect.Int:
-	case reflect.Uint:
-	// Other types are not supported simply because they are not used in any command right now
-	// but support can be added if and when needed
-	case reflect.Slice:
-	case reflect.Func:
-	case reflect.Interface:
-	case reflect.Map:
-	case reflect.UnsafePointer:
-	case reflect.Invalid:
-	case reflect.Uintptr:
-	case reflect.Complex64:
-	case reflect.Complex128:
-	case reflect.Array:
-	case reflect.Chan:
+	case reflect.Int,
+		reflect.Uint,
+		// Other types are not supported simply because they are not used in any command right now
+		// but support can be added if and when needed
+		reflect.Slice,
+		reflect.Func,
+		reflect.Interface,
+		reflect.Map,
+		reflect.UnsafePointer,
+		reflect.Invalid,
+		reflect.Uintptr,
+		reflect.Complex64,
+		reflect.Complex128,
+		reflect.Array,
+		reflect.Chan:
+		fallthrough
 	default:
 		return reflect.Value{},
 			errors.Errorf("Unsupported type '%s' for parameter '%s'", parameterDesc.typeof.Kind(), parameterDesc.name)
