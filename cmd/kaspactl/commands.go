@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"unicode"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 )
 
-var requestTypes = []reflect.Type{
+var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_AddPeerRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetConnectedPeerInfoRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetPeerAddressesRequest{}),
@@ -35,7 +34,7 @@ var requestTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_GetUtxosByAddressesRequest{}),
 }
 
-type requestDescription struct {
+type commandDescription struct {
 	name       string
 	parameters []*parameterDescription
 	typeof     reflect.Type
@@ -46,45 +45,42 @@ type parameterDescription struct {
 	typeof reflect.Type
 }
 
-func unwrapRequestType(requestTypeWrapped reflect.Type) reflect.Type {
-	return requestTypeWrapped.Field(0).Type.Elem()
-}
+func commandDescriptions() []*commandDescription {
+	commandDescriptions := make([]*commandDescription, len(commandTypes))
 
-func requestDescriptions() []*requestDescription {
-	requestDescriptions := make([]*requestDescription, len(requestTypes))
+	for i, commandTypeWrapped := range commandTypes {
+		commandType := unwrapCommandType(commandTypeWrapped)
 
-	for i, requestTypeWrapped := range requestTypes {
-		requestType := unwrapRequestType(requestTypeWrapped)
-
-		name := strings.TrimSuffix(requestType.Name(), "RequestMessage")
-		numFields := requestType.NumField()
+		name := strings.TrimSuffix(commandType.Name(), "RequestMessage")
+		numFields := commandType.NumField()
 
 		var parameters []*parameterDescription
 		for i := 0; i < numFields; i++ {
-			field := requestType.Field(i)
+			field := commandType.Field(i)
 
-			if !unicode.IsUpper(rune(field.Name[0])) { // Only exported fields are of interest
+			if !isFieldExported(field) {
 				continue
 			}
+
 			parameters = append(parameters, &parameterDescription{
 				name:   field.Name,
 				typeof: field.Type,
 			})
 		}
-		requestDescriptions[i] = &requestDescription{
+		commandDescriptions[i] = &commandDescription{
 			name:       name,
 			parameters: parameters,
-			typeof:     requestTypeWrapped,
+			typeof:     commandTypeWrapped,
 		}
 	}
 
-	return requestDescriptions
+	return commandDescriptions
 }
 
-func (rd *requestDescription) help() string {
+func (cd *commandDescription) help() string {
 	sb := &strings.Builder{}
-	sb.WriteString(rd.name)
-	for _, parameter := range rd.parameters {
+	sb.WriteString(cd.name)
+	for _, parameter := range cd.parameters {
 		_, _ = fmt.Fprintf(sb, " [%s]", parameter.name)
 	}
 	return sb.String()

@@ -49,14 +49,14 @@ func main() {
 }
 
 func printAllCommands() {
-	requestDescs := requestDescriptions()
+	requestDescs := commandDescriptions()
 	for _, requestDesc := range requestDescs {
 		fmt.Printf("\t%s\n", requestDesc.help())
 	}
 }
 
 func postCommand(cfg *configFlags, client *grpcclient.GRPCClient, responseChan chan string) {
-	message, err := parseCommand(cfg.CommandAndParameters, requestDescriptions())
+	message, err := parseCommand(cfg.CommandAndParameters, commandDescriptions())
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error parsing command: %+v", err))
 	}

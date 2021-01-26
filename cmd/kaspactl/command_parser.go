@@ -11,56 +11,50 @@ import (
 	"github.com/pkg/errors"
 )
 
-func parseCommand(args []string, requestDescs []*requestDescription) (*protowire.KaspadMessage, error) {
-	commandName, parameters := args[0], args[1:]
+func parseCommand(args []string, commandDescs []*commandDescription) (*protowire.KaspadMessage, error) {
+	commandName, parameterStrings := args[0], args[1:]
 
-	var requestDesc *requestDescription
-	for _, rd := range requestDescs {
-		if rd.name == commandName {
-			requestDesc = rd
+	var commandDesc *commandDescription
+	for _, cd := range commandDescs {
+		if cd.name == commandName {
+			commandDesc = cd
 			break
 		}
 	}
-	if requestDesc == nil {
+	if commandDesc == nil {
 		return nil, errors.Errorf("unknown command: %s. Use --list-commands to list all commands", commandName)
 	}
-	if len(parameters) != len(requestDesc.parameters) {
+	if len(parameterStrings) != len(commandDesc.parameters) {
 		return nil, errors.Errorf("command '%s' expects %d parameters but got %d",
-			commandName, len(requestDesc.parameters), len(parameters))
+			commandName, len(commandDesc.parameters), len(parameterStrings))
 	}
 
-	request := reflect.New(unwrapRequestType(requestDesc.typeof))
-	for i, parameterDesc := range requestDesc.parameters {
-		field := request.Elem().FieldByName(parameterDesc.name)
-		parameter := parameters[i]
-		err := setField(field, parameterDesc, parameter)
+	commandValue := reflect.New(unwrapCommandType(commandDesc.typeof))
+	for i, parameterDesc := range commandDesc.parameters {
+		parameterValue, err := stringToValue(parameterDesc, parameterStrings[i])
+		if err != nil {
+			return nil, err
+		}
+		err = setField(commandValue, parameterValue, parameterDesc)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	requestWrapper := reflect.New(requestDesc.typeof)
-	requestWrapper.Elem().Field(0).Set(request)
-
-	kaspadMessage := reflect.New(reflect.TypeOf(protowire.KaspadMessage{}))
-	kaspadMessage.Elem().FieldByName("Payload").Set(requestWrapper)
-	return kaspadMessage.Interface().(*protowire.KaspadMessage), nil
+	return generateKaspadMessage(commandValue, commandDesc)
 }
 
-func setField(field reflect.Value, parameterDesc *parameterDescription, valueStr string) error {
-	value, err := stringToValue(field, parameterDesc, valueStr)
-	if err != nil {
-		return err
-	}
+func setField(commandValue reflect.Value, parameterValue reflect.Value, parameterDesc *parameterDescription) error {
+	parameterField := commandValue.Elem().FieldByName(parameterDesc.name)
 
-	field.Set(value)
+	parameterField.Set(parameterValue)
 	return nil
 }
 
-func stringToValue(field reflect.Value, parameterDesc *parameterDescription, valueStr string) (reflect.Value, error) {
+func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflect.Value, error) {
 	var value interface{}
 	var err error
-	switch field.Kind() {
+	switch parameterDesc.typeof.Kind() {
 	case reflect.Bool:
 		value, err = strconv.ParseBool(valueStr)
 		if err != nil {
@@ -133,7 +127,7 @@ func stringToValue(field reflect.Value, parameterDesc *parameterDescription, val
 	case reflect.String:
 		value = valueStr
 	case reflect.Struct:
-		pointer := reflect.New(field.Type()) // create pointer to this type
+		pointer := reflect.New(parameterDesc.typeof) // create pointer to this type
 		fieldInterface := pointer.Interface().(proto.Message)
 		err := protojson.Unmarshal([]byte(valueStr), fieldInterface)
 		if err != nil {
@@ -143,19 +137,25 @@ func stringToValue(field reflect.Value, parameterDesc *parameterDescription, val
 		fieldInterfaceValue := reflect.ValueOf(fieldInterface)
 		value = fieldInterfaceValue.Elem().Interface()
 	case reflect.Ptr:
-		valuePointedTo, err := stringToValue(reflect.New(field.Type().Elem()).Elem(), parameterDesc, valueStr)
+		dummyParameterDesc := &parameterDescription{
+			name:   "valuePointedTo",
+			typeof: parameterDesc.typeof.Elem(),
+		}
+		valuePointedTo, err := stringToValue(dummyParameterDesc, valueStr)
 		if err != nil {
 			return reflect.Value{}, errors.WithStack(err)
 		}
-		pointer := reflect.New(valuePointedTo.Type())
-		pointer.Elem().Set(valuePointedTo)
+		pointer := pointerToValue(valuePointedTo)
 
 		value = pointer.Interface()
 
-	case reflect.Slice:
-	case reflect.Func:
+	// Int and uint are not supported because their size is unexpected
 	case reflect.Int:
 	case reflect.Uint:
+	// Other types are not supported simply because they are not used in any command right now
+	// but support can be added if and when needed
+	case reflect.Slice:
+	case reflect.Func:
 	case reflect.Interface:
 	case reflect.Map:
 	case reflect.UnsafePointer:
@@ -167,7 +167,7 @@ func stringToValue(field reflect.Value, parameterDesc *parameterDescription, val
 	case reflect.Chan:
 	default:
 		return reflect.Value{},
-			errors.Errorf("Unsupported type '%s' for parameter '%s'", field.Type().Kind(), parameterDesc.name)
+			errors.Errorf("Unsupported type '%s' for parameter '%s'", parameterDesc.typeof.Kind(), parameterDesc.name)
 	}
 
 	return reflect.ValueOf(value), nil
