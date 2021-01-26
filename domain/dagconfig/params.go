@@ -204,7 +204,6 @@ var MainnetParams = Params{
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{"dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
@@ -261,7 +260,6 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	GRPCSeeds:   []string{"testnet-dnsseed.kas.pa:17100"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
