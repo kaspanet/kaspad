@@ -45,6 +45,8 @@ type DBReader interface {
 
 // DBWriter is an interface to write to the database
 type DBWriter interface {
+	DBReader
+
 	// Put sets the value for the given key. It overwrites
 	// any previous value for that key.
 	Put(key DBKey, value []byte) error
@@ -58,7 +60,6 @@ type DBWriter interface {
 // access that requires an open database transaction
 type DBTransaction interface {
 	DBWriter
-	DBReader
 
 	// Rollback rolls back whatever changes were made to the
 	// database within this transaction.
@@ -77,7 +78,7 @@ type DBTransaction interface {
 // DBManager defines the interface of a database that can begin
 // transactions and read data.
 type DBManager interface {
-	DBReader
+	DBWriter
 
 	// Begin begins a new database transaction.
 	Begin() (DBTransaction, error)

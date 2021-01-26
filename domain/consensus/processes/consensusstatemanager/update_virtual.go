@@ -52,10 +52,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	log.Debugf("Staging new UTXO diff for the virtual block")
-	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
-	if err != nil {
-		return nil, err
-	}
+	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
 
 	log.Debugf("Updating the virtual diff parents after adding %s to the DAG", newBlockHash)
 	err = csm.updateVirtualDiffParents(virtualUTXODiff)

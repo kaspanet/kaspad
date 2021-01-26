@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
@@ -24,7 +23,6 @@ var orphanResolutionRange uint32 = 5
 type RelayInvsContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
-	NetAdapter() *netadapter.NetAdapter
 	OnNewBlock(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
@@ -109,6 +107,10 @@ func (flow *handleRelayInvsFlow) start() error {
 		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
+			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+				log.Infof("Ignoring duplicate block %s", inv.Hash)
+				continue
+			}
 			return err
 		}
 		if len(missingParents) > 0 {
