@@ -86,7 +86,7 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 
 func prettifyJSON(jsonString string) string {
 	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, []byte(jsonString), "", "\t")
+	err := json.Indent(&prettyJSON, []byte(jsonString), "", "    ")
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error prettifying the response from the RPC server: %s", err))
 	}
