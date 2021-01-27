@@ -362,13 +362,9 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externala
 		return false, err
 	}
 
-	block, succeed, err := flow.receivePruningPointBlock(pruningPointHash)
+	block, err := flow.receivePruningPointBlock()
 	if err != nil {
 		return false, err
-	}
-
-	if !succeed {
-		return false, nil
 	}
 
 	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet(pruningPointHash)
@@ -391,36 +387,25 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externala
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) receivePruningPointBlock(
-	pruningPointHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
-
+func (flow *handleRelayInvsFlow) receivePruningPointBlock() (*externalapi.DomainBlock, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receivePruningPointBlock")
 	defer onEnd()
 
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	switch message := message.(type) {
-	case *appmessage.MsgIBDBlock:
-		block := appmessage.MsgBlockToDomainBlock(message.MsgBlock)
-		blockHash := consensushashing.BlockHash(block)
-		if !blockHash.Equal(pruningPointHash) {
-			return nil, false, protocolerrors.Errorf(true, "requested pruning point %s but got %s",
-				pruningPointHash, blockHash)
-		}
-		log.Infof("Received pruning point block %s", consensushashing.BlockHash(block))
-		return block, true, nil
-	case *appmessage.MsgUnexpectedPruningPoint:
-		log.Infof("Could not receive the pruning point block. The pruning point %s "+
-			"is no longer the pruning point of peer %s", pruningPointHash, flow.peer)
-		return nil, false, nil
-	default:
-		return nil, false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s or %s, got: %s", appmessage.CmdIBDBlock, appmessage.CmdUnexpectedPruningPoint, message.Command(),
-		)
+	ibdBlockMessage, ok := message.(*appmessage.MsgIBDBlock)
+	if !ok {
+		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
 	}
+	block := appmessage.MsgBlockToDomainBlock(ibdBlockMessage.MsgBlock)
+
+	log.Debugf("Received pruning point block %s", consensushashing.BlockHash(block))
+
+	return block, nil
 }
 
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
@@ -461,11 +446,11 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			}
 
 		case *appmessage.MsgDonePruningPointUTXOSetChunks:
-			log.Infof("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
+			log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
 			return true, nil
 
 		case *appmessage.MsgUnexpectedPruningPoint:
-			log.Infof("Could not receive the next UTXO chunk because the pruning point %s "+
+			log.Debugf("Could not receive the next UTXO chunk because the pruning point %s "+
 				"is no longer the pruning point of peer %s", pruningPointHash, flow.peer)
 			return false, nil
 
