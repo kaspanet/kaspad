@@ -20,13 +20,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
+	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
 
@@ -87,7 +87,7 @@ func logHashRate() {
 	spawn("logHashRate", func() {
 		lastCheck := time.Now()
 		for range time.Tick(logHashRateInterval) {
-			currentHashesTried := hashesTried
+			currentHashesTried := atomic.LoadUint64(&hashesTried)
 			currentTime := time.Now()
 			kiloHashesTried := float64(currentHashesTried) / 1000.0
 			hashRate := kiloHashesTried / currentTime.Sub(lastCheck).Seconds()
@@ -129,7 +129,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
 	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
-	initialNonce := random.Uint64()
+	initialNonce := rand.Uint64() // Use the global concurrent-safe random source.
 	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
@@ -191,8 +191,9 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 		stopOldTemplateSolving = make(chan struct{})
 		block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
 
+		stopOldTemplateSolvingCopy := stopOldTemplateSolving
 		spawn("solveBlock", func() {
-			solveBlock(block, stopOldTemplateSolving, foundBlock)
+			solveBlock(block, stopOldTemplateSolvingCopy, foundBlock)
 		})
 	}
 	if stopOldTemplateSolving != nil {
