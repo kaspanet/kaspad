@@ -85,6 +85,8 @@ func New(
 // FindNextPruningPoint finds the next pruning point from the
 // given blockHash
 func (pm *pruningManager) UpdatePruningPointByVirtual() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.UpdatePruningPointByVirtual")
+	defer onEnd()
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
 	if err != nil {
 		return err
@@ -413,6 +415,9 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 // validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
 // This is a sanity test, to make sure that kaspad doesn't store, and subsequently sends syncing peers the wrong UTXOSet.
 func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.validateUTXOSetFitsCommitment")
+	defer onEnd()
+
 	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
 	if err != nil {
 		return err
