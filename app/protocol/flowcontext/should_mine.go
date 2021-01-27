@@ -3,7 +3,7 @@ package flowcontext
 import "github.com/kaspanet/kaspad/util/mstime"
 
 const (
-	maxSelectedParentTimeDiffToAllowMiningInMilliSeconds = 300_000
+	maxSelectedParentTimeDiffToAllowMiningInMilliSeconds = 60 * 60 * 1000 // 1 Hour
 )
 
 // ShouldMine returns whether it's ok to use block template from this node
