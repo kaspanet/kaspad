@@ -20,7 +20,7 @@ func TestFinality(t *testing.T) {
 		params.FinalityDuration = 50 * params.TargetTimePerBlock
 
 		factory := NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestFinality")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestFinality")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -232,12 +232,12 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		factory := NewFactory()
-		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(params, "BoundedMergeTestBuild")
+		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(params, false, "BoundedMergeTestBuild")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
 
-		consensusReal, teardownFunc2, err := factory.NewTestConsensus(params, "BoundedMergeTestReal")
+		consensusReal, teardownFunc2, err := factory.NewTestConsensus(params, false, "BoundedMergeTestReal")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}

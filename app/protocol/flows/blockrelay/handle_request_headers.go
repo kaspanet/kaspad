@@ -42,9 +42,10 @@ func (flow *handleRequestBlocksFlow) start() error {
 		if err != nil {
 			return err
 		}
+		log.Debugf("Recieved requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		for !lowHash.Equal(highHash) {
-			log.Debugf("Getting block hashes between %s and %s to %s", lowHash, highHash, flow.peer)
+			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
 
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long

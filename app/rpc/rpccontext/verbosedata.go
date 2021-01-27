@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/big"
 	"strconv"
@@ -19,7 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/pointers"
 )
 
@@ -83,7 +83,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	target := util.CompactToBig(bits)
+	target := difficulty.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
 	diff, _ := difficulty.Float64()

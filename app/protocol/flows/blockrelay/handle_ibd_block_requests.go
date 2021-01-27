@@ -25,7 +25,8 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 			return err
 		}
 		msgRequestIBDBlocks := message.(*appmessage.MsgRequestIBDBlocks)
-		for _, hash := range msgRequestIBDBlocks.Hashes {
+		log.Debugf("Got request for %d ibd blocks", len(msgRequestIBDBlocks.Hashes))
+		for i, hash := range msgRequestIBDBlocks.Hashes {
 			// Fetch the block from the database.
 			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
 			if err != nil {
@@ -47,6 +48,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 			if err != nil {
 				return err
 			}
+			log.Debugf("sent %d out of %d", i, len(msgRequestIBDBlocks.Hashes))
 		}
 	}
 }

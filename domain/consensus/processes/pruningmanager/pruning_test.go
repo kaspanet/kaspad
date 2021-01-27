@@ -33,10 +33,10 @@ func TestPruning(t *testing.T) {
 			"kaspa-testnet": "1582",
 		},
 		"dag-for-test-pruning.json": {
-			"kaspa-mainnet": "502",
+			"kaspa-mainnet": "503",
 			"kaspa-simnet":  "502",
 			"kaspa-devnet":  "503",
-			"kaspa-testnet": "502",
+			"kaspa-testnet": "503",
 		},
 	}
 
@@ -67,7 +67,7 @@ func TestPruning(t *testing.T) {
 			params.MergeSetSizeLimit = test.MergeSetSizeLimit
 
 			factory := consensus.NewFactory()
-			tc, teardown, err := factory.NewTestConsensus(params, "TestPruning")
+			tc, teardown, err := factory.NewTestConsensus(params, false, "TestPruning")
 			if err != nil {
 				t.Fatalf("Error setting up consensus: %+v", err)
 			}

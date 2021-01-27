@@ -2,10 +2,11 @@ package consensusstatemanager_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
@@ -24,7 +25,7 @@ func TestDoubleSpends(t *testing.T) {
 
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -161,7 +162,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		params.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(params, "TestTransactionAcceptance")
+		testConsensus, teardown, err := factory.NewTestConsensus(params, false, "TestTransactionAcceptance")
 		if err != nil {
 			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
@@ -381,7 +382,7 @@ func TestTransactionAcceptance(t *testing.T) {
 
 func TestResolveBlockStatusSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, "TestResolveBlockStatusSanity")
+		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestResolveBlockStatusSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

@@ -18,9 +18,11 @@ type p2pServer struct {
 	gRPCServer
 }
 
+const p2pMaxMessageSize = 10 * 1024 * 1024 // 10MB
+
 // NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
-	gRPCServer := newGRPCServer(listeningAddresses)
+	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, "P2P")
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}
 	protowire.RegisterP2PServer(gRPCServer.server, p2pServer)
 	return p2pServer, nil
@@ -35,7 +37,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 // Connect connects to the given address
 // This is part of the P2PServer interface
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
-	log.Infof("Dialing to %s", address)
+	log.Infof("%s Dialing to %s", p.name, address)
 
 	const dialTimeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
@@ -43,19 +45,19 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 
 	gRPCClientConnection, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to %s", address)
+		return nil, errors.Wrapf(err, "%s error connecting to %s", p.name, address)
 	}
 
 	client := protowire.NewP2PClient(gRPCClientConnection)
 	stream, err := client.MessageStream(context.Background(), grpc.UseCompressor(gzip.Name),
-		grpc.MaxCallRecvMsgSize(MaxMessageSize), grpc.MaxCallSendMsgSize(MaxMessageSize))
+		grpc.MaxCallRecvMsgSize(p2pMaxMessageSize), grpc.MaxCallSendMsgSize(p2pMaxMessageSize))
 	if err != nil {
-		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
+		return nil, errors.Wrapf(err, "%s error getting client stream for %s", p.name, address)
 	}
 
 	peerInfo, ok := peer.FromContext(stream.Context())
 	if !ok {
-		return nil, errors.Errorf("error getting stream peer info from context for %s", address)
+		return nil, errors.Errorf("%s error getting stream peer info from context for %s", p.name, address)
 	}
 	tcpAddress, ok := peerInfo.Addr.(*net.TCPAddr)
 	if !ok {
@@ -69,7 +71,7 @@ func (p *p2pServer) Connect(address string) (server.Connection, error) {
 		return nil, err
 	}
 
-	log.Infof("Connected to %s", address)
+	log.Infof("%s Connected to %s", p.name, address)
 
 	return connection, nil
 }

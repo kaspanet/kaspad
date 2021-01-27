@@ -1,17 +1,18 @@
 package pruningmanager
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // pruningManager resolves and manages the current pruning point
 type pruningManager struct {
-	databaseContext model.DBReader
+	databaseContext model.DBManager
 
 	dagTraversalManager    model.DAGTraversalManager
 	dagTopologyManager     model.DAGTopologyManager
@@ -28,6 +29,7 @@ type pruningManager struct {
 	blockHeaderStore    model.BlockHeaderStore
 	utxoDiffStore       model.UTXODiffStore
 
+	isArchivalNode   bool
 	genesisHash      *externalapi.DomainHash
 	finalityInterval uint64
 	pruningDepth     uint64
@@ -35,7 +37,7 @@ type pruningManager struct {
 
 // New instantiates a new PruningManager
 func New(
-	databaseContext model.DBReader,
+	databaseContext model.DBManager,
 
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
@@ -52,6 +54,7 @@ func New(
 	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
 
+	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
@@ -72,6 +75,7 @@ func New(
 		blockHeaderStore:       blockHeaderStore,
 		utxoDiffStore:          utxoDiffStore,
 		headerSelectedTipStore: headerSelectedTipStore,
+		isArchivalNode:         isArchivalNode,
 		genesisHash:            genesisHash,
 		pruningDepth:           pruningDepth,
 		finalityInterval:       finalityInterval,
@@ -168,6 +172,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	}
 
 	if !newCandidate.Equal(currentCandidate) {
+		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
 		pm.pruningStore.StagePruningPointCandidate(newCandidate)
 	}
 
@@ -178,6 +183,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
+		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(newPruningPoint)
 		if err != nil {
 			return err
@@ -305,16 +311,15 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	utxoIter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
+	// TODO: This is an assert that takes ~30 seconds to run
+	// It must be removed or optimized before launching testnet
+	err := pm.validateUTXOSetFitsCommitment(pruningPointHash)
 	if err != nil {
 		return err
 	}
 
-	serializedUtxo, err := pm.calculateAndValidateSerializedUTXOSet(utxoIter, pruningPointHash)
-	if err != nil {
-		return err
-	}
-	pm.pruningStore.StagePruningPoint(pruningPointHash, serializedUtxo)
+	pm.pruningStore.StagePruningPoint(pruningPointHash)
+	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet()
 
 	return nil
 }
@@ -328,12 +333,16 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 		return true, nil
 	}
 
+	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+	if pm.isArchivalNode {
+		return false, nil
+	}
+
 	pm.multiSetStore.Delete(blockHash)
 	pm.acceptanceDataStore.Delete(blockHash)
 	pm.blocksStore.Delete(blockHash)
 	pm.utxoDiffStore.Delete(blockHash)
 
-	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
 	return false, nil
 }
 
@@ -401,32 +410,27 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 	return pm.pruningStore.PruningPointCandidate(pm.databaseContext)
 }
 
-func (pm *pruningManager) calculateAndValidateSerializedUTXOSet(
-	iter model.ReadOnlyUTXOSetIterator, pruningPointHash *externalapi.DomainHash) ([]byte, error) {
-
-	serializedUtxo, err := utxoserialization.ReadOnlyUTXOSetToProtoUTXOSet(iter)
-	if err != nil {
-		return nil, err
-	}
-
-	err = pm.validateUTXOSetFitsCommitment(serializedUtxo, pruningPointHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return proto.Marshal(serializedUtxo)
-}
-
 // validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
 // This is a sanity test, to make sure that kaspad doesn't store, and subsequently sends syncing peers the wrong UTXOSet.
-func (pm *pruningManager) validateUTXOSetFitsCommitment(
-	serializedUtxo *utxoserialization.ProtoUTXOSet, pruningPointHash *externalapi.DomainHash) error {
-
-	utxoSetMultiSet, err := utxoserialization.CalculateMultisetFromProtoUTXOSet(serializedUtxo)
+func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *externalapi.DomainHash) error {
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
 	if err != nil {
 		return err
 	}
-	utxoSetHash := utxoSetMultiSet.Hash()
+
+	utxoSetMultiset := multiset.New()
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
+		outpoint, entry, err := utxoSetIterator.Get()
+		if err != nil {
+			return err
+		}
+		serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)
+		if err != nil {
+			return err
+		}
+		utxoSetMultiset.Add(serializedUTXO)
+	}
+	utxoSetHash := utxoSetMultiset.Hash()
 
 	header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, pruningPointHash)
 	if err != nil {
@@ -440,6 +444,8 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(
 			pruningPointHash, utxoSetHash, expectedUTXOCommitment)
 	}
 
+	log.Debugf("Validated the pruning point %s UTXO commitment: %s", pruningPointHash, utxoSetHash)
+
 	return nil
 }
 
@@ -447,4 +453,96 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(
 // the given block.
 func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
+}
+
+func (pm *pruningManager) ClearImportedPruningPointData() error {
+	err := pm.pruningStore.ClearImportedPruningPointMultiset(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	return pm.pruningStore.ClearImportedPruningPointUTXOs(pm.databaseContext)
+}
+
+func (pm *pruningManager) AppendImportedPruningPointUTXOs(
+	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+
+	dbTx, err := pm.databaseContext.Begin()
+	if err != nil {
+		return err
+	}
+	defer dbTx.RollbackUnlessClosed()
+
+	importedMultiset, err := pm.pruningStore.ImportedPruningPointMultiset(dbTx)
+	if err != nil {
+		if !database.IsNotFoundError(err) {
+			return err
+		}
+		importedMultiset = multiset.New()
+	}
+	for _, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		serializedUTXO, err := utxo.SerializeUTXO(outpointAndUTXOEntryPair.UTXOEntry, outpointAndUTXOEntryPair.Outpoint)
+		if err != nil {
+			return err
+		}
+		importedMultiset.Add(serializedUTXO)
+	}
+	err = pm.pruningStore.UpdateImportedPruningPointMultiset(dbTx, importedMultiset)
+	if err != nil {
+		return err
+	}
+
+	err = pm.pruningStore.AppendImportedPruningPointUTXOs(dbTx, outpointAndUTXOEntryPairs)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
+}
+
+func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
+	hadStartedUpdatingPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+	if !hadStartedUpdatingPruningPointUTXOSet {
+		return nil
+	}
+
+	log.Debugf("Pruning point UTXO set update is required")
+	err = pm.updatePruningPointUTXOSet()
+	if err != nil {
+		return err
+	}
+	log.Debugf("Pruning point UTXO set updated")
+
+	return nil
+}
+
+func (pm *pruningManager) updatePruningPointUTXOSet() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
+	defer onEnd()
+
+	logger.LogMemoryStats(log, "updatePruningPointUTXOSet start")
+	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
+
+	log.Debugf("Getting the pruning point")
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Restoring the pruning point UTXO set")
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Updating the pruning point UTXO set")
+	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Finishing updating the pruning point UTXO set")
+	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }

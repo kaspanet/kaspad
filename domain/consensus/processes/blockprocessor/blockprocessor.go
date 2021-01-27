@@ -4,13 +4,15 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"time"
 )
 
 // blockProcessor is responsible for processing incoming blocks
 // and creating blocks from the current state
 type blockProcessor struct {
-	genesisHash     *externalapi.DomainHash
-	databaseContext model.DBManager
+	genesisHash        *externalapi.DomainHash
+	targetTimePerBlock time.Duration
+	databaseContext    model.DBManager
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -24,19 +26,20 @@ type blockProcessor struct {
 	headerTipsManager     model.HeadersSelectedTipManager
 	syncManager           model.SyncManager
 
-	acceptanceDataStore     model.AcceptanceDataStore
-	blockStore              model.BlockStore
-	blockStatusStore        model.BlockStatusStore
-	blockRelationStore      model.BlockRelationStore
-	multisetStore           model.MultisetStore
-	ghostdagDataStore       model.GHOSTDAGDataStore
-	consensusStateStore     model.ConsensusStateStore
-	pruningStore            model.PruningStore
-	reachabilityDataStore   model.ReachabilityDataStore
-	utxoDiffStore           model.UTXODiffStore
-	blockHeaderStore        model.BlockHeaderStore
-	headersSelectedTipStore model.HeaderSelectedTipStore
-	finalityStore           model.FinalityStore
+	acceptanceDataStore       model.AcceptanceDataStore
+	blockStore                model.BlockStore
+	blockStatusStore          model.BlockStatusStore
+	blockRelationStore        model.BlockRelationStore
+	multisetStore             model.MultisetStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	consensusStateStore       model.ConsensusStateStore
+	pruningStore              model.PruningStore
+	reachabilityDataStore     model.ReachabilityDataStore
+	utxoDiffStore             model.UTXODiffStore
+	blockHeaderStore          model.BlockHeaderStore
+	headersSelectedTipStore   model.HeaderSelectedTipStore
+	finalityStore             model.FinalityStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 
 	stores []model.Store
 }
@@ -44,6 +47,7 @@ type blockProcessor struct {
 // New instantiates a new BlockProcessor
 func New(
 	genesisHash *externalapi.DomainHash,
+	targetTimePerBlock time.Duration,
 	databaseContext model.DBManager,
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
@@ -70,10 +74,12 @@ func New(
 	blockHeaderStore model.BlockHeaderStore,
 	headersSelectedTipStore model.HeaderSelectedTipStore,
 	finalityStore model.FinalityStore,
+	headersSelectedChainStore model.HeadersSelectedChainStore,
 ) model.BlockProcessor {
 
 	return &blockProcessor{
 		genesisHash:           genesisHash,
+		targetTimePerBlock:    targetTimePerBlock,
 		databaseContext:       databaseContext,
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,
@@ -86,20 +92,21 @@ func New(
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
 
-		consensusStateManager:   consensusStateManager,
-		acceptanceDataStore:     acceptanceDataStore,
-		blockStore:              blockStore,
-		blockStatusStore:        blockStatusStore,
-		blockRelationStore:      blockRelationStore,
-		multisetStore:           multisetStore,
-		ghostdagDataStore:       ghostdagDataStore,
-		consensusStateStore:     consensusStateStore,
-		pruningStore:            pruningStore,
-		reachabilityDataStore:   reachabilityDataStore,
-		utxoDiffStore:           utxoDiffStore,
-		blockHeaderStore:        blockHeaderStore,
-		headersSelectedTipStore: headersSelectedTipStore,
-		finalityStore:           finalityStore,
+		consensusStateManager:     consensusStateManager,
+		acceptanceDataStore:       acceptanceDataStore,
+		blockStore:                blockStore,
+		blockStatusStore:          blockStatusStore,
+		blockRelationStore:        blockRelationStore,
+		multisetStore:             multisetStore,
+		ghostdagDataStore:         ghostdagDataStore,
+		consensusStateStore:       consensusStateStore,
+		pruningStore:              pruningStore,
+		reachabilityDataStore:     reachabilityDataStore,
+		utxoDiffStore:             utxoDiffStore,
+		blockHeaderStore:          blockHeaderStore,
+		headersSelectedTipStore:   headersSelectedTipStore,
+		finalityStore:             finalityStore,
+		headersSelectedChainStore: headersSelectedChainStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -116,6 +123,7 @@ func New(
 			blockHeaderStore,
 			headersSelectedTipStore,
 			finalityStore,
+			headersSelectedChainStore,
 		},
 	}
 }
@@ -129,9 +137,9 @@ func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock)
 	return bp.validateAndInsertBlock(block, false)
 }
 
-func (bp *blockProcessor) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertPruningPoint")
+func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertImportedPruningPoint")
 	defer onEnd()
 
-	return bp.validateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
+	return bp.validateAndInsertImportedPruningPoint(newPruningPoint)
 }

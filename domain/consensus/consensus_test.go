@@ -14,7 +14,7 @@ import (
 func TestConsensus_GetBlockInfo(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestConsensus_GetBlockInfo")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestConsensus_GetBlockInfo")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

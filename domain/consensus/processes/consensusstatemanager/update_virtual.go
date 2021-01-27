@@ -6,7 +6,7 @@ import (
 )
 
 func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash,
-	tips []*externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+	tips []*externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 
 	log.Debugf("updateVirtual start for block %s", newBlockHash)
 	defer log.Debugf("updateVirtual end for block %s", newBlockHash)
@@ -52,10 +52,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	log.Debugf("Staging new UTXO diff for the virtual block")
-	err = csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
-	if err != nil {
-		return nil, err
-	}
+	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
 
 	log.Debugf("Updating the virtual diff parents after adding %s to the DAG", newBlockHash)
 	err = csm.updateVirtualDiffParents(virtualUTXODiff)
@@ -64,14 +61,15 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	}
 
 	log.Debugf("Calculating selected parent chain changes")
-	var selectedParentChainChanges *externalapi.SelectedParentChainChanges
+	var selectedParentChainChanges *externalapi.SelectedChainPath
 	if !newBlockHash.Equal(csm.genesisHash) {
 		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
-		selectedParentChainChanges, err = csm.calculateSelectedParentChainChanges(oldVirtualSelectedParent, newVirtualSelectedParent)
+		selectedParentChainChanges, err = csm.dagTraversalManager.
+			CalculateChainPath(oldVirtualSelectedParent, newVirtualSelectedParent)
 		if err != nil {
 			return nil, err
 		}

@@ -42,8 +42,10 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveVersionFlow.start()")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveVersionFlow.start")
 	defer onEnd()
+
+	log.Debugf("Starting receiveVersionFlow with %s", flow.peer.Address())
 
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {

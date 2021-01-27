@@ -7,9 +7,10 @@ import (
 // Mempool maintains a set of known transactions that
 // are intended to be mined into new blocks
 type Mempool interface {
-	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) []*consensusexternalapi.DomainTransaction
-	Transactions() []*consensusexternalapi.DomainTransaction
+	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error)
+	BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction)
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
+	AllTransactions() []*consensusexternalapi.DomainTransaction
 }

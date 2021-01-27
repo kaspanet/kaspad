@@ -1,13 +1,13 @@
 package ghostdag2
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"sort"
 
 	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
 )
 
 type ghostdagHelper struct {
@@ -111,7 +111,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if err != nil {
 			return err
 		}
-		myWork.Add(myWork, util.CalcWork(header.Bits()))
+		myWork.Add(myWork, difficulty.CalcWork(header.Bits()))
 	}
 
 	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)

@@ -1,9 +1,9 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"sync"
 
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -32,19 +32,20 @@ type consensus struct {
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
-	acceptanceDataStore     model.AcceptanceDataStore
-	blockStore              model.BlockStore
-	blockHeaderStore        model.BlockHeaderStore
-	pruningStore            model.PruningStore
-	ghostdagDataStore       model.GHOSTDAGDataStore
-	blockRelationStore      model.BlockRelationStore
-	blockStatusStore        model.BlockStatusStore
-	consensusStateStore     model.ConsensusStateStore
-	headersSelectedTipStore model.HeaderSelectedTipStore
-	multisetStore           model.MultisetStore
-	reachabilityDataStore   model.ReachabilityDataStore
-	utxoDiffStore           model.UTXODiffStore
-	finalityStore           model.FinalityStore
+	acceptanceDataStore       model.AcceptanceDataStore
+	blockStore                model.BlockStore
+	blockHeaderStore          model.BlockHeaderStore
+	pruningStore              model.PruningStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	blockRelationStore        model.BlockRelationStore
+	blockStatusStore          model.BlockStatusStore
+	consensusStateStore       model.ConsensusStateStore
+	headersSelectedTipStore   model.HeaderSelectedTipStore
+	multisetStore             model.MultisetStore
+	reachabilityDataStore     model.ReachabilityDataStore
+	utxoDiffStore             model.UTXODiffStore
+	finalityStore             model.FinalityStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -198,7 +199,9 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	return s.syncManager.GetMissingBlockBodyHashes(highHash)
 }
 
-func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi.DomainHash) ([]byte, error) {
+func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -213,11 +216,11 @@ func (s *consensus) GetPruningPointUTXOSet(expectedPruningPointHash *externalapi
 			pruningPointHash)
 	}
 
-	serializedUTXOSet, err := s.pruningStore.PruningPointSerializedUTXOSet(s.databaseContext)
+	pruningPointUTXOs, err := s.pruningStore.PruningPointUTXOs(s.databaseContext, fromOutpoint, limit)
 	if err != nil {
 		return nil, err
 	}
-	return serializedUTXOSet, nil
+	return pruningPointUTXOs, nil
 }
 
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
@@ -227,11 +230,25 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext)
 }
 
-func (s *consensus) ValidateAndInsertPruningPoint(newPruningPoint *externalapi.DomainBlock, serializedUTXOSet []byte) error {
+func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertPruningPoint(newPruningPoint, serializedUTXOSet)
+	return s.pruningManager.ClearImportedPruningPointData()
+}
+
+func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
+}
+
+func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.blockProcessor.ValidateAndInsertImportedPruningPoint(newPruningPoint)
 }
 
 func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) {
@@ -297,15 +314,29 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
 }
 
-func (s *consensus) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
+func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(blockLocator) == 0 {
-		return nil, nil, errors.Errorf("empty block locator")
+	lowHash, err := s.pruningStore.PruningPoint(s.databaseContext)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.syncManager.FindNextBlockLocatorBoundaries(blockLocator)
+	highHash, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
+}
+
+func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
@@ -327,7 +358,7 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 	return s.pruningManager.IsValidPruningPoint(blockHash)
 }
 
-func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedParentChainChanges, error) {
+func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

@@ -75,3 +75,49 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 	return nil
 }
+
+func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromUTXOSet(
+	pruningPoint *externalapi.DomainBlock, iterator model.ReadOnlyUTXOSetIterator) error {
+
+	// Collect the required outpoints from the block
+	outpointsForPopulation := make(map[externalapi.DomainOutpoint]interface{})
+	for _, transaction := range pruningPoint.Transactions {
+		for _, input := range transaction.Inputs {
+			outpointsForPopulation[input.PreviousOutpoint] = struct{}{}
+		}
+	}
+
+	// Collect the UTXO entries from the iterator
+	outpointsToUTXOEntries := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, len(outpointsForPopulation))
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		outpoint, utxoEntry, err := iterator.Get()
+		if err != nil {
+			return err
+		}
+		outpointValue := *outpoint
+		if _, ok := outpointsForPopulation[outpointValue]; ok {
+			outpointsToUTXOEntries[outpointValue] = utxoEntry
+		}
+		if len(outpointsForPopulation) == len(outpointsToUTXOEntries) {
+			break
+		}
+	}
+
+	// Populate the block with the collected UTXO entries
+	var missingOutpoints []*externalapi.DomainOutpoint
+	for _, transaction := range pruningPoint.Transactions {
+		for _, input := range transaction.Inputs {
+			utxoEntry, ok := outpointsToUTXOEntries[input.PreviousOutpoint]
+			if !ok {
+				missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+				continue
+			}
+			input.UTXOEntry = utxoEntry
+		}
+	}
+
+	if len(missingOutpoints) > 0 {
+		return ruleerrors.NewErrMissingTxOut(missingOutpoints)
+	}
+	return nil
+}

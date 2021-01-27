@@ -175,7 +175,7 @@ type Params struct {
 	MaxMassAcceptedByBlock uint64
 
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
-	CoinbasePayloadScriptPublicKeyMaxLength uint64
+	CoinbasePayloadScriptPublicKeyMaxLength uint8
 
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy uint64
@@ -204,7 +204,6 @@ var MainnetParams = Params{
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{"dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
@@ -261,7 +260,6 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	GRPCSeeds:   []string{"testnet-dnsseed.kas.pa:17100"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,

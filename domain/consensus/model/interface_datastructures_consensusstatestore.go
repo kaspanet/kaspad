@@ -7,8 +7,7 @@ type ConsensusStateStore interface {
 	Store
 	IsStaged() bool
 
-	StageVirtualUTXODiff(virtualUTXODiff UTXODiff) error
-	StageVirtualUTXOSet(virtualUTXOSetIterator ReadOnlyUTXOSetIterator) error
+	StageVirtualUTXODiff(virtualUTXODiff UTXODiff)
 	UTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, error)
 	HasUTXOByOutpoint(dbContext DBReader, outpoint *externalapi.DomainOutpoint) (bool, error)
 	VirtualUTXOSetIterator(dbContext DBReader) (ReadOnlyUTXOSetIterator, error)
@@ -18,4 +17,9 @@ type ConsensusStateStore interface {
 
 	StageTips(tipHashes []*externalapi.DomainHash)
 	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
+
+	StartImportingPruningPointUTXOSet(dbContext DBWriter) error
+	HadStartedImportingPruningPointUTXOSet(dbContext DBWriter) (bool, error)
+	ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext DBWriter, pruningPointUTXOSetIterator ReadOnlyUTXOSetIterator) error
+	FinishImportingPruningPointUTXOSet(dbContext DBWriter) error
 }

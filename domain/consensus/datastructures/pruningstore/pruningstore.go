@@ -2,23 +2,30 @@ package pruningstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var pruningBlockHashKey = dbkeys.MakeBucket().Key([]byte("pruning-block-hash"))
-var candidatePruningPointHashKey = dbkeys.MakeBucket().Key([]byte("candidate-pruning-point-hash"))
-var pruningSerializedUTXOSetKey = dbkeys.MakeBucket().Key([]byte("pruning-utxo-set"))
+var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
+var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
+var pruningPointUTXOSetBucket = database.MakeBucket([]byte("pruning-point-utxo-set"))
+var updatingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("updating-pruning-point-utxo-set"))
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
 	pruningPointStaging          *externalapi.DomainHash
-	pruningPointCandidateStaging *externalapi.DomainHash
-	serializedUTXOSetStaging     []byte
-	pruningPointCandidateCache   *externalapi.DomainHash
 	pruningPointCache            *externalapi.DomainHash
+	pruningPointCandidateStaging *externalapi.DomainHash
+	pruningPointCandidateCache   *externalapi.DomainHash
+
+	startUpdatingPruningPointUTXOSetStaging bool
+}
+
+// New instantiates a new PruningStore
+func New() model.PruningStore {
+	return &pruningStore{}
 }
 
 func (ps *pruningStore) StagePruningPointCandidate(candidate *externalapi.DomainHash) {
@@ -59,24 +66,18 @@ func (ps *pruningStore) HasPruningPointCandidate(dbContext model.DBReader) (bool
 	return dbContext.Has(candidatePruningPointHashKey)
 }
 
-// New instantiates a new PruningStore
-func New() model.PruningStore {
-	return &pruningStore{}
-}
-
 // Stage stages the pruning state
-func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash, pruningPointUTXOSetBytes []byte) {
+func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash) {
 	ps.pruningPointStaging = pruningPointBlockHash
-	ps.serializedUTXOSetStaging = pruningPointUTXOSetBytes
 }
 
 func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.serializedUTXOSetStaging != nil
+	return ps.pruningPointStaging != nil || ps.startUpdatingPruningPointUTXOSetStaging
 }
 
 func (ps *pruningStore) Discard() {
 	ps.pruningPointStaging = nil
-	ps.serializedUTXOSetStaging = nil
+	ps.startUpdatingPruningPointUTXOSetStaging = false
 }
 
 func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
@@ -104,18 +105,57 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
 	}
 
-	if ps.serializedUTXOSetStaging != nil {
-		utxoSetBytes, err := ps.serializeUTXOSetBytes(ps.serializedUTXOSetStaging)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(pruningSerializedUTXOSetKey, utxoSetBytes)
+	if ps.startUpdatingPruningPointUTXOSetStaging {
+		err := dbTx.Put(updatingPruningPointUTXOSetKey, []byte{0})
 		if err != nil {
 			return err
 		}
 	}
 
 	ps.Discard()
+	return nil
+}
+
+func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
+	utxoSetIterator model.ReadOnlyUTXOSetIterator) error {
+
+	// Delete all the old UTXOs from the database
+	deleteCursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
+	if err != nil {
+		return err
+	}
+	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
+		key, err := deleteCursor.Key()
+		if err != nil {
+			return err
+		}
+		err = dbContext.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Insert all the new UTXOs into the database
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
+		outpoint, entry, err := utxoSetIterator.Get()
+		if err != nil {
+			return err
+		}
+		serializedOutpoint, err := serializeOutpoint(outpoint)
+		if err != nil {
+			return err
+		}
+		key := pruningPointUTXOSetBucket.Key(serializedOutpoint)
+		serializedUTXOEntry, err := serializeUTXOEntry(entry)
+		if err != nil {
+			return err
+		}
+		err = dbContext.Put(key, serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -140,24 +180,6 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.Dom
 	}
 	ps.pruningPointCache = pruningPoint
 	return pruningPoint, nil
-}
-
-// PruningPointSerializedUTXOSet returns the serialized UTXO set of the current pruning point
-func (ps *pruningStore) PruningPointSerializedUTXOSet(dbContext model.DBReader) ([]byte, error) {
-	if ps.serializedUTXOSetStaging != nil {
-		return ps.serializedUTXOSetStaging, nil
-	}
-
-	dbPruningPointUTXOSetBytes, err := dbContext.Get(pruningSerializedUTXOSetKey)
-	if err != nil {
-		return nil, err
-	}
-
-	pruningPointUTXOSet, err := ps.deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes)
-	if err != nil {
-		return nil, err
-	}
-	return pruningPointUTXOSet, nil
 }
 
 func (ps *pruningStore) serializeHash(hash *externalapi.DomainHash) ([]byte, error) {
@@ -198,4 +220,52 @@ func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) 
 	}
 
 	return dbContext.Has(pruningBlockHashKey)
+}
+
+func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	cursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
+	if err != nil {
+		return nil, err
+	}
+
+	if fromOutpoint != nil {
+		serializedFromOutpoint, err := serializeOutpoint(fromOutpoint)
+		if err != nil {
+			return nil, err
+		}
+		seekKey := pruningPointUTXOSetBucket.Key(serializedFromOutpoint)
+		err = cursor.Seek(seekKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
+
+	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0, limit)
+	for len(outpointAndUTXOEntryPairs) < limit && pruningPointUTXOIterator.Next() {
+		outpoint, utxoEntry, err := pruningPointUTXOIterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		outpointAndUTXOEntryPairs = append(outpointAndUTXOEntryPairs, &externalapi.OutpointAndUTXOEntryPair{
+			Outpoint:  outpoint,
+			UTXOEntry: utxoEntry,
+		})
+	}
+	return outpointAndUTXOEntryPairs, nil
+}
+
+func (ps *pruningStore) StageStartUpdatingPruningPointUTXOSet() {
+	ps.startUpdatingPruningPointUTXOSetStaging = true
+}
+
+func (ps *pruningStore) HadStartedUpdatingPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
+	return dbContext.Has(updatingPruningPointUTXOSetKey)
+}
+
+func (ps *pruningStore) FinishUpdatingPruningPointUTXOSet(dbContext model.DBWriter) error {
+	return dbContext.Delete(updatingPruningPointUTXOSetKey)
 }
