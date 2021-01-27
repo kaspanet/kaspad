@@ -446,11 +446,11 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			}
 
 		case *appmessage.MsgDonePruningPointUTXOSetChunks:
-			log.Debugf("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
+			log.Infof("Finished receiving the UTXO set. Total UTXOs: %d", receivedUTXOCount)
 			return true, nil
 
 		case *appmessage.MsgUnexpectedPruningPoint:
-			log.Debugf("Could not receive the next UTXO chunk because the pruning point %s "+
+			log.Infof("Could not receive the next UTXO chunk because the pruning point %s "+
 				"is no longer the pruning point of peer %s", pruningPointHash, flow.peer)
 			return false, nil
 
