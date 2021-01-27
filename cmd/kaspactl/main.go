@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"os"
 	"time"
 
@@ -42,7 +43,8 @@ func main() {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	select {
 	case responseString := <-responseChan:
-		fmt.Println(responseString)
+		prettyResponseString := prettifyResponse(responseString)
+		fmt.Println(prettyResponseString)
 	case <-time.After(timeout):
 		printErrorAndExit(fmt.Sprintf("timeout of %s has been exceeded", timeout))
 	}
@@ -79,6 +81,18 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
 	doneChan <- responseString
+}
+
+func prettifyResponse(response string) string {
+	kaspadMessage := &protowire.KaspadMessage{}
+	err := protojson.Unmarshal([]byte(response), kaspadMessage)
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("error parsing the response from the RPC server: %s", err))
+	}
+
+	marshalOptions := &protojson.MarshalOptions{}
+	marshalOptions.Indent = "    "
+	return marshalOptions.Format(kaspadMessage)
 }
 
 func printErrorAndExit(message string) {
