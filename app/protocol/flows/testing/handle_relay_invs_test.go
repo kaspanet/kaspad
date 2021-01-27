@@ -817,66 +817,6 @@ func TestHandleRelayInvs(t *testing.T) {
 			expectsIBDToFinish: true,
 		},
 		{
-			name: "testing a situation where the pruning point moved during IBD (before sending the pruning point block)",
-			funcToExecute: func(t *testing.T, incomingRoute, outgoingRoute *router.Route, context *fakeRelayInvsContext) {
-				triggerIBD(t, incomingRoute, outgoingRoute, context)
-
-				msg, err := outgoingRoute.DequeueWithTimeout(time.Second)
-				if err != nil {
-					t.Fatalf("DequeueWithTimeout: %+v", err)
-				}
-
-				highestHash := msg.(*appmessage.MsgIBDBlockLocator).BlockLocatorHashes[0]
-				err = incomingRoute.Enqueue(appmessage.NewMsgIBDBlockLocatorHighestHash(highestHash))
-				if err != nil {
-					t.Fatalf("Enqueue: %+v", err)
-				}
-
-				msg, err = outgoingRoute.DequeueWithTimeout(time.Second)
-				if err != nil {
-					t.Fatalf("DequeueWithTimeout: %+v", err)
-				}
-				_ = msg.(*appmessage.MsgRequestHeaders)
-
-				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
-				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
-					Exists:      true,
-					BlockStatus: externalapi.StatusHeaderOnly,
-				}
-
-				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
-				if err != nil {
-					t.Fatalf("Enqueue: %+v", err)
-				}
-
-				msg, err = outgoingRoute.DequeueWithTimeout(time.Second)
-				if err != nil {
-					t.Fatalf("DequeueWithTimeout: %+v", err)
-				}
-				_ = msg.(*appmessage.MsgRequestPruningPointHashMessage)
-
-				err = incomingRoute.Enqueue(appmessage.NewPruningPointHashMessage(validPruningPointHash))
-				if err != nil {
-					t.Fatalf("Enqueue: %+v", err)
-				}
-
-				msg, err = outgoingRoute.DequeueWithTimeout(time.Second)
-				if err != nil {
-					t.Fatalf("DequeueWithTimeout: %+v", err)
-				}
-				_ = msg.(*appmessage.MsgRequestPruningPointUTXOSetAndBlock)
-
-				err = incomingRoute.Enqueue(appmessage.NewMsgUnexpectedPruningPoint())
-				if err != nil {
-					t.Fatalf("Enqueue: %+v", err)
-				}
-
-				checkNoActivity(t, outgoingRoute)
-			},
-			expectsIBDToFinish: true,
-		},
-		{
 			name: "testing a situation where the pruning point moved during IBD (after sending the pruning point block)",
 			funcToExecute: func(t *testing.T, incomingRoute, outgoingRoute *router.Route, context *fakeRelayInvsContext) {
 				triggerIBD(t, incomingRoute, outgoingRoute, context)
