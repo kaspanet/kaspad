@@ -5,7 +5,7 @@
 package addressmanager
 
 import (
-	"encoding/binary"
+	"net"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -18,9 +18,11 @@ type AddressRandomizer interface {
 	RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress
 }
 
-// AddressKey represents a "string" key of the ip addresses
-// for use as keys in maps.
-type AddressKey string
+// AddressKey represents a pair of IP and port, the IP is always in V6 representation
+type AddressKey struct {
+	port    uint16
+	address [net.IPv6len]byte
+}
 
 // ErrAddressNotFound is an error returned from some functions when a
 // given address is not found in the address manager
@@ -28,13 +30,10 @@ var ErrAddressNotFound = errors.New("address not found")
 
 // NetAddressKey returns a key of the ip address to use it in maps.
 func netAddressKey(netAddress *appmessage.NetAddress) AddressKey {
-	port := make([]byte, 2, 2)
-	binary.LittleEndian.PutUint16(port, netAddress.Port)
-
-	key := make([]byte, len(netAddress.IP), len(netAddress.IP)+len(port))
-	copy(key, netAddress.IP)
-
-	return AddressKey(append(key, port...))
+	key := AddressKey{port: netAddress.Port}
+	// all IPv4 can be represented as IPv6.
+	copy(key.address[:], netAddress.IP.To16())
+	return key
 }
 
 // netAddressKeys returns a key of the ip address to use it in maps.
