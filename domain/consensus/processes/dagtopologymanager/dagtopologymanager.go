@@ -195,5 +195,5 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
 			blockHash, specifiedHighHash)
 	}
 
-	return dtm.reachabilityManager.FindAncestorOfThisAmongChildrenOfOther(highHash, blockHash)
+	return dtm.reachabilityManager.FindNextAncestor(highHash, blockHash)
 }

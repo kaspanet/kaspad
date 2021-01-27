@@ -16,6 +16,54 @@ func intervalSize(ri *model.ReachabilityInterval) uint64 {
 	return ri.End - ri.Start + 1
 }
 
+// intervalIncrease returns a ReachabilityInterval with offset added to start and end
+func intervalIncrease(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start + offset,
+		End:   ri.End + offset,
+	}
+}
+
+// intervalDecrease returns a ReachabilityInterval with offset subtracted from start and end
+func intervalDecrease(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start - offset,
+		End:   ri.End - offset,
+	}
+}
+
+// intervalIncreaseStart returns a ReachabilityInterval with offset added to start
+func intervalIncreaseStart(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start + offset,
+		End:   ri.End,
+	}
+}
+
+// intervalDecreaseStart returns a ReachabilityInterval with offset reduced from start
+func intervalDecreaseStart(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start - offset,
+		End:   ri.End,
+	}
+}
+
+// intervalIncreaseEnd returns a ReachabilityInterval with offset added to end
+func intervalIncreaseEnd(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start,
+		End:   ri.End + offset,
+	}
+}
+
+// intervalDecreaseEnd returns a ReachabilityInterval with offset subtracted from end
+func intervalDecreaseEnd(ri *model.ReachabilityInterval, offset uint64) *model.ReachabilityInterval {
+	return &model.ReachabilityInterval{
+		Start: ri.Start,
+		End:   ri.End - offset,
+	}
+}
+
 // intervalSplitInHalf splits this interval by a fraction of 0.5.
 // See splitFraction for further details.
 func intervalSplitInHalf(ri *model.ReachabilityInterval) (
@@ -109,6 +157,35 @@ func intervalSplitWithExponentialBias(ri *model.ReachabilityInterval, sizes []ui
 		remainingBias -= bias
 	}
 	return intervalSplitExact(ri, biasedSizes)
+}
+
+// exponentialFractions returns a fraction of each size in sizes
+// as follows:
+//   fraction[i] = 2^size[i] / sum_j(2^size[j])
+// In the code below the above equation is divided by 2^max(size)
+// to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
+// we divide 1 by potentially a very large number, which will
+// result in loss of float precision. This is not a problem - all
+// numbers close to 0 bear effectively the same weight.
+func exponentialFractions(sizes []uint64) []float64 {
+	maxSize := uint64(0)
+	for _, size := range sizes {
+		if size > maxSize {
+			maxSize = size
+		}
+	}
+	fractions := make([]float64, len(sizes))
+	for i, size := range sizes {
+		fractions[i] = 1 / math.Pow(2, float64(maxSize-size))
+	}
+	fractionsSum := float64(0)
+	for _, fraction := range fractions {
+		fractionsSum += fraction
+	}
+	for i, fraction := range fractions {
+		fractions[i] = fraction / fractionsSum
+	}
+	return fractions
 }
 
 // intervalContains returns true if ri contains other.

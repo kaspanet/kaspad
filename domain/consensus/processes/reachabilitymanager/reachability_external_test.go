@@ -1,6 +1,7 @@
 package reachabilitymanager_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -57,10 +58,20 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("reindex root is expected to change")
 		}
 
-		// Add another block over genesis
-		_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		// Add enough blocks over genesis to test also the case where the first
+		// level (genesis in this case) runs out of slack
+		slackSize := tc.ReachabilityManager().ReachabilityReindexSlack()
+		blocksToAdd := uint64(math.Log2(float64(slackSize))) + 2
+		for i := uint64(0); i < blocksToAdd; i++ {
+			_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+		}
+
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
 		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
+			t.Fatal(err)
 		}
 	})
 }
@@ -152,6 +163,11 @@ func TestUpdateReindexRoot(t *testing.T) {
 			t.Fatalf("got unexpected chain1RootBlock interval. Want: %d, got: %d",
 				intervalSize(chain1RootBlock), expectedChain1RootIntervalSize)
 		}
+
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 }
 
@@ -224,27 +240,16 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("rightBlock interval not tight after reindex")
 		}
 
-		// Get the current interval for centerBlock. Its interval should be:
-		// genesisInterval - 1 - leftInterval - leftSlack - rightInterval - rightSlack
-		expectedCenterInterval := intervalSize(params.GenesisHash) - 1 -
-			intervalSize(leftBlock) - tc.ReachabilityManager().ReachabilityReindexSlack() -
-			intervalSize(rightBlock) - tc.ReachabilityManager().ReachabilityReindexSlack()
-		if intervalSize(centerBlock) != expectedCenterInterval {
-			t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
-				expectedCenterInterval, intervalSize(centerBlock))
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		// Add a chain of reachabilityReindexWindow - 1 blocks above leftBlock.
 		// Each addition will trigger a low-than-reindex-root reindex. We
 		// expect the centerInterval to shrink by 1 each time, but its child
 		// to remain unaffected
-		centerData, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), centerBlock)
-		if err != nil {
-			t.Fatalf("ReachabilityData: %s", err)
-		}
 
-		treeChildOfCenterBlock := centerData.Children()[0]
-		treeChildOfCenterBlockOriginalIntervalSize := intervalSize(treeChildOfCenterBlock)
 		leftTipHash := leftBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			var err error
@@ -253,14 +258,9 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			expectedCenterInterval--
-			if intervalSize(centerBlock) != expectedCenterInterval {
-				t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
-					expectedCenterInterval, intervalSize(centerBlock))
-			}
-
-			if intervalSize(treeChildOfCenterBlock) != treeChildOfCenterBlockOriginalIntervalSize {
-				t.Fatalf("the interval of centerBlock's child unexpectedly changed")
+			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			if err != nil {
+				t.Fatal(err)
 			}
 		}
 
@@ -276,15 +276,15 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			expectedCenterInterval--
-			if intervalSize(centerBlock) != expectedCenterInterval {
-				t.Fatalf("unexpected centerBlock interval. Want: %d, got: %d",
-					expectedCenterInterval, intervalSize(centerBlock))
+			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			if err != nil {
+				t.Fatal(err)
 			}
+		}
 
-			if intervalSize(treeChildOfCenterBlock) != treeChildOfCenterBlockOriginalIntervalSize {
-				t.Fatalf("the interval of centerBlock's child unexpectedly changed")
-			}
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 }
@@ -323,6 +323,11 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		_, _, err = tc.AddBlock([]*externalapi.DomainHash{sideBlock}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 }

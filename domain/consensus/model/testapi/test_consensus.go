@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"io"
 )
 
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
@@ -32,6 +33,7 @@ type TestConsensus interface {
 	AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
 		*externalapi.BlockInsertionResult, error)
 
+	MineJSON(r io.Reader) (tips []*externalapi.DomainHash, err error)
 	DiscardAllStores()
 
 	AcceptanceDataStore() model.AcceptanceDataStore
