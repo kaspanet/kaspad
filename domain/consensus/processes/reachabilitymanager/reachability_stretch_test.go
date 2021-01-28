@@ -54,7 +54,7 @@ func buildJsonDAG(t *testing.T, tc testapi.TestConsensus, attackJson bool) (tips
 	}
 	defer gzipReader.Close()
 
-	tips, err = tc.MineJSON(gzipReader)
+	tips, err = tc.MineJSON(gzipReader, testapi.MineJSONBlockTypeUTXOInvalidHeader)
 	if err != nil {
 		t.Fatal(err)
 	}

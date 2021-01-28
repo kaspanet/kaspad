@@ -106,7 +106,7 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 	return consensushashing.BlockHash(block), blockInsertionResult, nil
 }
 
-func (tc *testConsensus) MineJSON(r io.Reader) (tips []*externalapi.DomainHash, err error) {
+func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockType) (tips []*externalapi.DomainHash, err error) {
 	// jsonBlock is a json representation of a block in mine format
 	type jsonBlock struct {
 		ID      string   `json:"id"`
@@ -145,10 +145,28 @@ func (tc *testConsensus) MineJSON(r io.Reader) (tips []*externalapi.DomainHash, 
 			}
 			delete(tipSet, *parentHashes[i])
 		}
-		blockHash, _, err := tc.AddUTXOInvalidHeader(parentHashes)
-		if err != nil {
-			return nil, err
+
+		var blockHash *externalapi.DomainHash
+		switch blockType {
+		case testapi.MineJSONBlockTypeUTXOValidBlock:
+			blockHash, _, err = tc.AddBlock(parentHashes, nil, nil)
+			if err != nil {
+				return nil, err
+			}
+		case testapi.MineJSONBlockTypeUTXOInvalidBlock:
+			blockHash, _, err = tc.AddUTXOInvalidBlock(parentHashes)
+			if err != nil {
+				return nil, err
+			}
+		case testapi.MineJSONBlockTypeUTXOInvalidHeader:
+			blockHash, _, err = tc.AddUTXOInvalidHeader(parentHashes)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, errors.Errorf("unknwon block type %v", blockType)
 		}
+
 		parentsMap[block.ID] = blockHash
 		tipSet[*blockHash] = blockHash
 	}
