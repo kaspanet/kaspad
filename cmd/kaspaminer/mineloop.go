@@ -117,6 +117,10 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 
 	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Infof("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			return nil
+		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
 			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
 			return nil
