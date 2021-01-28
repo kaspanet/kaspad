@@ -14,12 +14,7 @@ import (
 func SerializeUTXO(entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
 
-	err := serializeOutpoint(w, outpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	err = serializeUTXOEntry(w, entry)
+	err := SerializeUTXOIntoWriter(w, entry, outpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -27,15 +22,30 @@ func SerializeUTXO(entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutp
 	return w.Bytes(), nil
 }
 
+// SerializeUTXOIntoWriter serializes the byte-slice representation for given UTXOEntry-outpoint pair into the given writer
+func SerializeUTXOIntoWriter(writer io.Writer, entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) error {
+	err := serializeOutpoint(writer, outpoint)
+	if err != nil {
+		return err
+	}
+
+	return serializeUTXOEntry(writer, entry)
+}
+
 // DeserializeUTXO deserializes the given byte slice to UTXOEntry-outpoint pair
 func DeserializeUTXO(utxoBytes []byte) (entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint, err error) {
 	r := bytes.NewReader(utxoBytes)
-	outpoint, err = deserializeOutpoint(r)
+	return DeserializeUTXOOutOfReader(r)
+}
+
+// DeserializeUTXOOutOfReader deserializes a UTXOEntry-outpoint pair out of the given reader
+func DeserializeUTXOOutOfReader(reader io.Reader) (entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint, err error) {
+	outpoint, err = deserializeOutpoint(reader)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	entry, err = deserializeUTXOEntry(r)
+	entry, err = deserializeUTXOEntry(reader)
 	if err != nil {
 		return nil, nil, err
 	}

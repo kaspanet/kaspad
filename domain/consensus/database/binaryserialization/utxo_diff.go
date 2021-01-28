@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// SerializeUTXODiff serializes the given utxoDiff into the given writer
 func SerializeUTXODiff(writer io.Writer, utxoDiff model.UTXODiff) error {
 	err := SerializeUTXOCollection(writer, utxoDiff.ToAdd())
 	if err != nil {
@@ -14,6 +15,7 @@ func SerializeUTXODiff(writer io.Writer, utxoDiff model.UTXODiff) error {
 	return SerializeUTXOCollection(writer, utxoDiff.ToRemove())
 }
 
+// DeserializeUTXODiff deserializes a utxoDiff out of the given reader
 func DeserializeUTXODiff(reader io.Reader) (model.UTXODiff, error) {
 	toAdd, err := DeserializeUTXOCollection(reader)
 	if err != nil {
