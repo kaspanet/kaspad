@@ -85,7 +85,7 @@ func buildTestUTXOCollection() model.UTXOCollection {
 		utxoEntryAmount := rand.Uint64()
 		var utxoEntryScriptPublicKeyScript [256]byte
 		rand.Read(utxoEntryScriptPublicKeyScript[:])
-		utxoEntryScriptPublicKeyVersion := uint16(0)
+		utxoEntryScriptPublicKeyVersion := uint16(rand.Uint32())
 		utxoEntryScriptPublicKey := &externalapi.ScriptPublicKey{
 			Script:  utxoEntryScriptPublicKeyScript[:],
 			Version: utxoEntryScriptPublicKeyVersion,
