@@ -1411,8 +1411,8 @@ func TestHandleRelayInvs(t *testing.T) {
 					select {
 					case err := <-errChan:
 						checkFlowError(t, err, test.expectsProtocolError, test.expectsBan, test.expectsErrToContain)
-					case <-time.After(time.Second):
-						t.Fatalf("waiting for error timed out after %s", time.Second)
+					case <-time.After(10 * time.Second):
+						t.Fatalf("waiting for error timed out after %s", 10*time.Second)
 					}
 				}
 
