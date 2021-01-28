@@ -8,6 +8,20 @@ import (
 	"io"
 )
 
+// MineJSONBlockType indicates which type of blocks MineJSON mines
+type MineJSONBlockType int
+
+const (
+	// MineJSONBlockTypeUTXOValidBlock indicates for MineJSON to mine valid blocks.
+	MineJSONBlockTypeUTXOValidBlock MineJSONBlockType = iota
+
+	// MineJSONBlockTypeUTXOInvalidBlock indicates for MineJSON to mine UTXO invalid blocks.
+	MineJSONBlockTypeUTXOInvalidBlock
+
+	// MineJSONBlockTypeUTXOInvalidHeader indicates for MineJSON to mine UTXO invalid headers.
+	MineJSONBlockTypeUTXOInvalidHeader
+)
+
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
 type TestConsensus interface {
 	externalapi.Consensus
@@ -33,7 +47,7 @@ type TestConsensus interface {
 	AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
 		*externalapi.BlockInsertionResult, error)
 
-	MineJSON(r io.Reader) (tips []*externalapi.DomainHash, err error)
+	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
 	DiscardAllStores()
 
 	AcceptanceDataStore() model.AcceptanceDataStore
