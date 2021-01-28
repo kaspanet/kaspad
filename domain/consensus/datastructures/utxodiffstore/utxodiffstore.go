@@ -1,8 +1,10 @@
 package utxodiffstore
 
 import (
+	"bytes"
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/domain/consensus/database"
+	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -188,27 +190,17 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff model.UTXODiff) ([]byte, error) {
-	dbUtxoDiff, err := serialization.UTXODiffToDBUTXODiff(utxoDiff)
+	writer := &bytes.Buffer{}
+	err := binaryserialization.SerializeUTXODiff(writer, utxoDiff)
 	if err != nil {
 		return nil, err
 	}
-
-	bytes, err := proto.Marshal(dbUtxoDiff)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return bytes, nil
+	return writer.Bytes(), nil
 }
 
 func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (model.UTXODiff, error) {
-	dbUTXODiff := &serialization.DbUtxoDiff{}
-	err := proto.Unmarshal(utxoDiffBytes, dbUTXODiff)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return serialization.DBUTXODiffToUTXODiff(dbUTXODiff)
+	reader := bytes.NewReader(utxoDiffBytes)
+	return binaryserialization.DeserializeUTXODiff(reader)
 }
 
 func (uds *utxoDiffStore) serializeUTXODiffChild(utxoDiffChild *externalapi.DomainHash) ([]byte, error) {
