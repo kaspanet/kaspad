@@ -90,9 +90,9 @@ func buildTestUTXOCollection() model.UTXOCollection {
 			Script:  utxoEntryScriptPublicKeyScript[:],
 			Version: utxoEntryScriptPublicKeyVersion,
 		}
-		isCoinbase := rand.Float32() > 0.5
-		blockBlueScore := rand.Uint64()
-		utxoEntry := utxo.NewUTXOEntry(utxoEntryAmount, utxoEntryScriptPublicKey, isCoinbase, blockBlueScore)
+		utxoEntryIsCoinbase := rand.Float32() > 0.5
+		utxoEntryBlockBlueScore := rand.Uint64()
+		utxoEntry := utxo.NewUTXOEntry(utxoEntryAmount, utxoEntryScriptPublicKey, utxoEntryIsCoinbase, utxoEntryBlockBlueScore)
 
 		utxoMap[*outpoint] = utxoEntry
 	}
