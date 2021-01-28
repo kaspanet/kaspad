@@ -65,10 +65,10 @@ func (s *gRPCServer) Stop() error {
 	const stopTimeout = 2 * time.Second
 
 	stopChan := make(chan interface{})
-	go func() {
+	spawn("gRPCServer.Stop", func() {
 		s.server.GracefulStop()
 		close(stopChan)
-	}()
+	})
 
 	select {
 	case <-stopChan:
