@@ -11,11 +11,10 @@ import (
 func BenchmarkUTXODiffSerialization(b *testing.B) {
 	utxoDiffStore := New(0).(*utxoDiffStore)
 
+	testUTXODiff := buildTestUTXODiff(b)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		testUTXODiff := buildTestUTXODiff(b)
-		b.StartTimer()
 		_, err := utxoDiffStore.serializeUTXODiff(testUTXODiff)
 		if err != nil {
 			b.Fatalf("Could not serialize UTXO diff: %s", err)
@@ -26,15 +25,14 @@ func BenchmarkUTXODiffSerialization(b *testing.B) {
 func BenchmarkUTXODiffDeserialization(b *testing.B) {
 	utxoDiffStore := New(0).(*utxoDiffStore)
 
+	testUTXODiff := buildTestUTXODiff(b)
+	serializedUTXODiff, err := utxoDiffStore.serializeUTXODiff(testUTXODiff)
+	if err != nil {
+		b.Fatalf("Could not serialize UTXO diff: %s", err)
+	}
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		testUTXODiff := buildTestUTXODiff(b)
-		serializedUTXODiff, err := utxoDiffStore.serializeUTXODiff(testUTXODiff)
-		if err != nil {
-			b.Fatalf("Could not serialize UTXO diff: %s", err)
-		}
-		b.StartTimer()
 		_, err = utxoDiffStore.deserializeUTXODiff(serializedUTXODiff)
 		if err != nil {
 			b.Fatalf("Could not deserialize UTXO diff: %s", err)
@@ -45,11 +43,10 @@ func BenchmarkUTXODiffDeserialization(b *testing.B) {
 func BenchmarkUTXODiffSerializationAndDeserialization(b *testing.B) {
 	utxoDiffStore := New(0).(*utxoDiffStore)
 
+	testUTXODiff := buildTestUTXODiff(b)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		testUTXODiff := buildTestUTXODiff(b)
-		b.StartTimer()
 		serializedUTXODiff, err := utxoDiffStore.serializeUTXODiff(testUTXODiff)
 		if err != nil {
 			b.Fatalf("Could not serialize UTXO diff: %s", err)
