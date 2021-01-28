@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"net"
+	"time"
 )
 
 type gRPCServer struct {
@@ -61,7 +62,20 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 }
 
 func (s *gRPCServer) Stop() error {
-	s.server.GracefulStop()
+	const stopTimeout = 2 * time.Second
+
+	stopChan := make(chan interface{})
+	spawn("gRPCServer.Stop", func() {
+		s.server.GracefulStop()
+		close(stopChan)
+	})
+
+	select {
+	case <-stopChan:
+	case <-time.After(stopTimeout):
+		log.Warnf("Could not gracefully stop %s: timed out after %s", s.name, stopTimeout)
+		s.server.Stop()
+	}
 	return nil
 }
 
