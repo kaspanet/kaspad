@@ -122,7 +122,9 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
-			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			const waitTime = 1 * time.Second
+			log.Warnf("Block %s was rejected because the node is in IBD. Waiting for %s", blockHash, waitTime)
+			time.Sleep(waitTime)
 			return nil
 		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
