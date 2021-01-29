@@ -3,13 +3,16 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash,
 	tips []*externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updateVirtual")
+	defer onEnd()
+
 	log.Debugf("updateVirtual start for block %s", newBlockHash)
-	defer log.Debugf("updateVirtual end for block %s", newBlockHash)
 
 	log.Debugf("Saving a reference to the GHOSTDAG data of the old virtual")
 	var oldVirtualSelectedParent *externalapi.DomainHash
@@ -44,6 +47,9 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Calculated the past UTXO of the new virtual. "+
+		"Diff toAdd length: %d, toRemove length: %d",
+		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
 	log.Debugf("Staging new acceptance data for the virtual block")
 	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
@@ -73,6 +79,8 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		if err != nil {
 			return nil, err
 		}
+		log.Debugf("Selected parent chain changes: %d blocks were removed and %d blocks were added",
+			len(selectedParentChainChanges.Removed), len(selectedParentChainChanges.Added))
 	}
 
 	return selectedParentChainChanges, nil
