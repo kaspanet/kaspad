@@ -117,8 +117,14 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 
 	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			return nil
+		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
-			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			const waitTime = 1 * time.Second
+			log.Warnf("Block %s was rejected because the node is in IBD. Waiting for %s", blockHash, waitTime)
+			time.Sleep(waitTime)
 			return nil
 		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
@@ -152,7 +158,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	getBlockTemplate := func() {
 		template, err := client.GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Infof("Got timeout while requesting block template from %s", client.Address())
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
 			return
 		} else if err != nil {
 			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)

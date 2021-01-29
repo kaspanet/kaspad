@@ -78,11 +78,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
-			err := m.context.ConnectionManager().Ban(netConnection)
-			if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
-				panic(err)
-			}
-
+			m.context.ConnectionManager().Ban(netConnection)
 			err = outgoingRoute.Enqueue(appmessage.NewMsgReject(protocolErr.Error()))
 			if err != nil && !errors.Is(err, routerpkg.ErrRouteClosed) {
 				panic(err)

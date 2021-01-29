@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -29,6 +30,15 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		if err != nil {
 			return err
 		}
+
+		log.Debug(logger.NewLogClosure(func() string {
+			ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
+			if err != nil {
+				panic(err)
+			}
+
+			return fmt.Sprintf("block %s blue score is %d", blockHash, ghostdagData.BlueScore())
+		}))
 	}
 
 	err = v.validateMedianTime(header)
