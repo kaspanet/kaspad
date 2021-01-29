@@ -1,10 +1,12 @@
 package consensusstatemanager_test
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"testing"
 	"time"
 )
@@ -12,6 +14,8 @@ import (
 func TestPickVirtualParents(t *testing.T) {
 	params := dagconfig.DevnetParams
 	params.SkipProofOfWork = true
+
+	logger.SetLogLevels("debug")
 
 	factory := consensus.NewFactory()
 	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestPickVirtualParents")
@@ -27,23 +31,25 @@ func TestPickVirtualParents(t *testing.T) {
 
 		tipHash := params.GenesisHash
 		for blockIndex := 0; blockIndex < chainSize; blockIndex++ {
+			fmt.Printf("\n\n\nBUILD BLOCK WITH PARENTS\n\n\n")
 			block, _, err := testConsensus.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Could not build block: %s", err)
 			}
 			blockHash := consensushashing.BlockHash(block)
 			start := time.Now()
+			fmt.Printf("\n\n\nVALIDATE AND INSERT BLOCK\n\n\n")
 			_, err = testConsensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("Failed to validate block %s: %s", blockHash, err)
 			}
 			validationTime := time.Since(start)
 			accumulatedValidationTime += validationTime
-			t.Logf("Validated block #%d in chain #%d, took %s", blockIndex, chainIndex, validationTime)
+			fmt.Printf("Validated block #%d in chain #%d, took %s\n", blockIndex, chainIndex, validationTime)
 			tipHash = blockHash
 		}
 
 		averageValidationTime := accumulatedValidationTime / 1000
-		t.Logf("Average validation time for chain #%d: %s", chainIndex, averageValidationTime)
+		fmt.Printf("Average validation time for chain #%d: %s\n", chainIndex, averageValidationTime)
 	}
 }
