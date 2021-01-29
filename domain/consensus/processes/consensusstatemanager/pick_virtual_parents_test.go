@@ -29,7 +29,7 @@ func TestPickVirtualParents(t *testing.T) {
 		for blockIndex := 0; blockIndex < chainSize; blockIndex++ {
 			block, _, err := testConsensus.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
-				t.Fatalf("Could not build block with the genesis block as its only parent: %s", err)
+				t.Fatalf("Could not build block: %s", err)
 			}
 			blockHash := consensushashing.BlockHash(block)
 			start := time.Now()
