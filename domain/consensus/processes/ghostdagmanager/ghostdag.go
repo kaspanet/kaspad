@@ -3,6 +3,7 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 	"math/big"
@@ -40,6 +41,9 @@ func (bg *blockGHOSTDAGData) toModel() *model.BlockGHOSTDAGData {
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GHOSTDAG")
+	defer onEnd()
+
 	newBlockData := &blockGHOSTDAGData{
 		blueWork:           new(big.Int),
 		mergeSetBlues:      make([]*externalapi.DomainHash, 0),

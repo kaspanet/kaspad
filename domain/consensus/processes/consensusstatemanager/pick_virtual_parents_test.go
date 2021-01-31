@@ -15,14 +15,14 @@ func TestPickVirtualParents(t *testing.T) {
 	params := dagconfig.DevnetParams
 	params.SkipProofOfWork = true
 
-	logger.SetLogLevels("debug")
-
 	factory := consensus.NewFactory()
 	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestPickVirtualParents")
 	if err != nil {
 		t.Fatalf("Error setting up consensus: %+v", err)
 	}
 	defer teardown(false)
+
+	found := false
 
 	// Build three chains over the genesis
 	for chainIndex := 0; chainIndex < 3; chainIndex++ {
@@ -31,22 +31,35 @@ func TestPickVirtualParents(t *testing.T) {
 
 		tipHash := params.GenesisHash
 		for blockIndex := 0; blockIndex < chainSize; blockIndex++ {
-			fmt.Printf("\n\n\nBUILD BLOCK WITH PARENTS\n\n\n")
+			if found {
+				fmt.Printf("\n\n\nBUILD BLOCK WITH PARENTS\n\n\n")
+			}
 			block, _, err := testConsensus.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Could not build block: %s", err)
 			}
 			blockHash := consensushashing.BlockHash(block)
 			start := time.Now()
-			fmt.Printf("\n\n\nVALIDATE AND INSERT BLOCK\n\n\n")
+			if found {
+				fmt.Printf("\n\n\nVALIDATE AND INSERT BLOCK\n\n\n")
+			}
 			_, err = testConsensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("Failed to validate block %s: %s", blockHash, err)
 			}
 			validationTime := time.Since(start)
+
 			accumulatedValidationTime += validationTime
 			fmt.Printf("Validated block #%d in chain #%d, took %s\n", blockIndex, chainIndex, validationTime)
 			tipHash = blockHash
+
+			if found {
+				t.Fatalf("DONE")
+			}
+			if validationTime > 100*time.Millisecond {
+				found = true
+				logger.SetLogLevels("debug")
+			}
 		}
 
 		averageValidationTime := accumulatedValidationTime / 1000
