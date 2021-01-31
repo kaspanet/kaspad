@@ -3,9 +3,13 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ghostdagManager.findSelectedParent")
+	defer onEnd()
+
 	var selectedParent *externalapi.DomainHash
 	for _, hash := range parentHashes {
 		if selectedParent == nil {

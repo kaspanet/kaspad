@@ -73,6 +73,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		return err
 	}
 
+	onMergeSetWithoutSelectedParentEnd := logger.LogAndMeasureExecutionTime(log, "GHOSTDAG.mergeSetWithoutSelectedParent")
 	for _, blueCandidate := range mergeSetWithoutSelectedParent {
 		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData.toModel(), blueCandidate)
 		if err != nil {
@@ -90,6 +91,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 			newBlockData.mergeSetReds = append(newBlockData.mergeSetReds, blueCandidate)
 		}
 	}
+	onMergeSetWithoutSelectedParentEnd()
 
 	if !isGenesis {
 		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.selectedParent)
