@@ -4,7 +4,7 @@ Kaspaminer is a CPU-based miner for kaspad
 
 ## Requirements
 
-Go 1.14 or later.
+Go 1.15 or later.
 
 ## Installation
 

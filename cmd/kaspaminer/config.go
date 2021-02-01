@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	defaultLogFilename    = "kaspaminer.log"
-	defaultErrLogFilename = "kaspaminer_err.log"
+	defaultLogFilename          = "kaspaminer.log"
+	defaultErrLogFilename       = "kaspaminer_err.log"
+	defaultTargetBlockRateRatio = 2.0
 )
 
 var (
@@ -30,13 +31,13 @@ var (
 )
 
 type configFlags struct {
-	ShowVersion           bool    `short:"V" long:"version" description:"Display version information and exit"`
-	RPCServer             string  `short:"s" long:"rpcserver" description:"RPC server to connect to"`
-	MiningAddr            string  `long:"miningaddr" description:"Address to mine to"`
-	NumberOfBlocks        uint64  `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
-	MineWhenNotSynced     bool    `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
-	Profile               string  `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
-	TargetBlocksPerSecond float64 `long:"target-blocks-per-second" description:"Sets a maximum block rate. This flag is for debugging purposes."`
+	ShowVersion           bool     `short:"V" long:"version" description:"Display version information and exit"`
+	RPCServer             string   `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	MiningAddr            string   `long:"miningaddr" description:"Address to mine to"`
+	NumberOfBlocks        uint64   `short:"n" long:"numblocks" description:"Number of blocks to mine. If omitted, will mine until the process is interrupted."`
+	MineWhenNotSynced     bool     `long:"mine-when-not-synced" description:"Mine even if the node is not synced with the rest of the network."`
+	Profile               string   `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	TargetBlocksPerSecond *float64 `long:"target-blocks-per-second" description:"Sets a maximum block rate. 0 means no limit (The default one is 2 * target network block rate)"`
 	config.NetworkFlags
 }
 
@@ -62,6 +63,11 @@ func parseConfig() (*configFlags, error) {
 	err = cfg.ResolveNetwork(parser)
 	if err != nil {
 		return nil, err
+	}
+
+	if cfg.TargetBlocksPerSecond == nil {
+		targetBlocksPerSecond := defaultTargetBlockRateRatio / cfg.NetParams().TargetTimePerBlock.Seconds()
+		cfg.TargetBlocksPerSecond = &targetBlocksPerSecond
 	}
 
 	if cfg.Profile != "" {
