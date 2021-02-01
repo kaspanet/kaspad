@@ -20,13 +20,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
+	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
 
@@ -87,7 +87,7 @@ func logHashRate() {
 	spawn("logHashRate", func() {
 		lastCheck := time.Now()
 		for range time.Tick(logHashRateInterval) {
-			currentHashesTried := hashesTried
+			currentHashesTried := atomic.LoadUint64(&hashesTried)
 			currentTime := time.Now()
 			kiloHashesTried := float64(currentHashesTried) / 1000.0
 			hashRate := kiloHashesTried / currentTime.Sub(lastCheck).Seconds()
@@ -117,8 +117,14 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 
 	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			return nil
+		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
-			log.Warnf("Block %s was rejected because the node is in IBD", blockHash)
+			const waitTime = 1 * time.Second
+			log.Warnf("Block %s was rejected because the node is in IBD. Waiting for %s", blockHash, waitTime)
+			time.Sleep(waitTime)
 			return nil
 		}
 		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
@@ -129,7 +135,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
 	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 	headerForMining := block.Header.ToMutable()
-	initialNonce := random.Uint64()
+	initialNonce := rand.Uint64() // Use the global concurrent-safe random source.
 	for i := initialNonce; i != initialNonce-1; i++ {
 		select {
 		case <-stopChan:
@@ -152,7 +158,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 	getBlockTemplate := func() {
 		template, err := client.GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Infof("Got timeout while requesting block template from %s", client.Address())
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
 			return
 		} else if err != nil {
 			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
@@ -191,8 +197,9 @@ func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage,
 		stopOldTemplateSolving = make(chan struct{})
 		block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
 
+		stopOldTemplateSolvingCopy := stopOldTemplateSolving
 		spawn("solveBlock", func() {
-			solveBlock(block, stopOldTemplateSolving, foundBlock)
+			solveBlock(block, stopOldTemplateSolvingCopy, foundBlock)
 		})
 	}
 	if stopOldTemplateSolving != nil {

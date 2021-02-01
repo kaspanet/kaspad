@@ -5,41 +5,46 @@
 package addressmanager
 
 import (
-	"encoding/binary"
+	"net"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
 
-// AddressRandomizer is the interface for the randomizer needed for the AddressManager.
-type AddressRandomizer interface {
+// addressRandomizer is the interface for the randomizer needed for the AddressManager.
+type addressRandomizer interface {
 	RandomAddress(addresses []*appmessage.NetAddress) *appmessage.NetAddress
 	RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress
 }
 
-// AddressKey represents a "string" key of the ip addresses
-// for use as keys in maps.
-type AddressKey string
+// addressKey represents a pair of IP and port, the IP is always in V6 representation
+type addressKey struct {
+	port    uint16
+	address ipv6
+}
+
+type ipv6 [net.IPv6len]byte
+
+func (i ipv6) equal(other ipv6) bool {
+	return i == other
+}
 
 // ErrAddressNotFound is an error returned from some functions when a
 // given address is not found in the address manager
 var ErrAddressNotFound = errors.New("address not found")
 
 // NetAddressKey returns a key of the ip address to use it in maps.
-func netAddressKey(netAddress *appmessage.NetAddress) AddressKey {
-	port := make([]byte, 2, 2)
-	binary.LittleEndian.PutUint16(port, netAddress.Port)
-
-	key := make([]byte, len(netAddress.IP), len(netAddress.IP)+len(port))
-	copy(key, netAddress.IP)
-
-	return AddressKey(append(key, port...))
+func netAddressKey(netAddress *appmessage.NetAddress) addressKey {
+	key := addressKey{port: netAddress.Port}
+	// all IPv4 can be represented as IPv6.
+	copy(key.address[:], netAddress.IP.To16())
+	return key
 }
 
 // netAddressKeys returns a key of the ip address to use it in maps.
-func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[AddressKey]bool {
-	result := make(map[AddressKey]bool, len(netAddresses))
+func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[addressKey]bool {
+	result := make(map[addressKey]bool, len(netAddresses))
 	for _, netAddress := range netAddresses {
 		key := netAddressKey(netAddress)
 		result[key] = true
@@ -51,12 +56,12 @@ func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[AddressKey]bool
 // AddressManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddressManager struct {
-	addresses       map[AddressKey]*appmessage.NetAddress
-	bannedAddresses map[AddressKey]*appmessage.NetAddress
+	addresses       map[addressKey]*appmessage.NetAddress
+	bannedAddresses map[ipv6]*appmessage.NetAddress
 	localAddresses  *localAddressManager
 	mutex           sync.Mutex
 	cfg             *Config
-	random          AddressRandomizer
+	random          addressRandomizer
 }
 
 // New returns a new Kaspa address manager.
@@ -67,8 +72,8 @@ func New(cfg *Config) (*AddressManager, error) {
 	}
 
 	return &AddressManager{
-		addresses:       map[AddressKey]*appmessage.NetAddress{},
-		bannedAddresses: map[AddressKey]*appmessage.NetAddress{},
+		addresses:       map[addressKey]*appmessage.NetAddress{},
+		bannedAddresses: map[ipv6]*appmessage.NetAddress{},
 		localAddresses:  localAddresses,
 		random:          NewAddressRandomize(),
 		cfg:             cfg,
@@ -112,7 +117,6 @@ func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) {
 
 	key := netAddressKey(address)
 	delete(am.addresses, key)
-	delete(am.bannedAddresses, key)
 }
 
 // Addresses returns all addresses
@@ -176,21 +180,23 @@ func (am *AddressManager) BestLocalAddress(remoteAddress *appmessage.NetAddress)
 }
 
 // Ban marks the given address as banned
-func (am *AddressManager) Ban(address *appmessage.NetAddress) error {
+func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	key := netAddressKey(address)
-	addressToBan, ok := am.addresses[key]
-	if !ok {
-		return errors.Wrapf(ErrAddressNotFound, "address %s "+
-			"is not registered with the address manager", address.TCPAddress())
+	keyToBan := netAddressKey(addressToBan)
+	keysToDelete := make([]addressKey, 0)
+	for _, address := range am.addresses {
+		key := netAddressKey(address)
+		if key.address.equal(keyToBan.address) {
+			keysToDelete = append(keysToDelete, key)
+		}
+	}
+	for _, key := range keysToDelete {
+		delete(am.addresses, key)
 	}
 
-	delete(am.addresses, key)
-	am.bannedAddresses[key] = addressToBan
-	return nil
-
+	am.bannedAddresses[keyToBan.address] = addressToBan
 }
 
 // Unban unmarks the given address as banned
@@ -199,13 +205,13 @@ func (am *AddressManager) Unban(address *appmessage.NetAddress) error {
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	bannedAddress, ok := am.bannedAddresses[key]
+	bannedAddress, ok := am.bannedAddresses[key.address]
 	if !ok {
 		return errors.Wrapf(ErrAddressNotFound, "address %s "+
 			"is not registered with the address manager as banned", address.TCPAddress())
 	}
 
-	delete(am.bannedAddresses, key)
+	delete(am.bannedAddresses, key.address)
 	am.addresses[key] = bannedAddress
 	return nil
 }
@@ -216,7 +222,7 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	if _, ok := am.bannedAddresses[key]; !ok {
+	if _, ok := am.bannedAddresses[key.address]; !ok {
 		if _, ok = am.addresses[key]; !ok {
 			return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
 				"is not registered with the address manager", address.TCPAddress())

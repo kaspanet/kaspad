@@ -25,7 +25,7 @@ func (rt *reachabilityManager) stageReindexRoot(blockHash *externalapi.DomainHas
 	rt.reachabilityDataStore.StageReachabilityReindexRoot(blockHash)
 }
 
-func (rt *reachabilityManager) addChildAndStage(node, child *externalapi.DomainHash) error {
+func (rt *reachabilityManager) stageAddChild(node, child *externalapi.DomainHash) error {
 	nodeData, err := rt.reachabilityDataForInsertion(node)
 	if err != nil {
 		return err

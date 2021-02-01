@@ -246,6 +246,11 @@ func TestAddChild(t *testing.T) {
 		}
 	}
 
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Scenario 2: test addChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
@@ -306,6 +311,11 @@ func TestAddChild(t *testing.T) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
 	}
+
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
@@ -333,6 +343,11 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 
 	if !helper.isReachabilityTreeAncestorOf(root, root) {
 		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is expected to be an ancestor of root")
+	}
+
+	err := manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -978,19 +993,19 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	treeNodeB2 := helper.newNodeWithInterval(newReachabilityInterval(150, 199))
 	treeNodeC := helper.newNodeWithInterval(newReachabilityInterval(100, 149))
 
-	err := helper.addChildAndStage(treeNodeA, treeNodeB1)
+	err := helper.stageAddChild(treeNodeA, treeNodeB1)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeA, treeNodeB2)
+	err = helper.stageAddChild(treeNodeA, treeNodeB2)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeB2, treeNodeC)
+	err = helper.stageAddChild(treeNodeB2, treeNodeC)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
 	str, err := manager.String(treeNodeA)

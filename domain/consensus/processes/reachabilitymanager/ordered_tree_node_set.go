@@ -1,7 +1,6 @@
 package reachabilitymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -57,21 +56,4 @@ func (rt *reachabilityManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, n
 		return 0, false, nil
 	}
 	return low - 1, true, nil
-}
-
-func (rt *reachabilityManager) propagateIntervals(tns orderedTreeNodeSet, intervals []*model.ReachabilityInterval,
-	subtreeSizeMaps []map[externalapi.DomainHash]uint64) error {
-
-	for i, node := range tns {
-		err := rt.stageInterval(node, intervals[i])
-		if err != nil {
-			return err
-		}
-		subtreeSizeMap := subtreeSizeMaps[i]
-		err = rt.propagateInterval(node, subtreeSizeMap)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
