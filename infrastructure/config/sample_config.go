@@ -1,4 +1,8 @@
-[Application Options]
+package config
+
+// This should be identical to the content of sample-kaspad.conf
+// TODO: Replace with go:embed once go1.16 lands
+var sampleConfig = `[Application Options]
 
 ; ------------------------------------------------------------------------------
 ; Data settings
@@ -30,7 +34,7 @@
 
 ; Use Universal Plug and Play (UPnP) to automatically open the listen port
 ; and obtain the external IP address from supported devices. NOTE: This option
-; will have no effect if exernal IP addresses are specified.
+; will have no effect if external IP addresses are specified.
 ; upnp=1
 
 ; Specify the external IP addresses your node is listening on. One address per
@@ -83,7 +87,7 @@
 ; connect=[fe80::2]:16111
 
 ; Maximum number of inbound and outbound peers.
-; maxpeers=125
+; maxinpeers=125
 
 ; Disable banning of misbehaving peers.
 ; nobanning=1
@@ -142,9 +146,6 @@
 ; Disable peer bloom filtering. See BIP0111.
 ; nopeerbloomfilters=1
 
-; Add additional checkpoints. Format: '<height>:<hash>'
-; addcheckpoint=<height>:<hash>
-
 ; Add comments to the user agent that is advertised to peers.
 ; Must not include characters '/', ':', '(' and ')'.
 ; uacomment=
@@ -198,13 +199,6 @@
 ; Set the minimum transaction fee to be considered a non-zero fee,
 ; minrelaytxfee=0.00001
 
-; Rate-limit free transactions to the value 15 * 1000 bytes per
-; minute.
-; limitfreerelay=15
-
-; Require high priority for relaying free or low-fee transactions.
-; norelaypriority=0
-
 ; Limit orphan transaction pool to 100 transactions.
 ; maxorphantx=100
 
@@ -219,59 +213,11 @@
 
 
 ; ------------------------------------------------------------------------------
-; Optional Indexes
-; ------------------------------------------------------------------------------
-
-; Build and maintain a full hash-based transaction index which makes all
-; transactions available via the getrawtransaction RPC.
-; txindex=1
-
-; Build and maintain a full address-based transaction index which makes the
-; searchrawtransactions RPC available.
-; addrindex=1
-
-; Delete the entire address index on start up, then exit.
-; dropaddrindex=0
-
-
-; ------------------------------------------------------------------------------
 ; Signature Verification Cache
 ; ------------------------------------------------------------------------------
 
 ; Limit the signature cache to a max of 50000 entries.
 ; sigcachemaxsize=50000
-
-
-; ------------------------------------------------------------------------------
-; Coin Generation (Mining) Settings - The following options control the
-; generation of block templates used by external mining applications through RPC
-; calls.
-; ------------------------------------------------------------------------------
-
-; Add addresses to pay mined blocks to in the block templates generated
-; for the getblocktemplate RPC. One address per line.
-; miningaddr=kaspa:yourkaspaaddress
-; miningaddr=kaspa:yourkaspaaddress2
-; miningaddr=kaspa:yourkaspaaddress3
-
-; Specify the minimum block size in bytes to create. By default, only
-; transactions which have enough fees or a high enough priority will be included
-; in generated block templates. Specifying a minimum block size will instead
-; attempt to fill generated block templates up with transactions until it is at
-; least the specified number of bytes.
-; blockminsize=0
-
-; Specify the maximum block size in bytes to create. This value will be limited
-; to the consensus limit if it is larger than that value.
-; blockmaxsize=750000
-
-; Specify the size in bytes of the high-priority/low-fee area when creating a
-; block. Transactions which consist of large amounts, old inputs, and small
-; sizes have the highest priority. One consequence of this is that as low-fee
-; or free transactions age, they raise in priority thereby making them more
-; likely to be included in this section of a new block. This value is limited
-; by the blackmaxsize option and will be limited as needed.
-; blockprioritysize=50000
 
 
 ; ------------------------------------------------------------------------------
@@ -289,12 +235,4 @@
 ; be disabled if this option is not specified. The profile information can be
 ; accessed at http://localhost:<profileport>/debug/pprof once running.
 ; profile=6061
-
-; ------------------------------------------------------------------------------
-; Subnetworks
-; ------------------------------------------------------------------------------
-
-; If subnetwork > 0, than node will request and process only payloads from
-; specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks
-; are processed.
-; subnetwork=0
+`

@@ -18,7 +18,7 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("Failed finding config file path")
 	}
-	sampleConfigFile := filepath.Join(filepath.Dir(path), "..", "..", "sample-kaspad.conf")
+	sampleConfigFile := filepath.Join(filepath.Dir(path), "sample-kaspad.conf")
 
 	// Setup a temporary directory
 	tmpDir, err := ioutil.TempDir("", "kaspad")
