@@ -5,9 +5,7 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,18 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
-	"github.com/pkg/errors"
-
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/version"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -244,9 +239,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Flags: cfgFlags,
 	}
-	if !preCfg.Simnet || preCfg.ConfigFile !=
-		defaultConfigFile {
-
+	if !preCfg.Simnet || preCfg.ConfigFile != defaultConfigFile {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
@@ -593,13 +586,6 @@ func createDefaultConfigFile(destinationPath string) error {
 		return err
 	}
 
-	// We assume sample config file path is same as binary
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		return err
-	}
-	sampleConfigPath := filepath.Join(path, sampleConfigFilename)
-
 	dest, err := os.OpenFile(destinationPath,
 		os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -607,25 +593,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	src, err := os.Open(sampleConfigPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	_, err = dest.WriteString(sampleConfig)
 
-	// We copy every line from the sample config file to the destination
-	reader := bufio.NewReader(src)
-	for err != io.EOF {
-		var line string
-		line, err = reader.ReadString('\n')
-		if err != nil && err != io.EOF {
-			return err
-		}
-
-		if _, err := dest.WriteString(line); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }

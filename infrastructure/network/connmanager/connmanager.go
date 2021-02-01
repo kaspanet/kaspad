@@ -175,26 +175,9 @@ func (c *ConnectionManager) IsBanned(netConnection *netadapter.NetConnection) (b
 func (c *ConnectionManager) waitTillNextIteration() {
 	select {
 	case <-c.resetLoopChan:
-		c.loopTicker.Stop()
-		c.loopTicker = time.NewTicker(connectionsLoopInterval)
+		c.loopTicker.Reset(connectionsLoopInterval)
 	case <-c.loopTicker.C:
 	}
-}
-
-func (c *ConnectionManager) connectionExists(addressString string) bool {
-	if _, ok := c.activeRequested[addressString]; ok {
-		return true
-	}
-
-	if _, ok := c.activeOutgoing[addressString]; ok {
-		return true
-	}
-
-	if _, ok := c.activeIncoming[addressString]; ok {
-		return true
-	}
-
-	return false
 }
 
 func (c *ConnectionManager) isPermanent(addressString string) bool {
