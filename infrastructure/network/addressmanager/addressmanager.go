@@ -5,8 +5,10 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -205,14 +207,13 @@ func (am *AddressManager) Unban(address *appmessage.NetAddress) error {
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	bannedAddress, ok := am.bannedAddresses[key.address]
+	_, ok := am.bannedAddresses[key.address]
 	if !ok {
 		return errors.Wrapf(ErrAddressNotFound, "address %s "+
 			"is not registered with the address manager as banned", address.TCPAddress())
 	}
 
 	delete(am.bannedAddresses, key.address)
-	am.addresses[key] = bannedAddress
 	return nil
 }
 
@@ -222,6 +223,7 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
+	am.unbanIfOldEnough(key.address)
 	if _, ok := am.bannedAddresses[key.address]; !ok {
 		if _, ok = am.addresses[key]; !ok {
 			return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
@@ -232,4 +234,16 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 
 	return true, nil
 
+}
+
+func (am *AddressManager) unbanIfOldEnough(ipv6Address ipv6) {
+	address, ok := am.bannedAddresses[ipv6Address]
+	if !ok {
+		return
+	}
+
+	const maxBanTime = 24 * time.Hour
+	if mstime.Since(address.Timestamp) > maxBanTime {
+		delete(am.bannedAddresses, ipv6Address)
+	}
 }

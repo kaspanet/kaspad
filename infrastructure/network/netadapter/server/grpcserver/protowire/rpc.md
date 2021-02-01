@@ -4,84 +4,90 @@
 ## Table of Contents
 
 - [rpc.proto](#rpc.proto)
-  - [RPCError](#protowire.RPCError)
-  - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
-  - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
-  - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
-  - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
-  - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
-  - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
-  - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
-  - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
-  - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
-  - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
-  - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
-  - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
-  - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
-  - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
-  - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
-  - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
-  - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
-  - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
-  - [MempoolEntry](#protowire.MempoolEntry)
-  - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
-  - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
-  - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
-  - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
-  - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
-  - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
-  - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
-  - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
-  - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
-  - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
-  - [ChainBlock](#protowire.ChainBlock)
-  - [AcceptedBlock](#protowire.AcceptedBlock)
-  - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
-  - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
-  - [BlockVerboseData](#protowire.BlockVerboseData)
-  - [TransactionVerboseData](#protowire.TransactionVerboseData)
-  - [TransactionVerboseInput](#protowire.TransactionVerboseInput)
-  - [ScriptSig](#protowire.ScriptSig)
-  - [TransactionVerboseOutput](#protowire.TransactionVerboseOutput)
-  - [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult)
-  - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
-  - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
-  - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
-  - [GetVirtualSelectedParentChainFromBlockResponseMessage](#protowire.GetVirtualSelectedParentChainFromBlockResponseMessage)
-  - [GetBlocksRequestMessage](#protowire.GetBlocksRequestMessage)
-  - [GetBlocksResponseMessage](#protowire.GetBlocksResponseMessage)
-  - [GetBlockCountRequestMessage](#protowire.GetBlockCountRequestMessage)
-  - [GetBlockCountResponseMessage](#protowire.GetBlockCountResponseMessage)
-  - [GetBlockDagInfoRequestMessage](#protowire.GetBlockDagInfoRequestMessage)
-  - [GetBlockDagInfoResponseMessage](#protowire.GetBlockDagInfoResponseMessage)
-  - [ResolveFinalityConflictRequestMessage](#protowire.ResolveFinalityConflictRequestMessage)
-  - [ResolveFinalityConflictResponseMessage](#protowire.ResolveFinalityConflictResponseMessage)
-  - [NotifyFinalityConflictsRequestMessage](#protowire.NotifyFinalityConflictsRequestMessage)
-  - [NotifyFinalityConflictsResponseMessage](#protowire.NotifyFinalityConflictsResponseMessage)
-  - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
-  - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
-  - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
-  - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
-  - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
-  - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
-  - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
-  - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
-  - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
-  - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
-  - [RpcTransaction](#protowire.RpcTransaction)
-  - [RpcTransactionInput](#protowire.RpcTransactionInput)
-  - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
-  - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
-  - [RpcOutpoint](#protowire.RpcOutpoint)
-  - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
-  - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
-  - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
-  - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
-  - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
-  - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
-  - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
-  - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
-
+    - [RPCError](#protowire.RPCError)
+    - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
+    - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
+    - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
+    - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
+    - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
+    - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
+    - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
+    - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
+    - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
+    - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
+    - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
+    - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
+    - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
+    - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
+    - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
+    - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
+    - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
+    - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
+    - [MempoolEntry](#protowire.MempoolEntry)
+    - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
+    - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
+    - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
+    - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
+    - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
+    - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
+    - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
+    - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
+    - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
+    - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
+    - [ChainBlock](#protowire.ChainBlock)
+    - [AcceptedBlock](#protowire.AcceptedBlock)
+    - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
+    - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
+    - [BlockVerboseData](#protowire.BlockVerboseData)
+    - [TransactionVerboseData](#protowire.TransactionVerboseData)
+    - [TransactionVerboseInput](#protowire.TransactionVerboseInput)
+    - [ScriptSig](#protowire.ScriptSig)
+    - [TransactionVerboseOutput](#protowire.TransactionVerboseOutput)
+    - [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult)
+    - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
+    - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
+    - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
+    - [GetVirtualSelectedParentChainFromBlockResponseMessage](#protowire.GetVirtualSelectedParentChainFromBlockResponseMessage)
+    - [GetBlocksRequestMessage](#protowire.GetBlocksRequestMessage)
+    - [GetBlocksResponseMessage](#protowire.GetBlocksResponseMessage)
+    - [GetBlockCountRequestMessage](#protowire.GetBlockCountRequestMessage)
+    - [GetBlockCountResponseMessage](#protowire.GetBlockCountResponseMessage)
+    - [GetBlockDagInfoRequestMessage](#protowire.GetBlockDagInfoRequestMessage)
+    - [GetBlockDagInfoResponseMessage](#protowire.GetBlockDagInfoResponseMessage)
+    - [ResolveFinalityConflictRequestMessage](#protowire.ResolveFinalityConflictRequestMessage)
+    - [ResolveFinalityConflictResponseMessage](#protowire.ResolveFinalityConflictResponseMessage)
+    - [NotifyFinalityConflictsRequestMessage](#protowire.NotifyFinalityConflictsRequestMessage)
+    - [NotifyFinalityConflictsResponseMessage](#protowire.NotifyFinalityConflictsResponseMessage)
+    - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
+    - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
+    - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
+    - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
+    - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
+    - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
+    - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
+    - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
+    - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
+    - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
+    - [RpcTransaction](#protowire.RpcTransaction)
+    - [RpcTransactionInput](#protowire.RpcTransactionInput)
+    - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
+    - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
+    - [RpcOutpoint](#protowire.RpcOutpoint)
+    - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
+    - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
+    - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
+    - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
+    - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
+    - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
+    - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
+    - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+    - [BanRequestMessage](#protowire.BanRequestMessage)
+    - [BanResponseMessage](#protowire.BanResponseMessage)
+    - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
+    - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
+  
+    - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
+  
 - [Scalar Value Types](#scalar-value-types)
 
 
@@ -94,8 +100,8 @@ RPC-related types. Request messages, response messages, and dependant types.
 
 Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
 
-Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server will respond with a ResponseMessage (
-likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
+Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server will respond with a
+ResponseMessage (likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
 
 **IMPORTANT:** This API is a work in progress and is subject to break between versions.
 
@@ -103,69 +109,105 @@ likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
 <a name="protowire.RPCError"></a>
 
 ### RPCError
-
 RPCError represents a generic non-internal error.
 
 Receivers of any ResponseMessage are expected to check whether its error field is not null.
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetCurrentNetworkRequestMessage"></a>
 
 ### GetCurrentNetworkRequestMessage
-
 GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
 
 Possible networks are: Mainnet, Testnet, Simnet, Devnet
 
+
+
+
+
+
 <a name="protowire.GetCurrentNetworkResponseMessage"></a>
 
 ### GetCurrentNetworkResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | currentNetwork | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitBlockRequestMessage"></a>
 
 ### SubmitBlockRequestMessage
-
-SubmitBlockRequestMessage requests to submit a block into the DAG. Blocks are generally expected to have been generated
-using the getBlockTemplate call.
+SubmitBlockRequestMessage requests to submit a block into the DAG.
+Blocks are generally expected to have been generated using the getBlockTemplate call.
 
 See: GetBlockTemplateRequestMessage
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | block | [BlockMessage](#protowire.BlockMessage) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitBlockResponseMessage"></a>
 
 ### SubmitBlockResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| rejectReason | [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
 
 <a name="protowire.GetBlockTemplateRequestMessage"></a>
 
 ### GetBlockTemplateRequestMessage
-
-GetBlockTemplateRequestMessage requests a current block template. Callers are expected to solve the block template and
-submit it using the submitBlock call
+GetBlockTemplateRequestMessage requests a current block template.
+Callers are expected to solve the block template and submit it using the submitBlock call
 
 See: SubmitBlockRequestMessage
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | payAddress | [string](#string) |  | Which kaspa address should the coinbase block reward transaction pay into |
 
+
+
+
+
+
 <a name="protowire.GetBlockTemplateResponseMessage"></a>
 
 ### GetBlockTemplateResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -173,45 +215,72 @@ See: SubmitBlockRequestMessage
 | isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced. Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the solving effort would have been wasted. |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.NotifyBlockAddedRequestMessage"></a>
 
 ### NotifyBlockAddedRequestMessage
-
 NotifyBlockAddedRequestMessage registers this connection for blockAdded notifications.
 
 See: BlockAddedNotificationMessage
+
+
+
+
+
 
 <a name="protowire.NotifyBlockAddedResponseMessage"></a>
 
 ### NotifyBlockAddedResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.BlockAddedNotificationMessage"></a>
 
 ### BlockAddedNotificationMessage
-
 BlockAddedNotificationMessage is sent whenever a blocks has been added (NOT accepted)
 into the DAG.
 
 See: NotifyBlockAddedRequestMessage
 
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | block | [BlockMessage](#protowire.BlockMessage) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetPeerAddressesRequestMessage"></a>
 
 ### GetPeerAddressesRequestMessage
+GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
+current network. (mainnet, testnet, etc.)
 
-GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the current network. (mainnet, testnet,
-etc.)
+
+
+
+
 
 <a name="protowire.GetPeerAddressesResponseMessage"></a>
 
 ### GetPeerAddressesResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -219,90 +288,160 @@ etc.)
 | bannedAddresses | [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetPeerAddressesKnownAddressMessage"></a>
 
 ### GetPeerAddressesKnownAddressMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | Addr | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetSelectedTipHashRequestMessage"></a>
 
 ### GetSelectedTipHashRequestMessage
+GetSelectedTipHashRequestMessage requests the hash of the current virtual&#39;s
+selected parent.
 
-GetSelectedTipHashRequestMessage requests the hash of the current virtual&#39;s selected parent.
+
+
+
+
 
 <a name="protowire.GetSelectedTipHashResponseMessage"></a>
 
 ### GetSelectedTipHashResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | selectedTipHash | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetMempoolEntryRequestMessage"></a>
 
 ### GetMempoolEntryRequestMessage
+GetMempoolEntryRequestMessage requests information about a specific transaction
+in the mempool.
 
-GetMempoolEntryRequestMessage requests information about a specific transaction in the mempool.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txId | [string](#string) |  | The transaction&#39;s TransactionID. |
 
+
+
+
+
+
 <a name="protowire.GetMempoolEntryResponseMessage"></a>
 
 ### GetMempoolEntryResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entry | [MempoolEntry](#protowire.MempoolEntry) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetMempoolEntriesRequestMessage"></a>
 
 ### GetMempoolEntriesRequestMessage
+GetMempoolEntriesRequestMessage requests information about all the transactions
+currently in the mempool.
 
-GetMempoolEntriesRequestMessage requests information about all the transactions currently in the mempool.
+
+
+
+
 
 <a name="protowire.GetMempoolEntriesResponseMessage"></a>
 
 ### GetMempoolEntriesResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entries | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.MempoolEntry"></a>
 
 ### MempoolEntry
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | fee | [uint64](#uint64) |  |  |
 | transactionVerboseData | [TransactionVerboseData](#protowire.TransactionVerboseData) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetConnectedPeerInfoRequestMessage"></a>
 
 ### GetConnectedPeerInfoRequestMessage
+GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
+currently connected to this kaspad.
 
-GetConnectedPeerInfoRequestMessage requests information about all the p2p peers currently connected to this kaspad.
+
+
+
+
 
 <a name="protowire.GetConnectedPeerInfoResponseMessage"></a>
 
 ### GetConnectedPeerInfoResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | infos | [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetConnectedPeerInfoMessage"></a>
 
 ### GetConnectedPeerInfoMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -316,108 +455,173 @@ GetConnectedPeerInfoRequestMessage requests information about all the p2p peers 
 | timeConnected | [int64](#int64) |  | The timestamp of when this peer connected to this kaspad |
 | isIbdPeer | [bool](#bool) |  | Whether this peer is the IBD peer (if IBD is running) |
 
+
+
+
+
+
 <a name="protowire.AddPeerRequestMessage"></a>
 
 ### AddPeerRequestMessage
+AddPeerRequestMessage adds a peer to kaspad&#39;s outgoing connection list.
+This will, in most cases, result in kaspad connecting to said peer.
 
-AddPeerRequestMessage adds a peer to kaspad&#39;s outgoing connection list. This will, in most cases, result in kaspad
-connecting to said peer.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | address | [string](#string) |  |  |
 | isPermanent | [bool](#bool) |  | Whether to keep attempting to connect to this peer after disconnection |
 
+
+
+
+
+
 <a name="protowire.AddPeerResponseMessage"></a>
 
 ### AddPeerResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitTransactionRequestMessage"></a>
 
 ### SubmitTransactionRequestMessage
-
 SubmitTransactionRequestMessage submits a transaction to the mempool
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitTransactionResponseMessage"></a>
 
 ### SubmitTransactionResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  | The transaction ID of the submitted transaction |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.NotifyVirtualSelectedParentChainChangedRequestMessage"></a>
 
 ### NotifyVirtualSelectedParentChainChangedRequestMessage
-
-NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection for virtualSelectedParentChainChanged
-notifications.
+NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection for virtualSelectedParentChainChanged notifications.
 
 See: VirtualSelectedParentChainChangedNotificationMessage
+
+
+
+
+
 
 <a name="protowire.NotifyVirtualSelectedParentChainChangedResponseMessage"></a>
 
 ### NotifyVirtualSelectedParentChainChangedResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.VirtualSelectedParentChainChangedNotificationMessage"></a>
 
 ### VirtualSelectedParentChainChangedNotificationMessage
-
-VirtualSelectedParentChainChangedNotificationMessage is sent whenever the DAG&#39;s selected parent chain had changed.
+VirtualSelectedParentChainChangedNotificationMessage is sent whenever the DAG&#39;s selected parent
+chain had changed.
 
 See: NotifyVirtualSelectedParentChainChangedRequestMessage
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
 
+
+
+
+
+
 <a name="protowire.ChainBlock"></a>
 
 ### ChainBlock
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | hash | [string](#string) |  |  |
 | acceptedBlocks | [AcceptedBlock](#protowire.AcceptedBlock) | repeated |  |
 
+
+
+
+
+
 <a name="protowire.AcceptedBlock"></a>
 
 ### AcceptedBlock
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | hash | [string](#string) |  |  |
 | acceptedTransactionIds | [string](#string) | repeated |  |
 
+
+
+
+
+
 <a name="protowire.GetBlockRequestMessage"></a>
 
 ### GetBlockRequestMessage
-
 GetBlockRequestMessage requests information about a specific block
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | hash | [string](#string) |  | The hash of the requested block |
-| subnetworkId | [string](#string) |  |  |
 | includeTransactionVerboseData | [bool](#bool) |  | Whether to include transaction data in the response |
+
+
+
+
+
 
 <a name="protowire.GetBlockResponseMessage"></a>
 
 ### GetBlockResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -425,9 +629,16 @@ GetBlockRequestMessage requests information about a specific block
 | blockVerboseData | [BlockVerboseData](#protowire.BlockVerboseData) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.BlockVerboseData"></a>
 
 ### BlockVerboseData
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -448,9 +659,16 @@ GetBlockRequestMessage requests information about a specific block
 | isHeaderOnly | [bool](#bool) |  |  |
 | blueScore | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.TransactionVerboseData"></a>
 
 ### TransactionVerboseData
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -469,9 +687,16 @@ GetBlockRequestMessage requests information about a specific block
 | time | [uint64](#uint64) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.TransactionVerboseInput"></a>
 
 ### TransactionVerboseInput
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -480,18 +705,32 @@ GetBlockRequestMessage requests information about a specific block
 | scriptSig | [ScriptSig](#protowire.ScriptSig) |  |  |
 | sequence | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.ScriptSig"></a>
 
 ### ScriptSig
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | asm | [string](#string) |  |  |
 | hex | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.TransactionVerboseOutput"></a>
 
 ### TransactionVerboseOutput
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -499,9 +738,16 @@ GetBlockRequestMessage requests information about a specific block
 | index | [uint32](#uint32) |  |  |
 | scriptPublicKey | [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult) |  |  |
 
+
+
+
+
+
 <a name="protowire.ScriptPublicKeyResult"></a>
 
 ### ScriptPublicKeyResult
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -510,33 +756,50 @@ GetBlockRequestMessage requests information about a specific block
 | type | [string](#string) |  |  |
 | address | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetSubnetworkRequestMessage"></a>
 
 ### GetSubnetworkRequestMessage
-
 GetSubnetworkRequestMessage requests information about a specific subnetwork
 
 Currently unimplemented
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | subnetworkId | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetSubnetworkResponseMessage"></a>
 
 ### GetSubnetworkResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | gasLimit | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetVirtualSelectedParentChainFromBlockRequestMessage"></a>
 
 ### GetVirtualSelectedParentChainFromBlockRequestMessage
+GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected
+parent chain from some startHash to this kaspad&#39;s current virtual
 
-GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected parent chain from some startHash to
-this kaspad&#39;s current virtual
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -551,17 +814,25 @@ this kaspad&#39;s current virtual
 
 ### GetVirtualSelectedParentChainFromBlockResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetBlocksRequestMessage"></a>
 
 ### GetBlocksRequestMessage
+GetBlocksRequestMessage requests blocks between a certain block lowHash up to this
+kaspad&#39;s current virtual.
 
-GetBlocksRequestMessage requests blocks between a certain block lowHash up to this kaspad&#39;s current virtual.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -570,9 +841,16 @@ GetBlocksRequestMessage requests blocks between a certain block lowHash up to th
 | includeBlockVerboseData | [bool](#bool) |  |  |
 | includeTransactionVerboseData | [bool](#bool) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetBlocksResponseMessage"></a>
 
 ### GetBlocksResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -581,16 +859,27 @@ GetBlocksRequestMessage requests blocks between a certain block lowHash up to th
 | blockVerboseData | [BlockVerboseData](#protowire.BlockVerboseData) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetBlockCountRequestMessage"></a>
 
 ### GetBlockCountRequestMessage
+GetBlockCountRequestMessage requests the current number of blocks in this kaspad.
+Note that this number may decrease as pruning occurs.
 
-GetBlockCountRequestMessage requests the current number of blocks in this kaspad. Note that this number may decrease as
-pruning occurs.
+
+
+
+
 
 <a name="protowire.GetBlockCountResponseMessage"></a>
 
 ### GetBlockCountResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -598,15 +887,27 @@ pruning occurs.
 | headerCount | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetBlockDagInfoRequestMessage"></a>
 
 ### GetBlockDagInfoRequestMessage
+GetBlockDagInfoRequestMessage requests general information about the current state
+of this kaspad&#39;s DAG.
 
-GetBlockDagInfoRequestMessage requests general information about the current state of this kaspad&#39;s DAG.
+
+
+
+
 
 <a name="protowire.GetBlockDagInfoResponseMessage"></a>
 
 ### GetBlockDagInfoResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -619,69 +920,127 @@ GetBlockDagInfoRequestMessage requests general information about the current sta
 | virtualParentHashes | [string](#string) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.ResolveFinalityConflictRequestMessage"></a>
 
 ### ResolveFinalityConflictRequestMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | finalityBlockHash | [string](#string) |  |  |
+
+
+
+
+
 
 <a name="protowire.ResolveFinalityConflictResponseMessage"></a>
 
 ### ResolveFinalityConflictResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
 
 <a name="protowire.NotifyFinalityConflictsRequestMessage"></a>
 
 ### NotifyFinalityConflictsRequestMessage
 
+
+
+
+
+
+
 <a name="protowire.NotifyFinalityConflictsResponseMessage"></a>
 
 ### NotifyFinalityConflictsResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
 
 <a name="protowire.FinalityConflictNotificationMessage"></a>
 
 ### FinalityConflictNotificationMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | violatingBlockHash | [string](#string) |  |  |
+
+
+
+
+
 
 <a name="protowire.FinalityConflictResolvedNotificationMessage"></a>
 
 ### FinalityConflictResolvedNotificationMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | finalityBlockHash | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.ShutDownRequestMessage"></a>
 
 ### ShutDownRequestMessage
-
 ShutDownRequestMessage shuts down this kaspad.
+
+
+
+
+
 
 <a name="protowire.ShutDownResponseMessage"></a>
 
 ### ShutDownResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetHeadersRequestMessage"></a>
 
 ### GetHeadersRequestMessage
+GetHeadersRequestMessage requests headers between the given startHash and the
+current virtual, up to the given limit.
 
-GetHeadersRequestMessage requests headers between the given startHash and the current virtual, up to the given limit.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -689,53 +1048,85 @@ GetHeadersRequestMessage requests headers between the given startHash and the cu
 | limit | [uint64](#uint64) |  |  |
 | isAscending | [bool](#bool) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetHeadersResponseMessage"></a>
 
 ### GetHeadersResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | headers | [string](#string) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.NotifyUtxosChangedRequestMessage"></a>
 
 ### NotifyUtxosChangedRequestMessage
-
-NotifyUtxosChangedRequestMessage registers this connection for utxoChanged notifications for the given addresses.
+NotifyUtxosChangedRequestMessage registers this connection for utxoChanged notifications
+for the given addresses.
 
 This call is only available when this kaspad was started with `--utxoindex`
 
 See: UtxosChangedNotificationMessage
 
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
+
+
+
+
+
 
 <a name="protowire.NotifyUtxosChangedResponseMessage"></a>
 
 ### NotifyUtxosChangedResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.UtxosChangedNotificationMessage"></a>
 
 ### UtxosChangedNotificationMessage
-
 UtxosChangedNotificationMessage is sent whenever the UTXO index had been updated.
 
 See: NotifyUtxosChangedRequestMessage
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | added | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 | removed | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 
+
+
+
+
+
 <a name="protowire.UtxosByAddressesEntry"></a>
 
 ### UtxosByAddressesEntry
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -774,42 +1165,72 @@ See: NotifyUtxosChangedRequestMessage
 
 ### RpcTransactionInput
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | previousOutpoint | [RpcOutpoint](#protowire.RpcOutpoint) |  |  |
 | signatureScript | [string](#string) |  |  |
 | sequence | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcScriptPublicKey"></a>
 
 ### RpcScriptPublicKey
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) |  |  |
 | scriptPublicKey | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransactionOutput"></a>
 
 ### RpcTransactionOutput
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | amount | [uint64](#uint64) |  |  |
 | scriptPublicKey | [RpcScriptPublicKey](#protowire.RpcScriptPublicKey) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcOutpoint"></a>
 
 ### RpcOutpoint
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  |  |
 | index | [uint32](#uint32) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcUtxoEntry"></a>
 
 ### RpcUtxoEntry
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -818,55 +1239,89 @@ See: NotifyUtxosChangedRequestMessage
 | blockBlueScore | [uint64](#uint64) |  |  |
 | isCoinbase | [bool](#bool) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetUtxosByAddressesRequestMessage"></a>
 
 ### GetUtxosByAddressesRequestMessage
-
 GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
 
 This call is only available when this kaspad was started with `--utxoindex`
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
 
+
+
+
+
+
 <a name="protowire.GetUtxosByAddressesResponseMessage"></a>
 
 ### GetUtxosByAddressesResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entries | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetVirtualSelectedParentBlueScoreRequestMessage"></a>
 
 ### GetVirtualSelectedParentBlueScoreRequestMessage
+GetVirtualSelectedParentBlueScoreRequestMessage requests the blue score of the current selected parent
+of the virtual block.
 
-GetVirtualSelectedParentBlueScoreRequestMessage requests the blue score of the current selected parent of the virtual
-block.
+
+
+
+
 
 <a name="protowire.GetVirtualSelectedParentBlueScoreResponseMessage"></a>
 
 ### GetVirtualSelectedParentBlueScoreResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blueScore | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage"></a>
 
 ### NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-
 NotifyVirtualSelectedParentBlueScoreChangedRequestMessage registers this connection for
 virtualSelectedParentBlueScoreChanged notifications.
 
 See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 
+
+
+
+
+
 <a name="protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage"></a>
 
 ### NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -880,9 +1335,8 @@ See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 <a name="protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage"></a>
 
 ### VirtualSelectedParentBlueScoreChangedNotificationMessage
-
-VirtualSelectedParentBlueScoreChangedNotificationMessage is sent whenever the blue score of the virtual&#39;s selected
-parent changes.
+VirtualSelectedParentBlueScoreChangedNotificationMessage is sent whenever the blue score
+of the virtual&#39;s selected parent changes.
 
 See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
@@ -895,7 +1349,80 @@ See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 
 
+
+<a name="protowire.BanRequestMessage"></a>
+
+### BanRequestMessage
+BanRequestMessage bans the given ip.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ip | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.BanResponseMessage"></a>
+
+### BanResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.UnbanRequestMessage"></a>
+
+### UnbanRequestMessage
+UnbanRequestMessage unbans the given ip.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ip | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.UnbanResponseMessage"></a>
+
+### UnbanResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
  
+
+
+<a name="protowire.SubmitBlockResponseMessage.RejectReason"></a>
+
+### SubmitBlockResponseMessage.RejectReason
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| BLOCK_INVALID | 1 |  |
+| IS_IN_IBD | 2 |  |
+
 
  
 
