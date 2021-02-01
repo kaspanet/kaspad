@@ -10,7 +10,7 @@ It is capable of generating wallet key-pairs, printing a wallet's current balanc
 
 ## Requirements
 
-Go 1.14 or later.
+Go 1.15 or later.
 
 ## Installation
 
