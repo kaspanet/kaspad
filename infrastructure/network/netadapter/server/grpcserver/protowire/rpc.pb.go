@@ -4523,6 +4523,196 @@ func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) GetVirtualSel
 	return 0
 }
 
+// BanRequestMessage bans the given ip.
+type BanRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ip string `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
+}
+
+func (x *BanRequestMessage) Reset() {
+	*x = BanRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[77]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BanRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BanRequestMessage) ProtoMessage() {}
+
+func (x *BanRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[77]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BanRequestMessage.ProtoReflect.Descriptor instead.
+func (*BanRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *BanRequestMessage) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+type BanResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Error *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *BanResponseMessage) Reset() {
+	*x = BanResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[78]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BanResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BanResponseMessage) ProtoMessage() {}
+
+func (x *BanResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[78]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BanResponseMessage.ProtoReflect.Descriptor instead.
+func (*BanResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *BanResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+// UnbanRequestMessage unbans the given ip.
+type UnbanRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ip string `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
+}
+
+func (x *UnbanRequestMessage) Reset() {
+	*x = UnbanRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[79]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UnbanRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnbanRequestMessage) ProtoMessage() {}
+
+func (x *UnbanRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[79]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnbanRequestMessage.ProtoReflect.Descriptor instead.
+func (*UnbanRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *UnbanRequestMessage) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+type UnbanResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Error *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *UnbanResponseMessage) Reset() {
+	*x = UnbanResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[80]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UnbanResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnbanResponseMessage) ProtoMessage() {}
+
+func (x *UnbanResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[80]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnbanResponseMessage.ProtoReflect.Descriptor instead.
+func (*UnbanResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *UnbanResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 var File_rpc_proto protoreflect.FileDescriptor
 
 var file_rpc_proto_rawDesc = []byte{
@@ -5124,10 +5314,23 @@ var file_rpc_proto_rawDesc = []byte{
 	0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x61, 0x72, 0x65, 0x6e, 0x74, 0x42, 0x6c, 0x75, 0x65,
 	0x53, 0x63, 0x6f, 0x72, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x1e, 0x76, 0x69, 0x72,
 	0x74, 0x75, 0x61, 0x6c, 0x53, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x65, 0x64, 0x50, 0x61, 0x72, 0x65,
-	0x6e, 0x74, 0x42, 0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x42, 0x26, 0x5a, 0x24, 0x67,
-	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e,
-	0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
-	0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x74, 0x42, 0x6c, 0x75, 0x65, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x22, 0x23, 0x0a, 0x11, 0x42,
+	0x61, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70,
+	0x22, 0x40, 0x0a, 0x12, 0x42, 0x61, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x22, 0x25, 0x0a, 0x13, 0x55, 0x6e, 0x62, 0x61, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x22, 0x42, 0x0a, 0x14, 0x55, 0x6e, 0x62,
+	0x61, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50,
+	0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x26, 0x5a,
+	0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70,
+	0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5143,7 +5346,7 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 77)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 81)
 var file_rpc_proto_goTypes = []interface{}{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
 	(*RPCError)(nil),                                                   // 1: protowire.RPCError
@@ -5223,17 +5426,21 @@ var file_rpc_proto_goTypes = []interface{}{
 	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 75: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 76: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
 	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 77: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	(*BlockMessage)(nil),                                               // 78: protowire.BlockMessage
+	(*BanRequestMessage)(nil),                                          // 78: protowire.BanRequestMessage
+	(*BanResponseMessage)(nil),                                         // 79: protowire.BanResponseMessage
+	(*UnbanRequestMessage)(nil),                                        // 80: protowire.UnbanRequestMessage
+	(*UnbanResponseMessage)(nil),                                       // 81: protowire.UnbanResponseMessage
+	(*BlockMessage)(nil),                                               // 82: protowire.BlockMessage
 }
 var file_rpc_proto_depIdxs = []int32{
 	1,  // 0: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
-	78, // 1: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.BlockMessage
+	82, // 1: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.BlockMessage
 	0,  // 2: protowire.SubmitBlockResponseMessage.rejectReason:type_name -> protowire.SubmitBlockResponseMessage.RejectReason
 	1,  // 3: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
-	78, // 4: protowire.GetBlockTemplateResponseMessage.blockMessage:type_name -> protowire.BlockMessage
+	82, // 4: protowire.GetBlockTemplateResponseMessage.blockMessage:type_name -> protowire.BlockMessage
 	1,  // 5: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 6: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
-	78, // 7: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.BlockMessage
+	82, // 7: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.BlockMessage
 	13, // 8: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
 	13, // 9: protowire.GetPeerAddressesResponseMessage.bannedAddresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
 	1,  // 10: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
@@ -5283,11 +5490,13 @@ var file_rpc_proto_depIdxs = []int32{
 	1,  // 54: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 55: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 56: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
-	57, // [57:57] is the sub-list for method output_type
-	57, // [57:57] is the sub-list for method input_type
-	57, // [57:57] is the sub-list for extension type_name
-	57, // [57:57] is the sub-list for extension extendee
-	0,  // [0:57] is the sub-list for field type_name
+	1,  // 57: protowire.BanResponseMessage.error:type_name -> protowire.RPCError
+	1,  // 58: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
+	59, // [59:59] is the sub-list for method output_type
+	59, // [59:59] is the sub-list for method input_type
+	59, // [59:59] is the sub-list for extension type_name
+	59, // [59:59] is the sub-list for extension extendee
+	0,  // [0:59] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -6221,6 +6430,54 @@ func file_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_rpc_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BanRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BanResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnbanRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[80].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnbanResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -6228,7 +6485,7 @@ func file_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   77,
+			NumMessages:   81,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

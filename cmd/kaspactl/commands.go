@@ -32,6 +32,9 @@ var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_SubmitTransactionRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_GetUtxosByAddressesRequest{}),
+
+	reflect.TypeOf(protowire.KaspadMessage_BanRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_UnbanRequest{}),
 }
 
 type commandDescription struct {

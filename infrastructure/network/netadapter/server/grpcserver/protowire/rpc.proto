@@ -532,3 +532,21 @@ message NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
 message VirtualSelectedParentBlueScoreChangedNotificationMessage {
   uint64 virtualSelectedParentBlueScore = 1;
 }
+
+// BanRequestMessage bans the given ip.
+message BanRequestMessage{
+  string ip = 1;
+}
+
+message BanResponseMessage{
+  RPCError error = 1000;
+}
+
+// UnbanRequestMessage unbans the given ip.
+message UnbanRequestMessage{
+  string ip = 1;
+}
+
+message UnbanResponseMessage{
+  RPCError error = 1000;
+}
