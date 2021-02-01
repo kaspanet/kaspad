@@ -209,8 +209,10 @@ func (c *ConnectionManager) ipHasPermanentConnection(ip net.IP) (bool, error) {
 			return false, err
 		}
 
-		if len(ips) == 0 && ips[0].Equal(ip) {
-			return true, nil
+		for _, extractedIP := range ips {
+			if extractedIP.Equal(ip) {
+				return true, nil
+			}
 		}
 	}
 
@@ -224,8 +226,8 @@ func (c *ConnectionManager) ipHasPermanentConnection(ip net.IP) (bool, error) {
 			return false, err
 		}
 
-		for _, ip := range ips {
-			if ip.Equal(ip) {
+		for _, extractedIP := range ips {
+			if extractedIP.Equal(ip) {
 				return true, nil
 			}
 		}

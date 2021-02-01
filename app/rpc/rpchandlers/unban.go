@@ -16,7 +16,7 @@ func HandleUnban(context *rpccontext.Context, _ *router.Router, request appmessa
 		errorMessage.Error = appmessage.RPCErrorf("Could not parse IP %s", unbanRequest.IP)
 		return errorMessage, nil
 	}
-	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(net.ParseIP(unbanRequest.IP), 0, 0))
+	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(ip, 0, 0))
 	if err != nil {
 		errorMessage := &appmessage.UnbanResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not unban IP: %s", err)
