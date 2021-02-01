@@ -60,7 +60,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	}
 
 	if !allowSelfConnections && flow.NetAdapter().ID().IsEqual(msgVersion.ID) {
-		return nil, protocolerrors.New(true, "connected to self")
+		return nil, protocolerrors.New(false, "connected to self")
 	}
 
 	// Disconnect and ban peers from a different network

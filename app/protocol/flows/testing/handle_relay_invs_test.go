@@ -18,6 +18,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
+	"sync"
 	"testing"
 	"time"
 )
@@ -105,6 +106,7 @@ type fakeRelayInvsContext struct {
 	validateAndInsertImportedPruningPointResponse error
 	getBlockInfoResponse                          *externalapi.BlockInfo
 	validateAndInsertBlockResponse                error
+	rwLock                                        sync.RWMutex
 }
 
 func (f *fakeRelayInvsContext) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
@@ -128,6 +130,8 @@ func (f *fakeRelayInvsContext) GetBlockHeader(blockHash *externalapi.DomainHash)
 }
 
 func (f *fakeRelayInvsContext) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalapi.BlockInfo, error) {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	if f.getBlockInfoResponse != nil {
 		return f.getBlockInfoResponse, nil
 	}
@@ -167,6 +171,8 @@ func (f *fakeRelayInvsContext) AppendImportedPruningPointUTXOs(outpointAndUTXOEn
 }
 
 func (f *fakeRelayInvsContext) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return f.validateAndInsertImportedPruningPointResponse
 }
 
@@ -179,12 +185,16 @@ func (f *fakeRelayInvsContext) CreateBlockLocator(lowHash, highHash *externalapi
 }
 
 func (f *fakeRelayInvsContext) CreateHeadersSelectedChainBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return externalapi.BlockLocator{
 		f.params.GenesisHash,
 	}, nil
 }
 
 func (f *fakeRelayInvsContext) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return externalapi.BlockLocator{
 		f.params.GenesisHash,
 	}, nil
@@ -203,6 +213,8 @@ func (f *fakeRelayInvsContext) GetVirtualInfo() (*externalapi.VirtualInfo, error
 }
 
 func (f *fakeRelayInvsContext) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return f.isValidPruningPointResponse, nil
 }
 
@@ -231,6 +243,8 @@ func (f *fakeRelayInvsContext) Domain() domain.Domain {
 }
 
 func (f *fakeRelayInvsContext) Config() *config.Config {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return &config.Config{
 		Flags: &config.Flags{
 			NetworkFlags: config.NetworkFlags{
@@ -269,11 +283,57 @@ func (f *fakeRelayInvsContext) IsIBDRunning() bool {
 }
 
 func (f *fakeRelayInvsContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	return f.trySetIBDRunningResponse
 }
 
 func (f *fakeRelayInvsContext) UnsetIBDRunning() {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
 	close(f.finishedIBD)
+}
+
+func (f *fakeRelayInvsContext) SetValidateAndInsertBlockResponse(err error) {
+	f.rwLock.Lock()
+	defer f.rwLock.Unlock()
+	f.validateAndInsertBlockResponse = err
+}
+
+func (f *fakeRelayInvsContext) SetValidateAndInsertImportedPruningPointResponse(err error) {
+	f.rwLock.Lock()
+	defer f.rwLock.Unlock()
+	f.validateAndInsertImportedPruningPointResponse = err
+}
+
+func (f *fakeRelayInvsContext) SetGetBlockInfoResponse(info externalapi.BlockInfo) {
+	f.rwLock.Lock()
+	defer f.rwLock.Unlock()
+	f.getBlockInfoResponse = &info
+}
+
+func (f *fakeRelayInvsContext) SetTrySetIBDRunningResponse(b bool) {
+	f.rwLock.Lock()
+	defer f.rwLock.Unlock()
+	f.trySetIBDRunningResponse = b
+}
+
+func (f *fakeRelayInvsContext) SetIsValidPruningPointResponse(b bool) {
+	f.rwLock.Lock()
+	defer f.rwLock.Unlock()
+	f.isValidPruningPointResponse = b
+}
+
+func (f *fakeRelayInvsContext) GetGenesisHeader() externalapi.BlockHeader {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
+	return f.params.GenesisBlock.Header
+}
+
+func (f *fakeRelayInvsContext) GetFinishedIBDChan() chan struct{} {
+	f.rwLock.RLock()
+	defer f.rwLock.RUnlock()
+	return f.finishedIBD
 }
 
 func TestHandleRelayInvs(t *testing.T) {
@@ -289,10 +349,7 @@ func TestHandleRelayInvs(t *testing.T) {
 		}
 		_ = msg.(*appmessage.MsgRequestRelayBlocks)
 
-		context.validateAndInsertBlockResponse = ruleerrors.NewErrMissingParents(orphanBlock.Header.ParentHashes())
-		defer func() {
-			context.validateAndInsertBlockResponse = nil
-		}()
+		context.SetValidateAndInsertBlockResponse(ruleerrors.NewErrMissingParents(orphanBlock.Header.ParentHashes()))
 
 		err = incomingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(orphanBlock))
 		if err != nil {
@@ -342,10 +399,10 @@ func TestHandleRelayInvs(t *testing.T) {
 			name: "sending a known invalid inv",
 			funcToExecute: func(t *testing.T, incomingRoute, outgoingRoute *router.Route, context *fakeRelayInvsContext) {
 
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusInvalid,
-				}
+				})
 
 				err := incomingRoute.Enqueue(appmessage.NewMsgInvBlock(knownInvalidBlockHash))
 				if err != nil {
@@ -402,7 +459,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestRelayBlocks)
 
-				context.validateAndInsertBlockResponse = ruleerrors.ErrBadMerkleRoot
+				context.SetValidateAndInsertBlockResponse(ruleerrors.ErrBadMerkleRoot)
 				err = incomingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(invalidBlock))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -426,7 +483,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestRelayBlocks)
 
-				context.validateAndInsertBlockResponse = ruleerrors.NewErrMissingParents(orphanBlock.Header.ParentHashes())
+				context.SetValidateAndInsertBlockResponse(ruleerrors.NewErrMissingParents(orphanBlock.Header.ParentHashes()))
 				err = incomingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(orphanBlock))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -452,7 +509,7 @@ func TestHandleRelayInvs(t *testing.T) {
 		{
 			name: "starting IBD when peer is already in IBD",
 			funcToExecute: func(t *testing.T, incomingRoute, outgoingRoute *router.Route, context *fakeRelayInvsContext) {
-				context.trySetIBDRunningResponse = false
+				context.SetTrySetIBDRunningResponse(false)
 				triggerIBD(t, incomingRoute, outgoingRoute, context)
 
 				checkNoActivity(t, outgoingRoute)
@@ -558,15 +615,15 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestHeaders)
 
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(
 					appmessage.NewBlockHeadersMessage(
 						[]*appmessage.MsgBlockHeader{
-							appmessage.DomainBlockHeaderToBlockHeader(context.params.GenesisBlock.Header)},
+							appmessage.DomainBlockHeaderToBlockHeader(context.GetGenesisHeader())},
 					),
 				)
 				if err != nil {
@@ -581,10 +638,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				// Finish the IBD by sending DoneHeaders and send incompatible pruning point
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
@@ -598,7 +655,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestPruningPointHashMessage)
 
-				context.isValidPruningPointResponse = false
+				context.SetIsValidPruningPointResponse(false)
 				err = incomingRoute.Enqueue(appmessage.NewPruningPointHashMessage(invalidPruningPointHash))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -630,11 +687,11 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestHeaders)
 
-				context.validateAndInsertBlockResponse = ruleerrors.ErrDuplicateBlock
+				context.SetValidateAndInsertBlockResponse(ruleerrors.ErrDuplicateBlock)
 				err = incomingRoute.Enqueue(
 					appmessage.NewBlockHeadersMessage(
 						[]*appmessage.MsgBlockHeader{
-							appmessage.DomainBlockHeaderToBlockHeader(context.params.GenesisBlock.Header)},
+							appmessage.DomainBlockHeaderToBlockHeader(context.GetGenesisHeader())},
 					),
 				)
 				if err != nil {
@@ -649,10 +706,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				// Finish the IBD by sending DoneHeaders and send incompatible pruning point
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
@@ -666,7 +723,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestPruningPointHashMessage)
 
-				context.isValidPruningPointResponse = false
+				context.SetIsValidPruningPointResponse(false)
 				err = incomingRoute.Enqueue(appmessage.NewPruningPointHashMessage(invalidPruningPointHash))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -698,7 +755,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestHeaders)
 
-				context.validateAndInsertBlockResponse = ruleerrors.ErrBadMerkleRoot
+				context.SetValidateAndInsertBlockResponse(ruleerrors.ErrBadMerkleRoot)
 				err = incomingRoute.Enqueue(
 					appmessage.NewBlockHeadersMessage(
 						[]*appmessage.MsgBlockHeader{
@@ -738,10 +795,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -790,10 +847,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -806,7 +863,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestPruningPointHashMessage)
 
-				context.isValidPruningPointResponse = false
+				context.SetIsValidPruningPointResponse(false)
 				err = incomingRoute.Enqueue(appmessage.NewPruningPointHashMessage(invalidPruningPointHash))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -840,10 +897,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -905,10 +962,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -968,10 +1025,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1037,10 +1094,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1064,7 +1121,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestPruningPointUTXOSetAndBlock)
 
-				context.validateAndInsertImportedPruningPointResponse = ruleerrors.ErrBadMerkleRoot
+				context.SetValidateAndInsertImportedPruningPointResponse(ruleerrors.ErrBadMerkleRoot)
 				err = incomingRoute.Enqueue(appmessage.NewMsgIBDBlock(appmessage.DomainBlockToMsgBlock(invalidPruningPointBlock)))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -1104,10 +1161,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1131,7 +1188,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestPruningPointUTXOSetAndBlock)
 
-				context.validateAndInsertImportedPruningPointResponse = ruleerrors.ErrSuggestedPruningViolatesFinality
+				context.SetValidateAndInsertImportedPruningPointResponse(ruleerrors.ErrSuggestedPruningViolatesFinality)
 				err = incomingRoute.Enqueue(appmessage.NewMsgIBDBlock(appmessage.DomainBlockToMsgBlock(validPruningPointBlock)))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -1168,10 +1225,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1247,10 +1304,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1324,10 +1381,10 @@ func TestHandleRelayInvs(t *testing.T) {
 
 				// This is done so it'll think it added the high hash to the DAG and proceed with fetching
 				// the pruning point UTXO set.
-				context.getBlockInfoResponse = &externalapi.BlockInfo{
+				context.SetGetBlockInfoResponse(externalapi.BlockInfo{
 					Exists:      true,
 					BlockStatus: externalapi.StatusHeaderOnly,
-				}
+				})
 
 				err = incomingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
 				if err != nil {
@@ -1367,7 +1424,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 				_ = msg.(*appmessage.MsgRequestIBDBlocks)
 
-				context.validateAndInsertBlockResponse = ruleerrors.ErrBadMerkleRoot
+				context.SetValidateAndInsertImportedPruningPointResponse(ruleerrors.ErrBadMerkleRoot)
 				err = incomingRoute.Enqueue(appmessage.NewMsgIBDBlock(appmessage.DomainBlockToMsgBlock(invalidBlock)))
 				if err != nil {
 					t.Fatalf("Enqueue: %+v", err)
@@ -1417,11 +1474,11 @@ func TestHandleRelayInvs(t *testing.T) {
 				}
 
 				select {
-				case <-context.finishedIBD:
+				case <-context.GetFinishedIBDChan():
 					if !test.expectsIBDToFinish {
 						t.Fatalf("IBD unexpecetedly finished")
 					}
-				case <-time.After(time.Second):
+				case <-time.After(10 * time.Second):
 					if test.expectsIBDToFinish {
 						t.Fatalf("IBD didn't finished after %d", time.Second)
 					}
@@ -1436,7 +1493,7 @@ func TestHandleRelayInvs(t *testing.T) {
 						if !errors.Is(err, router.ErrRouteClosed) {
 							t.Fatalf("unexpected error %+v", err)
 						}
-					case <-time.After(time.Second):
+					case <-time.After(10 * time.Second):
 						t.Fatalf("waiting for flow to finish timed out after %s", time.Second)
 					}
 				}

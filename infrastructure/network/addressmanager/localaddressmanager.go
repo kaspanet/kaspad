@@ -38,7 +38,7 @@ type localAddress struct {
 }
 
 type localAddressManager struct {
-	localAddresses map[AddressKey]*localAddress
+	localAddresses map[addressKey]*localAddress
 	lookupFunc     func(string) ([]net.IP, error)
 	cfg            *Config
 	mutex          sync.Mutex
@@ -46,7 +46,7 @@ type localAddressManager struct {
 
 func newLocalAddressManager(cfg *Config) (*localAddressManager, error) {
 	localAddressManager := localAddressManager{
-		localAddresses: map[AddressKey]*localAddress{},
+		localAddresses: map[addressKey]*localAddress{},
 		cfg:            cfg,
 		lookupFunc:     cfg.Lookup,
 	}

@@ -126,35 +126,41 @@ func (c *ConnectionManager) ConnectionCount() int {
 }
 
 // Ban marks the given netConnection as banned
-func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) error {
-	return c.addressManager.Ban(netConnection.NetAddress())
+func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
+	if c.isPermanent(netConnection.Address()) {
+		log.Infof("Cannot ban %s because it's a permanent connection", netConnection.Address())
+		return
+	}
+
+	c.addressManager.Ban(netConnection.NetAddress())
 }
 
 // IsBanned returns whether the given netConnection is banned
 func (c *ConnectionManager) IsBanned(netConnection *netadapter.NetConnection) (bool, error) {
+	if c.isPermanent(netConnection.Address()) {
+		return false, nil
+	}
+
 	return c.addressManager.IsBanned(netConnection.NetAddress())
 }
 
 func (c *ConnectionManager) waitTillNextIteration() {
 	select {
 	case <-c.resetLoopChan:
-		c.loopTicker.Stop()
-		c.loopTicker = time.NewTicker(connectionsLoopInterval)
+		c.loopTicker.Reset(connectionsLoopInterval)
 	case <-c.loopTicker.C:
 	}
 }
 
-func (c *ConnectionManager) connectionExists(addressString string) bool {
-	if _, ok := c.activeRequested[addressString]; ok {
-		return true
+func (c *ConnectionManager) isPermanent(addressString string) bool {
+	c.connectionRequestsLock.Lock()
+	defer c.connectionRequestsLock.Unlock()
+	if conn, ok := c.activeRequested[addressString]; ok {
+		return conn.isPermanent
 	}
 
-	if _, ok := c.activeOutgoing[addressString]; ok {
-		return true
-	}
-
-	if _, ok := c.activeIncoming[addressString]; ok {
-		return true
+	if conn, ok := c.pendingRequested[addressString]; ok {
+		return conn.isPermanent
 	}
 
 	return false
