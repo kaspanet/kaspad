@@ -34,7 +34,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14
+          go-version: 1.15
 
 
       # Source: https://github.com/actions/cache/blob/main/examples.md#go---modules
@@ -60,7 +60,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14
+          go-version: 1.15
 
       - name: Create coverage file
         # Because of https://github.com/golang/go/issues/27333 this seem to "fail" even though nothing is wrong, so ignore the failure
