@@ -222,8 +222,8 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	am.unbanOldBannedAddresses()
 	key := netAddressKey(address)
+	am.unbanIfOldEnough(key.address)
 	if _, ok := am.bannedAddresses[key.address]; !ok {
 		if _, ok = am.addresses[key]; !ok {
 			return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
@@ -236,16 +236,14 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 
 }
 
-func (am *AddressManager) unbanOldBannedAddresses() {
-	keysToDelete := make([]ipv6, 0)
-	for key, address := range am.bannedAddresses {
-		const maxBanTime = 24 * time.Hour
-		if mstime.Since(address.Timestamp) > maxBanTime {
-			keysToDelete = append(keysToDelete, key)
-		}
+func (am *AddressManager) unbanIfOldEnough(ipv6Address ipv6) {
+	address, ok := am.bannedAddresses[ipv6Address]
+	if !ok {
+		return
 	}
 
-	for _, key := range keysToDelete {
-		delete(am.bannedAddresses, key)
+	const maxBanTime = 24 * time.Hour
+	if mstime.Since(address.Timestamp) > maxBanTime {
+		delete(am.bannedAddresses, ipv6Address)
 	}
 }
