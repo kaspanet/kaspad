@@ -4,12 +4,13 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"net"
 )
 
 // HandleUnban handles the respectively named RPC command
 func HandleUnban(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	unbanRequest := request.(*appmessage.UnbanRequestMessage)
-	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(unbanRequest.IP, 0, 0))
+	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(net.ParseIP(unbanRequest.IP), 0, 0))
 	if err != nil {
 		errorMessage := &appmessage.UnbanResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not unban IP: %s", err)

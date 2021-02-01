@@ -2,17 +2,16 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"net"
 )
 
 func (x *KaspadMessage_BanRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.BanRequestMessage{
-		IP: net.ParseIP(x.BanRequest.Ip),
+		IP: x.BanRequest.Ip,
 	}, nil
 }
 
 func (x *KaspadMessage_BanRequest) fromAppMessage(message *appmessage.BanRequestMessage) error {
-	x.BanRequest = &BanRequestMessage{Ip: message.IP.String()}
+	x.BanRequest = &BanRequestMessage{Ip: message.IP}
 	return nil
 }
 

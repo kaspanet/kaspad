@@ -1,13 +1,11 @@
 package appmessage
 
-import "net"
-
 // UnbanRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type UnbanRequestMessage struct {
 	baseMessage
 
-	IP net.IP
+	IP string
 }
 
 // Command returns the protocol command string for the message
@@ -16,7 +14,7 @@ func (msg *UnbanRequestMessage) Command() MessageCommand {
 }
 
 // NewUnbanRequestMessage returns an instance of the message
-func NewUnbanRequestMessage(ip net.IP) *UnbanRequestMessage {
+func NewUnbanRequestMessage(ip string) *UnbanRequestMessage {
 	return &UnbanRequestMessage{
 		IP: ip,
 	}
