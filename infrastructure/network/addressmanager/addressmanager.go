@@ -117,7 +117,6 @@ func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) {
 
 	key := netAddressKey(address)
 	delete(am.addresses, key)
-	delete(am.bannedAddresses, key.address)
 }
 
 // Addresses returns all addresses
