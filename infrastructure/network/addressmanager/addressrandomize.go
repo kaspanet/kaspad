@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
-// AddressRandomize implement AddressRandomizer interface
+// AddressRandomize implement addressRandomizer interface
 type AddressRandomize struct {
 	random *rand.Rand
 }

@@ -232,12 +232,12 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		factory := NewFactory()
-		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(params, false, "BoundedMergeTestBuild")
+		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(params, false, "TestBoundedMergeTestBuild")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
 
-		consensusReal, teardownFunc2, err := factory.NewTestConsensus(params, false, "BoundedMergeTestReal")
+		consensusReal, teardownFunc2, err := factory.NewTestConsensus(params, false, "TestBoundedMergeTestReal")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}

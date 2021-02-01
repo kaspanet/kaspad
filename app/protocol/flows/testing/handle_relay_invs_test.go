@@ -1421,7 +1421,7 @@ func TestHandleRelayInvs(t *testing.T) {
 					if !test.expectsIBDToFinish {
 						t.Fatalf("IBD unexpecetedly finished")
 					}
-				case <-time.After(time.Second):
+				case <-time.After(10 * time.Second):
 					if test.expectsIBDToFinish {
 						t.Fatalf("IBD didn't finished after %d", time.Second)
 					}
@@ -1436,7 +1436,7 @@ func TestHandleRelayInvs(t *testing.T) {
 						if !errors.Is(err, router.ErrRouteClosed) {
 							t.Fatalf("unexpected error %+v", err)
 						}
-					case <-time.After(time.Second):
+					case <-time.After(10 * time.Second):
 						t.Fatalf("waiting for flow to finish timed out after %s", time.Second)
 					}
 				}
