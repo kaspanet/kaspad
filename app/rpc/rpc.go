@@ -38,8 +38,8 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetUTXOsByAddressesRequestMessage:                         rpchandlers.HandleGetUTXOsByAddresses,
 	appmessage.CmdGetVirtualSelectedParentBlueScoreRequestMessage:           rpchandlers.HandleGetVirtualSelectedParentBlueScore,
 	appmessage.CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage: rpchandlers.HandleNotifyVirtualSelectedParentBlueScoreChanged,
-	appmessage.CmdBanRequestMessage:                                         rpchandlers.Ban,
-	appmessage.CmdUnbanRequestMessage:                                       rpchandlers.Unban,
+	appmessage.CmdBanRequestMessage:                                         rpchandlers.HandleBan,
+	appmessage.CmdUnbanRequestMessage:                                       rpchandlers.HandleUnban,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {
