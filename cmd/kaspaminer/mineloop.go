@@ -167,6 +167,8 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 		newTemplateChan <- template
 	}
 	getBlockTemplate()
+	const tickerTime = 500 * time.Millisecond
+	ticker := time.NewTicker(tickerTime)
 	for {
 		select {
 		case <-stopChan:
@@ -174,7 +176,8 @@ func templatesLoop(client *minerClient, miningAddr util.Address,
 			return
 		case <-client.blockAddedNotificationChan:
 			getBlockTemplate()
-		case <-time.Tick(500 * time.Millisecond):
+			ticker.Reset(tickerTime)
+		case <-ticker.C:
 			getBlockTemplate()
 		}
 	}
