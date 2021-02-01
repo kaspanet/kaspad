@@ -1,6 +1,9 @@
 package connmanager
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,7 +38,7 @@ type ConnectionManager struct {
 	maxIncoming      int
 
 	stop                   uint32
-	connectionRequestsLock sync.Mutex
+	connectionRequestsLock sync.RWMutex
 
 	resetLoopChan chan struct{}
 	loopTicker    *time.Ticker
@@ -125,14 +128,39 @@ func (c *ConnectionManager) ConnectionCount() int {
 	return c.netAdapter.P2PConnectionCount()
 }
 
+// ErrCannotBanPermanent is the error returned when trying to ban a permanent peer.
+var ErrCannotBanPermanent = errors.New("ErrCannotBanPermanent")
+
 // Ban marks the given netConnection as banned
-func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) {
+func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) error {
 	if c.isPermanent(netConnection.Address()) {
-		log.Infof("Cannot ban %s because it's a permanent connection", netConnection.Address())
-		return
+		return errors.Wrapf(ErrCannotBanPermanent, "Cannot ban %s because it's a permanent connection", netConnection.Address())
 	}
 
 	c.addressManager.Ban(netConnection.NetAddress())
+	return nil
+}
+
+// BanByIP bans the given IP and disconnects from all the connection with that IP.
+func (c *ConnectionManager) BanByIP(ip net.IP) error {
+	ipHasPermanentConnection, err := c.ipHasPermanentConnection(ip)
+	if err != nil {
+		return err
+	}
+
+	if ipHasPermanentConnection {
+		return errors.Wrapf(ErrCannotBanPermanent, "Cannot ban %s because it's a permanent connection", ip)
+	}
+
+	connections := c.netAdapter.P2PConnections()
+	for _, conn := range connections {
+		if conn.NetAddress().IP.Equal(ip) {
+			conn.Disconnect()
+		}
+	}
+
+	c.addressManager.Ban(appmessage.NewNetAddressIPPort(ip, 0, 0))
+	return nil
 }
 
 // IsBanned returns whether the given netConnection is banned
@@ -170,6 +198,9 @@ func (c *ConnectionManager) connectionExists(addressString string) bool {
 }
 
 func (c *ConnectionManager) isPermanent(addressString string) bool {
+	c.connectionRequestsLock.RLock()
+	defer c.connectionRequestsLock.RUnlock()
+
 	if conn, ok := c.activeRequested[addressString]; ok {
 		return conn.isPermanent
 	}
@@ -179,4 +210,61 @@ func (c *ConnectionManager) isPermanent(addressString string) bool {
 	}
 
 	return false
+}
+
+func (c *ConnectionManager) ipHasPermanentConnection(ip net.IP) (bool, error) {
+	c.connectionRequestsLock.RLock()
+	defer c.connectionRequestsLock.RUnlock()
+
+	for addr, conn := range c.activeRequested {
+		if !conn.isPermanent {
+			continue
+		}
+
+		ips, err := c.extractAddressIPs(addr)
+		if err != nil {
+			return false, err
+		}
+
+		if len(ips) == 0 && ips[0].Equal(ip) {
+			return true, nil
+		}
+	}
+
+	for addr, conn := range c.pendingRequested {
+		if !conn.isPermanent {
+			continue
+		}
+
+		ips, err := c.extractAddressIPs(addr)
+		if err != nil {
+			return false, err
+		}
+
+		for _, ip := range ips {
+			if ip.Equal(ip) {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func (c *ConnectionManager) extractAddressIPs(address string) ([]net.IP, error) {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		ips, err := c.cfg.Lookup(host)
+		if err != nil {
+			return nil, err
+		}
+		return ips, nil
+	}
+
+	return []net.IP{ip}, nil
 }

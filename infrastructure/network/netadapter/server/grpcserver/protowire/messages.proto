@@ -98,6 +98,10 @@ message KaspadMessage {
     NotifyVirtualSelectedParentBlueScoreChangedRequestMessage notifyVirtualSelectedParentBlueScoreChangedRequest = 1056;
     NotifyVirtualSelectedParentBlueScoreChangedResponseMessage notifyVirtualSelectedParentBlueScoreChangedResponse = 1057;
     VirtualSelectedParentBlueScoreChangedNotificationMessage virtualSelectedParentBlueScoreChangedNotification = 1058;
+    BanRequestMessage banRequest = 1059;
+    BanResponseMessage banResponse = 1060;
+    UnbanRequestMessage unbanRequest = 1061;
+    UnbanResponseMessage unbanResponse = 1062;
   }
 }
 

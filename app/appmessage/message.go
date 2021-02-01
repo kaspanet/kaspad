@@ -123,6 +123,10 @@ const (
 	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 	CmdNotifyVirtualSelectedParentBlueScoreChangedResponseMessage
 	CmdVirtualSelectedParentBlueScoreChangedNotificationMessage
+	CmdBanRequestMessage
+	CmdBanResponseMessage
+	CmdUnbanRequestMessage
+	CmdUnbanResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -220,6 +224,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage:  "NotifyVirtualSelectedParentBlueScoreChangedRequest",
 	CmdNotifyVirtualSelectedParentBlueScoreChangedResponseMessage: "NotifyVirtualSelectedParentBlueScoreChangedResponse",
 	CmdVirtualSelectedParentBlueScoreChangedNotificationMessage:   "VirtualSelectedParentBlueScoreChangedNotification",
+	CmdBanRequestMessage:                                          "BanRequestMessage",
+	CmdBanResponseMessage:                                         "BanResponseMessage",
+	CmdUnbanRequestMessage:                                        "UnbanRequestMessage",
+	CmdUnbanResponseMessage:                                       "UnbanResponseMessage",
 }
 
 // Message is an interface that describes a kaspa message. A type that
