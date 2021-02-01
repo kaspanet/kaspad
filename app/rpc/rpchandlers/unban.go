@@ -10,6 +10,12 @@ import (
 // HandleUnban handles the respectively named RPC command
 func HandleUnban(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	unbanRequest := request.(*appmessage.UnbanRequestMessage)
+	ip := net.ParseIP(unbanRequest.IP)
+	if ip == nil {
+		errorMessage := &appmessage.UnbanResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse IP %s", unbanRequest.IP)
+		return errorMessage, nil
+	}
 	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(net.ParseIP(unbanRequest.IP), 0, 0))
 	if err != nil {
 		errorMessage := &appmessage.UnbanResponseMessage{}
