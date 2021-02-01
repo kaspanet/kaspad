@@ -8,8 +8,8 @@ import (
 
 // Ban handles the respectively named RPC command
 func Ban(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	unbanRequest := request.(*appmessage.BanRequestMessage)
-	err := context.ConnectionManager.BanByIP(unbanRequest.IP)
+	banRequest := request.(*appmessage.BanRequestMessage)
+	err := context.ConnectionManager.BanByIP(banRequest.IP)
 	if err != nil {
 		errorMessage := &appmessage.BanResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not ban IP: %s", err)

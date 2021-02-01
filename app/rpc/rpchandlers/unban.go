@@ -8,8 +8,8 @@ import (
 
 // Unban handles the respectively named RPC command
 func Unban(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	banRequest := request.(*appmessage.UnbanRequestMessage)
-	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(banRequest.IP, 0, 0))
+	unbanRequest := request.(*appmessage.UnbanRequestMessage)
+	err := context.AddressManager.Unban(appmessage.NewNetAddressIPPort(unbanRequest.IP, 0, 0))
 	if err != nil {
 		errorMessage := &appmessage.UnbanResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not unban IP: %s", err)
