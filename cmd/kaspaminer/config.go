@@ -23,10 +23,11 @@ const (
 
 var (
 	// Default configuration options
-	defaultHomeDir    = util.AppDataDir("kaspaminer", false)
-	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
-	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
-	defaultRPCServer  = "localhost"
+	defaultHomeDir               = util.AppDataDir("kaspaminer", false)
+	defaultLogFile               = filepath.Join(defaultHomeDir, defaultLogFilename)
+	defaultErrLogFile            = filepath.Join(defaultHomeDir, defaultErrLogFilename)
+	defaultRPCServer             = "localhost"
+	defaultTargetBlocksPerSecond = 2.0
 )
 
 type configFlags struct {
@@ -42,7 +43,8 @@ type configFlags struct {
 
 func parseConfig() (*configFlags, error) {
 	cfg := &configFlags{
-		RPCServer: defaultRPCServer,
+		RPCServer:             defaultRPCServer,
+		TargetBlocksPerSecond: defaultTargetBlocksPerSecond,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
