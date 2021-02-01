@@ -242,11 +242,7 @@ func (c *ConnectionManager) extractAddressIPs(address string) ([]net.IP, error) 
 
 	ip := net.ParseIP(host)
 	if ip == nil {
-		ips, err := c.cfg.Lookup(host)
-		if err != nil {
-			return nil, err
-		}
-		return ips, nil
+		return c.cfg.Lookup(host)
 	}
 
 	return []net.IP{ip}, nil
