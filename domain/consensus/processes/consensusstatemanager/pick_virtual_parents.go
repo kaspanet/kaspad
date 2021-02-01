@@ -1,6 +1,7 @@
 package consensusstatemanager
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -9,8 +10,10 @@ import (
 )
 
 func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pickVirtualParents")
+	defer onEnd()
+
 	log.Debugf("pickVirtualParents start for tips len: %d", len(tips))
-	defer log.Debugf("pickVirtualParents end for tips len: %d", len(tips))
 
 	log.Debugf("Pushing all tips into a DownHeap")
 	candidatesHeap := csm.dagTraversalManager.NewDownHeap()
@@ -84,8 +87,8 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 func (csm *consensusStateManager) selectVirtualSelectedParent(
 	candidatesHeap model.BlockHeap) (*externalapi.DomainHash, error) {
 
-	log.Tracef("selectVirtualSelectedParent start")
-	defer log.Tracef("selectVirtualSelectedParent end")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "selectVirtualSelectedParent")
+	defer onEnd()
 
 	disqualifiedCandidates := hashset.New()
 
@@ -153,8 +156,8 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 func (csm *consensusStateManager) mergeSetIncrease(
 	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet) (uint64, error) {
 
-	log.Tracef("mergeSetIncrease start")
-	defer log.Tracef("mergeSetIncrease end")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "mergeSetIncrease")
+	defer onEnd()
 
 	visited := hashset.New()
 	queue := csm.dagTraversalManager.NewDownHeap()
@@ -204,8 +207,10 @@ func (csm *consensusStateManager) mergeSetIncrease(
 func (csm *consensusStateManager) boundedMergeBreakingParents(
 	parents []*externalapi.DomainHash) (hashset.HashSet, error) {
 
+	onEnd := logger.LogAndMeasureExecutionTime(log, "boundedMergeBreakingParents")
+	defer onEnd()
+
 	log.Tracef("boundedMergeBreakingParents start for parents: %s", parents)
-	defer log.Tracef("boundedMergeBreakingParents end for parents: %s", parents)
 
 	log.Debug("Temporarily setting virtual to all parents, so that we can run ghostdag on it")
 	err := csm.dagTopologyManager.SetParents(model.VirtualBlockHash, parents)

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -15,8 +16,10 @@ import (
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
 	model.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
+	onEnd := logger.LogAndMeasureExecutionTime(log, "CalculatePastUTXOAndAcceptanceData")
+	defer onEnd()
+
 	log.Debugf("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
-	defer log.Debugf("CalculatePastUTXOAndAcceptanceData end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Block %s is the genesis. By definition, "+
@@ -35,6 +38,9 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	log.Debugf("Restored the past UTXO of block %s with selectedParent %s. "+
+		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
+		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
 	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
@@ -53,8 +59,10 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 }
 
 func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.MutableUTXODiff, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "restorePastUTXO")
+	defer onEnd()
+
 	log.Debugf("restorePastUTXO start for block %s", blockHash)
-	defer log.Debugf("restorePastUTXO end for block %s", blockHash)
 
 	var err error
 
