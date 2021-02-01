@@ -147,8 +147,7 @@ func (c *ConnectionManager) IsBanned(netConnection *netadapter.NetConnection) (b
 func (c *ConnectionManager) waitTillNextIteration() {
 	select {
 	case <-c.resetLoopChan:
-		c.loopTicker.Stop()
-		c.loopTicker = time.NewTicker(connectionsLoopInterval)
+		c.loopTicker.Reset(connectionsLoopInterval)
 	case <-c.loopTicker.C:
 	}
 }
