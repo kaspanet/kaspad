@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -78,7 +79,11 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
-			m.context.ConnectionManager().Ban(netConnection)
+			err := m.context.ConnectionManager().Ban(netConnection)
+			if !errors.Is(err, connmanager.ErrCannotBanPermanent) {
+				panic(err)
+			}
+
 			err = outgoingRoute.Enqueue(appmessage.NewMsgReject(protocolErr.Error()))
 			if err != nil && !errors.Is(err, routerpkg.ErrRouteClosed) {
 				panic(err)
