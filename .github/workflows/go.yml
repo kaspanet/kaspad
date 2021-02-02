@@ -63,8 +63,7 @@ jobs:
           go-version: 1.15
 
       - name: Create coverage file
-        # Because of https://github.com/golang/go/issues/27333 this seem to "fail" even though nothing is wrong, so ignore the failure
-        run: go test -json -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./... || true
+        run: go test -json -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
 
       - name: Upload coverage file
         run: bash <(curl -s https://codecov.io/bash)
