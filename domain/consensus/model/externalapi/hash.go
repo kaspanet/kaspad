@@ -107,7 +107,12 @@ func HashesEqual(a, b []*DomainHash) bool {
 	return true
 }
 
-// Less returns true iff hash a is less than hash b
+// Less returns true if hash a is less than hash b
 func Less(a, b *DomainHash) bool {
 	return bytes.Compare(a.hashArray[:], b.hashArray[:]) < 0
+}
+
+// LessOrEqual returns true if hash a is smaller or equal to hash b
+func LessOrEqual(a, b *DomainHash) bool {
+	return bytes.Compare(a.hashArray[:], b.hashArray[:]) <= 0
 }
