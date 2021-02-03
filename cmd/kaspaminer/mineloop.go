@@ -2,12 +2,12 @@ package main
 
 import (
 	nativeerrors "errors"
+	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"sync/atomic"
 	"time"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -29,11 +29,19 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
-
-	templateStopChan := make(chan struct{})
-
 	doneChan := make(chan struct{})
-	spawn("mineLoop-internalLoop", func() {
+
+	// We don't want to send router.DefaultMaxMessages blocks at once because there's
+	// a high chance we'll get disconnected from the node, so we make the channel
+	// capacity router.DefaultMaxMessages/2 (we give some slack for getBlockTemplate
+	// requests)
+	foundBlockChan := make(chan *externalapi.DomainBlock, router.DefaultMaxMessages/2)
+
+	spawn("templatesLoop", func() {
+		templatesLoop(client, miningAddr, errChan)
+	})
+
+	spawn("blocksLoop", func() {
 		const windowSize = 10
 		var expectedDurationForWindow time.Duration
 		var windowExpectedEndTime time.Time
@@ -44,16 +52,8 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 		}
 		blockInWindowIndex := 0
 
-		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
-
-			foundBlock := make(chan *externalapi.DomainBlock)
-			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
-			block := <-foundBlock
-			templateStopChan <- struct{}{}
-			err := handleFoundBlock(client, block)
-			if err != nil {
-				errChan <- err
-			}
+		for {
+			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
 
 			if hasBlockRateTarget {
 				blockInWindowIndex++
@@ -69,6 +69,17 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 				}
 			}
 
+		}
+	})
+
+	spawn("handleFoundBlock", func() {
+		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+			block := <-foundBlockChan
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+				return
+			}
 		}
 		doneChan <- struct{}{}
 	})
@@ -99,21 +110,9 @@ func logHashRate() {
 	})
 }
 
-func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *externalapi.DomainBlock, mineWhenNotSynced bool,
-	templateStopChan chan struct{}, errChan chan error) {
-
-	newTemplateChan := make(chan *appmessage.GetBlockTemplateResponseMessage)
-	spawn("templatesLoop", func() {
-		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
-	})
-	spawn("solveLoop", func() {
-		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced)
-	})
-}
-
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.Address())
 
 	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
@@ -132,80 +131,78 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	return nil
 }
 
-func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
-	headerForMining := block.Header.ToMutable()
-	initialNonce := rand.Uint64() // Use the global concurrent-safe random source.
-	for i := initialNonce; i != initialNonce-1; i++ {
-		select {
-		case <-stopChan:
-			return
-		default:
-			headerForMining.SetNonce(i)
-			atomic.AddUint64(&hashesTried, 1)
-			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-				block.Header = headerForMining.ToImmutable()
-				foundBlock <- block
-				return
-			}
+func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
+	nonce := rand.Uint64() // Use the global concurrent-safe random source.
+	for {
+		nonce++
+		// For each nonce we try to build a block from the most up to date
+		// block template.
+		// In the rare case where the nonce space is exhausted for a specific
+		// block, it'll keep looping the nonce until a new block template
+		// is discovered.
+		block := getBlockForMining(mineWhenNotSynced)
+		targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
+		headerForMining := block.Header.ToMutable()
+		headerForMining.SetNonce(nonce)
+		atomic.AddUint64(&hashesTried, 1)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
+			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block), block.Header.ParentHashes())
+			return block
 		}
 	}
 }
 
-func templatesLoop(client *minerClient, miningAddr util.Address,
-	newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, errChan chan error, stopChan chan struct{}) {
+func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
+	tryCount := 0
+	for {
+		tryCount++
+		const sleepTime = 500 * time.Millisecond
+		shouldLog := (tryCount-1)%10 == 0
+		template := templatemanager.Get()
+		if template == nil {
+			if shouldLog {
+				log.Info("Waiting for the initial template")
+			}
+			time.Sleep(sleepTime)
+			continue
+		}
+		if !template.IsSynced && !mineWhenNotSynced {
+			if shouldLog {
+				log.Warnf("Kaspad is not synced. Skipping current block template")
+			}
+			time.Sleep(sleepTime)
+			continue
+		}
 
+		return appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+	}
+}
+
+func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan error) {
 	getBlockTemplate := func() {
 		template, err := client.GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
 			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
 			return
-		} else if err != nil {
+		}
+		if err != nil {
 			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
 			return
 		}
-		newTemplateChan <- template
+		templatemanager.Set(template)
 	}
+
 	getBlockTemplate()
 	const tickerTime = 500 * time.Millisecond
 	ticker := time.NewTicker(tickerTime)
 	for {
 		select {
-		case <-stopChan:
-			close(newTemplateChan)
-			return
 		case <-client.blockAddedNotificationChan:
 			getBlockTemplate()
 			ticker.Reset(tickerTime)
 		case <-ticker.C:
 			getBlockTemplate()
 		}
-	}
-}
-
-func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *externalapi.DomainBlock,
-	mineWhenNotSynced bool) {
-
-	var stopOldTemplateSolving chan struct{}
-	for template := range newTemplateChan {
-		if !template.IsSynced && !mineWhenNotSynced {
-			log.Warnf("Kaspad is not synced. Skipping current block template")
-			continue
-		}
-
-		if stopOldTemplateSolving != nil {
-			close(stopOldTemplateSolving)
-		}
-
-		stopOldTemplateSolving = make(chan struct{})
-		block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
-
-		stopOldTemplateSolvingCopy := stopOldTemplateSolving
-		spawn("solveBlock", func() {
-			solveBlock(block, stopOldTemplateSolvingCopy, foundBlock)
-		})
-	}
-	if stopOldTemplateSolving != nil {
-		close(stopOldTemplateSolving)
 	}
 }
