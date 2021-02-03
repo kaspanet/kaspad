@@ -565,13 +565,8 @@ func (mp *mempool) addTransactionToOrderedTransactionsByFeeRate(tx *consensusext
 		return err
 	}
 
-	if index == len(mp.orderedTransactionsByFeeRate) {
-		mp.orderedTransactionsByFeeRate = append(mp.orderedTransactionsByFeeRate, tx)
-	} else {
-		// copied and modified from https://stackoverflow.com/a/61822301/2413761
-		mp.orderedTransactionsByFeeRate = append(mp.orderedTransactionsByFeeRate[:index+1], mp.orderedTransactionsByFeeRate[index:]...)
-		mp.orderedTransactionsByFeeRate[index] = tx
-	}
+	mp.orderedTransactionsByFeeRate = append(mp.orderedTransactionsByFeeRate[:index],
+		append([]*consensusexternalapi.DomainTransaction{tx}, mp.orderedTransactionsByFeeRate[index:]...)...)
 
 	return nil
 }
