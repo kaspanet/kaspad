@@ -85,6 +85,16 @@ func (hash *DomainHash) Equal(other *DomainHash) bool {
 	return hash.hashArray == other.hashArray
 }
 
+// Less returns true if hash is less than other
+func (hash *DomainHash) Less(other *DomainHash) bool {
+	return bytes.Compare(hash.hashArray[:], other.hashArray[:]) < 0
+}
+
+// LessOrEqual returns true if hash is smaller or equal to other
+func (hash *DomainHash) LessOrEqual(other *DomainHash) bool {
+	return bytes.Compare(hash.hashArray[:], other.hashArray[:]) <= 0
+}
+
 // CloneHashes returns a clone of the given hashes slice.
 // Note: since DomainHash is a read-only type, the clone is shallow
 func CloneHashes(hashes []*DomainHash) []*DomainHash {
@@ -105,14 +115,4 @@ func HashesEqual(a, b []*DomainHash) bool {
 		}
 	}
 	return true
-}
-
-// Less returns true if hash a is less than hash b
-func Less(a, b *DomainHash) bool {
-	return bytes.Compare(a.hashArray[:], b.hashArray[:]) < 0
-}
-
-// LessOrEqual returns true if hash a is smaller or equal to hash b
-func LessOrEqual(a, b *DomainHash) bool {
-	return bytes.Compare(a.hashArray[:], b.hashArray[:]) <= 0
 }

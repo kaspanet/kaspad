@@ -550,12 +550,15 @@ func (mp *mempool) findTxIndexInOrderedTransactionsByFeeRate(tx *consensusextern
 
 	return sort.Search(len(mp.orderedTransactionsByFeeRate), func(i int) bool {
 		elementFeeRate := float64(mp.orderedTransactionsByFeeRate[i].Fee) / float64(mp.orderedTransactionsByFeeRate[i].Mass)
-		return elementFeeRate > txFeeRate ||
-			(elementFeeRate == txFeeRate &&
-				consensusexternalapi.LessOrEqual(
-					(*consensusexternalapi.DomainHash)(txID),
-					(*consensusexternalapi.DomainHash)(consensushashing.TransactionID(mp.orderedTransactionsByFeeRate[i])),
-				))
+		if elementFeeRate > txFeeRate {
+			return true
+		}
+
+		if elementFeeRate == txFeeRate && txID.LessOrEqual(consensushashing.TransactionID(mp.orderedTransactionsByFeeRate[i])) {
+			return true
+		}
+
+		return false
 	}), nil
 }
 
