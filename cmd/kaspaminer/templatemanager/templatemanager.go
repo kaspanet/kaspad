@@ -6,7 +6,7 @@ import (
 )
 
 var currentTemplate *appmessage.GetBlockTemplateResponseMessage
-var lock *sync.Mutex
+var lock = &sync.Mutex{}
 
 // Get returns the template to work on
 func Get() *appmessage.GetBlockTemplateResponseMessage {
