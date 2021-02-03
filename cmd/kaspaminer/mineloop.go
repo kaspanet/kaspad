@@ -141,7 +141,7 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 		atomic.AddUint64(&hashesTried, 1)
 		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 			block.Header = headerForMining.ToImmutable()
-			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block))
+			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block), block.Header.ParentHashes())
 			return block
 		}
 	}
