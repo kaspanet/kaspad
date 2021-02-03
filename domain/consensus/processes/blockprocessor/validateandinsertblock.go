@@ -290,6 +290,9 @@ func (bp *blockProcessor) discardAllChanges() {
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "commitAllChanges")
+	defer onEnd()
+
 	dbTx, err := bp.databaseContext.Begin()
 	if err != nil {
 		return err
