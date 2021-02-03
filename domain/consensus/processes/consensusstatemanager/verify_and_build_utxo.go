@@ -5,8 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
@@ -142,8 +140,7 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 		}
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		return transactionid.Less(
-			consensushashing.TransactionID(acceptedTransactions[i]),
+		return consensushashing.TransactionID(acceptedTransactions[i]).Less(
 			consensushashing.TransactionID(acceptedTransactions[j]))
 	})
 
