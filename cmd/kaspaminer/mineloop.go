@@ -132,12 +132,18 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 }
 
 func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
-	initialNonce := rand.Uint64() // Use the global concurrent-safe random source.
-	for i := initialNonce; ; i++ {
+	nonce := rand.Uint64() // Use the global concurrent-safe random source.
+	for {
+		nonce++
+		// For each nonce we try to build a block from the most up to date
+		// block template.
+		// In the rare case where the nonce space is exhausted for a specific
+		// block, it'll keep looping the nonce until a new block template
+		// is discovered.
 		block := getBlockForMining(mineWhenNotSynced)
 		targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 		headerForMining := block.Header.ToMutable()
-		headerForMining.SetNonce(i)
+		headerForMining.SetNonce(nonce)
 		atomic.AddUint64(&hashesTried, 1)
 		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 			block.Header = headerForMining.ToImmutable()
