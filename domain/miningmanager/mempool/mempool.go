@@ -543,7 +543,7 @@ func (mp *mempool) addTransaction(tx *consensusexternalapi.DomainTransaction, pa
 func (mp *mempool) findTxIndexInOrderedTransactionsByFeeRate(tx *consensusexternalapi.DomainTransaction) (int, error) {
 	if tx.Fee == 0 || tx.Mass == 0 {
 		return 0, errors.Errorf("findTxIndexInOrderedTransactionsByFeeRate expects a transaction with " +
-			"populated fee and as")
+			"populated fee and mass")
 	}
 	txID := consensushashing.TransactionID(tx)
 	txFeeRate := float64(tx.Fee) / float64(tx.Mass)
