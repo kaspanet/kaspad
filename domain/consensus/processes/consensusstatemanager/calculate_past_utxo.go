@@ -270,6 +270,8 @@ func (csm *consensusStateManager) checkTransactionMass(
 // RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a model.ReadOnlyUTXOSetIterator
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (
 	model.ReadOnlyUTXOSetIterator, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.RestorePastUTXOSetIterator")
+	defer onEnd()
 
 	blockStatus, err := csm.resolveBlockStatus(blockHash)
 	if err != nil {
@@ -284,7 +286,7 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 	log.Tracef("RestorePastUTXOSetIterator start for block %s", blockHash)
 	defer log.Tracef("RestorePastUTXOSetIterator end for block %s", blockHash)
 
-	log.Tracef("Calculating UTXO diff for block %s", blockHash)
+	log.Debugf("Calculating UTXO diff for block %s", blockHash)
 	blockDiff, err := csm.restorePastUTXO(blockHash)
 	if err != nil {
 		return nil, err
