@@ -30,7 +30,12 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 
 	errChan := make(chan error)
 	doneChan := make(chan struct{})
-	foundBlockChan := make(chan *externalapi.DomainBlock, 100)
+
+	// We don't want to send router.DefaultMaxMessages blocks at once because there's
+	// a high chance we'll get disconnected from the node, so we make the channel
+	// capacity router.DefaultMaxMessages/2 (we give some slack for getBlockTemplate
+	// requests)
+	foundBlockChan := make(chan *externalapi.DomainBlock, router.DefaultMaxMessages/2)
 
 	spawn("templatesLoop", func() {
 		templatesLoop(client, miningAddr, errChan)
@@ -47,7 +52,7 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 		}
 		blockInWindowIndex := 0
 
-		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+		for {
 			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
 
 			if hasBlockRateTarget {
@@ -65,17 +70,18 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 			}
 
 		}
-		doneChan <- struct{}{}
 	})
 
 	spawn("handleFoundBlock", func() {
-		for block := range foundBlockChan {
+		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+			block := <-foundBlockChan
 			err := handleFoundBlock(client, block)
 			if err != nil {
 				errChan <- err
 				return
 			}
 		}
+		doneChan <- struct{}{}
 	})
 
 	logHashRate()
@@ -106,7 +112,7 @@ func logHashRate() {
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes(), client.Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.Address())
 
 	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
@@ -127,7 +133,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 
 func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 	initialNonce := rand.Uint64() // Use the global concurrent-safe random source.
-	for i := initialNonce; i != initialNonce-1; i++ {
+	for i := initialNonce; ; i++ {
 		block := getBlockForMining(mineWhenNotSynced)
 		targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
 		headerForMining := block.Header.ToMutable()
@@ -135,16 +141,18 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 		atomic.AddUint64(&hashesTried, 1)
 		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 			block.Header = headerForMining.ToImmutable()
+			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block))
 			return block
 		}
 	}
-	panic("Exhausted the nonce space")
 }
 
 func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
-	for i := 0; ; i++ {
+	tryCount := 0
+	for {
+		tryCount++
 		const sleepTime = 500 * time.Millisecond
-		shouldLog := i%10 == 0
+		shouldLog := (tryCount-1)%10 == 0
 		template := templatemanager.Get()
 		if template == nil {
 			if shouldLog {
