@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
@@ -197,7 +196,7 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
 		acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
 		acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])
-		return transactionid.Less(acceptedTransactionIID, acceptedTransactionJID)
+		return acceptedTransactionIID.Less(acceptedTransactionJID)
 	})
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions), nil
