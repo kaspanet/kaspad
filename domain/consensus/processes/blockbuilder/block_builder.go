@@ -1,7 +1,9 @@
 package blockbuilder
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/pkg/errors"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -21,6 +23,7 @@ type blockBuilder struct {
 	coinbaseManager       model.CoinbaseManager
 	consensusStateManager model.ConsensusStateManager
 	ghostdagManager       model.GHOSTDAGManager
+	transactionValidator  model.TransactionValidator
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -72,6 +75,11 @@ func (bb *blockBuilder) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
 
+	err := bb.validateTransactions(transactions)
+	if err != nil {
+		return nil, err
+	}
+
 	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)
 	if err != nil {
 		return nil, err
@@ -87,6 +95,53 @@ func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 		Header:       header,
 		Transactions: transactionsWithCoinbase,
 	}, nil
+}
+
+func (bb *blockBuilder) validateTransactions(transactions []*externalapi.DomainTransaction) error {
+	invalidTransactions := make([]ruleerrors.InvalidTransaction, 0)
+	for _, tx := range transactions {
+		err := bb.validateTransaction(tx)
+		if err != nil {
+			if !errors.As(err, &ruleerrors.RuleError{}) {
+				return err
+			}
+			invalidTransactions = append(invalidTransactions,
+				ruleerrors.InvalidTransaction{Transaction: tx, Error: err})
+		}
+	}
+
+	if len(invalidTransactions) > 0 {
+		return ruleerrors.NewErrInvalidTransactionsInNewBlock(invalidTransactions)
+	}
+
+	return nil
+}
+
+func (bb *blockBuilder) validateTransaction(tx *externalapi.DomainTransaction) error {
+	originalEntries := make([]externalapi.UTXOEntry, len(tx.Inputs))
+	for i, input := range tx.Inputs {
+		originalEntries[i] = input.UTXOEntry
+		input.UTXOEntry = nil
+	}
+
+	defer func() {
+		for i, input := range tx.Inputs {
+			input.UTXOEntry = originalEntries[i]
+		}
+	}()
+
+	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(tx)
+	if err != nil {
+		return err
+	}
+
+	virtualSelectedParentMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(tx,
+		model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(
