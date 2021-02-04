@@ -8,6 +8,7 @@ var (
 		BlockCacheCapacity:     256 * opt.MiB,
 		WriteBuffer:            128 * opt.MiB,
 		DisableSeeksCompaction: true,
+		NoSync:                 true,
 	}
 
 	// Options is a function that returns a leveldb
