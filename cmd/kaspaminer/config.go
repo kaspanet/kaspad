@@ -77,6 +77,10 @@ func parseConfig() (*configFlags, error) {
 		}
 	}
 
+	if cfg.MiningAddr == "" {
+		return nil, errors.New("--miningaddr is required")
+	}
+
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	return cfg, nil
