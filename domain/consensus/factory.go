@@ -70,6 +70,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
 
+	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
+	// the previous pruning point.
+	pruningWindowSizePlusFinalityDepthForCache := int(dagParams.PruningDepth() + dagParams.FinalityDepth())
+
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New(200)
 	blockStore, err := blockstore.New(dbManager, 200)
@@ -80,11 +84,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(pruningWindowSizeForCaches)
-	blockStatusStore := blockstatusstore.New(200)
+	blockRelationStore := blockrelationstore.New(pruningWindowSizePlusFinalityDepthForCache)
+
+	blockStatusStore := blockstatusstore.New(pruningWindowSizePlusFinalityDepthForCache)
 	multisetStore := multisetstore.New(200)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizeForCaches)
+	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizePlusFinalityDepthForCache)
 	utxoDiffStore := utxodiffstore.New(200)
 	consensusStateStore := consensusstatestore.New(10_000)
 	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
