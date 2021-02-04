@@ -60,7 +60,7 @@ func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagData
 	case 1:
 		return false
 	case 0:
-		return externalapi.Less(blockHashA, blockHashB)
+		return blockHashA.Less(blockHashB)
 	default:
 		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
 	}

@@ -313,6 +313,16 @@ func (id *DomainTransactionID) Equal(other *DomainTransactionID) bool {
 	return (*DomainHash)(id).Equal((*DomainHash)(other))
 }
 
+// Less returns true if id is less than other
+func (id *DomainTransactionID) Less(other *DomainTransactionID) bool {
+	return (*DomainHash)(id).Less((*DomainHash)(other))
+}
+
+// LessOrEqual returns true if id is smaller or equal to other
+func (id *DomainTransactionID) LessOrEqual(other *DomainTransactionID) bool {
+	return (*DomainHash)(id).LessOrEqual((*DomainHash)(other))
+}
+
 // ByteArray returns the bytes in this transactionID represented as a byte array.
 // The transactionID bytes are cloned, therefore it is safe to modify the resulting array.
 func (id *DomainTransactionID) ByteArray() *[DomainHashSize]byte {

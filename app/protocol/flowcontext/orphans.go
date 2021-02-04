@@ -194,6 +194,9 @@ func (f *FlowContext) GetOrphanRoots(orphan *externalapi.DomainHash) ([]*externa
 
 			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				roots = append(roots, current)
+			} else {
+				log.Debugf("Block %s was skipped when checking for orphan roots: "+
+					"exists: %t, status: %s", current, blockInfo.Exists, blockInfo.BlockStatus)
 			}
 			continue
 		}
