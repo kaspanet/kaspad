@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 // LevelDBTransaction is a thin wrapper around native leveldb
@@ -41,7 +40,7 @@ func (tx *LevelDBTransaction) Commit() error {
 	}
 
 	tx.isClosed = true
-	return errors.WithStack(tx.db.ldb.Write(tx.batch, &opt.WriteOptions{Sync: true}))
+	return errors.WithStack(tx.db.ldb.Write(tx.batch, nil))
 }
 
 // Rollback rolls back whatever changes were made to the
