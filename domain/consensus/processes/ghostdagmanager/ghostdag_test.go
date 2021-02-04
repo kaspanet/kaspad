@@ -178,6 +178,12 @@ func TestGHOSTDAG(t *testing.T) {
 	})
 }
 
+// TestBlueWork tests if GHOSTDAG picks as selected parent the parent
+// with the most blue work, even if its blue score is not the greatest.
+// To do that it creates one chain of 3 blocks over genesis, and another
+// chain of 2 blocks with more blue work than the 3 blocks chain, and
+// checks that a block that points to both chain tips will have the
+// 2 blocks chain tip as its selected parent.
 func TestBlueWork(t *testing.T) {
 	dagTopology := &DAGTopologyManagerImpl{
 		parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
@@ -231,7 +237,7 @@ func TestBlueWork(t *testing.T) {
 		&externalapi.DomainHash{},
 		&externalapi.DomainHash{},
 		0,
-		math.MaxUint32,
+		math.MaxUint32, // Put a very high difficulty so the chain that contains this block will have a very high blue work
 		0,
 	)
 
@@ -256,6 +262,10 @@ func TestBlueWork(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GHOSTDAG: %+v", err)
 		}
+	}
+
+	if ghostdagDataStore.dagMap[*longestChainBlock3Hash].BlueScore() <= ghostdagDataStore.dagMap[*heaviestChainBlock2Hash].BlueScore() {
+		t.Fatalf("Expected longestChainBlock3Hash to have greater blue score than heaviestChainBlock2Hash")
 	}
 
 	if !ghostdagDataStore.dagMap[*tipHash].SelectedParent().Equal(heaviestChainBlock2Hash) {
