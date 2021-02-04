@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util/difficulty"
+	"math"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -175,6 +176,101 @@ func TestGHOSTDAG(t *testing.T) {
 			t.Fatalf("Expected 6 test files, ran %d instead", testsCounter)
 		}
 	})
+}
+
+// TestBlueWork tests if GHOSTDAG picks as selected parent the parent
+// with the most blue work, even if its blue score is not the greatest.
+// To do that it creates one chain of 3 blocks over genesis, and another
+// chain of 2 blocks with more blue work than the 3 blocks chain, and
+// checks that a block that points to both chain tips will have the
+// 2 blocks chain tip as its selected parent.
+func TestBlueWork(t *testing.T) {
+	dagTopology := &DAGTopologyManagerImpl{
+		parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
+	}
+
+	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
+		dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
+	}
+
+	blockHeadersStore := &blockHeadersStore{
+		dagMap: make(map[externalapi.DomainHash]externalapi.BlockHeader),
+	}
+
+	fakeGenesisHash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})
+	longestChainBlock1Hash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})
+	longestChainBlock2Hash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})
+	longestChainBlock3Hash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3})
+	heaviestChainBlock1Hash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4})
+	heaviestChainBlock2Hash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{5})
+	tipHash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{6})
+
+	lowDifficultyHeader := blockheader.NewImmutableBlockHeader(
+		0,
+		nil,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0,
+		0,
+		0,
+	)
+
+	dagTopology.parentsMap[*fakeGenesisHash] = nil
+	ghostdagDataStore.dagMap[*fakeGenesisHash] = model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
+	blockHeadersStore.dagMap[*fakeGenesisHash] = lowDifficultyHeader
+
+	dagTopology.parentsMap[*longestChainBlock1Hash] = []*externalapi.DomainHash{fakeGenesisHash}
+	blockHeadersStore.dagMap[*longestChainBlock1Hash] = lowDifficultyHeader
+
+	dagTopology.parentsMap[*longestChainBlock2Hash] = []*externalapi.DomainHash{longestChainBlock1Hash}
+	blockHeadersStore.dagMap[*longestChainBlock2Hash] = lowDifficultyHeader
+
+	dagTopology.parentsMap[*longestChainBlock3Hash] = []*externalapi.DomainHash{longestChainBlock2Hash}
+	blockHeadersStore.dagMap[*longestChainBlock3Hash] = lowDifficultyHeader
+
+	dagTopology.parentsMap[*heaviestChainBlock1Hash] = []*externalapi.DomainHash{fakeGenesisHash}
+	blockHeadersStore.dagMap[*heaviestChainBlock1Hash] = blockheader.NewImmutableBlockHeader(
+		0,
+		nil,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0,
+		math.MaxUint32, // Put a very high difficulty so the chain that contains this block will have a very high blue work
+		0,
+	)
+
+	dagTopology.parentsMap[*heaviestChainBlock2Hash] = []*externalapi.DomainHash{heaviestChainBlock1Hash}
+	blockHeadersStore.dagMap[*heaviestChainBlock2Hash] = lowDifficultyHeader
+
+	dagTopology.parentsMap[*tipHash] = []*externalapi.DomainHash{heaviestChainBlock2Hash, longestChainBlock3Hash}
+	blockHeadersStore.dagMap[*tipHash] = lowDifficultyHeader
+
+	manager := ghostdagmanager.New(nil, dagTopology, ghostdagDataStore, blockHeadersStore, 18)
+	blocksForGHOSTDAG := []*externalapi.DomainHash{
+		longestChainBlock1Hash,
+		longestChainBlock2Hash,
+		longestChainBlock3Hash,
+		heaviestChainBlock1Hash,
+		heaviestChainBlock2Hash,
+		tipHash,
+	}
+
+	for _, blockHash := range blocksForGHOSTDAG {
+		err := manager.GHOSTDAG(blockHash)
+		if err != nil {
+			t.Fatalf("GHOSTDAG: %+v", err)
+		}
+	}
+
+	if ghostdagDataStore.dagMap[*longestChainBlock3Hash].BlueScore() <= ghostdagDataStore.dagMap[*heaviestChainBlock2Hash].BlueScore() {
+		t.Fatalf("Expected longestChainBlock3Hash to have greater blue score than heaviestChainBlock2Hash")
+	}
+
+	if !ghostdagDataStore.dagMap[*tipHash].SelectedParent().Equal(heaviestChainBlock2Hash) {
+		t.Fatalf("Expected the block with the most blue work to be the selected parent of the tip")
+	}
 }
 
 func hashesToStrings(arr []*externalapi.DomainHash) []string {
