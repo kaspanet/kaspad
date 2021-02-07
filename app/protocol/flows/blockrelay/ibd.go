@@ -468,6 +468,13 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 	if err != nil {
 		return err
 	}
+	if len(hashes) == 0 {
+		// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
+		// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
+		// In these cases - GetMissingBlockBodyHashes would return an empty array.
+		log.Debugf("No missing block body hashes found.")
+		return nil
+	}
 
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
