@@ -210,28 +210,15 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 }
 
 func createAChainDag(genesisHash *externalapi.DomainHash, tc testapi.TestConsensus) (*externalapi.DomainHash, error) {
-
-	block1, _, err := tc.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
-	if err != nil {
-		return nil, err
+	block := genesisHash
+	var err error
+	for i := 0; i < 5; i++ {
+		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
-	block2, _, err := tc.AddBlock([]*externalapi.DomainHash{block1}, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	block3, _, err := tc.AddBlock([]*externalapi.DomainHash{block2}, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	block4, _, err := tc.AddBlock([]*externalapi.DomainHash{block3}, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	block5, _, err := tc.AddBlock([]*externalapi.DomainHash{block4}, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	return block5, nil
+	return block, nil
 
 }
 func expendDagToTwoChildrenSameSelectedParent(parentHash *externalapi.DomainHash, tc testapi.TestConsensus) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
