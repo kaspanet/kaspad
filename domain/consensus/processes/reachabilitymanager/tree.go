@@ -337,30 +337,36 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 
 	rc := newReindexContext(rt)
 
-	// Iterate from reindexRootAncestor towards newReindexRoot
-	for {
-		chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
-		if err != nil {
-			return err
+	if !newReindexRoot.Equal(reindexRootAncestor) {
+		log.Debugf("Concentrating the intervals towards the new reindex root")
+		// Iterate from reindexRootAncestor towards newReindexRoot
+		for {
+			chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
+			if err != nil {
+				return err
+			}
+
+			isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
+
+			// Concentrate interval from current ancestor to its chosen child
+			err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
+			if err != nil {
+				return err
+			}
+
+			if isFinalReindexRoot {
+				break
+			}
+
+			reindexRootAncestor = chosenChild
 		}
-
-		isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
-
-		// Concentrate interval from current ancestor to it's chosen child
-		err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
-		if err != nil {
-			return err
-		}
-
-		if isFinalReindexRoot {
-			break
-		}
-
-		reindexRootAncestor = chosenChild
+	} else {
+		log.Debugf("newReindexRoot is the same as reindexRootAncestor. Skipping concentration...")
 	}
 
 	// Update reindex root data store
 	rt.stageReindexRoot(newReindexRoot)
+	log.Debugf("Updated the reindex root to %s", newReindexRoot)
 	return nil
 }
 
@@ -393,8 +399,12 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		// We have reindex root out of selected tip chain, however we switch chains only after a sufficient
 		// threshold of reindexSlack score in order to address possible alternating reorg attacks.
 		// The reindexSlack constant is used as an heuristic for a large enough constant on the one hand, but
-		// one which will not harm performance on the other hand - given the available slack at the chain split point
-		if selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
+		// one which will not harm performance on the other hand - given the available slack at the chain split point.
+		//
+		// Note: In some cases the blue score selected tip can be lower than the current reindex root blue score.
+		// If that's the case we keep the reindex root unchanged.
+		if selectedTipGHOSTDAGData.BlueScore() < currentRootGHOSTDAGData.BlueScore() ||
+			selectedTipGHOSTDAGData.BlueScore()-currentRootGHOSTDAGData.BlueScore() < rt.reindexSlack {
 			// Return current - this indicates no change
 			return currentReindexRoot, currentReindexRoot, nil
 		}
@@ -420,6 +430,11 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, chosenChild)
 		if err != nil {
 			return nil, nil, err
+		}
+
+		if selectedTipGHOSTDAGData.BlueScore() < chosenChildGHOSTDAGData.BlueScore() {
+			return nil, nil, errors.Errorf("chosen child %s has blue score greater "+
+				"than %s although it's in its selected parent chain", chosenChild, selectedTip)
 		}
 
 		if selectedTipGHOSTDAGData.BlueScore()-chosenChildGHOSTDAGData.BlueScore() < rt.reindexWindow {
