@@ -19,11 +19,11 @@ type acceptanceDataStore struct {
 }
 
 // New instantiates a new AcceptanceDataStore
-func New(cacheSize int) model.AcceptanceDataStore {
+func New(cacheSize int, preallocate bool) model.AcceptanceDataStore {
 	return &acceptanceDataStore{
 		staging:  make(map[externalapi.DomainHash]externalapi.AcceptanceData),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 }
 
