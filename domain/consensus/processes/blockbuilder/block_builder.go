@@ -99,14 +99,14 @@ func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 func (bb *blockBuilder) validateTransactions(transactions []*externalapi.DomainTransaction) error {
 	invalidTransactions := make([]ruleerrors.InvalidTransaction, 0)
-	for _, tx := range transactions {
-		err := bb.validateTransaction(tx)
+	for _, transaction := range transactions {
+		err := bb.validateTransaction(transaction)
 		if err != nil {
 			if !errors.As(err, &ruleerrors.RuleError{}) {
 				return err
 			}
 			invalidTransactions = append(invalidTransactions,
-				ruleerrors.InvalidTransaction{Transaction: tx, Error: err})
+				ruleerrors.InvalidTransaction{Transaction: transaction, Error: err})
 		}
 	}
 
@@ -117,20 +117,20 @@ func (bb *blockBuilder) validateTransactions(transactions []*externalapi.DomainT
 	return nil
 }
 
-func (bb *blockBuilder) validateTransaction(tx *externalapi.DomainTransaction) error {
-	originalEntries := make([]externalapi.UTXOEntry, len(tx.Inputs))
-	for i, input := range tx.Inputs {
+func (bb *blockBuilder) validateTransaction(transaction *externalapi.DomainTransaction) error {
+	originalEntries := make([]externalapi.UTXOEntry, len(transaction.Inputs))
+	for i, input := range transaction.Inputs {
 		originalEntries[i] = input.UTXOEntry
 		input.UTXOEntry = nil
 	}
 
 	defer func() {
-		for i, input := range tx.Inputs {
+		for i, input := range transaction.Inputs {
 			input.UTXOEntry = originalEntries[i]
 		}
 	}()
 
-	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(tx)
+	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(transaction)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (bb *blockBuilder) validateTransaction(tx *externalapi.DomainTransaction) e
 		return err
 	}
 
-	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(tx,
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
 		model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
