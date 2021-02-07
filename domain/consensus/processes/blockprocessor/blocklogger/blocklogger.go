@@ -11,78 +11,56 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-type blockType uint8
-
-const (
-	blockTypeHeader blockType = iota
-	blockTypeBody
+var (
+	receivedLogBlocks       int64
+	receivedLogHeaders      int64
+	receivedLogTransactions int64
+	lastBlockLogTime        time.Time
 )
-
-var statsPerBlockType = map[blockType]*struct {
-	receivedLogBlocks int64
-	receivedLogTx     int64
-	lastBlockLogTime  time.Time
-}{
-	blockTypeHeader: {
-		lastBlockLogTime: time.Now(),
-	},
-	blockTypeBody: {
-		lastBlockLogTime: time.Now(),
-	},
-}
 
 // LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
 func LogBlock(block *externalapi.DomainBlock) {
-	currentBlockType := blockTypeBody
 	if len(block.Transactions) == 0 {
-		currentBlockType = blockTypeHeader
+		receivedLogHeaders++
+	} else {
+		receivedLogBlocks++
 	}
 
-	stats := statsPerBlockType[currentBlockType]
-	stats.receivedLogBlocks++
-	stats.receivedLogTx += int64(len(block.Transactions))
+	receivedLogTransactions += int64(len(block.Transactions))
 
 	now := time.Now()
-	duration := now.Sub(stats.lastBlockLogTime)
+	duration := now.Sub(lastBlockLogTime)
 	if duration < time.Second*10 {
 		return
 	}
 
 	// Truncate the duration to 10s of milliseconds.
-	tDuration := duration.Round(10 * time.Millisecond)
+	truncatedDuration := duration.Round(10 * time.Millisecond)
 
 	// Log information about new block blue score.
-	blockStr := ""
-	txStr := ""
-	if currentBlockType == blockTypeBody {
-		blockStr = "blocks"
-		if stats.receivedLogBlocks == 1 {
-			blockStr = "block"
-		}
-
-		txStr = "transactions"
-		if stats.receivedLogTx == 1 {
-			txStr = "transaction"
-		}
-	} else {
-		blockStr = "headers"
-		if stats.receivedLogBlocks == 1 {
-			blockStr = "header"
-		}
+	blockStr := "blocks"
+	if receivedLogBlocks == 1 {
+		blockStr = "block"
 	}
 
-	if currentBlockType == blockTypeBody {
-		log.Infof("Processed %d %s in the last %s (%d %s, %s)",
-			stats.receivedLogBlocks, blockStr, tDuration, stats.receivedLogTx,
-			txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
-	} else {
-		log.Infof("Processed %d %s in the last %s (%s)",
-			stats.receivedLogBlocks, blockStr, tDuration, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
+	txStr := "transactions"
+	if receivedLogTransactions == 1 {
+		txStr = "transaction"
 	}
 
-	stats.receivedLogBlocks = 0
-	stats.receivedLogTx = 0
-	stats.lastBlockLogTime = now
+	headerStr := "headers"
+	if receivedLogBlocks == 1 {
+		headerStr = "header"
+	}
+
+	log.Infof("Processed %d %s and %d %s in the last %s (%d %s, %s)",
+		receivedLogBlocks, blockStr, receivedLogHeaders, headerStr, truncatedDuration, receivedLogTransactions,
+		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
+
+	receivedLogBlocks = 0
+	receivedLogHeaders = 0
+	receivedLogTransactions = 0
+	lastBlockLogTime = now
 }
