@@ -132,8 +132,8 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 			// In these cases - return an empty list of blocks to sync
 			return []*externalapi.DomainHash{}, nil
 		}
-		// TODO: Once block children are fixed, this error
-		// should be returned instead of simply logged
+		// TODO: Once block children are fixed (https://github.com/kaspanet/kaspad/issues/1499),
+		// this error should be returned rather the logged
 		log.Errorf("no header-only blocks between %s and %s",
 			lowHash, highHash)
 	}
