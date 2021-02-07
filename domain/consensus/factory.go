@@ -45,6 +45,10 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
+const (
+	defaultTestLeveldbCacheSizeMiB = 8
+)
+
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
@@ -54,11 +58,13 @@ type Factory interface {
 
 	SetTestDataDir(dataDir string)
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
+	SetTestLevelDBCacheSize(cacheSizeMiB int)
 }
 
 type factory struct {
 	dataDir             string
 	ghostdagConstructor GHOSTDAGManagerConstructor
+	cacheSizeMiB        *int
 }
 
 // NewFactory creates a new Consensus factory
@@ -395,7 +401,13 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode b
 			return nil, nil, err
 		}
 	}
-	db, err := ldb.NewLevelDB(datadir)
+	var cacheSizeMiB int
+	if f.cacheSizeMiB != nil {
+		cacheSizeMiB = *f.cacheSizeMiB
+	} else {
+		cacheSizeMiB = defaultTestLeveldbCacheSizeMiB
+	}
+	db, err := ldb.NewLevelDB(datadir, cacheSizeMiB)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -436,4 +448,8 @@ func (f *factory) SetTestDataDir(dataDir string) {
 
 func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
 	f.ghostdagConstructor = ghostdagConstructor
+}
+
+func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
+	f.cacheSizeMiB = &cacheSizeMiB
 }
