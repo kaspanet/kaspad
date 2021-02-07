@@ -126,8 +126,14 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		lowHash = selectedChild
 	}
 	if !foundHeaderOnlyBlock {
-		// TODO: Once block children are fixed, this error
-		// should be returned instead of simply logged
+		if lowHash == highHash {
+			// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
+			// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
+			// In these cases - return an empty list of blocks to sync
+			return []*externalapi.DomainHash{}, nil
+		}
+		// TODO: Once block children are fixed (https://github.com/kaspanet/kaspad/issues/1499),
+		// this error should be returned rather the logged
 		log.Errorf("no header-only blocks between %s and %s",
 			lowHash, highHash)
 	}
