@@ -18,7 +18,7 @@ func TestNewConsensus(t *testing.T) {
 		return
 	}
 
-	db, err := ldb.NewLevelDB(tmpDir)
+	db, err := ldb.NewLevelDB(tmpDir, 8)
 	if err != nil {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
