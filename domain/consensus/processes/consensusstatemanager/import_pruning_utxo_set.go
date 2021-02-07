@@ -86,7 +86,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Debugf("Staging the new pruning point")
+	log.Debugf("Staging the new pruning point %s", newPruningPointHash)
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
 
 	log.Debugf("Populating the pruning point with UTXO entries")
