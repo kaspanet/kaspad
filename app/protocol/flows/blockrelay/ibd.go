@@ -56,28 +56,28 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 }
 
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) error {
-	highHashReceived := false
-	for !highHashReceived {
-		log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-		highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
-		if err != nil {
-			return err
-		}
-		log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-
-		err = flow.downloadHeaders(highestSharedBlockHash, highHash)
-		if err != nil {
-			return err
-		}
-
-		// We're finished once highHash has been inserted into the DAG
-		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
-		if err != nil {
-			return err
-		}
-		highHashReceived = blockInfo.Exists
-		log.Debugf("Headers downloaded from peer %s. Are further headers required: %t", flow.peer, !highHashReceived)
+	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+	highestSharedBlockHash, err := flow.findHighestSharedBlockHash(highHash)
+	if err != nil {
+		return err
 	}
+	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+
+	err = flow.downloadHeaders(highestSharedBlockHash, highHash)
+	if err != nil {
+		return err
+	}
+
+	// If the highHash has not been received, the peer is misbehaving
+	highHashBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
+	if err != nil {
+		return err
+	}
+	if !highHashBlockInfo.Exists {
+		return protocolerrors.Errorf(true, "did not receive "+
+			"highHash header %s from peer %s during header download", highHash, flow.peer)
+	}
+	log.Debugf("Headers downloaded from peer %s", flow.peer)
 	return nil
 }
 
