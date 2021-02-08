@@ -127,6 +127,8 @@ const (
 	CmdBanResponseMessage
 	CmdUnbanRequestMessage
 	CmdUnbanResponseMessage
+	CmdGetInfoRequestMessage
+	CmdGetInfoResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -228,6 +230,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdBanResponseMessage:                                         "BanResponse",
 	CmdUnbanRequestMessage:                                        "UnbanRequest",
 	CmdUnbanResponseMessage:                                       "UnbanResponse",
+	CmdGetInfoRequestMessage:                                      "GetInfoRequestMessage",
+	CmdGetInfoResponseMessage:                                     "GeInfoResponseMessage",
 }
 
 // Message is an interface that describes a kaspa message. A type that
