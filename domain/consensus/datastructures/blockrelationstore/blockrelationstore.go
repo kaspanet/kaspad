@@ -18,10 +18,10 @@ type blockRelationStore struct {
 }
 
 // New instantiates a new BlockRelationStore
-func New(cacheSize int) model.BlockRelationStore {
+func New(cacheSize int, preallocate bool) model.BlockRelationStore {
 	return &blockRelationStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
-		cache:   lrucache.New(cacheSize),
+		cache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 

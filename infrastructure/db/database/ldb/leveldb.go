@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	ldbErrors "github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 // LevelDB defines a thin wrapper around leveldb.
@@ -13,9 +14,12 @@ type LevelDB struct {
 }
 
 // NewLevelDB opens a leveldb instance defined by the given path.
-func NewLevelDB(path string) (*LevelDB, error) {
+func NewLevelDB(path string, cacheSizeMiB int) (*LevelDB, error) {
 	// Open leveldb. If it doesn't exist, create it.
-	ldb, err := leveldb.OpenFile(path, Options())
+	options := Options()
+	options.BlockCacheCapacity = cacheSizeMiB * opt.MiB
+	options.WriteBuffer = (cacheSizeMiB * opt.MiB) / 2
+	ldb, err := leveldb.OpenFile(path, &options)
 
 	// If the database is corrupted, attempt to recover.
 	if _, corrupted := err.(*ldbErrors.ErrCorrupted); corrupted {

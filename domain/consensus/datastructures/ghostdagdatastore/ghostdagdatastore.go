@@ -18,10 +18,10 @@ type ghostdagDataStore struct {
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(cacheSize int) model.GHOSTDAGDataStore {
+func New(cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-		cache:   lrucache.New(cacheSize),
+		cache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 

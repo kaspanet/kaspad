@@ -23,13 +23,13 @@ type utxoDiffStore struct {
 }
 
 // New instantiates a new UTXODiffStore
-func New(cacheSize int) model.UTXODiffStore {
+func New(cacheSize int, preallocate bool) model.UTXODiffStore {
 	return &utxoDiffStore{
 		utxoDiffStaging:      make(map[externalapi.DomainHash]model.UTXODiff),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete:             make(map[externalapi.DomainHash]struct{}),
-		utxoDiffCache:        lrucache.New(cacheSize),
-		utxoDiffChildCache:   lrucache.New(cacheSize),
+		utxoDiffCache:        lrucache.New(cacheSize, preallocate),
+		utxoDiffChildCache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 

@@ -21,11 +21,11 @@ type blockStore struct {
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, cacheSize int) (model.BlockStore, error) {
+func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 
 	err := blockStore.initializeCount(dbContext)

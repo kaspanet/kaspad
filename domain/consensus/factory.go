@@ -45,6 +45,12 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
+const (
+	defaultTestLeveldbCacheSizeMiB = 8
+	defaultPreallocateCaches       = true
+	defaultTestPreallocateCaches   = false
+)
+
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
@@ -54,11 +60,15 @@ type Factory interface {
 
 	SetTestDataDir(dataDir string)
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
+	SetTestLevelDBCacheSize(cacheSizeMiB int)
+	SetTestPreAllocateCache(preallocateCaches bool)
 }
 
 type factory struct {
 	dataDir             string
 	ghostdagConstructor GHOSTDAGManagerConstructor
+	cacheSizeMiB        *int
+	preallocateCaches   *bool
 }
 
 // NewFactory creates a new Consensus factory
@@ -76,32 +86,39 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
 
+	var preallocateCaches bool
+	if f.preallocateCaches != nil {
+		preallocateCaches = *f.preallocateCaches
+	} else {
+		preallocateCaches = defaultPreallocateCaches
+	}
+
 	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
 	// the previous pruning point.
 	pruningWindowSizePlusFinalityDepthForCache := int(dagParams.PruningDepth() + dagParams.FinalityDepth())
 
 	// Data Structures
-	acceptanceDataStore := acceptancedatastore.New(200)
-	blockStore, err := blockstore.New(dbManager, 200)
+	acceptanceDataStore := acceptancedatastore.New(200, preallocateCaches)
+	blockStore, err := blockstore.New(dbManager, 200, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, 10_000)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, 10_000, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(pruningWindowSizePlusFinalityDepthForCache)
+	blockRelationStore := blockrelationstore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 
-	blockStatusStore := blockstatusstore.New(pruningWindowSizePlusFinalityDepthForCache)
-	multisetStore := multisetstore.New(200)
+	blockStatusStore := blockstatusstore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	multisetStore := multisetstore.New(200, preallocateCaches)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizePlusFinalityDepthForCache)
-	utxoDiffStore := utxodiffstore.New(200)
-	consensusStateStore := consensusstatestore.New(10_000)
-	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches)
+	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	utxoDiffStore := utxodiffstore.New(200, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(10_000, preallocateCaches)
+	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches, preallocateCaches)
 	headersSelectedTipStore := headersselectedtipstore.New()
-	finalityStore := finalitystore.New(200)
-	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches)
+	finalityStore := finalitystore.New(200, preallocateCaches)
+	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -395,7 +412,16 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode b
 			return nil, nil, err
 		}
 	}
-	db, err := ldb.NewLevelDB(datadir)
+	var cacheSizeMiB int
+	if f.cacheSizeMiB != nil {
+		cacheSizeMiB = *f.cacheSizeMiB
+	} else {
+		cacheSizeMiB = defaultTestLeveldbCacheSizeMiB
+	}
+	if f.preallocateCaches == nil {
+		f.SetTestPreAllocateCache(defaultTestPreallocateCaches)
+	}
+	db, err := ldb.NewLevelDB(datadir, cacheSizeMiB)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -436,4 +462,11 @@ func (f *factory) SetTestDataDir(dataDir string) {
 
 func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
 	f.ghostdagConstructor = ghostdagConstructor
+}
+
+func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
+	f.cacheSizeMiB = &cacheSizeMiB
+}
+func (f *factory) SetTestPreAllocateCache(preallocateCaches bool) {
+	f.preallocateCaches = &preallocateCaches
 }

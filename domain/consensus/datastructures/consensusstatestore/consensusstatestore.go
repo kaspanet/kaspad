@@ -19,9 +19,9 @@ type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New(utxoSetCacheSize int) model.ConsensusStateStore {
+func New(utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
 	return &consensusStateStore{
-		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize),
+		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize, preallocate),
 	}
 }
 
