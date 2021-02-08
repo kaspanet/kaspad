@@ -281,6 +281,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		consensusStateManager,
 		ghostdagManager,
+		transactionValidator,
+
 		acceptanceDataStore,
 		blockRelationStore,
 		multisetStore,

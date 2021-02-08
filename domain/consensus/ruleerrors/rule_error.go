@@ -263,11 +263,11 @@ func NewErrMissingParents(missingParentHashes []*externalapi.DomainHash) error {
 // InvalidTransaction is a struct containing an invalid transaction, and the error explaining why it's invalid.
 type InvalidTransaction struct {
 	Transaction *externalapi.DomainTransaction
-	err         error
+	Error       error
 }
 
 func (invalid InvalidTransaction) String() string {
-	return fmt.Sprintf("(%v: %s)", consensushashing.TransactionID(invalid.Transaction), invalid.err)
+	return fmt.Sprintf("(%v: %s)", consensushashing.TransactionID(invalid.Transaction), invalid.Error)
 }
 
 // ErrInvalidTransactionsInNewBlock indicates that some transactions in a new block are invalid
