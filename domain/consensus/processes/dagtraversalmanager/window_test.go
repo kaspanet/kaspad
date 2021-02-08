@@ -344,7 +344,7 @@ func TestBlueBlockWindow(t *testing.T) {
 			if err != nil {
 				t.Fatalf("BlueWindow: %s", err)
 			}
-			sort.Sort(consensus.NewTestGhostDAGSorter(window, tc, t))
+			sort.Sort(testutils.NewTestGhostDAGSorter(window, tc, t))
 			if err := checkWindowIDs(window, blockData.expectedWindowWithGenesisPadding, idByBlockMap); err != nil {
 				t.Errorf("Unexpected values for window for block %s: %s", blockData.id, err)
 			}
