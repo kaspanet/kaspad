@@ -1,7 +1,6 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/blocklogger"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
@@ -38,8 +37,6 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	}
 
 	for i, newBlock := range newBlocks {
-		blocklogger.LogBlock(block)
-
 		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
 		_, err = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 		if err != nil {
