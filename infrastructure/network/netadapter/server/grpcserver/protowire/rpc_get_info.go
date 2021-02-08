@@ -19,7 +19,7 @@ func (x *KaspadMessage_GetInfoResponse) toAppMessage() (appmessage.Message, erro
 		err = &appmessage.RPCError{Message: x.GetInfoResponse.Error.Message}
 	}
 	return &appmessage.GetInfoResponseMessage{
-		ID:    x.GetInfoResponse.Id,
+		P2PID: x.GetInfoResponse.P2PId,
 		Error: err,
 	}, nil
 }
@@ -30,7 +30,7 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetInfoResponse = &GetInfoResponseMessage{
-		Id:    message.ID,
+		P2PId: message.P2PID,
 		Error: err,
 	}
 	return nil

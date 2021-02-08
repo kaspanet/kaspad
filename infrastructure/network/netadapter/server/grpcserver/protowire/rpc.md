@@ -1430,7 +1430,7 @@ GetInfoRequestMessage returns info about the node.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| p2pId | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

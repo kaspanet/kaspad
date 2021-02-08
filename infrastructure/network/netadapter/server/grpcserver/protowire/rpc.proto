@@ -556,6 +556,6 @@ message GetInfoRequestMessage{
 }
 
 message GetInfoResponseMessage{
-  string id = 1;
+  string p2pId = 1;
   RPCError error = 1000;
 }

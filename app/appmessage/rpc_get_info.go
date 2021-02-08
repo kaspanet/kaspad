@@ -20,7 +20,7 @@ func NewGeInfoRequestMessage() *GetInfoRequestMessage {
 // its respective RPC message
 type GetInfoResponseMessage struct {
 	baseMessage
-	ID string
+	P2PID string
 
 	Error *RPCError
 }
@@ -31,8 +31,8 @@ func (msg *GetInfoResponseMessage) Command() MessageCommand {
 }
 
 // NewGetInfoResponseMessage returns a instance of the message
-func NewGetInfoResponseMessage(id string) *GetInfoResponseMessage {
+func NewGetInfoResponseMessage(p2pID string) *GetInfoResponseMessage {
 	return &GetInfoResponseMessage{
-		ID: id,
+		P2PID: p2pID,
 	}
 }
