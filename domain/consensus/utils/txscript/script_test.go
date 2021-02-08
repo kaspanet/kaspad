@@ -3723,6 +3723,17 @@ func TestPushedData(t *testing.T) {
 	}
 }
 
+// isPushOnlyScript returns whether or not the passed script only pushes data.
+//
+// False will be returned when the script does not parse.
+func isPushOnlyScript(script []byte) (bool, error) {
+	pops, err := parseScript(script)
+	if err != nil {
+		return false, err
+	}
+	return isPushOnly(pops), nil
+}
+
 // TestHasCanonicalPush ensures the canonicalPush function works as expected.
 func TestHasCanonicalPush(t *testing.T) {
 	t.Parallel()
@@ -3734,8 +3745,8 @@ func TestHasCanonicalPush(t *testing.T) {
 				err)
 			continue
 		}
-		if result, _ := IsPushOnlyScript(script); !result {
-			t.Errorf("IsPushOnlyScript: test #%d failed: %x\n", i,
+		if result, _ := isPushOnlyScript(script); !result {
+			t.Errorf("isPushOnlyScript: test #%d failed: %x\n", i,
 				script)
 			continue
 		}
@@ -3760,8 +3771,8 @@ func TestHasCanonicalPush(t *testing.T) {
 			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
 			continue
 		}
-		if result, _ := IsPushOnlyScript(script); !result {
-			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
+		if result, _ := isPushOnlyScript(script); !result {
+			t.Errorf("StandardPushesTests isPushOnlyScript test #%d failed: %x\n", i, script)
 			continue
 		}
 		pops, err := parseScript(script)
@@ -3889,9 +3900,9 @@ func TestHasCanonicalPushes(t *testing.T) {
 	}
 }
 
-// TestIsPushOnlyScript ensures the IsPushOnlyScript function returns the
+// TestIsPushOnly ensures the isPushOnly function returns the
 // expected results.
-func TestIsPushOnlyScript(t *testing.T) {
+func TestIsPushOnly(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -3922,19 +3933,19 @@ func TestIsPushOnlyScript(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		isPushOnly, err := IsPushOnlyScript(test.script)
+		isPushOnly, err := isPushOnlyScript(test.script)
 
 		if isPushOnly != test.expectedResult {
-			t.Errorf("IsPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
+			t.Errorf("isPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
 				"%v", test.name, isPushOnly, test.expectedResult)
 		}
 
 		if test.shouldFail && err == nil {
-			t.Errorf("IsPushOnlyScript (%s) expected an error but got <nil>", test.name)
+			t.Errorf("isPushOnlyScript (%s) expected an error but got <nil>", test.name)
 		}
 
 		if !test.shouldFail && err != nil {
-			t.Errorf("IsPushOnlyScript (%s) expected no error but got: %v", test.name, err)
+			t.Errorf("isPushOnlyScript (%s) expected no error but got: %v", test.name, err)
 		}
 	}
 }

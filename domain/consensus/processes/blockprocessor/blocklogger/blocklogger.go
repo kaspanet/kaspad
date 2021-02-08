@@ -5,7 +5,6 @@
 package blocklogger
 
 import (
-	"sync"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -13,46 +12,55 @@ import (
 )
 
 var (
-	receivedLogBlocks int64
-	receivedLogTx     int64
-	lastBlockLogTime  = mstime.Now()
-	mtx               sync.Mutex
+	receivedLogBlocks       int64
+	receivedLogHeaders      int64
+	receivedLogTransactions int64
+	lastBlockLogTime        time.Time
 )
 
 // LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
 func LogBlock(block *externalapi.DomainBlock) {
-	mtx.Lock()
-	defer mtx.Unlock()
+	if len(block.Transactions) == 0 {
+		receivedLogHeaders++
+	} else {
+		receivedLogBlocks++
+	}
 
-	receivedLogBlocks++
-	receivedLogTx += int64(len(block.Transactions))
+	receivedLogTransactions += int64(len(block.Transactions))
 
-	now := mstime.Now()
+	now := time.Now()
 	duration := now.Sub(lastBlockLogTime)
 	if duration < time.Second*10 {
 		return
 	}
 
 	// Truncate the duration to 10s of milliseconds.
-	tDuration := duration.Round(10 * time.Millisecond)
+	truncatedDuration := duration.Round(10 * time.Millisecond)
 
 	// Log information about new block blue score.
 	blockStr := "blocks"
 	if receivedLogBlocks == 1 {
 		blockStr = "block"
 	}
+
 	txStr := "transactions"
-	if receivedLogTx == 1 {
+	if receivedLogTransactions == 1 {
 		txStr = "transaction"
 	}
 
-	log.Infof("Processed %d %s in the last %s (%d %s, %s)",
-		receivedLogBlocks, blockStr, tDuration, receivedLogTx,
+	headerStr := "headers"
+	if receivedLogBlocks == 1 {
+		headerStr = "header"
+	}
+
+	log.Infof("Processed %d %s and %d %s in the last %s (%d %s, %s)",
+		receivedLogBlocks, blockStr, receivedLogHeaders, headerStr, truncatedDuration, receivedLogTransactions,
 		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
 
 	receivedLogBlocks = 0
-	receivedLogTx = 0
+	receivedLogHeaders = 0
+	receivedLogTransactions = 0
 	lastBlockLogTime = now
 }
