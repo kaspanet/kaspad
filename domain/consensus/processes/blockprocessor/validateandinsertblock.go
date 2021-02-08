@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor/blocklogger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -142,6 +143,8 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	if logClosureErr != nil {
 		return nil, logClosureErr
 	}
+
+	blocklogger.LogBlock(block)
 
 	return &externalapi.BlockInsertionResult{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
