@@ -221,47 +221,44 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.deletePastBlocks")
 	defer onEnd()
 
-	// Go over all P.Past and P.AC that's not in V.Past
+	// Go over all pruningPoint.Past and pruningPoint.Anticone that's not in virtual.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
-
-	// Find P.AC that's not in V.Past
-	dagTips, err := pm.consensusStateStore.Tips(pm.databaseContext)
-	if err != nil {
-		return err
-	}
-	newTips := make([]*externalapi.DomainHash, 0, len(dagTips))
 	virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+
+	// Start queue with all tips that are below the pruning point (and on the way remove them from list of tips)
+	prunedTips, err := pm.pruneTips(pruningPoint, virtualParents)
 	if err != nil {
 		return err
 	}
-	for _, tip := range dagTips {
-		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(tip, pruningPoint, virtualParents)
-		if err != nil {
-			return err
-		}
-		if !isInPruningFutureOrInVirtualPast {
-			// Add them to the queue so they and their past will be pruned
-			err := queue.Push(tip)
-			if err != nil {
-				return err
-			}
-		} else {
-			newTips = append(newTips, tip)
-		}
+	err = queue.PushSlice(prunedTips)
+	if err != nil {
+		return err
 	}
-	pm.consensusStateStore.StageTips(newTips)
-	// Add P.Parents
+
+	// Add pruningPoint.Parents to queue
 	parents, err := pm.dagTopologyManager.Parents(pruningPoint)
 	if err != nil {
 		return err
 	}
-	for _, parent := range parents {
-		err = queue.Push(parent)
-		if err != nil {
-			return err
-		}
+	err = queue.PushSlice(parents)
+	if err != nil {
+		return err
 	}
 
+	err = pm.deleteBlocksDownward(queue)
+	if err != nil {
+		return err
+	}
+
+	err = pm.pruneVirtualDiffParents(pruningPoint, virtualParents)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pm *pruningManager) deleteBlocksDownward(queue model.BlockHeap) error {
 	visited := map[externalapi.DomainHash]struct{}{}
 	// Prune everything in the queue including its past
 	for queue.Len() > 0 {
@@ -288,8 +285,10 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 			}
 		}
 	}
+	return nil
+}
 
-	// Delete virtual diff parents that are in PruningPoint's Anticone and not in Virtual's Past
+func (pm *pruningManager) pruneVirtualDiffParents(pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) error {
 	virtualDiffParents, err := pm.consensusStateStore.VirtualDiffParents(pm.databaseContext)
 	if err != nil {
 		return err
@@ -307,6 +306,34 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	pm.consensusStateStore.StageVirtualDiffParents(validVirtualDiffParents)
 
 	return nil
+}
+
+func (pm *pruningManager) pruneTips(pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) (
+	prunedTips []*externalapi.DomainHash, err error) {
+
+	// Find P.AC that's not in V.Past
+	dagTips, err := pm.consensusStateStore.Tips(pm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+	newTips := make([]*externalapi.DomainHash, 0, len(dagTips))
+	if err != nil {
+		return nil, err
+	}
+	for _, tip := range dagTips {
+		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(tip, pruningPoint, virtualParents)
+		if err != nil {
+			return nil, err
+		}
+		if !isInPruningFutureOrInVirtualPast {
+			prunedTips = append(prunedTips, tip)
+		} else {
+			newTips = append(newTips, tip)
+		}
+	}
+	pm.consensusStateStore.StageTips(newTips)
+
+	return prunedTips, nil
 }
 
 func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainHash) error {
