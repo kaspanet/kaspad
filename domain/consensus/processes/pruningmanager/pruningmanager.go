@@ -151,8 +151,11 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 
 	newPruningPoint := currentPruningPoint
 	newPruningPointGHOSTDAGData := currentPruningPointGHOSTDAGData
-	for iterator.Next() {
-		selectedChild := iterator.Get()
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		selectedChild, err := iterator.Get()
+		if err != nil {
+			return err
+		}
 		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, selectedChild)
 		if err != nil {
 			return err
@@ -577,4 +580,24 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 
 	log.Debugf("Finishing updating the pruning point UTXO set")
 	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
+}
+
+func (pm *pruningManager) PruneAllBlocks() error {
+	iterator, err := pm.blocksStore.AllBlockHashesIterator(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		blockHash, err := iterator.Get()
+		if err != nil {
+			return err
+		}
+		_, err = pm.deleteBlock(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
