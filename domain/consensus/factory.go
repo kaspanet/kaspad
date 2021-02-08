@@ -52,8 +52,8 @@ type Factory interface {
 	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 
-	SetDataDir(dataDir string)
-	SetGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
+	SetTestDataDir(dataDir string)
+	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 }
 
 type factory struct {
@@ -428,10 +428,10 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode b
 	return tstConsensus, teardown, nil
 }
 
-func (f *factory) SetDataDir(dataDir string) {
+func (f *factory) SetTestDataDir(dataDir string) {
 	f.dataDir = dataDir
 }
 
-func (f *factory) SetGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
+func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
 	f.ghostdagConstructor = ghostdagConstructor
 }
