@@ -192,7 +192,7 @@ const (
 	// or to be in compressed format as a 32 byte string prefixed with 0x02 or 0x03 to signal oddness.
 	ErrPubKeyFormat
 
-	// ErrCleanStack is returned when after evalution, the stack
+	// ErrCleanStack is returned when after evaluation, the stack
 	// contains more than one element.
 	ErrCleanStack
 

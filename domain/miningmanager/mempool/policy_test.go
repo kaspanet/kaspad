@@ -236,18 +236,6 @@ func TestCheckTransactionStandard(t *testing.T) {
 			code:       RejectNonstandard,
 		},
 		{
-			name: "Signature script that does more than push data",
-			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{{
-				PreviousOutpoint: dummyPrevOut,
-				SignatureScript: []byte{
-					txscript.OpCheckSigVerify},
-				Sequence: constants.MaxTxInSequenceNum,
-			}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
-			height:     300000,
-			isStandard: false,
-			code:       RejectNonstandard,
-		},
-		{
 			name: "Valid but non standard public key script",
 			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
 				Value:           100000000,
