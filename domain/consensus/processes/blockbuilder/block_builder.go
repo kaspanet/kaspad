@@ -40,6 +40,7 @@ func New(
 	coinbaseManager model.CoinbaseManager,
 	consensusStateManager model.ConsensusStateManager,
 	ghostdagManager model.GHOSTDAGManager,
+	transactionValidator model.TransactionValidator,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -54,10 +55,12 @@ func New(
 		coinbaseManager:       coinbaseManager,
 		consensusStateManager: consensusStateManager,
 		ghostdagManager:       ghostdagManager,
-		acceptanceDataStore:   acceptanceDataStore,
-		blockRelationStore:    blockRelationStore,
-		multisetStore:         multisetStore,
-		ghostdagDataStore:     ghostdagDataStore,
+		transactionValidator:  transactionValidator,
+
+		acceptanceDataStore: acceptanceDataStore,
+		blockRelationStore:  blockRelationStore,
+		multisetStore:       multisetStore,
+		ghostdagDataStore:   ghostdagDataStore,
 	}
 }
 
