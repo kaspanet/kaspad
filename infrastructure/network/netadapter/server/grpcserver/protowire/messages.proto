@@ -102,6 +102,8 @@ message KaspadMessage {
     BanResponseMessage banResponse = 1060;
     UnbanRequestMessage unbanRequest = 1061;
     UnbanResponseMessage unbanResponse = 1062;
+    GetInfoRequestMessage getInfoRequest = 1063;
+    GetInfoResponseMessage getInfoResponse = 1064;
   }
 }
 

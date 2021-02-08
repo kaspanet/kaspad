@@ -85,6 +85,8 @@
     - [BanResponseMessage](#protowire.BanResponseMessage)
     - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
     - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
+    - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
+    - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1403,6 +1405,32 @@ UnbanRequestMessage unbans the given ip.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetInfoRequestMessage"></a>
+
+### GetInfoRequestMessage
+GetInfoRequestMessage returns info about the node.
+
+
+
+
+
+
+<a name="protowire.GetInfoResponseMessage"></a>
+
+### GetInfoResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| p2pId | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
