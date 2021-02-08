@@ -51,15 +51,21 @@ type Factory interface {
 		externalapi.Consensus, error)
 	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
-	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
-		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
+
+	SetTestDataDir(dataDir string)
+	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 }
 
-type factory struct{}
+type factory struct {
+	dataDir             string
+	ghostdagConstructor GHOSTDAGManagerConstructor
+}
 
 // NewFactory creates a new Consensus factory
 func NewFactory() Factory {
-	return &factory{}
+	return &factory{
+		ghostdagConstructor: ghostdagmanager.New,
+	}
 }
 
 // NewConsensus instantiates a new Consensus
@@ -107,7 +113,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager,
 		blockRelationStore,
 		ghostdagDataStore)
-	ghostdagManager := ghostdagmanager.New(
+	ghostdagManager := f.ghostdagConstructor(
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
@@ -382,19 +388,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
-
-	dataDir, err := ioutil.TempDir("", testName)
-	if err != nil {
-		return nil, nil, err
+	datadir := f.dataDir
+	if datadir == "" {
+		datadir, err = ioutil.TempDir("", testName)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-
-	return f.NewTestConsensusWithDataDir(dagParams, dataDir, isArchivalNode)
-}
-
-func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string, isArchivalNode bool) (
-	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
-
-	db, err := ldb.NewLevelDB(dataDir)
+	db, err := ldb.NewLevelDB(datadir)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -404,9 +405,7 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 	}
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
-
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
-
 	testTransactionValidator := transactionvalidator.NewTestTransactionValidator(consensusAsImplementation.transactionValidator)
 
 	tstConsensus := &testConsensus{
@@ -422,12 +421,19 @@ func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataD
 	teardown = func(keepDataDir bool) {
 		db.Close()
 		if !keepDataDir {
-			err := os.RemoveAll(dataDir)
+			err := os.RemoveAll(f.dataDir)
 			if err != nil {
 				log.Errorf("Error removing data directory for test consensus: %s", err)
 			}
 		}
 	}
-
 	return tstConsensus, teardown, nil
+}
+
+func (f *factory) SetTestDataDir(dataDir string) {
+	f.dataDir = dataDir
+}
+
+func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
+	f.ghostdagConstructor = ghostdagConstructor
 }
