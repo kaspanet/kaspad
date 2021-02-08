@@ -84,17 +84,6 @@ func isPushOnly(pops []parsedOpcode) bool {
 	return true
 }
 
-// IsPushOnlyScript returns whether or not the passed script only pushes data.
-//
-// False will be returned when the script does not parse.
-func IsPushOnlyScript(script []byte) (bool, error) {
-	pops, err := parseScript(script)
-	if err != nil {
-		return false, err
-	}
-	return isPushOnly(pops), nil
-}
-
 // parseScriptTemplate is the same as parseScript but allows the passing of the
 // template list for testing purposes. When there are parse errors, it returns
 // the list of parsed opcodes up to the point of failure along with the error.
