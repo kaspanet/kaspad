@@ -28,7 +28,7 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 
 	response := appmessage.NewGetBlockResponseMessage()
 
-	blockVerboseData, err := context.BuildBlockVerboseData(header, getBlockRequest.IncludeTransactionVerboseData)
+	blockVerboseData, err := context.BuildBlockVerboseData(header, nil, getBlockRequest.IncludeTransactionVerboseData)
 	if err != nil {
 		return nil, err
 	}
