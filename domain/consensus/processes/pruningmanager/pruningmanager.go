@@ -583,7 +583,9 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 }
 
 func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.DomainHash) error {
-	logger.LogAndMeasureExecutionTime(log, "PruneAllBlocksBelow")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "PruneAllBlocksBelow")
+	defer onEnd()
+
 	iterator, err := pm.blocksStore.AllBlockHashesIterator(pm.databaseContext)
 	if err != nil {
 		return err
