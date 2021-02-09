@@ -78,11 +78,6 @@ func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
 		}
 		defer tearDown(false)
 
-		tc, tearDown, err = factory.NewTestConsensus(params, false,
-			"TestBlockAtDepth")
-		if err != nil {
-			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
-		}
 		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(params.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
@@ -138,11 +133,6 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 		const sizeOfTheFirstChildSubChainDAG = 3
 		const sizeOfTheSecondChildSubChainDAG = 2
 
-		tc, tearDown, err = factory.NewTestConsensus(params, false,
-			"TestBlockAtDepth")
-		if err != nil {
-			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
-		}
 		firstChild, secondChild, err := createADAGWithTwoDifferentChains(params.GenesisHash, tc, sizeOfTheFirstChildSubChainDAG,
 			sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
