@@ -582,7 +582,8 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }
 
-func (pm *pruningManager) PruneAllBlocks() error {
+func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.DomainHash) error {
+	logger.LogAndMeasureExecutionTime(log, "PruneAllBlocksBelow")
 	iterator, err := pm.blocksStore.AllBlockHashesIterator(pm.databaseContext)
 	if err != nil {
 		return err
@@ -592,6 +593,13 @@ func (pm *pruningManager) PruneAllBlocks() error {
 		blockHash, err := iterator.Get()
 		if err != nil {
 			return err
+		}
+		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsDescendantOf(blockHash, pruningPointHash)
+		if err != nil {
+			return err
+		}
+		if !isInPastOfPruningPoint {
+			continue
 		}
 		_, err = pm.deleteBlock(blockHash)
 		if err != nil {

@@ -29,7 +29,7 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(newPruningPoint 
 	}
 
 	log.Info("Deleting block data for all blocks in blockStore")
-	err = bp.pruningManager.PruneAllBlocks()
+	err = bp.pruningManager.PruneAllBlocksBelow(newPruningPointHash)
 	if err != nil {
 		return err
 	}

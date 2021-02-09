@@ -9,5 +9,5 @@ type PruningManager interface {
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
 	UpdatePruningPointUTXOSetIfRequired() error
-	PruneAllBlocks() error
+	PruneAllBlocksBelow(pruningPointHash *externalapi.DomainHash) error
 }
