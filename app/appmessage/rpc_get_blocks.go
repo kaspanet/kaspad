@@ -4,8 +4,9 @@ package appmessage
 // its respective RPC message
 type GetBlocksRequestMessage struct {
 	baseMessage
-	LowHash                 string
-	IncludeBlockVerboseData bool
+	LowHash                       string
+	IncludeBlockVerboseData       bool
+	IncludeTransactionVerboseData bool
 }
 
 // Command returns the protocol command string for the message

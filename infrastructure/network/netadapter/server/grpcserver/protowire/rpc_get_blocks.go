@@ -4,15 +4,17 @@ import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (x *KaspadMessage_GetBlocksRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.GetBlocksRequestMessage{
-		LowHash:                 x.GetBlocksRequest.LowHash,
-		IncludeBlockVerboseData: x.GetBlocksRequest.IncludeBlockVerboseData,
+		LowHash:                       x.GetBlocksRequest.LowHash,
+		IncludeBlockVerboseData:       x.GetBlocksRequest.IncludeBlockVerboseData,
+		IncludeTransactionVerboseData: x.GetBlocksRequest.IncludeTransactionVerboseData,
 	}, nil
 }
 
 func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetBlocksRequestMessage) error {
 	x.GetBlocksRequest = &GetBlocksRequestMessage{
-		LowHash:                 message.LowHash,
-		IncludeBlockVerboseData: message.IncludeBlockVerboseData,
+		LowHash:                       message.LowHash,
+		IncludeBlockVerboseData:       message.IncludeBlockVerboseData,
+		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil
 }
