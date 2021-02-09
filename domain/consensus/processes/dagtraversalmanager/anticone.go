@@ -5,10 +5,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
-// AnticoneFromContext returns blocks in (context.Past ⋂ block.Anticone)
-func (dtm *dagTraversalManager) AnticoneFromContext(context, block *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	anticone := []*externalapi.DomainHash{}
-	queue := []*externalapi.DomainHash{context}
+	queue, err := dtm.consensusStateStore.Tips(dtm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
 	visited := hashset.New()
 
 	for len(queue) > 0 {
@@ -21,7 +23,7 @@ func (dtm *dagTraversalManager) AnticoneFromContext(context, block *externalapi.
 
 		visited.Add(current)
 
-		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(current, block)
+		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(current, blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +32,7 @@ func (dtm *dagTraversalManager) AnticoneFromContext(context, block *externalapi.
 			continue
 		}
 
-		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(block, current)
+		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(blockHash, current)
 		if err != nil {
 			return nil, err
 		}

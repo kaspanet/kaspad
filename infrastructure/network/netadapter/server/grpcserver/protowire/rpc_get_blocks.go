@@ -35,6 +35,7 @@ func (x *KaspadMessage_GetBlocksResponse) toAppMessage() (appmessage.Message, er
 	return &appmessage.GetBlocksResponseMessage{
 		BlockHashes:      x.GetBlocksResponse.BlockHashes,
 		BlockVerboseData: blockVerboseData,
+		NextLowHash:      x.GetBlocksResponse.NextLowHash,
 		Error:            err,
 	}, nil
 }
@@ -56,6 +57,7 @@ func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.Get
 	x.GetBlocksResponse = &GetBlocksResponseMessage{
 		BlockHashes:      message.BlockHashes,
 		BlockVerboseData: blockVerboseData,
+		NextLowHash:      message.NextLowHash,
 		Error:            err,
 	}
 	return nil

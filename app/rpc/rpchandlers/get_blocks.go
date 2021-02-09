@@ -3,7 +3,6 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -36,10 +35,26 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 			}, nil
 		}
 	}
-	blockHashes, err := context.Domain.Consensus().GetHashesBetween(lowHash, model.VirtualBlockHash,
-		maxBlocksInGetBlocksResponse)
+
+	virtualSelectedParent, err := context.Domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return nil, err
+	}
+
+	blockHashes, err := context.Domain.Consensus().GetHashesBetween(
+		lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
+	if err != nil {
+		return nil, err
+	}
+	nextLowHash := blockHashes[len(blockHashes)-1]
+
+	if len(blockHashes) < maxBlocksInGetBlocksResponse {
+		virtualSelectedParentAnticone, err := context.Domain.Consensus().Anticone(virtualSelectedParent)
+		if err != nil {
+			return nil, err
+		}
+		nextLowHash = virtualSelectedParent
+		blockHashes = append(blockHashes, virtualSelectedParentAnticone...)
 	}
 
 	if len(blockHashes) > maxBlocksInGetBlocksResponse {
@@ -49,6 +64,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	response := &appmessage.GetBlocksResponseMessage{
 		BlockHashes:      hashes.ToStrings(blockHashes),
 		BlockVerboseData: make([]*appmessage.BlockVerboseData, len(blockHashes)),
+		NextLowHash:      nextLowHash.String(),
 	}
 
 	for i, blockHash := range blockHashes {

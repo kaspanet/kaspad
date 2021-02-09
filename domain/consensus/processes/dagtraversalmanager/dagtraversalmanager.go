@@ -2,6 +2,7 @@ package dagtraversalmanager
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -16,6 +17,7 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
+	consensusStateStore   model.ConsensusStateStore
 }
 
 // selectedParentIterator implements the `model.BlockIterator` API
@@ -47,13 +49,15 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
+	ghostdagManager model.GHOSTDAGManager,
+	conssensusStateStore model.ConsensusStateStore) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
+		consensusStateStore:   conssensusStateStore,
 	}
 }
 

@@ -348,6 +348,7 @@ message GetBlocksRequestMessage{
 message GetBlocksResponseMessage{
   repeated string blockHashes = 1;
   repeated BlockVerboseData blockVerboseData = 2;
+  string NextLowHash = 3;
   RPCError error = 1000;
 }
 
