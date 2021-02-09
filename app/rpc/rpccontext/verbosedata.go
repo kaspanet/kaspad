@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/big"
@@ -23,8 +24,14 @@ import (
 	"github.com/kaspanet/kaspad/util/pointers"
 )
 
-// BuildBlockVerboseData builds a BlockVerboseData from the given block.
-func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+// BuildBlockVerboseData builds a BlockVerboseData from the given blockHeader.
+// A block may optionally also be given if it's available in the calling context.
+func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, block *externalapi.DomainBlock,
+	includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockVerboseData")
+	defer onEnd()
+
 	hash := consensushashing.HeaderHash(blockHeader)
 
 	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
@@ -48,9 +55,11 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, i
 	}
 
 	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		block, err := ctx.Domain.Consensus().GetBlock(hash)
-		if err != nil {
-			return nil, err
+		if block == nil {
+			block, err = ctx.Domain.Consensus().GetBlock(hash)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		txIDs := make([]string, len(block.Transactions))
@@ -99,6 +108,9 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
 	blockHeader externalapi.BlockHeader, blockHash string) (
 	*appmessage.TransactionVerboseData, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildTransactionVerboseData")
+	defer onEnd()
 
 	var payloadHash string
 	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
