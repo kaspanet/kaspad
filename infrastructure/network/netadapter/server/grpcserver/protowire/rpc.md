@@ -261,6 +261,7 @@ See: NotifyBlockAddedRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | block | [BlockMessage](#protowire.BlockMessage) |  |  |
+| blockVerboseData | [BlockVerboseData](#protowire.BlockVerboseData) |  |  |
 
 
 
