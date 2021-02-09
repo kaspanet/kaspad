@@ -2,6 +2,10 @@ package testing
 
 import (
 	"fmt"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -18,9 +22,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
-	"sync"
-	"testing"
-	"time"
 )
 
 var orphanBlock = &externalapi.DomainBlock{
@@ -107,6 +108,10 @@ type fakeRelayInvsContext struct {
 	getBlockInfoResponse                          *externalapi.BlockInfo
 	validateAndInsertBlockResponse                error
 	rwLock                                        sync.RWMutex
+}
+
+func (f *fakeRelayInvsContext) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
 func (f *fakeRelayInvsContext) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
