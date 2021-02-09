@@ -1,10 +1,11 @@
 package blockprocessor
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"time"
 )
 
 // blockProcessor is responsible for processing incoming blocks

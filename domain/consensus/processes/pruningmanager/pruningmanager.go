@@ -578,3 +578,68 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	log.Debugf("Finishing updating the pruning point UTXO set")
 	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }
+
+// PruneBlocksBelowImportedPruning traversers the DAG upwards starting from the old pruning point and it's anticone,
+// pruning all unpruned blocks in the importedPruningPoint's past.
+// Traversal stops the moment it reaches a block that is either headers-only or not in the past of importedPruningPoint
+func (pm *pruningManager) PruneBlocksBelowImportedPruningPoint(importedPruningPointHash *externalapi.DomainHash) error {
+	oldPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	queue := []*externalapi.DomainHash{oldPruningPoint}
+
+	// Add any blocks in the old pruning point's anticone
+	oldPruningPointAnticone, err :=
+		pm.dagTraversalManager.AnticoneFromContext(model.VirtualBlockHash, oldPruningPoint)
+	if err != nil {
+		return err
+	}
+	queue = append(queue, oldPruningPointAnticone...)
+
+	visited := make(map[*externalapi.DomainHash]struct{})
+	for _, blockHash := range queue {
+		visited[blockHash] = struct{}{}
+	}
+	var current *externalapi.DomainHash
+	for len(queue) > 0 {
+		current, queue = queue[0], queue[1:]
+
+		// skip if current is not in importedPruningPoint's past
+		isCurrentInImportedPruningPointPast, err := pm.dagTopologyManager.IsDescendantOf(current, importedPruningPointHash)
+		if err != nil {
+			return err
+		}
+		if !isCurrentInImportedPruningPointPast {
+			continue
+		}
+
+		// skip if current was already pruned
+		currentStatus, err := pm.blockStatusStore.Get(pm.databaseContext, current)
+		if err != nil {
+			return err
+		}
+		if currentStatus == externalapi.StatusHeaderOnly {
+			continue
+		}
+
+		// prune current
+		_, err = pm.deleteBlock(current)
+		if err != nil {
+			return err
+		}
+
+		// add all of current's unvisited children to queue
+		children, err := pm.dagTopologyManager.Children(current)
+		if err != nil {
+			return err
+		}
+		for _, child := range children {
+			if _, ok := visited[child]; !ok {
+				queue = append(queue, child)
+				visited[child] = struct{}{}
+			}
+		}
+	}
+}
