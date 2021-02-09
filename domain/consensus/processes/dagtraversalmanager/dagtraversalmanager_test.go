@@ -9,21 +9,20 @@ import (
 	"testing"
 )
 
-const sizeOfTheChainThatCommonToAllGraphs int = 5
+const commonChainSize = 5
+const depth uint64 = 2
 
-func TestBlockAtDepth(t *testing.T) {
+func TestBlockAtDepthOnChainDag(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, false,
-			"TestBlockAtDepth")
+			"TestBlockAtDepthOnChainDag")
 		if err != nil {
 			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
 		}
 		defer tearDown(false)
 
-		// The first test compares the result of BlockAtDepth to the result of looping over the SelectedChain on a single chain DAG.
-		const depth uint64 = 2
+		// This test compares the result of BlockAtDepth to the result of looping over the SelectedChain on a single chain DAG.
 		highHash, err := createAChainDAG(params.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a Chain DAG In BlockAtDepthTEST: %+v", err)
@@ -52,8 +51,20 @@ func TestBlockAtDepth(t *testing.T) {
 		if !actualBlockHash.Equal(expectedBlockHash) {
 			t.Fatalf("Expected block %s but got %s", expectedBlockHash, actualBlockHash)
 		}
+	})
+}
 
-		// The second test compares the results of BlockAtDepth of 2 children that have the same selectedParent.
+func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		factory := consensus.NewFactory()
+		tc, tearDown, err := factory.NewTestConsensus(params, false,
+			"TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent")
+		if err != nil {
+			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
+		}
+		defer tearDown(false)
+
+		// This test compares the results of BlockAtDepth of 2 children that have the same selectedParent.
 		tc, tearDown, err = factory.NewTestConsensus(params, false,
 			"TestBlockAtDepth")
 		if err != nil {
@@ -61,9 +72,9 @@ func TestBlockAtDepth(t *testing.T) {
 		}
 		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(params.GenesisHash, tc)
 		if err != nil {
-			t.Fatalf("Failed creating a DAG InBlockAtDepthTEST: %+v", err)
+			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
 		}
-		actualBlockHash, err = tc.DAGTraversalManager().BlockAtDepth(firstChild, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, depth)
 		if err != nil {
 			t.Fatalf("Failed at BlockAtDepth: %+v", err)
 		}
@@ -74,25 +85,38 @@ func TestBlockAtDepth(t *testing.T) {
 		if !actualBlockHash.Equal(expectedSameHash) {
 			t.Fatalf("Expected block %s but got %s", expectedSameHash, actualBlockHash)
 		}
+	})
+}
 
-		// The third test compares results of BlockAtDepth on two different chains, on the same DAG, and validates they merge at the correct point.
-		const firstDepth uint64 = 3
-		const secondDepth uint64 = 2
+func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		factory := consensus.NewFactory()
+		tc, tearDown, err := factory.NewTestConsensus(params, false,
+			"TestBlockAtDepthOnDAGWithTwoDifferentChains")
+		if err != nil {
+			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
+		}
+		defer tearDown(false)
+
+		// This test compares results of BlockAtDepth on two different chains, on the same DAG, and validates they merge at the correct point.
+		const sizeOfTheFirstChildSubChainDAG = 3
+		const sizeOfTheSecondChildSubChainDAG = 2
+
 		tc, tearDown, err = factory.NewTestConsensus(params, false,
 			"TestBlockAtDepth")
 		if err != nil {
 			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
 		}
-		firstChild, secondChild, err = createADAGWithTwoDifferentChains(params.GenesisHash, tc)
+		firstChild, secondChild, err := createADAGWithTwoDifferentChains(params.GenesisHash, tc, sizeOfTheFirstChildSubChainDAG, sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
-			t.Fatalf("Failed creating a DAG in lockAtDepthTEST: %+v", err)
+			t.Fatalf("Failed creating a DAG with two different chains in BlockAtDepthTEST: %+v", err)
 		}
 
-		actualBlockHash, err = tc.DAGTraversalManager().BlockAtDepth(firstChild, firstDepth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, sizeOfTheFirstChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err = tc.DAGTraversalManager().BlockAtDepth(secondChild, secondDepth)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -100,7 +124,7 @@ func TestBlockAtDepth(t *testing.T) {
 		if !actualBlockHash.Equal(expectedSameHash) {
 			t.Fatalf("Expected block %s but got %s", expectedSameHash, actualBlockHash)
 		}
-		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, secondDepth-1)
+		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG-1)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -216,7 +240,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 func createAChainDAG(genesisHash *externalapi.DomainHash, tc testapi.TestConsensus) (*externalapi.DomainHash, error) {
 	block := genesisHash
 	var err error
-	for i := 0; i < sizeOfTheChainThatCommonToAllGraphs; i++ {
+	for i := 0; i < commonChainSize; i++ {
 		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
 		if err != nil {
 			return nil, err
@@ -228,7 +252,7 @@ func createAChainDAG(genesisHash *externalapi.DomainHash, tc testapi.TestConsens
 func createADAGTwoChildrenWithSameSelectedParent(genesisHash *externalapi.DomainHash, tc testapi.TestConsensus) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
 	block := genesisHash
 	var err error
-	for i := 0; i < sizeOfTheChainThatCommonToAllGraphs; i++ {
+	for i := 0; i < commonChainSize; i++ {
 		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
 		if err != nil {
 			return nil, nil, err
@@ -245,42 +269,36 @@ func createADAGTwoChildrenWithSameSelectedParent(genesisHash *externalapi.Domain
 	return firstChild, secondChild, nil
 }
 
-func createADAGWithTwoDifferentChains(genesisHash *externalapi.DomainHash, tc testapi.TestConsensus) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
-	const sizeOfTheFirstChildSubChainDAG int = 3
-	const sizeOfTheSecondChildSubChainDAG int = 2
+func createADAGWithTwoDifferentChains(genesisHash *externalapi.DomainHash, tc testapi.TestConsensus, sizeOfTheFirstChildSubChainDAG int, sizeOfTheSecondChildSubChainDAG int) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
 	block := genesisHash
 	var err error
-	for i := 0; i < sizeOfTheChainThatCommonToAllGraphs; i++ {
+	for i := 0; i < commonChainSize; i++ {
 		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	firstChainHash, _, err := tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
+	firstChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	secondChainHash, _, err := tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
+	secondChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	block = firstChainHash
 	for i := 0; i < sizeOfTheFirstChildSubChainDAG; i++ {
-		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
+		firstChainTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{firstChainTipHash}, nil, nil)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	firstChainHash = block
 
-	block = secondChainHash
 	for i := 0; i < sizeOfTheSecondChildSubChainDAG; i++ {
-		block, _, err = tc.AddBlock([]*externalapi.DomainHash{block}, nil, nil)
+		secondChainTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{secondChainTipHash}, nil, nil)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
-	secondChainHash = block
-	return firstChainHash, secondChainHash, nil
+	return firstChainTipHash, secondChainTipHash, nil
 }
