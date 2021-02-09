@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgInvRelayBlock implements the Message interface and represents a kaspa
@@ -9,7 +9,7 @@ import (
 // by sending their hash, and let the receiving node decide if it needs it.
 type MsgInvRelayBlock struct {
 	baseMessage
-	Hash *daghash.Hash
+	Hash *externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -20,7 +20,7 @@ func (msg *MsgInvRelayBlock) Command() MessageCommand {
 
 // NewMsgInvBlock returns a new kaspa invrelblk message that conforms to
 // the Message interface. See MsgInvRelayBlock for details.
-func NewMsgInvBlock(hash *daghash.Hash) *MsgInvRelayBlock {
+func NewMsgInvBlock(hash *externalapi.DomainHash) *MsgInvRelayBlock {
 	return &MsgInvRelayBlock{
 		Hash: hash,
 	}

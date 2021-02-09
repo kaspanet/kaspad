@@ -1,7 +1,6 @@
 package transactionvalidator
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -19,24 +18,24 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 
 	err := v.checkTransactionCoinbaseMaturity(povBlockHash, tx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	totalSompiIn, err := v.checkTransactionInputAmounts(tx)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	totalSompiOut, err := v.checkTransactionOutputAmounts(tx, totalSompiIn)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
 	err = v.checkTransactionSequenceLock(povBlockHash, tx, selectedParentMedianTime)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = v.validateTransactionScripts(tx)
@@ -60,14 +59,14 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 		return err
 	}
 
-	txBlueScore := ghostdagData.BlueScore
-	var missingOutpoints []externalapi.DomainOutpoint
+	txBlueScore := ghostdagData.BlueScore()
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
-		} else if utxoEntry.IsCoinbase {
-			originBlueScore := utxoEntry.BlockBlueScore
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
+		} else if utxoEntry.IsCoinbase() {
+			originBlueScore := utxoEntry.BlockBlueScore()
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
@@ -90,11 +89,11 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 
 	totalSompiIn = 0
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 
@@ -117,11 +116,11 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 	return totalSompiIn, nil
 }
 
-func (v *transactionValidator) checkEntryAmounts(entry *externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *transactionValidator) checkEntryAmounts(entry externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
-	originTxSompi := entry.Amount
+	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInAfter < totalSompiInBefore ||
 		totalSompiInAfter > constants.MaxSompi {
@@ -137,7 +136,7 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 	totalSompiOut := uint64(0)
 	// Calculate the total output amount for this transaction. It is safe
 	// to ignore overflow and out of range errors here because those error
-	// conditions would have already been caught by checkTransactionSanity.
+	// conditions would have already been caught by checkTransactionAmountRanges.
 	for _, output := range tx.Outputs {
 		totalSompiOut += output.Value
 	}
@@ -167,7 +166,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 		return err
 	}
 
-	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore, medianTime) {
+	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore(), medianTime) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -178,19 +177,19 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 
-		scriptPubKey := utxoEntry.ScriptPublicKey
+		scriptPubKey := utxoEntry.ScriptPublicKey()
 		vm, err := txscript.NewEngine(scriptPubKey, tx,
-			i, txscript.ScriptNoFlags, nil)
+			i, txscript.ScriptNoFlags, v.sigCache)
 		if err != nil {
 			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
 				"%d which references output %s - "+
@@ -231,31 +230,31 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		return sequenceLock, nil
 	}
 
-	var missingOutpoints []externalapi.DomainOutpoint
+	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, input.PreviousOutpoint)
+			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 			continue
 		}
 
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputBlueScore := utxoEntry.BlockBlueScore
+		inputBlueScore := utxoEntry.BlockBlueScore()
 
 		// Given a sequence number, we apply the relative time lock
 		// mask in order to obtain the time lock delta required before
 		// this input can be spent.
 		sequenceNum := input.Sequence
-		relativeLock := int64(sequenceNum & appmessage.SequenceLockTimeMask)
+		relativeLock := int64(sequenceNum & constants.SequenceLockTimeMask)
 
 		switch {
 		// Relative time locks are disabled for this input, so we can
 		// skip any further calculation.
-		case sequenceNum&appmessage.SequenceLockTimeDisabled == appmessage.SequenceLockTimeDisabled:
+		case sequenceNum&constants.SequenceLockTimeDisabled == constants.SequenceLockTimeDisabled:
 			continue
-		case sequenceNum&appmessage.SequenceLockTimeIsSeconds == appmessage.SequenceLockTimeIsSeconds:
+		case sequenceNum&constants.SequenceLockTimeIsSeconds == constants.SequenceLockTimeIsSeconds:
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent. Therefore, we
 			// need to query for the block prior to the one in
@@ -271,16 +270,16 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 
 			for {
 				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
-					baseGHOSTDAGData.SelectedParent)
+					baseGHOSTDAGData.SelectedParent())
 				if err != nil {
 					return nil, err
 				}
 
-				if selectedParentGHOSTDAGData.BlueScore <= inputBlueScore {
+				if selectedParentGHOSTDAGData.BlueScore() <= inputBlueScore {
 					break
 				}
 
-				baseHash = baseGHOSTDAGData.SelectedParent
+				baseHash = baseGHOSTDAGData.SelectedParent()
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 
@@ -290,11 +289,11 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			}
 
 			// Time based relative time-locks have a time granularity of
-			// appmessage.SequenceLockTimeGranularity, so we shift left by this
+			// constants.SequenceLockTimeGranularity, so we shift left by this
 			// amount to convert to the proper relative time-lock. We also
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock << appmessage.SequenceLockTimeGranularity) - 1
+			timeLockMilliseconds := (relativeLock << constants.SequenceLockTimeGranularity) - 1
 			timeLock := medianTime + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock

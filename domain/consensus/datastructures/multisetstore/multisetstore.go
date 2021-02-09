@@ -2,31 +2,34 @@ package multisetstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("multisets"))
+var bucket = database.MakeBucket([]byte("multisets"))
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
 	staging  map[externalapi.DomainHash]model.Multiset
 	toDelete map[externalapi.DomainHash]struct{}
+	cache    *lrucache.LRUCache
 }
 
 // New instantiates a new MultisetStore
-func New() model.MultisetStore {
+func New(cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
 		staging:  make(map[externalapi.DomainHash]model.Multiset),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given multiset for the given blockHash
 func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
-	ms.staging[*blockHash] = multiset
+	ms.staging[*blockHash] = multiset.Clone()
 }
 
 func (ms *multisetStore) IsStaged() bool {
@@ -44,11 +47,11 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-
 		err = dbTx.Put(ms.hashAsKey(&hash), multisetBytes)
 		if err != nil {
 			return err
 		}
+		ms.cache.Add(&hash, multiset)
 	}
 
 	for hash := range ms.toDelete {
@@ -56,6 +59,7 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
+		ms.cache.Remove(&hash)
 	}
 
 	ms.Discard()
@@ -65,7 +69,11 @@ func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
 // Get gets the multiset associated with the given blockHash
 func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.Multiset, error) {
 	if multiset, ok := ms.staging[*blockHash]; ok {
-		return multiset, nil
+		return multiset.Clone(), nil
+	}
+
+	if multiset, ok := ms.cache.Get(blockHash); ok {
+		return multiset.(model.Multiset).Clone(), nil
 	}
 
 	multisetBytes, err := dbContext.Get(ms.hashAsKey(blockHash))
@@ -73,7 +81,12 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 		return nil, err
 	}
 
-	return ms.deserializeMultiset(multisetBytes)
+	multiset, err := ms.deserializeMultiset(multisetBytes)
+	if err != nil {
+		return nil, err
+	}
+	ms.cache.Add(blockHash, multiset)
+	return multiset.Clone(), nil
 }
 
 // Delete deletes the multiset associated with the given blockHash
@@ -86,7 +99,7 @@ func (ms *multisetStore) Delete(blockHash *externalapi.DomainHash) {
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (ms *multisetStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {

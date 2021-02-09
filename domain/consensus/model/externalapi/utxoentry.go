@@ -4,19 +4,17 @@ package externalapi
 // set such as whether or not it was contained in a coinbase tx, the blue
 // score of the block that accepts the tx, its public key script, and how
 // much it pays.
-type UTXOEntry struct {
-	Amount          uint64
-	ScriptPublicKey []byte // The public key script for the output.
-	BlockBlueScore  uint64 // Blue score of the block accepting the tx.
-	IsCoinbase      bool
+type UTXOEntry interface {
+	Amount() uint64
+	ScriptPublicKey() *ScriptPublicKey // The public key script for the output.
+	BlockBlueScore() uint64            // Blue score of the block accepting the tx.
+	IsCoinbase() bool
+	Equal(other UTXOEntry) bool
 }
 
-// NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(amount uint64, scriptPubKey []byte, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
-	return &UTXOEntry{
-		Amount:          amount,
-		ScriptPublicKey: scriptPubKey,
-		BlockBlueScore:  blockBlueScore,
-		IsCoinbase:      isCoinbase,
-	}
+// OutpointAndUTXOEntryPair is an outpoint along with its
+// respective UTXO entry
+type OutpointAndUTXOEntryPair struct {
+	Outpoint  *DomainOutpoint
+	UTXOEntry UTXOEntry
 }

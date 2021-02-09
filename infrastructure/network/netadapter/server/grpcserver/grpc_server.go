@@ -9,22 +9,23 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"net"
+	"time"
 )
 
 type gRPCServer struct {
 	onConnectedHandler server.OnConnectedHandler
 	listeningAddresses []string
 	server             *grpc.Server
+	name               string
 }
 
-// MaxMessageSize is the max size allowed for a message
-const MaxMessageSize = 1024 * 1024 * 10 // 10MB
-
 // newGRPCServer creates a gRPC server
-func newGRPCServer(listeningAddresses []string) *gRPCServer {
+func newGRPCServer(listeningAddresses []string, maxMessageSize int, name string) *gRPCServer {
+	log.Debugf("Created new %s GRPC server with maxMessageSize %d", name, maxMessageSize)
 	return &gRPCServer{
-		server:             grpc.NewServer(grpc.MaxRecvMsgSize(MaxMessageSize), grpc.MaxSendMsgSize(MaxMessageSize)),
+		server:             grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
 		listeningAddresses: listeningAddresses,
+		name:               name,
 	}
 }
 
@@ -40,30 +41,41 @@ func (s *gRPCServer) Start() error {
 		}
 	}
 
-	log.Debugf("Server started with MaxMessageSize %d", MaxMessageSize)
-
 	return nil
 }
 
 func (s *gRPCServer) listenOn(listenAddr string) error {
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		return errors.Wrapf(err, "error listening on %s", listenAddr)
+		return errors.Wrapf(err, "%s error listening on %s", s.name, listenAddr)
 	}
 
-	spawn("gRPCServer.listenOn-Serve", func() {
+	spawn(fmt.Sprintf("%s.gRPCServer.listenOn-Serve", s.name), func() {
 		err := s.server.Serve(listener)
 		if err != nil {
-			panics.Exit(log, fmt.Sprintf("error serving on %s: %+v", listenAddr, err))
+			panics.Exit(log, fmt.Sprintf("error serving %s on %s: %+v", s.name, listenAddr, err))
 		}
 	})
 
-	log.Infof("Server listening on %s", listenAddr)
+	log.Infof("%s Server listening on %s", s.name, listenAddr)
 	return nil
 }
 
 func (s *gRPCServer) Stop() error {
-	s.server.GracefulStop()
+	const stopTimeout = 2 * time.Second
+
+	stopChan := make(chan interface{})
+	spawn("gRPCServer.Stop", func() {
+		s.server.GracefulStop()
+		close(stopChan)
+	})
+
+	select {
+	case <-stopChan:
+	case <-time.After(stopTimeout):
+		log.Warnf("Could not gracefully stop %s: timed out after %s", s.name, stopTimeout)
+		s.server.Stop()
+	}
 	return nil
 }
 
@@ -90,7 +102,7 @@ func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStr
 		return err
 	}
 
-	log.Infof("Incoming connection from %s", peerInfo.Addr)
+	log.Infof("%s Incoming connection from %s", s.name, peerInfo.Addr)
 
 	<-connection.stopChan
 

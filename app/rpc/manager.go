@@ -4,16 +4,14 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
-	"github.com/kaspanet/kaspad/domain/mempool"
-	"github.com/kaspanet/kaspad/domain/mining"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // Manager is an RPC manager
@@ -24,27 +22,23 @@ type Manager struct {
 // NewManager creates a new RPC Manager
 func NewManager(
 	cfg *config.Config,
+	domain domain.Domain,
 	netAdapter *netadapter.NetAdapter,
-	dag *blockdag.BlockDAG,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
-	blockTemplateGenerator *mining.BlkTmplGenerator,
-	mempool *mempool.TxPool,
 	addressManager *addressmanager.AddressManager,
-	acceptanceIndex *indexers.AcceptanceIndex,
+	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
 		context: rpccontext.NewContext(
 			cfg,
+			domain,
 			netAdapter,
-			dag,
 			protocolManager,
 			connectionManager,
-			blockTemplateGenerator,
-			mempool,
 			addressManager,
-			acceptanceIndex,
+			utxoIndex,
 			shutDownChan,
 		),
 	}
@@ -54,40 +48,91 @@ func NewManager(
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *util.Block) error {
-	m.context.BlockTemplateState.NotifyBlockAdded(block)
+func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
+	defer onEnd()
 
-	notification := appmessage.NewBlockAddedNotificationMessage(block.MsgBlock())
-	return m.context.NotificationManager.NotifyBlockAdded(notification)
-}
+	if m.context.Config.UTXOIndex {
+		err := m.notifyUTXOsChanged(blockInsertionResult)
+		if err != nil {
+			return err
+		}
+	}
 
-// NotifyChainChanged notifies the manager that the DAG's selected parent chain has changed
-func (m *Manager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) error {
-	addedChainBlocks, err := m.context.CollectChainBlocks(addedChainBlockHashes)
+	err := m.notifyVirtualSelectedParentBlueScoreChanged()
 	if err != nil {
 		return err
 	}
-	removedChainBlockHashStrings := make([]string, len(removedChainBlockHashes))
-	for i, removedChainBlockHash := range removedChainBlockHashes {
-		removedChainBlockHashStrings[i] = removedChainBlockHash.String()
+
+	err = m.notifyVirtualSelectedParentChainChanged(blockInsertionResult)
+	if err != nil {
+		return err
 	}
-	notification := appmessage.NewChainChangedNotificationMessage(removedChainBlockHashStrings, addedChainBlocks)
-	return m.context.NotificationManager.NotifyChainChanged(notification)
+
+	msgBlock := appmessage.DomainBlockToMsgBlock(block)
+	blockVerboseData, err := m.context.BuildBlockVerboseData(block.Header, block, false)
+	if err != nil {
+		return err
+	}
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(msgBlock, blockVerboseData)
+	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 
 // NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
 func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflict")
+	defer onEnd()
+
 	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
 	return m.context.NotificationManager.NotifyFinalityConflict(notification)
 }
 
 // NotifyFinalityConflictResolved notifies the manager that a finality conflict in the DAG has been resolved
 func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflictResolved")
+	defer onEnd()
+
 	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }
 
-// NotifyTransactionAddedToMempool notifies the manager that a transaction has been added to the mempool
-func (m *Manager) NotifyTransactionAddedToMempool() {
-	m.context.BlockTemplateState.NotifyMempoolTx()
+func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyUTXOsChanged")
+	defer onEnd()
+
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.VirtualSelectedParentChainChanges)
+	if err != nil {
+		return err
+	}
+	return m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
+}
+
+func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
+	defer onEnd()
+
+	virtualSelectedParent, err := m.context.Domain.Consensus().GetVirtualSelectedParent()
+	if err != nil {
+		return err
+	}
+
+	blockInfo, err := m.context.Domain.Consensus().GetBlockInfo(virtualSelectedParent)
+	if err != nil {
+		return err
+	}
+
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(blockInfo.BlueScore)
+	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
+}
+
+func (m *Manager) notifyVirtualSelectedParentChainChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
+	defer onEnd()
+
+	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+		blockInsertionResult.VirtualSelectedParentChainChanges)
+	if err != nil {
+		return err
+	}
+	return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
 }

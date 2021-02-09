@@ -6,6 +6,8 @@ package txscript
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -184,23 +186,30 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 
 // PayToAddrScript creates a new script to pay a transaction output to a the
 // specified address.
-func PayToAddrScript(addr util.Address) ([]byte, error) {
+func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 	const nilAddrErrStr = "unable to generate payment script for nil address"
-
 	switch addr := addr.(type) {
 	case *util.AddressPubKeyHash:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
 		}
-		return payToPubKeyHashScript(addr.ScriptAddress())
+		script, err := payToPubKeyHashScript(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
+		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
 		}
-		return payToScriptHashScript(addr.ScriptAddress())
+		script, err := payToScriptHashScript(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
+		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
@@ -254,9 +263,12 @@ func PushedData(script []byte) ([][]byte, error) {
 // ExtractScriptPubKeyAddress returns the type of script and its addresses.
 // Note that it only works for 'standard' transaction script types. Any data such
 // as public keys which are invalid will return a nil address.
-func ExtractScriptPubKeyAddress(scriptPubKey []byte, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
+		return NonStandardTy, nil, errors.Errorf("Script version is unkown.")
+	}
 	// No valid address if the script doesn't parse.
-	pops, err := parseScript(scriptPubKey)
+	pops, err := parseScript(scriptPubKey.Script)
 	if err != nil {
 		return NonStandardTy, nil, err
 	}

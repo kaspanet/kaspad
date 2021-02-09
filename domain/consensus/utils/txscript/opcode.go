@@ -10,13 +10,14 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"github.com/kaspanet/go-secp256k1"
 	"hash"
 
-	"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/blake2b"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
+	"github.com/kaspanet/go-secp256k1"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -204,7 +205,7 @@ const (
 	OpSHA1                = 0xa7 // 167
 	OpSHA256              = 0xa8 // 168
 	OpHash160             = 0xa9 // 169
-	OpHash256             = 0xaa // 170
+	OpBlake2b             = 0xaa // 170
 	OpUnknown171          = 0xab // 171
 	OpCheckSig            = 0xac // 172
 	OpCheckSigVerify      = 0xad // 173
@@ -488,7 +489,7 @@ var opcodeArray = [256]opcode{
 	OpSHA1:                {OpSHA1, "OP_SHA1", 1, opcodeSha1},
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
 	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
-	OpHash256:             {OpHash256, "OP_HASH256", 1, opcodeHash256},
+	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
 	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
@@ -1148,7 +1149,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The lock time feature can also be disabled, thereby bypassing
 	// OP_CHECKLOCKTIMEVERIFY, if every transaction input has been finalized by
-	// setting its sequence to the maximum value (appmessage.MaxTxInSequenceNum). This
+	// setting its sequence to the maximum value (constants.MaxTxInSequenceNum). This
 	// condition would result in the transaction being allowed into the blockDAG
 	// making the opcode ineffective.
 	//
@@ -1160,7 +1161,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// NOTE: This implies that even if the transaction is not finalized due to
 	// another input being unlocked, the opcode execution will still fail when the
 	// input being used by the opcode is locked.
-	if vm.tx.Inputs[vm.txIdx].Sequence == appmessage.MaxTxInSequenceNum {
+	if vm.tx.Inputs[vm.txIdx].Sequence == constants.MaxTxInSequenceNum {
 		return scriptError(ErrUnsatisfiedLockTime,
 			"transaction input is finalized")
 	}
@@ -1204,7 +1205,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&uint64(appmessage.SequenceLockTimeDisabled) != 0 {
+	if sequence&uint64(constants.SequenceLockTimeDisabled) != 0 {
 		return nil
 	}
 
@@ -1213,17 +1214,17 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// number does not have this bit set prevents using this property
 	// to get around a CHECKSEQUENCEVERIFY check.
 	txSequence := vm.tx.Inputs[vm.txIdx].Sequence
-	if txSequence&appmessage.SequenceLockTimeDisabled != 0 {
+	if txSequence&constants.SequenceLockTimeDisabled != 0 {
 		str := fmt.Sprintf("transaction sequence has sequence "+
 			"locktime disabled bit set: 0x%x", txSequence)
 		return scriptError(ErrUnsatisfiedLockTime, str)
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := uint64(appmessage.SequenceLockTimeIsSeconds |
-		appmessage.SequenceLockTimeMask)
+	lockTimeMask := uint64(constants.SequenceLockTimeIsSeconds |
+		constants.SequenceLockTimeMask)
 	return verifyLockTime(txSequence&lockTimeMask,
-		appmessage.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
+		constants.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it
@@ -1961,17 +1962,17 @@ func opcodeHash160(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeHash256 treats the top item of the data stack as raw bytes and replaces
-// it with sha256(sha256(data)).
+// opcodeBlake2b treats the top item of the data stack as raw bytes and replaces
+// it with blake2b(data).
 //
-// Stack transformation: [... x1] -> [... sha256(sha256(x1))]
-func opcodeHash256(op *parsedOpcode, vm *Engine) error {
+// Stack transformation: [... x1] -> [... blake2b(x1)]
+func opcodeBlake2b(op *parsedOpcode, vm *Engine) error {
 	buf, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
-
-	vm.dstack.PushByteArray(daghash.DoubleHashB(buf))
+	hash := blake2b.Sum256(buf)
+	vm.dstack.PushByteArray(hash[:])
 	return nil
 }
 
@@ -2033,7 +2034,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	script := vm.currentScript()
 
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2051,7 +2052,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	var valid bool
-	secpHash := secp256k1.Hash(*sigHash)
+	secpHash := secp256k1.Hash(*sigHash.ByteArray())
 	if vm.sigCache != nil {
 
 		valid = vm.sigCache.Exists(secpHash, signature, pubKey)
@@ -2240,15 +2241,14 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
 		if err != nil {
 			return err
 		}
 
-		secpHash := secp256k1.Hash(*sigHash)
+		secpHash := secp256k1.Hash(*sigHash.ByteArray())
 		var valid bool
 		if vm.sigCache != nil {
-
 			valid = vm.sigCache.Exists(secpHash, parsedSig, parsedPubKey)
 			if !valid && parsedPubKey.SchnorrVerify(&secpHash, parsedSig) {
 				vm.sigCache.Add(secpHash, parsedSig, parsedPubKey)

@@ -16,6 +16,7 @@ type Routes struct {
 	netConnection                *netadapter.NetConnection
 	IncomingRoute, OutgoingRoute *router.Route
 	handshakeRoute               *router.Route
+	addressesRoute               *router.Route
 	pingRoute                    *router.Route
 }
 
@@ -24,13 +25,27 @@ type Routes struct {
 func (r *Routes) WaitForMessageOfType(command appmessage.MessageCommand, timeout time.Duration) (appmessage.Message, error) {
 	timeoutTime := time.Now().Add(timeout)
 	for {
-		message, err := r.IncomingRoute.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
+		route := r.chooseRouteForCommand(command)
+		message, err := route.DequeueWithTimeout(timeoutTime.Sub(time.Now()))
 		if err != nil {
 			return nil, errors.Wrapf(err, "error waiting for message of type %s", command)
 		}
 		if message.Command() == command {
 			return message, nil
 		}
+	}
+}
+
+func (r *Routes) chooseRouteForCommand(command appmessage.MessageCommand) *router.Route {
+	switch command {
+	case appmessage.CmdVersion, appmessage.CmdVerAck:
+		return r.handshakeRoute
+	case appmessage.CmdRequestAddresses, appmessage.CmdAddresses:
+		return r.addressesRoute
+	case appmessage.CmdPing:
+		return r.pingRoute
+	default:
+		return r.IncomingRoute
 	}
 }
 

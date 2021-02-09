@@ -5,9 +5,7 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,17 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
-	"github.com/pkg/errors"
-
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 	"github.com/kaspanet/kaspad/version"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -54,7 +50,6 @@ const (
 	DefaultMaxOrphanTxSize  = 100000
 	defaultSigCacheMaxSize  = 100000
 	sampleConfigFilename    = "sample-kaspad.conf"
-	defaultAcceptanceIndex  = false
 	defaultMaxUTXOCacheSize = 5000000000
 )
 
@@ -116,12 +111,12 @@ type Flags struct {
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainFromBlock RPC available"`
-	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
+	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
+	IsArchivalNode       bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -136,7 +131,7 @@ type Config struct {
 	MiningAddrs   []util.Address
 	MinRelayTxFee util.Amount
 	Whitelists    []*net.IPNet
-	SubnetworkID  *subnetworkid.SubnetworkID // nil in full nodes
+	SubnetworkID  *externalapi.DomainSubnetworkID // nil in full nodes
 }
 
 // ServiceOptions defines the configuration options for the daemon as a service on
@@ -187,7 +182,6 @@ func defaultFlags() *Flags {
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
-		AcceptanceIndex:      defaultAcceptanceIndex,
 		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
 		ServiceOptions:       &ServiceOptions{},
 	}
@@ -245,9 +239,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Flags: cfgFlags,
 	}
-	if !preCfg.Simnet || preCfg.ConfigFile !=
-		defaultConfigFile {
-
+	if !preCfg.Simnet || preCfg.ConfigFile != defaultConfigFile {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
@@ -511,16 +503,6 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	// --acceptanceindex and --dropacceptanceindex do not mix.
-	if cfg.AcceptanceIndex && cfg.DropAcceptanceIndex {
-		err := errors.Errorf("%s: the --acceptanceindex and --dropacceptanceindex "+
-			"options may not be activated at the same time",
-			funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, err
-	}
-
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.Listeners, err = network.NormalizeAddresses(cfg.Listeners,
@@ -604,13 +586,6 @@ func createDefaultConfigFile(destinationPath string) error {
 		return err
 	}
 
-	// We assume sample config file path is same as binary
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		return err
-	}
-	sampleConfigPath := filepath.Join(path, sampleConfigFilename)
-
 	dest, err := os.OpenFile(destinationPath,
 		os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -618,25 +593,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	src, err := os.Open(sampleConfigPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	_, err = dest.WriteString(sampleConfig)
 
-	// We copy every line from the sample config file to the destination
-	reader := bufio.NewReader(src)
-	for err != io.EOF {
-		var line string
-		line, err = reader.ReadString('\n')
-		if err != nil && err != io.EOF {
-			return err
-		}
-
-		if _, err := dest.WriteString(line); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }

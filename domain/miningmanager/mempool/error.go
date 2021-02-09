@@ -6,7 +6,7 @@ package mempool
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+
 	"github.com/pkg/errors"
 )
 
@@ -15,7 +15,7 @@ import (
 // rules. The caller can use type assertions to determine if a failure was
 // specifically due to a rule violation and use the Err field to access the
 // underlying error, which will be either a TxRuleError or a
-// blockdag.RuleError.
+// ruleerrors.RuleError.
 type RuleError struct {
 	Err error
 }
@@ -26,6 +26,11 @@ func (e RuleError) Error() string {
 		return "<nil>"
 	}
 	return e.Err.Error()
+}
+
+// Unwrap unwraps the wrapped error
+func (e RuleError) Unwrap() error {
+	return e.Err
 }
 
 // RejectCode represents a numeric value by which a remote peer indicates
@@ -92,11 +97,9 @@ func txRuleError(c RejectCode, desc string) RuleError {
 	}
 }
 
-// dagRuleError returns a RuleError that encapsulates the given
-// blockdag.RuleError.
-func dagRuleError(dagErr blockdag.RuleError) RuleError {
+func newRuleError(err error) RuleError {
 	return RuleError{
-		Err: dagErr,
+		Err: err,
 	}
 }
 
@@ -110,40 +113,9 @@ func extractRejectCode(err error) (RejectCode, bool) {
 		err = ruleErr.Err
 	}
 
-	var dagRuleErr blockdag.RuleError
-	if errors.As(err, &dagRuleErr) {
-		// Convert the DAG error to a reject code.
-		var code RejectCode
-		switch dagRuleErr.ErrorCode {
-		// Rejected due to duplicate.
-		case blockdag.ErrDuplicateBlock:
-			code = RejectDuplicate
-
-		// Rejected due to obsolete version.
-		case blockdag.ErrBlockVersionTooOld:
-			code = RejectObsolete
-
-		// Rejected due to being earlier than the last finality point.
-		case blockdag.ErrFinalityPointTimeTooOld:
-			code = RejectFinality
-		case blockdag.ErrDifficultyTooLow:
-			code = RejectDifficulty
-
-		// Everything else is due to the block or transaction being invalid.
-		default:
-			code = RejectInvalid
-		}
-
-		return code, true
-	}
-
 	var trErr TxRuleError
 	if errors.As(err, &trErr) {
 		return trErr.RejectCode, true
-	}
-
-	if err == nil {
-		return RejectInvalid, false
 	}
 
 	return RejectInvalid, false

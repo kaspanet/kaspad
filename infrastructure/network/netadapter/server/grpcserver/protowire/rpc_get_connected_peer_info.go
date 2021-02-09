@@ -23,13 +23,12 @@ func (x *KaspadMessage_GetConnectedPeerInfoResponse) toAppMessage() (appmessage.
 			ID:                        info.Id,
 			Address:                   info.Address,
 			LastPingDuration:          info.LastPingDuration,
-			SelectedTipHash:           info.SelectedTipHash,
-			IsSyncNode:                info.IsSyncNode,
 			IsOutbound:                info.IsOutbound,
 			TimeOffset:                info.TimeOffset,
 			UserAgent:                 info.UserAgent,
 			AdvertisedProtocolVersion: info.AdvertisedProtocolVersion,
 			TimeConnected:             info.TimeOffset,
+			IsIBDPeer:                 info.IsIbdPeer,
 		}
 	}
 	return &appmessage.GetConnectedPeerInfoResponseMessage{
@@ -49,13 +48,12 @@ func (x *KaspadMessage_GetConnectedPeerInfoResponse) fromAppMessage(message *app
 			Id:                        info.ID,
 			Address:                   info.Address,
 			LastPingDuration:          info.LastPingDuration,
-			SelectedTipHash:           info.SelectedTipHash,
-			IsSyncNode:                info.IsSyncNode,
 			IsOutbound:                info.IsOutbound,
 			TimeOffset:                info.TimeOffset,
 			UserAgent:                 info.UserAgent,
 			AdvertisedProtocolVersion: info.AdvertisedProtocolVersion,
 			TimeConnected:             info.TimeOffset,
+			IsIbdPeer:                 info.IsIBDPeer,
 		}
 	}
 	x.GetConnectedPeerInfoResponse = &GetConnectedPeerInfoResponseMessage{

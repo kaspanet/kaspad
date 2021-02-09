@@ -1,0 +1,69 @@
+name: Go
+
+on:
+  push:
+  pull_request:
+    # edtited - "title, body, or the base branch of the PR is modified"
+    # synchronize - "commit(s) pushed to the pull request"
+    types: [opened, synchronize, edited, reopened]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-16.04, macos-10.15 ]
+    name: Testing on on ${{ matrix.os }}
+    steps:
+
+      - name: Fix windows CRLF
+        run: git config --global core.autocrlf false
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      # We need to increase the page size because the tests run out of memory on github CI windows.
+      # Use the powershell script from this github action: https://github.com/al-cheb/configure-pagefile-action/blob/master/scripts/SetPageFileSize.ps1
+      # MIT License (MIT) Copyright (c) 2020 Maxim Lobanov and contributors
+      - name: Increase page size on windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: powershell -command .\.github\workflows\SetPageFileSize.ps1
+
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+
+      # Source: https://github.com/actions/cache/blob/main/examples.md#go---modules
+      - name: Go Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Test
+        shell: bash
+        run: ./build_and_test.sh
+
+  coverage:
+    runs-on: ubuntu-20.04
+    name: Produce code coverage
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Create coverage file
+        run: go test -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
+
+      - name: Upload coverage file
+        run: bash <(curl -s https://codecov.io/bash)

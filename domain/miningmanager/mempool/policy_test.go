@@ -6,12 +6,14 @@ package mempool
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/app/appmessage"
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.
@@ -93,11 +95,12 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 
 // TestDust tests the isDust API.
 func TestDust(t *testing.T) {
-	ScriptPublicKey := []byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
-		0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9,
-		0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c,
-		0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d,
-		0xba, 0x5e, 0x88, 0xac}
+	scriptPublicKey := &consensusexternalapi.ScriptPublicKey{
+		[]byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
+			0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9,
+			0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c,
+			0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d,
+			0xba, 0x5e}, 0}
 
 	tests := []struct {
 		name     string // test description
@@ -108,40 +111,40 @@ func TestDust(t *testing.T) {
 		{
 			// Any value is allowed with a zero relay fee.
 			"zero value with zero relay fee",
-			consensusexternalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: ScriptPublicKey},
+			consensusexternalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
 			0,
 			false,
 		},
 		{
 			// Zero value is dust with any relay fee"
 			"zero value with very small tx fee",
-			consensusexternalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: ScriptPublicKey},
+			consensusexternalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
 			1,
 			true,
 		},
 		{
-			"38 byte public key script with value 605",
-			consensusexternalapi.DomainTransactionOutput{Value: 605, ScriptPublicKey: ScriptPublicKey},
+			"36 byte public key script with value 605",
+			consensusexternalapi.DomainTransactionOutput{Value: 605, ScriptPublicKey: scriptPublicKey},
 			1000,
 			true,
 		},
 		{
-			"38 byte public key script with value 606",
-			consensusexternalapi.DomainTransactionOutput{Value: 606, ScriptPublicKey: ScriptPublicKey},
+			"36 byte public key script with value 606",
+			consensusexternalapi.DomainTransactionOutput{Value: 606, ScriptPublicKey: scriptPublicKey},
 			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max sompi amount is never dust",
-			consensusexternalapi.DomainTransactionOutput{Value: util.MaxSompi, ScriptPublicKey: ScriptPublicKey},
+			consensusexternalapi.DomainTransactionOutput{Value: util.MaxSompi, ScriptPublicKey: scriptPublicKey},
 			util.MaxSompi,
 			false,
 		},
 		{
 			// Maximum int64 value causes overflow.
 			"maximum int64 value",
-			consensusexternalapi.DomainTransactionOutput{Value: 1<<63 - 1, ScriptPublicKey: ScriptPublicKey},
+			consensusexternalapi.DomainTransactionOutput{Value: 1<<63 - 1, ScriptPublicKey: scriptPublicKey},
 			1<<63 - 1,
 			true,
 		},
@@ -149,7 +152,7 @@ func TestDust(t *testing.T) {
 			// Unspendable ScriptPublicKey due to an invalid public key
 			// script.
 			"unspendable ScriptPublicKey",
-			consensusexternalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: []byte{0x01}},
+			consensusexternalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{[]byte{0x01}, 0}},
 			0, // no relay fee
 			true,
 		},
@@ -173,7 +176,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 	dummyTxIn := consensusexternalapi.DomainTransactionInput{
 		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
-		Sequence:         appmessage.MaxTxInSequenceNum,
+		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
@@ -198,34 +201,23 @@ func TestCheckTransactionStandard(t *testing.T) {
 	}{
 		{
 			name:       "Typical pay-to-pubkey-hash transaction",
-			tx:         consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
+			tx:         consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: true,
 		},
 		{
 			name:       "Transaction version too high",
-			tx:         consensusexternalapi.DomainTransaction{Version: appmessage.TxVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
+			tx:         consensusexternalapi.DomainTransaction{Version: constants.MaxTransactionVersion + 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
-		// This is commented out, because transaction finaliation is a consensus check, not a policy check.
-		//{
-		//	name: "Transaction is not finalized",
-		//	tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{{
-		//		PreviousOutpoint: dummyPrevOut,
-		//		SignatureScript:  dummySigScript,
-		//		Sequence:         0,
-		//	}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}, LockTime: 300001},
-		//	height:     300000,
-		//	isStandard: false,
-		//	code:       RejectNonstandard,
-		//},
+
 		{
 			name: "Transaction size is too large",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
+			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: bytes.Repeat([]byte{0x00}, MaxStandardTxSize+1),
+				ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, MaxStandardTxSize+1), 0},
 			}}},
 			height:     300000,
 			isStandard: false,
@@ -233,23 +225,11 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Signature script size is too large",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{{
+			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{{
 				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: bytes.Repeat([]byte{0x00},
 					maxStandardSigScriptSize+1),
-				Sequence: appmessage.MaxTxInSequenceNum,
-			}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
-			height:     300000,
-			isStandard: false,
-			code:       RejectNonstandard,
-		},
-		{
-			name: "Signature script that does more than push data",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{{
-				PreviousOutpoint: dummyPrevOut,
-				SignatureScript: []byte{
-					txscript.OpCheckSigVerify},
-				Sequence: appmessage.MaxTxInSequenceNum,
+				Sequence: constants.MaxTxInSequenceNum,
 			}}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
@@ -257,17 +237,17 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Valid but non standard public key script",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
+			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
 				Value:           100000000,
-				ScriptPublicKey: []byte{txscript.OpTrue},
+				ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{[]byte{txscript.OpTrue}, 0},
 			}}},
 			height:     300000,
 			isStandard: false,
 			code:       RejectNonstandard,
 		},
-		{
+		{ //Todo : check on ScriptPublicKey type.
 			name: "Dust output",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
+			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
 				Value:           0,
 				ScriptPublicKey: dummyScriptPublicKey,
 			}}},
@@ -277,9 +257,9 @@ func TestCheckTransactionStandard(t *testing.T) {
 		},
 		{
 			name: "Nulldata transaction",
-			tx: consensusexternalapi.DomainTransaction{Version: 1, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
+			tx: consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: []byte{txscript.OpReturn},
+				ScriptPublicKey: &consensusexternalapi.ScriptPublicKey{[]byte{txscript.OpReturn}, 0},
 			}}},
 			height:     300000,
 			isStandard: false,
@@ -289,7 +269,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 
 	for _, test := range tests {
 		// Ensure standardness is as expected.
-		err := checkTransactionStandard(&test.tx, &policy{MinRelayTxFee: DefaultMinRelayTxFee, MaxTxVersion: 1})
+		err := checkTransactionStandard(&test.tx, &policy{MinRelayTxFee: DefaultMinRelayTxFee, MaxTxVersion: 0})
 		if err == nil && test.isStandard {
 			// Test passes since function returned standard for a
 			// transaction which is intended to be standard.

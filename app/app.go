@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/dbaccess"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
-	"github.com/kaspanet/kaspad/domain/blockdag/indexers"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
@@ -21,6 +21,8 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/os/limits"
 	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
 )
+
+const leveldbCacheSizeMiB = 256
 
 var desiredLimits = &limits.DesiredLimits{
 	FileLimitWant: 2048,
@@ -46,7 +48,7 @@ func StartApp() error {
 	// initializes logging and configures it accordingly.
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -123,16 +125,6 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 		return nil
 	}
 
-	// Drop indexes and exit if requested.
-	if app.cfg.DropAcceptanceIndex {
-		if err := indexers.DropAcceptanceIndex(databaseContext); err != nil {
-			log.Errorf("%s", err)
-			return err
-		}
-
-		return nil
-	}
-
 	// Create componentManager and start it.
 	componentManager, err := NewComponentManager(app.cfg, databaseContext, interrupt)
 	if err != nil {
@@ -188,8 +180,8 @@ func removeDatabase(cfg *config.Config) error {
 	return os.RemoveAll(dbPath)
 }
 
-func openDB(cfg *config.Config) (*dbaccess.DatabaseContext, error) {
+func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 	log.Infof("Loading database from '%s'", dbPath)
-	return dbaccess.New(dbPath)
+	return ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 }

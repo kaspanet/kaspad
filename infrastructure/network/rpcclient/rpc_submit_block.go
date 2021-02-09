@@ -1,29 +1,24 @@
 package rpcclient
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) SubmitBlock(block *util.Block) error {
-	blockBytes, err := block.Bytes()
+func (c *RPCClient) SubmitBlock(block *externalapi.DomainBlock) (appmessage.RejectReason, error) {
+	err := c.rpcRouter.outgoingRoute().Enqueue(
+		appmessage.NewSubmitBlockRequestMessage(appmessage.DomainBlockToMsgBlock(block)))
 	if err != nil {
-		return err
-	}
-	blockHex := hex.EncodeToString(blockBytes)
-	err = c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewSubmitBlockRequestMessage(blockHex))
-	if err != nil {
-		return err
+		return appmessage.RejectReasonNone, err
 	}
 	response, err := c.route(appmessage.CmdSubmitBlockResponseMessage).DequeueWithTimeout(c.timeout)
 	if err != nil {
-		return err
+		return appmessage.RejectReasonNone, err
 	}
 	submitBlockResponse := response.(*appmessage.SubmitBlockResponseMessage)
 	if submitBlockResponse.Error != nil {
-		return c.convertRPCError(submitBlockResponse.Error)
+		return submitBlockResponse.RejectReason, c.convertRPCError(submitBlockResponse.Error)
 	}
-	return nil
+	return appmessage.RejectReasonNone, nil
 }

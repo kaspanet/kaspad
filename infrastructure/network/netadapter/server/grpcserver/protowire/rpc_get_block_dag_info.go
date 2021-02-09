@@ -21,6 +21,7 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) toAppMessage() (appmessage.Messa
 	return &appmessage.GetBlockDAGInfoResponseMessage{
 		NetworkName:         x.GetBlockDagInfoResponse.NetworkName,
 		BlockCount:          x.GetBlockDagInfoResponse.BlockCount,
+		HeaderCount:         x.GetBlockDagInfoResponse.HeaderCount,
 		TipHashes:           x.GetBlockDagInfoResponse.TipHashes,
 		VirtualParentHashes: x.GetBlockDagInfoResponse.VirtualParentHashes,
 		Difficulty:          x.GetBlockDagInfoResponse.Difficulty,
@@ -37,6 +38,7 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) fromAppMessage(message *appmessa
 	x.GetBlockDagInfoResponse = &GetBlockDagInfoResponseMessage{
 		NetworkName:         message.NetworkName,
 		BlockCount:          message.BlockCount,
+		HeaderCount:         message.HeaderCount,
 		TipHashes:           message.TipHashes,
 		VirtualParentHashes: message.VirtualParentHashes,
 		Difficulty:          message.Difficulty,

@@ -10,8 +10,9 @@ func bluesAnticoneSizesToDBBluesAnticoneSizes(bluesAnticoneSizes map[externalapi
 	dbBluesAnticoneSizes := make([]*DbBluesAnticoneSizes, len(bluesAnticoneSizes))
 	i := 0
 	for hash, anticoneSize := range bluesAnticoneSizes {
+		hashCopy := hash
 		dbBluesAnticoneSizes[i] = &DbBluesAnticoneSizes{
-			BlueHash:     DomainHashToDbHash(&hash),
+			BlueHash:     DomainHashToDbHash(&hashCopy),
 			AnticoneSize: uint32(anticoneSize),
 		}
 		i++

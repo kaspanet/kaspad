@@ -1,26 +1,27 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
+	"github.com/kaspanet/kaspad/domain"
+
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/app/protocol/flows/relaytransactions"
+	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/domain/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *util.Block) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
@@ -31,45 +32,48 @@ type OnTransactionAddedToMempoolHandler func()
 type FlowContext struct {
 	cfg               *config.Config
 	netAdapter        *netadapter.NetAdapter
-	txPool            *mempool.TxPool
-	dag               *blockdag.BlockDAG
+	domain            domain.Domain
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
+
+	timeStarted int64
 
 	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
 	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
 
 	transactionsToRebroadcastLock sync.Mutex
-	transactionsToRebroadcast     map[daghash.TxID]*util.Tx
+	transactionsToRebroadcast     map[externalapi.DomainTransactionID]*externalapi.DomainTransaction
 	lastRebroadcastTime           time.Time
-	sharedRequestedTransactions   *relaytransactions.SharedRequestedTransactions
+	sharedRequestedTransactions   *transactionrelay.SharedRequestedTransactions
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD       uint32
-	startIBDMutex sync.Mutex
-	ibdPeer       *peerpkg.Peer
+	ibdPeer      *peerpkg.Peer
+	ibdPeerMutex sync.RWMutex
 
 	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex
+
+	orphans      map[externalapi.DomainHash]*externalapi.DomainBlock
+	orphansMutex sync.RWMutex
 }
 
 // New returns a new instance of FlowContext.
-func New(cfg *config.Config, dag *blockdag.BlockDAG, addressManager *addressmanager.AddressManager,
-	txPool *mempool.TxPool, netAdapter *netadapter.NetAdapter,
-	connectionManager *connmanager.ConnectionManager) *FlowContext {
+func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanager.AddressManager,
+	netAdapter *netadapter.NetAdapter, connectionManager *connmanager.ConnectionManager) *FlowContext {
 
 	return &FlowContext{
 		cfg:                         cfg,
 		netAdapter:                  netAdapter,
-		dag:                         dag,
+		domain:                      domain,
 		addressManager:              addressManager,
 		connectionManager:           connectionManager,
-		txPool:                      txPool,
-		sharedRequestedTransactions: relaytransactions.NewSharedRequestedTransactions(),
+		sharedRequestedTransactions: transactionrelay.NewSharedRequestedTransactions(),
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
 		peers:                       make(map[id.ID]*peerpkg.Peer),
-		transactionsToRebroadcast:   make(map[daghash.TxID]*util.Tx),
+		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
+		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		timeStarted:                 mstime.Now().UnixMilliseconds(),
 	}
 }
 

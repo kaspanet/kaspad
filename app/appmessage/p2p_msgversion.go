@@ -6,14 +6,13 @@ package appmessage
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/version"
 	"strings"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/version"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
-
-	"github.com/kaspanet/kaspad/util/daghash"
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 )
 
 // MaxUserAgentLen is the maximum allowed length for the user agent field in a
@@ -54,14 +53,11 @@ type MsgVersion struct {
 	// on the appmessage. This has a max length of MaxUserAgentLen.
 	UserAgent string
 
-	// The selected tip hash of the generator of the version message.
-	SelectedTipHash *daghash.Hash
-
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
 
 	// The subnetwork of the generator of the version message. Should be nil in full nodes
-	SubnetworkID *subnetworkid.SubnetworkID
+	SubnetworkID *externalapi.DomainSubnetworkID
 }
 
 // HasService returns whether the specified service is supported by the peer
@@ -86,7 +82,7 @@ func (msg *MsgVersion) Command() MessageCommand {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
-	selectedTipHash *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
+	subnetworkID *externalapi.DomainSubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
@@ -98,7 +94,6 @@ func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
 		Address:         addr,
 		ID:              id,
 		UserAgent:       DefaultUserAgent,
-		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  false,
 		SubnetworkID:    subnetworkID,
 	}

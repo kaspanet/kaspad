@@ -1,49 +1,79 @@
 package flowcontext
 
 import (
-	"sync/atomic"
+	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/pkg/errors"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/domain/blockdag"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
-func (f *FlowContext) OnNewBlock(block *util.Block) error {
-	transactionsAcceptedToMempool, err := f.txPool.HandleNewBlock(block)
+func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
+	blockInsertionResult *externalapi.BlockInsertionResult) error {
+
+	hash := consensushashing.BlockHash(block)
+	log.Debugf("OnNewBlock start for block %s", hash)
+	defer log.Debugf("OnNewBlock end for block %s", hash)
+
+	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
-	if f.onBlockAddedToDAGHandler != nil {
-		err := f.onBlockAddedToDAGHandler(block)
+
+	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
+
+	newBlocks := []*externalapi.DomainBlock{block}
+	newBlockInsertionResults := []*externalapi.BlockInsertionResult{blockInsertionResult}
+	for _, unorphaningResult := range unorphaningResults {
+		newBlocks = append(newBlocks, unorphaningResult.block)
+		newBlockInsertionResults = append(newBlockInsertionResults, unorphaningResult.blockInsertionResult)
+	}
+
+	for i, newBlock := range newBlocks {
+		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
+		_, err = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 		if err != nil {
 			return err
 		}
+
+		if f.onBlockAddedToDAGHandler != nil {
+			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
+			blockInsertionResult = newBlockInsertionResults[i]
+			err := f.onBlockAddedToDAGHandler(newBlock, blockInsertionResult)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	return f.broadcastTransactionsAfterBlockAdded(block, transactionsAcceptedToMempool)
+	return nil
 }
 
-func (f *FlowContext) broadcastTransactionsAfterBlockAdded(block *util.Block, transactionsAcceptedToMempool []*util.Tx) error {
+func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
+	block *externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
+
 	f.updateTransactionsToRebroadcast(block)
 
 	// Don't relay transactions when in IBD.
-	if atomic.LoadUint32(&f.isInIBD) != 0 {
+	if f.IsIBDRunning() {
 		return nil
 	}
 
-	var txIDsToRebroadcast []*daghash.TxID
+	var txIDsToRebroadcast []*externalapi.DomainTransactionID
 	if f.shouldRebroadcastTransactions() {
 		txIDsToRebroadcast = f.txIDsToRebroadcast()
 	}
 
-	txIDsToBroadcast := make([]*daghash.TxID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
+	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
 	for i, tx := range transactionsAcceptedToMempool {
-		txIDsToBroadcast[i] = tx.ID()
+		txIDsToBroadcast[i] = consensushashing.TransactionID(tx)
 	}
 	offset := len(transactionsAcceptedToMempool)
 	for i, txID := range txIDsToRebroadcast {
@@ -67,14 +97,62 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 }
 
 // AddBlock adds the given block to the DAG and propagates it.
-func (f *FlowContext) AddBlock(block *util.Block, flags blockdag.BehaviorFlags) error {
-	_, _, err := f.DAG().ProcessBlock(block, flags)
+func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
+	blockInsertionResult, err := f.Domain().Consensus().ValidateAndInsertBlock(block)
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
+		}
+		return err
+	}
+	err = f.OnNewBlock(block, blockInsertionResult)
 	if err != nil {
 		return err
 	}
-	err = f.OnNewBlock(block)
-	if err != nil {
-		return err
+	return f.Broadcast(appmessage.NewMsgInvBlock(consensushashing.BlockHash(block)))
+}
+
+// IsIBDRunning returns true if IBD is currently marked as running
+func (f *FlowContext) IsIBDRunning() bool {
+	f.ibdPeerMutex.RLock()
+	defer f.ibdPeerMutex.RUnlock()
+
+	return f.ibdPeer != nil
+}
+
+// TrySetIBDRunning attempts to set `isInIBD`. Returns false
+// if it is already set
+func (f *FlowContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
+	f.ibdPeerMutex.Lock()
+	defer f.ibdPeerMutex.Unlock()
+
+	if f.ibdPeer != nil {
+		return false
 	}
-	return f.Broadcast(appmessage.NewMsgInvBlock(block.Hash()))
+	f.ibdPeer = ibdPeer
+	log.Infof("IBD started")
+
+	return true
+}
+
+// UnsetIBDRunning unsets isInIBD
+func (f *FlowContext) UnsetIBDRunning() {
+	f.ibdPeerMutex.Lock()
+	defer f.ibdPeerMutex.Unlock()
+
+	if f.ibdPeer == nil {
+		panic("attempted to unset isInIBD when it was not set to begin with")
+	}
+
+	f.ibdPeer = nil
+	log.Infof("IBD finished")
+}
+
+// IBDPeer returns the current IBD peer or null if the node is not
+// in IBD
+func (f *FlowContext) IBDPeer() *peerpkg.Peer {
+	f.ibdPeerMutex.RLock()
+	defer f.ibdPeerMutex.RUnlock()
+
+	return f.ibdPeer
 }

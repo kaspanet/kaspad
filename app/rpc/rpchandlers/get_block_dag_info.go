@@ -3,21 +3,38 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // HandleGetBlockDAGInfo handles the respectively named RPC command
 func HandleGetBlockDAGInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	dag := context.DAG
-	params := dag.Params
+	params := context.Config.ActiveNetParams
+	consensus := context.Domain.Consensus()
 
 	response := appmessage.NewGetBlockDAGInfoResponseMessage()
 	response.NetworkName = params.Name
-	response.BlockCount = dag.BlockCount()
-	response.TipHashes = daghash.Strings(dag.TipHashes())
-	response.VirtualParentHashes = daghash.Strings(dag.VirtualParentHashes())
-	response.Difficulty = context.GetDifficultyRatio(dag.CurrentBits(), params)
-	response.PastMedianTime = dag.CalcPastMedianTime().UnixMilliseconds()
+
+	syncInfo, err := consensus.GetSyncInfo()
+	if err != nil {
+		return nil, err
+	}
+	response.BlockCount = syncInfo.BlockCount
+	response.HeaderCount = syncInfo.HeaderCount
+
+	tipHashes, err := consensus.Tips()
+	if err != nil {
+		return nil, err
+	}
+	response.TipHashes = hashes.ToStrings(tipHashes)
+
+	virtualInfo, err := consensus.GetVirtualInfo()
+	if err != nil {
+		return nil, err
+	}
+	response.VirtualParentHashes = hashes.ToStrings(virtualInfo.ParentHashes)
+	response.Difficulty = context.GetDifficultyRatio(virtualInfo.Bits, context.Config.ActiveNetParams)
+	response.PastMedianTime = virtualInfo.PastMedianTime
+
 	return response, nil
 }

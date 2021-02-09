@@ -17,6 +17,14 @@ func (dbw *dbManager) Has(key model.DBKey) (bool, error) {
 	return dbw.db.Has(dbKeyToDatabaseKey(key))
 }
 
+func (dbw *dbManager) Put(key model.DBKey, value []byte) error {
+	return dbw.db.Put(dbKeyToDatabaseKey(key), value)
+}
+
+func (dbw *dbManager) Delete(key model.DBKey) error {
+	return dbw.db.Delete(dbKeyToDatabaseKey(key))
+}
+
 func (dbw *dbManager) Cursor(bucket model.DBBucket) (model.DBCursor, error) {
 	cursor, err := dbw.db.Cursor(dbBucketToDatabaseBucket(bucket))
 	if err != nil {

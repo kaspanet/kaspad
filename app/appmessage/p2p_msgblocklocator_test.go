@@ -3,19 +3,20 @@ package appmessage
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/daghash"
 )
 
 // TestBlockLocator tests the MsgBlockLocator API.
 func TestBlockLocator(t *testing.T) {
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	locatorHash, err := daghash.NewHashFromStr(hashStr)
+	locatorHash, err := externalapi.NewDomainHashFromString(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	msg := NewMsgBlockLocator([]*daghash.Hash{locatorHash})
+	msg := NewMsgBlockLocator([]*externalapi.DomainHash{locatorHash})
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(10)

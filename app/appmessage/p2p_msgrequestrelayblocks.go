@@ -1,19 +1,19 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// MsgRequestRelayBlocksHashes is the maximum number of hashes that can
+// MaxRequestRelayBlocksHashes is the maximum number of hashes that can
 // be in a single RequestRelayBlocks message.
-const MsgRequestRelayBlocksHashes = MaxInvPerMsg
+const MaxRequestRelayBlocksHashes = MaxInvPerMsg
 
 // MsgRequestRelayBlocks implements the Message interface and represents a kaspa
 // RequestRelayBlocks message. It is used to request blocks as part of the block
 // relay protocol.
 type MsgRequestRelayBlocks struct {
 	baseMessage
-	Hashes []*daghash.Hash
+	Hashes []*externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -24,7 +24,7 @@ func (msg *MsgRequestRelayBlocks) Command() MessageCommand {
 
 // NewMsgRequestRelayBlocks returns a new kaspa RequestRelayBlocks message that conforms to
 // the Message interface. See MsgRequestRelayBlocks for details.
-func NewMsgRequestRelayBlocks(hashes []*daghash.Hash) *MsgRequestRelayBlocks {
+func NewMsgRequestRelayBlocks(hashes []*externalapi.DomainHash) *MsgRequestRelayBlocks {
 	return &MsgRequestRelayBlocks{
 		Hashes: hashes,
 	}

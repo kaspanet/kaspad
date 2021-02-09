@@ -55,8 +55,9 @@ func (hs HashSet) Subtract(other HashSet) HashSet {
 	diff := New()
 
 	for hash := range hs {
-		if !other.Contains(&hash) {
-			diff.Add(&hash)
+		hashCopy := hash
+		if !other.Contains(&hashCopy) {
+			diff.Add(&hashCopy)
 		}
 	}
 
@@ -79,7 +80,8 @@ func (hs HashSet) ToSlice() []*externalapi.DomainHash {
 	slice := make([]*externalapi.DomainHash, 0, len(hs))
 
 	for hash := range hs {
-		slice = append(slice, &hash)
+		hashCopy := hash
+		slice = append(slice, &hashCopy)
 	}
 
 	return slice
@@ -87,5 +89,5 @@ func (hs HashSet) ToSlice() []*externalapi.DomainHash {
 
 // Length returns the length of this HashSet
 func (hs HashSet) Length() int {
-	return hs.Length()
+	return len(hs)
 }

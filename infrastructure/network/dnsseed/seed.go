@@ -12,13 +12,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	pb2 "github.com/kaspanet/kaspad/infrastructure/network/dnsseed/pb"
 	"google.golang.org/grpc"
 
 	"github.com/kaspanet/kaspad/util/mstime"
-
-	"github.com/kaspanet/kaspad/util/subnetworkid"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -45,7 +45,7 @@ type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
 func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
-	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
+	subnetworkID *externalapi.DomainSubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
 	if customSeed != "" {
@@ -103,61 +103,68 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 }
 
 // SeedFromGRPC send gRPC request to get list of peers for a given host
-func SeedFromGRPC(dagParams *dagconfig.Params, host string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
-	subnetworkID *subnetworkid.SubnetworkID, seedFn OnSeed) {
+func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
+	subnetworkID *externalapi.DomainSubnetworkID, seedFn OnSeed) {
+	var grpcSeeds []string
+	if customSeed != "" {
+		grpcSeeds = []string{customSeed}
+	} else {
+		grpcSeeds = dagParams.GRPCSeeds
+	}
 
-	spawn("SeedFromGRPC", func() {
+	for _, host := range grpcSeeds {
+		spawn("SeedFromGRPC", func() {
+			randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-		randSource := rand.New(rand.NewSource(time.Now().UnixNano()))
+			conn, err := grpc.Dial(host, grpc.WithInsecure())
+			client := pb2.NewPeerServiceClient(conn)
+			if err != nil {
+				log.Warnf("Failed to connect to gRPC server: %s", host)
+			}
 
-		conn, err := grpc.Dial(host, grpc.WithInsecure())
-		client := pb2.NewPeerServiceClient(conn)
-		if err != nil {
-			log.Warnf("Failed to connect to gRPC server: %s", host)
-		}
+			var subnetID []byte
+			if subnetworkID != nil {
+				subnetID = subnetworkID[:]
+			} else {
+				subnetID = nil
+			}
 
-		var subnetID []byte
-		if subnetworkID != nil {
-			subnetID = subnetworkID.CloneBytes()
-		} else {
-			subnetID = nil
-		}
+			req := &pb2.GetPeersListRequest{
+				ServiceFlag:           uint64(reqServices),
+				SubnetworkID:          subnetID,
+				IncludeAllSubnetworks: includeAllSubnetworks,
+			}
+			res, err := client.GetPeersList(context.Background(), req)
 
-		req := &pb2.GetPeersListRequest{
-			ServiceFlag:           uint64(reqServices),
-			SubnetworkID:          subnetID,
-			IncludeAllSubnetworks: includeAllSubnetworks,
-		}
-		res, err := client.GetPeersList(context.Background(), req)
+			if err != nil {
+				log.Infof("gRPC request to get peers failed (host=%s): %s", host, err)
+				return
+			}
 
-		if err != nil {
-			log.Infof("gRPC request to get peers failed (host=%s): %s", host, err)
-			return
-		}
+			seedPeers := fromProtobufAddresses(res.Addresses)
 
-		seedPeers := fromProtobufAddresses(res.Addresses)
+			numPeers := len(seedPeers)
 
-		numPeers := len(seedPeers)
+			log.Infof("%d addresses found from DNS seed %s", numPeers, host)
 
-		log.Infof("%d addresses found from DNS seed %s", numPeers, host)
+			if numPeers == 0 {
+				return
+			}
+			addresses := make([]*appmessage.NetAddress, len(seedPeers))
+			// if this errors then we have *real* problems
+			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
+			for i, peer := range seedPeers {
+				addresses[i] = appmessage.NewNetAddressTimestamp(
+					// seed with addresses from a time randomly selected
+					// between 3 and 7 days ago.
+					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
+						randSource.Int31n(secondsIn4Days))),
+					0, peer, uint16(intPort))
+			}
 
-		if numPeers == 0 {
-			return
-		}
-		addresses := make([]*appmessage.NetAddress, len(seedPeers))
-		// if this errors then we have *real* problems
-		intPort, _ := strconv.Atoi(dagParams.DefaultPort)
-		for i, peer := range seedPeers {
-			addresses[i] = appmessage.NewNetAddressTimestamp(
-				// seed with addresses from a time randomly selected
-				// between 3 and 7 days ago.
-				mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
-					randSource.Int31n(secondsIn4Days))),
-				0, peer, uint16(intPort))
-		}
-
-		seedFn(addresses)
-	})
+			seedFn(addresses)
+		})
+	}
 }
 
 func fromProtobufAddresses(proto []*pb2.NetAddress) []net.IP {

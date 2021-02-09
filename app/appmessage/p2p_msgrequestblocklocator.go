@@ -1,17 +1,18 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/daghash"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // MsgRequestBlockLocator implements the Message interface and represents a kaspa
-// RequestBlockLocator message. It is used to request a block locator between high
-// and low hash.
+// RequestBlockLocator message. It is used to request a block locator between low
+// and high hash.
 // The locator is returned via a locator message (MsgBlockLocator).
 type MsgRequestBlockLocator struct {
 	baseMessage
-	HighHash *daghash.Hash
-	LowHash  *daghash.Hash
+	LowHash  *externalapi.DomainHash
+	HighHash *externalapi.DomainHash
+	Limit    uint32
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -23,9 +24,10 @@ func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 // NewMsgRequestBlockLocator returns a new RequestBlockLocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgRequestBlockLocator(highHash, lowHash *daghash.Hash) *MsgRequestBlockLocator {
+func NewMsgRequestBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
 	return &MsgRequestBlockLocator{
-		HighHash: highHash,
 		LowHash:  lowHash,
+		HighHash: highHash,
+		Limit:    limit,
 	}
 }

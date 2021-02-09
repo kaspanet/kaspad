@@ -2,11 +2,10 @@ package transactionid
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
-// NewDomainTransactionIDFromString creates a new DomainTransactionID from the given string
-func NewDomainTransactionIDFromString(str string) (*externalapi.DomainTransactionID, error) {
-	hash, err := hashes.FromString(str)
+// FromString creates a new DomainTransactionID from the given string
+func FromString(str string) (*externalapi.DomainTransactionID, error) {
+	hash, err := externalapi.NewDomainHashFromString(str)
 	return (*externalapi.DomainTransactionID)(hash), err
 }

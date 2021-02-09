@@ -8,7 +8,11 @@ import (
 
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -21,7 +25,7 @@ func TestTxRelay(t *testing.T) {
 	connect(t, payer, mediator)
 	connect(t, mediator, payee)
 
-	payeeBlockAddedChan := make(chan *appmessage.BlockHeader)
+	payeeBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
 	setOnBlockAddedHandler(t, payee, func(notification *appmessage.BlockAddedNotificationMessage) {
 		payeeBlockAddedChan <- &notification.Block.Header
 	})
@@ -38,12 +42,14 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
-	tx := generateTx(t, secondBlock.CoinbaseTransaction().MsgTx(), payer, payee)
-	response, err := payer.rpcClient.SubmitTransaction(tx)
+	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
-	txID := response.TxID
+	txID := response.TransactionID
 
 	txAddedToMempoolChan := make(chan struct{})
 
@@ -54,7 +60,7 @@ func TestTxRelay(t *testing.T) {
 		for range ticker.C {
 			_, err := payee.rpcClient.GetMempoolEntry(txID)
 			if err != nil {
-				if strings.Contains(err.Error(), "transaction is not in the pool") {
+				if strings.Contains(err.Error(), "not found") {
 					continue
 				}
 
@@ -72,7 +78,7 @@ func TestTxRelay(t *testing.T) {
 	}
 }
 
-func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.BlockHeader) {
+func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.MsgBlockHeader) {
 	select {
 	case <-payeeBlockAddedChan:
 	case <-time.After(defaultTimeout):
@@ -80,9 +86,9 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessa
 	}
 }
 
-func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee *appHarness) *appmessage.MsgTx {
+func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction, payer, payee *appHarness) *appmessage.MsgTx {
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(firstBlockCoinbase.TxID(), 0), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{}, 0)
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
@@ -93,11 +99,11 @@ func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee
 		t.Fatalf("Error generating script: %+v", err)
 	}
 
-	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.TxOut[0].Value-1, toScript)}
+	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.Outputs[0].Value-1000, toScript)}
 
-	fromScript := firstBlockCoinbase.TxOut[0].ScriptPubKey
+	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
-	tx := appmessage.NewNativeMsgTx(appmessage.TxVersion, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {
@@ -108,7 +114,8 @@ func generateTx(t *testing.T, firstBlockCoinbase *appmessage.MsgTx, payer, payee
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}
 
-	signatureScript, err := txscript.SignatureScript(tx, 0, fromScript, txscript.SigHashAll, privateKey, true)
+	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
+		fromScript, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

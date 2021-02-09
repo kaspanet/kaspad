@@ -4,14 +4,15 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/blockdag"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
 // RelayBlockRequestsContext is the interface for the context needed for the HandleRelayBlockRequests flow.
 type RelayBlockRequestsContext interface {
-	DAG() *blockdag.BlockDAG
+	Domain() domain.Domain
 }
 
 // HandleRelayBlockRequests listens to appmessage.MsgRequestRelayBlocks messages and sends
@@ -25,31 +26,28 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 			return err
 		}
 		getRelayBlocksMessage := message.(*appmessage.MsgRequestRelayBlocks)
+		log.Debugf("Got request for relay blocks with hashes %s", getRelayBlocksMessage.Hashes)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
-			block, err := context.DAG().BlockByHash(hash)
-			if blockdag.IsNotInDAGErr(err) {
-				return protocolerrors.Errorf(true, "block %s not found", hash)
-			} else if err != nil {
-				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
-			}
-			msgBlock := block.MsgBlock()
-
-			// If we are a full node and the peer is a partial node, we must convert
-			// the block to a partial block.
-			nodeSubnetworkID := context.DAG().SubnetworkID()
-			peerSubnetworkID := peer.SubnetworkID()
-
-			isNodeFull := nodeSubnetworkID == nil
-			isPeerFull := peerSubnetworkID == nil
-			if isNodeFull && !isPeerFull {
-				msgBlock.ConvertToPartial(peerSubnetworkID)
-			}
-
-			err = outgoingRoute.Enqueue(msgBlock)
+			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
 			if err != nil {
 				return err
 			}
+			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+				return protocolerrors.Errorf(true, "block %s not found", hash)
+			}
+			block, err := context.Domain().Consensus().GetBlock(hash)
+			if err != nil {
+				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+			}
+
+			// TODO (Partial nodes): Convert block to partial block if needed
+
+			err = outgoingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(block))
+			if err != nil {
+				return err
+			}
+			log.Debugf("Relayed block with hash %s", hash)
 		}
 	}
 }

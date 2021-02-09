@@ -8,8 +8,14 @@ import (
 )
 
 func TestNewErrMissingTxOut(t *testing.T) {
-	outer := NewErrMissingTxOut([]externalapi.DomainOutpoint{{TransactionID: externalapi.DomainTransactionID{255, 255, 255}, Index: 5}})
-	expectedOuterErr := "ErrMissingTxOut: [(0000000000000000000000000000000000000000000000000000000000ffffff: 5)]"
+	outer := NewErrMissingTxOut(
+		[]*externalapi.DomainOutpoint{
+			{
+				TransactionID: *externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{255, 255, 255}),
+				Index:         5,
+			},
+		})
+	expectedOuterErr := "ErrMissingTxOut: missing the following outpoint: [(ffffff0000000000000000000000000000000000000000000000000000000000: 5)]"
 	inner := &ErrMissingTxOut{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestWrapInRuleError: Outer should contain ErrMissingTxOut in it")
@@ -41,7 +47,7 @@ func TestNewErrMissingTxOut(t *testing.T) {
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(3a464e1e43410c7add1dd81c3f10486f41eb473bb43e8d64feca3c7f0c8028d3: ErrNoTxInputs)]"
+	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(bbf6e84f5a6333948063aa45ea02ff5bb0355e11e41becf20245791f61179db1: ErrNoTxInputs)]"
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")
@@ -50,8 +56,8 @@ func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	if len(inner.InvalidTransactions) != 1 {
 		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected len(inner.MissingOutpoints) 1, found: %d", len(inner.InvalidTransactions))
 	}
-	if inner.InvalidTransactions[0].err != ErrNoTxInputs {
-		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].err)
+	if inner.InvalidTransactions[0].Error != ErrNoTxInputs {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].Error)
 	}
 	if inner.InvalidTransactions[0].Transaction.Fee != 1337 {
 		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected 1337. found: %v", inner.InvalidTransactions[0].Transaction.Fee)
