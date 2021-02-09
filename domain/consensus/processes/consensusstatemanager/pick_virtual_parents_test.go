@@ -1,68 +1,117 @@
 package consensusstatemanager_test
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"io/ioutil"
+	"os/user"
+	"path"
+	"runtime/pprof"
 	"testing"
 	"time"
 )
+var log, _ = logger.Get(logger.SubsystemTags.CMGR)
 
 func TestPickVirtualParents(t *testing.T) {
+	usr, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const chainSize = 97
+
 	params := dagconfig.DevnetParams
 	params.SkipProofOfWork = true
 
 	factory := consensus.NewFactory()
+
+	var chains [10][]*externalapi.DomainBlock
+	// Build three chains over the genesis
+	for chainIndex := range chains {
+		func() {
+			tipHash := params.GenesisHash
+			builder, teardown, err := factory.NewTestConsensus(&params, false, fmt.Sprintf("TestPickVirtualParents: %d", chainIndex))
+			if err != nil {
+				t.Fatalf("Error setting up consensus: %+v", err)
+			}
+			defer teardown(false)
+			for blockIndex := 0; blockIndex < chainSize; blockIndex++ {
+				scriptPubKey, _ := testutils.OpTrueScript()
+				extraData := []byte{byte(chainIndex)}
+				block, _, err := builder.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{scriptPubKey, extraData}, nil)
+				if err != nil {
+					t.Fatalf("Could not build block: %s", err)
+				}
+				_, err = builder.ValidateAndInsertBlock(block)
+				if err != nil {
+					t.Fatalf("Could not build block: %s", err)
+				}
+				chains[chainIndex] = append(chains[chainIndex], block)
+				tipHash = consensushashing.BlockHash(block)
+			}
+			fmt.Printf("Finished Building chain: %d\n", chainIndex)
+		}()
+	}
+
+
 	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestPickVirtualParents")
 	if err != nil {
 		t.Fatalf("Error setting up consensus: %+v", err)
 	}
 	defer teardown(false)
 
-	found := false
-
+	var maxTime time.Duration
+	var maxString string
+	var profName string
+	maxProf := make([]byte, 0, 1024)
 	// Build three chains over the genesis
-	for chainIndex := 0; chainIndex < 3; chainIndex++ {
-		const chainSize = 1000
+	buf := bytes.NewBuffer(make([]byte, 0, 1024))
+	for chainIndex, chain := range chains {
 		accumulatedValidationTime := time.Duration(0)
-
-		tipHash := params.GenesisHash
-		for blockIndex := 0; blockIndex < chainSize; blockIndex++ {
-			if found {
-				fmt.Printf("\n\n\nBUILD BLOCK WITH PARENTS\n\n\n")
+		for blockIndex, block := range chain {
+			if chainIndex == 9 && blockIndex > 90 {
+				logger.InitLog(path.Join(usr.HomeDir, "TestPickVirtualParents.log"), path.Join(usr.HomeDir, "TestPickVirtualParents_err.log"))
+				logger.SetLogLevels("debug")
 			}
-			block, _, err := testConsensus.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
-			if err != nil {
-				t.Fatalf("Could not build block: %s", err)
-			}
+			log.Debugf("Starting chain:#%d, block: #%d", chainIndex, blockIndex)
 			blockHash := consensushashing.BlockHash(block)
-			start := time.Now()
-			if found {
-				fmt.Printf("\n\n\nVALIDATE AND INSERT BLOCK\n\n\n")
+			buf.Reset()
+			err = pprof.StartCPUProfile(buf)
+			if err != nil {
+				t.Fatal(err)
 			}
-			_, err = testConsensus.ValidateAndInsertBlock(block)
+			start := time.Now()
+			_, err := testConsensus.ValidateAndInsertBlock(block)
+			validationTime := time.Since(start)
+			pprof.StopCPUProfile()
 			if err != nil {
 				t.Fatalf("Failed to validate block %s: %s", blockHash, err)
 			}
-			validationTime := time.Since(start)
+			if validationTime > maxTime {
+				maxTime = validationTime
+				maxString = fmt.Sprintf("Chain: %d, Block: %d", chainIndex, blockIndex)
+				profName = fmt.Sprintf("TestPickVirtualParents-chain-%d-block-%d.pprof", chainIndex, blockIndex)
+				maxProf = append(maxProf[:0], buf.Bytes()...)
+			}
 
 			accumulatedValidationTime += validationTime
-			fmt.Printf("Validated block #%d in chain #%d, took %s\n", blockIndex, chainIndex, validationTime)
-			tipHash = blockHash
+			log.Debugf("Validated block #%d in chain #%d, took %s\n", blockIndex, chainIndex, validationTime)
 
-			if found {
-				t.Fatalf("DONE")
-			}
-			if validationTime > 100*time.Millisecond {
-				found = true
-				logger.SetLogLevels("debug")
-			}
 		}
 
-		averageValidationTime := accumulatedValidationTime / 1000
+		averageValidationTime := accumulatedValidationTime / chainSize
 		fmt.Printf("Average validation time for chain #%d: %s\n", chainIndex, averageValidationTime)
 	}
+
+	err = ioutil.WriteFile(path.Join(usr.HomeDir, profName), maxProf, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%s, took: %s\n", maxString, maxTime)
 }
