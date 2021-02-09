@@ -10,9 +10,15 @@ type LRUCache struct {
 }
 
 // New creates a new LRUCache
-func New(capacity int) *LRUCache {
+func New(capacity int, preallocate bool) *LRUCache {
+	var cache map[uint64]*externalapi.DomainHash
+	if preallocate {
+		cache = make(map[uint64]*externalapi.DomainHash, capacity+1)
+	} else {
+		cache = make(map[uint64]*externalapi.DomainHash)
+	}
 	return &LRUCache{
-		cache:    make(map[uint64]*externalapi.DomainHash, capacity+1),
+		cache:    cache,
 		capacity: capacity,
 	}
 }

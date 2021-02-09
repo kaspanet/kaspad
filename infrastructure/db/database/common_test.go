@@ -25,7 +25,7 @@ func prepareLDBForTest(t *testing.T, testName string) (db database.Database, nam
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	db, err = ldb.NewLevelDB(path)
+	db, err = ldb.NewLevelDB(path, 8)
 	if err != nil {
 		t.Fatalf("%s: Open unexpectedly "+
 			"failed: %s", testName, err)

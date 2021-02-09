@@ -21,10 +21,10 @@ type reachabilityDataStore struct {
 }
 
 // New instantiates a new ReachabilityDataStore
-func New(cacheSize int) model.ReachabilityDataStore {
+func New(cacheSize int, preallocate bool) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
 		reachabilityDataStaging: make(map[externalapi.DomainHash]model.ReachabilityData),
-		reachabilityDataCache:   lrucache.New(cacheSize),
+		reachabilityDataCache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 

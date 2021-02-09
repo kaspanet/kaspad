@@ -37,8 +37,13 @@ func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Messag
 	if err != nil {
 		return nil, err
 	}
+	blockVerboseData, err := x.BlockAddedNotification.BlockVerboseData.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
 	return &appmessage.BlockAddedNotificationMessage{
-		Block: block,
+		Block:            block,
+		BlockVerboseData: blockVerboseData,
 	}, nil
 }
 
@@ -48,8 +53,14 @@ func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessag
 	if err != nil {
 		return err
 	}
+	blockVerboseData := &BlockVerboseData{}
+	err = blockVerboseData.fromAppMessage(message.BlockVerboseData)
+	if err != nil {
+		return err
+	}
 	x.BlockAddedNotification = &BlockAddedNotificationMessage{
-		Block: blockMessage,
+		Block:            blockMessage,
+		BlockVerboseData: blockVerboseData,
 	}
 	return nil
 }
