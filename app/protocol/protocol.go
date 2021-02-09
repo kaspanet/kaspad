@@ -138,7 +138,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 	return []*flow{
 		m.registerOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
 			isStopping, errChan, func(route *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.SendVirtualSelectedParentInv(m.context, outgoingRoute)
+				return blockrelay.SendVirtualSelectedParentInv(m.context, outgoingRoute, peer)
 			}),
 
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
