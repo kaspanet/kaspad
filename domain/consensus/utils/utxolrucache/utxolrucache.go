@@ -12,9 +12,15 @@ type LRUCache struct {
 }
 
 // New creates a new LRUCache
-func New(capacity int) *LRUCache {
+func New(capacity int, preallocate bool) *LRUCache {
+	var cache map[externalapi.DomainOutpoint]externalapi.UTXOEntry
+	if preallocate {
+		cache = make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, capacity+1)
+	} else {
+		cache = make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+	}
 	return &LRUCache{
-		cache:    make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, capacity+1),
+		cache:    cache,
 		capacity: capacity,
 	}
 }

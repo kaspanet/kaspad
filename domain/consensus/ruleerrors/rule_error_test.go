@@ -56,8 +56,8 @@ func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
 	if len(inner.InvalidTransactions) != 1 {
 		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected len(inner.MissingOutpoints) 1, found: %d", len(inner.InvalidTransactions))
 	}
-	if inner.InvalidTransactions[0].err != ErrNoTxInputs {
-		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].err)
+	if inner.InvalidTransactions[0].Error != ErrNoTxInputs {
+		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected ErrNoTxInputs. found: %v", inner.InvalidTransactions[0].Error)
 	}
 	if inner.InvalidTransactions[0].Transaction.Fee != 1337 {
 		t.Fatalf("TestNewErrInvalidTransactionsInNewBlock: Expected 1337. found: %v", inner.InvalidTransactions[0].Transaction.Fee)

@@ -222,19 +222,6 @@ func checkTransactionStandard(tx *consensusexternalapi.DomainTransaction, policy
 				maxStandardSigScriptSize)
 			return txRuleError(RejectNonstandard, str)
 		}
-
-		// Each transaction input signature script must only contain
-		// opcodes which push data onto the stack.
-		isPushOnly, err := txscript.IsPushOnlyScript(txIn.SignatureScript)
-		if err != nil {
-			str := fmt.Sprintf("transaction input %d: IsPushOnlyScript: %t. Error %s", i, isPushOnly, err)
-			return txRuleError(RejectNonstandard, str)
-		}
-		if !isPushOnly {
-			str := fmt.Sprintf("transaction input %d: signature "+
-				"script is not push only", i)
-			return txRuleError(RejectNonstandard, str)
-		}
 	}
 
 	// None of the output public key scripts can be a non-standard script or

@@ -87,6 +87,7 @@ message NotifyBlockAddedResponseMessage{
 // See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
   BlockMessage block = 1;
+  BlockVerboseData blockVerboseData = 2;
 }
 
 // GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
@@ -548,5 +549,14 @@ message UnbanRequestMessage{
 }
 
 message UnbanResponseMessage{
+  RPCError error = 1000;
+}
+
+// GetInfoRequestMessage returns info about the node.
+message GetInfoRequestMessage{
+}
+
+message GetInfoResponseMessage{
+  string p2pId = 1;
   RPCError error = 1000;
 }
