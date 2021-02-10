@@ -136,11 +136,16 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
+		m.registerOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
+			isStopping, errChan, func(route *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.SendVirtualSelectedParentInv(m.context, outgoingRoute, peer)
+			}),
+
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
 			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
 			appmessage.CmdBlockHeaders, appmessage.CmdPruningPointHash, appmessage.CmdIBDBlockLocatorHighestHash,
-			appmessage.CmdDonePruningPointUTXOSetChunks},
+			appmessage.CmdIBDBlockLocatorHighestHashNotFound, appmessage.CmdDonePruningPointUTXOSetChunks},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
 					outgoingRoute, peer)

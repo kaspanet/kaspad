@@ -16,7 +16,7 @@ func TestIBD(t *testing.T) {
 	syncer, syncee, _, teardown := standardSetup(t)
 	defer teardown()
 
-	for i := 0; i < numBlocks-1; i++ {
+	for i := 0; i < numBlocks; i++ {
 		mineNextBlock(t, syncer)
 	}
 
@@ -28,10 +28,8 @@ func TestIBD(t *testing.T) {
 		blockAddedWG.Done()
 	})
 
-	connect(t, syncer, syncee)
-
 	// We expect this to trigger IBD
-	mineNextBlock(t, syncer)
+	connect(t, syncer, syncee)
 
 	select {
 	case <-time.After(defaultTimeout):
@@ -97,10 +95,8 @@ func TestIBDWithPruning(t *testing.T) {
 		mineNextBlock(t, syncer)
 	}
 
-	connect(t, syncer, syncee)
-
 	// We expect this to trigger IBD
-	mineNextBlock(t, syncer)
+	connect(t, syncer, syncee)
 
 	syncerBlockCountResponse, err := syncer.rpcClient.GetBlockCount()
 	if err != nil {
