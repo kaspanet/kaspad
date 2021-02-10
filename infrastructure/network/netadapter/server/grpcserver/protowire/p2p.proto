@@ -195,6 +195,9 @@ message IbdBlockLocatorHighestHashMessage {
   Hash highestHash = 1;
 }
 
+message IbdBlockLocatorHighestHashNotFoundMessage {
+}
+
 message BlockHeadersMessage {
   repeated BlockHeaderMessage blockHeaders = 1;
 }
