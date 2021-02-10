@@ -10,6 +10,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -26,135 +27,22 @@ var (
 	// BackendLog is the logging backend used to create all subsystem loggers.
 	BackendLog = NewBackend()
 
-	adxrLog = BackendLog.Logger("ADXR")
-	amgrLog = BackendLog.Logger("AMGR")
-	cmgrLog = BackendLog.Logger("CMGR")
-	ksdbLog = BackendLog.Logger("KSDB")
-	kasdLog = BackendLog.Logger("KASD")
-	bdagLog = BackendLog.Logger("BDAG")
-	cnfgLog = BackendLog.Logger("CNFG")
-	discLog = BackendLog.Logger("DISC")
-	indxLog = BackendLog.Logger("INDX")
-	minrLog = BackendLog.Logger("MINR")
-	peerLog = BackendLog.Logger("PEER")
-	rpcsLog = BackendLog.Logger("RPCS")
-	rpccLog = BackendLog.Logger("RPCC")
-	scrpLog = BackendLog.Logger("SCRP")
-	srvrLog = BackendLog.Logger("SRVR")
-	syncLog = BackendLog.Logger("SYNC")
-	txmpLog = BackendLog.Logger("TXMP")
-	utilLog = BackendLog.Logger("UTIL")
-	profLog = BackendLog.Logger("PROF")
-	protLog = BackendLog.Logger("PROT")
-	muxxLog = BackendLog.Logger("MUXX")
-	grpcLog = BackendLog.Logger("GRPC")
-	p2psLog = BackendLog.Logger("P2PS")
-	ntarLog = BackendLog.Logger("NTAR")
-	dnssLog = BackendLog.Logger("DNSS")
-	snvrLog = BackendLog.Logger("SNVR")
-	wsvcLog = BackendLog.Logger("WSVC")
-	reacLog = BackendLog.Logger("REAC")
-	prnmLog = BackendLog.Logger("PRNM")
-	blvlLog = BackendLog.Logger("BLVL")
+	// subsystemLoggers maps each subsystem identifier to its associated logger.
+	subsystemLoggers      = make(map[string]*Logger)
+	subsystemLoggersMutex sync.Mutex
 )
 
-// SubsystemTags is an enum of all sub system tags
-var SubsystemTags = struct {
-	ADXR,
-	AMGR,
-	CMGR,
-	KSDB,
-	KASD,
-	BDAG,
-	CNFG,
-	DISC,
-	INDX,
-	MINR,
-	PEER,
-	RPCS,
-	RPCC,
-	SCRP,
-	SRVR,
-	SYNC,
-	TXMP,
-	UTIL,
-	PROF,
-	PROT,
-	MUXX,
-	GRPC,
-	P2PS,
-	NTAR,
-	DNSS,
-	SNVR,
-	WSVC,
-	REAC,
-	PRNM,
-	BLVL string
-}{
-	ADXR: "ADXR",
-	AMGR: "AMGR",
-	CMGR: "CMGR",
-	KSDB: "KSDB",
-	KASD: "KASD",
-	BDAG: "BDAG",
-	CNFG: "CNFG",
-	DISC: "DISC",
-	INDX: "INDX",
-	MINR: "MINR",
-	PEER: "PEER",
-	RPCS: "RPCS",
-	RPCC: "RPCC",
-	SCRP: "SCRP",
-	SRVR: "SRVR",
-	SYNC: "SYNC",
-	TXMP: "TXMP",
-	UTIL: "UTIL",
-	PROF: "PROF",
-	PROT: "PROT",
-	MUXX: "MUXX",
-	GRPC: "GRPC",
-	P2PS: "P2PS",
-	NTAR: "NTAR",
-	DNSS: "DNSS",
-	SNVR: "SNVR",
-	WSVC: "WSVC",
-	REAC: "REAC",
-	PRNM: "PRNM",
-	BLVL: "BLVL",
-}
-
-// subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]*Logger{
-	SubsystemTags.ADXR: adxrLog,
-	SubsystemTags.AMGR: amgrLog,
-	SubsystemTags.CMGR: cmgrLog,
-	SubsystemTags.KSDB: ksdbLog,
-	SubsystemTags.KASD: kasdLog,
-	SubsystemTags.BDAG: bdagLog,
-	SubsystemTags.CNFG: cnfgLog,
-	SubsystemTags.DISC: discLog,
-	SubsystemTags.INDX: indxLog,
-	SubsystemTags.MINR: minrLog,
-	SubsystemTags.PEER: peerLog,
-	SubsystemTags.RPCS: rpcsLog,
-	SubsystemTags.RPCC: rpccLog,
-	SubsystemTags.SCRP: scrpLog,
-	SubsystemTags.SRVR: srvrLog,
-	SubsystemTags.SYNC: syncLog,
-	SubsystemTags.TXMP: txmpLog,
-	SubsystemTags.UTIL: utilLog,
-	SubsystemTags.PROF: profLog,
-	SubsystemTags.PROT: protLog,
-	SubsystemTags.MUXX: muxxLog,
-	SubsystemTags.GRPC: grpcLog,
-	SubsystemTags.P2PS: p2psLog,
-	SubsystemTags.NTAR: ntarLog,
-	SubsystemTags.DNSS: dnssLog,
-	SubsystemTags.SNVR: snvrLog,
-	SubsystemTags.WSVC: wsvcLog,
-	SubsystemTags.REAC: reacLog,
-	SubsystemTags.PRNM: prnmLog,
-	SubsystemTags.BLVL: blvlLog,
+// RegisterSubSystem Registers a new subsystem logger, should be called in a global variable,
+// panics if the subsystem is already registered
+func RegisterSubSystem(subsystem string) *Logger {
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
+	logger, exists := subsystemLoggers[subsystem]
+	if !exists {
+		logger = BackendLog.Logger(subsystem)
+		subsystemLoggers[subsystem] = logger
+	}
+	return logger
 }
 
 // InitLog attaches log file and error log file to the backend log.
@@ -175,34 +63,33 @@ func InitLog(logFile, errLogFile string) {
 // SetLogLevel sets the logging level for provided subsystem. Invalid
 // subsystems are ignored. Uninitialized subsystems are dynamically created as
 // needed.
-func SetLogLevel(subsystemID string, logLevel string) {
+func SetLogLevel(subsystemID string, logLevel string) error {
 	// Ignore invalid subsystems.
 	logger, ok := subsystemLoggers[subsystemID]
 	if !ok {
-		return
+		return errors.Errorf("'%s' Isn't a valid subsystem", subsystemID)
+	}
+	// Defaults to info if the log level is invalid.
+	level, ok := LevelFromString(logLevel)
+	if !ok {
+		return errors.Errorf("'%s' Isn't a valid log level", logLevel)
 	}
 
-	// Defaults to info if the log level is invalid.
-	level, _ := LevelFromString(logLevel)
 	logger.SetLevel(level)
+	return nil
 }
 
 // SetLogLevels sets the log level for all subsystem loggers to the passed
 // level. It also dynamically creates the subsystem loggers as needed, so it
 // can be used to initialize the logging system.
-func SetLogLevels(logLevel string) {
+func SetLogLevels(logLevel string) error {
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
 	// Configure all sub-systems with the new logging level. Dynamically
 	// create loggers as needed.
-	for subsystemID := range subsystemLoggers {
-		SetLogLevel(subsystemID, logLevel)
-	}
-}
-
-// DirectionString is a helper function that returns a string that represents
-// the direction of a connection (inbound or outbound).
-func DirectionString(inbound bool) string {
-	if inbound {
-		return "inbound"
+	level, ok := LevelFromString(logLevel)
+	if !ok {
+		return errors.Errorf("'%s' Isn't a valid log level", logLevel)
 	}
 	return "outbound"
 }
@@ -219,6 +106,8 @@ func PickNoun(n uint64, singular, plural string) string {
 // SupportedSubsystems returns a sorted slice of the supported subsystems for
 // logging purposes.
 func SupportedSubsystems() []string {
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
 	// Convert the subsystemLoggers map keys to a slice.
 	subsystems := make([]string, 0, len(subsystemLoggers))
 	for subsysID := range subsystemLoggers {
@@ -230,8 +119,9 @@ func SupportedSubsystems() []string {
 	return subsystems
 }
 
-// Get returns a logger of a specific sub system
-func Get(tag string) (logger *Logger, ok bool) {
+func getSubsystem(tag string) (logger *Logger, ok bool) {
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
 	logger, ok = subsystemLoggers[tag]
 	return
 }
@@ -250,9 +140,7 @@ func ParseAndSetLogLevels(logLevel string) error {
 		}
 
 		// Change the logging level for all subsystems.
-		SetLogLevels(logLevel)
-
-		return nil
+		return SetLogLevels(logLevel)
 	}
 
 	// Split the specified string into subsystem/level pairs while detecting
@@ -269,7 +157,7 @@ func ParseAndSetLogLevels(logLevel string) error {
 		subsysID, logLevel := fields[0], fields[1]
 
 		// Validate subsystem.
-		if _, exists := Get(subsysID); !exists {
+		if _, exists := getSubsystem(subsysID); !exists {
 			str := "The specified subsystem [%s] is invalid -- " +
 				"supported subsytems %s"
 			return errors.Errorf(str, subsysID, strings.Join(SupportedSubsystems(), ", "))
