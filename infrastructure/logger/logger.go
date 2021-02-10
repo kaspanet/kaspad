@@ -50,12 +50,12 @@ func InitLog(logFile, errLogFile string) {
 	// 280 MB (MB=1000^2 bytes)
 	err := BackendLog.AddLogFileWithCustomRotator(logFile, LevelTrace, 1000*280, 64)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, LevelTrace, err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, LevelTrace, err)
 		os.Exit(1)
 	}
 	err = BackendLog.AddLogFile(errLogFile, LevelWarn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, LevelWarn, err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, LevelWarn, err)
 		os.Exit(1)
 	}
 }
@@ -91,16 +91,10 @@ func SetLogLevels(logLevel string) error {
 	if !ok {
 		return errors.Errorf("'%s' Isn't a valid log level", logLevel)
 	}
-	return "outbound"
-}
-
-// PickNoun returns the singular or plural form of a noun depending
-// on the count n.
-func PickNoun(n uint64, singular, plural string) string {
-	if n == 1 {
-		return singular
+	for _, logger := range subsystemLoggers {
+		logger.SetLevel(level)
 	}
-	return plural
+	return nil
 }
 
 // SupportedSubsystems returns a sorted slice of the supported subsystems for
@@ -169,29 +163,12 @@ func ParseAndSetLogLevels(logLevel string) error {
 			return errors.Errorf(str, logLevel)
 		}
 
-		SetLogLevel(subsysID, logLevel)
+		err := SetLogLevel(subsysID, logLevel)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
-}
-
-// validLogLevel returns whether or not logLevel is a valid debug log level.
-func validLogLevel(logLevel string) bool {
-	switch logLevel {
-	case "trace":
-		fallthrough
-	case "debug":
-		fallthrough
-	case "info":
-		fallthrough
-	case "warn":
-		fallthrough
-	case "error":
-		fallthrough
-	case "critical":
-		return true
-	}
-	return false
 }
 
 // LogClosure is a closure that can be printed with %s to be used to
