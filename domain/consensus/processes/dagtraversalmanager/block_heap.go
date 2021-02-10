@@ -109,6 +109,16 @@ func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
 	return nil
 }
 
+func (bh *blockHeap) PushSlice(blockHashes []*externalapi.DomainHash) error {
+	for _, blockHash := range blockHashes {
+		err := bh.Push(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Len returns the length of this heap
 func (bh *blockHeap) Len() int {
 	return bh.impl.Len()
