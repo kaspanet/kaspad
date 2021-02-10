@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -48,18 +49,17 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		chain1TipHashString = minedBlockHashString
 	}
 
-	// In kaspad2, mine a different chain of `blockAmountToMine`
+	// In kaspad2, mine a different chain of `blockAmountToMine` + 1
 	// blocks over the genesis
-	for i := 0; i < blockAmountToMine; i++ {
-		mineNextBlock(t, kaspad2)
+	var chain2Tip *externalapi.DomainBlock
+	for i := 0; i < blockAmountToMine+1; i++ {
+		chain2Tip = mineNextBlock(t, kaspad2)
 	}
 
-	// Connect the two kaspads
+	// Connect the two kaspads. This should trigger sync
+	// between the two nodes
 	connect(t, kaspad1, kaspad2)
 
-	// In kaspad2, mine another block. This should trigger sync
-	// between the two nodes
-	chain2Tip := mineNextBlock(t, kaspad2)
 	chain2TipHash := consensushashing.BlockHash(chain2Tip)
 	chain2TipHashString := chain2TipHash.String()
 
