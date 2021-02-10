@@ -1,8 +1,6 @@
 package dagtraversalmanager
 
 import (
-	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -20,29 +18,6 @@ type dagTraversalManager struct {
 	consensusStateStore   model.ConsensusStateStore
 }
 
-// selectedParentIterator implements the `model.BlockIterator` API
-type selectedParentIterator struct {
-	databaseContext   model.DBReader
-	ghostdagDataStore model.GHOSTDAGDataStore
-	current           *externalapi.DomainHash
-}
-
-func (spi *selectedParentIterator) Next() bool {
-	if spi.current == nil {
-		return false
-	}
-	ghostdagData, err := spi.ghostdagDataStore.Get(spi.databaseContext, spi.current)
-	if err != nil {
-		panic(fmt.Sprintf("ghostdagDataStore is missing ghostdagData for: %v. '%s' ", spi.current, err))
-	}
-	spi.current = ghostdagData.SelectedParent()
-	return spi.current != nil
-}
-
-func (spi *selectedParentIterator) Get() *externalapi.DomainHash {
-	return spi.current
-}
-
 // New instantiates a new DAGTraversalManager
 func New(
 	databaseContext model.DBReader,
@@ -58,16 +33,6 @@ func New(
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
 		consensusStateStore:   conssensusStateStore,
-	}
-}
-
-// SelectedParentIterator creates an iterator over the selected
-// parent chain of the given highHash
-func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.BlockIterator {
-	return &selectedParentIterator{
-		databaseContext:   dtm.databaseContext,
-		ghostdagDataStore: dtm.ghostdagDataStore,
-		current:           highHash,
 	}
 }
 
