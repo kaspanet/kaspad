@@ -129,7 +129,7 @@ func (l Level) String() string {
 
 // NewBackend creates a new logger backend.
 func NewBackend(opts ...BackendOption) *Backend {
-	b := &Backend{flag: defaultFlags, toStdout: true}
+	b := &Backend{flag: defaultFlags, stdoutLevel: LevelInfo}
 	for _, o := range opts {
 		o(b)
 	}
@@ -145,10 +145,10 @@ type backendLogRotator struct {
 // the backend's Writer. Backend provides atomic writes to the Writer from all
 // subsystems.
 type Backend struct {
-	rotators []*backendLogRotator
-	mu       sync.Mutex // ensures atomic writes
-	flag     uint32
-	toStdout bool
+	rotators    []*backendLogRotator
+	mu          sync.Mutex // ensures atomic writes
+	flag        uint32
+	stdoutLevel Level
 }
 
 // BackendOption is a function used to modify the behavior of a Backend.
@@ -352,7 +352,7 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.toStdout {
+	if lvl >= b.StdoutLevel() {
 		os.Stdout.Write(bytesToWrite)
 	}
 
@@ -363,16 +363,21 @@ func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	}
 }
 
+// StdoutLevel returns the current stdout logging level
+func (b *Backend) StdoutLevel() Level {
+	return Level(atomic.LoadUint32((*uint32)(&b.stdoutLevel)))
+}
+
+// SetStdoutLevel changes the logging level to the passed level.
+func (b *Backend) SetStdoutLevel(level Level) {
+	atomic.StoreUint32((*uint32)(&b.stdoutLevel), uint32(level))
+}
+
 // Close finalizes all log rotators for this backend
 func (b *Backend) Close() {
 	for _, r := range b.rotators {
 		r.Close()
 	}
-}
-
-// WriteToStdout sets if the backend will print to stdout or not (default: true)
-func (b *Backend) WriteToStdout(stdout bool) {
-	b.toStdout = stdout
 }
 
 // Logger returns a new logger for a particular subsystem that writes to the
