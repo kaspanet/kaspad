@@ -283,11 +283,9 @@ func (pm *pruningManager) deleteBlocksDownward(queue model.BlockHeap) error {
 			if err != nil {
 				return err
 			}
-			for _, parent := range parents {
-				err = queue.Push(parent)
-				if err != nil {
-					return err
-				}
+			err = queue.PushSlice(parents)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -323,9 +321,6 @@ func (pm *pruningManager) pruneTips(pruningPoint *externalapi.DomainHash, virtua
 		return nil, err
 	}
 	newTips := make([]*externalapi.DomainHash, 0, len(dagTips))
-	if err != nil {
-		return nil, err
-	}
 	for _, tip := range dagTips {
 		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(tip, pruningPoint, virtualParents)
 		if err != nil {
@@ -599,7 +594,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.Doma
 		if err != nil {
 			return err
 		}
-		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsDescendantOf(blockHash, pruningPointHash)
+		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(pruningPointHash, blockHash)
 		if err != nil {
 			return err
 		}
