@@ -70,8 +70,14 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 		}
 
 		if !foundHighestHashInTheSelectedParentChainOfTargetHash {
-			return protocolerrors.Errorf(true, "no hash was found in the blockLocator "+
+			log.Warnf("no hash was found in the blockLocator "+
 				"that was in the selected parent chain of targetHash %s", targetHash)
+
+			ibdBlockLocatorHighestHashNotFoundMessage := appmessage.NewMsgIBDBlockLocatorHighestHashNotFound()
+			err = outgoingRoute.Enqueue(ibdBlockLocatorHighestHashNotFoundMessage)
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
