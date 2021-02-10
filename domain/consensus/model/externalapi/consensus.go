@@ -29,4 +29,5 @@ type Consensus interface {
 	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedChainPath, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)
+	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 }

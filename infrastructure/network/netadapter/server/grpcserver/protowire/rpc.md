@@ -840,7 +840,6 @@ kaspad&#39;s current virtual.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | lowHash | [string](#string) |  |  |
-| includeBlockHexes | [bool](#bool) |  |  |
 | includeBlockVerboseData | [bool](#bool) |  |  |
 | includeTransactionVerboseData | [bool](#bool) |  |  |
 

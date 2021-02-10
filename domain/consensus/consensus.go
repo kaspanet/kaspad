@@ -403,3 +403,15 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 
 	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
 }
+
+func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	err := s.validateBlockHashExists(blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.dagTraversalManager.Anticone(blockHash)
+}
