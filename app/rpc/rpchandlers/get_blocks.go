@@ -71,13 +71,13 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 
 	// Prepare the response
 	response := &appmessage.GetBlocksResponseMessage{
-		BlockHashes:      hashes.ToStrings(blockHashes),
-		BlockVerboseData: make([]*appmessage.BlockVerboseData, len(blockHashes)),
-		NextLowHash:      nextLowHash.String(),
+		BlockHashes: hashes.ToStrings(blockHashes),
+		NextLowHash: nextLowHash.String(),
 	}
 
 	// Retrieve all block data in case BlockVerboseData was requested
 	if getBlocksRequest.IncludeBlockVerboseData {
+		response.BlockVerboseData = make([]*appmessage.BlockVerboseData, len(blockHashes))
 		for i, blockHash := range blockHashes {
 			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
 			if err != nil {
