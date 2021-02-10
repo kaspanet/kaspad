@@ -15,10 +15,12 @@ func (msg *GetBlocksRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlocksRequestMessage returns a instance of the message
-func NewGetBlocksRequestMessage(lowHash string, includeBlockHexes bool, includeBlockVerboseData bool) *GetBlocksRequestMessage {
+func NewGetBlocksRequestMessage(lowHash string, includeBlockVerboseData bool,
+	includeTransactionVerboseData bool) *GetBlocksRequestMessage {
 	return &GetBlocksRequestMessage{
-		LowHash:                 lowHash,
-		IncludeBlockVerboseData: includeBlockVerboseData,
+		LowHash:                       lowHash,
+		IncludeBlockVerboseData:       includeBlockVerboseData,
+		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }
 
