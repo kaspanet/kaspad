@@ -39,8 +39,11 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		if err != nil {
 			return nil, err
 		}
-		for iterator.Next() {
-			highHash = iterator.Get()
+		for ok := iterator.First(); ok; ok = iterator.Next() {
+			highHash, err = iterator.Get()
+			if err != nil {
+				return nil, err
+			}
 			highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
 			if err != nil {
 				return nil, err
@@ -112,8 +115,11 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	lowHash := pruningPoint
 	foundHeaderOnlyBlock := false
-	for selectedChildIterator.Next() {
-		selectedChild := selectedChildIterator.Get()
+	for ok := selectedChildIterator.First(); ok; ok = selectedChildIterator.Next() {
+		selectedChild, err := selectedChildIterator.Get()
+		if err != nil {
+			return nil, err
+		}
 		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, selectedChild)
 		if err != nil {
 			return nil, err

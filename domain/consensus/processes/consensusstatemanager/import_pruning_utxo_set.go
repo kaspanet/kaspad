@@ -61,7 +61,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	log.Debugf("Staging the the pruning point as the only DAG tip")
+	log.Debugf("Staging the pruning point as the only DAG tip")
 	newTips := []*externalapi.DomainHash{newPruningPointHash}
 	csm.consensusStateStore.StageTips(newTips)
 
