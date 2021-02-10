@@ -12,6 +12,26 @@ import (
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash,
 	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
 
+	// If lowHash is not in the selectedParentChain of highHash - SelectedChildIterator will fail.
+	// Therefore, we traverse down lowHash's selectedParentChain until we reach a block that is in
+	// highHash's selectedParentChain.
+	// We keep originalLowHash to filter out blocks in it's past later down the road
+	originalLowHash := lowHash
+	for {
+		isInSelectedParentChain, err := sm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
+		if err != nil {
+			return nil, err
+		}
+		if isInSelectedParentChain {
+			break
+		}
+		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
+		if err != nil {
+			return nil, err
+		}
+		lowHash = lowBlockGHOSTDAGData.SelectedParent()
+	}
+
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
 		return nil, err
@@ -80,9 +100,16 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		if isCurrentAncestorOfLowHash {
 			continue
 		}
-		err = hashesUpHeap.Push(current)
+		// Push current to hashesUpHeap if it's not in the past of originalLowHash
+		isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(current, originalLowHash)
 		if err != nil {
 			return nil, err
+		}
+		if !isInPastOfOriginalLowHash {
+			err = hashesUpHeap.Push(current)
+			if err != nil {
+				return nil, err
+			}
 		}
 		parents, err := sm.dagTopologyManager.Parents(current)
 		if err != nil {
