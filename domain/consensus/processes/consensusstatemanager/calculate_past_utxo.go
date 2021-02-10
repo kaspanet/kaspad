@@ -119,7 +119,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
-	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
+	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
 
 	mergeSetHashes := ghostdagData.MergeSet()
 	log.Debugf("Merge set for block %s is %v", blockHash, mergeSetHashes)

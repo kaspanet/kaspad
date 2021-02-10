@@ -56,7 +56,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 
 		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
-		log.Debugf("Block %s status resolved to `%s`", unverifiedBlockHash, blockStatus)
+		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks", unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
 	}
 
 	return blockStatus, nil
@@ -122,7 +122,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
 	log.Debugf("resolveSingleBlockStatus start for block %s", blockHash)
-	defer log.Tracef("resolveSingleBlockStatus end for block %s", blockHash)
+	defer log.Debugf("resolveSingleBlockStatus end for block %s", blockHash)
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
 	pastUTXODiff, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
