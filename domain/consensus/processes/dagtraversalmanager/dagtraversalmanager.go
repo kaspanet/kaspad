@@ -15,6 +15,7 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
+	consensusStateStore   model.ConsensusStateStore
 }
 
 // New instantiates a new DAGTraversalManager
@@ -23,13 +24,15 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
+	ghostdagManager model.GHOSTDAGManager,
+	conssensusStateStore model.ConsensusStateStore) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
+		consensusStateStore:   conssensusStateStore,
 	}
 }
 

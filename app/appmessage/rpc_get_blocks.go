@@ -4,9 +4,9 @@ package appmessage
 // its respective RPC message
 type GetBlocksRequestMessage struct {
 	baseMessage
-	LowHash                 string
-	IncludeBlockHexes       bool
-	IncludeBlockVerboseData bool
+	LowHash                       string
+	IncludeBlockVerboseData       bool
+	IncludeTransactionVerboseData bool
 }
 
 // Command returns the protocol command string for the message
@@ -15,11 +15,12 @@ func (msg *GetBlocksRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlocksRequestMessage returns a instance of the message
-func NewGetBlocksRequestMessage(lowHash string, includeBlockHexes bool, includeBlockVerboseData bool) *GetBlocksRequestMessage {
+func NewGetBlocksRequestMessage(lowHash string, includeBlockVerboseData bool,
+	includeTransactionVerboseData bool) *GetBlocksRequestMessage {
 	return &GetBlocksRequestMessage{
-		LowHash:                 lowHash,
-		IncludeBlockHexes:       includeBlockHexes,
-		IncludeBlockVerboseData: includeBlockVerboseData,
+		LowHash:                       lowHash,
+		IncludeBlockVerboseData:       includeBlockVerboseData,
+		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }
 
@@ -28,7 +29,6 @@ func NewGetBlocksRequestMessage(lowHash string, includeBlockHexes bool, includeB
 type GetBlocksResponseMessage struct {
 	baseMessage
 	BlockHashes      []string
-	BlockHexes       []string
 	BlockVerboseData []*BlockVerboseData
 
 	Error *RPCError
@@ -45,7 +45,6 @@ func NewGetBlocksResponseMessage(blockHashes []string, blockHexes []string,
 
 	return &GetBlocksResponseMessage{
 		BlockHashes:      blockHashes,
-		BlockHexes:       blockHexes,
 		BlockVerboseData: blockVerboseData,
 	}
 }
