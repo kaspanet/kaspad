@@ -28,7 +28,6 @@ type GetBlocksResponseMessage struct {
 	baseMessage
 	BlockHashes      []string
 	BlockVerboseData []*BlockVerboseData
-	NextLowHash      string
 
 	Error *RPCError
 }

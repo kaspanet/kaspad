@@ -49,7 +49,6 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	if err != nil {
 		return nil, err
 	}
-	nextLowHash := blockHashes[len(blockHashes)-1]
 
 	// If there are no maxBlocksInGetBlocksResponse between lowHash and virtualSelectedParent -
 	// add virtualSelectedParent's anticone
@@ -59,8 +58,6 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 			return nil, err
 		}
 		blockHashes = append(blockHashes, virtualSelectedParentAnticone...)
-
-		// Don't move nextLowHash, since lowHash has to be in virtualSelectedParent's past
 	}
 
 	// Both GetHashesBetween and Anticone might return more then the allowed number of blocks, so
@@ -72,7 +69,6 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	// Prepare the response
 	response := &appmessage.GetBlocksResponseMessage{
 		BlockHashes: hashes.ToStrings(blockHashes),
-		NextLowHash: nextLowHash.String(),
 	}
 
 	// Retrieve all block data in case BlockVerboseData was requested
