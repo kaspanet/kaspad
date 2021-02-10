@@ -227,6 +227,9 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	// Go over all pruningPoint.Past and pruningPoint.Anticone that's not in virtual.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
 	virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
 
 	// Start queue with all tips that are below the pruning point (and on the way remove them from list of tips)
 	prunedTips, err := pm.pruneTips(pruningPoint, virtualParents)
