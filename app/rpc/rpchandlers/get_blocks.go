@@ -18,6 +18,7 @@ const (
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
 
+	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlockVerboseData
 	if !getBlocksRequest.IncludeBlockVerboseData && getBlocksRequest.IncludeTransactionVerboseData {
 		return &appmessage.GetBlocksResponseMessage{
 			Error: appmessage.RPCErrorf(
@@ -25,6 +26,8 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		}, nil
 	}
 
+	// Decode lowHash
+	// If lowHash is empty - use genesis instead.
 	lowHash := context.Config.ActiveNetParams.GenesisHash
 	if getBlocksRequest.LowHash != "" {
 		var err error
@@ -36,11 +39,11 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		}
 	}
 
+	// Get hashes between lowHash and virtualSelectedParent
 	virtualSelectedParent, err := context.Domain.Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return nil, err
 	}
-
 	blockHashes, err := context.Domain.Consensus().GetHashesBetween(
 		lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
 	if err != nil {
@@ -48,37 +51,46 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	}
 	nextLowHash := blockHashes[len(blockHashes)-1]
 
+	// If there are no maxBlocksInGetBlocksResponse between lowHash and virtualSelectedParent -
+	// add virtualSelectedParent's anticone
 	if len(blockHashes) < maxBlocksInGetBlocksResponse {
 		virtualSelectedParentAnticone, err := context.Domain.Consensus().Anticone(virtualSelectedParent)
 		if err != nil {
 			return nil, err
 		}
-		nextLowHash = virtualSelectedParent
 		blockHashes = append(blockHashes, virtualSelectedParentAnticone...)
+
+		// Don't move nextLowHash, since lowHash has to be in virtualSelectedParent's past
 	}
 
+	// Both GetHashesBetween and Anticone might return more then the allowed number of blocks, so
+	// trim any extra blocks.
 	if len(blockHashes) > maxBlocksInGetBlocksResponse {
 		blockHashes = blockHashes[:maxBlocksInGetBlocksResponse]
 	}
 
+	// Prepare the response
 	response := &appmessage.GetBlocksResponseMessage{
 		BlockHashes:      hashes.ToStrings(blockHashes),
 		BlockVerboseData: make([]*appmessage.BlockVerboseData, len(blockHashes)),
 		NextLowHash:      nextLowHash.String(),
 	}
 
-	for i, blockHash := range blockHashes {
-		blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
-		if err != nil {
-			return nil, err
-		}
-		blockVerboseData, err := context.BuildBlockVerboseData(blockHeader, nil,
-			getBlocksRequest.IncludeTransactionVerboseData)
-		if err != nil {
-			return nil, err
-		}
+	// Retrieve all block data in case BlockVerboseData was requested
+	if getBlocksRequest.IncludeBlockVerboseData {
+		for i, blockHash := range blockHashes {
+			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
+			if err != nil {
+				return nil, err
+			}
+			blockVerboseData, err := context.BuildBlockVerboseData(blockHeader, nil,
+				getBlocksRequest.IncludeTransactionVerboseData)
+			if err != nil {
+				return nil, err
+			}
 
-		response.BlockVerboseData[i] = blockVerboseData
+			response.BlockVerboseData[i] = blockVerboseData
+		}
 	}
 	return response, nil
 }
