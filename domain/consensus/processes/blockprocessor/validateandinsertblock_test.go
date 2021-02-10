@@ -126,7 +126,8 @@ func TestValidateAndInsertErrors(t *testing.T) {
 		tipHash, emptyCoinbase, tx1 := initData(params)
 
 		// Tests all the error case on the function: "checkBlockStatus"(sub-function in function validateBlock)
-		blockWithStatusInvalid, err := tc.BuildBlock(&emptyCoinbase, []*externalapi.DomainTransaction{tx1, tx1})
+		blockWithStatusInvalid, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash},
+			&emptyCoinbase, []*externalapi.DomainTransaction{tx1, tx1})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}

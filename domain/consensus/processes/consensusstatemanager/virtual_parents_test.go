@@ -32,8 +32,8 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 				t.Fatalf("Consensus failed building a block: %v", err)
 			}
 			blockParents := block.Header.ParentHashes()
-			sort.Sort(consensus.NewTestGhostDAGSorter(virtualRelations.Parents, tc, t))
-			sort.Sort(consensus.NewTestGhostDAGSorter(blockParents, tc, t))
+			sort.Sort(testutils.NewTestGhostDAGSorter(virtualRelations.Parents, tc, t))
+			sort.Sort(testutils.NewTestGhostDAGSorter(blockParents, tc, t))
 			if !externalapi.HashesEqual(virtualRelations.Parents, blockParents) {
 				t.Fatalf("Block relations and BuildBlock return different parents for virtual, %s != %s", virtualRelations.Parents, blockParents)
 			}
@@ -54,7 +54,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 		}
 
 		virtualParents := getSortedVirtualParents(tc)
-		sort.Sort(consensus.NewTestGhostDAGSorter(parents, tc, t))
+		sort.Sort(testutils.NewTestGhostDAGSorter(parents, tc, t))
 
 		// Make sure the first half of the blocks are with highest blueWork
 		// we use (max+1)/2 because the first "half" is rounded up, so `(dividend + (divisor - 1)) / divisor` = `(max + (2-1))/2` = `(max+1)/2`
@@ -102,7 +102,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			parents = append(parents, block)
 		}
 
-		sort.Sort(consensus.NewTestGhostDAGSorter(parents, tc, t))
+		sort.Sort(testutils.NewTestGhostDAGSorter(parents, tc, t))
 		virtualParents = getSortedVirtualParents(tc)
 		if !externalapi.HashesEqual(virtualParents, parents) {
 			t.Fatalf("Expected VirtualParents and parents to be equal, instead: %s != %s", virtualParents, parents)

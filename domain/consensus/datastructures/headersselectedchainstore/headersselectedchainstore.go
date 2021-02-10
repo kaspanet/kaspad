@@ -26,14 +26,14 @@ type headersSelectedChainStore struct {
 }
 
 // New instantiates a new HeadersSelectedChainStore
-func New(cacheSize int) model.HeadersSelectedChainStore {
+func New(cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
 		stagingAddedByHash:    make(map[externalapi.DomainHash]uint64),
 		stagingRemovedByHash:  make(map[externalapi.DomainHash]struct{}),
 		stagingAddedByIndex:   make(map[uint64]*externalapi.DomainHash),
 		stagingRemovedByIndex: make(map[uint64]struct{}),
-		cacheByIndex:          lrucacheuint64tohash.New(cacheSize),
-		cacheByHash:           lrucache.New(cacheSize),
+		cacheByIndex:          lrucacheuint64tohash.New(cacheSize, preallocate),
+		cacheByHash:           lrucache.New(cacheSize, preallocate),
 	}
 }
 

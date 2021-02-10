@@ -1,4 +1,4 @@
-package consensus
+package testutils
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"

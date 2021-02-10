@@ -16,11 +16,11 @@ type finalityStore struct {
 }
 
 // New instantiates a new FinalityStore
-func New(cacheSize int) model.FinalityStore {
+func New(cacheSize int, preallocate bool) model.FinalityStore {
 	return &finalityStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 }
 

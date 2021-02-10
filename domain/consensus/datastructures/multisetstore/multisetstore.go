@@ -19,11 +19,11 @@ type multisetStore struct {
 }
 
 // New instantiates a new MultisetStore
-func New(cacheSize int) model.MultisetStore {
+func New(cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
 		staging:  make(map[externalapi.DomainHash]model.Multiset),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 }
 
