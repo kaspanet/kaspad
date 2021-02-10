@@ -59,6 +59,9 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	return nil
 }
 
+// syncHeaders attempts to sync headers from the peer. This method may fail
+// because the peer and us have conflicting pruning points. In that case we
+// return (false, nil) so that we may stop IBD gracefully.
 func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) (bool, error) {
 	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
@@ -88,6 +91,9 @@ func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) (
 	return true, nil
 }
 
+// findHighestSharedBlock attempts to find the highest shared block between the peer
+// and this node. This method may fail because the peer and us have conflicting pruning
+// points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
 func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(
 	targetHash *externalapi.DomainHash) (*externalapi.DomainHash, bool, error) {
 
@@ -171,6 +177,9 @@ func (flow *handleRelayInvsFlow) findHighestHashIndex(
 	return highestHashIndex, nil
 }
 
+// fetchHighestHash attempts to fetch the highest hash the peer knows amongst the given
+// blockLocator. This method may fail because the peer and us have conflicting pruning
+// points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
 func (flow *handleRelayInvsFlow) fetchHighestHash(
 	targetHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (*externalapi.DomainHash, bool, error) {
 
