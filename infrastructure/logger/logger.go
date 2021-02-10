@@ -236,28 +236,28 @@ func Get(tag string) (logger *Logger, ok bool) {
 	return
 }
 
-// ParseAndSetDebugLevels attempts to parse the specified debug level and set
+// ParseAndSetLogLevels attempts to parse the specified debug level and set
 // the levels accordingly. An appropriate error is returned if anything is
 // invalid.
-func ParseAndSetDebugLevels(debugLevel string) error {
+func ParseAndSetLogLevels(logLevel string) error {
 	// When the specified string doesn't have any delimters, treat it as
 	// the log level for all subsystems.
-	if !strings.Contains(debugLevel, ",") && !strings.Contains(debugLevel, "=") {
+	if !strings.Contains(logLevel, ",") && !strings.Contains(logLevel, "=") {
 		// Validate debug log level.
-		if !validLogLevel(debugLevel) {
+		if !validLogLevel(logLevel) {
 			str := "The specified debug level [%s] is invalid"
-			return errors.Errorf(str, debugLevel)
+			return errors.Errorf(str, logLevel)
 		}
 
 		// Change the logging level for all subsystems.
-		SetLogLevels(debugLevel)
+		SetLogLevels(logLevel)
 
 		return nil
 	}
 
 	// Split the specified string into subsystem/level pairs while detecting
 	// issues and update the log levels accordingly.
-	for _, logLevelPair := range strings.Split(debugLevel, ",") {
+	for _, logLevelPair := range strings.Split(logLevel, ",") {
 		if !strings.Contains(logLevelPair, "=") {
 			str := "The specified debug level contains an invalid " +
 				"subsystem/level pair [%s]"

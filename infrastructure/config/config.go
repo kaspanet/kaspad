@@ -102,7 +102,7 @@ type Flags struct {
 	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
-	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
+	LogLevel             string        `short:"d" long:"loglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
@@ -166,7 +166,7 @@ func newConfigParser(cfgFlags *Flags, options flags.Options) *flags.Parser {
 func defaultFlags() *Flags {
 	return &Flags{
 		ConfigFile:           defaultConfigFile,
-		DebugLevel:           defaultLogLevel,
+		LogLevel:             defaultLogLevel,
 		TargetOutboundPeers:  defaultTargetOutboundPeers,
 		MaxInboundPeers:      defaultMaxInboundPeers,
 		BanDuration:          defaultBanDuration,
@@ -326,7 +326,7 @@ func LoadConfig() (*Config, error) {
 	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.NetParams().Name)
 
 	// Special show command to list supported subsystems and exit.
-	if cfg.DebugLevel == "show" {
+	if cfg.LogLevel == "show" {
 		fmt.Println("Supported subsystems", logger.SupportedSubsystems())
 		os.Exit(0)
 	}
@@ -336,7 +336,7 @@ func LoadConfig() (*Config, error) {
 	logger.InitLog(filepath.Join(cfg.LogDir, defaultLogFilename), filepath.Join(cfg.LogDir, defaultErrLogFilename))
 
 	// Parse, validate, and set debug log level(s).
-	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+	if err := logger.ParseAndSetLogLevels(cfg.LogLevel); err != nil {
 		err := errors.Errorf("%s: %s", funcName, err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
