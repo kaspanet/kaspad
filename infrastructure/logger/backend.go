@@ -9,11 +9,44 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
 
 const normalLogSize = 512
+
+// defaultFlags specifies changes to the default logger behavior. It is set
+// during package init and configured using the LOGFLAGS environment variable.
+// New logger backends can override these default flags using WithFlags.
+// We're using this instead of `init()` function because variables are initialized before init functions,
+// and this variable is used inside other variable intializations, so runs before them
+var defaultFlags = getDefaultFlags()
+
+// Flags to modify Backend's behavior.
+const (
+	// Llongfile modifies the logger output to include full path and line number
+	// of the logging callsite, e.g. /a/b/c/main.go:123.
+	Llongfile uint32 = 1 << iota
+
+	// Lshortfile modifies the logger output to include filename and line number
+	// of the logging callsite, e.g. main.go:123. Overrides Llongfile.
+	Lshortfile
+)
+
+// Read logger flags from the LOGFLAGS environment variable. Multiple flags can
+// be set at once, separated by commas.
+func getDefaultFlags() (flags uint32) {
+	for _, f := range strings.Split(os.Getenv("LOGFLAGS"), ",") {
+		switch f {
+		case "longfile":
+			flags |= Llongfile
+		case "shortfile":
+			flags |= Lshortfile
+		}
+	}
+	return
+}
 
 // NewBackendWithFlags configures a Backend to use the specified flags rather than using
 // the package's defaults as determined through the LOGFLAGS environment
@@ -93,7 +126,7 @@ func formatHeader(buf *[]byte, t mstime.Time, lvl, tag string, file string, line
 // caller of the subsystem logger. It is used to recover the filename and line
 // number of the logging call if either the short or long file flags are
 // specified.
-const calldepth = 3
+const calldepth = 4
 
 // callsite returns the file name and line number of the callsite to the
 // subsystem logger.

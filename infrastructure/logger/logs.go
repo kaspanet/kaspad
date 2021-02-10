@@ -33,41 +33,9 @@
 package logger
 
 import (
-	"os"
-	"strings"
-	"sync/atomic"
-
 	"github.com/jrick/logrotate/rotator"
+	"sync/atomic"
 )
-
-// defaultFlags specifies changes to the default logger behavior. It is set
-// during package init and configured using the LOGFLAGS environment variable.
-// New logger backends can override these default flags using WithFlags.
-var defaultFlags uint32
-
-// Flags to modify Backend's behavior.
-const (
-	// Llongfile modifies the logger output to include full path and line number
-	// of the logging callsite, e.g. /a/b/c/main.go:123.
-	Llongfile uint32 = 1 << iota
-
-	// Lshortfile modifies the logger output to include filename and line number
-	// of the logging callsite, e.g. main.go:123. Overrides Llongfile.
-	Lshortfile
-)
-
-// Read logger flags from the LOGFLAGS environment variable. Multiple flags can
-// be set at once, separated by commas.
-func init() {
-	for _, f := range strings.Split(os.Getenv("LOGFLAGS"), ",") {
-		switch f {
-		case "longfile":
-			defaultFlags |= Llongfile
-		case "shortfile":
-			defaultFlags |= Lshortfile
-		}
-	}
-}
 
 type backendLogRotator struct {
 	*rotator.Rotator
