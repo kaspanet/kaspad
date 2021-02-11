@@ -14,13 +14,19 @@ func HandleStopNotifyingUTXOsChanged(context *rpccontext.Context, router *router
 		return errorMessage, nil
 	}
 
-	StopNotifyingUTXOsChangedRequest := request.(*appmessage.StopNotifyingUTXOsChangedRequestMessage)
+	stopNotifyingUTXOsChangedRequest := request.(*appmessage.StopNotifyingUTXOsChangedRequestMessage)
+	addresses, err := context.ConvertAddressStringsToUTXOsChangedNotificationAddresses(stopNotifyingUTXOsChangedRequest.Addresses)
+	if err != nil {
+		errorMessage := appmessage.NewNotifyUTXOsChangedResponseMessage()
+		errorMessage.Error = appmessage.RPCErrorf("Parsing error: %s", err)
+		return errorMessage, nil
+	}
 
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.StopPropagatingUTXOsChangedNotifications(StopNotifyingUTXOsChangedRequest.Addresses)
+	listener.StopPropagatingUTXOsChangedNotifications(addresses)
 
 	response := appmessage.NewStopNotifyingUTXOsChangedResponseMessage()
 	return response, nil

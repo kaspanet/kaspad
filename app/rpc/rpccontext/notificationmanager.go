@@ -31,7 +31,7 @@ type NotificationListener struct {
 	propagateUTXOsChangedNotifications                          bool
 	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
 
-	propagateUTXOsChangedNotificationAddresses map[string]*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -222,49 +222,64 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
 	if !nl.propagateUTXOsChangedNotifications {
 		nl.propagateUTXOsChangedNotifications = true
-		nl.propagateUTXOsChangedNotificationAddresses = make(map[string]*UTXOsChangedNotificationAddress, len(addresses))
+		nl.propagateUTXOsChangedNotificationAddresses =
+			make(map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress, len(addresses))
 	}
 
 	for _, address := range addresses {
-		nl.propagateUTXOsChangedNotificationAddresses[address.Address] = address
+		nl.propagateUTXOsChangedNotificationAddresses[address.ScriptPublicKeyString] = address
 	}
 }
 
 // StopPropagatingUTXOsChangedNotifications instructs the listener to stop sending UTXOs
 // changed notifications to the remote listener for the given addresses. Addresses for which
 // notifications are not currently sent are ignored.
-func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(addresses []string) {
+func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
 	if !nl.propagateUTXOsChangedNotifications {
 		return
 	}
 
 	for _, address := range addresses {
-		delete(nl.propagateUTXOsChangedNotificationAddresses, address)
+		delete(nl.propagateUTXOsChangedNotificationAddresses, address.ScriptPublicKeyString)
 	}
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	utxoChanges *utxoindex.UTXOChanges) *appmessage.UTXOsChangedNotificationMessage {
 
+	// As an optimization, we iterate over the smaller set (O(n)) among the two below
+	// and check existence over the larger set (O(1))
+	utxoChangesSize := len(utxoChanges.Added) + len(utxoChanges.Removed)
+	addressesSize := len(nl.propagateUTXOsChangedNotificationAddresses)
+
 	notification := &appmessage.UTXOsChangedNotificationMessage{}
-	for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
-		listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
-		if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
-			notification.Added = append(notification.Added,
-				ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)...)
+	if utxoChangesSize < addressesSize {
+		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
+			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
+				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
+				notification.Added = append(notification.Added, utxosByAddressesEntries...)
+			}
 		}
-		if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
-			for outpoint := range removedOutpoints {
-				notification.Removed = append(notification.Removed, &appmessage.UTXOsByAddressesEntry{
-					Address: listenerAddress.Address,
-					Outpoint: &appmessage.RPCOutpoint{
-						TransactionID: outpoint.TransactionID.String(),
-						Index:         outpoint.Index,
-					},
-				})
+		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
+			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
+				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
+			}
+		}
+	} else {
+		for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
+			listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
+			if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
+				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
+				notification.Added = append(notification.Added, utxosByAddressesEntries...)
+			}
+			if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
+				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
 	}
+
 	return notification
 }
 
