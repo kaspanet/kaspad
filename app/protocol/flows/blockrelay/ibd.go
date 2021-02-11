@@ -221,7 +221,6 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 	// headers
 	blockHeadersMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
 	errChan := make(chan error)
-	doneChan := make(chan interface{})
 	spawn("handleRelayInvsFlow-downloadHeaders", func() {
 		for {
 			blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
@@ -230,7 +229,7 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 				return
 			}
 			if doneIBD {
-				doneChan <- struct{}{}
+				close(blockHeadersMessageChan)
 				return
 			}
 
@@ -246,7 +245,10 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 
 	for {
 		select {
-		case blockHeadersMessage := <-blockHeadersMessageChan:
+		case blockHeadersMessage, ok := <-blockHeadersMessageChan:
+			if !ok {
+				return nil
+			}
 			for _, header := range blockHeadersMessage.BlockHeaders {
 				err = flow.processHeader(header)
 				if err != nil {
@@ -255,8 +257,6 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 			}
 		case err := <-errChan:
 			return err
-		case <-doneChan:
-			return nil
 		}
 	}
 }
