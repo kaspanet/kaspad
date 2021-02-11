@@ -65,7 +65,7 @@ is used for this project.
 
 ## Documentation
 
-The documentation is a work-in-progress.
+The [documentation](https://github.com/kaspanet/docs) is a work-in-progress
 
 ## License
 

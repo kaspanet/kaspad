@@ -27,16 +27,16 @@ type testJSON struct {
 func TestPruning(t *testing.T) {
 	expectedPruningPointByNet := map[string]map[string]string{
 		"chain-for-test-pruning.json": {
-			"kaspa-mainnet": "1582",
-			"kaspa-simnet":  "1582",
-			"kaspa-devnet":  "1582",
-			"kaspa-testnet": "1582",
+			dagconfig.MainnetParams.Name: "1582",
+			dagconfig.TestnetParams.Name: "1582",
+			dagconfig.DevnetParams.Name:  "1582",
+			dagconfig.SimnetParams.Name:  "1582",
 		},
 		"dag-for-test-pruning.json": {
-			"kaspa-mainnet": "503",
-			"kaspa-simnet":  "502",
-			"kaspa-devnet":  "503",
-			"kaspa-testnet": "503",
+			dagconfig.MainnetParams.Name: "503",
+			dagconfig.TestnetParams.Name: "503",
+			dagconfig.DevnetParams.Name:  "503",
+			dagconfig.SimnetParams.Name:  "502",
 		},
 	}
 
