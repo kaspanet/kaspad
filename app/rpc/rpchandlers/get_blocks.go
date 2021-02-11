@@ -50,6 +50,9 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		return nil, err
 	}
 
+	// prepend low hash to make it inclusive
+	blockHashes = append([]*externalapi.DomainHash{lowHash}, blockHashes...)
+
 	// If there are no maxBlocksInGetBlocksResponse between lowHash and virtualSelectedParent -
 	// add virtualSelectedParent's anticone
 	if len(blockHashes) < maxBlocksInGetBlocksResponse {
