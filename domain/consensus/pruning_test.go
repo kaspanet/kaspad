@@ -1,17 +1,18 @@
 package consensus
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestPruningDepth(t *testing.T) {
 	expectedResult := map[string]uint64{
-		"kaspa-mainnet": 244838,
-		"kaspa-testnet": 244838,
-		"kaspa-devnet":  244838,
-		"kaspa-simnet":  192038,
+		dagconfig.MainnetParams.Name: 244838,
+		dagconfig.TestnetParams.Name: 244838,
+		dagconfig.DevnetParams.Name:  244838,
+		dagconfig.SimnetParams.Name:  192038,
 	}
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		expected, found := expectedResult[params.Name]
