@@ -31,7 +31,7 @@ type NotificationListener struct {
 	propagateUTXOsChangedNotifications                          bool
 	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
 
-	propagateUTXOsChangedNotificationAddresses []*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses map[string]*UTXOsChangedNotificationAddress
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -218,8 +218,14 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 // PropagateUTXOsChangedNotifications instructs the listener to send UTXOs changed notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
-	nl.propagateUTXOsChangedNotifications = true
-	nl.propagateUTXOsChangedNotificationAddresses = addresses
+	if !nl.propagateUTXOsChangedNotifications {
+		nl.propagateUTXOsChangedNotifications = true
+		nl.propagateUTXOsChangedNotificationAddresses = make(map[string]*UTXOsChangedNotificationAddress, len(addresses))
+	}
+
+	for _, address := range addresses {
+		nl.propagateUTXOsChangedNotificationAddresses[address.Address] = address
+	}
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
