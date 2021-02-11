@@ -41,7 +41,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		return nil, err
 	}
 	if lowBlockGHOSTDAGData.BlueScore() > highBlockGHOSTDAGData.BlueScore() {
-		return nil, errors.Errorf("low hash blueScore >= high hash blueScore (%d >= %d)",
+		return nil, errors.Errorf("low hash blueScore > high hash blueScore (%d > %d)",
 			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
 	}
 
