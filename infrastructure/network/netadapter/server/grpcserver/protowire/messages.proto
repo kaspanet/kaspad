@@ -105,6 +105,8 @@ message KaspadMessage {
     UnbanResponseMessage unbanResponse = 1062;
     GetInfoRequestMessage getInfoRequest = 1063;
     GetInfoResponseMessage getInfoResponse = 1064;
+    StopNotifyingUtxosChangedRequestMessage stopNotifyingUtxosChangedRequest = 1065;
+    StopNotifyingUtxosChangedResponseMessage stopNotifyingUtxosChangedResponse = 1066;
   }
 }
 
