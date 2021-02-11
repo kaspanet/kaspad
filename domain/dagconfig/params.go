@@ -256,7 +256,7 @@ var MainnetParams = Params{
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet",
+	Name:        "kaspa-testnet-2",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
