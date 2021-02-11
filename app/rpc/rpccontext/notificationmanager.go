@@ -216,7 +216,9 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 }
 
 // PropagateUTXOsChangedNotifications instructs the listener to send UTXOs changed notifications
-// to the remote listener
+// to the remote listener for the given addresses. Subsequent calls instruct the listener to
+// send UTXOs changed notifications for those addresses along with the old ones. Duplicate addresses
+// are ignored.
 func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
 	if !nl.propagateUTXOsChangedNotifications {
 		nl.propagateUTXOsChangedNotifications = true
@@ -225,6 +227,19 @@ func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*
 
 	for _, address := range addresses {
 		nl.propagateUTXOsChangedNotificationAddresses[address.Address] = address
+	}
+}
+
+// StopPropagatingUTXOsChangedNotifications instructs the listener to stop sending UTXOs
+// changed notifications to the remote listener for the given addresses. Addresses for which
+// notifications are not currently sent are ignored.
+func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(addresses []string) {
+	if !nl.propagateUTXOsChangedNotifications {
+		return
+	}
+
+	for _, address := range addresses {
+		delete(nl.propagateUTXOsChangedNotificationAddresses, address)
 	}
 }
 
