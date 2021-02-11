@@ -19,7 +19,7 @@ func TestBlueBlockWindow(t *testing.T) {
 		id                               string //id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
 		expectedWindowWithGenesisPadding []string
 	}{
-		"kaspa-mainnet": {
+		dagconfig.MainnetParams.Name: {
 			{
 				parents:                          []string{"A"},
 				id:                               "B",
@@ -91,7 +91,7 @@ func TestBlueBlockWindow(t *testing.T) {
 				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "H"},
 			},
 		},
-		"kaspa-testnet": {
+		dagconfig.TestnetParams.Name: {
 			{
 				parents:                          []string{"A"},
 				id:                               "B",
@@ -163,7 +163,7 @@ func TestBlueBlockWindow(t *testing.T) {
 				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "H", "C", "D"},
 			},
 		},
-		"kaspa-devnet": {
+		dagconfig.DevnetParams.Name: {
 			{
 				parents:                          []string{"A"},
 				id:                               "B",
@@ -235,7 +235,7 @@ func TestBlueBlockWindow(t *testing.T) {
 				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "H", "C", "D"},
 			},
 		},
-		"kaspa-simnet": {
+		dagconfig.SimnetParams.Name: {
 			{
 				parents:                          []string{"A"},
 				id:                               "B",
