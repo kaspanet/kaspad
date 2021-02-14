@@ -58,6 +58,25 @@ func (as *addressStore) restoreNotBannedAddresses() error {
 }
 
 func (as *addressStore) restoreBannedAddresses() error {
+	cursor, err := as.database.Cursor(bannedAddressBucket)
+	if err != nil {
+		return err
+	}
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		databaseKey, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		var ipv6 ipv6
+		copy(ipv6[:], databaseKey.Suffix())
+
+		serializedNetAddress, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		netAddress := as.deserializeNetAddress(serializedNetAddress)
+		as.bannedAddresses[ipv6] = netAddress
+	}
 	return nil
 }
 
