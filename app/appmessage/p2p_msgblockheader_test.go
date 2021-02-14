@@ -11,15 +11,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestBlockHeader tests the MsgBlockHeader API.
 func TestBlockHeader(t *testing.T) {
-	nonce, err := random.Uint64()
-	if err != nil {
-		t.Errorf("random.Uint64: Error generating nonce: %v", err)
-	}
+	nonce := uint64(0xba4d87a69924a93d)
 
 	hashes := []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}
 
