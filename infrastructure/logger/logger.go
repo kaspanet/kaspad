@@ -33,7 +33,7 @@ var (
 )
 
 // RegisterSubSystem Registers a new subsystem logger, should be called in a global variable,
-// panics if the subsystem is already registered
+// returns the existing one if the subsystem is already registered
 func RegisterSubSystem(subsystem string) *Logger {
 	subsystemLoggersMutex.Lock()
 	defer subsystemLoggersMutex.Unlock()
@@ -43,6 +43,21 @@ func RegisterSubSystem(subsystem string) *Logger {
 		subsystemLoggers[subsystem] = logger
 	}
 	return logger
+}
+
+// InitLogStdoutOnly attaches stdout to the backend log and starts the logger.
+func InitLogStdoutOnly(logLevel Level) {
+	err := BackendLog.AddLogWriter(os.Stdout, logLevel)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error adding stdout to the loggerfor level %s: %s", LevelWarn, err)
+		os.Exit(1)
+	}
+
+	err = BackendLog.Run()
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error starting the logger: %s ", err)
+		os.Exit(1)
+	}
 }
 
 // InitLog attaches log file and error log file to the backend log.
@@ -58,18 +73,20 @@ func InitLog(logFile, errLogFile string) {
 		_, _ = fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, LevelWarn, err)
 		os.Exit(1)
 	}
+
+	InitLogStdoutOnly(LevelInfo)
 }
 
 // SetLogLevel sets the logging level for provided subsystem. Invalid
 // subsystems are ignored. Uninitialized subsystems are dynamically created as
 // needed.
 func SetLogLevel(subsystemID string, logLevel string) error {
-	// Ignore invalid subsystems.
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
 	logger, ok := subsystemLoggers[subsystemID]
 	if !ok {
 		return errors.Errorf("'%s' Isn't a valid subsystem", subsystemID)
 	}
-	// Defaults to info if the log level is invalid.
 	level, ok := LevelFromString(logLevel)
 	if !ok {
 		return errors.Errorf("'%s' Isn't a valid log level", logLevel)
@@ -79,22 +96,27 @@ func SetLogLevel(subsystemID string, logLevel string) error {
 	return nil
 }
 
-// SetLogLevels sets the log level for all subsystem loggers to the passed
-// level. It also dynamically creates the subsystem loggers as needed, so it
-// can be used to initialize the logging system.
-func SetLogLevels(logLevel string) error {
-	subsystemLoggersMutex.Lock()
-	defer subsystemLoggersMutex.Unlock()
-	// Configure all sub-systems with the new logging level. Dynamically
-	// create loggers as needed.
+// SetLogLevelsString the same as SetLogLevels but also parses the level from a string
+func SetLogLevelsString(logLevel string) error {
 	level, ok := LevelFromString(logLevel)
 	if !ok {
 		return errors.Errorf("'%s' Isn't a valid log level", logLevel)
 	}
-	for _, logger := range subsystemLoggers {
-		logger.SetLevel(level)
-	}
+	SetLogLevels(level)
 	return nil
+}
+
+// SetLogLevels sets the log level for all subsystem loggers to the passed
+// level. It also dynamically creates the subsystem loggers as needed, so it
+// can be used to initialize the logging system.
+func SetLogLevels(logLevel Level) {
+	subsystemLoggersMutex.Lock()
+	defer subsystemLoggersMutex.Unlock()
+	// Configure all sub-systems with the new logging level. Dynamically
+	// create loggers as needed.
+	for _, logger := range subsystemLoggers {
+		logger.SetLevel(logLevel)
+	}
 }
 
 // SupportedSubsystems returns a sorted slice of the supported subsystems for
@@ -134,7 +156,7 @@ func ParseAndSetLogLevels(logLevel string) error {
 		}
 
 		// Change the logging level for all subsystems.
-		return SetLogLevels(logLevel)
+		return SetLogLevelsString(logLevel)
 	}
 
 	// Split the specified string into subsystem/level pairs while detecting
@@ -169,19 +191,4 @@ func ParseAndSetLogLevels(logLevel string) error {
 		}
 	}
 	return nil
-}
-
-// LogClosure is a closure that can be printed with %s to be used to
-// generate expensive-to-create data for a detailed log level and avoid doing
-// the work if the data isn't printed.
-type LogClosure func() string
-
-func (c LogClosure) String() string {
-	return c()
-}
-
-// NewLogClosure casts a function to a LogClosure.
-// See LogClosure for details.
-func NewLogClosure(c func() string) LogClosure {
-	return c
 }
