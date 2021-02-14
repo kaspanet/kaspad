@@ -450,6 +450,20 @@ message UtxosByAddressesEntry {
   RpcUtxoEntry utxoEntry = 3;
 }
 
+// StopNotifyingUtxosChangedRequestMessage unregisters this connection for utxoChanged notifications
+// for the given addresses.
+//
+// This call is only available when this kaspad was started with `--utxoindex`
+//
+// See: UtxosChangedNotificationMessage
+message StopNotifyingUtxosChangedRequestMessage {
+  repeated string addresses = 1;
+}
+
+message StopNotifyingUtxosChangedResponseMessage {
+  RPCError error = 1000;
+}
+
 message RpcTransaction {
   uint32 version = 1;
   repeated RpcTransactionInput inputs = 2;
