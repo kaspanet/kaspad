@@ -90,7 +90,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		return nil, err
 	}
 
-	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg))
+	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg), db)
 	if err != nil {
 		return nil, err
 	}

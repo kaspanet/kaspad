@@ -5,6 +5,7 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"sync"
@@ -58,67 +59,70 @@ func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[addressKey]bool
 // AddressManager provides a concurrency safe address manager for caching potential
 // peers on the Kaspa network.
 type AddressManager struct {
-	addresses       map[addressKey]*appmessage.NetAddress
-	bannedAddresses map[ipv6]*appmessage.NetAddress
-	localAddresses  *localAddressManager
-	mutex           sync.Mutex
-	cfg             *Config
-	random          addressRandomizer
+	store          *addressStore
+	localAddresses *localAddressManager
+	mutex          sync.Mutex
+	cfg            *Config
+	random         addressRandomizer
 }
 
 // New returns a new Kaspa address manager.
-func New(cfg *Config) (*AddressManager, error) {
+func New(cfg *Config, database database.Database) (*AddressManager, error) {
+	addressStore, err := newAddressStore(database)
+	if err != nil {
+		return nil, err
+	}
 	localAddresses, err := newLocalAddressManager(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AddressManager{
-		addresses:       map[addressKey]*appmessage.NetAddress{},
-		bannedAddresses: map[ipv6]*appmessage.NetAddress{},
-		localAddresses:  localAddresses,
-		random:          NewAddressRandomize(),
-		cfg:             cfg,
+		store:          addressStore,
+		localAddresses: localAddresses,
+		random:         NewAddressRandomize(),
+		cfg:            cfg,
 	}, nil
 }
 
-func (am *AddressManager) addAddressNoLock(address *appmessage.NetAddress) {
+func (am *AddressManager) addAddressNoLock(address *appmessage.NetAddress) error {
 	if !IsRoutable(address, am.cfg.AcceptUnroutable) {
-		return
+		return nil
 	}
 
 	key := netAddressKey(address)
-	_, ok := am.addresses[key]
-	if !ok {
-		am.addresses[key] = address
-	}
+	return am.store.add(key, address)
 }
 
 // AddAddress adds address to the address manager
-func (am *AddressManager) AddAddress(address *appmessage.NetAddress) {
+func (am *AddressManager) AddAddress(address *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	am.addAddressNoLock(address)
+	return am.addAddressNoLock(address)
 }
 
 // AddAddresses adds addresses to the address manager
-func (am *AddressManager) AddAddresses(addresses ...*appmessage.NetAddress) {
+func (am *AddressManager) AddAddresses(addresses ...*appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	for _, address := range addresses {
-		am.addAddressNoLock(address)
+		err := am.addAddressNoLock(address)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // RemoveAddress removes addresses from the address manager
-func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) {
+func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	delete(am.addresses, key)
+	return am.store.remove(key)
 }
 
 // Addresses returns all addresses
@@ -126,12 +130,7 @@ func (am *AddressManager) Addresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
-	for _, address := range am.addresses {
-		result = append(result, address)
-	}
-
-	return result
+	return am.store.getAllNotBanned()
 }
 
 // BannedAddresses returns all banned addresses
@@ -139,28 +138,15 @@ func (am *AddressManager) BannedAddresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.bannedAddresses))
-	for _, address := range am.bannedAddresses {
-		result = append(result, address)
-	}
-
-	return result
+	return am.store.getAllBanned()
 }
 
 // notBannedAddressesWithException returns all not banned addresses with excpetion
 func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
-	exceptionsKeys := netAddressesKeys(exceptions)
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	result := make([]*appmessage.NetAddress, 0, len(am.addresses))
-	for key, address := range am.addresses {
-		if !exceptionsKeys[key] {
-			result = append(result, address)
-		}
-	}
-
-	return result
+	return am.store.getAllNotBannedWithout(exceptions)
 }
 
 // RandomAddress returns a random address that isn't banned and isn't in exceptions
@@ -182,23 +168,26 @@ func (am *AddressManager) BestLocalAddress(remoteAddress *appmessage.NetAddress)
 }
 
 // Ban marks the given address as banned
-func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) {
+func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	keyToBan := netAddressKey(addressToBan)
 	keysToDelete := make([]addressKey, 0)
-	for _, address := range am.addresses {
+	for _, address := range am.store.getAllNotBanned() {
 		key := netAddressKey(address)
 		if key.address.equal(keyToBan.address) {
 			keysToDelete = append(keysToDelete, key)
 		}
 	}
 	for _, key := range keysToDelete {
-		delete(am.addresses, key)
+		err := am.store.remove(key)
+		if err != nil {
+			return err
+		}
 	}
 
-	am.bannedAddresses[keyToBan.address] = addressToBan
+	return am.store.addBanned(keyToBan, addressToBan)
 }
 
 // Unban unmarks the given address as banned
@@ -207,14 +196,12 @@ func (am *AddressManager) Unban(address *appmessage.NetAddress) error {
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	_, ok := am.bannedAddresses[key.address]
-	if !ok {
+	if !am.store.isBanned(key) {
 		return errors.Wrapf(ErrAddressNotFound, "address %s "+
 			"is not registered with the address manager as banned", address.TCPAddress())
 	}
 
-	delete(am.bannedAddresses, key.address)
-	return nil
+	return am.store.removeBanned(key)
 }
 
 // IsBanned returns true if the given address is marked as banned
@@ -223,9 +210,12 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	defer am.mutex.Unlock()
 
 	key := netAddressKey(address)
-	am.unbanIfOldEnough(key.address)
-	if _, ok := am.bannedAddresses[key.address]; !ok {
-		if _, ok = am.addresses[key]; !ok {
+	err := am.unbanIfOldEnough(key)
+	if err != nil {
+		return false, err
+	}
+	if !am.store.isBanned(key) {
+		if !am.store.isNotBanned(key) {
 			return false, errors.Wrapf(ErrAddressNotFound, "address %s "+
 				"is not registered with the address manager", address.TCPAddress())
 		}
@@ -236,14 +226,18 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 
 }
 
-func (am *AddressManager) unbanIfOldEnough(ipv6Address ipv6) {
-	address, ok := am.bannedAddresses[ipv6Address]
+func (am *AddressManager) unbanIfOldEnough(key addressKey) error {
+	address, ok := am.store.getBanned(key)
 	if !ok {
-		return
+		return nil
 	}
 
 	const maxBanTime = 24 * time.Hour
 	if mstime.Since(address.Timestamp) > maxBanTime {
-		delete(am.bannedAddresses, ipv6Address)
+		err := am.store.removeBanned(key)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
