@@ -35,6 +35,5 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 		return protocolerrors.Errorf(true, "address count exceeded %d", addressmanager.GetAddressesMax)
 	}
 
-	context.AddressManager().AddAddresses(msgAddresses.AddressList...)
-	return nil
+	return context.AddressManager().AddAddresses(msgAddresses.AddressList...)
 }
