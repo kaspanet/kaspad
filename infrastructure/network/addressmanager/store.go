@@ -31,6 +31,10 @@ func newAddressStore(database database.Database) (*addressStore, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("Loaded %d addresses and %d banned addresses",
+		len(addressStore.notBannedAddresses), len(addressStore.bannedAddresses))
+
 	return addressStore, nil
 }
 
