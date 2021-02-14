@@ -139,14 +139,6 @@ message DbUtxoDiff {
   repeated DbUtxoCollectionItem toRemove = 2;
 }
 
-message DbPruningPointUTXOSetBytes {
-  bytes bytes = 1;
-}
-
-message DbHeaderTips {
-  repeated DbHash tips = 1;
-}
-
 message DbTips {
   repeated DbHash tips = 1;
 }

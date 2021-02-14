@@ -21,7 +21,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util/pointers"
 )
 
 // BuildBlockVerboseData builds a BlockVerboseData from the given blockHeader.
@@ -179,7 +178,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		passesFilter := len(filterAddrMap) == 0
 		var encodedAddr string
 		if addr != nil {
-			encodedAddr = *pointers.String(addr.EncodeAddress())
+			encodedAddr = addr.EncodeAddress()
 
 			// If the filter doesn't already pass, make it pass if
 			// the address exists in the filter.

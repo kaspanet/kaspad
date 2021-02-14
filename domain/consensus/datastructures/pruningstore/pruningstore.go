@@ -196,20 +196,6 @@ func (ps *pruningStore) deserializePruningPoint(pruningPointBytes []byte) (*exte
 	return serialization.DbHashToDomainHash(dbHash)
 }
 
-func (ps *pruningStore) serializeUTXOSetBytes(pruningPointUTXOSetBytes []byte) ([]byte, error) {
-	return proto.Marshal(&serialization.DbPruningPointUTXOSetBytes{Bytes: pruningPointUTXOSetBytes})
-}
-
-func (ps *pruningStore) deserializeUTXOSetBytes(dbPruningPointUTXOSetBytes []byte) ([]byte, error) {
-	dbPruningPointUTXOSet := &serialization.DbPruningPointUTXOSetBytes{}
-	err := proto.Unmarshal(dbPruningPointUTXOSetBytes, dbPruningPointUTXOSet)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbPruningPointUTXOSet.Bytes, nil
-}
-
 func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) {
 	if ps.pruningPointStaging != nil {
 		return true, nil
