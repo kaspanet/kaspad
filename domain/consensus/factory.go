@@ -62,19 +62,22 @@ type Factory interface {
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 	SetTestLevelDBCacheSize(cacheSizeMiB int)
 	SetTestPreAllocateCache(preallocateCaches bool)
+	SetTestMedianTimeManager(medianTimeConstructor MEDIAN)
 }
 
 type factory struct {
-	dataDir             string
-	ghostdagConstructor GHOSTDAGManagerConstructor
-	cacheSizeMiB        *int
-	preallocateCaches   *bool
+	dataDir                  string
+	ghostdagConstructor      GHOSTDAGManagerConstructor
+	pastMedianTimeConsructor MEDIAN
+	cacheSizeMiB             *int
+	preallocateCaches        *bool
 }
 
 // NewFactory creates a new Consensus factory
 func NewFactory() Factory {
 	return &factory{
-		ghostdagConstructor: ghostdagmanager.New,
+		ghostdagConstructor:      ghostdagmanager.New,
+		pastMedianTimeConsructor: pastmediantimemanager.New,
 	}
 }
 
@@ -142,7 +145,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		reachabilityDataStore,
 		ghostdagManager)
-	pastMedianTimeManager := pastmediantimemanager.New(
+	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
@@ -462,6 +465,10 @@ func (f *factory) SetTestDataDir(dataDir string) {
 
 func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
 	f.ghostdagConstructor = ghostdagConstructor
+}
+
+func (f *factory) SetTestMedianTimeManager(medianTimeConstructor MEDIAN) {
+	f.pastMedianTimeConsructor = medianTimeConstructor
 }
 
 func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
