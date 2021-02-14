@@ -148,8 +148,7 @@ func (as *addressStore) notBannedDatabaseKey(key addressKey) *database.Key {
 }
 
 func (as *addressStore) bannedDatabaseKey(key addressKey) *database.Key {
-	serializedKey := as.serializeAddressKey(key)
-	return bannedAddressBucket.Key(serializedKey)
+	return bannedAddressBucket.Key(key.address[:])
 }
 
 func (as *addressStore) serializeAddressKey(key addressKey) []byte {
