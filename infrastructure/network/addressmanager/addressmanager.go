@@ -166,7 +166,7 @@ func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) {
 
 	keyToBan := netAddressKey(addressToBan)
 	keysToDelete := make([]addressKey, 0)
-	for _, address := range am.store.addresses {
+	for _, address := range am.store.getAllNotBanned() {
 		key := netAddressKey(address)
 		if key.address.equal(keyToBan.address) {
 			keysToDelete = append(keysToDelete, key)
