@@ -33,20 +33,25 @@
 package logger
 
 import (
-	"github.com/jrick/logrotate/rotator"
+	"bytes"
+	"fmt"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"os"
+	"runtime"
 	"sync/atomic"
 )
 
-type backendLogRotator struct {
-	*rotator.Rotator
-	logLevel Level
-}
-
 // Logger is a subsystem logger for a Backend.
 type Logger struct {
-	lvl Level // atomic
-	tag string
-	b   *Backend
+	lvl       Level // atomic
+	tag       string
+	b         *Backend
+	writeChan chan<- logEntry
+}
+
+type logEntry struct {
+	log   []byte
+	level Level
 }
 
 // Trace formats message using the default formats for its operands, prepends
@@ -126,7 +131,7 @@ func (l *Logger) Criticalf(format string, args ...interface{}) {
 func (l *Logger) Write(logLevel Level, args ...interface{}) {
 	lvl := l.Level()
 	if lvl <= logLevel {
-		l.b.print(logLevel, l.tag, args...)
+		l.print(logLevel, l.tag, args...)
 	}
 }
 
@@ -135,7 +140,7 @@ func (l *Logger) Write(logLevel Level, args ...interface{}) {
 func (l *Logger) Writef(logLevel Level, format string, args ...interface{}) {
 	lvl := l.Level()
 	if lvl <= logLevel {
-		l.b.printf(logLevel, l.tag, format, args...)
+		l.printf(logLevel, l.tag, format, args...)
 	}
 }
 
@@ -152,4 +157,135 @@ func (l *Logger) SetLevel(level Level) {
 // Backend returns the log backend
 func (l *Logger) Backend() *Backend {
 	return l.b
+}
+
+// printf outputs a log message to the writer associated with the backend after
+// creating a prefix for the given level and tag according to the formatHeader
+// function and formatting the provided arguments according to the given format
+// specifier.
+func (l *Logger) printf(lvl Level, tag string, format string, args ...interface{}) {
+	t := mstime.Now() // get as early as possible
+
+	var file string
+	var line int
+	if l.b.flag&(Lshortfile|Llongfile) != 0 {
+		file, line = callsite(l.b.flag)
+	}
+
+	buf := make([]byte, 0, normalLogSize)
+
+	formatHeader(&buf, t, lvl.String(), tag, file, line)
+	bytesBuf := bytes.NewBuffer(buf)
+	_, _ = fmt.Fprintf(bytesBuf, format, args...)
+	bytesBuf.WriteByte('\n')
+
+	if !l.b.IsRunning() {
+		panic("Writing to the logger when it's not running")
+	}
+	l.writeChan <- logEntry{bytesBuf.Bytes(), lvl}
+}
+
+// print outputs a log message to the writer associated with the backend after
+// creating a prefix for the given level and tag according to the formatHeader
+// function and formatting the provided arguments using the default formatting
+// rules.
+func (l *Logger) print(lvl Level, tag string, args ...interface{}) {
+	if atomic.LoadUint32(&l.b.isRunning) == 0 {
+		panic("printing log without initializing")
+	}
+	t := mstime.Now() // get as early as possible
+
+	var file string
+	var line int
+	if l.b.flag&(Lshortfile|Llongfile) != 0 {
+		file, line = callsite(l.b.flag)
+	}
+
+	buf := make([]byte, 0, normalLogSize)
+	formatHeader(&buf, t, lvl.String(), tag, file, line)
+	bytesBuf := bytes.NewBuffer(buf)
+	_, _ = fmt.Fprintln(bytesBuf, args...)
+
+	if !l.b.IsRunning() {
+		panic("Writing to the logger when it's not running")
+	}
+	l.writeChan <- logEntry{bytesBuf.Bytes(), lvl}
+}
+
+// From stdlib log package.
+// Cheap integer to fixed-width decimal ASCII. Give a negative width to avoid zero-padding.
+func itoa(buf *[]byte, i int, wid int) {
+	// Assemble decimal in reverse order.
+	var b [20]byte
+	bp := len(b) - 1
+	for i >= 10 || wid > 1 {
+		wid--
+		q := i / 10
+		b[bp] = byte('0' + i - q*10)
+		bp--
+		i = q
+	}
+	// i < 10
+	b[bp] = byte('0' + i)
+	*buf = append(*buf, b[bp:]...)
+}
+
+// Appends a header in the default format 'YYYY-MM-DD hh:mm:ss.sss [LVL] TAG: '.
+// If either of the Lshortfile or Llongfile flags are specified, the file named
+// and line number are included after the tag and before the final colon.
+func formatHeader(buf *[]byte, t mstime.Time, lvl, tag string, file string, line int) {
+	year, month, day := t.Date()
+	hour, min, sec := t.Clock()
+	ms := t.Millisecond()
+
+	itoa(buf, year, 4)
+	*buf = append(*buf, '-')
+	itoa(buf, int(month), 2)
+	*buf = append(*buf, '-')
+	itoa(buf, day, 2)
+	*buf = append(*buf, ' ')
+	itoa(buf, hour, 2)
+	*buf = append(*buf, ':')
+	itoa(buf, min, 2)
+	*buf = append(*buf, ':')
+	itoa(buf, sec, 2)
+	*buf = append(*buf, '.')
+	itoa(buf, ms, 3)
+	*buf = append(*buf, " ["...)
+	*buf = append(*buf, lvl...)
+	*buf = append(*buf, "] "...)
+	*buf = append(*buf, tag...)
+	if file != "" {
+		*buf = append(*buf, ' ')
+		*buf = append(*buf, file...)
+		*buf = append(*buf, ':')
+		itoa(buf, line, -1)
+	}
+	*buf = append(*buf, ": "...)
+}
+
+// calldepth is the call depth of the callsite function relative to the
+// caller of the subsystem logger. It is used to recover the filename and line
+// number of the logging call if either the short or long file flags are
+// specified.
+const calldepth = 4
+
+// callsite returns the file name and line number of the callsite to the
+// subsystem logger.
+func callsite(flag uint32) (string, int) {
+	_, file, line, ok := runtime.Caller(calldepth)
+	if !ok {
+		return "???", 0
+	}
+	if flag&Lshortfile != 0 {
+		short := file
+		for i := len(file) - 1; i > 0; i-- {
+			if os.IsPathSeparator(file[i]) {
+				short = file[i+1:]
+				break
+			}
+		}
+		file = short
+	}
+	return file, line
 }
