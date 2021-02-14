@@ -5,12 +5,13 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"io/ioutil"
 	"net"
+	"reflect"
 	"testing"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 )
@@ -32,7 +33,9 @@ func newAddrManagerForTest(t *testing.T, testName string) (addressManager *Addre
 		t.Fatalf("%s: error creating address manager: %s", testName, err)
 	}
 
-	return addressManager, func() {}
+	return addressManager, func() {
+		database.Close()
+	}
 }
 
 func TestBestLocalAddress(t *testing.T) {
@@ -115,5 +118,104 @@ func TestBestLocalAddress(t *testing.T) {
 				x, test.remoteAddr.IP, test.want2.IP, got.IP)
 			continue
 		}
+	}
+}
+
+func TestAddressManager(t *testing.T) {
+	addressManager, teardown := newAddrManagerForTest(t, "TestAddressManager")
+	defer teardown()
+
+	testAddress1 := &appmessage.NetAddress{IP: net.ParseIP("1.2.3.4"), Timestamp: mstime.Now()}
+	testAddress2 := &appmessage.NetAddress{IP: net.ParseIP("5.6.8.8"), Timestamp: mstime.Now()}
+	testAddress3 := &appmessage.NetAddress{IP: net.ParseIP("9.0.1.2"), Timestamp: mstime.Now()}
+	testAddresses := []*appmessage.NetAddress{testAddress1, testAddress2, testAddress3}
+
+	// Add a few addresses
+	addressManager.AddAddresses(testAddresses...)
+
+	// Make sure that all the addresses are returned
+	addresses := addressManager.Addresses()
+	if len(testAddresses) != len(addresses) {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses. "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses))
+	}
+	for _, testAddress := range testAddresses {
+		found := false
+		for _, address := range addresses {
+			if reflect.DeepEqual(testAddress, address) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("Address %s not returned from Addresses().", testAddress.IP)
+		}
+	}
+
+	// Remove an address
+	addressToRemove := testAddress2
+	addressManager.RemoveAddress(addressToRemove)
+
+	// Make sure that the removed address is not returned
+	addresses = addressManager.Addresses()
+	if len(addresses) != len(testAddresses)-1 {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses(). "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses)-1)
+	}
+	for _, address := range addresses {
+		if reflect.DeepEqual(addressToRemove, address) {
+			t.Fatalf("Removed addresses %s returned from Addresses()", addressToRemove.IP)
+		}
+	}
+
+	// Add that address back
+	addressManager.AddAddress(addressToRemove)
+
+	// Ban a different address
+	addressToBan := testAddress3
+	addressManager.Ban(addressToBan)
+
+	// Make sure that the banned address is not returned
+	addresses = addressManager.Addresses()
+	if len(addresses) != len(testAddresses)-1 {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses(). "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses)-1)
+	}
+	for _, address := range addresses {
+		if reflect.DeepEqual(addressToBan, address) {
+			t.Fatalf("Banned addresses %s returned from Addresses()", addressToBan.IP)
+		}
+	}
+
+	// Check that the address is banned
+	isBanned, err := addressManager.IsBanned(addressToBan)
+	if err != nil {
+		t.Fatalf("IsBanned() failed: %s", err)
+	}
+	if !isBanned {
+		t.Fatalf("Adderss %s is unexpectedly not banned", addressToBan.IP)
+	}
+
+	// Check that BannedAddresses() returns the banned address
+	bannedAddresses := addressManager.BannedAddresses()
+	if len(bannedAddresses) != 1 {
+		t.Fatalf("Unexpected amount of addresses returned from BannedAddresses(). "+
+			"Want: %d, got: %d", 1, len(bannedAddresses))
+	}
+	if !reflect.DeepEqual(addressToBan, bannedAddresses[0]) {
+		t.Fatalf("Banned address %s not returned from BannedAddresses()", addressToBan.IP)
+	}
+
+	// Unban the address
+	err = addressManager.Unban(addressToBan)
+	if err != nil {
+		t.Fatalf("Unban() failed: %s", err)
+	}
+
+	// Check that BannedAddresses() not longer returns the banned address
+	bannedAddresses = addressManager.BannedAddresses()
+	if len(bannedAddresses) != 0 {
+		t.Fatalf("Unexpected amount of addresses returned from BannedAddresses(). "+
+			"Want: %d, got: %d", 0, len(bannedAddresses))
 	}
 }
