@@ -9,7 +9,9 @@ import (
 )
 
 func TestAddressKeySerialization(t *testing.T) {
-	addressStore := newAddressStore(nil)
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressKeySerialization")
+	defer teardown()
+	addressStore := addressManager.store
 
 	testAddress := &appmessage.NetAddress{IP: net.ParseIP("2602:100:abcd::102"), Port: 12345}
 	testAddressKey := netAddressKey(testAddress)
@@ -23,7 +25,9 @@ func TestAddressKeySerialization(t *testing.T) {
 }
 
 func TestNetAddressSerialization(t *testing.T) {
-	addressStore := newAddressStore(nil)
+	addressManager, teardown := newAddressManagerForTest(t, "TestNetAddressSerialization")
+	defer teardown()
+	addressStore := addressManager.store
 
 	testAddress := &appmessage.NetAddress{
 		IP:        net.ParseIP("2602:100:abcd::102"),

@@ -15,7 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 )
 
-func newAddrManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
+func newAddressManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
 	cfg := config.DefaultConfig()
 
 	datadir := t.TempDir()
@@ -75,7 +75,7 @@ func TestBestLocalAddress(t *testing.T) {
 		},
 	}
 
-	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress")
+	amgr, teardown := newAddressManagerForTest(t, "TestGetBestLocalAddress")
 	defer teardown()
 
 	// Test against default when there's no address
@@ -118,7 +118,7 @@ func TestBestLocalAddress(t *testing.T) {
 }
 
 func TestAddressManager(t *testing.T) {
-	addressManager, teardown := newAddrManagerForTest(t, "TestAddressManager")
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressManager")
 	defer teardown()
 
 	testAddress1 := &appmessage.NetAddress{IP: net.ParseIP("1.2.3.4"), Timestamp: mstime.Now()}

@@ -17,12 +17,48 @@ type addressStore struct {
 	bannedAddresses    map[ipv6]*appmessage.NetAddress
 }
 
-func newAddressStore(database database.Database) *addressStore {
-	return &addressStore{
+func newAddressStore(database database.Database) (*addressStore, error) {
+	addressStore := &addressStore{
 		database:           database,
 		notBannedAddresses: map[addressKey]*appmessage.NetAddress{},
 		bannedAddresses:    map[ipv6]*appmessage.NetAddress{},
 	}
+	err := addressStore.restoreNotBannedAddresses()
+	if err != nil {
+		return nil, err
+	}
+	err = addressStore.restoreBannedAddresses()
+	if err != nil {
+		return nil, err
+	}
+	return addressStore, nil
+}
+
+func (as *addressStore) restoreNotBannedAddresses() error {
+	cursor, err := as.database.Cursor(notBannedAddressBucket)
+	if err != nil {
+		return err
+	}
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		databaseKey, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+		serializedKey := databaseKey.Suffix()
+		key := as.deserializeAddressKey(serializedKey)
+
+		serializedNetAddress, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		netAddress := as.deserializeNetAddress(serializedNetAddress)
+		as.notBannedAddresses[key] = netAddress
+	}
+	return nil
+}
+
+func (as *addressStore) restoreBannedAddresses() error {
+	return nil
 }
 
 func (as *addressStore) add(key addressKey, address *appmessage.NetAddress) error {

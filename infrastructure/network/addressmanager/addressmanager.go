@@ -68,13 +68,17 @@ type AddressManager struct {
 
 // New returns a new Kaspa address manager.
 func New(cfg *Config, database database.Database) (*AddressManager, error) {
+	addressStore, err := newAddressStore(database)
+	if err != nil {
+		return nil, err
+	}
 	localAddresses, err := newLocalAddressManager(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AddressManager{
-		store:          newAddressStore(database),
+		store:          addressStore,
 		localAddresses: localAddresses,
 		random:         NewAddressRandomize(),
 		cfg:            cfg,
