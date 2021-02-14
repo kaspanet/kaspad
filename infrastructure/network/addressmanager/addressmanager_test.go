@@ -5,6 +5,8 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"io/ioutil"
 	"net"
 	"testing"
 
@@ -16,13 +18,21 @@ import (
 func newAddrManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
 	cfg := config.DefaultConfig()
 
-	addressManager, err := New(NewConfig(cfg))
+	datadir, err := ioutil.TempDir("", testName)
 	if err != nil {
-		t.Fatalf("error creating address manager: %s", err)
+		t.Fatalf("%s: could not create a temp directory: %s", testName, err)
+	}
+	database, err := ldb.NewLevelDB(datadir, 8)
+	if err != nil {
+		t.Fatalf("%s: could not create a database: %s", testName, err)
 	}
 
-	return addressManager, func() {
+	addressManager, err = New(NewConfig(cfg), database)
+	if err != nil {
+		t.Fatalf("%s: error creating address manager: %s", testName, err)
 	}
+
+	return addressManager, func() {}
 }
 
 func TestBestLocalAddress(t *testing.T) {
