@@ -127,6 +127,8 @@ type KaspadMessage struct {
 	//	*KaspadMessage_UnbanResponse
 	//	*KaspadMessage_GetInfoRequest
 	//	*KaspadMessage_GetInfoResponse
+	//	*KaspadMessage_StopNotifyingUtxosChangedRequest
+	//	*KaspadMessage_StopNotifyingUtxosChangedResponse
 	Payload isKaspadMessage_Payload `protobuf_oneof:"payload"`
 }
 
@@ -841,6 +843,20 @@ func (x *KaspadMessage) GetGetInfoResponse() *GetInfoResponseMessage {
 	return nil
 }
 
+func (x *KaspadMessage) GetStopNotifyingUtxosChangedRequest() *StopNotifyingUtxosChangedRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyingUtxosChangedRequest); ok {
+		return x.StopNotifyingUtxosChangedRequest
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStopNotifyingUtxosChangedResponse() *StopNotifyingUtxosChangedResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyingUtxosChangedResponse); ok {
+		return x.StopNotifyingUtxosChangedResponse
+	}
+	return nil
+}
+
 type isKaspadMessage_Payload interface {
 	isKaspadMessage_Payload()
 }
@@ -1229,6 +1245,14 @@ type KaspadMessage_GetInfoResponse struct {
 	GetInfoResponse *GetInfoResponseMessage `protobuf:"bytes,1064,opt,name=getInfoResponse,proto3,oneof"`
 }
 
+type KaspadMessage_StopNotifyingUtxosChangedRequest struct {
+	StopNotifyingUtxosChangedRequest *StopNotifyingUtxosChangedRequestMessage `protobuf:"bytes,1065,opt,name=stopNotifyingUtxosChangedRequest,proto3,oneof"`
+}
+
+type KaspadMessage_StopNotifyingUtxosChangedResponse struct {
+	StopNotifyingUtxosChangedResponse *StopNotifyingUtxosChangedResponseMessage `protobuf:"bytes,1066,opt,name=stopNotifyingUtxosChangedResponse,proto3,oneof"`
+}
+
 func (*KaspadMessage_Addresses) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_Block) isKaspadMessage_Payload() {}
@@ -1421,13 +1445,17 @@ func (*KaspadMessage_GetInfoRequest) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_GetInfoResponse) isKaspadMessage_Payload() {}
 
+func (*KaspadMessage_StopNotifyingUtxosChangedRequest) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StopNotifyingUtxosChangedResponse) isKaspadMessage_Payload() {}
+
 var File_messages_proto protoreflect.FileDescriptor
 
 var file_messages_proto_rawDesc = []byte{
 	0x0a, 0x0e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x12, 0x09, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x1a, 0x09, 0x70, 0x32, 0x70,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x09, 0x72, 0x70, 0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xe0, 0x4c, 0x0a, 0x0d, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
+	0x6f, 0x22, 0xeb, 0x4e, 0x0a, 0x0d, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x12, 0x3b, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
 	0x72, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x4d, 0x65, 0x73, 0x73,
@@ -2040,21 +2068,38 @@ var file_messages_proto_rawDesc = []byte{
 	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
 	0x47, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
 	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x0f, 0x67, 0x65, 0x74, 0x49, 0x6e, 0x66,
-	0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09, 0x0a, 0x07, 0x70, 0x61, 0x79,
-	0x6c, 0x6f, 0x61, 0x64, 0x32, 0x50, 0x0a, 0x03, 0x50, 0x32, 0x50, 0x12, 0x49, 0x0a, 0x0d, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
-	0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x32, 0x50, 0x0a, 0x03, 0x52, 0x50, 0x43, 0x12, 0x49, 0x0a,
-	0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61,
-	0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f,
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x81, 0x01, 0x0a, 0x20, 0x73, 0x74,
+	0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x69, 0x6e, 0x67, 0x55, 0x74, 0x78, 0x6f, 0x73,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0xa9,
+	0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x32, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72,
+	0x65, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x69, 0x6e, 0x67, 0x55,
+	0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x20, 0x73, 0x74, 0x6f,
+	0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x69, 0x6e, 0x67, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x84, 0x01,
+	0x0a, 0x21, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x69, 0x6e, 0x67, 0x55,
+	0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x18, 0xaa, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x33, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x69, 0x6e, 0x67, 0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48,
+	0x00, 0x52, 0x21, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x69, 0x6e, 0x67,
+	0x55, 0x74, 0x78, 0x6f, 0x73, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x42, 0x09, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x32,
+	0x50, 0x0a, 0x03, 0x50, 0x32, 0x50, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61,
+	0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30,
+	0x01, 0x32, 0x50, 0x0a, 0x03, 0x52, 0x50, 0x43, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
+	0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28,
+	0x01, 0x30, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
+	0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61,
+	0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2167,113 +2212,117 @@ var file_messages_proto_goTypes = []interface{}{
 	(*UnbanResponseMessage)(nil),                                       // 93: protowire.UnbanResponseMessage
 	(*GetInfoRequestMessage)(nil),                                      // 94: protowire.GetInfoRequestMessage
 	(*GetInfoResponseMessage)(nil),                                     // 95: protowire.GetInfoResponseMessage
+	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 96: protowire.StopNotifyingUtxosChangedRequestMessage
+	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 97: protowire.StopNotifyingUtxosChangedResponseMessage
 }
 var file_messages_proto_depIdxs = []int32{
-	1,  // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
-	2,  // 1: protowire.KaspadMessage.block:type_name -> protowire.BlockMessage
-	3,  // 2: protowire.KaspadMessage.transaction:type_name -> protowire.TransactionMessage
-	4,  // 3: protowire.KaspadMessage.requestBlockLocator:type_name -> protowire.RequestBlockLocatorMessage
-	5,  // 4: protowire.KaspadMessage.blockLocator:type_name -> protowire.BlockLocatorMessage
-	6,  // 5: protowire.KaspadMessage.requestAddresses:type_name -> protowire.RequestAddressesMessage
-	7,  // 6: protowire.KaspadMessage.requestHeaders:type_name -> protowire.RequestHeadersMessage
-	8,  // 7: protowire.KaspadMessage.requestNextHeaders:type_name -> protowire.RequestNextHeadersMessage
-	9,  // 8: protowire.KaspadMessage.DoneHeaders:type_name -> protowire.DoneHeadersMessage
-	10, // 9: protowire.KaspadMessage.requestRelayBlocks:type_name -> protowire.RequestRelayBlocksMessage
-	11, // 10: protowire.KaspadMessage.requestTransactions:type_name -> protowire.RequestTransactionsMessage
-	2,  // 11: protowire.KaspadMessage.ibdBlock:type_name -> protowire.BlockMessage
-	12, // 12: protowire.KaspadMessage.invRelayBlock:type_name -> protowire.InvRelayBlockMessage
-	13, // 13: protowire.KaspadMessage.invTransactions:type_name -> protowire.InvTransactionsMessage
-	14, // 14: protowire.KaspadMessage.ping:type_name -> protowire.PingMessage
-	15, // 15: protowire.KaspadMessage.pong:type_name -> protowire.PongMessage
-	16, // 16: protowire.KaspadMessage.verack:type_name -> protowire.VerackMessage
-	17, // 17: protowire.KaspadMessage.version:type_name -> protowire.VersionMessage
-	18, // 18: protowire.KaspadMessage.transactionNotFound:type_name -> protowire.TransactionNotFoundMessage
-	19, // 19: protowire.KaspadMessage.reject:type_name -> protowire.RejectMessage
-	20, // 20: protowire.KaspadMessage.requestPruningPointUTXOSetAndBlock:type_name -> protowire.RequestPruningPointUTXOSetAndBlockMessage
-	21, // 21: protowire.KaspadMessage.pruningPointUtxoSetChunk:type_name -> protowire.PruningPointUtxoSetChunkMessage
-	22, // 22: protowire.KaspadMessage.requestIBDBlocks:type_name -> protowire.RequestIBDBlocksMessage
-	23, // 23: protowire.KaspadMessage.unexpectedPruningPoint:type_name -> protowire.UnexpectedPruningPointMessage
-	24, // 24: protowire.KaspadMessage.requestPruningPointHash:type_name -> protowire.RequestPruningPointHashMessage
-	25, // 25: protowire.KaspadMessage.pruningPointHash:type_name -> protowire.PruningPointHashMessage
-	26, // 26: protowire.KaspadMessage.ibdBlockLocator:type_name -> protowire.IbdBlockLocatorMessage
-	27, // 27: protowire.KaspadMessage.ibdBlockLocatorHighestHash:type_name -> protowire.IbdBlockLocatorHighestHashMessage
-	28, // 28: protowire.KaspadMessage.blockHeaders:type_name -> protowire.BlockHeadersMessage
-	29, // 29: protowire.KaspadMessage.requestNextPruningPointUtxoSetChunk:type_name -> protowire.RequestNextPruningPointUtxoSetChunkMessage
-	30, // 30: protowire.KaspadMessage.donePruningPointUtxoSetChunks:type_name -> protowire.DonePruningPointUtxoSetChunksMessage
-	31, // 31: protowire.KaspadMessage.ibdBlockLocatorHighestHashNotFound:type_name -> protowire.IbdBlockLocatorHighestHashNotFoundMessage
-	32, // 32: protowire.KaspadMessage.getCurrentNetworkRequest:type_name -> protowire.GetCurrentNetworkRequestMessage
-	33, // 33: protowire.KaspadMessage.getCurrentNetworkResponse:type_name -> protowire.GetCurrentNetworkResponseMessage
-	34, // 34: protowire.KaspadMessage.submitBlockRequest:type_name -> protowire.SubmitBlockRequestMessage
-	35, // 35: protowire.KaspadMessage.submitBlockResponse:type_name -> protowire.SubmitBlockResponseMessage
-	36, // 36: protowire.KaspadMessage.getBlockTemplateRequest:type_name -> protowire.GetBlockTemplateRequestMessage
-	37, // 37: protowire.KaspadMessage.getBlockTemplateResponse:type_name -> protowire.GetBlockTemplateResponseMessage
-	38, // 38: protowire.KaspadMessage.notifyBlockAddedRequest:type_name -> protowire.NotifyBlockAddedRequestMessage
-	39, // 39: protowire.KaspadMessage.notifyBlockAddedResponse:type_name -> protowire.NotifyBlockAddedResponseMessage
-	40, // 40: protowire.KaspadMessage.blockAddedNotification:type_name -> protowire.BlockAddedNotificationMessage
-	41, // 41: protowire.KaspadMessage.getPeerAddressesRequest:type_name -> protowire.GetPeerAddressesRequestMessage
-	42, // 42: protowire.KaspadMessage.getPeerAddressesResponse:type_name -> protowire.GetPeerAddressesResponseMessage
-	43, // 43: protowire.KaspadMessage.getSelectedTipHashRequest:type_name -> protowire.GetSelectedTipHashRequestMessage
-	44, // 44: protowire.KaspadMessage.getSelectedTipHashResponse:type_name -> protowire.GetSelectedTipHashResponseMessage
-	45, // 45: protowire.KaspadMessage.getMempoolEntryRequest:type_name -> protowire.GetMempoolEntryRequestMessage
-	46, // 46: protowire.KaspadMessage.getMempoolEntryResponse:type_name -> protowire.GetMempoolEntryResponseMessage
-	47, // 47: protowire.KaspadMessage.getConnectedPeerInfoRequest:type_name -> protowire.GetConnectedPeerInfoRequestMessage
-	48, // 48: protowire.KaspadMessage.getConnectedPeerInfoResponse:type_name -> protowire.GetConnectedPeerInfoResponseMessage
-	49, // 49: protowire.KaspadMessage.addPeerRequest:type_name -> protowire.AddPeerRequestMessage
-	50, // 50: protowire.KaspadMessage.addPeerResponse:type_name -> protowire.AddPeerResponseMessage
-	51, // 51: protowire.KaspadMessage.submitTransactionRequest:type_name -> protowire.SubmitTransactionRequestMessage
-	52, // 52: protowire.KaspadMessage.submitTransactionResponse:type_name -> protowire.SubmitTransactionResponseMessage
-	53, // 53: protowire.KaspadMessage.notifyVirtualSelectedParentChainChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
-	54, // 54: protowire.KaspadMessage.notifyVirtualSelectedParentChainChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
-	55, // 55: protowire.KaspadMessage.virtualSelectedParentChainChangedNotification:type_name -> protowire.VirtualSelectedParentChainChangedNotificationMessage
-	56, // 56: protowire.KaspadMessage.getBlockRequest:type_name -> protowire.GetBlockRequestMessage
-	57, // 57: protowire.KaspadMessage.getBlockResponse:type_name -> protowire.GetBlockResponseMessage
-	58, // 58: protowire.KaspadMessage.getSubnetworkRequest:type_name -> protowire.GetSubnetworkRequestMessage
-	59, // 59: protowire.KaspadMessage.getSubnetworkResponse:type_name -> protowire.GetSubnetworkResponseMessage
-	60, // 60: protowire.KaspadMessage.getVirtualSelectedParentChainFromBlockRequest:type_name -> protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	61, // 61: protowire.KaspadMessage.getVirtualSelectedParentChainFromBlockResponse:type_name -> protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	62, // 62: protowire.KaspadMessage.getBlocksRequest:type_name -> protowire.GetBlocksRequestMessage
-	63, // 63: protowire.KaspadMessage.getBlocksResponse:type_name -> protowire.GetBlocksResponseMessage
-	64, // 64: protowire.KaspadMessage.getBlockCountRequest:type_name -> protowire.GetBlockCountRequestMessage
-	65, // 65: protowire.KaspadMessage.getBlockCountResponse:type_name -> protowire.GetBlockCountResponseMessage
-	66, // 66: protowire.KaspadMessage.getBlockDagInfoRequest:type_name -> protowire.GetBlockDagInfoRequestMessage
-	67, // 67: protowire.KaspadMessage.getBlockDagInfoResponse:type_name -> protowire.GetBlockDagInfoResponseMessage
-	68, // 68: protowire.KaspadMessage.resolveFinalityConflictRequest:type_name -> protowire.ResolveFinalityConflictRequestMessage
-	69, // 69: protowire.KaspadMessage.resolveFinalityConflictResponse:type_name -> protowire.ResolveFinalityConflictResponseMessage
-	70, // 70: protowire.KaspadMessage.notifyFinalityConflictsRequest:type_name -> protowire.NotifyFinalityConflictsRequestMessage
-	71, // 71: protowire.KaspadMessage.notifyFinalityConflictsResponse:type_name -> protowire.NotifyFinalityConflictsResponseMessage
-	72, // 72: protowire.KaspadMessage.finalityConflictNotification:type_name -> protowire.FinalityConflictNotificationMessage
-	73, // 73: protowire.KaspadMessage.finalityConflictResolvedNotification:type_name -> protowire.FinalityConflictResolvedNotificationMessage
-	74, // 74: protowire.KaspadMessage.getMempoolEntriesRequest:type_name -> protowire.GetMempoolEntriesRequestMessage
-	75, // 75: protowire.KaspadMessage.getMempoolEntriesResponse:type_name -> protowire.GetMempoolEntriesResponseMessage
-	76, // 76: protowire.KaspadMessage.shutDownRequest:type_name -> protowire.ShutDownRequestMessage
-	77, // 77: protowire.KaspadMessage.shutDownResponse:type_name -> protowire.ShutDownResponseMessage
-	78, // 78: protowire.KaspadMessage.getHeadersRequest:type_name -> protowire.GetHeadersRequestMessage
-	79, // 79: protowire.KaspadMessage.getHeadersResponse:type_name -> protowire.GetHeadersResponseMessage
-	80, // 80: protowire.KaspadMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUtxosChangedRequestMessage
-	81, // 81: protowire.KaspadMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUtxosChangedResponseMessage
-	82, // 82: protowire.KaspadMessage.utxosChangedNotification:type_name -> protowire.UtxosChangedNotificationMessage
-	83, // 83: protowire.KaspadMessage.getUtxosByAddressesRequest:type_name -> protowire.GetUtxosByAddressesRequestMessage
-	84, // 84: protowire.KaspadMessage.getUtxosByAddressesResponse:type_name -> protowire.GetUtxosByAddressesResponseMessage
-	85, // 85: protowire.KaspadMessage.getVirtualSelectedParentBlueScoreRequest:type_name -> protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	86, // 86: protowire.KaspadMessage.getVirtualSelectedParentBlueScoreResponse:type_name -> protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	87, // 87: protowire.KaspadMessage.notifyVirtualSelectedParentBlueScoreChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	88, // 88: protowire.KaspadMessage.notifyVirtualSelectedParentBlueScoreChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	89, // 89: protowire.KaspadMessage.virtualSelectedParentBlueScoreChangedNotification:type_name -> protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	90, // 90: protowire.KaspadMessage.banRequest:type_name -> protowire.BanRequestMessage
-	91, // 91: protowire.KaspadMessage.banResponse:type_name -> protowire.BanResponseMessage
-	92, // 92: protowire.KaspadMessage.unbanRequest:type_name -> protowire.UnbanRequestMessage
-	93, // 93: protowire.KaspadMessage.unbanResponse:type_name -> protowire.UnbanResponseMessage
-	94, // 94: protowire.KaspadMessage.getInfoRequest:type_name -> protowire.GetInfoRequestMessage
-	95, // 95: protowire.KaspadMessage.getInfoResponse:type_name -> protowire.GetInfoResponseMessage
-	0,  // 96: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
-	0,  // 97: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
-	0,  // 98: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
-	0,  // 99: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
-	98, // [98:100] is the sub-list for method output_type
-	96, // [96:98] is the sub-list for method input_type
-	96, // [96:96] is the sub-list for extension type_name
-	96, // [96:96] is the sub-list for extension extendee
-	0,  // [0:96] is the sub-list for field type_name
+	1,   // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
+	2,   // 1: protowire.KaspadMessage.block:type_name -> protowire.BlockMessage
+	3,   // 2: protowire.KaspadMessage.transaction:type_name -> protowire.TransactionMessage
+	4,   // 3: protowire.KaspadMessage.requestBlockLocator:type_name -> protowire.RequestBlockLocatorMessage
+	5,   // 4: protowire.KaspadMessage.blockLocator:type_name -> protowire.BlockLocatorMessage
+	6,   // 5: protowire.KaspadMessage.requestAddresses:type_name -> protowire.RequestAddressesMessage
+	7,   // 6: protowire.KaspadMessage.requestHeaders:type_name -> protowire.RequestHeadersMessage
+	8,   // 7: protowire.KaspadMessage.requestNextHeaders:type_name -> protowire.RequestNextHeadersMessage
+	9,   // 8: protowire.KaspadMessage.DoneHeaders:type_name -> protowire.DoneHeadersMessage
+	10,  // 9: protowire.KaspadMessage.requestRelayBlocks:type_name -> protowire.RequestRelayBlocksMessage
+	11,  // 10: protowire.KaspadMessage.requestTransactions:type_name -> protowire.RequestTransactionsMessage
+	2,   // 11: protowire.KaspadMessage.ibdBlock:type_name -> protowire.BlockMessage
+	12,  // 12: protowire.KaspadMessage.invRelayBlock:type_name -> protowire.InvRelayBlockMessage
+	13,  // 13: protowire.KaspadMessage.invTransactions:type_name -> protowire.InvTransactionsMessage
+	14,  // 14: protowire.KaspadMessage.ping:type_name -> protowire.PingMessage
+	15,  // 15: protowire.KaspadMessage.pong:type_name -> protowire.PongMessage
+	16,  // 16: protowire.KaspadMessage.verack:type_name -> protowire.VerackMessage
+	17,  // 17: protowire.KaspadMessage.version:type_name -> protowire.VersionMessage
+	18,  // 18: protowire.KaspadMessage.transactionNotFound:type_name -> protowire.TransactionNotFoundMessage
+	19,  // 19: protowire.KaspadMessage.reject:type_name -> protowire.RejectMessage
+	20,  // 20: protowire.KaspadMessage.requestPruningPointUTXOSetAndBlock:type_name -> protowire.RequestPruningPointUTXOSetAndBlockMessage
+	21,  // 21: protowire.KaspadMessage.pruningPointUtxoSetChunk:type_name -> protowire.PruningPointUtxoSetChunkMessage
+	22,  // 22: protowire.KaspadMessage.requestIBDBlocks:type_name -> protowire.RequestIBDBlocksMessage
+	23,  // 23: protowire.KaspadMessage.unexpectedPruningPoint:type_name -> protowire.UnexpectedPruningPointMessage
+	24,  // 24: protowire.KaspadMessage.requestPruningPointHash:type_name -> protowire.RequestPruningPointHashMessage
+	25,  // 25: protowire.KaspadMessage.pruningPointHash:type_name -> protowire.PruningPointHashMessage
+	26,  // 26: protowire.KaspadMessage.ibdBlockLocator:type_name -> protowire.IbdBlockLocatorMessage
+	27,  // 27: protowire.KaspadMessage.ibdBlockLocatorHighestHash:type_name -> protowire.IbdBlockLocatorHighestHashMessage
+	28,  // 28: protowire.KaspadMessage.blockHeaders:type_name -> protowire.BlockHeadersMessage
+	29,  // 29: protowire.KaspadMessage.requestNextPruningPointUtxoSetChunk:type_name -> protowire.RequestNextPruningPointUtxoSetChunkMessage
+	30,  // 30: protowire.KaspadMessage.donePruningPointUtxoSetChunks:type_name -> protowire.DonePruningPointUtxoSetChunksMessage
+	31,  // 31: protowire.KaspadMessage.ibdBlockLocatorHighestHashNotFound:type_name -> protowire.IbdBlockLocatorHighestHashNotFoundMessage
+	32,  // 32: protowire.KaspadMessage.getCurrentNetworkRequest:type_name -> protowire.GetCurrentNetworkRequestMessage
+	33,  // 33: protowire.KaspadMessage.getCurrentNetworkResponse:type_name -> protowire.GetCurrentNetworkResponseMessage
+	34,  // 34: protowire.KaspadMessage.submitBlockRequest:type_name -> protowire.SubmitBlockRequestMessage
+	35,  // 35: protowire.KaspadMessage.submitBlockResponse:type_name -> protowire.SubmitBlockResponseMessage
+	36,  // 36: protowire.KaspadMessage.getBlockTemplateRequest:type_name -> protowire.GetBlockTemplateRequestMessage
+	37,  // 37: protowire.KaspadMessage.getBlockTemplateResponse:type_name -> protowire.GetBlockTemplateResponseMessage
+	38,  // 38: protowire.KaspadMessage.notifyBlockAddedRequest:type_name -> protowire.NotifyBlockAddedRequestMessage
+	39,  // 39: protowire.KaspadMessage.notifyBlockAddedResponse:type_name -> protowire.NotifyBlockAddedResponseMessage
+	40,  // 40: protowire.KaspadMessage.blockAddedNotification:type_name -> protowire.BlockAddedNotificationMessage
+	41,  // 41: protowire.KaspadMessage.getPeerAddressesRequest:type_name -> protowire.GetPeerAddressesRequestMessage
+	42,  // 42: protowire.KaspadMessage.getPeerAddressesResponse:type_name -> protowire.GetPeerAddressesResponseMessage
+	43,  // 43: protowire.KaspadMessage.getSelectedTipHashRequest:type_name -> protowire.GetSelectedTipHashRequestMessage
+	44,  // 44: protowire.KaspadMessage.getSelectedTipHashResponse:type_name -> protowire.GetSelectedTipHashResponseMessage
+	45,  // 45: protowire.KaspadMessage.getMempoolEntryRequest:type_name -> protowire.GetMempoolEntryRequestMessage
+	46,  // 46: protowire.KaspadMessage.getMempoolEntryResponse:type_name -> protowire.GetMempoolEntryResponseMessage
+	47,  // 47: protowire.KaspadMessage.getConnectedPeerInfoRequest:type_name -> protowire.GetConnectedPeerInfoRequestMessage
+	48,  // 48: protowire.KaspadMessage.getConnectedPeerInfoResponse:type_name -> protowire.GetConnectedPeerInfoResponseMessage
+	49,  // 49: protowire.KaspadMessage.addPeerRequest:type_name -> protowire.AddPeerRequestMessage
+	50,  // 50: protowire.KaspadMessage.addPeerResponse:type_name -> protowire.AddPeerResponseMessage
+	51,  // 51: protowire.KaspadMessage.submitTransactionRequest:type_name -> protowire.SubmitTransactionRequestMessage
+	52,  // 52: protowire.KaspadMessage.submitTransactionResponse:type_name -> protowire.SubmitTransactionResponseMessage
+	53,  // 53: protowire.KaspadMessage.notifyVirtualSelectedParentChainChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
+	54,  // 54: protowire.KaspadMessage.notifyVirtualSelectedParentChainChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
+	55,  // 55: protowire.KaspadMessage.virtualSelectedParentChainChangedNotification:type_name -> protowire.VirtualSelectedParentChainChangedNotificationMessage
+	56,  // 56: protowire.KaspadMessage.getBlockRequest:type_name -> protowire.GetBlockRequestMessage
+	57,  // 57: protowire.KaspadMessage.getBlockResponse:type_name -> protowire.GetBlockResponseMessage
+	58,  // 58: protowire.KaspadMessage.getSubnetworkRequest:type_name -> protowire.GetSubnetworkRequestMessage
+	59,  // 59: protowire.KaspadMessage.getSubnetworkResponse:type_name -> protowire.GetSubnetworkResponseMessage
+	60,  // 60: protowire.KaspadMessage.getVirtualSelectedParentChainFromBlockRequest:type_name -> protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	61,  // 61: protowire.KaspadMessage.getVirtualSelectedParentChainFromBlockResponse:type_name -> protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	62,  // 62: protowire.KaspadMessage.getBlocksRequest:type_name -> protowire.GetBlocksRequestMessage
+	63,  // 63: protowire.KaspadMessage.getBlocksResponse:type_name -> protowire.GetBlocksResponseMessage
+	64,  // 64: protowire.KaspadMessage.getBlockCountRequest:type_name -> protowire.GetBlockCountRequestMessage
+	65,  // 65: protowire.KaspadMessage.getBlockCountResponse:type_name -> protowire.GetBlockCountResponseMessage
+	66,  // 66: protowire.KaspadMessage.getBlockDagInfoRequest:type_name -> protowire.GetBlockDagInfoRequestMessage
+	67,  // 67: protowire.KaspadMessage.getBlockDagInfoResponse:type_name -> protowire.GetBlockDagInfoResponseMessage
+	68,  // 68: protowire.KaspadMessage.resolveFinalityConflictRequest:type_name -> protowire.ResolveFinalityConflictRequestMessage
+	69,  // 69: protowire.KaspadMessage.resolveFinalityConflictResponse:type_name -> protowire.ResolveFinalityConflictResponseMessage
+	70,  // 70: protowire.KaspadMessage.notifyFinalityConflictsRequest:type_name -> protowire.NotifyFinalityConflictsRequestMessage
+	71,  // 71: protowire.KaspadMessage.notifyFinalityConflictsResponse:type_name -> protowire.NotifyFinalityConflictsResponseMessage
+	72,  // 72: protowire.KaspadMessage.finalityConflictNotification:type_name -> protowire.FinalityConflictNotificationMessage
+	73,  // 73: protowire.KaspadMessage.finalityConflictResolvedNotification:type_name -> protowire.FinalityConflictResolvedNotificationMessage
+	74,  // 74: protowire.KaspadMessage.getMempoolEntriesRequest:type_name -> protowire.GetMempoolEntriesRequestMessage
+	75,  // 75: protowire.KaspadMessage.getMempoolEntriesResponse:type_name -> protowire.GetMempoolEntriesResponseMessage
+	76,  // 76: protowire.KaspadMessage.shutDownRequest:type_name -> protowire.ShutDownRequestMessage
+	77,  // 77: protowire.KaspadMessage.shutDownResponse:type_name -> protowire.ShutDownResponseMessage
+	78,  // 78: protowire.KaspadMessage.getHeadersRequest:type_name -> protowire.GetHeadersRequestMessage
+	79,  // 79: protowire.KaspadMessage.getHeadersResponse:type_name -> protowire.GetHeadersResponseMessage
+	80,  // 80: protowire.KaspadMessage.notifyUtxosChangedRequest:type_name -> protowire.NotifyUtxosChangedRequestMessage
+	81,  // 81: protowire.KaspadMessage.notifyUtxosChangedResponse:type_name -> protowire.NotifyUtxosChangedResponseMessage
+	82,  // 82: protowire.KaspadMessage.utxosChangedNotification:type_name -> protowire.UtxosChangedNotificationMessage
+	83,  // 83: protowire.KaspadMessage.getUtxosByAddressesRequest:type_name -> protowire.GetUtxosByAddressesRequestMessage
+	84,  // 84: protowire.KaspadMessage.getUtxosByAddressesResponse:type_name -> protowire.GetUtxosByAddressesResponseMessage
+	85,  // 85: protowire.KaspadMessage.getVirtualSelectedParentBlueScoreRequest:type_name -> protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	86,  // 86: protowire.KaspadMessage.getVirtualSelectedParentBlueScoreResponse:type_name -> protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	87,  // 87: protowire.KaspadMessage.notifyVirtualSelectedParentBlueScoreChangedRequest:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	88,  // 88: protowire.KaspadMessage.notifyVirtualSelectedParentBlueScoreChangedResponse:type_name -> protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	89,  // 89: protowire.KaspadMessage.virtualSelectedParentBlueScoreChangedNotification:type_name -> protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	90,  // 90: protowire.KaspadMessage.banRequest:type_name -> protowire.BanRequestMessage
+	91,  // 91: protowire.KaspadMessage.banResponse:type_name -> protowire.BanResponseMessage
+	92,  // 92: protowire.KaspadMessage.unbanRequest:type_name -> protowire.UnbanRequestMessage
+	93,  // 93: protowire.KaspadMessage.unbanResponse:type_name -> protowire.UnbanResponseMessage
+	94,  // 94: protowire.KaspadMessage.getInfoRequest:type_name -> protowire.GetInfoRequestMessage
+	95,  // 95: protowire.KaspadMessage.getInfoResponse:type_name -> protowire.GetInfoResponseMessage
+	96,  // 96: protowire.KaspadMessage.stopNotifyingUtxosChangedRequest:type_name -> protowire.StopNotifyingUtxosChangedRequestMessage
+	97,  // 97: protowire.KaspadMessage.stopNotifyingUtxosChangedResponse:type_name -> protowire.StopNotifyingUtxosChangedResponseMessage
+	0,   // 98: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 99: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 100: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
+	0,   // 101: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
+	100, // [100:102] is the sub-list for method output_type
+	98,  // [98:100] is the sub-list for method input_type
+	98,  // [98:98] is the sub-list for extension type_name
+	98,  // [98:98] is the sub-list for extension extendee
+	0,   // [0:98] is the sub-list for field type_name
 }
 
 func init() { file_messages_proto_init() }
@@ -2394,6 +2443,8 @@ func file_messages_proto_init() {
 		(*KaspadMessage_UnbanResponse)(nil),
 		(*KaspadMessage_GetInfoRequest)(nil),
 		(*KaspadMessage_GetInfoResponse)(nil),
+		(*KaspadMessage_StopNotifyingUtxosChangedRequest)(nil),
+		(*KaspadMessage_StopNotifyingUtxosChangedResponse)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
