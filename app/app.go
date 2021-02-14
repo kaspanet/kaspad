@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -149,6 +150,7 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 			log.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
 		}
 		log.Infof("Kaspad shutdown complete")
+		logger.BackendLog.Close()
 	}()
 
 	componentManager.Start()

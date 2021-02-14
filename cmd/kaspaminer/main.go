@@ -26,6 +26,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s\n", err)
 		os.Exit(1)
 	}
+	defer backendLog.Close()
 
 	// Show version at startup.
 	log.Infof("Version %s", version.Version())
