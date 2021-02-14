@@ -1,7 +1,6 @@
 package dagtraversalmanager
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -16,29 +15,7 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
-}
-
-// selectedParentIterator implements the `model.BlockIterator` API
-type selectedParentIterator struct {
-	databaseContext   model.DBReader
-	ghostdagDataStore model.GHOSTDAGDataStore
-	current           *externalapi.DomainHash
-}
-
-func (spi *selectedParentIterator) Next() bool {
-	if spi.current == nil {
-		return false
-	}
-	ghostdagData, err := spi.ghostdagDataStore.Get(spi.databaseContext, spi.current)
-	if err != nil {
-		panic(fmt.Sprintf("ghostdagDataStore is missing ghostdagData for: %v. '%s' ", spi.current, err))
-	}
-	spi.current = ghostdagData.SelectedParent()
-	return spi.current != nil
-}
-
-func (spi *selectedParentIterator) Get() *externalapi.DomainHash {
-	return spi.current
+	consensusStateStore   model.ConsensusStateStore
 }
 
 // New instantiates a new DAGTraversalManager
@@ -47,23 +24,15 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	ghostdagManager model.GHOSTDAGManager) model.DAGTraversalManager {
+	ghostdagManager model.GHOSTDAGManager,
+	conssensusStateStore model.ConsensusStateStore) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
-	}
-}
-
-// SelectedParentIterator creates an iterator over the selected
-// parent chain of the given highHash
-func (dtm *dagTraversalManager) SelectedParentIterator(highHash *externalapi.DomainHash) model.BlockIterator {
-	return &selectedParentIterator{
-		databaseContext:   dtm.databaseContext,
-		ghostdagDataStore: dtm.ghostdagDataStore,
-		current:           highHash,
+		consensusStateStore:   conssensusStateStore,
 	}
 }
 

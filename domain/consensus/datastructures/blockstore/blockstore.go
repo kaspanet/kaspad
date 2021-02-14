@@ -212,3 +212,34 @@ func (bs *blockStore) serializeBlockCount(count uint64) ([]byte, error) {
 	dbBlockCount := &serialization.DbBlockCount{Count: count}
 	return proto.Marshal(dbBlockCount)
 }
+
+type allBlockHashesIterator struct {
+	cursor model.DBCursor
+}
+
+func (a allBlockHashesIterator) First() bool {
+	return a.cursor.First()
+}
+
+func (a allBlockHashesIterator) Next() bool {
+	return a.cursor.Next()
+}
+
+func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
+	key, err := a.cursor.Key()
+	if err != nil {
+		return nil, err
+	}
+
+	blockHashBytes := key.Suffix()
+	return externalapi.NewDomainHashFromByteSlice(blockHashBytes)
+}
+
+func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
+	cursor, err := dbContext.Cursor(bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	return &allBlockHashesIterator{cursor: cursor}, nil
+}

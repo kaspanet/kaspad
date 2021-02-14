@@ -1,9 +1,10 @@
 package difficultymanager_test
 
 import (
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/util/mstime"
 
@@ -132,9 +133,9 @@ func TestDifficulty(t *testing.T) {
 
 		var expectedBits uint32
 		switch params.Name {
-		case "kaspa-testnet", "kaspa-devnet":
+		case dagconfig.TestnetParams.Name, dagconfig.DevnetParams.Name:
 			expectedBits = uint32(0x1e7f83df)
-		case "kaspa-mainnet":
+		case dagconfig.MainnetParams.Name:
 			expectedBits = uint32(0x207f83df)
 		}
 

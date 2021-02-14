@@ -1,475 +1,256 @@
-package transactionvalidator
+package transactionvalidator_test
 
 import (
-	"bytes"
+	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"io/ioutil"
-	"os"
-	"path/filepath"
+	"github.com/kaspanet/kaspad/util"
+
+	"math/big"
+
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/domain/txscript"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/daghash"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 type mocPastMedianTimeManager struct {
 	PastMedianTimeForTest int64
 }
 
-func (mdf *mocPastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
+// PastMedianTime returns the past median time for the test.
+func (mdf *mocPastMedianTimeManager) PastMedianTime(*externalapi.DomainHash) (int64, error) {
 	return mdf.PastMedianTimeForTest, nil
 }
 
-func setupTransactionValidator(dbManager model.DBManager, dagParams *dagconfig.Params) *transactionValidator {
-	ghostdagDataStore := ghostdagdatastore.New()
-
-	pastMedianTimeManager := &mocPastMedianTimeManager{}
-	vlidator := New(dagParams.BlockCoinbaseMaturity,
-		dbManager,
-		pastMedianTimeManager,
-		ghostdagDataStore)
-
-	return vlidator.(*transactionValidator)
-}
-
-func setupDBManager(dbName string) (model.DBManager, func(), error) {
-	var err error
-	tmpDir, err := ioutil.TempDir("", "setupDBManager")
-	if err != nil {
-		return nil, nil, errors.Errorf("error creating temp dir: %s", err)
-	}
-
-	dbPath := filepath.Join(tmpDir, dbName)
-	_ = os.RemoveAll(dbPath)
-	db, err := ldb.NewLevelDB(dbPath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	originalLDBOptions := ldb.Options
-	ldb.Options = func() *opt.Options {
-		return nil
-	}
-
-	teardown := func() {
-		db.Close()
-		ldb.Options = originalLDBOptions
-		os.RemoveAll(dbPath)
-	}
-
-	dbManager := consensusdatabase.New(db)
-	return dbManager, teardown, err
-}
-
-//func TestValidateTransactionInIsolation(t *testing.T) {
-//	prevOutTxID := &externalapi.DomainTransactionID{}
-//	dummyPrevOut := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
-//	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
-//	dummyTxIn := externalapi.DomainTransactionInput{
-//		PreviousOutpoint: dummyPrevOut,
-//		SignatureScript:  dummySigScript,
-//		Sequence:         appmessage.MaxTxInSequenceNum,
-//	}
-//	addrHash := [20]byte{0x01}
-//	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
-//	if err != nil {
-//		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
-//	}
-//	dummyScriptPublicKey, err := txscript.PayToAddrScript(addr)
-//	if err != nil {
-//		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
-//	}
-//	dummyTxOut := externalapi.DomainTransactionOutput{
-//		Value:           100000000, // 1 KAS
-//		ScriptPublicKey: dummyScriptPublicKey,
-//	}
-//
-//	dummyLargeTxOut := externalapi.DomainTransactionOutput{
-//		Value:           util.MaxSompi + 1,
-//		ScriptPublicKey: dummyScriptPublicKey,
-//	}
-//
-//	payload := make([]byte, 8)
-//	payloadHash := externalapi.DomainHash(*daghash.DoubleHashP(payload))
-//
-//	largePayload := make([]byte, constants.MaxCoinbasePayloadLength+1)
-//
-//	tests := []struct {
-//		name    string
-//		tx      *externalapi.DomainTransaction
-//		isValid bool
-//	}{
-//		{
-//			name: "Valid transaction",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: true,
-//		},
-//		{
-//			name: "checkTransactionInputCount",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkTransactionAmountRanges",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyLargeTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkDuplicateTransactionInputs",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn, &dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      largePayload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkTransactionPayloadHash",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-//				Gas:          0,
-//				PayloadHash:  externalapi.DomainHash{},
-//				Payload:      largePayload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkGasInBuiltInOrNativeTransactions",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          1,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkSubnetworkRegistryTransaction",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      nil,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkNativeTransactionPayload",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDNative,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//		{
-//			name: "checkTransactionSubnetwork",
-//			tx: &externalapi.DomainTransaction{
-//				Version:      appmessage.TxVersion,
-//				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxIn},
-//				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-//				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-//				Gas:          0,
-//				PayloadHash:  payloadHash,
-//				Payload:      payload,
-//				LockTime:     0},
-//			isValid: false,
-//		},
-//	}
-//
-//	dbManager, teardownFunc, err := setupDBManager(t.Name())
-//	if err != nil {
-//		t.Fatalf("Failed to setup DBManager instance: %v", err)
-//	}
-//	defer teardownFunc()
-//
-//	validator := setupTransactionValidator(dbManager, &dagconfig.SimnetParams)
-//
-//	for _, test := range tests {
-//		err := validator.ValidateTransactionInIsolation(test.tx)
-//		if test.isValid {
-//			if err != nil {
-//				t.Fatalf("ValidateTransactionInIsolation %v: %v", test.name, err)
-//			}
-//		} else {
-//			if err == nil {
-//				t.Fatalf("ValidateTransactionInIsolation:%v: Waiting for error, but got : %v", test.name, err)
-//			}
-//		}
-//	}
-//}
-
 func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
-	prevOutTxID := &externalapi.DomainTransactionID{}
-	dummyPrevOut := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
-	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
-	addrHash := [20]byte{0x01}
-	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
-	if err != nil {
-		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
-	}
-	dummyScriptPublicKey, err := txscript.PayToAddrScript(addr)
-	if err != nil {
-		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
-	}
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
-	dummyTxInWithEntry := externalapi.DomainTransactionInput{
-		PreviousOutpoint: dummyPrevOut,
-		SignatureScript:  dummySigScript,
-		Sequence:         appmessage.MaxTxInSequenceNum,
-		//UTXOEntry: &externalapi.UTXOEntry{
-		//	Amount:          100000000, // 1 KAS
-		//	ScriptPublicKey: dummyScriptPublicKey,
-		//	BlockBlueScore:  uint64(5),
-		//	IsCoinbase:      true,
-		//},
-		UTXOEntry: utxo.NewUTXOEntry(
-			100000000, // 1 KAS
-			dummyScriptPublicKey,
-			true,
-			uint64(5)),
-	}
+		factory := consensus.NewFactory()
+		pastMedianManager := &mocPastMedianTimeManager{}
+		factory.SetTestMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
+			model.GHOSTDAGDataStore) model.PastMedianTimeManager {
+			return pastMedianManager
+		})
+		tc, tearDown, err := factory.NewTestConsensus(params, false,
+			"TestValidateTransactionInContextAndPopulateMassAndFee")
+		if err != nil {
+			t.Fatalf("Failed create a NewTestConsensus: %s", err)
+		}
+		defer tearDown(false)
 
-	dummyTxInWithEntryMaxSequence := externalapi.DomainTransactionInput{
-		PreviousOutpoint: dummyPrevOut,
-		SignatureScript:  dummySigScript,
-		Sequence:         appmessage.SequenceLockTimeIsSeconds,
-		UTXOEntry: &externalapi.UTXOEntry{
-			Amount:          100000000, // 1 KAS
-			ScriptPublicKey: dummyScriptPublicKey,
-			BlockBlueScore:  uint64(5),
-			IsCoinbase:      true,
-		},
-	}
+		pastMedianManager.PastMedianTimeForTest = 1
+		privateKey, err := secp256k1.GeneratePrivateKey()
+		if err != nil {
+			t.Fatalf("Failed to generate a private key: %v", err)
+		}
+		publicKey, err := privateKey.SchnorrPublicKey()
+		if err != nil {
+			t.Fatalf("Failed to generate a public key: %v", err)
+		}
+		publicKeySerialized, err := publicKey.Serialize()
+		if err != nil {
+			t.Fatalf("Failed to serialize public key: %v", err)
+		}
+		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
+		if err != nil {
+			t.Fatalf("Failed to generate p2pkh address: %v", err)
+		}
+		scriptPublicKey, err := txscript.PayToAddrScript(addr)
+		if err != nil {
+			t.Fatalf("PayToAddrScript: unexpected error: %v", err)
+		}
+		prevOutTxID := &externalapi.DomainTransactionID{}
+		prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
 
-	dummyTxInWithLargeEntry := externalapi.DomainTransactionInput{
-		PreviousOutpoint: dummyPrevOut,
-		SignatureScript:  dummySigScript,
-		Sequence:         constants.MaxTxInSequenceNum,
-		UTXOEntry: &externalapi.UTXOEntry{
-			Amount:          constants.MaxSompi,
-			ScriptPublicKey: dummyScriptPublicKey,
-			BlockBlueScore:  uint64(5),
-			IsCoinbase:      true,
-		},
-	}
+		txInput := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.MaxTxInSequenceNum,
+			UTXOEntry: utxo.NewUTXOEntry(
+				100_000_000, // 1 KAS
+				scriptPublicKey,
+				true,
+				uint64(5)),
+		}
+		txInputWithMaxSequence := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.SequenceLockTimeIsSeconds,
+			UTXOEntry: utxo.NewUTXOEntry(
+				100000000, // 1 KAS
+				scriptPublicKey,
+				true,
+				uint64(5)),
+		}
+		txInputWithLargeEntry := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.MaxTxInSequenceNum,
+			UTXOEntry: utxo.NewUTXOEntry(
+				constants.MaxSompi,
+				scriptPublicKey,
+				true,
+				uint64(5)),
+		}
 
-	dummyTxOut := externalapi.DomainTransactionOutput{
-		Value:           100000000, // 1 KAS
-		ScriptPublicKey: dummyScriptPublicKey,
-	}
-	dummyTxOut2 := externalapi.DomainTransactionOutput{
-		Value:           200000000, // 2 KAS
-		ScriptPublicKey: dummyScriptPublicKey,
-	}
+		txOut := externalapi.DomainTransactionOutput{
+			Value:           100000000, // 1 KAS
+			ScriptPublicKey: scriptPublicKey,
+		}
+		txOutBigValue := externalapi.DomainTransactionOutput{
+			Value:           200_000_000, // 2 KAS
+			ScriptPublicKey: scriptPublicKey,
+		}
 
-	payload := make([]byte, 8)
-	payloadHash := externalapi.DomainHash(*daghash.DoubleHashP(payload))
-	povBlockHash := externalapi.DomainHash([32]byte{0x01})
+		validTx := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithMaxSequence},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txForCoinbaseMaturityCheck := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txForInputsAmountsCheck := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput, &txInputWithLargeEntry},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txForOutputsAmountsCheck := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutBigValue},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txForSequenceLockCheck := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txForScriptsCheck := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
 
-	dbManager, teardownFunc, err := setupDBManager(t.Name())
-	if err != nil {
-		t.Fatalf("Failed to setup DBManager instance: %v", err)
-	}
-	defer teardownFunc()
-
-	validator := setupTransactionValidator(dbManager, &dagconfig.SimnetParams)
-	genesisHash := externalapi.DomainHash(*dagconfig.SimnetParams.GenesisHash)
-
-	validator.ghostdagDataStore.Stage(&genesisHash, &model.BlockGHOSTDAGData{
-		BlueScore:      0,
-		SelectedParent: &genesisHash,
-		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
-		MergeSetReds:   make([]*externalapi.DomainHash, 1),
-	})
-	validator.ghostdagDataStore.Stage(model.VirtualBlockHash, &model.BlockGHOSTDAGData{
-		BlueScore:      dagconfig.SimnetParams.BlockCoinbaseMaturity + dummyTxInWithEntry.UTXOEntry.BlockBlueScore,
-		SelectedParent: &genesisHash,
-		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
-		MergeSetReds:   make([]*externalapi.DomainHash, 1),
-	})
-	validator.ghostdagDataStore.Stage(&povBlockHash, &model.BlockGHOSTDAGData{
-		BlueScore:      0,
-		SelectedParent: &genesisHash,
-		MergeSetBlues:  make([]*externalapi.DomainHash, 1000),
-		MergeSetReds:   make([]*externalapi.DomainHash, 1),
-	})
-
-	//largePayload := make([]byte, constants.MaxCoinbasePayloadLength+1)
-	tests := []struct {
-		name                     string
-		tx                       *externalapi.DomainTransaction
-		povBlockHash             *externalapi.DomainHash
-		selectedParentMedianTime int64
-		isValid                  bool
-	}{
-		{
-			name: "Valid transaction",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntryMaxSequence},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             model.VirtualBlockHash,
-			selectedParentMedianTime: 1,
-			isValid:                  true,
-		},
-		{
-			name: "checkTransactionCoinbaseMaturity",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntry},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             &povBlockHash,
-			selectedParentMedianTime: 1,
-			isValid:                  false,
-		},
-		{
-			name: "checkTransactionInputAmounts",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntry, &dummyTxInWithLargeEntry},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             model.VirtualBlockHash,
-			selectedParentMedianTime: 1,
-			isValid:                  false,
-		},
-		{
-			name: "checkTransactionOutputAmounts",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntry},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut2},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             model.VirtualBlockHash,
-			selectedParentMedianTime: 1,
-			isValid:                  false,
-		},
-		{
-			name: "checkTransactionSequenceLock",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntry},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             model.VirtualBlockHash,
-			selectedParentMedianTime: -1,
-			isValid:                  false,
-		},
-		{
-			name: "validateTransactionScripts",
-			tx: &externalapi.DomainTransaction{
-				Version:      appmessage.TxVersion,
-				Inputs:       []*externalapi.DomainTransactionInput{&dummyTxInWithEntry},
-				Outputs:      []*externalapi.DomainTransactionOutput{&dummyTxOut},
-				SubnetworkID: subnetworks.SubnetworkIDRegistry,
-				Gas:          0,
-				PayloadHash:  payloadHash,
-				Payload:      payload,
-				LockTime:     0},
-			povBlockHash:             model.VirtualBlockHash,
-			selectedParentMedianTime: 1,
-			isValid:                  false,
-		},
-	}
-
-	for _, test := range tests {
-		err := validator.ValidateTransactionInContextAndPopulateMassAndFee(test.tx, test.povBlockHash, test.selectedParentMedianTime)
-		if test.isValid {
+		for i, input := range validTx.Inputs {
+			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, txscript.SigHashAll, privateKey)
 			if err != nil {
-				t.Fatalf("ValidateTransactionInContextAndPopulateMassAndFee %v: %v", test.name, err)
+				t.Fatalf("Failed to create a sigScript: %v", err)
 			}
-		} else {
-			if err == nil {
-				t.Fatalf("ValidateTransactionInContextAndPopulateMassAndFee:%v: Waiting for error, but got : %v", test.name, err)
+			input.SignatureScript = signatureScript
+		}
+
+		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
+		genesisHash := params.GenesisHash
+		tc.GHOSTDAGDataStore().Stage(model.VirtualBlockHash, model.NewBlockGHOSTDAGData(
+			params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockBlueScore(),
+			new(big.Int),
+			genesisHash,
+			make([]*externalapi.DomainHash, 1000),
+			make([]*externalapi.DomainHash, 1),
+			nil))
+		tc.GHOSTDAGDataStore().Stage(povBlockHash, model.NewBlockGHOSTDAGData(
+			10,
+			new(big.Int),
+			genesisHash,
+			make([]*externalapi.DomainHash, 1000),
+			make([]*externalapi.DomainHash, 1),
+			nil))
+
+		tests := []struct {
+			name                     string
+			tx                       *externalapi.DomainTransaction
+			povBlockHash             *externalapi.DomainHash
+			selectedParentMedianTime int64
+			isValid                  bool
+			expectedError            error
+		}{
+			{
+				name:                     "Valid transaction",
+				tx:                       &validTx,
+				povBlockHash:             model.VirtualBlockHash,
+				selectedParentMedianTime: 1,
+				isValid:                  true,
+				expectedError:            nil,
+			},
+			{
+				name:                     "checkTransactionCoinbaseMaturity",
+				tx:                       &txForCoinbaseMaturityCheck,
+				povBlockHash:             povBlockHash,
+				selectedParentMedianTime: 1,
+				isValid:                  false,
+				expectedError:            ruleerrors.ErrImmatureSpend,
+			},
+			{
+				name:                     "checkTransactionInputAmounts",
+				tx:                       &txForInputsAmountsCheck,
+				povBlockHash:             model.VirtualBlockHash,
+				selectedParentMedianTime: 1,
+				isValid:                  false,
+				expectedError:            ruleerrors.ErrBadTxOutValue,
+			},
+			{
+				name:                     "checkTransactionOutputAmounts",
+				tx:                       &txForOutputsAmountsCheck,
+				povBlockHash:             model.VirtualBlockHash,
+				selectedParentMedianTime: 1,
+				isValid:                  false,
+				expectedError:            ruleerrors.ErrSpendTooHigh,
+			},
+			{
+				name:                     "checkTransactionSequenceLock",
+				tx:                       &txForSequenceLockCheck,
+				povBlockHash:             model.VirtualBlockHash,
+				selectedParentMedianTime: -1,
+				isValid:                  false,
+				expectedError:            ruleerrors.ErrUnfinalizedTx,
+			},
+			{
+				name:                     "checkTransactionScripts",
+				tx:                       &txForScriptsCheck,
+				povBlockHash:             model.VirtualBlockHash,
+				selectedParentMedianTime: 1,
+				isValid:                  false,
+				expectedError:            ruleerrors.ErrScriptValidation,
+			},
+		}
+
+		for _, test := range tests {
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(test.tx,
+				test.povBlockHash, test.selectedParentMedianTime)
+
+			if test.isValid {
+				if err != nil {
+					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateMassAndFee"+
+						" on test %v: %v", test.name, err)
+				}
+			} else {
+				if err == nil || !errors.Is(err, test.expectedError) {
+					t.Fatalf("TestValidateTransactionInContextAndPopulateMassAndFee: test %v:"+
+						" Unexpected error: Expected to: %v, but got : %v", test.name, test.expectedError, err)
+				}
 			}
 		}
-	}
+	})
 }

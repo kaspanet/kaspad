@@ -227,9 +227,9 @@ var sampleConfig = `[Application Options]
 ; Debug logging level.
 ; Valid levels are {trace, debug, info, warn, error, critical}
 ; You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set
-; log level for individual subsystems. Use kaspad --debuglevel=show to list
+; log level for individual subsystems. Use kaspad --loglevel=show to list
 ; available subsystems.
-; debuglevel=info
+; loglevel=info
 
 ; The port used to listen for HTTP profile requests. The profile server will
 ; be disabled if this option is not specified. The profile information can be

@@ -71,11 +71,6 @@ func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, 
 	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashA, blockHashB)
 }
 
-// IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
-func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashB, blockHashA)
-}
-
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
 func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	for _, potentialDescendant := range potentialDescendants {
