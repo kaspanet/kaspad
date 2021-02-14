@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"net"
 )
 
 var notBannedAddressBucket = database.MakeBucket([]byte("not-banned-addresses"))
@@ -89,7 +91,7 @@ func (as *addressStore) getBanned(key addressKey) (*appmessage.NetAddress, bool)
 }
 
 func (as *addressStore) serializeAddressKey(key addressKey) []byte {
-	serializedSize := 18
+	serializedSize := 16 + 2 // ipv6 + port
 	serializedKey := make([]byte, serializedSize)
 
 	copy(serializedKey[:], key.address[:])
@@ -107,5 +109,33 @@ func (as *addressStore) deserializeAddressKey(serializedKey []byte) addressKey {
 	return addressKey{
 		port:    port,
 		address: ip,
+	}
+}
+
+func (as *addressStore) serializeNetAddress(netAddress *appmessage.NetAddress) []byte {
+	serializedSize := 16 + 2 + 8 + 8 // ipv6 + port + timestamp + services
+	serializedNetAddress := make([]byte, serializedSize)
+
+	copy(serializedNetAddress[:], netAddress.IP[:])
+	binary.LittleEndian.PutUint16(serializedNetAddress[16:], netAddress.Port)
+	binary.LittleEndian.PutUint64(serializedNetAddress[18:], uint64(netAddress.Timestamp.UnixMilliseconds()))
+	binary.LittleEndian.PutUint64(serializedNetAddress[26:], uint64(netAddress.Services))
+
+	return serializedNetAddress
+}
+
+func (as *addressStore) deserializeNetAddress(serializedNetAddress []byte) *appmessage.NetAddress {
+	ip := make(net.IP, 16)
+	copy(ip[:], serializedNetAddress[:])
+
+	port := binary.LittleEndian.Uint16(serializedNetAddress[16:])
+	timestamp := mstime.UnixMilliseconds(int64(binary.LittleEndian.Uint64(serializedNetAddress[18:])))
+	services := appmessage.ServiceFlag(binary.LittleEndian.Uint64(serializedNetAddress[26:]))
+
+	return &appmessage.NetAddress{
+		IP:        ip,
+		Port:      port,
+		Timestamp: timestamp,
+		Services:  services,
 	}
 }
