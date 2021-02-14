@@ -237,6 +237,7 @@ func TestRestoreAddressManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not create a database: %s", err)
 	}
+	defer database.Close()
 
 	// Create an addressManager with the empty database
 	addressManager, err := New(NewConfig(cfg), database)
@@ -273,7 +274,6 @@ func TestRestoreAddressManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not create a database: %s", err)
 	}
-	defer database.Close()
 
 	// Recreate an addressManager with a the previous database
 	addressManager, err = New(NewConfig(cfg), database)
