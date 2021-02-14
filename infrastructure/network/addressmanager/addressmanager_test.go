@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"io/ioutil"
 	"net"
 	"reflect"
 	"testing"
@@ -19,10 +18,7 @@ import (
 func newAddrManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
 	cfg := config.DefaultConfig()
 
-	datadir, err := ioutil.TempDir("", testName)
-	if err != nil {
-		t.Fatalf("%s: could not create a temp directory: %s", testName, err)
-	}
+	datadir := t.TempDir()
 	database, err := ldb.NewLevelDB(datadir, 8)
 	if err != nil {
 		t.Fatalf("%s: could not create a database: %s", testName, err)
@@ -131,13 +127,16 @@ func TestAddressManager(t *testing.T) {
 	testAddresses := []*appmessage.NetAddress{testAddress1, testAddress2, testAddress3}
 
 	// Add a few addresses
-	addressManager.AddAddresses(testAddresses...)
+	err := addressManager.AddAddresses(testAddresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses() failed: %s", err)
+	}
 
 	// Make sure that all the addresses are returned
 	addresses := addressManager.Addresses()
 	if len(testAddresses) != len(addresses) {
 		t.Fatalf("Unexpected amount of addresses returned from Addresses. "+
-			"Want: %d, got: %d", len(addresses), len(testAddresses))
+			"Want: %d, got: %d", len(testAddresses), len(addresses))
 	}
 	for _, testAddress := range testAddresses {
 		found := false
@@ -154,7 +153,10 @@ func TestAddressManager(t *testing.T) {
 
 	// Remove an address
 	addressToRemove := testAddress2
-	addressManager.RemoveAddress(addressToRemove)
+	err = addressManager.RemoveAddress(addressToRemove)
+	if err != nil {
+		t.Fatalf("RemoveAddress() failed: %s", err)
+	}
 
 	// Make sure that the removed address is not returned
 	addresses = addressManager.Addresses()
@@ -169,11 +171,17 @@ func TestAddressManager(t *testing.T) {
 	}
 
 	// Add that address back
-	addressManager.AddAddress(addressToRemove)
+	err = addressManager.AddAddress(addressToRemove)
+	if err != nil {
+		t.Fatalf("AddAddress() failed: %s", err)
+	}
 
 	// Ban a different address
 	addressToBan := testAddress3
-	addressManager.Ban(addressToBan)
+	err = addressManager.Ban(addressToBan)
+	if err != nil {
+		t.Fatalf("Ban() failed: %s", err)
+	}
 
 	// Make sure that the banned address is not returned
 	addresses = addressManager.Addresses()

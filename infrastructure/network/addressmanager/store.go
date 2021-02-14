@@ -25,15 +25,23 @@ func newAddressStore(database database.Database) *addressStore {
 	}
 }
 
-func (as *addressStore) add(key addressKey, address *appmessage.NetAddress) {
-	_, ok := as.notBannedAddresses[key]
-	if !ok {
-		as.notBannedAddresses[key] = address
+func (as *addressStore) add(key addressKey, address *appmessage.NetAddress) error {
+	if _, ok := as.notBannedAddresses[key]; ok {
+		return nil
 	}
+
+	as.notBannedAddresses[key] = address
+
+	databaseKey := as.notBannedDatabaseKey(key)
+	serializedAddress := as.serializeNetAddress(address)
+	return as.database.Put(databaseKey, serializedAddress)
 }
 
-func (as *addressStore) remove(key addressKey) {
+func (as *addressStore) remove(key addressKey) error {
 	delete(as.notBannedAddresses, key)
+
+	databaseKey := as.notBannedDatabaseKey(key)
+	return as.database.Delete(databaseKey)
 }
 
 func (as *addressStore) getAllNotBanned() []*appmessage.NetAddress {
@@ -61,15 +69,23 @@ func (as *addressStore) isNotBanned(key addressKey) bool {
 	return ok
 }
 
-func (as *addressStore) addBanned(key addressKey, address *appmessage.NetAddress) {
-	_, ok := as.bannedAddresses[key.address]
-	if !ok {
-		as.bannedAddresses[key.address] = address
+func (as *addressStore) addBanned(key addressKey, address *appmessage.NetAddress) error {
+	if _, ok := as.bannedAddresses[key.address]; ok {
+		return nil
 	}
+
+	as.bannedAddresses[key.address] = address
+
+	databaseKey := as.bannedDatabaseKey(key)
+	serializedAddress := as.serializeNetAddress(address)
+	return as.database.Put(databaseKey, serializedAddress)
 }
 
-func (as *addressStore) removeBanned(key addressKey) {
+func (as *addressStore) removeBanned(key addressKey) error {
 	delete(as.bannedAddresses, key.address)
+
+	databaseKey := as.bannedDatabaseKey(key)
+	return as.database.Delete(databaseKey)
 }
 
 func (as *addressStore) getAllBanned() []*appmessage.NetAddress {
@@ -88,6 +104,16 @@ func (as *addressStore) isBanned(key addressKey) bool {
 func (as *addressStore) getBanned(key addressKey) (*appmessage.NetAddress, bool) {
 	bannedAddress, ok := as.bannedAddresses[key.address]
 	return bannedAddress, ok
+}
+
+func (as *addressStore) notBannedDatabaseKey(key addressKey) *database.Key {
+	serializedKey := as.serializeAddressKey(key)
+	return notBannedAddressBucket.Key(serializedKey)
+}
+
+func (as *addressStore) bannedDatabaseKey(key addressKey) *database.Key {
+	serializedKey := as.serializeAddressKey(key)
+	return bannedAddressBucket.Key(serializedKey)
 }
 
 func (as *addressStore) serializeAddressKey(key addressKey) []byte {
