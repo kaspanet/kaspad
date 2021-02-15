@@ -58,26 +58,28 @@
     - [ResolveFinalityConflictResponseMessage](#protowire.ResolveFinalityConflictResponseMessage)
     - [NotifyFinalityConflictsRequestMessage](#protowire.NotifyFinalityConflictsRequestMessage)
     - [NotifyFinalityConflictsResponseMessage](#protowire.NotifyFinalityConflictsResponseMessage)
-    - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
-    - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
-    - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
-    - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
-    - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
-    - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
-    - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
-    - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
-    - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
-    - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
-    - [RpcTransaction](#protowire.RpcTransaction)
-    - [RpcTransactionInput](#protowire.RpcTransactionInput)
-    - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
-    - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
-    - [RpcOutpoint](#protowire.RpcOutpoint)
-    - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
-    - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
-    - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
-    - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
-    - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
+  - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
+  - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
+  - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
+  - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
+  - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
+  - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
+  - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
+  - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
+  - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
+  - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
+  - [StopNotifyingUtxosChangedRequestMessage](#protowire.StopNotifyingUtxosChangedRequestMessage)
+  - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
+  - [RpcTransaction](#protowire.RpcTransaction)
+  - [RpcTransactionInput](#protowire.RpcTransactionInput)
+  - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
+  - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
+  - [RpcOutpoint](#protowire.RpcOutpoint)
+  - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
+  - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
+  - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
+  - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
+  - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
     - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
@@ -857,7 +859,6 @@ kaspad&#39;s current virtual.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | blockHashes | [string](#string) | repeated |  |
-| blockHexes | [string](#string) | repeated |  |
 | blockVerboseData | [BlockVerboseData](#protowire.BlockVerboseData) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
@@ -1128,24 +1129,38 @@ See: NotifyUtxosChangedRequestMessage
 
 ### UtxosByAddressesEntry
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | address | [string](#string) |  |  |
 | outpoint | [RpcOutpoint](#protowire.RpcOutpoint) |  |  |
 | utxoEntry | [RpcUtxoEntry](#protowire.RpcUtxoEntry) |  |  |
 
+<a name="protowire.StopNotifyingUtxosChangedRequestMessage"></a>
 
+### StopNotifyingUtxosChangedRequestMessage
 
+StopNotifyingUtxosChangedRequestMessage unregisters this connection for utxoChanged notifications for the given
+addresses.
 
+This call is only available when this kaspad was started with `--utxoindex`
 
+See: UtxosChangedNotificationMessage
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+<a name="protowire.StopNotifyingUtxosChangedResponseMessage"></a>
+
+### StopNotifyingUtxosChangedResponseMessage
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 <a name="protowire.RpcTransaction"></a>
 
 ### RpcTransaction
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |

@@ -5,23 +5,32 @@
 package addressmanager
 
 import (
-	"net"
-	"testing"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/util/mstime"
+	"net"
+	"reflect"
+	"testing"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 )
 
-func newAddrManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
+func newAddressManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
 	cfg := config.DefaultConfig()
 
-	addressManager, err := New(NewConfig(cfg))
+	datadir := t.TempDir()
+	database, err := ldb.NewLevelDB(datadir, 8)
 	if err != nil {
-		t.Fatalf("error creating address manager: %s", err)
+		t.Fatalf("%s: could not create a database: %s", testName, err)
+	}
+
+	addressManager, err = New(NewConfig(cfg), database)
+	if err != nil {
+		t.Fatalf("%s: error creating address manager: %s", testName, err)
 	}
 
 	return addressManager, func() {
+		database.Close()
 	}
 }
 
@@ -66,7 +75,7 @@ func TestBestLocalAddress(t *testing.T) {
 		},
 	}
 
-	amgr, teardown := newAddrManagerForTest(t, "TestGetBestLocalAddress")
+	amgr, teardown := newAddressManagerForTest(t, "TestGetBestLocalAddress")
 	defer teardown()
 
 	// Test against default when there's no address
@@ -105,5 +114,192 @@ func TestBestLocalAddress(t *testing.T) {
 				x, test.remoteAddr.IP, test.want2.IP, got.IP)
 			continue
 		}
+	}
+}
+
+func TestAddressManager(t *testing.T) {
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressManager")
+	defer teardown()
+
+	testAddress1 := &appmessage.NetAddress{IP: net.ParseIP("1.2.3.4"), Timestamp: mstime.Now()}
+	testAddress2 := &appmessage.NetAddress{IP: net.ParseIP("5.6.8.8"), Timestamp: mstime.Now()}
+	testAddress3 := &appmessage.NetAddress{IP: net.ParseIP("9.0.1.2"), Timestamp: mstime.Now()}
+	testAddresses := []*appmessage.NetAddress{testAddress1, testAddress2, testAddress3}
+
+	// Add a few addresses
+	err := addressManager.AddAddresses(testAddresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses() failed: %s", err)
+	}
+
+	// Make sure that all the addresses are returned
+	addresses := addressManager.Addresses()
+	if len(testAddresses) != len(addresses) {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses. "+
+			"Want: %d, got: %d", len(testAddresses), len(addresses))
+	}
+	for _, testAddress := range testAddresses {
+		found := false
+		for _, address := range addresses {
+			if reflect.DeepEqual(testAddress, address) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("Address %s not returned from Addresses().", testAddress.IP)
+		}
+	}
+
+	// Remove an address
+	addressToRemove := testAddress2
+	err = addressManager.RemoveAddress(addressToRemove)
+	if err != nil {
+		t.Fatalf("RemoveAddress() failed: %s", err)
+	}
+
+	// Make sure that the removed address is not returned
+	addresses = addressManager.Addresses()
+	if len(addresses) != len(testAddresses)-1 {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses(). "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses)-1)
+	}
+	for _, address := range addresses {
+		if reflect.DeepEqual(addressToRemove, address) {
+			t.Fatalf("Removed addresses %s returned from Addresses()", addressToRemove.IP)
+		}
+	}
+
+	// Add that address back
+	err = addressManager.AddAddress(addressToRemove)
+	if err != nil {
+		t.Fatalf("AddAddress() failed: %s", err)
+	}
+
+	// Ban a different address
+	addressToBan := testAddress3
+	err = addressManager.Ban(addressToBan)
+	if err != nil {
+		t.Fatalf("Ban() failed: %s", err)
+	}
+
+	// Make sure that the banned address is not returned
+	addresses = addressManager.Addresses()
+	if len(addresses) != len(testAddresses)-1 {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses(). "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses)-1)
+	}
+	for _, address := range addresses {
+		if reflect.DeepEqual(addressToBan, address) {
+			t.Fatalf("Banned addresses %s returned from Addresses()", addressToBan.IP)
+		}
+	}
+
+	// Check that the address is banned
+	isBanned, err := addressManager.IsBanned(addressToBan)
+	if err != nil {
+		t.Fatalf("IsBanned() failed: %s", err)
+	}
+	if !isBanned {
+		t.Fatalf("Adderss %s is unexpectedly not banned", addressToBan.IP)
+	}
+
+	// Check that BannedAddresses() returns the banned address
+	bannedAddresses := addressManager.BannedAddresses()
+	if len(bannedAddresses) != 1 {
+		t.Fatalf("Unexpected amount of addresses returned from BannedAddresses(). "+
+			"Want: %d, got: %d", 1, len(bannedAddresses))
+	}
+	if !reflect.DeepEqual(addressToBan, bannedAddresses[0]) {
+		t.Fatalf("Banned address %s not returned from BannedAddresses()", addressToBan.IP)
+	}
+
+	// Unban the address
+	err = addressManager.Unban(addressToBan)
+	if err != nil {
+		t.Fatalf("Unban() failed: %s", err)
+	}
+
+	// Check that BannedAddresses() not longer returns the banned address
+	bannedAddresses = addressManager.BannedAddresses()
+	if len(bannedAddresses) != 0 {
+		t.Fatalf("Unexpected amount of addresses returned from BannedAddresses(). "+
+			"Want: %d, got: %d", 0, len(bannedAddresses))
+	}
+}
+
+func TestRestoreAddressManager(t *testing.T) {
+	cfg := config.DefaultConfig()
+
+	// Create an empty database
+	datadir := t.TempDir()
+	database, err := ldb.NewLevelDB(datadir, 8)
+	if err != nil {
+		t.Fatalf("Could not create a database: %s", err)
+	}
+	defer database.Close()
+
+	// Create an addressManager with the empty database
+	addressManager, err := New(NewConfig(cfg), database)
+	if err != nil {
+		t.Fatalf("Error creating address manager: %s", err)
+	}
+
+	testAddress1 := &appmessage.NetAddress{IP: net.ParseIP("1.2.3.4"), Timestamp: mstime.Now()}
+	testAddress2 := &appmessage.NetAddress{IP: net.ParseIP("5.6.8.8"), Timestamp: mstime.Now()}
+	testAddress3 := &appmessage.NetAddress{IP: net.ParseIP("9.0.1.2"), Timestamp: mstime.Now()}
+	testAddresses := []*appmessage.NetAddress{testAddress1, testAddress2, testAddress3}
+
+	// Add some addresses
+	err = addressManager.AddAddresses(testAddresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses() failed: %s", err)
+	}
+
+	// Ban one of the addresses
+	addressToBan := testAddress1
+	err = addressManager.Ban(addressToBan)
+	if err != nil {
+		t.Fatalf("Ban() failed: %s", err)
+	}
+
+	// Close the database
+	err = database.Close()
+	if err != nil {
+		t.Fatalf("Close() failed: %s", err)
+	}
+
+	// Reopen the database
+	database, err = ldb.NewLevelDB(datadir, 8)
+	if err != nil {
+		t.Fatalf("Could not create a database: %s", err)
+	}
+
+	// Recreate an addressManager with a the previous database
+	addressManager, err = New(NewConfig(cfg), database)
+	if err != nil {
+		t.Fatalf("Error creating address manager: %s", err)
+	}
+
+	// Make sure that Addresses() returns the correct addresses
+	addresses := addressManager.Addresses()
+	if len(addresses) != len(testAddresses)-1 {
+		t.Fatalf("Unexpected amount of addresses returned from Addresses(). "+
+			"Want: %d, got: %d", len(addresses), len(testAddresses)-1)
+	}
+	for _, address := range addresses {
+		if reflect.DeepEqual(addressToBan, address) {
+			t.Fatalf("Banned addresses %s returned from Addresses()", addressToBan.IP)
+		}
+	}
+
+	// Make sure that BannedAddresses() returns the correct addresses
+	bannedAddresses := addressManager.BannedAddresses()
+	if len(bannedAddresses) != 1 {
+		t.Fatalf("Unexpected amount of addresses returned from BannedAddresses(). "+
+			"Want: %d, got: %d", 1, len(bannedAddresses))
+	}
+	if !reflect.DeepEqual(addressToBan, bannedAddresses[0]) {
+		t.Fatalf("Banned address %s not returned from BannedAddresses()", addressToBan.IP)
 	}
 }

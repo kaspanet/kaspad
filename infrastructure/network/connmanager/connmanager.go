@@ -137,8 +137,7 @@ func (c *ConnectionManager) Ban(netConnection *netadapter.NetConnection) error {
 		return errors.Wrapf(ErrCannotBanPermanent, "Cannot ban %s because it's a permanent connection", netConnection.Address())
 	}
 
-	c.addressManager.Ban(netConnection.NetAddress())
-	return nil
+	return c.addressManager.Ban(netConnection.NetAddress())
 }
 
 // BanByIP bans the given IP and disconnects from all the connection with that IP.
@@ -159,8 +158,7 @@ func (c *ConnectionManager) BanByIP(ip net.IP) error {
 		}
 	}
 
-	c.addressManager.Ban(appmessage.NewNetAddressIPPort(ip, 0, 0))
-	return nil
+	return c.addressManager.Ban(appmessage.NewNetAddressIPPort(ip, 0, 0))
 }
 
 // IsBanned returns whether the given netConnection is banned

@@ -1,6 +1,7 @@
 package random
 
 import (
+	"crypto/rand"
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
@@ -61,8 +62,9 @@ func TestRandomUint64(t *testing.T) {
 // and checks the results accordingly.
 func TestRandomUint64Errors(t *testing.T) {
 	// Test short reads.
-	fr := &fakeRandReader{n: 2, err: io.EOF}
-	nonce, err := randomUint64(fr)
+	reader := rand.Reader
+	rand.Reader = &fakeRandReader{n: 2, err: io.EOF}
+	nonce, err := Uint64()
 	if !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Errorf("Error not expected value of %v [%v]",
 			io.ErrUnexpectedEOF, err)
@@ -70,4 +72,5 @@ func TestRandomUint64Errors(t *testing.T) {
 	if nonce != 0 {
 		t.Errorf("Nonce is not 0 [%v]", nonce)
 	}
+	rand.Reader = reader
 }
