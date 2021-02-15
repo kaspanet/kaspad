@@ -53,12 +53,16 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 	err = bp.validatePostProofOfWork(block, isPruningPoint)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			// If we got ErrMissingParents the block shouldn't be considered as invalid
-			// because it could be added later on when its parents are present, if
-			// we get ErrBadMerkleRoot we shouldn't mark the block as invalid because
-			// later on we can get the block with transactions that fits the merkle
-			// root, and ErrPrunedBlock is an error that rejects a block body and
-			// not the block as a whole, so we shouldn't mark it as invalid as well.
+			// We mark invalid blocks with status externalapi.StatusInvalid except in the
+			// case of the following errors:
+			// ErrMissingParents - If we got ErrMissingParents the block shouldn't be
+			// considered as invalid because it could be added later on when its
+			// parents are present.
+			// ErrBadMerkleRoot - if we get ErrBadMerkleRoot we shouldn't mark the
+			// block as invalid because later on we can get the block with
+			// transactions that fits the merkle root.
+			// ErrPrunedBlock - ErrPrunedBlock is an error that rejects a block body and
+			// not the block as a whole, so we shouldn't mark it as invalid.
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) &&
 				!errors.Is(err, ruleerrors.ErrBadMerkleRoot) &&
 				!errors.Is(err, ruleerrors.ErrPrunedBlock) {
