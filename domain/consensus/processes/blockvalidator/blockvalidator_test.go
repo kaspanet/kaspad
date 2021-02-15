@@ -1,6 +1,7 @@
 package blockvalidator
 
 //
+//
 //import (
 //	"io/ioutil"
 //	"os"
@@ -360,11 +361,11 @@ package blockvalidator
 //		t.Fatalf("Waiting for error, but got: %s", err)
 //	}
 //
-//	// checkBlockParentsOrder
-//	err = checkBlockParentsOrder(blockHeader)
-//	if err == nil {
-//		t.Fatalf("Waiting for error, but got: %s", err)
-//	}
+//	//// checkBlockParentsOrder
+//	//err = checkBlockParentsOrder(blockHeader)
+//	//if err == nil {
+//	//	t.Fatalf("Waiting for error, but got: %s", err)
+//	//}
 //
 //	// checkParentsIncest
 //	err = validator.checkParentsIncest(blockHeader)
@@ -561,7 +562,7 @@ package blockvalidator
 //			t.Fatalf("ValidateBodyInIsolation: %v", err)
 //		}
 //
-//		err = validator.ValidateProofOfWorkAndDifficulty(blockHash)
+//		err = validator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
 //		if err != nil {
 //			t.Fatalf("ValidateProofOfWorkAndDifficulty: %v", err)
 //		}
