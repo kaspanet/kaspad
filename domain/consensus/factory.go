@@ -63,19 +63,22 @@ type Factory interface {
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 	SetTestLevelDBCacheSize(cacheSizeMiB int)
 	SetTestPreAllocateCache(preallocateCaches bool)
+	SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor)
 }
 
 type factory struct {
-	dataDir             string
-	ghostdagConstructor GHOSTDAGManagerConstructor
-	cacheSizeMiB        *int
-	preallocateCaches   *bool
+	dataDir               string
+	ghostdagConstructor   GHOSTDAGManagerConstructor
+	difficultyConstructor DifficultyManagerConstructor
+	cacheSizeMiB          *int
+	preallocateCaches     *bool
 }
 
 // NewFactory creates a new Consensus factory
 func NewFactory() Factory {
 	return &factory{
-		ghostdagConstructor: ghostdagmanager.New,
+		ghostdagConstructor:   ghostdagmanager.New,
+		difficultyConstructor: difficultymanager.New,
 	}
 }
 
@@ -159,7 +162,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	difficultyManager := difficultymanager.New(
+	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
 		ghostdagDataStore,
@@ -464,6 +467,11 @@ func (f *factory) SetTestDataDir(dataDir string) {
 
 func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
 	f.ghostdagConstructor = ghostdagConstructor
+}
+
+// SetTestDifficultyManager is a setter for the difficultyManager field on the factory.
+func (f *factory) SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor) {
+	f.difficultyConstructor = difficultyConstructor
 }
 
 func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {

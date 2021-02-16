@@ -1,6 +1,7 @@
 package blockvalidator_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
@@ -12,8 +13,8 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
-
 	"testing"
+	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -240,4 +241,60 @@ func TestCheckPruningPointViolation(t *testing.T) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 	})
+}
+
+func TestValidateDifficulty(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		mocDifficulty := &mocDifficultyManager{}
+		factory.SetTestDifficultyManager(func(model.DBReader, model.GHOSTDAGManager, model.GHOSTDAGDataStore,
+			model.BlockHeaderStore, model.DAGTopologyManager, model.DAGTraversalManager, *big.Int, int, bool, time.Duration,
+			*externalapi.DomainHash) model.DifficultyManager {
+			return mocDifficulty
+		})
+		genesisDifficulty := params.GenesisBlock.Header.Bits()
+		mocDifficulty.testDifficulty = genesisDifficulty
+		mocDifficulty.testGenesisBits = genesisDifficulty
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckPruningPointViolation")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		emptyCoinbase := externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  nil,
+				Version: 0,
+			},
+		}
+		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, nil)
+		if err != nil {
+			t.Fatalf("TestValidateDifficulty: Failed build block with parents: %v.", err)
+		}
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+		tc.BlockHeaderStore().Stage(blockHash, block.Header)
+		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
+		mocDifficulty.testDifficulty = wrongTestDifficulty
+
+		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
+			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnexpectedDifficulty, err)
+		}
+	})
+}
+
+type mocDifficultyManager struct {
+	testDifficulty  uint32
+	testGenesisBits uint32
+}
+
+func (dm *mocDifficultyManager) genesisBits() (uint32, error) {
+	return dm.testGenesisBits, nil
+}
+
+// RequiredDifficulty returns the difficulty required for the test
+func (dm *mocDifficultyManager) RequiredDifficulty(*externalapi.DomainHash) (uint32, error) {
+	return dm.testDifficulty, nil
 }
