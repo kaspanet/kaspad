@@ -35,6 +35,9 @@ func (tc *testConsensus) convertToDot() (string, error) {
 		dotScriptBuilder.WriteString(fmt.Sprintf("\t\"%s\";\n", hash))
 
 		parents, err := tc.dagTopologyManager.Parents(hash)
+		if err != nil {
+			return "", err
+		}
 
 		for _, parentHash := range parents {
 			edges = append(edges, fmt.Sprintf("\t\"%s\" -> \"%s\";", hash, parentHash))
