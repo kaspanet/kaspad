@@ -130,12 +130,6 @@ func TestHandleGetBlocks(t *testing.T) {
 				virtualSelectedParent, actualBlocks.BlockHashes)
 		}
 
-		// TODO: Remove this
-		err = tc.RenderDAGToDot("/tmp/blabla.svg")
-		if err != nil {
-			panic(err)
-		}
-
 		expectedOrder = append([]*externalapi.DomainHash{params.GenesisHash}, expectedOrder...)
 		actualOrder := getBlocks(nil)
 		if !reflect.DeepEqual(actualOrder.BlockHashes, hashes.ToStrings(expectedOrder)) {
