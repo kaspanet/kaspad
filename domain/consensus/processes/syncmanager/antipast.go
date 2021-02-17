@@ -137,6 +137,10 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *model.BlockGHOSTDAGData,
 	lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
 
+	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
+		return highHash, nil
+	}
+
 	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
 	if err != nil {
 		return nil, err
