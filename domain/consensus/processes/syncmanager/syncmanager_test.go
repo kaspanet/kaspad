@@ -1,14 +1,15 @@
 package syncmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"math"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestSyncManager_GetHashesBetween(t *testing.T) {
@@ -58,7 +59,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(upBfsOrder, tc, t)))
 		upBfsOrderExcludingGenesis := upBfsOrder[1:]
 		if !reflect.DeepEqual(allHashes, upBfsOrderExcludingGenesis) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected %v\n == \n%v", allHashes, upBfsOrder)
+			t.Fatalf("TestSyncManager_GetHashesBetween expected: \n%s\nactual:\n%s\n", upBfsOrderExcludingGenesis, allHashes)
 		}
 	})
 }

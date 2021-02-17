@@ -9,6 +9,7 @@ import (
 // antiPastHashesBetween returns the hashes of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
 // `maxBlueScoreDifference`, if non-zero.
+// The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash,
 	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
 
@@ -86,6 +87,12 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 			blockHashes = append(blockHashes, blockHash)
 		}
 	}
+
+	// The process above doesn't return highHash, so include it explicitly, unless highHash == lowHash
+	if lowHash != highHash {
+		blockHashes = append(blockHashes, highHash)
+	}
+
 	return blockHashes, nil
 }
 
@@ -117,6 +124,7 @@ func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*ex
 			i++
 		} else {
 			sortedMergeSet = append(sortedMergeSet, currentRed)
+			j++
 		}
 	}
 	sortedMergeSet = append(sortedMergeSet, blueMergeSet[i:]...)
