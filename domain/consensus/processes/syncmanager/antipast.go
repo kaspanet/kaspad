@@ -18,6 +18,9 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	// We keep originalLowHash to filter out blocks in it's past later down the road
 	originalLowHash := lowHash
 	var err error
+	if !lowHash.Equal(highHash) {
+		log.Criticalf("REMOVE MEEEEE!!!!!")
+	}
 	lowHash, err = sm.findLowHashInHighHashSelectedParentChain(lowHash, highHash)
 	if err != nil {
 		return nil, err
@@ -121,7 +124,8 @@ func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*ex
 	}
 	sortedMergeSet = append(sortedMergeSet, blueMergeSet[i:]...)
 	sortedMergeSet = append(sortedMergeSet, redMergeSet[j:]...)
-	return blueMergeSet, nil
+
+	return sortedMergeSet, nil
 }
 
 func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *externalapi.DomainHash,
