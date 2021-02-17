@@ -243,6 +243,11 @@ func TestCheckPruningPointViolation(t *testing.T) {
 	})
 }
 
+// TestValidateDifficulty verified that in case of a block with an unexpected difficulty,
+// an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
+// function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The require difficulty is
+// "calculated" by the function (dm *mocDifficultyManager) RequiredDifficulty ,
+// where mocDifficultyManager is special implementation of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
@@ -256,7 +261,7 @@ func TestValidateDifficulty(t *testing.T) {
 		genesisDifficulty := params.GenesisBlock.Header.Bits()
 		mocDifficulty.testDifficulty = genesisDifficulty
 		mocDifficulty.testGenesisBits = genesisDifficulty
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckPruningPointViolation")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
