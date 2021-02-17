@@ -18,9 +18,6 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	// We keep originalLowHash to filter out blocks in it's past later down the road
 	originalLowHash := lowHash
 	var err error
-	if !lowHash.Equal(highHash) {
-		log.Criticalf("REMOVE MEEEEE!!!!!")
-	}
 	lowHash, err = sm.findLowHashInHighHashSelectedParentChain(lowHash, highHash)
 	if err != nil {
 		return nil, err
@@ -79,7 +76,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 
 		// append to blockHashes all blocks in sortedMergeSet which are not in the past of originalLowHash
 		for _, blockHash := range sortedMergeSet {
-			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(originalLowHash, blockHash)
+			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(blockHash, originalLowHash)
 			if err != nil {
 				return nil, err
 			}
@@ -100,8 +97,8 @@ func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*ex
 
 	blueMergeSet := currentGhostdagData.MergeSetBlues()
 	redMergeSet := currentGhostdagData.MergeSetReds()
+	sortedMergeSet := make([]*externalapi.DomainHash, 0, len(blueMergeSet)+len(redMergeSet))
 	selectedParent, blueMergeSet := blueMergeSet[0], blueMergeSet[1:]
-	sortedMergeSet := make([]*externalapi.DomainHash, len(blueMergeSet)+len(redMergeSet))
 	sortedMergeSet = append(sortedMergeSet, selectedParent)
 	i, j := 0, 0
 	for i < len(blueMergeSet) && j < len(redMergeSet) {
