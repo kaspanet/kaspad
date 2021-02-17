@@ -159,7 +159,7 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 		tryCount++
 		const sleepTime = 500 * time.Millisecond
 		shouldLog := (tryCount-1)%10 == 0
-		template := templatemanager.Get()
+		template, isSynced := templatemanager.Get()
 		if template == nil {
 			if shouldLog {
 				log.Info("Waiting for the initial template")
@@ -167,7 +167,7 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 			time.Sleep(sleepTime)
 			continue
 		}
-		if !template.IsSynced && !mineWhenNotSynced {
+		if !isSynced && !mineWhenNotSynced {
 			if shouldLog {
 				log.Warnf("Kaspad is not synced. Skipping current block template")
 			}
@@ -175,7 +175,7 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 			continue
 		}
 
-		return appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+		return template
 	}
 }
 
