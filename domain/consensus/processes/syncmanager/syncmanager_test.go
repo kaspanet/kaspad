@@ -44,10 +44,6 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 			}
 			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(splitBlocks, tc, t)))
 			restOfSplitBlocks, selectedParent := splitBlocks[:len(splitBlocks)-1], splitBlocks[len(splitBlocks)-1]
-			selectedParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(splitBlocks...)
-			if err != nil {
-				return
-			}
 			expectedOrder = append(expectedOrder, selectedParent)
 			expectedOrder = append(expectedOrder, restOfSplitBlocks...)
 
@@ -68,13 +64,13 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 			}
 		}
 
-		allHashes, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
+		actualOrder, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
 		if err != nil {
-			t.Fatalf("TestSyncManager_GetHashesBetween failed returning allHashes: %v", err)
+			t.Fatalf("TestSyncManager_GetHashesBetween failed returning actualOrder: %v", err)
 		}
 
-		if !reflect.DeepEqual(allHashes, expectedOrder) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected: \n%s\nactual:\n%s\n", expectedOrder, allHashes)
+		if !reflect.DeepEqual(actualOrder, expectedOrder) {
+			t.Fatalf("TestSyncManager_GetHashesBetween expected: \n%s\nactual:\n%s\n", expectedOrder, actualOrder)
 		}
 	})
 }

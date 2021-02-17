@@ -1,6 +1,10 @@
 package rpchandlers_test
 
 import (
+	"reflect"
+	"sort"
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
@@ -12,9 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	"github.com/kaspanet/kaspad/infrastructure/config"
-	"reflect"
-	"sort"
-	"testing"
 )
 
 type fakeDomain struct {
@@ -65,66 +66,85 @@ func TestHandleGetBlocks(t *testing.T) {
 			return antipast
 		}
 
-		upBfsOrder := make([]*externalapi.DomainHash, 0, 30)
-		selectedParent := params.GenesisHash
-		upBfsOrder = append(upBfsOrder, selectedParent)
+		// Create a DAG with the following structure:
+		//          merging block
+		//         /      |      \
+		//      split1  split2   split3
+		//        \       |      /
+		//         merging block
+		//         /      |      \
+		//      split1  split2   split3
+		//        \       |      /
+		//               etc.
+		expectedOrder := make([]*externalapi.DomainHash, 0, 40)
+		mergingBlock := params.GenesisHash
 		for i := 0; i < 10; i++ {
-			parents := make([]*externalapi.DomainHash, 0, 3)
-			for j := 0; j < 4; j++ {
-				blockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{selectedParent}, nil, nil)
+			splitBlocks := make([]*externalapi.DomainHash, 0, 3)
+			for j := 0; j < 3; j++ {
+				blockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{mergingBlock}, nil, nil)
 				if err != nil {
 					t.Fatalf("Failed adding block: %v", err)
 				}
-				parents = append(parents, blockHash)
-				upBfsOrder = append(upBfsOrder, blockHash)
+				splitBlocks = append(splitBlocks, blockHash)
 			}
-			selectedParent, _, err = tc.AddBlock(parents, nil, nil)
+			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(splitBlocks, tc, t)))
+			restOfSplitBlocks, selectedParent := splitBlocks[:len(splitBlocks)-1], splitBlocks[len(splitBlocks)-1]
+			expectedOrder = append(expectedOrder, selectedParent)
+			expectedOrder = append(expectedOrder, restOfSplitBlocks...)
+
+			mergingBlock, _, err = tc.AddBlock(splitBlocks, nil, nil)
 			if err != nil {
 				t.Fatalf("Failed adding block: %v", err)
 			}
-			upBfsOrder = append(upBfsOrder, selectedParent)
+			expectedOrder = append(expectedOrder, mergingBlock)
 		}
 
 		virtualSelectedParent, err := tc.GetVirtualSelectedParent()
 		if err != nil {
 			t.Fatalf("Failed getting SelectedParent: %v", err)
 		}
-		if !virtualSelectedParent.Equal(upBfsOrder[len(upBfsOrder)-1]) {
-			t.Fatalf("Expected %s to be selectedParent, instead found: %s", upBfsOrder[len(upBfsOrder)-1], virtualSelectedParent)
+		if !virtualSelectedParent.Equal(expectedOrder[len(expectedOrder)-1]) {
+			t.Fatalf("Expected %s to be selectedParent, instead found: %s", expectedOrder[len(expectedOrder)-1], virtualSelectedParent)
 		}
 
 		requestSelectedParent := getBlocks(virtualSelectedParent)
 		if !reflect.DeepEqual(requestSelectedParent.BlockHashes, hashes.ToStrings([]*externalapi.DomainHash{virtualSelectedParent})) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected %v\n == \n%v", requestSelectedParent.BlockHashes, virtualSelectedParent)
+			t.Fatalf("TestHandleGetBlocks expected:\n%v\nactual:\n%v", virtualSelectedParent, requestSelectedParent.BlockHashes)
 		}
 
-		for i, blockHash := range upBfsOrder {
-			expectedBlocks := filterAntiPast(blockHash, upBfsOrder)
-			// sort the slice in the order GetBlocks is returning them
-			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(expectedBlocks, tc, t)))
+		for i, blockHash := range expectedOrder {
+			expectedBlocks := filterAntiPast(blockHash, expectedOrder)
 			expectedBlocks = append([]*externalapi.DomainHash{blockHash}, expectedBlocks...)
 
-			blocks := getBlocks(blockHash)
-			if !reflect.DeepEqual(blocks.BlockHashes, hashes.ToStrings(expectedBlocks)) {
-				t.Fatalf("TestSyncManager_GetHashesBetween %d expected %s\n == \n%s", i, blocks.BlockHashes, hashes.ToStrings(expectedBlocks))
+			actualBlocks := getBlocks(blockHash)
+			if !reflect.DeepEqual(actualBlocks.BlockHashes, hashes.ToStrings(expectedBlocks)) {
+				t.Fatalf("TestHandleGetBlocks %d \nexpected: \n%v\nactual:\n%v", i,
+					hashes.ToStrings(expectedBlocks), actualBlocks.BlockHashes)
 			}
 		}
 
-		// Make explitly sure that if lowHash==highHash we get a slice with a single hash.
-		blocks := getBlocks(virtualSelectedParent)
-		if !reflect.DeepEqual(blocks.BlockHashes, []string{virtualSelectedParent.String()}) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected blocks to contain just '%s', instead got: \n%s", virtualSelectedParent, blocks.BlockHashes)
+		// Make explicitly sure that if lowHash==highHash we get a slice with a single hash.
+		actualBlocks := getBlocks(virtualSelectedParent)
+		if !reflect.DeepEqual(actualBlocks.BlockHashes, []string{virtualSelectedParent.String()}) {
+			t.Fatalf("TestHandleGetBlocks expected blocks to contain just '%s', instead got: \n%v",
+				virtualSelectedParent, actualBlocks.BlockHashes)
 		}
 
-		sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(upBfsOrder, tc, t)))
-		requestAllViaNil := getBlocks(nil)
-		if !reflect.DeepEqual(requestAllViaNil.BlockHashes, hashes.ToStrings(upBfsOrder)) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected %v\n == \n%v", requestAllViaNil.BlockHashes, upBfsOrder)
+		// TODO: Remove this
+		err = tc.RenderDAGToDot("/tmp/blabla.svg")
+		if err != nil {
+			panic(err)
+		}
+
+		expectedOrder = append([]*externalapi.DomainHash{params.GenesisHash}, expectedOrder...)
+		actualOrder := getBlocks(nil)
+		if !reflect.DeepEqual(actualOrder.BlockHashes, hashes.ToStrings(expectedOrder)) {
+			t.Fatalf("TestHandleGetBlocks \nexpected: %v \nactual:\n%v", expectedOrder, actualOrder.BlockHashes)
 		}
 
 		requestAllExplictly := getBlocks(params.GenesisHash)
-		if !reflect.DeepEqual(requestAllExplictly.BlockHashes, hashes.ToStrings(upBfsOrder)) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected %v\n == \n%v", requestAllExplictly.BlockHashes, upBfsOrder)
+		if !reflect.DeepEqual(requestAllExplictly.BlockHashes, hashes.ToStrings(expectedOrder)) {
+			t.Fatalf("TestHandleGetBlocks \nexpected: \n%v\n. actual:\n%v", expectedOrder, requestAllExplictly.BlockHashes)
 		}
 	})
 }
