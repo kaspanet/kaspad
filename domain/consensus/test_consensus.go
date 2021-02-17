@@ -2,6 +2,8 @@ package consensus
 
 import (
 	"encoding/json"
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
@@ -9,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
-	"io"
 )
 
 type testConsensus struct {

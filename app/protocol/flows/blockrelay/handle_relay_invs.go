@@ -112,6 +112,11 @@ func (flow *handleRelayInvsFlow) start() error {
 		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
+			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
+				log.Infof("Ignoring pruned block %s", inv.Hash)
+				continue
+			}
+
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue

@@ -1,11 +1,12 @@
 package testapi
 
 import (
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"io"
 )
 
 // MineJSONBlockType indicates which type of blocks MineJSON mines
@@ -49,6 +50,8 @@ type TestConsensus interface {
 
 	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
 	DiscardAllStores()
+
+	RenderDAGToDot(filename string) error
 
 	AcceptanceDataStore() model.AcceptanceDataStore
 	BlockHeaderStore() model.BlockHeaderStore
