@@ -9,20 +9,36 @@ import (
 type selectedChildIterator struct {
 	databaseContext    model.DBReader
 	dagTopologyManager model.DAGTopologyManager
-	highHash           *externalapi.DomainHash
-	current            *externalapi.DomainHash
+
+	reachabilityDataStore model.ReachabilityDataStore
+	highHash, lowHash     *externalapi.DomainHash
+	current               *externalapi.DomainHash
+	err                   error
 }
 
-func (s selectedChildIterator) Next() bool {
-	children, err := s.dagTopologyManager.Children(s.current)
-	if err != nil {
-		panic(err)
+func (s *selectedChildIterator) First() bool {
+	s.current = s.lowHash
+	return s.Next()
+}
+
+func (s *selectedChildIterator) Next() bool {
+	if s.err != nil {
+		return true
 	}
 
-	for _, child := range children {
+	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.current)
+	if err != nil {
+		s.current = nil
+		s.err = err
+		return true
+	}
+
+	for _, child := range data.Children() {
 		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
 		if err != nil {
-			panic(err)
+			s.current = nil
+			s.err = err
+			return true
 		}
 
 		if isChildInSelectedParentChainOfHighHash {
@@ -33,10 +49,12 @@ func (s selectedChildIterator) Next() bool {
 	return false
 }
 
-func (s selectedChildIterator) Get() *externalapi.DomainHash {
-	return s.current
+func (s *selectedChildIterator) Get() (*externalapi.DomainHash, error) {
+	return s.current, s.err
 }
 
+// SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over
+// highHash's selected parent chain
 func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {
 	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
 	if err != nil {
@@ -47,9 +65,11 @@ func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externa
 		return nil, errors.Errorf("%s is not in the selected parent chain of %s", highHash, lowHash)
 	}
 	return &selectedChildIterator{
-		databaseContext:    dtm.databaseContext,
-		dagTopologyManager: dtm.dagTopologyManager,
-		highHash:           highHash,
-		current:            lowHash,
+		databaseContext:       dtm.databaseContext,
+		dagTopologyManager:    dtm.dagTopologyManager,
+		reachabilityDataStore: dtm.reachabilityDataStore,
+		highHash:              highHash,
+		lowHash:               lowHash,
+		current:               lowHash,
 	}, nil
 }

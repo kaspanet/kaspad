@@ -27,7 +27,16 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 
 	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey}
 
-	templateBlock := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
+	templateBlock, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
+	if err != nil {
+		return nil, err
+	}
+	msgBlock := appmessage.DomainBlockToMsgBlock(templateBlock)
 
-	return appmessage.DomainBlockToMsgBlock(templateBlock), nil
+	isSynced, err := context.ProtocolManager.ShouldMine()
+	if err != nil {
+		return nil, err
+	}
+
+	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock, isSynced), nil
 }

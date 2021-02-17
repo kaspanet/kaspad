@@ -2,7 +2,6 @@ package peer
 
 import (
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -14,12 +13,13 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
+// maxProtocolVersion version is the maximum supported protocol
+// version this kaspad node supports
+const maxProtocolVersion = 1
+
 // Peer holds data about a peer.
 type Peer struct {
 	connection *netadapter.NetConnection
-
-	selectedTipHashMtx sync.RWMutex
-	selectedTipHash    *externalapi.DomainHash
 
 	userAgent                string
 	services                 appmessage.ServiceFlag
@@ -35,41 +35,19 @@ type Peer struct {
 	lastPingNonce    uint64        // The nonce of the last ping we sent
 	lastPingTime     time.Time     // Time we sent last ping
 	lastPingDuration time.Duration // Time for last ping to return
-
-	isSelectedTipRequested uint32
-	selectedTipRequestChan chan struct{}
-	lastSelectedTipRequest mstime.Time
-
-	ibdStartChan chan struct{}
 }
 
 // New returns a new Peer
 func New(connection *netadapter.NetConnection) *Peer {
 	return &Peer{
-		connection:             connection,
-		selectedTipRequestChan: make(chan struct{}),
-		ibdStartChan:           make(chan struct{}),
-		connectionStarted:      time.Now(),
+		connection:        connection,
+		connectionStarted: time.Now(),
 	}
 }
 
 // Connection returns the NetConnection associated with this peer
 func (p *Peer) Connection() *netadapter.NetConnection {
 	return p.connection
-}
-
-// SelectedTipHash returns the selected tip of the peer.
-func (p *Peer) SelectedTipHash() *externalapi.DomainHash {
-	p.selectedTipHashMtx.RLock()
-	defer p.selectedTipHashMtx.RUnlock()
-	return p.selectedTipHash
-}
-
-// SetSelectedTipHash sets the selected tip of the peer.
-func (p *Peer) SetSelectedTipHash(hash *externalapi.DomainHash) {
-	p.selectedTipHashMtx.Lock()
-	defer p.selectedTipHashMtx.Unlock()
-	p.selectedTipHash = hash
 }
 
 // SubnetworkID returns the subnetwork the peer is associated with.
@@ -112,9 +90,9 @@ func (p *Peer) IsOutbound() bool {
 func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVerion = msg.ProtocolVersion
-	p.protocolVersion = mathUtil.MinUint32(p.protocolVersion, p.advertisedProtocolVerion)
+	p.protocolVersion = mathUtil.MinUint32(maxProtocolVersion, p.advertisedProtocolVerion)
 	log.Debugf("Negotiated protocol version %d for peer %s",
-		p.protocolVersion, p.ID())
+		p.protocolVersion, p)
 
 	// Set the supported services for the peer to what the remote peer
 	// advertised.
@@ -124,7 +102,6 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion) {
 	p.userAgent = msg.UserAgent
 
 	p.disableRelayTx = msg.DisableRelayTx
-	p.selectedTipHash = msg.SelectedTipHash
 	p.subnetworkID = msg.SubnetworkID
 
 	p.timeOffset = mstime.Since(msg.Timestamp)
@@ -150,46 +127,6 @@ func (p *Peer) SetPingIdle() {
 
 func (p *Peer) String() string {
 	return p.connection.String()
-}
-
-// RequestSelectedTipIfRequired notifies the peer that requesting
-// a selected tip is required. This triggers the selected tip
-// request flow.
-func (p *Peer) RequestSelectedTipIfRequired() {
-	if atomic.SwapUint32(&p.isSelectedTipRequested, 1) != 0 {
-		return
-	}
-
-	const minGetSelectedTipInterval = time.Minute
-	if mstime.Since(p.lastSelectedTipRequest) < minGetSelectedTipInterval {
-		return
-	}
-
-	p.lastSelectedTipRequest = mstime.Now()
-	p.selectedTipRequestChan <- struct{}{}
-}
-
-// WaitForSelectedTipRequests blocks the current thread until
-// a selected tip is requested from this peer
-func (p *Peer) WaitForSelectedTipRequests() {
-	<-p.selectedTipRequestChan
-}
-
-// FinishRequestingSelectedTip finishes requesting the selected
-// tip from this peer
-func (p *Peer) FinishRequestingSelectedTip() {
-	atomic.StoreUint32(&p.isSelectedTipRequested, 0)
-}
-
-// StartIBD starts the IBD process for this peer
-func (p *Peer) StartIBD() {
-	p.ibdStartChan <- struct{}{}
-}
-
-// WaitForIBDStart blocks the current thread until
-// IBD start is requested from this peer
-func (p *Peer) WaitForIBDStart() {
-	<-p.ibdStartChan
 }
 
 // Address returns the address associated with this connection

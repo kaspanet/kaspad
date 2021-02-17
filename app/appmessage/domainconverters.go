@@ -1,7 +1,13 @@
 package appmessage
 
 import (
+	"encoding/hex"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
@@ -17,17 +23,17 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 	}
 }
 
-// DomainBlockHeaderToBlockHeader converts an externalapi.DomainBlockHeader to BlockHeader
-func DomainBlockHeaderToBlockHeader(domainBlockHeader *externalapi.DomainBlockHeader) *BlockHeader {
-	return &BlockHeader{
-		Version:              domainBlockHeader.Version,
-		ParentHashes:         domainBlockHeader.ParentHashes,
-		HashMerkleRoot:       &domainBlockHeader.HashMerkleRoot,
-		AcceptedIDMerkleRoot: &domainBlockHeader.AcceptedIDMerkleRoot,
-		UTXOCommitment:       &domainBlockHeader.UTXOCommitment,
-		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds),
-		Bits:                 domainBlockHeader.Bits,
-		Nonce:                domainBlockHeader.Nonce,
+// DomainBlockHeaderToBlockHeader converts an externalapi.BlockHeader to MsgBlockHeader
+func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *MsgBlockHeader {
+	return &MsgBlockHeader{
+		Version:              domainBlockHeader.Version(),
+		ParentHashes:         domainBlockHeader.ParentHashes(),
+		HashMerkleRoot:       domainBlockHeader.HashMerkleRoot(),
+		AcceptedIDMerkleRoot: domainBlockHeader.AcceptedIDMerkleRoot(),
+		UTXOCommitment:       domainBlockHeader.UTXOCommitment(),
+		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
+		Bits:                 domainBlockHeader.Bits(),
+		Nonce:                domainBlockHeader.Nonce(),
 	}
 }
 
@@ -44,18 +50,18 @@ func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 	}
 }
 
-// BlockHeaderToDomainBlockHeader converts a BlockHeader to externalapi.DomainBlockHeader
-func BlockHeaderToDomainBlockHeader(blockHeader *BlockHeader) *externalapi.DomainBlockHeader {
-	return &externalapi.DomainBlockHeader{
-		Version:              blockHeader.Version,
-		ParentHashes:         blockHeader.ParentHashes,
-		HashMerkleRoot:       *blockHeader.HashMerkleRoot,
-		AcceptedIDMerkleRoot: *blockHeader.AcceptedIDMerkleRoot,
-		UTXOCommitment:       *blockHeader.UTXOCommitment,
-		TimeInMilliseconds:   blockHeader.Timestamp.UnixMilliseconds(),
-		Bits:                 blockHeader.Bits,
-		Nonce:                blockHeader.Nonce,
-	}
+// BlockHeaderToDomainBlockHeader converts a MsgBlockHeader to externalapi.BlockHeader
+func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.BlockHeader {
+	return blockheader.NewImmutableBlockHeader(
+		blockHeader.Version,
+		blockHeader.ParentHashes,
+		blockHeader.HashMerkleRoot,
+		blockHeader.AcceptedIDMerkleRoot,
+		blockHeader.UTXOCommitment,
+		blockHeader.Timestamp.UnixMilliseconds(),
+		blockHeader.Bits,
+		blockHeader.Nonce,
+	)
 }
 
 // DomainTransactionToMsgTx converts an externalapi.DomainTransaction into an MsgTx
@@ -77,7 +83,7 @@ func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) 
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: domainTransaction.SubnetworkID,
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  &domainTransaction.PayloadHash,
+		PayloadHash:  domainTransaction.PayloadHash,
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -114,6 +120,12 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 	for _, txOut := range msgTx.TxOut {
 		transactionOutputs = append(transactionOutputs, txOutToDomainTransactionOutput(txOut))
 	}
+
+	payload := make([]byte, 0)
+	if msgTx.Payload != nil {
+		payload = msgTx.Payload
+	}
+
 	return &externalapi.DomainTransaction{
 		Version:      msgTx.Version,
 		Inputs:       transactionInputs,
@@ -121,8 +133,8 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
-		PayloadHash:  *msgTx.PayloadHash,
-		Payload:      msgTx.Payload,
+		PayloadHash:  msgTx.PayloadHash,
+		Payload:      payload,
 	}
 }
 
@@ -146,4 +158,160 @@ func outpointToDomainOutpoint(outpoint *Outpoint) *externalapi.DomainOutpoint {
 		TransactionID: outpoint.TxID,
 		Index:         outpoint.Index,
 	}
+}
+
+// RPCTransactionToDomainTransaction converts RPCTransactions to DomainTransactions
+func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externalapi.DomainTransaction, error) {
+	inputs := make([]*externalapi.DomainTransactionInput, len(rpcTransaction.Inputs))
+	for i, input := range rpcTransaction.Inputs {
+		transactionIDBytes, err := hex.DecodeString(input.PreviousOutpoint.TransactionID)
+		if err != nil {
+			return nil, err
+		}
+		transactionID, err := transactionid.FromBytes(transactionIDBytes)
+		if err != nil {
+			return nil, err
+		}
+		previousOutpoint := &externalapi.DomainOutpoint{
+			TransactionID: *transactionID,
+			Index:         input.PreviousOutpoint.Index,
+		}
+		signatureScript, err := hex.DecodeString(input.SignatureScript)
+		if err != nil {
+			return nil, err
+		}
+		inputs[i] = &externalapi.DomainTransactionInput{
+			PreviousOutpoint: *previousOutpoint,
+			SignatureScript:  signatureScript,
+			Sequence:         input.Sequence,
+		}
+	}
+	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
+	for i, output := range rpcTransaction.Outputs {
+		scriptPublicKey, err := hex.DecodeString(output.ScriptPublicKey.Script)
+		if err != nil {
+			return nil, err
+		}
+		outputs[i] = &externalapi.DomainTransactionOutput{
+			Value:           output.Amount,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
+		}
+	}
+
+	subnetworkIDBytes, err := hex.DecodeString(rpcTransaction.SubnetworkID)
+	if err != nil {
+		return nil, err
+	}
+	subnetworkID, err := subnetworks.FromBytes(subnetworkIDBytes)
+	if err != nil {
+		return nil, err
+	}
+	payloadHashBytes, err := hex.DecodeString(rpcTransaction.PayloadHash)
+	if err != nil {
+		return nil, err
+	}
+	payloadHash, err := externalapi.NewDomainHashFromByteSlice(payloadHashBytes)
+	if err != nil {
+		return nil, err
+	}
+	payload, err := hex.DecodeString(rpcTransaction.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainTransaction{
+		Version:      rpcTransaction.Version,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     rpcTransaction.LockTime,
+		SubnetworkID: *subnetworkID,
+		Gas:          rpcTransaction.LockTime,
+		PayloadHash:  *payloadHash,
+		Payload:      payload,
+	}, nil
+}
+
+// DomainTransactionToRPCTransaction converts DomainTransactions to RPCTransactions
+func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransaction) *RPCTransaction {
+	inputs := make([]*RPCTransactionInput, len(transaction.Inputs))
+	for i, input := range transaction.Inputs {
+		transactionID := input.PreviousOutpoint.TransactionID.String()
+		previousOutpoint := &RPCOutpoint{
+			TransactionID: transactionID,
+			Index:         input.PreviousOutpoint.Index,
+		}
+		signatureScript := hex.EncodeToString(input.SignatureScript)
+		inputs[i] = &RPCTransactionInput{
+			PreviousOutpoint: previousOutpoint,
+			SignatureScript:  signatureScript,
+			Sequence:         input.Sequence,
+		}
+	}
+	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))
+	for i, output := range transaction.Outputs {
+		scriptPublicKey := hex.EncodeToString(output.ScriptPublicKey.Script)
+		outputs[i] = &RPCTransactionOutput{
+			Amount:          output.Value,
+			ScriptPublicKey: &RPCScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
+		}
+	}
+	subnetworkID := hex.EncodeToString(transaction.SubnetworkID[:])
+	payloadHash := transaction.PayloadHash.String()
+	payload := hex.EncodeToString(transaction.Payload)
+	return &RPCTransaction{
+		Version:      transaction.Version,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     transaction.LockTime,
+		SubnetworkID: subnetworkID,
+		Gas:          transaction.LockTime,
+		PayloadHash:  payloadHash,
+		Payload:      payload,
+	}
+}
+
+// OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs converts
+// OutpointAndUTXOEntryPairs to domain OutpointAndUTXOEntryPairs
+func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
+	outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) []*externalapi.OutpointAndUTXOEntryPair {
+
+	domainOutpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, len(outpointAndUTXOEntryPairs))
+	for i, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		domainOutpointAndUTXOEntryPairs[i] = &externalapi.OutpointAndUTXOEntryPair{
+			Outpoint: &externalapi.DomainOutpoint{
+				TransactionID: outpointAndUTXOEntryPair.Outpoint.TxID,
+				Index:         outpointAndUTXOEntryPair.Outpoint.Index,
+			},
+			UTXOEntry: utxo.NewUTXOEntry(
+				outpointAndUTXOEntryPair.UTXOEntry.Amount,
+				outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
+				outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
+				outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore,
+			),
+		}
+	}
+	return domainOutpointAndUTXOEntryPairs
+}
+
+// DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs converts
+// domain OutpointAndUTXOEntryPairs to OutpointAndUTXOEntryPairs
+func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
+	outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) []*OutpointAndUTXOEntryPair {
+
+	domainOutpointAndUTXOEntryPairs := make([]*OutpointAndUTXOEntryPair, len(outpointAndUTXOEntryPairs))
+	for i, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
+		domainOutpointAndUTXOEntryPairs[i] = &OutpointAndUTXOEntryPair{
+			Outpoint: &Outpoint{
+				TxID:  outpointAndUTXOEntryPair.Outpoint.TransactionID,
+				Index: outpointAndUTXOEntryPair.Outpoint.Index,
+			},
+			UTXOEntry: &UTXOEntry{
+				Amount:          outpointAndUTXOEntryPair.UTXOEntry.Amount(),
+				ScriptPublicKey: outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey(),
+				IsCoinbase:      outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase(),
+				BlockBlueScore:  outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore(),
+			},
+		}
+	}
+	return domainOutpointAndUTXOEntryPairs
 }

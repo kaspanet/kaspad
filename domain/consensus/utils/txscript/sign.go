@@ -15,14 +15,14 @@ import (
 
 // RawTxInSignature returns the serialized Schnorr signature for the input idx of
 // the given transaction, with hashType appended to it.
-func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script []byte,
-	hashType SigHashType, key *secp256k1.PrivateKey) ([]byte, error) {
+func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script *externalapi.ScriptPublicKey,
+	hashType SigHashType, key *secp256k1.SchnorrKeyPair) ([]byte, error) {
 
 	hash, err := CalcSignatureHash(script, hashType, tx, idx)
 	if err != nil {
 		return nil, err
 	}
-	secpHash := secp256k1.Hash(*hash)
+	secpHash := secp256k1.Hash(*hash.ByteArray())
 	signature, err := key.SchnorrSign(&secpHash)
 	if err != nil {
 		return nil, errors.Errorf("cannot sign tx input: %s", err)
@@ -35,11 +35,11 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script []byte,
 // from a previous output to the owner of privKey. tx must include all
 // transaction inputs and outputs, however txin scripts are allowed to be filled
 // or empty. The returned script is calculated to be used as the idx'th txin
-// sigscript for tx. script is the ScriptPubKey of the previous output being used
+// sigscript for tx. script is the ScriptPublicKey of the previous output being used
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *externalapi.DomainTransaction, idx int, script []byte, hashType SigHashType, privKey *secp256k1.PrivateKey, compress bool) ([]byte, error) {
+func SignatureScript(tx *externalapi.DomainTransaction, idx int, script *externalapi.ScriptPublicKey, hashType SigHashType, privKey *secp256k1.SchnorrKeyPair) ([]byte, error) {
 	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
 	if err != nil {
 		return nil, err
@@ -49,21 +49,16 @@ func SignatureScript(tx *externalapi.DomainTransaction, idx int, script []byte, 
 	if err != nil {
 		return nil, err
 	}
-	var pkData []byte
-	if compress {
-		pkData, err = pk.SerializeCompressed()
-	} else {
-		pkData, err = pk.SerializeUncompressed()
-	}
+	pkData, err := pk.Serialize()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
+	return NewScriptBuilder().AddData(sig).AddData(pkData[:]).Script()
 }
 
 func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
+	script *externalapi.ScriptPublicKey, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, util.Address, error) {
 
 	class, address, err := ExtractScriptPubKeyAddress(script,
@@ -75,13 +70,12 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 	switch class {
 	case PubKeyHashTy:
 		// look up key for address
-		key, compressed, err := kdb.GetKey(address)
+		key, err := kdb.GetKey(address)
 		if err != nil {
 			return nil, class, nil, err
 		}
 
-		signedScript, err := SignatureScript(tx, idx, script, hashType,
-			key, compressed)
+		signedScript, err := SignatureScript(tx, idx, script, hashType, key)
 		if err != nil {
 			return nil, class, nil, err
 		}
@@ -106,7 +100,7 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 // function with addresses, class and nrequired that do not match scriptPubKey is
 // an error and results in undefined behaviour.
 func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	class ScriptClass, sigScript, prevScript []byte) ([]byte, error) {
+	class ScriptClass, sigScript []byte, prevScript *externalapi.ScriptPublicKey) ([]byte, error) {
 
 	switch class {
 	case ScriptHashTy:
@@ -114,9 +108,9 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 		// this could be a lot less inefficient.
 		sigPops, err := parseScript(sigScript)
 		if err != nil || len(sigPops) == 0 {
-			return prevScript, nil
+			return prevScript.Script, nil
 		}
-		prevPops, err := parseScript(prevScript)
+		prevPops, err := parseScript(prevScript.Script)
 		if err != nil || len(prevPops) == 0 {
 			return sigScript, nil
 		}
@@ -124,15 +118,21 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 		// assume that script in sigPops is the correct one, we just
 		// made it.
 		script := sigPops[len(sigPops)-1].data
-
+		scriptPubKey := &externalapi.ScriptPublicKey{
+			Script:  script,
+			Version: prevScript.Version,
+		}
 		// We already know this information somewhere up the stack.
 		class, _, _ :=
-			ExtractScriptPubKeyAddress(script, dagParams)
+			ExtractScriptPubKeyAddress(scriptPubKey, dagParams)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)
-		prevScript, _ := unparseScript(prevPops)
-
+		prevScriptByte, _ := unparseScript(prevPops)
+		prevScript = &externalapi.ScriptPublicKey{
+			Script:  prevScriptByte,
+			Version: prevScript.Version,
+		}
 		// Merge
 		mergedScript, err := mergeScripts(dagParams, tx, idx, class, sigScript, prevScript)
 		if err != nil {
@@ -152,25 +152,24 @@ func mergeScripts(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 	// above. In the conflict case here we just assume the longest is
 	// correct (this matches behaviour of the reference implementation).
 	default:
-		if len(sigScript) > len(prevScript) {
+		if len(sigScript) > len(prevScript.Script) {
 			return sigScript, nil
 		}
-		return prevScript, nil
+		return prevScript.Script, nil
 	}
 }
 
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(util.Address) (*secp256k1.PrivateKey, bool, error)
+	GetKey(util.Address) (*secp256k1.SchnorrKeyPair, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(util.Address) (*secp256k1.PrivateKey, bool, error)
+type KeyClosure func(util.Address) (*secp256k1.SchnorrKeyPair, error)
 
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address util.Address) (*secp256k1.PrivateKey,
-	bool, error) {
+func (kc KeyClosure) GetKey(address util.Address) (*secp256k1.SchnorrKeyPair, error) {
 	return kc(address)
 }
 
@@ -189,25 +188,30 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 }
 
 // SignTxOutput signs output idx of the given tx to resolve the script given in
-// scriptPubKey with a signature type of hashType. Any keys required will be
+// scriptPublicKey with a signature type of hashType. Any keys required will be
 // looked up by calling getKey() with the string of the given address.
 // Any pay-to-script-hash signatures will be similarly looked up by calling
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
 func SignTxOutput(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	scriptPubKey []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
-	previousScript []byte) ([]byte, error) {
+	scriptPublicKey *externalapi.ScriptPublicKey, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
+	previousScript *externalapi.ScriptPublicKey) ([]byte, error) {
 
 	sigScript, class, _, err := sign(dagParams, tx,
-		idx, scriptPubKey, hashType, kdb, sdb)
+		idx, scriptPublicKey, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
 
 	if class == ScriptHashTy {
+		scriptHashPreimageScriptPublicKey := &externalapi.ScriptPublicKey{
+			Script:  sigScript,
+			Version: scriptPublicKey.Version,
+		}
+
 		realSigScript, _, _, err := sign(dagParams, tx, idx,
-			sigScript, hashType, kdb, sdb)
+			scriptHashPreimageScriptPublicKey, hashType, kdb, sdb)
 		if err != nil {
 			return nil, err
 		}

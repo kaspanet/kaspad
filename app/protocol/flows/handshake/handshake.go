@@ -1,7 +1,6 @@
 package handshake
 
 import (
-	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain"
@@ -16,7 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util/locks"
 	"github.com/pkg/errors"
 )
 
@@ -26,7 +24,6 @@ type HandleHandshakeContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	Domain() domain.Domain
 	AddressManager() *addressmanager.AddressManager
-	StartIBDIfRequired() error
 	AddToPeers(peer *peerpkg.Peer) error
 	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
@@ -38,10 +35,12 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 ) (*peerpkg.Peer, error) {
 
 	// For HandleHandshake to finish, we need to get from the other node
-	// a version and verack messages, so we increase the wait group by 2
-	// and block HandleHandshake with wg.Wait().
-	wg := sync.WaitGroup{}
-	wg.Add(2)
+	// a version and verack messages, so we set doneCount to 2, decrease it
+	// when sending and receiving the version, and close the doneChan when
+	// it's 0. Then we wait for on select for a tick from doneChan or from
+	// errChan.
+	doneCount := int32(2)
+	doneChan := make(chan struct{})
 
 	isStopping := uint32(0)
 	errChan := make(chan error)
@@ -56,7 +55,9 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			return
 		}
 		peerAddress = address
-		wg.Done()
+		if atomic.AddInt32(&doneCount, -1) == 0 {
+			close(doneChan)
+		}
 	})
 
 	spawn("HandleHandshake-SendVersion", func() {
@@ -65,7 +66,9 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			handleError(err, "SendVersion", &isStopping, errChan)
 			return
 		}
-		wg.Done()
+		if atomic.AddInt32(&doneCount, -1) == 0 {
+			close(doneChan)
+		}
 	})
 
 	select {
@@ -74,28 +77,23 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 			return nil, err
 		}
 		return nil, nil
-	case <-locks.ReceiveFromChanWhenDone(func() { wg.Wait() }):
+	case <-doneChan:
 	}
 
 	err := context.AddToPeers(peer)
 	if err != nil {
-		if errors.As(err, &common.ErrPeerWithSameIDExists) {
+		if errors.Is(err, common.ErrPeerWithSameIDExists) {
 			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
 		return nil, err
 	}
 
 	if peerAddress != nil {
-		subnetworkID := peer.SubnetworkID()
-		context.AddressManager().AddAddress(peerAddress, peerAddress, subnetworkID)
-		context.AddressManager().Good(peerAddress, subnetworkID)
+		err := context.AddressManager().AddAddresses(peerAddress)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	err = context.StartIBDIfRequired()
-	if err != nil {
-		return nil, err
-	}
-
 	return peer, nil
 }
 

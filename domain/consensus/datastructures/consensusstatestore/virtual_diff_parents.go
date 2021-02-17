@@ -1,17 +1,22 @@
 package consensusstatestore
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
+	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
-var virtualDiffParentsKey = dbkeys.MakeBucket().Key([]byte("virtual-diff-parents"))
+var virtualDiffParentsKey = database.MakeBucket(nil).Key([]byte("virtual-diff-parents"))
 
-func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if c.stagedVirtualDiffParents != nil {
-		return c.stagedVirtualDiffParents, nil
+func (css *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	if css.virtualDiffParentsStaging != nil {
+		return externalapi.CloneHashes(css.virtualDiffParentsStaging), nil
+	}
+
+	if css.virtualDiffParentsCache != nil {
+		return externalapi.CloneHashes(css.virtualDiffParentsCache), nil
 	}
 
 	virtualDiffParentsBytes, err := dbContext.Get(virtualDiffParentsKey)
@@ -19,20 +24,51 @@ func (c *consensusStateStore) VirtualDiffParents(dbContext model.DBReader) ([]*e
 		return nil, err
 	}
 
-	return hashes.DeserializeHashSlice(virtualDiffParentsBytes)
+	virtualDiffParents, err := css.deserializeVirtualDiffParents(virtualDiffParentsBytes)
+	if err != nil {
+		return nil, err
+	}
+	css.virtualDiffParentsCache = virtualDiffParents
+	return externalapi.CloneHashes(virtualDiffParents), nil
 }
 
-func (c *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
-	c.stagedVirtualDiffParents = tipHashes
+func (css *consensusStateStore) StageVirtualDiffParents(tipHashes []*externalapi.DomainHash) {
+	css.virtualDiffParentsStaging = externalapi.CloneHashes(tipHashes)
 }
 
-func (c *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
-	virtualDiffParentsBytes := hashes.SerializeHashSlice(c.stagedVirtualDiffParents)
+func (css *consensusStateStore) commitVirtualDiffParents(dbTx model.DBTransaction) error {
+	if css.virtualDiffParentsStaging == nil {
+		return nil
+	}
 
-	err := dbTx.Put(virtualDiffParentsKey, virtualDiffParentsBytes)
+	virtualDiffParentsBytes, err := css.serializeVirtualDiffParents(css.virtualDiffParentsStaging)
 	if err != nil {
 		return err
 	}
+	err = dbTx.Put(virtualDiffParentsKey, virtualDiffParentsBytes)
+	if err != nil {
+		return err
+	}
+	css.virtualDiffParentsCache = css.virtualDiffParentsStaging
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
+}
+
+func (css *consensusStateStore) serializeVirtualDiffParents(virtualDiffParentsBytes []*externalapi.DomainHash) ([]byte, error) {
+	virtualDiffParents := serialization.VirtualDiffParentsToDBHeaderVirtualDiffParents(virtualDiffParentsBytes)
+	return proto.Marshal(virtualDiffParents)
+}
+
+func (css *consensusStateStore) deserializeVirtualDiffParents(virtualDiffParentsBytes []byte) ([]*externalapi.DomainHash,
+	error) {
+
+	dbVirtualDiffParents := &serialization.DbVirtualDiffParents{}
+	err := proto.Unmarshal(virtualDiffParentsBytes, dbVirtualDiffParents)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.DBVirtualDiffParentsToVirtualDiffParents(dbVirtualDiffParents)
 }

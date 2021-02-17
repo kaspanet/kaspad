@@ -11,4 +11,6 @@ type BlockStore interface {
 	HasBlock(dbContext DBReader, blockHash *externalapi.DomainHash) (bool, error)
 	Blocks(dbContext DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error)
 	Delete(blockHash *externalapi.DomainHash)
+	Count() uint64
+	AllBlockHashesIterator(dbContext DBReader) (BlockIterator, error)
 }

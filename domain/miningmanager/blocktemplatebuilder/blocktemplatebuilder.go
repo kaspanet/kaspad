@@ -1,15 +1,15 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/util/difficulty"
+	"math"
+	"sort"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	miningmanagerapi "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"math"
-	"sort"
 )
 
 type candidateTx struct {
@@ -26,13 +26,13 @@ type candidateTx struct {
 
 // blockTemplateBuilder creates block templates for a miner to consume
 type blockTemplateBuilder struct {
-	consensus consensus.Consensus
+	consensus consensusexternalapi.Consensus
 	mempool   miningmanagerapi.Mempool
 	policy    policy
 }
 
 // New creates a new blockTemplateBuilder
-func New(consensus consensus.Consensus, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
+func New(consensus consensusexternalapi.Consensus, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensus: consensus,
 		mempool:   mempool,
@@ -104,8 +104,8 @@ func New(consensus consensus.Consensus, mempool miningmanagerapi.Mempool, blockM
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 
-func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock {
-	mempoolTransactions := btb.mempool.Transactions()
+func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
+	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for _, tx := range mempoolTransactions {
 		// Calculate the tx value
@@ -141,15 +141,16 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		btb.mempool.RemoveTransactions(invalidTxs)
 		// We can call this recursively without worry because this should almost never happen
 		return btb.GetBlockTemplate(coinbaseData)
-	} else if err != nil {
-		log.Errorf("GetBlockTemplate: Failed building block: %s", err)
-		return nil
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
-		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, util.CompactToBig(blk.Header.Bits))
+		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
-	return blk
+	return blk, nil
 }
 
 // calcTxValue calculates a value to be used in transaction selection.

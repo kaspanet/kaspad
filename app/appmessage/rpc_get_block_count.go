@@ -1,5 +1,7 @@
 package appmessage
 
+import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
 // GetBlockCountRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type GetBlockCountRequestMessage struct {
@@ -20,7 +22,8 @@ func NewGetBlockCountRequestMessage() *GetBlockCountRequestMessage {
 // its respective RPC message
 type GetBlockCountResponseMessage struct {
 	baseMessage
-	BlockCount uint64
+	BlockCount  uint64
+	HeaderCount uint64
 
 	Error *RPCError
 }
@@ -31,8 +34,9 @@ func (msg *GetBlockCountResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBlockCountResponseMessage returns a instance of the message
-func NewGetBlockCountResponseMessage(blockCount uint64) *GetBlockCountResponseMessage {
+func NewGetBlockCountResponseMessage(syncInfo *externalapi.SyncInfo) *GetBlockCountResponseMessage {
 	return &GetBlockCountResponseMessage{
-		BlockCount: blockCount,
+		BlockCount:  syncInfo.BlockCount,
+		HeaderCount: syncInfo.HeaderCount,
 	}
 }

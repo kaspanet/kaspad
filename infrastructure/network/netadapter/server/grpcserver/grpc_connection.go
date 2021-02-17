@@ -27,7 +27,6 @@ type gRPCConnection struct {
 	streamLock sync.RWMutex
 
 	stopChan                chan struct{}
-	clientConn              grpc.ClientConn
 	onDisconnectedHandler   server.OnDisconnectedHandler
 	onInvalidMessageHandler server.OnInvalidMessageHandler
 
@@ -56,10 +55,6 @@ func newConnection(server *gRPCServer, address *net.TCPAddr, stream grpcStream,
 func (c *gRPCConnection) Start(router *router.Router) {
 	if c.onDisconnectedHandler == nil {
 		panic(errors.New("onDisconnectedHandler is nil"))
-	}
-
-	if c.onInvalidMessageHandler == nil {
-		panic(errors.New("onInvalidMessageHandler is nil"))
 	}
 
 	c.router = router

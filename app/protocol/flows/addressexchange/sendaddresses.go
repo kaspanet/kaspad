@@ -1,10 +1,11 @@
 package addressexchange
 
 import (
+	"math/rand"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"math/rand"
 )
 
 // SendAddressesContext is the interface for the context needed for the SendAddresses flow.
@@ -14,21 +15,20 @@ type SendAddressesContext interface {
 
 // SendAddresses sends addresses to a peer that requests it.
 func SendAddresses(context SendAddressesContext, incomingRoute *router.Route, outgoingRoute *router.Route) error {
-	message, err := incomingRoute.Dequeue()
-	if err != nil {
-		return err
-	}
+	for {
+		_, err := incomingRoute.Dequeue()
+		if err != nil {
+			return err
+		}
 
-	msgGetAddresses := message.(*appmessage.MsgRequestAddresses)
-	addresses := context.AddressManager().AddressCache(msgGetAddresses.IncludeAllSubnetworks,
-		msgGetAddresses.SubnetworkID)
-	msgAddresses := appmessage.NewMsgAddresses(msgGetAddresses.IncludeAllSubnetworks, msgGetAddresses.SubnetworkID)
-	err = msgAddresses.AddAddresses(shuffleAddresses(addresses)...)
-	if err != nil {
-		return err
-	}
+		addresses := context.AddressManager().Addresses()
+		msgAddresses := appmessage.NewMsgAddresses(shuffleAddresses(addresses))
 
-	return outgoingRoute.Enqueue(msgAddresses)
+		err = outgoingRoute.Enqueue(msgAddresses)
+		if err != nil {
+			return err
+		}
+	}
 }
 
 // shuffleAddresses randomizes the given addresses sent if there are more than the maximum allowed in one message.

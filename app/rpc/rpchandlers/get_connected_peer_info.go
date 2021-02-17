@@ -16,13 +16,12 @@ func HandleGetConnectedPeerInfo(context *rpccontext.Context, _ *router.Router, _
 			ID:                        peer.ID().String(),
 			Address:                   peer.Address(),
 			LastPingDuration:          peer.LastPingDuration().Milliseconds(),
-			SelectedTipHash:           peer.SelectedTipHash().String(),
-			IsSyncNode:                peer == ibdPeer,
 			IsOutbound:                peer.IsOutbound(),
 			TimeOffset:                peer.TimeOffset().Milliseconds(),
 			UserAgent:                 peer.UserAgent(),
 			AdvertisedProtocolVersion: peer.AdvertisedProtocolVersion(),
 			TimeConnected:             peer.TimeConnected().Milliseconds(),
+			IsIBDPeer:                 peer == ibdPeer,
 		}
 		infos = append(infos, info)
 	}

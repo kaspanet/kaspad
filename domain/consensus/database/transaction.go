@@ -9,6 +9,22 @@ type dbTransaction struct {
 	transaction database.Transaction
 }
 
+func (d *dbTransaction) Get(key model.DBKey) ([]byte, error) {
+	return d.transaction.Get(dbKeyToDatabaseKey(key))
+}
+
+func (d *dbTransaction) Has(key model.DBKey) (bool, error) {
+	return d.transaction.Has(dbKeyToDatabaseKey(key))
+}
+
+func (d *dbTransaction) Cursor(bucket model.DBBucket) (model.DBCursor, error) {
+	cursor, err := d.transaction.Cursor(dbBucketToDatabaseBucket(bucket))
+	if err != nil {
+		return nil, err
+	}
+	return newDBCursor(cursor), nil
+}
+
 func (d *dbTransaction) Put(key model.DBKey, value []byte) error {
 	return d.transaction.Put(dbKeyToDatabaseKey(key), value)
 }
@@ -26,7 +42,7 @@ func (d *dbTransaction) Commit() error {
 }
 
 func (d *dbTransaction) RollbackUnlessClosed() error {
-	return d.RollbackUnlessClosed()
+	return d.transaction.RollbackUnlessClosed()
 }
 
 func newDBTransaction(transaction database.Transaction) model.DBTransaction {

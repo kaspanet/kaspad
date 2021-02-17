@@ -22,6 +22,8 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
 )
 
+const leveldbCacheSizeMiB = 256
+
 var desiredLimits = &limits.DesiredLimits{
 	FileLimitWant: 2048,
 	FileLimitMin:  1024,
@@ -46,7 +48,7 @@ func StartApp() error {
 	// initializes logging and configures it accordingly.
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -181,5 +183,5 @@ func removeDatabase(cfg *config.Config) error {
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 	log.Infof("Loading database from '%s'", dbPath)
-	return ldb.NewLevelDB(dbPath)
+	return ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 }

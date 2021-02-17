@@ -40,7 +40,7 @@ type TxLoc struct {
 // response to a getdata message (MsgGetData) for a given block hash.
 type MsgBlock struct {
 	baseMessage
-	Header       BlockHeader
+	Header       MsgBlockHeader
 	Transactions []*MsgTx
 }
 
@@ -71,7 +71,7 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 // Note: this operation modifies the block in place.
 func (msg *MsgBlock) ConvertToPartial(subnetworkID *externalapi.DomainSubnetworkID) {
 	for _, tx := range msg.Transactions {
-		if tx.SubnetworkID != *subnetworkID {
+		if !tx.SubnetworkID.Equal(subnetworkID) {
 			tx.Payload = []byte{}
 		}
 	}
@@ -79,7 +79,7 @@ func (msg *MsgBlock) ConvertToPartial(subnetworkID *externalapi.DomainSubnetwork
 
 // NewMsgBlock returns a new kaspa block message that conforms to the
 // Message interface. See MsgBlock for details.
-func NewMsgBlock(blockHeader *BlockHeader) *MsgBlock {
+func NewMsgBlock(blockHeader *MsgBlockHeader) *MsgBlock {
 	return &MsgBlock{
 		Header:       *blockHeader,
 		Transactions: make([]*MsgTx, 0, defaultTransactionAlloc),

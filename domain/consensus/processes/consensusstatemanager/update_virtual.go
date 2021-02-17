@@ -3,73 +3,115 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager/utxoalgebra"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
-func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash, tips []*externalapi.DomainHash) error {
+func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.DomainHash,
+	tips []*externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updateVirtual")
+	defer onEnd()
+
+	log.Debugf("updateVirtual start for block %s", newBlockHash)
+
+	log.Debugf("Saving a reference to the GHOSTDAG data of the old virtual")
+	var oldVirtualSelectedParent *externalapi.DomainHash
+	if !newBlockHash.Equal(csm.genesisHash) {
+		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		oldVirtualSelectedParent = oldVirtualGHOSTDAGData.SelectedParent()
+	}
+
+	log.Debugf("Picking virtual parents from tips len: %d", len(tips))
 	virtualParents, err := csm.pickVirtualParents(tips)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	log.Debugf("Picked virtual parents: %s", virtualParents)
 
 	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, virtualParents)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	log.Debugf("Set new parents for the virtual block hash")
 
 	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	virtualUTXODiff, _, _, err := csm.calculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
+	log.Debugf("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
+	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err := csm.CalculatePastUTXOAndAcceptanceData(model.VirtualBlockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	log.Debugf("Calculated the past UTXO of the new virtual. "+
+		"Diff toAdd length: %d, toRemove length: %d",
+		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
+	log.Debugf("Staging new acceptance data for the virtual block")
+	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
+
+	log.Debugf("Staging new multiset for the virtual block")
+	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
+
+	log.Debugf("Staging new UTXO diff for the virtual block")
 	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
 
-	err = csm.updateVirtualDiffParents(newBlockHash, virtualUTXODiff)
+	log.Debugf("Updating the virtual diff parents after adding %s to the DAG", newBlockHash)
+	err = csm.updateVirtualDiffParents(virtualUTXODiff)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	log.Debugf("Calculating selected parent chain changes")
+	var selectedParentChainChanges *externalapi.SelectedChainPath
+	if !newBlockHash.Equal(csm.genesisHash) {
+		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			return nil, err
+		}
+		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
+		selectedParentChainChanges, err = csm.dagTraversalManager.
+			CalculateChainPath(oldVirtualSelectedParent, newVirtualSelectedParent)
+		if err != nil {
+			return nil, err
+		}
+		log.Debugf("Selected parent chain changes: %d blocks were removed and %d blocks were added",
+			len(selectedParentChainChanges.Removed), len(selectedParentChainChanges.Added))
+	}
+
+	return selectedParentChainChanges, nil
 }
 
-func (csm *consensusStateManager) updateVirtualDiffParents(
-	newBlockHash *externalapi.DomainHash, virtualUTXODiff *model.UTXODiff) error {
+func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff model.UTXODiff) error {
+	log.Debugf("updateVirtualDiffParents start")
+	defer log.Debugf("updateVirtualDiffParents end")
 
 	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
 	if err != nil {
 		return err
 	}
 
-	newBlockParentsSlice, err := csm.dagTopologyManager.Parents(newBlockHash)
-	if err != nil {
-		return err
-	}
-	newBlockParents := hashset.NewFromSlice(newBlockParentsSlice...)
-
-	newVirtualDiffParents := []*externalapi.DomainHash{newBlockHash}
 	for _, virtualDiffParent := range virtualDiffParents {
-		if newBlockParents.Contains(virtualDiffParent) {
-			virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-			if err != nil {
-				return err
-			}
-			newDiff, err := utxoalgebra.DiffFrom(virtualUTXODiff, virtualDiffParentUTXODiff)
-			if err != nil {
-				return err
-			}
-			csm.utxoDiffStore.Stage(virtualDiffParent, newDiff, newBlockHash)
-		} else {
-			newVirtualDiffParents = append(newVirtualDiffParents, virtualDiffParent)
+		log.Debugf("Calculating new UTXO diff for virtual diff parent %s", virtualDiffParent)
+		virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
+		if err != nil {
+			return err
+		}
+		newDiff, err := virtualUTXODiff.DiffFrom(virtualDiffParentUTXODiff)
+		if err != nil {
+			return err
+		}
+
+		log.Debugf("Staging new UTXO diff for virtual diff parent %s", virtualDiffParent)
+		err = csm.stageDiff(virtualDiffParent, newDiff, nil)
+		if err != nil {
+			return err
 		}
 	}
-
-	csm.consensusStateStore.StageVirtualDiffParents(newVirtualDiffParents)
 
 	return nil
 }

@@ -5,9 +5,7 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,18 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
-	"github.com/pkg/errors"
-
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/network"
 	"github.com/kaspanet/kaspad/version"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -55,7 +50,6 @@ const (
 	DefaultMaxOrphanTxSize  = 100000
 	defaultSigCacheMaxSize  = 100000
 	sampleConfigFilename    = "sample-kaspad.conf"
-	defaultAcceptanceIndex  = false
 	defaultMaxUTXOCacheSize = 5000000000
 )
 
@@ -108,7 +102,7 @@ type Flags struct {
 	ProxyPass            string        `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
-	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
+	LogLevel             string        `short:"d" long:"loglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                 bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee        float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
@@ -117,12 +111,12 @@ type Flags struct {
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
-	AcceptanceIndex      bool          `long:"acceptanceindex" description:"Maintain a full hash-based acceptance index which makes the getChainFromBlock RPC available"`
-	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"Deletes the hash-based acceptance index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
+	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
+	IsArchivalNode       bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -172,7 +166,7 @@ func newConfigParser(cfgFlags *Flags, options flags.Options) *flags.Parser {
 func defaultFlags() *Flags {
 	return &Flags{
 		ConfigFile:           defaultConfigFile,
-		DebugLevel:           defaultLogLevel,
+		LogLevel:             defaultLogLevel,
 		TargetOutboundPeers:  defaultTargetOutboundPeers,
 		MaxInboundPeers:      defaultMaxInboundPeers,
 		BanDuration:          defaultBanDuration,
@@ -188,7 +182,6 @@ func defaultFlags() *Flags {
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		MinRelayTxFee:        defaultMinRelayTxFee,
-		AcceptanceIndex:      defaultAcceptanceIndex,
 		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
 		ServiceOptions:       &ServiceOptions{},
 	}
@@ -246,9 +239,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Flags: cfgFlags,
 	}
-	if !preCfg.Simnet || preCfg.ConfigFile !=
-		defaultConfigFile {
-
+	if !preCfg.Simnet || preCfg.ConfigFile != defaultConfigFile {
 		if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
@@ -335,7 +326,7 @@ func LoadConfig() (*Config, error) {
 	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.NetParams().Name)
 
 	// Special show command to list supported subsystems and exit.
-	if cfg.DebugLevel == "show" {
+	if cfg.LogLevel == "show" {
 		fmt.Println("Supported subsystems", logger.SupportedSubsystems())
 		os.Exit(0)
 	}
@@ -345,7 +336,7 @@ func LoadConfig() (*Config, error) {
 	logger.InitLog(filepath.Join(cfg.LogDir, defaultLogFilename), filepath.Join(cfg.LogDir, defaultErrLogFilename))
 
 	// Parse, validate, and set debug log level(s).
-	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+	if err := logger.ParseAndSetLogLevels(cfg.LogLevel); err != nil {
 		err := errors.Errorf("%s: %s", funcName, err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -512,16 +503,6 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	// --acceptanceindex and --dropacceptanceindex do not mix.
-	if cfg.AcceptanceIndex && cfg.DropAcceptanceIndex {
-		err := errors.Errorf("%s: the --acceptanceindex and --dropacceptanceindex "+
-			"options may not be activated at the same time",
-			funcName)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, err
-	}
-
 	// Add default port to all listener addresses if needed and remove
 	// duplicate addresses.
 	cfg.Listeners, err = network.NormalizeAddresses(cfg.Listeners,
@@ -605,13 +586,6 @@ func createDefaultConfigFile(destinationPath string) error {
 		return err
 	}
 
-	// We assume sample config file path is same as binary
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		return err
-	}
-	sampleConfigPath := filepath.Join(path, sampleConfigFilename)
-
 	dest, err := os.OpenFile(destinationPath,
 		os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -619,25 +593,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	src, err := os.Open(sampleConfigPath)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	_, err = dest.WriteString(sampleConfig)
 
-	// We copy every line from the sample config file to the destination
-	reader := bufio.NewReader(src)
-	for err != io.EOF {
-		var line string
-		line, err = reader.ReadString('\n')
-		if err != nil && err != io.EOF {
-			return err
-		}
-
-		if _, err := dest.WriteString(line); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }

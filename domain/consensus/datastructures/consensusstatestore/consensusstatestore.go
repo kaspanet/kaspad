@@ -3,55 +3,56 @@ package consensusstatestore
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
 )
 
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
-	stagedTips               []*externalapi.DomainHash
-	stagedVirtualDiffParents []*externalapi.DomainHash
-	stagedVirtualUTXODiff    *model.UTXODiff
-	stagedVirtualUTXOSet     model.UTXOCollection
+	tipsStaging               []*externalapi.DomainHash
+	virtualDiffParentsStaging []*externalapi.DomainHash
+	virtualUTXODiffStaging    model.UTXODiff
+
+	virtualUTXOSetCache *utxolrucache.LRUCache
+
+	tipsCache               []*externalapi.DomainHash
+	virtualDiffParentsCache []*externalapi.DomainHash
 }
 
 // New instantiates a new ConsensusStateStore
-func New() model.ConsensusStateStore {
-	return &consensusStateStore{}
+func New(utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
+	return &consensusStateStore{
+		virtualUTXOSetCache: utxolrucache.New(utxoSetCacheSize, preallocate),
+	}
 }
 
-func (c *consensusStateStore) Discard() {
-	c.stagedTips = nil
-	c.stagedVirtualUTXODiff = nil
-	c.stagedVirtualDiffParents = nil
-	c.stagedVirtualUTXOSet = nil
+func (css *consensusStateStore) Discard() {
+	css.tipsStaging = nil
+	css.virtualUTXODiffStaging = nil
+	css.virtualDiffParentsStaging = nil
 }
 
-func (c *consensusStateStore) Commit(dbTx model.DBTransaction) error {
-	err := c.commitTips(dbTx)
+func (css *consensusStateStore) Commit(dbTx model.DBTransaction) error {
+	err := css.commitTips(dbTx)
 	if err != nil {
 		return err
 	}
-	err = c.commitVirtualDiffParents(dbTx)
-	if err != nil {
-		return err
-	}
-
-	err = c.commitVirtualUTXODiff(dbTx)
+	err = css.commitVirtualDiffParents(dbTx)
 	if err != nil {
 		return err
 	}
 
-	err = c.commitVirtualUTXOSet(dbTx)
+	err = css.commitVirtualUTXODiff(dbTx)
 	if err != nil {
 		return err
 	}
 
-	c.Discard()
+	css.Discard()
 
 	return nil
 }
 
-func (c *consensusStateStore) IsStaged() bool {
-	return c.stagedTips != nil ||
-		c.stagedVirtualDiffParents != nil ||
-		c.stagedVirtualUTXODiff != nil
+func (css *consensusStateStore) IsStaged() bool {
+	return css.tipsStaging != nil ||
+		css.virtualDiffParentsStaging != nil ||
+		css.virtualUTXODiffStaging != nil
 }

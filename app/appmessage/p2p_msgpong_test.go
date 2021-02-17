@@ -6,16 +6,11 @@ package appmessage
 
 import (
 	"testing"
-
-	"github.com/kaspanet/kaspad/util/random"
 )
 
 // TestPongLatest tests the MsgPong API against the latest protocol version.
 func TestPongLatest(t *testing.T) {
-	nonce, err := random.Uint64()
-	if err != nil {
-		t.Errorf("random.Uint64: error generating nonce: %v", err)
-	}
+	nonce := uint64(0x1a05b581a5182c)
 	msg := NewMsgPong(nonce)
 	if msg.Nonce != nonce {
 		t.Errorf("NewMsgPong: wrong nonce - got %v, want %v",

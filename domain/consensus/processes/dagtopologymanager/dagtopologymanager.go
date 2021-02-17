@@ -3,6 +3,7 @@ package dagtopologymanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 // dagTopologyManager exposes methods for querying relationships
@@ -10,6 +11,7 @@ import (
 type dagTopologyManager struct {
 	reachabilityManager model.ReachabilityManager
 	blockRelationStore  model.BlockRelationStore
+	ghostdagStore       model.GHOSTDAGDataStore
 	databaseContext     model.DBReader
 }
 
@@ -17,12 +19,14 @@ type dagTopologyManager struct {
 func New(
 	databaseContext model.DBReader,
 	reachabilityManager model.ReachabilityManager,
-	blockRelationStore model.BlockRelationStore) model.DAGTopologyManager {
+	blockRelationStore model.BlockRelationStore,
+	ghostdagStore model.GHOSTDAGDataStore) model.DAGTopologyManager {
 
 	return &dagTopologyManager{
 		databaseContext:     databaseContext,
 		reachabilityManager: reachabilityManager,
 		blockRelationStore:  blockRelationStore,
+		ghostdagStore:       ghostdagStore,
 	}
 }
 
@@ -67,11 +71,6 @@ func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, 
 	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashA, blockHashB)
 }
 
-// IsDescendantOf returns true if blockHashA is a DAG descendant of blockHashB
-func (dtm *dagTopologyManager) IsDescendantOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashB, blockHashA)
-}
-
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
 func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	for _, potentialDescendant := range potentialDescendants {
@@ -95,7 +94,7 @@ func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
 	for _, h := range hashes {
-		if *h == *hash {
+		if h.Equal(hash) {
 			return true
 		}
 	}
@@ -103,7 +102,6 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 }
 
 func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-
 	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, blockHash)
 	if err != nil {
 		return err
@@ -125,7 +123,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 				return err
 			}
 			for i, parentChild := range parentRelations.Children {
-				if *parentChild == *blockHash {
+				if parentChild.Equal(blockHash) {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
 					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
 					break
@@ -142,7 +140,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		}
 		isBlockAlreadyInChildren := false
 		for _, parentChild := range parentRelations.Children {
-			if *parentChild == *blockHash {
+			if parentChild.Equal(blockHash) {
 				isBlockAlreadyInChildren = true
 				break
 			}
@@ -160,4 +158,37 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 	})
 
 	return nil
+}
+
+// ChildInSelectedParentChainOf returns the child of `context` that is in the selected-parent-chain of `highHash`
+func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
+	blockHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+
+	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
+	// use it's selected parent as highHash.
+	specifiedHighHash := highHash
+	if highHash == model.VirtualBlockHash {
+		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, highHash)
+		if err != nil {
+			return nil, err
+		}
+		selectedParent := ghostdagData.SelectedParent()
+
+		// In case where `blockHash` is an immediate parent of `highHash`
+		if blockHash.Equal(selectedParent) {
+			return highHash, nil
+		}
+		highHash = selectedParent
+	}
+
+	isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(blockHash, highHash)
+	if err != nil {
+		return nil, err
+	}
+	if !isInSelectedParentChain {
+		return nil, errors.Errorf("blockHash(%s) is not in the selected-parent-chain of highHash(%s)",
+			blockHash, specifiedHighHash)
+	}
+
+	return dtm.reachabilityManager.FindNextAncestor(highHash, blockHash)
 }

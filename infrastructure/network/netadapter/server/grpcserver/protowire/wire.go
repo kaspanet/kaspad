@@ -11,7 +11,11 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
-	appMessage, err := x.Payload.(converter).toAppMessage()
+	converter, ok := x.Payload.(converter)
+	if !ok {
+		return nil, errors.Errorf("received invalid message")
+	}
+	appMessage, err := converter.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -93,15 +97,15 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestNextIBDBlocks:
-		payload := new(KaspadMessage_RequestNextIBDBlocks)
+	case *appmessage.MsgRequestNextHeaders:
+		payload := new(KaspadMessage_RequestNextHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgDoneIBDBlocks:
-		payload := new(KaspadMessage_DoneIBDBlocks)
+	case *appmessage.MsgDoneHeaders:
+		payload := new(KaspadMessage_DoneHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -109,13 +113,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.MsgRequestRelayBlocks:
 		payload := new(KaspadMessage_RequestRelayBlocks)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.MsgRequestSelectedTip:
-		payload := new(KaspadMessage_RequestSelectedTip)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -170,13 +167,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgSelectedTip:
-		payload := new(KaspadMessage_SelectedTip)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.MsgTx:
 		payload := new(KaspadMessage_Transaction)
 		err := payload.fromAppMessage(message)
@@ -200,6 +190,90 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.MsgReject:
 		payload := new(KaspadMessage_Reject)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestPruningPointUTXOSetAndBlock:
+		payload := new(KaspadMessage_RequestPruningPointUTXOSetAndBlock)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgPruningPointUTXOSetChunk:
+		payload := new(KaspadMessage_PruningPointUtxoSetChunk)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestHeaders:
+		payload := new(KaspadMessage_RequestHeaders)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgUnexpectedPruningPoint:
+		payload := new(KaspadMessage_UnexpectedPruningPoint)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestPruningPointHashMessage:
+		payload := new(KaspadMessage_RequestPruningPointHash)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgPruningPointHashMessage:
+		payload := new(KaspadMessage_PruningPointHash)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlockLocator:
+		payload := new(KaspadMessage_IbdBlockLocator)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlockLocatorHighestHash:
+		payload := new(KaspadMessage_IbdBlockLocatorHighestHash)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlockLocatorHighestHashNotFound:
+		payload := new(KaspadMessage_IbdBlockLocatorHighestHashNotFound)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.BlockHeadersMessage:
+		payload := new(KaspadMessage_BlockHeaders)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestNextPruningPointUTXOSetChunk:
+		payload := new(KaspadMessage_RequestNextPruningPointUtxoSetChunk)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgDonePruningPointUTXOSetChunks:
+		payload := new(KaspadMessage_DonePruningPointUtxoSetChunks)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -359,22 +433,22 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedRequestMessage:
-		payload := new(KaspadMessage_NotifyChainChangedRequest)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.NotifyChainChangedResponseMessage:
-		payload := new(KaspadMessage_NotifyChainChangedResponse)
+	case *appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.ChainChangedNotificationMessage:
-		payload := new(KaspadMessage_ChainChangedNotification)
+	case *appmessage.VirtualSelectedParentChainChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentChainChangedNotification)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -408,15 +482,15 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockRequestMessage:
-		payload := new(KaspadMessage_GetChainFromBlockRequest)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetChainFromBlockResponseMessage:
-		payload := new(KaspadMessage_GetChainFromBlockResponse)
+	case *appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -543,6 +617,132 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.GetHeadersResponseMessage:
 		payload := new(KaspadMessage_GetHeadersResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyUTXOsChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyUTXOsChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyUtxosChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.UTXOsChangedNotificationMessage:
+		payload := new(KaspadMessage_UtxosChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.StopNotifyingUTXOsChangedRequestMessage:
+		payload := new(KaspadMessage_StopNotifyingUtxosChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.StopNotifyingUTXOsChangedResponseMessage:
+		payload := new(KaspadMessage_StopNotifyingUtxosChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetUTXOsByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetUtxosByAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreRequestMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetVirtualSelectedParentBlueScoreResponseMessage:
+		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualSelectedParentBlueScoreChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.BanRequestMessage:
+		payload := new(KaspadMessage_BanRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.BanResponseMessage:
+		payload := new(KaspadMessage_BanResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.UnbanRequestMessage:
+		payload := new(KaspadMessage_UnbanRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.UnbanResponseMessage:
+		payload := new(KaspadMessage_UnbanResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetInfoRequestMessage:
+		payload := new(KaspadMessage_GetInfoRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetInfoResponseMessage:
+		payload := new(KaspadMessage_GetInfoResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

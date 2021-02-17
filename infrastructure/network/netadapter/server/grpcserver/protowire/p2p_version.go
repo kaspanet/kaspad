@@ -17,12 +17,7 @@ func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
 		}
 	}
 
-	selectedTipHash, err := x.Version.SelectedTipHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	subnetworkID, err := x.Version.SubnetworkID.toDomain()
+	subnetworkID, err := x.Version.SubnetworkId.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +35,6 @@ func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
 		Address:         address,
 		ID:              id.FromBytes(x.Version.Id),
 		UserAgent:       x.Version.UserAgent,
-		SelectedTipHash: selectedTipHash,
 		DisableRelayTx:  x.Version.DisableRelayTx,
 		SubnetworkID:    subnetworkID,
 	}, nil
@@ -71,9 +65,8 @@ func (x *KaspadMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion
 		Address:         address,
 		Id:              versionID,
 		UserAgent:       msgVersion.UserAgent,
-		SelectedTipHash: domainHashToProto(msgVersion.SelectedTipHash),
 		DisableRelayTx:  msgVersion.DisableRelayTx,
-		SubnetworkID:    domainSubnetworkIDToProto(msgVersion.SubnetworkID),
+		SubnetworkId:    domainSubnetworkIDToProto(msgVersion.SubnetworkID),
 	}
 	return nil
 }

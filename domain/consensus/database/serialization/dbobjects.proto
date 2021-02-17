@@ -9,7 +9,7 @@ message DbBlock {
 }
 
 message DbBlockHeader {
-  int32 version = 1;
+  uint32 version = 1;
   repeated DbHash parentHashes = 2;
   DbHash hashMerkleRoot = 3;
   DbHash acceptedIDMerkleRoot = 4;
@@ -24,7 +24,7 @@ message DbHash {
 }
 
 message DbTransaction {
-  int32 version = 1;
+  uint32 version = 1;
   repeated DbTransactionInput inputs = 2;
   repeated DbTransactionOutput outputs = 3;
   uint64 lockTime = 4;
@@ -51,7 +51,7 @@ message DbTransactionId {
 
 message DbTransactionOutput {
   uint64 value = 1;
-  bytes scriptPublicKey = 2;
+  DbScriptPublicKey scriptPublicKey = 2;
 }
 
 message DbSubnetworkId {
@@ -64,12 +64,14 @@ message DbAcceptanceData {
 
 message DbBlockAcceptanceData {
   repeated DbTransactionAcceptanceData transactionAcceptanceData = 1;
+  DbHash blockHash = 2;
 }
 
 message DbTransactionAcceptanceData {
   DbTransaction transaction = 1;
   uint64 fee = 2;
   bool isAccepted = 3;
+  repeated DbUtxoEntry transactionInputUtxoEntries = 4;
 }
 
 message DbBlockRelations {
@@ -83,10 +85,11 @@ message DbBlockStatus {
 
 message DbBlockGhostdagData {
   uint64 blueScore = 1;
-  DbHash selectedParent = 2;
-  repeated DbHash mergeSetBlues = 3;
-  repeated DbHash mergeSetReds = 4;
-  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 5;
+  bytes blueWork = 2;
+  DbHash selectedParent = 3;
+  repeated DbHash mergeSetBlues = 4;
+  repeated DbHash mergeSetReds = 5;
+  repeated DbBluesAnticoneSizes bluesAnticoneSizes = 6;
 }
 
 message DbBluesAnticoneSizes {
@@ -107,22 +110,23 @@ message DbUtxoCollectionItem {
   DbUtxoEntry utxoEntry = 2;
 }
 
+message DbScriptPublicKey {
+  bytes script = 1;
+  uint32 version = 2;
+}
+
 message DbUtxoEntry {
   uint64 amount = 1;
-  bytes scriptPublicKey = 2;
+  DbScriptPublicKey scriptPublicKey = 2;
   uint64 blockBlueScore = 3;
   bool isCoinbase = 4;
 }
 
 message DbReachabilityData {
-  DbReachabilityTreeNode treeNode = 1;
-  repeated DbHash futureCoveringSet = 2;
-}
-
-message DbReachabilityTreeNode {
   repeated DbHash children = 1;
   DbHash parent = 2;
   DbReachabilityInterval interval = 3;
+  repeated DbHash futureCoveringSet = 4;
 }
 
 message DbReachabilityInterval {
@@ -135,10 +139,18 @@ message DbUtxoDiff {
   repeated DbUtxoCollectionItem toRemove = 2;
 }
 
-message DbPruningPointUTXOSetBytes {
-  bytes bytes = 1;
+message DbTips {
+  repeated DbHash tips = 1;
 }
 
-message DbHeaderTips {
-  repeated DbHash tips = 1;
+message DbVirtualDiffParents {
+  repeated DbHash virtualDiffParents = 1;
+}
+
+message DbBlockCount {
+  uint64 count = 1;
+}
+
+message DbBlockHeaderCount {
+  uint64 count = 1;
 }

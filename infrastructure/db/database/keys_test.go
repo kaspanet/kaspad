@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func makeBucketJoin(path ...[]byte) *Bucket {
+	return MakeBucket(bytes.Join(path, []byte{bucketSeparator}))
+}
+
 func TestBucketPath(t *testing.T) {
 	tests := []struct {
 		bucketByteSlices [][]byte
@@ -23,14 +27,14 @@ func TestBucketPath(t *testing.T) {
 
 	for _, test := range tests {
 		// Build a result using the MakeBucket function alone
-		resultKey := MakeBucket(test.bucketByteSlices...).Path()
+		resultKey := makeBucketJoin(test.bucketByteSlices...).Path()
 		if !reflect.DeepEqual(resultKey, test.expectedPath) {
 			t.Errorf("TestBucketPath: got wrong path using MakeBucket. "+
 				"Want: %s, got: %s", string(test.expectedPath), string(resultKey))
 		}
 
 		// Build a result using sub-Bucket calls
-		bucket := MakeBucket()
+		bucket := MakeBucket(nil)
 		for _, bucketBytes := range test.bucketByteSlices {
 			bucket = bucket.Bucket(bucketBytes)
 		}
@@ -63,14 +67,14 @@ func TestBucketKey(t *testing.T) {
 			key:              []byte("test"),
 			expectedKeyBytes: []byte("hello/world/test"),
 			expectedKey: &Key{
-				bucket: MakeBucket([]byte("hello"), []byte("world")),
+				bucket: makeBucketJoin([]byte("hello"), []byte("world")),
 				suffix: []byte("test"),
 			},
 		},
 	}
 
 	for _, test := range tests {
-		resultKey := MakeBucket(test.bucketByteSlices...).Key(test.key)
+		resultKey := makeBucketJoin(test.bucketByteSlices...).Key(test.key)
 		if !reflect.DeepEqual(resultKey, test.expectedKey) {
 			t.Errorf("TestBucketKey: got wrong key. Want: %s, got: %s",
 				test.expectedKeyBytes, resultKey)

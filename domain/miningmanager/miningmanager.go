@@ -8,9 +8,10 @@ import (
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock
+	GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error)
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
-	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction)
+	AllTransactions() []*consensusexternalapi.DomainTransaction
+	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error)
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
 }
 
@@ -20,13 +21,13 @@ type miningManager struct {
 }
 
 // GetBlockTemplate creates a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) *consensusexternalapi.DomainBlock {
+func (mm *miningManager) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
 	return mm.blockTemplateBuilder.GetBlockTemplate(coinbaseData)
 }
 
 // HandleNewBlock handles the transactions for a new block that was just added to the DAG
-func (mm *miningManager) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) {
-	mm.mempool.HandleNewBlockTransactions(txs)
+func (mm *miningManager) HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error) {
+	return mm.mempool.HandleNewBlockTransactions(txs)
 }
 
 // ValidateAndInsertTransaction validates the given transaction, and
@@ -40,4 +41,8 @@ func (mm *miningManager) GetTransaction(
 	transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool) {
 
 	return mm.mempool.GetTransaction(transactionID)
+}
+
+func (mm *miningManager) AllTransactions() []*consensusexternalapi.DomainTransaction {
+	return mm.mempool.AllTransactions()
 }

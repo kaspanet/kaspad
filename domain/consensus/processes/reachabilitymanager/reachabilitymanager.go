@@ -9,34 +9,32 @@ import (
 // reachability queries in sub-linear time
 type reachabilityManager struct {
 	databaseContext       model.DBReader
-	blockRelationStore    model.BlockRelationStore
 	reachabilityDataStore model.ReachabilityDataStore
 	ghostdagDataStore     model.GHOSTDAGDataStore
+	reindexSlack          uint64
+	reindexWindow         uint64
 }
 
 // New instantiates a new reachabilityManager
 func New(
 	databaseContext model.DBReader,
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	blockRelationStore model.BlockRelationStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 ) model.ReachabilityManager {
 	return &reachabilityManager{
 		databaseContext:       databaseContext,
 		ghostdagDataStore:     ghostdagDataStore,
-		blockRelationStore:    blockRelationStore,
 		reachabilityDataStore: reachabilityDataStore,
+		reindexSlack:          defaultReindexSlack,
+		reindexWindow:         defaultReindexWindow,
 	}
 }
 
 // AddBlock adds the block with the given blockHash into the reachability tree.
 func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
-	// Allocate a new reachability tree node
-	newTreeNode := newReachabilityTreeNode()
-	err := rt.stageTreeNode(blockHash, newTreeNode)
-	if err != nil {
-		return err
-	}
+	// Allocate a new reachability data
+	newReachabilityData := newReachabilityTreeData()
+	rt.stageData(blockHash, newReachabilityData)
 
 	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, blockHash)
 	if err != nil {
@@ -44,7 +42,7 @@ func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error
 	}
 
 	// If this is the genesis node, simply initialize it and return
-	if ghostdagData.SelectedParent == nil {
+	if ghostdagData.SelectedParent() == nil {
 		rt.stageReindexRoot(blockHash)
 		return nil
 	}
@@ -55,16 +53,16 @@ func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	err = rt.addChild(ghostdagData.SelectedParent, blockHash, reindexRoot)
+	err = rt.addChild(ghostdagData.SelectedParent(), blockHash, reindexRoot)
 	if err != nil {
 		return err
 	}
 
 	// Add the block to the futureCoveringSets of all the blocks
 	// in the merget set
-	mergeSet := make([]*externalapi.DomainHash, len(ghostdagData.MergeSetBlues)+len(ghostdagData.MergeSetReds))
-	copy(mergeSet, ghostdagData.MergeSetBlues)
-	copy(mergeSet[len(ghostdagData.MergeSetBlues):], ghostdagData.MergeSetReds)
+	mergeSet := make([]*externalapi.DomainHash, len(ghostdagData.MergeSetBlues())+len(ghostdagData.MergeSetReds()))
+	copy(mergeSet, ghostdagData.MergeSetBlues())
+	copy(mergeSet[len(ghostdagData.MergeSetBlues()):], ghostdagData.MergeSetReds())
 
 	for _, current := range mergeSet {
 		err = rt.insertToFutureCoveringSet(current, blockHash)

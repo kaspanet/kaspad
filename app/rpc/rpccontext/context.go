@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
@@ -17,6 +18,7 @@ type Context struct {
 	ProtocolManager   *protocol.Manager
 	ConnectionManager *connmanager.ConnectionManager
 	AddressManager    *addressmanager.AddressManager
+	UTXOIndex         *utxoindex.UTXOIndex
 	ShutDownChan      chan<- struct{}
 
 	NotificationManager *NotificationManager
@@ -29,6 +31,7 @@ func NewContext(cfg *config.Config,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{}) *Context {
 
 	context := &Context{
@@ -38,8 +41,10 @@ func NewContext(cfg *config.Config,
 		ProtocolManager:   protocolManager,
 		ConnectionManager: connectionManager,
 		AddressManager:    addressManager,
+		UTXOIndex:         utxoIndex,
 		ShutDownChan:      shutDownChan,
 	}
 	context.NotificationManager = NewNotificationManager()
+
 	return context
 }

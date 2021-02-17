@@ -37,8 +37,8 @@ func (m *Manager) Peers() []*peerpkg.Peer {
 	return m.context.Peers()
 }
 
-// IBDPeer returns the currently active IBD peer.
-// Returns nil if we aren't currently in IBD
+// IBDPeer returns the current IBD peer or null if the node is not
+// in IBD
 func (m *Manager) IBDPeer() *peerpkg.Peer {
 	return m.context.IBDPeer()
 }
@@ -72,4 +72,15 @@ func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowconte
 // SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler
 func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
+}
+
+// ShouldMine returns whether it's ok to use block template from this node
+// for mining purposes.
+func (m *Manager) ShouldMine() (bool, error) {
+	return m.context.ShouldMine()
+}
+
+// IsIBDRunning returns true if IBD is currently marked as running
+func (m *Manager) IsIBDRunning() bool {
+	return m.context.IsIBDRunning()
 }
