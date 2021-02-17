@@ -137,7 +137,7 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *model.BlockGHOSTDAGData,
 	lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
 
-	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
+	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() <= maxBlueScoreDifference {
 		return highHash, nil
 	}
 
@@ -146,17 +146,18 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 		return nil, err
 	}
 	for ok := iterator.First(); ok; ok = iterator.Next() {
-		highHash, err = iterator.Get()
+		highHashCandidate, err := iterator.Get()
 		if err != nil {
 			return nil, err
 		}
-		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
+		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHashCandidate)
 		if err != nil {
 			return nil, err
 		}
-		if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore()+1 > maxBlueScoreDifference {
+		if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() > maxBlueScoreDifference {
 			break
 		}
+		highHash = highHashCandidate
 	}
 	return highHash, nil
 }
