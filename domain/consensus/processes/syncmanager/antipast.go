@@ -89,7 +89,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	}
 
 	// The process above doesn't return highHash, so include it explicitly, unless highHash == lowHash
-	if lowHash != highHash {
+	if !lowHash.Equal(highHash) {
 		blockHashes = append(blockHashes, highHash)
 	}
 
