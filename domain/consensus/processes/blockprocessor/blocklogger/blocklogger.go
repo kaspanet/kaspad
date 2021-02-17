@@ -11,27 +11,38 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-var (
+// BlockLogger is a type tracking the amount of blocks/headers/transactions to log the time it took to receive them
+type BlockLogger struct {
 	receivedLogBlocks       int64
 	receivedLogHeaders      int64
 	receivedLogTransactions int64
 	lastBlockLogTime        time.Time
-)
+}
+
+// NewBlockLogger creates a new instance with zeroed blocks/headers/transactions/time counters.
+func NewBlockLogger() *BlockLogger {
+	return &BlockLogger{
+		receivedLogBlocks:       0,
+		receivedLogHeaders:      0,
+		receivedLogTransactions: 0,
+		lastBlockLogTime:        time.Now(),
+	}
+}
 
 // LogBlock logs a new block blue score as an information message
 // to show progress to the user. In order to prevent spam, it limits logging to
 // one message every 10 seconds with duration and totals included.
-func LogBlock(block *externalapi.DomainBlock) {
+func (bl *BlockLogger) LogBlock(block *externalapi.DomainBlock) {
 	if len(block.Transactions) == 0 {
-		receivedLogHeaders++
+		bl.receivedLogHeaders++
 	} else {
-		receivedLogBlocks++
+		bl.receivedLogBlocks++
 	}
 
-	receivedLogTransactions += int64(len(block.Transactions))
+	bl.receivedLogTransactions += int64(len(block.Transactions))
 
 	now := time.Now()
-	duration := now.Sub(lastBlockLogTime)
+	duration := now.Sub(bl.lastBlockLogTime)
 	if duration < time.Second*10 {
 		return
 	}
@@ -41,26 +52,26 @@ func LogBlock(block *externalapi.DomainBlock) {
 
 	// Log information about new block blue score.
 	blockStr := "blocks"
-	if receivedLogBlocks == 1 {
+	if bl.receivedLogBlocks == 1 {
 		blockStr = "block"
 	}
 
 	txStr := "transactions"
-	if receivedLogTransactions == 1 {
+	if bl.receivedLogTransactions == 1 {
 		txStr = "transaction"
 	}
 
 	headerStr := "headers"
-	if receivedLogBlocks == 1 {
+	if bl.receivedLogBlocks == 1 {
 		headerStr = "header"
 	}
 
 	log.Infof("Processed %d %s and %d %s in the last %s (%d %s, %s)",
-		receivedLogBlocks, blockStr, receivedLogHeaders, headerStr, truncatedDuration, receivedLogTransactions,
+		bl.receivedLogBlocks, blockStr, bl.receivedLogHeaders, headerStr, truncatedDuration, bl.receivedLogTransactions,
 		txStr, mstime.UnixMilliseconds(block.Header.TimeInMilliseconds()))
 
-	receivedLogBlocks = 0
-	receivedLogHeaders = 0
-	receivedLogTransactions = 0
-	lastBlockLogTime = now
+	bl.receivedLogBlocks = 0
+	bl.receivedLogHeaders = 0
+	bl.receivedLogTransactions = 0
+	bl.lastBlockLogTime = now
 }
