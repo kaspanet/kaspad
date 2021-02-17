@@ -533,6 +533,11 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
 			}
 
+			err = flow.banIfBlockIsHeaderOnly(block)
+			if err != nil {
+				return err
+			}
+
 			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
