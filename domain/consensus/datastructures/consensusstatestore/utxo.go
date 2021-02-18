@@ -37,6 +37,7 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	}
 
 	toRemoveIterator := css.virtualUTXODiffStaging.ToRemove().Iterator()
+	defer toRemoveIterator.Close()
 	for ok := toRemoveIterator.First(); ok; ok = toRemoveIterator.Next() {
 		toRemoveOutpoint, _, err := toRemoveIterator.Get()
 		if err != nil {
@@ -56,6 +57,7 @@ func (css *consensusStateStore) commitVirtualUTXODiff(dbTx model.DBTransaction) 
 	}
 
 	toAddIterator := css.virtualUTXODiffStaging.ToAdd().Iterator()
+	defer toAddIterator.Close()
 	for ok := toAddIterator.First(); ok; ok = toAddIterator.Next() {
 		toAddOutpoint, toAddEntry, err := toAddIterator.Get()
 		if err != nil {
@@ -156,6 +158,7 @@ func (css *consensusStateStore) VirtualUTXOs(dbContext model.DBReader,
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close()
 
 	if fromOutpoint != nil {
 		serializedFromOutpoint, err := serializeOutpoint(fromOutpoint)
@@ -170,6 +173,7 @@ func (css *consensusStateStore) VirtualUTXOs(dbContext model.DBReader,
 	}
 
 	iterator := newCursorUTXOSetIterator(cursor)
+	defer iterator.Close()
 
 	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0, limit)
 	for len(outpointAndUTXOEntryPairs) < limit && iterator.Next() {

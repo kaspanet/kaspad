@@ -43,6 +43,11 @@ func (r *readOnlyUTXOIteratorWithDiff) First() bool {
 	baseNotEmpty := r.baseIterator.First()
 	baseEmpty := !baseNotEmpty
 
+	err := r.toAddIterator.Close()
+	if err != nil {
+		r.currentErr = err
+		return true
+	}
 	r.toAddIterator = r.diff.ToAdd().Iterator()
 	toAddEmpty := r.diff.ToAdd().Len() == 0
 

@@ -43,6 +43,7 @@ func (as *addressStore) restoreNotBannedAddresses() error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		databaseKey, err := cursor.Key()
 		if err != nil {
@@ -66,6 +67,7 @@ func (as *addressStore) restoreBannedAddresses() error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		databaseKey, err := cursor.Key()
 		if err != nil {

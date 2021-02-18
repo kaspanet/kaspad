@@ -59,6 +59,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	if err != nil {
 		return nil, err
 	}
+	defer iterator.Close()
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		current, err := iterator.Get()
 		if err != nil {
@@ -145,6 +146,7 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 	if err != nil {
 		return nil, err
 	}
+	defer iterator.Close()
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		highHashCandidate, err := iterator.Get()
 		if err != nil {
@@ -191,6 +193,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 	if err != nil {
 		return nil, err
 	}
+	defer selectedChildIterator.Close()
 
 	lowHash := pruningPoint
 	foundHeaderOnlyBlock := false
