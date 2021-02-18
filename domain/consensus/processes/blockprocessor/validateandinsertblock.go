@@ -83,6 +83,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	var selectedParentChainChanges *externalapi.SelectedChainPath
+	var virtualUTXODiff externalapi.UTXODiff
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when
@@ -90,7 +91,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		// in consensusStateManager.ImportPruningPoint
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
-			selectedParentChainChanges, err = bp.consensusStateManager.AddBlock(blockHash)
+			selectedParentChainChanges, virtualUTXODiff, err = bp.consensusStateManager.AddBlock(blockHash)
 			if err != nil {
 				return nil, err
 			}
@@ -145,8 +146,15 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 
 	bp.blockLogger.LogBlock(block)
 
+	virtualParents, err := bp.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return &externalapi.BlockInsertionResult{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
+		VirtualUTXODiff:                   virtualUTXODiff,
+		VirtualParents:                    virtualParents,
 	}, nil
 }
 

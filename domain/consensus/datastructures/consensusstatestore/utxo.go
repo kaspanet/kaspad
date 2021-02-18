@@ -19,7 +19,7 @@ func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	return utxoSetBucket.Key(serializedOutpoint), nil
 }
 
-func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff model.UTXODiff) {
+func (css *consensusStateStore) StageVirtualUTXODiff(virtualUTXODiff externalapi.UTXODiff) {
 	css.virtualUTXODiffStaging = virtualUTXODiff
 }
 
@@ -149,7 +149,7 @@ func (css *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbCon
 	return dbContext.Has(key)
 }
 
-func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
+func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader) (externalapi.ReadOnlyUTXOSetIterator, error) {
 	cursor, err := dbContext.Cursor(utxoSetBucket)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ type utxoSetIterator struct {
 	cursor model.DBCursor
 }
 
-func newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
+func newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSetIterator {
 	return &utxoSetIterator{cursor: cursor}
 }
 

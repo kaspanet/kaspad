@@ -5,15 +5,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type utxoCollection map[externalapi.DomainOutpoint]externalapi.UTXOEntry
 
 // NewUTXOCollection creates a UTXO-Collection from the given map from outpoint to UTXOEntry
-func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry) model.UTXOCollection {
+func NewUTXOCollection(utxoMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry) externalapi.UTXOCollection {
 	return utxoCollection(utxoMap)
 }
 

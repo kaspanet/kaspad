@@ -51,7 +51,7 @@ func (ps *pruningStore) AppendImportedPruningPointUTXOs(dbTx model.DBTransaction
 	return nil
 }
 
-func (ps *pruningStore) ImportedPruningPointUTXOIterator(dbContext model.DBReader) (model.ReadOnlyUTXOSetIterator, error) {
+func (ps *pruningStore) ImportedPruningPointUTXOIterator(dbContext model.DBReader) (externalapi.ReadOnlyUTXOSetIterator, error) {
 	cursor, err := dbContext.Cursor(importedPruningPointUTXOsBucket)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ type utxoSetIterator struct {
 	cursor model.DBCursor
 }
 
-func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) model.ReadOnlyUTXOSetIterator {
+func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSetIterator {
 	return &utxoSetIterator{cursor: cursor}
 }
 

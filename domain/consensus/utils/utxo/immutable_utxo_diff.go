@@ -1,7 +1,7 @@
 package utxo
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -11,7 +11,7 @@ type immutableUTXODiff struct {
 	isInvalidated bool
 }
 
-func (iud *immutableUTXODiff) ToAdd() model.UTXOCollection {
+func (iud *immutableUTXODiff) ToAdd() externalapi.UTXOCollection {
 	if iud.isInvalidated {
 		panic("Attempt to read from an invalidated UTXODiff")
 	}
@@ -19,7 +19,7 @@ func (iud *immutableUTXODiff) ToAdd() model.UTXOCollection {
 	return iud.mutableUTXODiff.ToAdd()
 }
 
-func (iud *immutableUTXODiff) ToRemove() model.UTXOCollection {
+func (iud *immutableUTXODiff) ToRemove() externalapi.UTXOCollection {
 	if iud.isInvalidated {
 		panic("Attempt to read from an invalidated UTXODiff")
 	}
@@ -27,7 +27,7 @@ func (iud *immutableUTXODiff) ToRemove() model.UTXOCollection {
 	return iud.mutableUTXODiff.ToRemove()
 }
 
-func (iud *immutableUTXODiff) WithDiff(other model.UTXODiff) (model.UTXODiff, error) {
+func (iud *immutableUTXODiff) WithDiff(other externalapi.UTXODiff) (externalapi.UTXODiff, error) {
 	if iud.isInvalidated {
 		panic("Attempt to read from an invalidated UTXODiff")
 	}
@@ -35,7 +35,7 @@ func (iud *immutableUTXODiff) WithDiff(other model.UTXODiff) (model.UTXODiff, er
 	return iud.mutableUTXODiff.WithDiff(other)
 }
 
-func (iud *immutableUTXODiff) DiffFrom(other model.UTXODiff) (model.UTXODiff, error) {
+func (iud *immutableUTXODiff) DiffFrom(other externalapi.UTXODiff) (externalapi.UTXODiff, error) {
 	if iud.isInvalidated {
 		panic("Attempt to read from an invalidated UTXODiff")
 	}
@@ -44,7 +44,7 @@ func (iud *immutableUTXODiff) DiffFrom(other model.UTXODiff) (model.UTXODiff, er
 }
 
 // NewUTXODiff creates an empty UTXODiff
-func NewUTXODiff() model.UTXODiff {
+func NewUTXODiff() externalapi.UTXODiff {
 	return newUTXODiff()
 }
 
@@ -56,7 +56,7 @@ func newUTXODiff() *immutableUTXODiff {
 }
 
 // NewUTXODiffFromCollections returns a new UTXODiff with the given toAdd and toRemove collections
-func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTXODiff, error) {
+func NewUTXODiffFromCollections(toAdd, toRemove externalapi.UTXOCollection) (externalapi.UTXODiff, error) {
 	add, ok := toAdd.(utxoCollection)
 	if !ok {
 		return nil, errors.New("toAdd is not of type utxoCollection")
@@ -73,7 +73,7 @@ func NewUTXODiffFromCollections(toAdd, toRemove model.UTXOCollection) (model.UTX
 	}, nil
 }
 
-func (iud *immutableUTXODiff) CloneMutable() model.MutableUTXODiff {
+func (iud *immutableUTXODiff) CloneMutable() externalapi.MutableUTXODiff {
 	return iud.cloneMutable()
 }
 
