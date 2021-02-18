@@ -18,7 +18,7 @@ COPY go.sum .
 
 COPY . .
 
-RUN NO_PARALLEL=1 ./build_and_test.sh
+RUN ./build_and_test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
