@@ -24,6 +24,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+var headerOnlyBlock = &externalapi.DomainBlock{
+	Header: blockheader.NewImmutableBlockHeader(
+		constants.MaxBlockVersion,
+		[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		0,
+		0,
+		0,
+	),
+}
+
 var orphanBlock = &externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -35,6 +48,7 @@ var orphanBlock = &externalapi.DomainBlock{
 		0,
 		0,
 	),
+	Transactions: []*externalapi.DomainTransaction{{}},
 }
 
 var validPruningPointBlock = &externalapi.DomainBlock{
@@ -48,6 +62,7 @@ var validPruningPointBlock = &externalapi.DomainBlock{
 		0,
 		0,
 	),
+	Transactions: []*externalapi.DomainTransaction{{}},
 }
 
 var invalidPruningPointBlock = &externalapi.DomainBlock{
@@ -61,6 +76,7 @@ var invalidPruningPointBlock = &externalapi.DomainBlock{
 		0,
 		0,
 	),
+	Transactions: []*externalapi.DomainTransaction{{}},
 }
 
 var unexpectedIBDBlock = &externalapi.DomainBlock{
@@ -74,6 +90,7 @@ var unexpectedIBDBlock = &externalapi.DomainBlock{
 		0,
 		0,
 	),
+	Transactions: []*externalapi.DomainTransaction{{}},
 }
 
 var invalidBlock = &externalapi.DomainBlock{
@@ -87,6 +104,7 @@ var invalidBlock = &externalapi.DomainBlock{
 		0,
 		0,
 	),
+	Transactions: []*externalapi.DomainTransaction{{}},
 }
 
 var unknownBlockHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})
@@ -95,6 +113,7 @@ var validPruningPointHash = consensushashing.BlockHash(validPruningPointBlock)
 var invalidBlockHash = consensushashing.BlockHash(invalidBlock)
 var invalidPruningPointHash = consensushashing.BlockHash(invalidPruningPointBlock)
 var orphanBlockHash = consensushashing.BlockHash(orphanBlock)
+var headerOnlyBlockHash = consensushashing.BlockHash(headerOnlyBlock)
 
 type fakeRelayInvsContext struct {
 	testName             string
@@ -449,6 +468,29 @@ func TestHandleRelayInvs(t *testing.T) {
 			expectsProtocolError: true,
 			expectsBan:           true,
 			expectsErrToContain:  "got unrequested block",
+		},
+		{
+			name: "sending header only block on relay",
+			funcToExecute: func(t *testing.T, incomingRoute, outgoingRoute *router.Route, context *fakeRelayInvsContext) {
+				err := incomingRoute.Enqueue(appmessage.NewMsgInvBlock(headerOnlyBlockHash))
+				if err != nil {
+					t.Fatalf("Enqueue: %+v", err)
+				}
+
+				msg, err := outgoingRoute.DequeueWithTimeout(time.Second)
+				if err != nil {
+					t.Fatalf("DequeueWithTimeout: %+v", err)
+				}
+				_ = msg.(*appmessage.MsgRequestRelayBlocks)
+
+				err = incomingRoute.Enqueue(appmessage.DomainBlockToMsgBlock(headerOnlyBlock))
+				if err != nil {
+					t.Fatalf("Enqueue: %+v", err)
+				}
+			},
+			expectsProtocolError: true,
+			expectsBan:           true,
+			expectsErrToContain:  "block where expected block with body",
 		},
 		{
 			name: "sending invalid block",
