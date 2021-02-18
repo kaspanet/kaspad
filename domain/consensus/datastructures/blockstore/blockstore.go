@@ -235,6 +235,10 @@ func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
 	return externalapi.NewDomainHashFromByteSlice(blockHashBytes)
 }
 
+func (a allBlockHashesIterator) Close() error {
+	return a.cursor.Close()
+}
+
 func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
 	cursor, err := dbContext.Cursor(bucket)
 	if err != nil {

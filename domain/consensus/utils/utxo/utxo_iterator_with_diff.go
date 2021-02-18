@@ -79,3 +79,11 @@ func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
 func (r *readOnlyUTXOIteratorWithDiff) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
 	return r.currentOutpoint, r.currentUTXOEntry, r.currentErr
 }
+
+func (r *readOnlyUTXOIteratorWithDiff) Close() error {
+	err := r.baseIterator.Close()
+	if err != nil {
+		return err
+	}
+	return r.toAddIterator.Close()
+}

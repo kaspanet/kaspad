@@ -238,3 +238,7 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 
 	return outpoint, utxoEntry, nil
 }
+
+func (u utxoSetIterator) Close() error {
+	return u.cursor.Close()
+}

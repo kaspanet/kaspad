@@ -99,6 +99,10 @@ func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry
 	return outpoint, utxoEntry, nil
 }
 
+func (u *utxoSetIterator) Close() error {
+	return u.cursor.Close()
+}
+
 func (ps *pruningStore) importedPruningPointUTXOKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	serializedOutpoint, err := serializeOutpoint(outpoint)
 	if err != nil {

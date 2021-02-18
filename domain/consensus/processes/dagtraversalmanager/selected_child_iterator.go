@@ -53,6 +53,10 @@ func (s *selectedChildIterator) Get() (*externalapi.DomainHash, error) {
 	return s.current, s.err
 }
 
+func (s *selectedChildIterator) Close() error {
+	return nil
+}
+
 // SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over
 // highHash's selected parent chain
 func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {

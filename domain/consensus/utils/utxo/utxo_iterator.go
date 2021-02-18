@@ -55,3 +55,7 @@ func (uci *utxoCollectionIterator) WithDiff(diff externalapi.UTXODiff) (external
 		toAddIterator: diff.ToAdd().Iterator(),
 	}, nil
 }
+
+func (uci *utxoCollectionIterator) Close() error {
+	return nil
+}
