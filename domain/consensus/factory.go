@@ -63,17 +63,17 @@ type Factory interface {
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 	SetTestLevelDBCacheSize(cacheSizeMiB int)
 	SetTestPreAllocateCache(preallocateCaches bool)
-  SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor)
-  SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor)
+	SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor)
+	SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor)
 }
-  
+
 type factory struct {
-	dataDir               string
-	ghostdagConstructor   GHOSTDAGManagerConstructor
-  pastMedianTimeConsructor PastMedianTimeManagerConstructor
-	difficultyConstructor DifficultyManagerConstructor
-	cacheSizeMiB          *int
-	preallocateCaches     *bool
+	dataDir                  string
+	ghostdagConstructor      GHOSTDAGManagerConstructor
+	pastMedianTimeConsructor PastMedianTimeManagerConstructor
+	difficultyConstructor    DifficultyManagerConstructor
+	cacheSizeMiB             *int
+	preallocateCaches        *bool
 }
 
 // NewFactory creates a new Consensus factory
@@ -81,7 +81,7 @@ func NewFactory() Factory {
 	return &factory{
 		ghostdagConstructor:      ghostdagmanager.New,
 		pastMedianTimeConsructor: pastmediantimemanager.New,
-    difficultyConstructor: difficultymanager.New,
+		difficultyConstructor:    difficultymanager.New,
 	}
 }
 
@@ -474,6 +474,7 @@ func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerCons
 
 func (f *factory) SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor) {
 	f.pastMedianTimeConsructor = medianTimeConstructor
+}
 
 // SetTestDifficultyManager is a setter for the difficultyManager field on the factory.
 func (f *factory) SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor) {
