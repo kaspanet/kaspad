@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.15-alpine AS build
+FROM golang:1.16-alpine AS build
 
 RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
@@ -21,7 +21,7 @@ RUN go mod download
 
 COPY . .
 
-RUN NO_PARALLEL=1 ./build_and_test.sh
+RUN ./build_and_test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
