@@ -16,6 +16,9 @@ RUN go get -u golang.org/x/lint/golint \
 COPY go.mod .
 COPY go.sum .
 
+# Cache kaspad dependencies
+RUN go mod download
+
 COPY . .
 
 RUN ./build_and_test.sh
