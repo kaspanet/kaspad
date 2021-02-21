@@ -2,12 +2,13 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/rand"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -155,11 +156,15 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 
 func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 	tryCount := 0
+
+	const sleepTime = 500 * time.Millisecond
+	const sleepTimeWhenNotSynced = 5 * time.Second
+
 	for {
 		tryCount++
-		const sleepTime = 500 * time.Millisecond
+
 		shouldLog := (tryCount-1)%10 == 0
-		template := templatemanager.Get()
+		template, isSynced := templatemanager.Get()
 		if template == nil {
 			if shouldLog {
 				log.Info("Waiting for the initial template")
@@ -167,15 +172,15 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 			time.Sleep(sleepTime)
 			continue
 		}
-		if !template.IsSynced && !mineWhenNotSynced {
+		if !isSynced && !mineWhenNotSynced {
 			if shouldLog {
 				log.Warnf("Kaspad is not synced. Skipping current block template")
 			}
-			time.Sleep(sleepTime)
+			time.Sleep(sleepTimeWhenNotSynced)
 			continue
 		}
 
-		return appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+		return template
 	}
 }
 

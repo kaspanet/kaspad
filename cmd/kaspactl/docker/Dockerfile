@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.15-alpine AS build
+FROM golang:1.16-alpine AS build
 
 RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
