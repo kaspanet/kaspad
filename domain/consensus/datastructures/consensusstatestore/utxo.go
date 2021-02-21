@@ -204,7 +204,8 @@ func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader)
 }
 
 type utxoSetIterator struct {
-	cursor model.DBCursor
+	cursor   model.DBCursor
+	isClosed bool
 }
 
 func newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSetIterator {
@@ -212,14 +213,23 @@ func newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSet
 }
 
 func (u utxoSetIterator) First() bool {
+	if u.isClosed {
+		panic("Tried using a closed utxoSetIterator")
+	}
 	return u.cursor.First()
 }
 
 func (u utxoSetIterator) Next() bool {
+	if u.isClosed {
+		panic("Tried using a closed utxoSetIterator")
+	}
 	return u.cursor.Next()
 }
 
 func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+	if u.isClosed {
+		return nil, nil, errors.New("Tried using a closed utxoSetIterator")
+	}
 	key, err := u.cursor.Key()
 	if err != nil {
 		panic(err)
@@ -244,5 +254,14 @@ func (u utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry 
 }
 
 func (u utxoSetIterator) Close() error {
-	return u.cursor.Close()
+	if u.isClosed {
+		return errors.New("Tried using a closed utxoSetIterator")
+	}
+	u.isClosed = true
+	err := u.cursor.Close()
+	if err != nil {
+		return err
+	}
+	u.cursor = nil
+	return nil
 }
