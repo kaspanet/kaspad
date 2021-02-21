@@ -4,7 +4,7 @@ kaspactl is an RPC client for kaspad
 
 ## Requirements
 
-Go 1.15 or later.
+Go 1.16 or later.
 
 ## Installation
 

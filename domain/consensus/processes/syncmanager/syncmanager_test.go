@@ -1,14 +1,15 @@
 package syncmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"math"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestSyncManager_GetHashesBetween(t *testing.T) {
@@ -20,27 +21,40 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		}
 		defer teardown(false)
 
-		upBfsOrder := make([]*externalapi.DomainHash, 0, 30)
-		selectedParent := params.GenesisHash
-		upBfsOrder = append(upBfsOrder, selectedParent)
+		// Create a DAG with the following structure:
+		//          merging block
+		//         /      |      \
+		//      split1  split2   split3
+		//        \       |      /
+		//         merging block
+		//         /      |      \
+		//      split1  split2   split3
+		//        \       |      /
+		//               etc.
+		expectedOrder := make([]*externalapi.DomainHash, 0, 40)
+		mergingBlock := params.GenesisHash
 		for i := 0; i < 10; i++ {
-			parents := make([]*externalapi.DomainHash, 0, 3)
-			for j := 0; j < 4; j++ {
-				blockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{selectedParent}, nil, nil)
+			splitBlocks := make([]*externalapi.DomainHash, 0, 3)
+			for j := 0; j < 3; j++ {
+				splitBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{mergingBlock}, nil, nil)
 				if err != nil {
 					t.Fatalf("Failed adding block: %v", err)
 				}
-				parents = append(parents, blockHash)
-				upBfsOrder = append(upBfsOrder, blockHash)
+				splitBlocks = append(splitBlocks, splitBlock)
 			}
-			selectedParent, _, err = tc.AddBlock(parents, nil, nil)
+			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(splitBlocks, tc, t)))
+			restOfSplitBlocks, selectedParent := splitBlocks[:len(splitBlocks)-1], splitBlocks[len(splitBlocks)-1]
+			expectedOrder = append(expectedOrder, selectedParent)
+			expectedOrder = append(expectedOrder, restOfSplitBlocks...)
+
+			mergingBlock, _, err = tc.AddBlock(splitBlocks, nil, nil)
 			if err != nil {
 				t.Fatalf("Failed adding block: %v", err)
 			}
-			upBfsOrder = append(upBfsOrder, selectedParent)
+			expectedOrder = append(expectedOrder, mergingBlock)
 		}
 
-		for i, blockHash := range upBfsOrder {
+		for i, blockHash := range expectedOrder {
 			empty, err := tc.SyncManager().GetHashesBetween(blockHash, blockHash, math.MaxUint64)
 			if err != nil {
 				t.Fatalf("TestSyncManager_GetHashesBetween failed returning 0 hashes on the %d'th block: %v", i, err)
@@ -50,15 +64,13 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 			}
 		}
 
-		allHashes, err := tc.SyncManager().GetHashesBetween(upBfsOrder[0], upBfsOrder[len(upBfsOrder)-1], math.MaxUint64)
+		actualOrder, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
 		if err != nil {
-			t.Fatalf("TestSyncManager_GetHashesBetween failed returning allHashes: %v", err)
+			t.Fatalf("TestSyncManager_GetHashesBetween failed returning actualOrder: %v", err)
 		}
 
-		sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(upBfsOrder, tc, t)))
-		upBfsOrderExcludingGenesis := upBfsOrder[1:]
-		if !reflect.DeepEqual(allHashes, upBfsOrderExcludingGenesis) {
-			t.Fatalf("TestSyncManager_GetHashesBetween expected %v\n == \n%v", allHashes, upBfsOrder)
+		if !reflect.DeepEqual(actualOrder, expectedOrder) {
+			t.Fatalf("TestSyncManager_GetHashesBetween expected: \n%s\nactual:\n%s\n", expectedOrder, actualOrder)
 		}
 	})
 }

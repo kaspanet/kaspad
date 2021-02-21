@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
+	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"strconv"
@@ -23,6 +24,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
+// ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.
+var ErrBuildBlockVerboseDataInvalidBlock = errors.New("ErrBuildBlockVerboseDataInvalidBlock")
+
 // BuildBlockVerboseData builds a BlockVerboseData from the given blockHeader.
 // A block may optionally also be given if it's available in the calling context.
 func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, block *externalapi.DomainBlock,
@@ -37,6 +41,12 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 	if err != nil {
 		return nil, err
 	}
+
+	if blockInfo.BlockStatus == externalapi.StatusInvalid {
+		return nil, errors.Wrap(ErrBuildBlockVerboseDataInvalidBlock, "cannot build verbose data for "+
+			"invalid block")
+	}
+
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version(),
