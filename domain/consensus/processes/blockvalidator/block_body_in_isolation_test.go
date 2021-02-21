@@ -1333,7 +1333,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(params *dagconfig.Params
 			constants.MaxBlockVersion,
 			[]*externalapi.DomainHash{params.GenesisHash},
 			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
-			merkle.CalculateIDMerkleRoot([]*externalapi.DomainTransaction{tx}),
+			&externalapi.DomainHash{},
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
 				0x5b, 0x7e, 0xaf, 0x84, 0x7e, 0x1b, 0x6b, 0x06,

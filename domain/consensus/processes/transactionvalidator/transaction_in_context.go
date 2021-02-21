@@ -53,6 +53,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
+
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
 	if err != nil {
 		return err

@@ -63,13 +63,13 @@ type Factory interface {
 	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
 	SetTestLevelDBCacheSize(cacheSizeMiB int)
 	SetTestPreAllocateCache(preallocateCaches bool)
-	SetTestMedianTimeManager(medianTimeConstructor MEDIAN)
+	SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor)
 }
 
 type factory struct {
 	dataDir                  string
 	ghostdagConstructor      GHOSTDAGManagerConstructor
-	pastMedianTimeConsructor MEDIAN
+	pastMedianTimeConsructor PastMedianTimeManagerConstructor
 	cacheSizeMiB             *int
 	preallocateCaches        *bool
 }
@@ -469,7 +469,7 @@ func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerCons
 	f.ghostdagConstructor = ghostdagConstructor
 }
 
-func (f *factory) SetTestMedianTimeManager(medianTimeConstructor MEDIAN) {
+func (f *factory) SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor) {
 	f.pastMedianTimeConsructor = medianTimeConstructor
 }
 

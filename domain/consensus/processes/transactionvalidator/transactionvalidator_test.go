@@ -22,12 +22,12 @@ import (
 )
 
 type mocPastMedianTimeManager struct {
-	PastMedianTimeForTest int64
+	pastMedianTimeForTest int64
 }
 
 // PastMedianTime returns the past median time for the test.
 func (mdf *mocPastMedianTimeManager) PastMedianTime(*externalapi.DomainHash) (int64, error) {
-	return mdf.PastMedianTimeForTest, nil
+	return mdf.pastMedianTimeForTest, nil
 }
 
 func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
@@ -35,7 +35,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 
 		factory := consensus.NewFactory()
 		pastMedianManager := &mocPastMedianTimeManager{}
-		factory.SetTestMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
+		factory.SetTestPastMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
 			model.GHOSTDAGDataStore) model.PastMedianTimeManager {
 			return pastMedianManager
 		})
@@ -46,7 +46,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		}
 		defer tearDown(false)
 
-		pastMedianManager.PastMedianTimeForTest = 1
+		pastMedianManager.pastMedianTimeForTest = 1
 		privateKey, err := secp256k1.GeneratePrivateKey()
 		if err != nil {
 			t.Fatalf("Failed to generate a private key: %v", err)
@@ -90,7 +90,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 				true,
 				uint64(5)),
 		}
-		txInputWithLargeEntry := externalapi.DomainTransactionInput{
+		txInputWithLargeAmount := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.MaxTxInSequenceNum,
@@ -117,35 +117,28 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txForCoinbaseMaturityCheck := externalapi.DomainTransaction{
+		txWithImmatureCoinbase := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txForInputsAmountsCheck := externalapi.DomainTransaction{
+		txWithLargeAmount := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInput, &txInputWithLargeEntry},
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput, &txInputWithLargeAmount},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txForOutputsAmountsCheck := externalapi.DomainTransaction{
+		txWithBigValue := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOutBigValue},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txForSequenceLockCheck := externalapi.DomainTransaction{
-			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
-			SubnetworkID: subnetworks.SubnetworkIDRegistry,
-			Gas:          0,
-			LockTime:     0}
-		txForScriptsCheck := externalapi.DomainTransaction{
+		txWithAnEmptyInvalidScript := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
@@ -194,41 +187,43 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 				isValid:                  true,
 				expectedError:            nil,
 			},
-			{
+			{ // The calculated block coinbase maturity is smaller than the minimum expected blockCoinbaseMaturity.
+				// The povBlockHash blue score is 10 and the UTXO blue score is 5, hence the The subtraction between
+				// them will yield a smaller result than the required CoinbaseMaturity (currently set to 100).
 				name:                     "checkTransactionCoinbaseMaturity",
-				tx:                       &txForCoinbaseMaturityCheck,
+				tx:                       &txWithImmatureCoinbase,
 				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrImmatureSpend,
 			},
-			{
+			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompi)
 				name:                     "checkTransactionInputAmounts",
-				tx:                       &txForInputsAmountsCheck,
+				tx:                       &txWithLargeAmount,
 				povBlockHash:             model.VirtualBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrBadTxOutValue,
 			},
-			{
+			{ // The total SompiIn (sum of inputs amount) is smaller than the total SompiOut (sum of outputs value) and hence invalid.
 				name:                     "checkTransactionOutputAmounts",
-				tx:                       &txForOutputsAmountsCheck,
+				tx:                       &txWithBigValue,
 				povBlockHash:             model.VirtualBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrSpendTooHigh,
 			},
-			{
+			{ // the selectedParentMedianTime is negative and hence invalid.
 				name:                     "checkTransactionSequenceLock",
-				tx:                       &txForSequenceLockCheck,
+				tx:                       &validTx,
 				povBlockHash:             model.VirtualBlockHash,
 				selectedParentMedianTime: -1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrUnfinalizedTx,
 			},
-			{
+			{ // The SignatureScript (in the txInput) is empty and hence invalid.
 				name:                     "checkTransactionScripts",
-				tx:                       &txForScriptsCheck,
+				tx:                       &txWithAnEmptyInvalidScript,
 				povBlockHash:             model.VirtualBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
