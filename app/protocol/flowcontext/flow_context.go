@@ -23,6 +23,8 @@ import (
 // when a block is added to the DAG
 type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 
+type OnPruningPointUTXOSetOverrideHandler func() error
+
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
 type OnTransactionAddedToMempoolHandler func()
@@ -38,8 +40,9 @@ type FlowContext struct {
 
 	timeStarted int64
 
-	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
-	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
+	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
+	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
+	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[externalapi.DomainTransactionID]*externalapi.DomainTransaction
@@ -80,6 +83,11 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
 	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
+}
+
+// SetOnPruningPointUTXOSetOverrideHandler sets the onPruningPointUTXOSetOverrideHandler handler
+func (f *FlowContext) SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler) {
+	f.onPruningPointUTXOSetOverrideHandler = onPruningPointUTXOSetOverrideHandler
 }
 
 // SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler

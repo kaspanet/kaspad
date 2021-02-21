@@ -28,6 +28,10 @@ func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex
 	}
 }
 
+func (ui *UTXOIndex) Reset() error {
+	panic("unimplemented")
+}
+
 // Update updates the UTXO index with the given DAG selected parent chain changes
 func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedChainPath) (*UTXOChanges, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.Update")

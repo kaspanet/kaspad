@@ -57,6 +57,13 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	return nil
 }
 
+func (f *FlowContext) OnPruningPointUTXOSetOverride() error {
+	if f.onPruningPointUTXOSetOverrideHandler != nil {
+		return f.onPruningPointUTXOSetOverrideHandler()
+	}
+	return nil
+}
+
 func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 	block *externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
 
