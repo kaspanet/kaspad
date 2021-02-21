@@ -295,10 +295,6 @@ type mocDifficultyManager struct {
 	testGenesisBits uint32
 }
 
-func (dm *mocDifficultyManager) genesisBits() (uint32, error) {
-	return dm.testGenesisBits, nil
-}
-
 // RequiredDifficulty returns the difficulty required for the test
 func (dm *mocDifficultyManager) RequiredDifficulty(*externalapi.DomainHash) (uint32, error) {
 	return dm.testDifficulty, nil
