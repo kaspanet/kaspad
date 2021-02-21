@@ -138,7 +138,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txWithAnEmptyInvalidScript := externalapi.DomainTransaction{
+		txWithInvalidSignature := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
@@ -223,7 +223,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			},
 			{ // The SignatureScript (in the txInput) is empty and hence invalid.
 				name:                     "checkTransactionScripts",
-				tx:                       &txWithAnEmptyInvalidScript,
+				tx:                       &txWithInvalidSignature,
 				povBlockHash:             model.VirtualBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
