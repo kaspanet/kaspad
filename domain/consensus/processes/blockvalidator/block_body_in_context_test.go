@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -57,6 +58,17 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 		_, err = tc.ValidateAndInsertBlock(beforePruningBlock)
 		if !errors.Is(err, ruleerrors.ErrPrunedBlock) {
 			t.Fatalf("Unexpected error: %+v", err)
+		}
+
+		beforePruningBlockBlockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(),
+			consensushashing.BlockHash(beforePruningBlock))
+		if err != nil {
+			t.Fatalf("BlockStatusStore().Get: %+v", err)
+		}
+
+		// Check that the block still has header only status although it got rejected.
+		if beforePruningBlockBlockStatus != externalapi.StatusHeaderOnly {
+			t.Fatalf("Unexpected status %s", beforePruningBlockBlockStatus)
 		}
 	})
 }

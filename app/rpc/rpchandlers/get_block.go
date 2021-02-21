@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/pkg/errors"
 )
 
 // HandleGetBlock handles the respectively named RPC command
@@ -30,8 +31,14 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 
 	blockVerboseData, err := context.BuildBlockVerboseData(header, nil, getBlockRequest.IncludeTransactionVerboseData)
 	if err != nil {
+		if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
+			errorMessage := &appmessage.GetBlockResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Block %s is invalid", hash)
+			return errorMessage, nil
+		}
 		return nil, err
 	}
+
 	response.BlockVerboseData = blockVerboseData
 
 	return response, nil

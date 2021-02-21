@@ -11,6 +11,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-16.04, macos-10.15 ]
     name: Testing on on ${{ matrix.os }}
@@ -34,7 +35,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.16
 
 
       # Source: https://github.com/actions/cache/blob/main/examples.md#go---modules
@@ -48,7 +49,7 @@ jobs:
 
       - name: Test
         shell: bash
-        run: ./build_and_test.sh
+        run: ./build_and_test.sh -v
 
   coverage:
     runs-on: ubuntu-20.04
@@ -60,10 +61,10 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.16
 
       - name: Create coverage file
-        run: go test -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
+        run: go test -v -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
 
       - name: Upload coverage file
         run: bash <(curl -s https://codecov.io/bash)

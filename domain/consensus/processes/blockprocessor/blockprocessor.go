@@ -3,6 +3,7 @@ package blockprocessor
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor/blocklogger"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"time"
 )
@@ -13,6 +14,7 @@ type blockProcessor struct {
 	genesisHash        *externalapi.DomainHash
 	targetTimePerBlock time.Duration
 	databaseContext    model.DBManager
+	blockLogger        *blocklogger.BlockLogger
 
 	consensusStateManager model.ConsensusStateManager
 	pruningManager        model.PruningManager
@@ -49,6 +51,7 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	targetTimePerBlock time.Duration,
 	databaseContext model.DBManager,
+
 	consensusStateManager model.ConsensusStateManager,
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,
@@ -81,6 +84,7 @@ func New(
 		genesisHash:           genesisHash,
 		targetTimePerBlock:    targetTimePerBlock,
 		databaseContext:       databaseContext,
+		blockLogger:           blocklogger.NewBlockLogger(),
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,
 		dagTopologyManager:    dagTopologyManager,

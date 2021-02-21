@@ -104,9 +104,19 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
+		err = flow.banIfBlockIsHeaderOnly(block)
+		if err != nil {
+			return err
+		}
+
 		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
 		if err != nil {
+			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
+				log.Infof("Ignoring pruned block %s", inv.Hash)
+				continue
+			}
+
 			if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 				log.Infof("Ignoring duplicate block %s", inv.Hash)
 				continue
@@ -133,6 +143,15 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 	}
+}
+
+func (flow *handleRelayInvsFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
+	if len(block.Transactions) == 0 {
+		return protocolerrors.Errorf(true, "sent header of %s block where expected block with body",
+			consensushashing.BlockHash(block))
+	}
+
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error) {
