@@ -49,7 +49,7 @@ jobs:
 
       - name: Test
         shell: bash
-        run: ./build_and_test.sh
+        run: ./build_and_test.sh -v
 
   coverage:
     runs-on: ubuntu-20.04
@@ -64,7 +64,7 @@ jobs:
           go-version: 1.16
 
       - name: Create coverage file
-        run: go test -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
+        run: go test -v -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
 
       - name: Upload coverage file
         run: bash <(curl -s https://codecov.io/bash)
