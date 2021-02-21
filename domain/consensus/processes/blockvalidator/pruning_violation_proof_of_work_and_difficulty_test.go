@@ -243,9 +243,9 @@ func TestCheckPruningPointViolation(t *testing.T) {
 	})
 }
 
-// TestValidateDifficulty verified that in case of a block with an unexpected difficulty,
+// TestValidateDifficulty verifies that in case of a block with an unexpected difficulty,
 // an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
-// function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The require difficulty is
+// function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The required difficulty is
 // "calculated" by the function (dm *mocDifficultyManager) RequiredDifficulty ,
 // where mocDifficultyManager is special implementation of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
