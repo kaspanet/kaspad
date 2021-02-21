@@ -2,9 +2,6 @@ package utxoindex
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"sync"
@@ -20,47 +17,107 @@ type UTXOIndex struct {
 }
 
 // New creates a new UTXO index
-func New(consensus externalapi.Consensus, database database.Database) *UTXOIndex {
-	store := newUTXOIndexStore(database)
-	return &UTXOIndex{
+func New(consensus externalapi.Consensus, database database.Database) (*UTXOIndex, error) {
+	utxoIndex := &UTXOIndex{
 		consensus: consensus,
-		store:     store,
+		store:     newUTXOIndexStore(database),
 	}
+
+	isSynced, err := utxoIndex.isSynced()
+	if err != nil {
+		return nil, err
+	}
+
+	if !isSynced {
+		err = utxoIndex.Reset()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return utxoIndex, nil
 }
 
 func (ui *UTXOIndex) Reset() error {
-	panic("unimplemented")
+	err := ui.store.deleteAll()
+	if err != nil {
+		return err
+	}
+
+	virtualInfo, err := ui.consensus.GetVirtualInfo()
+	if err != nil {
+		return err
+	}
+
+	var fromOutpoint *externalapi.DomainOutpoint
+	for {
+		const step = 1000
+		virtualUTXOs, err := ui.consensus.GetVirtualUTXOs(virtualInfo.ParentHashes, fromOutpoint, step)
+		if err != nil {
+			return err
+		}
+
+		err = ui.store.addAndCommitOutpointsWithoutTransaction(virtualUTXOs)
+		if err != nil {
+			return err
+		}
+
+		if len(virtualUTXOs) < step {
+			break
+		}
+
+		fromOutpoint = virtualUTXOs[len(virtualUTXOs)-1].Outpoint
+	}
+
+	// This has to be done last to mark that the reset went smoothly and no reset has to be called next time.
+	return ui.store.updateAndCommitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+}
+
+func (ui *UTXOIndex) isSynced() (bool, error) {
+	utxoIndexVirtualParents, err := ui.store.getVirtualParents()
+	if err != nil {
+		if database.IsNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	virtualInfo, err := ui.consensus.GetVirtualInfo()
+	if err != nil {
+		return false, err
+	}
+
+	return externalapi.HashesEqual(virtualInfo.ParentHashes, utxoIndexVirtualParents), nil
 }
 
 // Update updates the UTXO index with the given DAG selected parent chain changes
-func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedChainPath) (*UTXOChanges, error) {
+func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResult) (*UTXOChanges, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.Update")
 	defer onEnd()
 
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
-	log.Tracef("Updating UTXO index with chainChanges: %+v", chainChanges)
-	for _, removedBlockHash := range chainChanges.Removed {
-		err := ui.removeBlock(removedBlockHash)
-		if err != nil {
-			return nil, err
-		}
-	}
-	for _, addedBlockHash := range chainChanges.Added {
-		err := ui.addBlock(addedBlockHash)
-		if err != nil {
-			return nil, err
-		}
+	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", blockInsertionResult.VirtualUTXODiff)
+	err := ui.removeUTXOs(blockInsertionResult.VirtualUTXODiff.ToRemove())
+	if err != nil {
+		return nil, err
 	}
 
-	added, removed := ui.store.stagedData()
+	err = ui.addUTXOs(blockInsertionResult.VirtualUTXODiff.ToAdd())
+	if err != nil {
+		return nil, err
+	}
+
+	ui.store.updateVirtualParents(blockInsertionResult.VirtualParents)
+
+	added, removed, _ := ui.store.stagedData()
 	utxoIndexChanges := &UTXOChanges{
 		Added:   added,
 		Removed: removed,
 	}
 
-	err := ui.store.commit()
+	err = ui.store.commit()
 	if err != nil {
 		return nil, err
 	}
@@ -69,73 +126,21 @@ func (ui *UTXOIndex) Update(chainChanges *externalapi.SelectedChainPath) (*UTXOC
 	return utxoIndexChanges, nil
 }
 
-func (ui *UTXOIndex) addBlock(blockHash *externalapi.DomainHash) error {
-	log.Tracef("Adding block %s to UTXO index", blockHash)
-	acceptanceData, err := ui.consensus.GetBlockAcceptanceData(blockHash)
-	if err != nil {
-		return err
+func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
+	iterator := toAdd.Iterator()
+	hasEntries := iterator.First()
+	if !hasEntries {
+		return nil
 	}
-	blockInfo, err := ui.consensus.GetBlockInfo(blockHash)
-	if err != nil {
-		return err
-	}
-	for _, blockAcceptanceData := range acceptanceData {
-		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-			if !transactionAcceptanceData.IsAccepted {
-				continue
-			}
-			err := ui.addTransaction(transactionAcceptanceData.Transaction,
-				transactionAcceptanceData.TransactionInputUTXOEntries, blockInfo.BlueScore)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
 
-func (ui *UTXOIndex) removeBlock(blockHash *externalapi.DomainHash) error {
-	log.Tracef("Removing block %s from UTXO index", blockHash)
-	acceptanceData, err := ui.consensus.GetBlockAcceptanceData(blockHash)
-	if err != nil {
-		return err
-	}
-	for _, blockAcceptanceData := range acceptanceData {
-		for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-			if !transactionAcceptanceData.IsAccepted {
-				continue
-			}
-			err := ui.removeTransaction(transactionAcceptanceData.Transaction,
-				transactionAcceptanceData.TransactionInputUTXOEntries)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction,
-	transactionInputUTXOEntries []externalapi.UTXOEntry, blockBlueScore uint64) error {
-
-	transactionID := consensushashing.TransactionID(transaction)
-	log.Tracef("Adding transaction %s to UTXO index", transactionID)
-
-	isCoinbase := transactionhelper.IsCoinBase(transaction)
-	for i, transactionInput := range transaction.Inputs {
-		log.Tracef("Removing outpoint %s:%d from UTXO index",
-			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		inputUTXOEntry := transactionInputUTXOEntries[i]
-		err := ui.store.remove(inputUTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint)
+	for iterator.Next() {
+		outpoint, entry, err := iterator.Get()
 		if err != nil {
 			return err
 		}
-	}
-	for index, transactionOutput := range transaction.Outputs {
-		log.Tracef("Adding outpoint %s:%d to UTXO index", transactionID, index)
-		outpoint := externalapi.NewDomainOutpoint(transactionID, uint32(index))
-		utxoEntry := utxo.NewUTXOEntry(transactionOutput.Value, transactionOutput.ScriptPublicKey, isCoinbase, blockBlueScore)
-		err := ui.store.add(transactionOutput.ScriptPublicKey, outpoint, utxoEntry)
+
+		log.Tracef("Adding outpoint %s to UTXO index", outpoint)
+		err = ui.store.add(entry.ScriptPublicKey(), outpoint, entry)
 		if err != nil {
 			return err
 		}
@@ -143,24 +148,21 @@ func (ui *UTXOIndex) addTransaction(transaction *externalapi.DomainTransaction,
 	return nil
 }
 
-func (ui *UTXOIndex) removeTransaction(transaction *externalapi.DomainTransaction,
-	transactionInputUTXOEntries []externalapi.UTXOEntry) error {
+func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
+	iterator := toRemove.Iterator()
+	hasEntries := iterator.First()
+	if !hasEntries {
+		return nil
+	}
 
-	transactionID := consensushashing.TransactionID(transaction)
-	log.Tracef("Removing transaction %s from UTXO index", transactionID)
-	for index, transactionOutput := range transaction.Outputs {
-		log.Tracef("Removing outpoint %s:%d from UTXO index", transactionID, index)
-		outpoint := externalapi.NewDomainOutpoint(transactionID, uint32(index))
-		err := ui.store.remove(transactionOutput.ScriptPublicKey, outpoint)
+	for iterator.Next() {
+		outpoint, entry, err := iterator.Get()
 		if err != nil {
 			return err
 		}
-	}
-	for i, transactionInput := range transaction.Inputs {
-		log.Tracef("Adding outpoint %s:%d to UTXO index",
-			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		inputUTXOEntry := transactionInputUTXOEntries[i]
-		err := ui.store.add(inputUTXOEntry.ScriptPublicKey(), &transactionInput.PreviousOutpoint, transactionInput.UTXOEntry)
+
+		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
+		err = ui.store.remove(entry.ScriptPublicKey(), outpoint)
 		if err != nil {
 			return err
 		}

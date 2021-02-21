@@ -2,8 +2,6 @@ package utxoindex
 
 import (
 	"encoding/binary"
-	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -11,11 +9,13 @@ import (
 )
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
+var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-virtual-parents"))
 
 type utxoIndexStore struct {
-	database database.Database
-	toAdd    map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove map[ScriptPublicKeyString]UTXOOutpoints
+	database       database.Database
+	toAdd          map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	toRemove       map[ScriptPublicKeyString]UTXOOutpoints
+	virtualParents []*externalapi.DomainHash
 }
 
 func newUTXOIndexStore(database database.Database) *utxoIndexStore {
@@ -95,9 +95,14 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 	return nil
 }
 
+func (uis *utxoIndexStore) updateVirtualParents(virtualParents []*externalapi.DomainHash) {
+	uis.virtualParents = virtualParents
+}
+
 func (uis *utxoIndexStore) discard() {
 	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
 	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
+	uis.virtualParents = nil
 }
 
 func (uis *utxoIndexStore) commit() error {
@@ -144,6 +149,12 @@ func (uis *utxoIndexStore) commit() error {
 		}
 	}
 
+	serializeParentHashes := uis.serializeHashes(uis.virtualParents)
+	err = dbTransaction.Put(virtualParentsKey, serializeParentHashes)
+	if err != nil {
+		return err
+	}
+
 	err = dbTransaction.Commit()
 	if err != nil {
 		return err
@@ -151,6 +162,31 @@ func (uis *utxoIndexStore) commit() error {
 
 	uis.discard()
 	return nil
+}
+
+func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+	for _, pair := range utxoPairs {
+		bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
+		key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
+		if err != nil {
+			return err
+		}
+		serializedUTXOEntry, err := uis.serializeUTXOEntry(pair.UTXOEntry)
+		if err != nil {
+			return err
+		}
+		err = uis.database.Put(key, serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (uis *utxoIndexStore) updateAndCommitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
+	serializeParentHashes := uis.serializeHashes(virtualParents)
+	return uis.database.Put(virtualParentsKey, serializeParentHashes)
 }
 
 func (uis *utxoIndexStore) bucketForScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey) *database.Bucket {
@@ -173,37 +209,10 @@ func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi
 	return uis.deserializeOutpoint(serializedOutpoint)
 }
 
-func (uis *utxoIndexStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
-	dbOutpoint := serialization.DomainOutpointToDbOutpoint(outpoint)
-	return proto.Marshal(dbOutpoint)
-}
-
-func (uis *utxoIndexStore) deserializeOutpoint(serializedOutpoint []byte) (*externalapi.DomainOutpoint, error) {
-	var dbOutpoint serialization.DbOutpoint
-	err := proto.Unmarshal(serializedOutpoint, &dbOutpoint)
-	if err != nil {
-		return nil, err
-	}
-	return serialization.DbOutpointToDomainOutpoint(&dbOutpoint)
-}
-
-func (uis *utxoIndexStore) serializeUTXOEntry(utxoEntry externalapi.UTXOEntry) ([]byte, error) {
-	dbUTXOEntry := serialization.UTXOEntryToDBUTXOEntry(utxoEntry)
-	return proto.Marshal(dbUTXOEntry)
-}
-
-func (uis *utxoIndexStore) deserializeUTXOEntry(serializedUTXOEntry []byte) (externalapi.UTXOEntry, error) {
-	var dbUTXOEntry serialization.DbUtxoEntry
-	err := proto.Unmarshal(serializedUTXOEntry, &dbUTXOEntry)
-	if err != nil {
-		return nil, err
-	}
-	return serialization.DBUTXOEntryToUTXOEntry(&dbUTXOEntry)
-}
-
 func (uis *utxoIndexStore) stagedData() (
 	toAdd map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
-	toRemove map[ScriptPublicKeyString]UTXOOutpoints) {
+	toRemove map[ScriptPublicKeyString]UTXOOutpoints,
+	virtualParents []*externalapi.DomainHash) {
 
 	toAddClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toAdd))
 	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
@@ -223,7 +232,7 @@ func (uis *utxoIndexStore) stagedData() (
 		toRemoveClone[scriptPublicKeyString] = toRemoveOutpointsClone
 	}
 
-	return toAddClone, toRemoveClone
+	return toAddClone, toRemoveClone, uis.virtualParents
 }
 
 func (uis *utxoIndexStore) isAnythingStaged() bool {
@@ -261,4 +270,44 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalap
 		utxoOutpointEntryPairs[*outpoint] = utxoEntry
 	}
 	return utxoOutpointEntryPairs, nil
+}
+
+func (uis *utxoIndexStore) getVirtualParents() ([]*externalapi.DomainHash, error) {
+	if uis.isAnythingStaged() {
+		return nil, errors.Errorf("cannot get the virtual parents while staging isn't empty")
+	}
+
+	serializedHashes, err := uis.database.Get(virtualParentsKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return uis.deserializeHashes(serializedHashes)
+}
+
+func (uis *utxoIndexStore) deleteAll() error {
+	// First we delete the virtual parents, so if anything goes wrong, the UTXO index will be marked as "not synced"
+	// and will be reset.
+	err := uis.database.Delete(virtualParentsKey)
+	if err != nil {
+		return err
+	}
+
+	cursor, err := uis.database.Cursor(utxoIndexBucket)
+	if err != nil {
+		return err
+	}
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+
+		err = uis.database.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

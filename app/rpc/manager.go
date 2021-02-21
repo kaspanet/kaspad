@@ -114,7 +114,7 @@ func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInse
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyUTXOsChanged")
 	defer onEnd()
 
-	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.VirtualSelectedParentChainChanges)
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult)
 	if err != nil {
 		return err
 	}
