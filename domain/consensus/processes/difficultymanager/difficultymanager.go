@@ -1,9 +1,10 @@
 package difficultymanager
 
 import (
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -88,7 +89,7 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, err := dm.blueBlockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, err := dm.blockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {
 		return 0, err
 	}
