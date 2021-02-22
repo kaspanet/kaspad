@@ -11,7 +11,7 @@ type DAGTraversalManager interface {
 	// from lowHash (exclusive) to highHash (inclusive) over highHash's selected parent chain
 	SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (BlockIterator, error)
 	Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	BlueWindow(highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error)
+	BlockWindow(highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error)
 	NewDownHeap() BlockHeap
 	NewUpHeap() BlockHeap
 	CalculateChainPath(

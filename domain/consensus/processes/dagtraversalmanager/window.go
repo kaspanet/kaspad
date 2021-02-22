@@ -4,11 +4,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// blueBlockWindow returns a blockWindow of the given size that contains the
-// blues in the past of startindNode, the sorting is unspecified.
-// If the number of blues in the past of startingNode is less then windowSize,
+// BlockWindow returns a blockWindow of the given size that contains the
+// blocks in the past of startindNode, the sorting is unspecified.
+// If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dtm *dagTraversalManager) BlueWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlockWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
 	currentHash := startingBlock
 	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentHash)
 	if err != nil {

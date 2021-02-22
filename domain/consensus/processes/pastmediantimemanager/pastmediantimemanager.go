@@ -57,7 +57,7 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainH
 		return header.TimeInMilliseconds(), nil
 	}
 
-	window, err := pmtm.dagTraversalManager.BlueWindow(selectedParentHash, 2*pmtm.timestampDeviationTolerance-1)
+	window, err := pmtm.dagTraversalManager.BlockWindow(selectedParentHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
 	}

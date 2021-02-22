@@ -2,6 +2,7 @@ package flowcontext
 
 import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
 
@@ -98,6 +99,10 @@ func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks 
 
 // AddBlock adds the given block to the DAG and propagates it.
 func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
+	if len(block.Transactions) == 0 {
+		return protocolerrors.Errorf(false, "cannot add header only block")
+	}
+
 	blockInsertionResult, err := f.Domain().Consensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {

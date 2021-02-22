@@ -1,6 +1,12 @@
 package blockvalidator_test
 
 import (
+	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"math"
 	"testing"
 
@@ -84,7 +90,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockSanity")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -94,17 +100,17 @@ func TestCheckBlockSanity(t *testing.T) {
 			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
 		}
 
-		consensus.BlockStore().Stage(blockHash, &exampleValidBlock)
+		tc.BlockStore().Stage(blockHash, &exampleValidBlock)
 
-		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			t.Fatalf("Failed validating block in isolation: %v", err)
 		}
 
 		// Test with block with wrong transactions sorting order
 		blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
-		consensus.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
-		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
+		tc.BlockStore().Stage(blockHash, &blockWithWrongTxOrder)
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
 			t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
 		}
@@ -112,8 +118,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		// Test a block with invalid parents order
 		// We no longer require blocks to have ordered parents
 		blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
-		consensus.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
-		err = consensus.BlockValidator().ValidateBodyInIsolation(blockHash)
+		tc.BlockStore().Stage(blockHash, &unOrderedParentsBlock)
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
 		}
@@ -1033,4 +1039,310 @@ func TestCheckBlockHashMerkleRoot(t *testing.T) {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 	})
+}
+
+func TestBlockSize(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestBlockSize")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block, _, err := initBlockWithInvalidBlockSize(params, tc)
+		if err != nil {
+			t.Fatalf("Error BuildBlockWithParents : %+v", err)
+		}
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrBlockSizeTooHigh) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestBlockSize:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockSizeTooHigh, err)
+		}
+	})
+}
+
+func initBlockWithInvalidBlockSize(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+	emptyCoinbase := externalapi.DomainCoinbaseData{
+		ScriptPublicKey: &externalapi.ScriptPublicKey{
+			Script:  nil,
+			Version: 0,
+		},
+	}
+	prevOutTxID := &externalapi.DomainTransactionID{}
+	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
+	bigSignatureScript := bytes.Repeat([]byte("01"), 25000)
+	txInput := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bigSignatureScript,
+		Sequence:         constants.MaxTxInSequenceNum,
+		UTXOEntry: utxo.NewUTXOEntry(
+			100_000_000,
+			&externalapi.ScriptPublicKey{},
+			true,
+			uint64(5)),
+	}
+	tx := &externalapi.DomainTransaction{
+		Version: constants.MaxTransactionVersion,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		PayloadHash: *externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+		Payload: []byte{0x01},
+	}
+
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
+}
+
+func TestCheckBlockDuplicateTransactions(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockDuplicateTransactions")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block, _, err := initBlockWithDuplicateTransaction(params, tc)
+		if err != nil {
+			t.Fatalf("Error BuildBlockWithParents : %+v", err)
+		}
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateTx) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDuplicateTransactions:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDuplicateTx, err)
+		}
+	})
+}
+
+func initBlockWithDuplicateTransaction(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+	emptyCoinbase := externalapi.DomainCoinbaseData{
+		ScriptPublicKey: &externalapi.ScriptPublicKey{
+			Script:  nil,
+			Version: 0,
+		},
+	}
+	prevOutTxID := &externalapi.DomainTransactionID{}
+	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
+	txInput := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bytes.Repeat([]byte("01"), 10),
+		Sequence:         constants.MaxTxInSequenceNum,
+		UTXOEntry: utxo.NewUTXOEntry(
+			100_000_000,
+			&externalapi.ScriptPublicKey{},
+			true,
+			uint64(5)),
+	}
+	tx := &externalapi.DomainTransaction{
+		Version: 0,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		SubnetworkID: subnetworks.SubnetworkIDNative,
+	}
+
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx, tx})
+}
+
+func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockContainsOnlyOneCoinbase")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block, _, err := initBlockWithMoreThanOneCoinbase(params, tc)
+		if err != nil {
+			t.Fatalf("Error BuildBlockWithParents : %+v", err)
+		}
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrMultipleCoinbases) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockContainsOnlyOneCoinbase:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrMultipleCoinbases, err)
+		}
+	})
+}
+
+func initBlockWithMoreThanOneCoinbase(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+	emptyCoinbase := externalapi.DomainCoinbaseData{
+		ScriptPublicKey: &externalapi.ScriptPublicKey{
+			Script:  nil,
+			Version: 0,
+		},
+	}
+	prevOutTxID := &externalapi.DomainTransactionID{}
+	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
+	txInput := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bytes.Repeat([]byte("01"), 10),
+		Sequence:         constants.MaxTxInSequenceNum,
+		UTXOEntry: utxo.NewUTXOEntry(
+			100_000_000,
+			&externalapi.ScriptPublicKey{},
+			true,
+			uint64(5)),
+	}
+	tx := &externalapi.DomainTransaction{
+		Version: 0,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
+	}
+
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
+}
+
+func TestCheckBlockDoubleSpends(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockDoubleSpends")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block, _, err := initBlockWithDoubleSpends(params, tc)
+		if err != nil {
+			t.Fatalf("Error BuildBlockWithParents : %+v", err)
+		}
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDoubleSpends:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDoubleSpendInSameBlock, err)
+		}
+	})
+}
+
+func initBlockWithDoubleSpends(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+	emptyCoinbase := externalapi.DomainCoinbaseData{
+		ScriptPublicKey: &externalapi.ScriptPublicKey{
+			Script:  nil,
+			Version: 0,
+		},
+	}
+	prevOutTxID := &externalapi.DomainTransactionID{}
+	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
+	txInput := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bytes.Repeat([]byte("01"), 10),
+		Sequence:         constants.MaxTxInSequenceNum,
+		UTXOEntry: utxo.NewUTXOEntry(
+			100_000_000,
+			&externalapi.ScriptPublicKey{},
+			true,
+			uint64(5)),
+	}
+	tx := &externalapi.DomainTransaction{
+		Version: 0,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		SubnetworkID: subnetworks.SubnetworkIDNative,
+	}
+	txInputSameOutpoint := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bytes.Repeat([]byte("02"), 10),
+		Sequence:         constants.MaxTxInSequenceNum,
+		UTXOEntry: utxo.NewUTXOEntry(
+			100_000_000,
+			&externalapi.ScriptPublicKey{},
+			true,
+			uint64(4)),
+	}
+	txSameOutpoint := &externalapi.DomainTransaction{
+		Version: 0,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInputSameOutpoint},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		SubnetworkID: subnetworks.SubnetworkIDNative,
+	}
+
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash},
+		&emptyCoinbase, []*externalapi.DomainTransaction{tx, txSameOutpoint})
+}
+
+func TestCheckFirstBlockTransactionIsCoinbase(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckFirstBlockTransactionIsCoinbase")
+		if err != nil {
+			t.Fatalf("Error setting up tc: %+v", err)
+		}
+		defer teardown(false)
+
+		block := initBlockWithFirstTransactionDifferentThanCoinbase(params)
+		blockHash := consensushashing.BlockHash(block)
+		tc.BlockStore().Stage(blockHash, block)
+
+		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		if err == nil || !errors.Is(err, ruleerrors.ErrFirstTxNotCoinbase) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestCheckFirstBlockTransactionIsCoinbase:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrFirstTxNotCoinbase, err)
+		}
+	})
+}
+
+func initBlockWithFirstTransactionDifferentThanCoinbase(params *dagconfig.Params) *externalapi.DomainBlock {
+	prevOutTxID := &externalapi.DomainTransactionID{}
+	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
+	txInput := externalapi.DomainTransactionInput{
+		PreviousOutpoint: prevOutPoint,
+		SignatureScript:  bytes.Repeat([]byte("01"), 10),
+		Sequence:         constants.MaxTxInSequenceNum,
+	}
+	tx := &externalapi.DomainTransaction{
+		Version: 0,
+		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
+		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+		SubnetworkID: subnetworks.SubnetworkIDNative,
+	}
+
+	return &externalapi.DomainBlock{
+		Header: blockheader.NewImmutableBlockHeader(
+			constants.MaxBlockVersion,
+			[]*externalapi.DomainHash{params.GenesisHash},
+			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
+			&externalapi.DomainHash{},
+			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
+				0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
+				0x5b, 0x7e, 0xaf, 0x84, 0x7e, 0x1b, 0x6b, 0x06,
+				0x4e, 0x06, 0xba, 0x64, 0xd7, 0x61, 0xda, 0x25,
+				0x1a, 0x0e, 0x21, 0xd4, 0x64, 0x49, 0x02, 0xa2,
+			}),
+			0x5cd18053000,
+			0x207fffff,
+			0x1),
+		Transactions: []*externalapi.DomainTransaction{tx},
+	}
 }
