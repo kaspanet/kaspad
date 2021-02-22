@@ -29,8 +29,8 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 }
 
 // blockWindow returns a blockWindow of the given size that contains the
-// blues in the past of startindNode, the sorting is unspecified.
-// If the number of blues in the past of startingNode is less then windowSize,
+// blocks in the past of startindNode, the sorting is unspecified.
+// If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
 func (dm *difficultyManager) blockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
 	window := make(blockWindow, 0, windowSize)
