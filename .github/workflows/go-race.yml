@@ -9,6 +9,7 @@ jobs:
   race_test:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         branch: [ master, latest ]
     name: Race detection on ${{ matrix.branch }}
