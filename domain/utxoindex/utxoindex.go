@@ -129,12 +129,7 @@ func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResu
 
 func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
 	iterator := toAdd.Iterator()
-	hasEntries := iterator.First()
-	if !hasEntries {
-		return nil
-	}
-
-	for iterator.Next() {
+	for ok := iterator.First(); ok; ok = iterator.Next() {
 		outpoint, entry, err := iterator.Get()
 		if err != nil {
 			return err
@@ -151,12 +146,7 @@ func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
 
 func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
 	iterator := toRemove.Iterator()
-	hasEntries := iterator.First()
-	if !hasEntries {
-		return nil
-	}
-
-	for iterator.Next() {
+	for ok := iterator.First(); ok; ok = iterator.Next() {
 		outpoint, entry, err := iterator.Get()
 		if err != nil {
 			return err
