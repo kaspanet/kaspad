@@ -1,12 +1,13 @@
 package difficultymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/difficulty"
+	"github.com/pkg/errors"
 )
 
 type difficultyBlock struct {
@@ -27,13 +28,13 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 	}, nil
 }
 
-// blueBlockWindow returns a blockWindow of the given size that contains the
+// blockWindow returns a blockWindow of the given size that contains the
 // blues in the past of startindNode, the sorting is unspecified.
 // If the number of blues in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dm *difficultyManager) blueBlockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
+func (dm *difficultyManager) blockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
 	window := make(blockWindow, 0, windowSize)
-	windowHashes, err := dm.dagTraversalManager.BlueWindow(startingNode, windowSize)
+	windowHashes, err := dm.dagTraversalManager.BlockWindow(startingNode, windowSize)
 	if err != nil {
 		return nil, err
 	}

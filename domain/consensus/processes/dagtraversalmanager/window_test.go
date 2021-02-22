@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func TestBlueBlockWindow(t *testing.T) {
+func TestBlockWindow(t *testing.T) {
 	tests := map[string][]*struct {
 		parents                          []string
 		id                               string //id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
@@ -311,7 +311,7 @@ func TestBlueBlockWindow(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.K = 1
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestBlueBlockWindow")
+		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestBlockWindow")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -340,9 +340,9 @@ func TestBlueBlockWindow(t *testing.T) {
 			blockByIDMap[blockData.id] = block
 			idByBlockMap[*block] = blockData.id
 
-			window, err := tc.DAGTraversalManager().BlueWindow(block, windowSize)
+			window, err := tc.DAGTraversalManager().BlockWindow(block, windowSize)
 			if err != nil {
-				t.Fatalf("BlueWindow: %s", err)
+				t.Fatalf("BlockWindow: %s", err)
 			}
 			sort.Sort(testutils.NewTestGhostDAGSorter(window, tc, t))
 			if err := checkWindowIDs(window, blockData.expectedWindowWithGenesisPadding, idByBlockMap); err != nil {
