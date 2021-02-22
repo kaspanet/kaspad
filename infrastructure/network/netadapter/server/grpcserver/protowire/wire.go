@@ -748,6 +748,34 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage:
+		payload := new(KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage:
+		payload := new(KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.PruningPointUTXOSetOverrideNotificationMessage:
+		payload := new(KaspadMessage_PruningPointUTXOSetOverrideNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.StopNotifyPruningPointUTXOSetOverrideRequestMessage:
+		payload := new(KaspadMessage_StopNotifyPruningPointUTXOSetOverrideRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

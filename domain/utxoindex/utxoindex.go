@@ -38,6 +38,7 @@ func New(consensus externalapi.Consensus, database database.Database) (*UTXOInde
 	return utxoIndex, nil
 }
 
+// Reset deletes the whole UTXO index and resyncs it from consensus.
 func (ui *UTXOIndex) Reset() error {
 	err := ui.store.deleteAll()
 	if err != nil {

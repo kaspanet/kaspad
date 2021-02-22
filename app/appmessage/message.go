@@ -132,6 +132,11 @@ const (
 	CmdUnbanResponseMessage
 	CmdGetInfoRequestMessage
 	CmdGetInfoResponseMessage
+	CmdNotifyPruningPointUTXOSetOverrideRequestMessage
+	CmdNotifyPruningPointUTXOSetOverrideResponseMessage
+	CmdPruningPointUTXOSetOverrideNotificationMessage
+	CmdStopNotifyPruningPointUTXOSetOverrideRequestMessage
+	CmdStopNotifyPruningPointUTXOSetOverrideResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -236,8 +241,13 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdBanResponseMessage:                                         "BanResponse",
 	CmdUnbanRequestMessage:                                        "UnbanRequest",
 	CmdUnbanResponseMessage:                                       "UnbanResponse",
-	CmdGetInfoRequestMessage:                                      "GetInfoRequestMessage",
-	CmdGetInfoResponseMessage:                                     "GeInfoResponseMessage",
+	CmdGetInfoRequestMessage:                                      "GetInfoRequest",
+	CmdGetInfoResponseMessage:                                     "GeInfoResponse",
+	CmdNotifyPruningPointUTXOSetOverrideRequestMessage:            "NotifyPruningPointUTXOSetOverrideRequest",
+	CmdNotifyPruningPointUTXOSetOverrideResponseMessage:           "NotifyPruningPointUTXOSetOverrideResponse",
+	CmdPruningPointUTXOSetOverrideNotificationMessage:             "PruningPointUTXOSetOverrideNotification",
+	CmdStopNotifyPruningPointUTXOSetOverrideRequestMessage:        "StopNotifyPruningPointUTXOSetOverrideRequest",
+	CmdStopNotifyPruningPointUTXOSetOverrideResponseMessage:       "StopNotifyPruningPointUTXOSetOverrideResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

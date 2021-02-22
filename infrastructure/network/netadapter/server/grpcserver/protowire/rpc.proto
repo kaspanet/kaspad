@@ -546,6 +546,40 @@ message VirtualSelectedParentBlueScoreChangedNotificationMessage {
   uint64 virtualSelectedParentBlueScore = 1;
 }
 
+// NotifyPruningPointUTXOSetOverrideRequestMessage registers this connection for
+// pruning point UTXO set override notifications.
+//
+// This call is only available when this kaspad was started with `--utxoindex`
+//
+// See: NotifyPruningPointUTXOSetOverrideResponseMessage
+message NotifyPruningPointUTXOSetOverrideRequestMessage {
+}
+
+
+message NotifyPruningPointUTXOSetOverrideResponseMessage {
+  RPCError error = 1000;
+}
+
+// PruningPointUTXOSetOverrideNotificationMessage is sent whenever the UTXO index
+// resets due to pruning point change via IBD.
+//
+// See NotifyPruningPointUTXOSetOverrideRequestMessage
+message PruningPointUTXOSetOverrideNotificationMessage {
+}
+
+// StopNotifyPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
+// pruning point UTXO set override notifications.
+//
+// This call is only available when this kaspad was started with `--utxoindex`
+//
+// See: PruningPointUTXOSetOverrideNotificationMessage
+message StopNotifyPruningPointUTXOSetOverrideRequestMessage {
+}
+
+message StopNotifyPruningPointUTXOSetOverrideResponseMessage {
+  RPCError error = 1000;
+}
+
 // BanRequestMessage bans the given ip.
 message BanRequestMessage{
   string ip = 1;

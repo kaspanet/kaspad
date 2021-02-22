@@ -57,6 +57,8 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	return nil
 }
 
+// OnPruningPointUTXOSetOverride calls the handler function whenever the UTXO set
+// resets due to pruning point change via IBD.
 func (f *FlowContext) OnPruningPointUTXOSetOverride() error {
 	if f.onPruningPointUTXOSetOverrideHandler != nil {
 		return f.onPruningPointUTXOSetOverrideHandler()

@@ -69,6 +69,7 @@ func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowconte
 	m.context.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
 }
 
+// SetOnPruningPointUTXOSetOverrideHandler sets the OnPruningPointUTXOSetOverride handler
 func (m *Manager) SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler flowcontext.OnPruningPointUTXOSetOverrideHandler) {
 	m.context.SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler)
 }

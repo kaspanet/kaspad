@@ -78,8 +78,10 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 
+// NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
+// resets due to pruning point change via IBD.
 func (m *Manager) NotifyPruningPointUTXOSetOverride() error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyPruningPointUTXOSetOverride")
 	defer onEnd()
 
 	if m.context.Config.UTXOIndex {
@@ -130,8 +132,7 @@ func (m *Manager) notifyPruningPointUTXOSetOverride() error {
 		return err
 	}
 
-	// TODO: send RPC notification
-	return nil
+	return m.context.NotificationManager.NotifyPruningPointUTXOSetOverride()
 }
 
 func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {

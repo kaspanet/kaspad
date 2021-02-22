@@ -23,6 +23,8 @@ import (
 // when a block is added to the DAG
 type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
 
+// OnPruningPointUTXOSetOverrideHandler is a handle function that's triggered whenever the UTXO set
+// resets due to pruning point change via IBD.
 type OnPruningPointUTXOSetOverrideHandler func() error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
