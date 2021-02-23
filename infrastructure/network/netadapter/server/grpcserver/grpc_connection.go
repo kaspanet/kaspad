@@ -104,7 +104,7 @@ func (c *gRPCConnection) Disconnect() {
 		log.Debugf("Disconnected from %s", c)
 	}
 
-	log.Infof("Disconnecting from %s", c)
+	log.Debugf("Disconnecting from %s", c)
 	if c.onDisconnectedHandler != nil {
 		c.onDisconnectedHandler()
 	}
