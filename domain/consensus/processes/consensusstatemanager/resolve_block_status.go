@@ -156,7 +156,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(blockHash, multiset)
 
-	oldSelectedTip, err := csm.getSelectedTip()
+	oldSelectedTip, err := csm.selectedTip()
 	if err != nil {
 		return 0, err
 	}
@@ -175,16 +175,10 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		if err != nil {
 			return 0, err
 		}
-		err = csm.stageDiff(oldSelectedTip, oldSelectedTipUTXOSet, blockHash)
-		if err != nil {
-			return 0, err
-		}
+		csm.stageDiff(oldSelectedTip, oldSelectedTipUTXOSet, blockHash)
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		err = csm.stageDiff(blockHash, pastUTXODiff, nil)
-		if err != nil {
-			return 0, err
-		}
+		csm.stageDiff(blockHash, pastUTXODiff, nil)
 	} else {
 		log.Debugf("Block %s is not the new SelectedTip, therefore setting old selectedTip as it's diffChild", blockHash)
 		pastUTXODiff, err = oldSelectedTipUTXOSet.DiffFrom(pastUTXODiff)
@@ -193,10 +187,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		}
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		err = csm.stageDiff(blockHash, pastUTXODiff, oldSelectedTip)
-		if err != nil {
-			return 0, err
-		}
+		csm.stageDiff(blockHash, pastUTXODiff, oldSelectedTip)
 	}
 
 	return externalapi.StatusUTXOValid, nil
@@ -211,7 +202,7 @@ func (csm *consensusStateManager) isNewSelectedTip(blockHash, oldSelectedTip *ex
 	return blockHash.Equal(newSelectedTip), nil
 }
 
-func (csm *consensusStateManager) getSelectedTip() (*externalapi.DomainHash, error) {
+func (csm *consensusStateManager) selectedTip() (*externalapi.DomainHash, error) {
 	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
