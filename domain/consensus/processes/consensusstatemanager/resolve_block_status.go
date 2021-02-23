@@ -1,15 +1,18 @@
 package consensusstatemanager
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Debugf("resolveBlockStatus start for block %s", blockHash)
-	defer log.Debugf("resolveBlockStatus end for block %s", blockHash)
+	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveBlockStatus for %s", blockHash))
+	defer onEnd()
 
 	log.Debugf("Getting a list of all blocks in the selected "+
 		"parent chain of %s that have no yet resolved their status", blockHash)
@@ -56,7 +59,8 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 
 		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
-		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks", unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
+		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks",
+			unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
 	}
 
 	return blockStatus, nil
@@ -121,8 +125,8 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Debugf("resolveSingleBlockStatus start for block %s", blockHash)
-	defer log.Debugf("resolveSingleBlockStatus end for block %s", blockHash)
+	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveSingleBlockStatus for %s", blockHash))
+	defer onEnd()
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
 	pastUTXODiff, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
@@ -152,8 +156,29 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(blockHash, multiset)
 
+	oldSelectedTip, err := csm.getSelectedTip()
+	if err != nil {
+		return 0, err
+	}
+
+	var utxoDiffChild *externalapi.DomainHash
+	isNewSelectedTip, err := csm.isNewSelectedTip(blockHash, oldSelectedTip)
+	if err != nil {
+		return 0, err
+	}
 	log.Tracef("Staging the utxoDiff of block %s", blockHash)
-	err = csm.stageDiff(blockHash, pastUTXODiff, nil)
+	if !isNewSelectedTip {
+		utxoDiffChild = oldSelectedTip
+		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(oldSelectedTip)
+		if err != nil {
+			return 0, err
+		}
+		pastUTXODiff, err = oldSelectedTipUTXOSet.DiffFrom(pastUTXODiff)
+		if err != nil {
+			return 0, err
+		}
+	}
+	err = csm.stageDiff(blockHash, pastUTXODiff, utxoDiffChild)
 	if err != nil {
 		return 0, err
 	}
@@ -220,4 +245,22 @@ func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssign
 	}
 
 	return nil
+}
+
+func (csm *consensusStateManager) isNewSelectedTip(blockHash, oldSelectedTip *externalapi.DomainHash) (bool, error) {
+	newSelectedTip, err := csm.ghostdagManager.ChooseSelectedParent(blockHash, oldSelectedTip)
+	if err != nil {
+		return false, err
+	}
+
+	return blockHash.Equal(newSelectedTip), nil
+}
+
+func (csm *consensusStateManager) getSelectedTip() (*externalapi.DomainHash, error) {
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return virtualGHOSTDAGData.SelectedParent(), nil
 }
