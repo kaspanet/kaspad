@@ -144,12 +144,12 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, logClosureErr
 	}
 
-	bp.blockLogger.LogBlock(block)
-
 	virtualParents, err := bp.dagTopologyManager.Parents(model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
+
+	bp.blockLogger.LogBlock(block)
 
 	return &externalapi.BlockInsertionResult{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
