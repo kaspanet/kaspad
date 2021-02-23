@@ -60,8 +60,8 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	log.Debugf("Staging new UTXO diff for the virtual block")
 	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
 
-	log.Debugf("Updating the virtual diff parents after adding %s to the DAG", newBlockHash)
-	err = csm.updateVirtualDiffParents(virtualUTXODiff)
+	log.Debugf("Updating the selected tip's utxo-diff after adding %s to the DAG", newBlockHash)
+	err = csm.updateSelectedTipUTXODiff(virtualUTXODiff)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,32 +86,27 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	return selectedParentChainChanges, virtualUTXODiff, nil
 }
 
-func (csm *consensusStateManager) updateVirtualDiffParents(virtualUTXODiff externalapi.UTXODiff) error {
-	log.Debugf("updateVirtualDiffParents start")
-	defer log.Debugf("updateVirtualDiffParents end")
+func (csm *consensusStateManager) updateSelectedTipUTXODiff(virtualUTXODiff externalapi.UTXODiff) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updateSelectedTipUTXODiff")
+	defer onEnd()
 
-	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+	selectedTip, err := csm.selectedTip()
 	if err != nil {
 		return err
 	}
 
-	for _, virtualDiffParent := range virtualDiffParents {
-		log.Debugf("Calculating new UTXO diff for virtual diff parent %s", virtualDiffParent)
-		virtualDiffParentUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-		if err != nil {
-			return err
-		}
-		newDiff, err := virtualUTXODiff.DiffFrom(virtualDiffParentUTXODiff)
-		if err != nil {
-			return err
-		}
-
-		log.Debugf("Staging new UTXO diff for virtual diff parent %s", virtualDiffParent)
-		err = csm.stageDiff(virtualDiffParent, newDiff, nil)
-		if err != nil {
-			return err
-		}
+	log.Debugf("Calculating new UTXO diff for virtual diff parent %s", selectedTip)
+	selectedTipUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, selectedTip)
+	if err != nil {
+		return err
 	}
+	newDiff, err := virtualUTXODiff.DiffFrom(selectedTipUTXODiff)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Staging new UTXO diff for virtual diff parent %s", selectedTip)
+	csm.stageDiff(selectedTip, newDiff, nil)
 
 	return nil
 }

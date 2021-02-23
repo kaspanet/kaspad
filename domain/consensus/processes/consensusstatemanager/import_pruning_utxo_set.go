@@ -77,14 +77,8 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Debugf("Deleting all existing virtual diff parents")
-	csm.consensusStateStore.StageVirtualDiffParents(nil)
-
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
-	err = csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
-	if err != nil {
-		return err
-	}
+	csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
 
 	log.Debugf("Staging the new pruning point %s", newPruningPointHash)
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
