@@ -24,13 +24,14 @@ func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOS
 	}
 	spawn("RegisterPruningPointUTXOSetNotifications", func() {
 		for {
-			_, err := c.route(appmessage.CmdPruningPointUTXOSetOverrideNotificationMessage).Dequeue()
+			notification, err := c.route(appmessage.CmdPruningPointUTXOSetOverrideNotificationMessage).Dequeue()
 			if err != nil {
 				if errors.Is(err, routerpkg.ErrRouteClosed) {
 					break
 				}
 				panic(err)
 			}
+			_ = notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
 			onPruningPointUTXOSetNotifications()
 		}
 	})
