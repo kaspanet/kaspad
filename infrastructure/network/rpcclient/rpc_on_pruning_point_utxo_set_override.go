@@ -41,15 +41,15 @@ func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOS
 // Additionally, it stops listening for the appropriate notification using the given handler function
 func (c *RPCClient) UnregisterPruningPointUTXOSetNotifications() error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewStopNotifyPruningPointUTXOSetOverrideRequestMessage())
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage())
 	if err != nil {
 		return err
 	}
-	response, err := c.route(appmessage.CmdStopNotifyPruningPointUTXOSetOverrideResponseMessage).DequeueWithTimeout(c.timeout)
+	response, err := c.route(appmessage.CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage).DequeueWithTimeout(c.timeout)
 	if err != nil {
 		return err
 	}
-	stopNotifyPruningPointUTXOSetOverrideResponse := response.(*appmessage.StopNotifyPruningPointUTXOSetOverrideResponseMessage)
+	stopNotifyPruningPointUTXOSetOverrideResponse := response.(*appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
 	if stopNotifyPruningPointUTXOSetOverrideResponse.Error != nil {
 		return c.convertRPCError(stopNotifyPruningPointUTXOSetOverrideResponse.Error)
 	}

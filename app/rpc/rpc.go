@@ -43,7 +43,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdUnbanRequestMessage:                                       rpchandlers.HandleUnban,
 	appmessage.CmdGetInfoRequestMessage:                                     rpchandlers.HandleGetInfo,
 	appmessage.CmdNotifyPruningPointUTXOSetOverrideRequestMessage:           rpchandlers.HandleNotifyPruningPointUTXOSetOverrideRequest,
-	appmessage.CmdStopNotifyPruningPointUTXOSetOverrideRequestMessage:       rpchandlers.HandleStopNotifyPruningPointUTXOSetOverrideRequest,
+	appmessage.CmdStopNotifyingPruningPointUTXOSetOverrideRequestMessage:    rpchandlers.HandleStopNotifyingPruningPointUTXOSetOverrideRequest,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

@@ -49,35 +49,35 @@ func NewPruningPointUTXOSetOverrideNotificationMessage() *PruningPointUTXOSetOve
 	return &PruningPointUTXOSetOverrideNotificationMessage{}
 }
 
-// StopNotifyPruningPointUTXOSetOverrideRequestMessage is an appmessage corresponding to
+// StopNotifyingPruningPointUTXOSetOverrideRequestMessage is an appmessage corresponding to
 // its respective RPC message
-type StopNotifyPruningPointUTXOSetOverrideRequestMessage struct {
+type StopNotifyingPruningPointUTXOSetOverrideRequestMessage struct {
 	baseMessage
 }
 
 // Command returns the protocol command string for the message
-func (msg *StopNotifyPruningPointUTXOSetOverrideRequestMessage) Command() MessageCommand {
+func (msg *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) Command() MessageCommand {
 	return CmdNotifyPruningPointUTXOSetOverrideRequestMessage
 }
 
-// NewStopNotifyPruningPointUTXOSetOverrideRequestMessage returns a instance of the message
-func NewStopNotifyPruningPointUTXOSetOverrideRequestMessage() *StopNotifyPruningPointUTXOSetOverrideRequestMessage {
-	return &StopNotifyPruningPointUTXOSetOverrideRequestMessage{}
+// NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage returns a instance of the message
+func NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage() *StopNotifyingPruningPointUTXOSetOverrideRequestMessage {
+	return &StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}
 }
 
-// StopNotifyPruningPointUTXOSetOverrideResponseMessage is an appmessage corresponding to
+// StopNotifyingPruningPointUTXOSetOverrideResponseMessage is an appmessage corresponding to
 // its respective RPC message
-type StopNotifyPruningPointUTXOSetOverrideResponseMessage struct {
+type StopNotifyingPruningPointUTXOSetOverrideResponseMessage struct {
 	baseMessage
 	Error *RPCError
 }
 
 // Command returns the protocol command string for the message
-func (msg *StopNotifyPruningPointUTXOSetOverrideResponseMessage) Command() MessageCommand {
+func (msg *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) Command() MessageCommand {
 	return CmdNotifyPruningPointUTXOSetOverrideResponseMessage
 }
 
-// NewStopNotifyPruningPointUTXOSetOverrideResponseMessage returns a instance of the message
-func NewStopNotifyPruningPointUTXOSetOverrideResponseMessage() *StopNotifyPruningPointUTXOSetOverrideResponseMessage {
-	return &StopNotifyPruningPointUTXOSetOverrideResponseMessage{}
+// NewStopNotifyingPruningPointUTXOSetOverrideResponseMessage returns a instance of the message
+func NewStopNotifyingPruningPointUTXOSetOverrideResponseMessage() *StopNotifyingPruningPointUTXOSetOverrideResponseMessage {
+	return &StopNotifyingPruningPointUTXOSetOverrideResponseMessage{}
 }

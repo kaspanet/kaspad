@@ -86,8 +86,8 @@
     - [NotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.NotifyPruningPointUTXOSetOverrideRequestMessage)
     - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
     - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
-    - [StopNotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyPruningPointUTXOSetOverrideRequestMessage)
-    - [StopNotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyPruningPointUTXOSetOverrideResponseMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
     - [BanRequestMessage](#protowire.BanRequestMessage)
     - [BanResponseMessage](#protowire.BanResponseMessage)
     - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
@@ -1436,10 +1436,10 @@ See NotifyPruningPointUTXOSetOverrideRequestMessage
 
 
 
-<a name="protowire.StopNotifyPruningPointUTXOSetOverrideRequestMessage"></a>
+<a name="protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage"></a>
 
-### StopNotifyPruningPointUTXOSetOverrideRequestMessage
-StopNotifyPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
+### StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
 pruning point UTXO set override notifications.
 
 This call is only available when this kaspad was started with `--utxoindex`
@@ -1451,9 +1451,9 @@ See: PruningPointUTXOSetOverrideNotificationMessage
 
 
 
-<a name="protowire.StopNotifyPruningPointUTXOSetOverrideResponseMessage"></a>
+<a name="protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage"></a>
 
-### StopNotifyPruningPointUTXOSetOverrideResponseMessage
+### StopNotifyingPruningPointUTXOSetOverrideResponseMessage
 
 
 

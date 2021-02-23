@@ -769,8 +769,8 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.StopNotifyPruningPointUTXOSetOverrideRequestMessage:
-		payload := new(KaspadMessage_StopNotifyPruningPointUTXOSetOverrideRequest)
+	case *appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage:
+		payload := new(KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

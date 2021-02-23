@@ -135,8 +135,8 @@ const (
 	CmdNotifyPruningPointUTXOSetOverrideRequestMessage
 	CmdNotifyPruningPointUTXOSetOverrideResponseMessage
 	CmdPruningPointUTXOSetOverrideNotificationMessage
-	CmdStopNotifyPruningPointUTXOSetOverrideRequestMessage
-	CmdStopNotifyPruningPointUTXOSetOverrideResponseMessage
+	CmdStopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -246,8 +246,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdNotifyPruningPointUTXOSetOverrideRequestMessage:            "NotifyPruningPointUTXOSetOverrideRequest",
 	CmdNotifyPruningPointUTXOSetOverrideResponseMessage:           "NotifyPruningPointUTXOSetOverrideResponse",
 	CmdPruningPointUTXOSetOverrideNotificationMessage:             "PruningPointUTXOSetOverrideNotification",
-	CmdStopNotifyPruningPointUTXOSetOverrideRequestMessage:        "StopNotifyPruningPointUTXOSetOverrideRequest",
-	CmdStopNotifyPruningPointUTXOSetOverrideResponseMessage:       "StopNotifyPruningPointUTXOSetOverrideResponse",
+	CmdStopNotifyingPruningPointUTXOSetOverrideRequestMessage:     "StopNotifyingPruningPointUTXOSetOverrideRequest",
+	CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage:    "StopNotifyingPruningPointUTXOSetOverrideResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

@@ -567,16 +567,16 @@ message NotifyPruningPointUTXOSetOverrideResponseMessage {
 message PruningPointUTXOSetOverrideNotificationMessage {
 }
 
-// StopNotifyPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
+// StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
 // pruning point UTXO set override notifications.
 //
 // This call is only available when this kaspad was started with `--utxoindex`
 //
 // See: PruningPointUTXOSetOverrideNotificationMessage
-message StopNotifyPruningPointUTXOSetOverrideRequestMessage {
+message StopNotifyingPruningPointUTXOSetOverrideRequestMessage {
 }
 
-message StopNotifyPruningPointUTXOSetOverrideResponseMessage {
+message StopNotifyingPruningPointUTXOSetOverrideResponseMessage {
   RPCError error = 1000;
 }
 

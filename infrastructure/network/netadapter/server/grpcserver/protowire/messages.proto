@@ -110,8 +110,8 @@ message KaspadMessage {
     NotifyPruningPointUTXOSetOverrideRequestMessage notifyPruningPointUTXOSetOverrideRequest = 1067;
     NotifyPruningPointUTXOSetOverrideResponseMessage notifyPruningPointUTXOSetOverrideResponse = 1068;
     PruningPointUTXOSetOverrideNotificationMessage pruningPointUTXOSetOverrideNotification = 1069;
-    StopNotifyPruningPointUTXOSetOverrideRequestMessage stopNotifyPruningPointUTXOSetOverrideRequest = 1070;
-    StopNotifyPruningPointUTXOSetOverrideResponseMessage stopNotifyPruningPointUTXOSetOverrideResponse = 1071;
+    StopNotifyingPruningPointUTXOSetOverrideRequestMessage stopNotifyingPruningPointUTXOSetOverrideRequest = 1070;
+    StopNotifyingPruningPointUTXOSetOverrideResponseMessage stopNotifyingPruningPointUTXOSetOverrideResponse = 1071;
   }
 }
 
