@@ -157,7 +157,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	csm.multisetStore.Stage(blockHash, multiset)
 
 	if csm.genesisHash.Equal(blockHash) {
-		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		log.Tracef("Staging the utxoDiff of genesis")
 		csm.stageDiff(blockHash, pastUTXODiff, nil)
 		return externalapi.StatusUTXOValid, nil
 	}
