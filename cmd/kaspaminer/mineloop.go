@@ -128,7 +128,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			time.Sleep(waitTime)
 			return nil
 		}
-		return errors.Wrapf(err, "Error submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address())
+		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan er
 			return
 		}
 		if err != nil {
-			errChan <- errors.Wrapf(err, "Error getting block template from %s: %s", client.safeRPCClient().Address())
+			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
 			return
 		}
 		templatemanager.Set(template)
