@@ -89,7 +89,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 				panic(err)
 			}
 		}
-		log.Debugf("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
+		log.Infof("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
 		netConnection.Disconnect()
 		return
 	}
