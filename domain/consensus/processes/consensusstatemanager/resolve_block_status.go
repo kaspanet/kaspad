@@ -161,90 +161,45 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 		return 0, err
 	}
 
-	var utxoDiffChild *externalapi.DomainHash
 	isNewSelectedTip, err := csm.isNewSelectedTip(blockHash, oldSelectedTip)
 	if err != nil {
 		return 0, err
 	}
-	log.Tracef("Staging the utxoDiff of block %s", blockHash)
-	if !isNewSelectedTip {
-		utxoDiffChild = oldSelectedTip
-		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(oldSelectedTip)
+	oldSelectedTipUTXOSet, err := csm.restorePastUTXO(oldSelectedTip)
+	if err != nil {
+		return 0, err
+	}
+	if isNewSelectedTip {
+		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
+		oldSelectedTipUTXOSet, err := pastUTXODiff.DiffFrom(oldSelectedTipUTXOSet.ToImmutable())
 		if err != nil {
 			return 0, err
 		}
+		err = csm.stageDiff(oldSelectedTip, oldSelectedTipUTXOSet, blockHash)
+		if err != nil {
+			return 0, err
+		}
+
+		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		err = csm.stageDiff(blockHash, pastUTXODiff, nil)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		log.Debugf("Block %s is not the new SelectedTip, therefore setting old selectedTip as it's diffChild", blockHash)
 		pastUTXODiff, err = oldSelectedTipUTXOSet.DiffFrom(pastUTXODiff)
 		if err != nil {
 			return 0, err
 		}
-	}
-	err = csm.stageDiff(blockHash, pastUTXODiff, utxoDiffChild)
-	if err != nil {
-		return 0, err
-	}
 
-	log.Tracef("Remove block ancestors from virtual diff parents and assign %s as their diff child", blockHash)
-	err = csm.removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(blockHash, pastUTXODiff)
-	if err != nil {
-		return 0, err
+		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		err = csm.stageDiff(blockHash, pastUTXODiff, oldSelectedTip)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	return externalapi.StatusUTXOValid, nil
-}
-
-func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
-
-	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
-	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
-
-	if blockHash.Equal(csm.genesisHash) {
-		log.Tracef("Genesis block doesn't have ancestors to remove from the virtual diff parents")
-		return nil
-	}
-
-	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
-	if err != nil {
-		return err
-	}
-
-	for _, virtualDiffParent := range virtualDiffParents {
-		if virtualDiffParent.Equal(blockHash) {
-			log.Tracef("Skipping updating virtual diff parent %s "+
-				"because it was updated before.", virtualDiffParent)
-			continue
-		}
-
-		isAncestorOfBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, blockHash)
-		if err != nil {
-			return err
-		}
-
-		if !isAncestorOfBlock {
-			log.Tracef("Skipping block %s because it's not an "+
-				"ancestor of %s", virtualDiffParent, blockHash)
-			continue
-		}
-
-		// parents that didn't have a utxo-diff child until now were actually virtual's diffParents.
-		// Update them to have the new block as their utxo-diff child
-		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
-		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-		if err != nil {
-			return err
-		}
-		newDiff, err := pastUTXODiff.DiffFrom(currentDiff)
-		if err != nil {
-			return err
-		}
-
-		err = csm.stageDiff(virtualDiffParent, newDiff, blockHash)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (csm *consensusStateManager) isNewSelectedTip(blockHash, oldSelectedTip *externalapi.DomainHash) (bool, error) {
