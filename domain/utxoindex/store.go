@@ -138,7 +138,7 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
-			serializedUTXOEntry, err := uis.serializeUTXOEntry(utxoEntryToAdd)
+			serializedUTXOEntry, err := serializeUTXOEntry(utxoEntryToAdd)
 			if err != nil {
 				return err
 			}
@@ -149,7 +149,7 @@ func (uis *utxoIndexStore) commit() error {
 		}
 	}
 
-	serializeParentHashes := uis.serializeHashes(uis.virtualParents)
+	serializeParentHashes := serializeHashes(uis.virtualParents)
 	err = dbTransaction.Put(virtualParentsKey, serializeParentHashes)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*
 		if err != nil {
 			return err
 		}
-		serializedUTXOEntry, err := uis.serializeUTXOEntry(pair.UTXOEntry)
+		serializedUTXOEntry, err := serializeUTXOEntry(pair.UTXOEntry)
 		if err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*
 }
 
 func (uis *utxoIndexStore) updateAndCommitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
-	serializeParentHashes := uis.serializeHashes(virtualParents)
+	serializeParentHashes := serializeHashes(virtualParents)
 	return uis.database.Put(virtualParentsKey, serializeParentHashes)
 }
 
@@ -197,7 +197,7 @@ func (uis *utxoIndexStore) bucketForScriptPublicKey(scriptPublicKey *externalapi
 }
 
 func (uis *utxoIndexStore) convertOutpointToKey(bucket *database.Bucket, outpoint *externalapi.DomainOutpoint) (*database.Key, error) {
-	serializedOutpoint, err := uis.serializeOutpoint(outpoint)
+	serializedOutpoint, err := serializeOutpoint(outpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (uis *utxoIndexStore) convertOutpointToKey(bucket *database.Bucket, outpoin
 
 func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi.DomainOutpoint, error) {
 	serializedOutpoint := key.Suffix()
-	return uis.deserializeOutpoint(serializedOutpoint)
+	return deserializeOutpoint(serializedOutpoint)
 }
 
 func (uis *utxoIndexStore) stagedData() (
@@ -263,7 +263,7 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalap
 		if err != nil {
 			return nil, err
 		}
-		utxoEntry, err := uis.deserializeUTXOEntry(serializedUTXOEntry)
+		utxoEntry, err := deserializeUTXOEntry(serializedUTXOEntry)
 		if err != nil {
 			return nil, err
 		}
@@ -282,7 +282,7 @@ func (uis *utxoIndexStore) getVirtualParents() ([]*externalapi.DomainHash, error
 		return nil, err
 	}
 
-	return uis.deserializeHashes(serializedHashes)
+	return deserializeHashes(serializedHashes)
 }
 
 func (uis *utxoIndexStore) deleteAll() error {

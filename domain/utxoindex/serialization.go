@@ -9,12 +9,12 @@ import (
 	"io"
 )
 
-func (uis *utxoIndexStore) serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
+func serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	dbOutpoint := serialization.DomainOutpointToDbOutpoint(outpoint)
 	return proto.Marshal(dbOutpoint)
 }
 
-func (uis *utxoIndexStore) deserializeOutpoint(serializedOutpoint []byte) (*externalapi.DomainOutpoint, error) {
+func deserializeOutpoint(serializedOutpoint []byte) (*externalapi.DomainOutpoint, error) {
 	var dbOutpoint serialization.DbOutpoint
 	err := proto.Unmarshal(serializedOutpoint, &dbOutpoint)
 	if err != nil {
@@ -23,12 +23,12 @@ func (uis *utxoIndexStore) deserializeOutpoint(serializedOutpoint []byte) (*exte
 	return serialization.DbOutpointToDomainOutpoint(&dbOutpoint)
 }
 
-func (uis *utxoIndexStore) serializeUTXOEntry(utxoEntry externalapi.UTXOEntry) ([]byte, error) {
+func serializeUTXOEntry(utxoEntry externalapi.UTXOEntry) ([]byte, error) {
 	dbUTXOEntry := serialization.UTXOEntryToDBUTXOEntry(utxoEntry)
 	return proto.Marshal(dbUTXOEntry)
 }
 
-func (uis *utxoIndexStore) deserializeUTXOEntry(serializedUTXOEntry []byte) (externalapi.UTXOEntry, error) {
+func deserializeUTXOEntry(serializedUTXOEntry []byte) (externalapi.UTXOEntry, error) {
 	var dbUTXOEntry serialization.DbUtxoEntry
 	err := proto.Unmarshal(serializedUTXOEntry, &dbUTXOEntry)
 	if err != nil {
@@ -39,7 +39,7 @@ func (uis *utxoIndexStore) deserializeUTXOEntry(serializedUTXOEntry []byte) (ext
 
 const hashesLengthSize = 8
 
-func (uis *utxoIndexStore) serializeHashes(hashes []*externalapi.DomainHash) []byte {
+func serializeHashes(hashes []*externalapi.DomainHash) []byte {
 	serializedHashes := make([]byte, hashesLengthSize+externalapi.DomainHashSize*len(hashes))
 	binary.LittleEndian.PutUint64(serializedHashes[:hashesLengthSize], uint64(len(hashes)))
 	for i, hash := range hashes {
@@ -51,7 +51,7 @@ func (uis *utxoIndexStore) serializeHashes(hashes []*externalapi.DomainHash) []b
 	return serializedHashes
 }
 
-func (uis *utxoIndexStore) deserializeHashes(serializedHashes []byte) ([]*externalapi.DomainHash, error) {
+func deserializeHashes(serializedHashes []byte) ([]*externalapi.DomainHash, error) {
 	length := binary.LittleEndian.Uint64(serializedHashes[:hashesLengthSize])
 	hashes := make([]*externalapi.DomainHash, length)
 	for i := uint64(0); i < length; i++ {
