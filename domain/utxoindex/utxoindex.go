@@ -16,7 +16,9 @@ type UTXOIndex struct {
 	mutex sync.Mutex
 }
 
-// New creates a new UTXO index
+// New creates a new UTXO index.
+//
+// NOTE: While this is called no new blocks can be added to the consensus.
 func New(consensus externalapi.Consensus, database database.Database) (*UTXOIndex, error) {
 	utxoIndex := &UTXOIndex{
 		consensus: consensus,
