@@ -32,7 +32,7 @@ type TestConsensus interface {
 	Database() database.Database
 
 	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error)
+		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, externalapi.UTXODiff, error)
 
 	BuildHeaderWithParents(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader, error)
 

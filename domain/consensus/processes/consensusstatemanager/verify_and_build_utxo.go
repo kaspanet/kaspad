@@ -16,7 +16,7 @@ import (
 )
 
 func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff model.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
+	pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
 
 	log.Debugf("verifyUTXO start for block %s", blockHash)
 	defer log.Debugf("verifyUTXO end for block %s", blockHash)
@@ -55,7 +55,7 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 }
 
 func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	pastUTXODiff model.UTXODiff) error {
+	pastUTXODiff externalapi.UTXODiff) error {
 
 	blockHash := consensushashing.BlockHash(block)
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)

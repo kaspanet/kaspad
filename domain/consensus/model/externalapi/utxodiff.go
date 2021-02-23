@@ -1,12 +1,10 @@
-package model
-
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+package externalapi
 
 // UTXOCollection represents a collection of UTXO entries, indexed by their outpoint
 type UTXOCollection interface {
 	Iterator() ReadOnlyUTXOSetIterator
-	Get(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool)
-	Contains(outpoint *externalapi.DomainOutpoint) bool
+	Get(outpoint *DomainOutpoint) (UTXOEntry, bool)
+	Contains(outpoint *DomainOutpoint) bool
 	Len() int
 }
 
@@ -29,5 +27,5 @@ type MutableUTXODiff interface {
 	ToRemove() UTXOCollection
 
 	WithDiffInPlace(other UTXODiff) error
-	AddTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error
+	AddTransaction(transaction *DomainTransaction, blockBlueScore uint64) error
 }

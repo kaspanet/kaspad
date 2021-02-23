@@ -50,7 +50,7 @@ func TestUTXOIndex(t *testing.T) {
 	// the last block won't be accepted until the next block is
 	// mined
 	var notificationEntries []*appmessage.UTXOsByAddressesEntry
-	for i := 0; i < blockAmountToMine-1; i++ {
+	for i := 0; i < blockAmountToMine; i++ {
 		notification := <-onUTXOsChangedChan
 		if len(notification.Removed) > 0 {
 			t.Fatalf("Unexpectedly received that a UTXO has been removed")
@@ -70,21 +70,11 @@ func TestUTXOIndex(t *testing.T) {
 		}
 	}
 
-	// Mine a block to include the above transaction
-	mineNextBlock(t, kaspad)
-	notification := <-onUTXOsChangedChan
-	if len(notification.Removed) > 0 {
-		t.Fatalf("Unexpectedly received that a UTXO has been removed")
-	}
-	for _, added := range notification.Added {
-		notificationEntries = append(notificationEntries, added)
-	}
-
-	// Mine another block to accept the above block
+	// Mine a block to include the above transactions
 	mineNextBlock(t, kaspad)
 
 	// Make sure this block removed the UTXOs we spent
-	notification = <-onUTXOsChangedChan
+	notification := <-onUTXOsChangedChan
 	if len(notification.Removed) != transactionAmountToSpend {
 		t.Fatalf("Unexpected amount of removed UTXOs. Want: %d, got: %d",
 			transactionAmountToSpend, len(notification.Removed))

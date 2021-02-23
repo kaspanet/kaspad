@@ -9,7 +9,7 @@ import (
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
 	tipsStaging            []*externalapi.DomainHash
-	virtualUTXODiffStaging model.UTXODiff
+	virtualUTXODiffStaging externalapi.UTXODiff
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
 

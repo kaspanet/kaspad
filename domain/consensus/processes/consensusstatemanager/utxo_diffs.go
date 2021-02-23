@@ -1,12 +1,11 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
-	utxoDiff model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+	utxoDiff externalapi.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
 
 	log.Debugf("stageDiff start for block %s", blockHash)
 	defer log.Debugf("stageDiff end for block %s", blockHash)
