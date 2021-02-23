@@ -1,9 +1,10 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"sort"
+
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -138,7 +139,10 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
 		}
-		btb.mempool.RemoveTransactions(invalidTxs)
+		err = btb.mempool.RemoveTransactions(invalidTxs)
+		if err != nil {
+			return nil, err
+		}
 		// We can call this recursively without worry because this should almost never happen
 		return btb.GetBlockTemplate(coinbaseData)
 	}
