@@ -156,6 +156,12 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(blockHash, multiset)
 
+	if csm.genesisHash.Equal(blockHash) {
+		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		csm.stageDiff(blockHash, pastUTXODiff, nil)
+		return externalapi.StatusUTXOValid, nil
+	}
+
 	oldSelectedTip, err := csm.selectedTip()
 	if err != nil {
 		return 0, err
