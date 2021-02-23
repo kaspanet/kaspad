@@ -30,6 +30,7 @@ type NotificationListener struct {
 	propagateFinalityConflictResolvedNotifications              bool
 	propagateUTXOsChangedNotifications                          bool
 	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
+	propagatePruningPointUTXOSetOverrideNotifications           bool
 
 	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 }
@@ -180,6 +181,23 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 	return nil
 }
 
+// NotifyPruningPointUTXOSetOverride notifies the notification manager that the UTXO index
+// reset due to pruning point change via IBD.
+func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagatePruningPointUTXOSetOverrideNotifications {
+			err := router.OutgoingRoute().Enqueue(appmessage.NewPruningPointUTXOSetOverrideNotificationMessage())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func newNotificationListener() *NotificationListener {
 	return &NotificationListener{
 		propagateBlockAddedNotifications:                            false,
@@ -188,6 +206,7 @@ func newNotificationListener() *NotificationListener {
 		propagateFinalityConflictResolvedNotifications:              false,
 		propagateUTXOsChangedNotifications:                          false,
 		propagateVirtualSelectedParentBlueScoreChangedNotifications: false,
+		propagatePruningPointUTXOSetOverrideNotifications:           false,
 	}
 }
 
@@ -287,4 +306,16 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications() {
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
+}
+
+// PropagatePruningPointUTXOSetOverrideNotifications instructs the listener to send pruning point UTXO set override notifications
+// to the remote listener.
+func (nl *NotificationListener) PropagatePruningPointUTXOSetOverrideNotifications() {
+	nl.propagatePruningPointUTXOSetOverrideNotifications = true
+}
+
+// StopPropagatingPruningPointUTXOSetOverrideNotifications instructs the listener to stop sending pruning
+// point UTXO set override notifications to the remote listener.
+func (nl *NotificationListener) StopPropagatingPruningPointUTXOSetOverrideNotifications() {
+	nl.propagatePruningPointUTXOSetOverrideNotifications = false
 }

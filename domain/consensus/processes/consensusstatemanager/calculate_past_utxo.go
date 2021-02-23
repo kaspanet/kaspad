@@ -14,7 +14,7 @@ import (
 )
 
 func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *externalapi.DomainHash) (
-	model.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
+	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CalculatePastUTXOAndAcceptanceData")
 	defer onEnd()
@@ -58,7 +58,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
 
-func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (model.MutableUTXODiff, error) {
+func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainHash) (externalapi.MutableUTXODiff, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "restorePastUTXO")
 	defer onEnd()
 
@@ -67,7 +67,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	var err error
 
 	log.Debugf("Collecting UTXO diffs for block %s", blockHash)
-	var utxoDiffs []model.UTXODiff
+	var utxoDiffs []externalapi.UTXODiff
 	nextBlockHash := blockHash
 	for {
 		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
@@ -115,8 +115,8 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff model.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
-	externalapi.AcceptanceData, model.MutableUTXODiff, error) {
+	selectedParentPastUTXODiff externalapi.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
 	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
@@ -185,7 +185,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 }
 
 func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalapi.DomainTransaction,
-	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff model.MutableUTXODiff,
+	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff externalapi.MutableUTXODiff,
 	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64, err error) {
 
@@ -267,9 +267,9 @@ func (csm *consensusStateManager) checkTransactionMass(
 	return true, accumulatedMassAfter
 }
 
-// RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a model.ReadOnlyUTXOSetIterator
+// RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a externalapi.ReadOnlyUTXOSetIterator
 func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *externalapi.DomainHash) (
-	model.ReadOnlyUTXOSetIterator, error) {
+	externalapi.ReadOnlyUTXOSetIterator, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RestorePastUTXOSetIterator")
 	defer onEnd()

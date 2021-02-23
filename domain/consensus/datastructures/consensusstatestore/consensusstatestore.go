@@ -10,7 +10,7 @@ import (
 type consensusStateStore struct {
 	tipsStaging               []*externalapi.DomainHash
 	virtualDiffParentsStaging []*externalapi.DomainHash
-	virtualUTXODiffStaging    model.UTXODiff
+	virtualUTXODiffStaging    externalapi.UTXODiff
 
 	virtualUTXOSetCache *utxolrucache.LRUCache
 

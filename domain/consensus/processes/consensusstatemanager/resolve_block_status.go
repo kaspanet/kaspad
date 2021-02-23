@@ -1,7 +1,6 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/pkg/errors"
@@ -168,7 +167,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 }
 
 func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
+	blockHash *externalapi.DomainHash, pastUTXODiff externalapi.UTXODiff) error {
 
 	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
 	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)

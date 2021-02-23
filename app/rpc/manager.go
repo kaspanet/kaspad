@@ -78,6 +78,22 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 
+// NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
+// resets due to pruning point change via IBD.
+func (m *Manager) NotifyPruningPointUTXOSetOverride() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyPruningPointUTXOSetOverride")
+	defer onEnd()
+
+	if m.context.Config.UTXOIndex {
+		err := m.notifyPruningPointUTXOSetOverride()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // NotifyFinalityConflict notifies the manager that there's a finality conflict in the DAG
 func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflict")
@@ -100,11 +116,23 @@ func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInse
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyUTXOsChanged")
 	defer onEnd()
 
-	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult.VirtualSelectedParentChainChanges)
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult)
 	if err != nil {
 		return err
 	}
 	return m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
+}
+
+func (m *Manager) notifyPruningPointUTXOSetOverride() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.notifyPruningPointUTXOSetOverride")
+	defer onEnd()
+
+	err := m.context.UTXOIndex.Reset()
+	if err != nil {
+		return err
+	}
+
+	return m.context.NotificationManager.NotifyPruningPointUTXOSetOverride()
 }
 
 func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
