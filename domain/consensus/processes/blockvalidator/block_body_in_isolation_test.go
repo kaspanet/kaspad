@@ -2,7 +2,6 @@ package blockvalidator_test
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
@@ -1066,7 +1065,7 @@ func TestBlockSize(t *testing.T) {
 	})
 }
 
-func initBlockWithInvalidBlockSize(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+func initBlockWithInvalidBlockSize(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1127,7 +1126,7 @@ func TestCheckBlockDuplicateTransactions(t *testing.T) {
 	})
 }
 
-func initBlockWithDuplicateTransaction(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+func initBlockWithDuplicateTransaction(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1183,7 +1182,7 @@ func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
 	})
 }
 
-func initBlockWithMoreThanOneCoinbase(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+func initBlockWithMoreThanOneCoinbase(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1239,7 +1238,7 @@ func TestCheckBlockDoubleSpends(t *testing.T) {
 	})
 }
 
-func initBlockWithDoubleSpends(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, model.UTXODiff, error) {
+func initBlockWithDoubleSpends(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,

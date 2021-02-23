@@ -1,24 +1,23 @@
 package utxo
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
 type readOnlyUTXOIteratorWithDiff struct {
-	baseIterator model.ReadOnlyUTXOSetIterator
+	baseIterator externalapi.ReadOnlyUTXOSetIterator
 	diff         *immutableUTXODiff
 
 	currentOutpoint  *externalapi.DomainOutpoint
 	currentUTXOEntry externalapi.UTXOEntry
 	currentErr       error
 
-	toAddIterator model.ReadOnlyUTXOSetIterator
+	toAddIterator externalapi.ReadOnlyUTXOSetIterator
 }
 
 // IteratorWithDiff applies a UTXODiff to given utxo iterator
-func IteratorWithDiff(iterator model.ReadOnlyUTXOSetIterator, diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
+func IteratorWithDiff(iterator externalapi.ReadOnlyUTXOSetIterator, diff externalapi.UTXODiff) (externalapi.ReadOnlyUTXOSetIterator, error) {
 	d, ok := diff.(*immutableUTXODiff)
 	if !ok {
 		return nil, errors.New("diff is not of type *immutableUTXODiff")

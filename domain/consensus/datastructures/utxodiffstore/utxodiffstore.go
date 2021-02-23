@@ -15,7 +15,7 @@ var utxoDiffChildBucket = database.MakeBucket([]byte("utxo-diff-children"))
 
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
-	utxoDiffStaging      map[externalapi.DomainHash]model.UTXODiff
+	utxoDiffStaging      map[externalapi.DomainHash]externalapi.UTXODiff
 	utxoDiffChildStaging map[externalapi.DomainHash]*externalapi.DomainHash
 	toDelete             map[externalapi.DomainHash]struct{}
 	utxoDiffCache        *lrucache.LRUCache
@@ -25,7 +25,7 @@ type utxoDiffStore struct {
 // New instantiates a new UTXODiffStore
 func New(cacheSize int, preallocate bool) model.UTXODiffStore {
 	return &utxoDiffStore{
-		utxoDiffStaging:      make(map[externalapi.DomainHash]model.UTXODiff),
+		utxoDiffStaging:      make(map[externalapi.DomainHash]externalapi.UTXODiff),
 		utxoDiffChildStaging: make(map[externalapi.DomainHash]*externalapi.DomainHash),
 		toDelete:             make(map[externalapi.DomainHash]struct{}),
 		utxoDiffCache:        lrucache.New(cacheSize, preallocate),
@@ -34,7 +34,7 @@ func New(cacheSize int, preallocate bool) model.UTXODiffStore {
 }
 
 // Stage stages the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff model.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+func (uds *utxoDiffStore) Stage(blockHash *externalapi.DomainHash, utxoDiff externalapi.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
 	uds.utxoDiffStaging[*blockHash] = utxoDiff
 
 	if utxoDiffChild != nil {
@@ -55,7 +55,7 @@ func (uds *utxoDiffStore) IsBlockHashStaged(blockHash *externalapi.DomainHash) b
 }
 
 func (uds *utxoDiffStore) Discard() {
-	uds.utxoDiffStaging = make(map[externalapi.DomainHash]model.UTXODiff)
+	uds.utxoDiffStaging = make(map[externalapi.DomainHash]externalapi.UTXODiff)
 	uds.utxoDiffChildStaging = make(map[externalapi.DomainHash]*externalapi.DomainHash)
 	uds.toDelete = make(map[externalapi.DomainHash]struct{})
 }
@@ -107,13 +107,13 @@ func (uds *utxoDiffStore) Commit(dbTx model.DBTransaction) error {
 }
 
 // UTXODiff gets the utxoDiff associated with the given blockHash
-func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.UTXODiff, error) {
+func (uds *utxoDiffStore) UTXODiff(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	if utxoDiff, ok := uds.utxoDiffStaging[*blockHash]; ok {
 		return utxoDiff, nil
 	}
 
 	if utxoDiff, ok := uds.utxoDiffCache.Get(blockHash); ok {
-		return utxoDiff.(model.UTXODiff), nil
+		return utxoDiff.(externalapi.UTXODiff), nil
 	}
 
 	utxoDiffBytes, err := dbContext.Get(uds.utxoDiffHashAsKey(blockHash))
@@ -187,7 +187,7 @@ func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) m
 	return utxoDiffChildBucket.Key(hash.ByteSlice())
 }
 
-func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff model.UTXODiff) ([]byte, error) {
+func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff externalapi.UTXODiff) ([]byte, error) {
 	dbUtxoDiff, err := serialization.UTXODiffToDBUTXODiff(utxoDiff)
 	if err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff model.UTXODiff) ([]byte, er
 	return bytes, nil
 }
 
-func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (model.UTXODiff, error) {
+func (uds *utxoDiffStore) deserializeUTXODiff(utxoDiffBytes []byte) (externalapi.UTXODiff, error) {
 	dbUTXODiff := &serialization.DbUtxoDiff{}
 	err := proto.Unmarshal(utxoDiffBytes, dbUTXODiff)
 	if err != nil {
