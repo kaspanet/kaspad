@@ -141,7 +141,10 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		}
 		err = btb.mempool.RemoveTransactions(invalidTxs)
 		if err != nil {
-			return nil, err
+			// mempool.RemoveTransactions might return errors in situations that are perfectly fine in this context.
+			// TODO: Once the mempool invariants are clear, this should be converted back `return nil, err`:
+			// https://github.com/kaspanet/kaspad/issues/1553
+			log.Criticalf("Error from mempool.RemoveTransactions: %+v", err)
 		}
 		// We can call this recursively without worry because this should almost never happen
 		return btb.GetBlockTemplate(coinbaseData)
