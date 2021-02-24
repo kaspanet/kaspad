@@ -1,14 +1,15 @@
 package testing
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/pkg/errors"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
+	"github.com/pkg/errors"
 )
 
 func checkFlowError(t *testing.T, err error, isProtocolError bool, shouldBan bool, contains string) {
-	pErr := &protocolerrors.ProtocolError{}
+	pErr := protocolerrors.ProtocolError{}
 	if errors.As(err, &pErr) != isProtocolError {
 		t.Fatalf("Unexepcted error %+v", err)
 	}
