@@ -26,7 +26,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 
 	err := context.ProtocolManager.AddBlock(domainBlock)
 	if err != nil {
-		if !errors.As(err, &ruleerrors.RuleError{}) || !errors.As(err, &protocolerrors.ProtocolError{}) {
+		if !errors.As(err, &ruleerrors.RuleError{}) && !errors.As(err, &protocolerrors.ProtocolError{}) {
 			return nil, err
 		}
 
