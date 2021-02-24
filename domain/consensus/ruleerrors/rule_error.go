@@ -192,6 +192,8 @@ var (
 
 	// ErrPrunedBlock indicates that the block currently being validated had already been pruned.
 	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
+
+	ErrGetVirtualUTXOsWrongVirtualParents = newRuleError("ErrGetVirtualUTXOsWrongVirtualParents")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

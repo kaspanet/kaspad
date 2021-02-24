@@ -117,7 +117,7 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 }
 
 func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
-	utxoSetIterator model.ReadOnlyUTXOSetIterator) error {
+	utxoSetIterator externalapi.ReadOnlyUTXOSetIterator) error {
 
 	// Delete all the old UTXOs from the database
 	deleteCursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
