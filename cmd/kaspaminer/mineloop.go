@@ -113,12 +113,13 @@ func logHashRate() {
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Submitting block %s to %s", blockHash, client.Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 
-	rejectReason, err := client.SubmitBlock(block)
+	rejectReason, err := client.safeRPCClient().SubmitBlock(block)
 	if err != nil {
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
+			client.reconnect()
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
@@ -127,7 +128,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			time.Sleep(waitTime)
 			return nil
 		}
-		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
+		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 	}
 	return nil
 }
@@ -186,13 +187,14 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 
 func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan error) {
 	getBlockTemplate := func() {
-		template, err := client.GetBlockTemplate(miningAddr.String())
+		template, err := client.safeRPCClient().GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.safeRPCClient().Address(), err)
+			client.reconnect()
 			return
 		}
 		if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
+			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
 			return
 		}
 		templatemanager.Set(template)
