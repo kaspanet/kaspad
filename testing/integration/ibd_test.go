@@ -75,6 +75,7 @@ func TestIBDWithPruning(t *testing.T) {
 			miningAddress:           miningAddress2,
 			miningAddressPrivateKey: miningAddress2PrivateKey,
 			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
 		},
 	})
 	defer teardown()
@@ -93,6 +94,15 @@ func TestIBDWithPruning(t *testing.T) {
 
 	for i := 0; i < numBlocks-1; i++ {
 		mineNextBlock(t, syncer)
+	}
+
+	utxoSetOverriden := make(chan struct{})
+	err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
+		close(utxoSetOverriden)
+	})
+
+	if err != nil {
+		t.Fatalf("RegisterPruningPointUTXOSetNotifications: %+v", err)
 	}
 
 	// We expect this to trigger IBD
@@ -149,5 +159,12 @@ func TestIBDWithPruning(t *testing.T) {
 			"we got syncer headers count of %d and syncee headers count of %d", synceeOnlyBlocks,
 			syncerBlockCountResponse.HeaderCount,
 			synceeBlockCountResponse.HeaderCount)
+	}
+
+	const timeout = 10 * time.Second
+	select {
+	case <-utxoSetOverriden:
+	case <-time.After(timeout):
+		t.Fatalf("expected pruning point UTXO set override notification, but it didn't get one after %s", timeout)
 	}
 }

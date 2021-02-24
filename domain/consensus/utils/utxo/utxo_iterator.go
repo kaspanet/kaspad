@@ -1,7 +1,6 @@
 package utxo
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
@@ -16,7 +15,7 @@ type utxoCollectionIterator struct {
 	pairs []utxoOutpointEntryPair
 }
 
-func (uc utxoCollection) Iterator() model.ReadOnlyUTXOSetIterator {
+func (uc utxoCollection) Iterator() externalapi.ReadOnlyUTXOSetIterator {
 	pairs := make([]utxoOutpointEntryPair, len(uc))
 	i := 0
 	for outpoint, entry := range uc {
@@ -44,7 +43,7 @@ func (uci *utxoCollectionIterator) Get() (outpoint *externalapi.DomainOutpoint, 
 	return &pair.outpoint, pair.entry, nil
 }
 
-func (uci *utxoCollectionIterator) WithDiff(diff model.UTXODiff) (model.ReadOnlyUTXOSetIterator, error) {
+func (uci *utxoCollectionIterator) WithDiff(diff externalapi.UTXODiff) (externalapi.ReadOnlyUTXOSetIterator, error) {
 	d, ok := diff.(*immutableUTXODiff)
 	if !ok {
 		return nil, errors.New("diff is not of type *immutableUTXODiff")

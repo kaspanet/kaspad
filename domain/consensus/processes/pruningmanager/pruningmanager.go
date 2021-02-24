@@ -256,11 +256,6 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 		return err
 	}
 
-	err = pm.pruneVirtualDiffParents(pruningPoint, virtualParents)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -289,26 +284,6 @@ func (pm *pruningManager) deleteBlocksDownward(queue model.BlockHeap) error {
 			}
 		}
 	}
-	return nil
-}
-
-func (pm *pruningManager) pruneVirtualDiffParents(pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) error {
-	virtualDiffParents, err := pm.consensusStateStore.VirtualDiffParents(pm.databaseContext)
-	if err != nil {
-		return err
-	}
-	validVirtualDiffParents := make([]*externalapi.DomainHash, 0, len(virtualParents))
-	for _, parent := range virtualDiffParents {
-		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(parent, pruningPoint, virtualParents)
-		if err != nil {
-			return err
-		}
-		if isInPruningFutureOrInVirtualPast {
-			validVirtualDiffParents = append(validVirtualDiffParents, parent)
-		}
-	}
-	pm.consensusStateStore.StageVirtualDiffParents(validVirtualDiffParents)
-
 	return nil
 }
 

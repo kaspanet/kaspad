@@ -223,6 +223,30 @@ func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.D
 	return pruningPointUTXOs, nil
 }
 
+func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.DomainHash,
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	virtualParents, err := s.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if !externalapi.HashesEqual(expectedVirtualParents, virtualParents) {
+		return nil, errors.Wrapf(ruleerrors.ErrGetVirtualUTXOsWrongVirtualParents, "expected virtual parents %s but got %s",
+			expectedVirtualParents,
+			virtualParents)
+	}
+
+	virtualUTXOs, err := s.consensusStateStore.VirtualUTXOs(s.databaseContext, fromOutpoint, limit)
+	if err != nil {
+		return nil, err
+	}
+	return virtualUTXOs, nil
+}
+
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
