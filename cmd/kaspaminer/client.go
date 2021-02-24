@@ -5,42 +5,95 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const minerTimeout = 10 * time.Second
 
 type minerClient struct {
-	*rpcclient.RPCClient
+	isReconnecting uint32
+	clientLock     sync.RWMutex
+	rpcClient      *rpcclient.RPCClient
 
+	cfg                        *configFlags
 	blockAddedNotificationChan chan struct{}
 }
 
-func newMinerClient(cfg *configFlags) (*minerClient, error) {
-	rpcAddress, err := cfg.NetParams().NormalizeRPCServerAddress(cfg.RPCServer)
-	if err != nil {
-		return nil, err
-	}
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
-	if err != nil {
-		return nil, err
-	}
-	rpcClient.SetTimeout(minerTimeout)
-	rpcClient.SetLogger(backendLog, logger.LevelTrace)
+func (mc *minerClient) safeRPCClient() *rpcclient.RPCClient {
+	mc.clientLock.RLock()
+	defer mc.clientLock.RUnlock()
+	return mc.rpcClient
+}
 
-	minerClient := &minerClient{
-		RPCClient:                  rpcClient,
-		blockAddedNotificationChan: make(chan struct{}),
+func (mc *minerClient) reconnect() {
+	swapped := atomic.CompareAndSwapUint32(&mc.isReconnecting, 0, 1)
+	if !swapped {
+		return
 	}
 
-	err = rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
+	defer atomic.StoreUint32(&mc.isReconnecting, 0)
+
+	mc.clientLock.Lock()
+	defer mc.clientLock.Unlock()
+
+	retryDuration := time.Second
+	const maxRetryDuration = time.Minute
+	log.Infof("Reconnecting RPC connection")
+	for {
+		err := mc.connect()
+		if err == nil {
+			return
+		}
+
+		if retryDuration < time.Minute {
+			retryDuration *= 2
+		} else {
+			retryDuration = maxRetryDuration
+		}
+
+		log.Errorf("Got error '%s' while reconnecting. Trying again in %s", err, retryDuration)
+		time.Sleep(retryDuration)
+	}
+}
+
+func (mc *minerClient) connect() error {
+	rpcAddress, err := mc.cfg.NetParams().NormalizeRPCServerAddress(mc.cfg.RPCServer)
+	if err != nil {
+		return err
+	}
+	mc.rpcClient, err = rpcclient.NewRPCClient(rpcAddress)
+	if err != nil {
+		return err
+	}
+	mc.rpcClient.SetTimeout(minerTimeout)
+	mc.rpcClient.SetLogger(backendLog, logger.LevelTrace)
+
+	err = mc.rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
 		select {
-		case minerClient.blockAddedNotificationChan <- struct{}{}:
+		case mc.blockAddedNotificationChan <- struct{}{}:
 		default:
 		}
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "error requesting block-added notifications")
+		return errors.Wrapf(err, "error requesting block-added notifications")
+	}
+
+	log.Infof("Connected to %s", rpcAddress)
+
+	return nil
+}
+
+func newMinerClient(cfg *configFlags) (*minerClient, error) {
+	minerClient := &minerClient{
+		cfg:                        cfg,
+		blockAddedNotificationChan: make(chan struct{}),
+	}
+
+	err := minerClient.connect()
+	if err != nil {
+		return nil, err
 	}
 
 	return minerClient, nil
