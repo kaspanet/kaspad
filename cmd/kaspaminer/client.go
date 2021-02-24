@@ -39,6 +39,7 @@ func (mc *minerClient) reconnect() {
 	defer mc.clientLock.Unlock()
 
 	retryDuration := time.Second
+	const maxRetryDuration = time.Minute
 	log.Infof("Reconnecting RPC connection")
 	for {
 		err := mc.connect()
@@ -46,14 +47,13 @@ func (mc *minerClient) reconnect() {
 			return
 		}
 
-		const maxRetryDuration = time.Minute
 		if retryDuration < time.Minute {
 			retryDuration *= 2
 		} else {
 			retryDuration = maxRetryDuration
 		}
 
-		log.Errorf("Got error %s while reconnecting. Trying again in %s", err, retryDuration)
+		log.Errorf("Got error '%s' while reconnecting. Trying again in %s", err, retryDuration)
 		time.Sleep(retryDuration)
 	}
 }
