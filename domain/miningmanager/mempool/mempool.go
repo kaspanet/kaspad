@@ -373,11 +373,11 @@ func (mp *mempool) haveTransaction(txID *consensusexternalapi.DomainTransactionI
 	return mp.isTransactionInPool(txID) || mp.isOrphanInPool(txID)
 }
 
-// removeBlockTransactionsFromPool removes the transactions that are found in the block
-// from the mempool, and move their chained mempool transactions (if any) to the main pool.
+// removeTransactionsFromPool removes given transactions from the mempool, and move their chained mempool
+// transactions (if any) to the main pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
+func (mp *mempool) removeTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		txID := consensushashing.TransactionID(tx)
 
@@ -966,7 +966,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.removeBlockTransactionsFromPool(txs)
+	err := mp.removeTransactionsFromPool(txs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed removing txs from pool")
 	}
@@ -986,16 +986,10 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	return acceptedTxs, nil
 }
 
-func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) {
+func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	for _, tx := range txs {
-		err := mp.removeDoubleSpends(tx)
-		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", consensushashing.TransactionID(tx), err)
-		}
-		mp.removeOrphan(tx, true)
-	}
+	return mp.removeTransactionsFromPool(txs)
 }
