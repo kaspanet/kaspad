@@ -53,6 +53,8 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 		}
 		blockInWindowIndex := 0
 
+		sleepTime := 0 * time.Second
+
 		for {
 			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
 
@@ -61,15 +63,16 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 				if blockInWindowIndex == windowSize-1 {
 					deviation := windowExpectedEndTime.Sub(time.Now())
 					if deviation > 0 {
-						log.Infof("Finished to mine %d blocks %s earlier than expected. Sleeping %s to compensate",
-							windowSize, deviation, deviation)
-						time.Sleep(deviation)
+						sleepTime = deviation / windowSize
+						log.Infof("Finished to mine %d blocks %s earlier than expected. Setting the miner "+
+							"to sleep %s between blocks to compensate",
+							windowSize, deviation, sleepTime)
 					}
 					blockInWindowIndex = 0
 					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
 				}
+				time.Sleep(sleepTime)
 			}
-
 		}
 	})
 
