@@ -164,11 +164,7 @@ func outpointToDomainOutpoint(outpoint *Outpoint) *externalapi.DomainOutpoint {
 func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externalapi.DomainTransaction, error) {
 	inputs := make([]*externalapi.DomainTransactionInput, len(rpcTransaction.Inputs))
 	for i, input := range rpcTransaction.Inputs {
-		transactionIDBytes, err := hex.DecodeString(input.PreviousOutpoint.TransactionID)
-		if err != nil {
-			return nil, err
-		}
-		transactionID, err := transactionid.FromBytes(transactionIDBytes)
+		transactionID, err := transactionid.FromString(input.PreviousOutpoint.TransactionID)
 		if err != nil {
 			return nil, err
 		}
@@ -198,19 +194,11 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 		}
 	}
 
-	subnetworkIDBytes, err := hex.DecodeString(rpcTransaction.SubnetworkID)
+	subnetworkID, err := subnetworks.FromString(rpcTransaction.SubnetworkID)
 	if err != nil {
 		return nil, err
 	}
-	subnetworkID, err := subnetworks.FromBytes(subnetworkIDBytes)
-	if err != nil {
-		return nil, err
-	}
-	payloadHashBytes, err := hex.DecodeString(rpcTransaction.PayloadHash)
-	if err != nil {
-		return nil, err
-	}
-	payloadHash, err := externalapi.NewDomainHashFromByteSlice(payloadHashBytes)
+	payloadHash, err := externalapi.NewDomainHashFromString(rpcTransaction.PayloadHash)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +243,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 			ScriptPublicKey: &RPCScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
 		}
 	}
-	subnetworkID := hex.EncodeToString(transaction.SubnetworkID[:])
+	subnetworkID := transaction.SubnetworkID.String()
 	payloadHash := transaction.PayloadHash.String()
 	payload := hex.EncodeToString(transaction.Payload)
 	return &RPCTransaction{
