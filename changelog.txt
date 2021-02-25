@@ -1,0 +1,11 @@
+Kaspad v0.8.10 - 2021-02-25
+===========================
+
+[*] Fix bug where invalid mempool transactions were not removed (#1551)
+[*] Add RPC reconnection to the miner (#1552)
+[*] Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
+[*] Fix UTXO index (#1548)
+[*] Prevent fast failing (#1545)
+[*] Increase the sleep time in kaspaminer when the node is not synced (#1544)
+[*] Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
+[*] Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)
