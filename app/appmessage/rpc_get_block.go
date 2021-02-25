@@ -104,4 +104,5 @@ type ScriptPubKeyResult struct {
 	Hex     string
 	Type    string
 	Address string
+	Version uint16
 }

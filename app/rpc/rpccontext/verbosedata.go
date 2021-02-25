@@ -3,13 +3,14 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
+	"math/big"
+	"strconv"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math"
-	"math/big"
-	"strconv"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
@@ -205,6 +206,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		output.Index = uint32(i)
 		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
+			Version: transactionOutput.ScriptPublicKey.Version,
 			Address: encodedAddr,
 			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey.Script),
 			Type:    scriptClass.String(),

@@ -307,6 +307,7 @@ message ScriptPublicKeyResult{
   string hex = 2;
   string type = 3;
   string address = 4;
+  uint32 version = 5;
 }
 
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
