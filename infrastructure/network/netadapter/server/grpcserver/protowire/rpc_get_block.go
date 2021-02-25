@@ -147,6 +147,7 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 			Hex:     item.ScriptPublicKey.Hex,
 			Type:    item.ScriptPublicKey.Type,
 			Address: item.ScriptPublicKey.Address,
+			Version: uint16(item.ScriptPublicKey.Version),
 		}
 		outputs[j] = &appmessage.TransactionVerboseOutput{
 			Value:        item.Value,
@@ -195,6 +196,7 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 			Hex:     item.ScriptPubKey.Hex,
 			Type:    item.ScriptPubKey.Type,
 			Address: item.ScriptPubKey.Address,
+			Version: uint32(item.ScriptPubKey.Version),
 		}
 		outputs[j] = &TransactionVerboseOutput{
 			Value:           item.Value,
