@@ -9,6 +9,7 @@ type Consensus interface {
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
+	GetBlockChildren(blockHash *DomainHash) ([]*DomainHash, error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) ([]*DomainHash, error)

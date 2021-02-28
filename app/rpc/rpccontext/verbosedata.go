@@ -48,6 +48,11 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 			"invalid block")
 	}
 
+	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(hash)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version(),
@@ -56,6 +61,7 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot().String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment().String(),
 		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes()),
+		ChildrenHashes:       hashes.ToStrings(childrenHashes),
 		Nonce:                blockHeader.Nonce(),
 		Time:                 blockHeader.TimeInMilliseconds(),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits()), 16),
