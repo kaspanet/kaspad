@@ -9,7 +9,7 @@ import (
 
 func TestMain(m *testing.M) {
 	logger.SetLogLevels(logger.LevelDebug)
-	logger.InitLogStdoutOnly(logger.LevelDebug)
+	logger.InitLogStdout(logger.LevelDebug)
 
 	os.Exit(m.Run())
 }

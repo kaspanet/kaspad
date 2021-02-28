@@ -24,13 +24,13 @@ var defaultFlags = getDefaultFlags()
 
 // Flags to modify Backend's behavior.
 const (
-	// Llongfile modifies the logger output to include full path and line number
+	// LogFlagLongFile modifies the logger output to include full path and line number
 	// of the logging callsite, e.g. /a/b/c/main.go:123.
-	Llongfile uint32 = 1 << iota
+	LogFlagLongFile uint32 = 1 << iota
 
-	// Lshortfile modifies the logger output to include filename and line number
-	// of the logging callsite, e.g. main.go:123. Overrides Llongfile.
-	Lshortfile
+	// LogFlagShortFile modifies the logger output to include filename and line number
+	// of the logging callsite, e.g. main.go:123. takes precedence over LogFlagLongFile.
+	LogFlagShortFile
 )
 
 // Read logger flags from the LOGFLAGS environment variable. Multiple flags can
@@ -39,9 +39,9 @@ func getDefaultFlags() (flags uint32) {
 	for _, f := range strings.Split(os.Getenv("LOGFLAGS"), ",") {
 		switch f {
 		case "longfile":
-			flags |= Llongfile
+			flags |= LogFlagLongFile
 		case "shortfile":
-			flags |= Lshortfile
+			flags |= LogFlagShortFile
 		}
 	}
 	return
@@ -148,19 +148,23 @@ func (b *Backend) Run() error {
 				_, _ = fmt.Fprintf(os.Stderr, "Goroutine stacktrace: %s\n", debug.Stack())
 			}
 		}()
-		defer atomic.StoreUint32(&b.isRunning, 0)
-		b.syncClose.Lock()
-		defer b.syncClose.Unlock()
-
-		for log := range b.writeChan {
-			for _, writer := range b.writers {
-				if log.level >= writer.LogLevel() {
-					_, _ = writer.Write(log.log)
-				}
-			}
-		}
+		b.runBlocking()
 	}()
 	return nil
+}
+
+func (b *Backend) runBlocking() {
+	defer atomic.StoreUint32(&b.isRunning, 0)
+	b.syncClose.Lock()
+	defer b.syncClose.Unlock()
+
+	for log := range b.writeChan {
+		for _, writer := range b.writers {
+			if log.level >= writer.LogLevel() {
+				_, _ = writer.Write(log.log)
+			}
+		}
+	}
 }
 
 // IsRunning returns true if backend.Run() has been called and false if it hasn't.

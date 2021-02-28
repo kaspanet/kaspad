@@ -168,7 +168,7 @@ func (l *Logger) printf(lvl Level, tag string, format string, args ...interface{
 
 	var file string
 	var line int
-	if l.b.flag&(Lshortfile|Llongfile) != 0 {
+	if l.b.flag&(LogFlagShortFile|LogFlagLongFile) != 0 {
 		file, line = callsite(l.b.flag)
 	}
 
@@ -198,7 +198,7 @@ func (l *Logger) print(lvl Level, tag string, args ...interface{}) {
 
 	var file string
 	var line int
-	if l.b.flag&(Lshortfile|Llongfile) != 0 {
+	if l.b.flag&(LogFlagShortFile|LogFlagLongFile) != 0 {
 		file, line = callsite(l.b.flag)
 	}
 
@@ -232,7 +232,7 @@ func itoa(buf *[]byte, i int, wid int) {
 }
 
 // Appends a header in the default format 'YYYY-MM-DD hh:mm:ss.sss [LVL] TAG: '.
-// If either of the Lshortfile or Llongfile flags are specified, the file named
+// If either of the LogFlagShortFile or LogFlagLongFile flags are specified, the file named
 // and line number are included after the tag and before the final colon.
 func formatHeader(buf *[]byte, t mstime.Time, lvl, tag string, file string, line int) {
 	year, month, day := t.Date()
@@ -278,7 +278,7 @@ func callsite(flag uint32) (string, int) {
 	if !ok {
 		return "???", 0
 	}
-	if flag&Lshortfile != 0 {
+	if flag&LogFlagShortFile != 0 {
 		short := file
 		for i := len(file) - 1; i > 0; i-- {
 			if os.IsPathSeparator(file[i]) {

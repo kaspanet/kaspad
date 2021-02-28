@@ -45,8 +45,8 @@ func RegisterSubSystem(subsystem string) *Logger {
 	return logger
 }
 
-// InitLogStdoutOnly attaches stdout to the backend log and starts the logger.
-func InitLogStdoutOnly(logLevel Level) {
+// InitLogStdout attaches stdout to the backend log and starts the logger.
+func InitLogStdout(logLevel Level) {
 	err := BackendLog.AddLogWriter(os.Stdout, logLevel)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error adding stdout to the loggerfor level %s: %s", LevelWarn, err)
@@ -74,7 +74,7 @@ func InitLog(logFile, errLogFile string) {
 		os.Exit(1)
 	}
 
-	InitLogStdoutOnly(LevelInfo)
+	InitLogStdout(LevelInfo)
 }
 
 // SetLogLevel sets the logging level for provided subsystem. Invalid
@@ -149,13 +149,7 @@ func ParseAndSetLogLevels(logLevel string) error {
 	// When the specified string doesn't have any delimters, treat it as
 	// the log level for all subsystems.
 	if !strings.Contains(logLevel, ",") && !strings.Contains(logLevel, "=") {
-		// Validate debug log level.
-		if !validLogLevel(logLevel) {
-			str := "The specified debug level [%s] is invalid"
-			return errors.Errorf(str, logLevel)
-		}
-
-		// Change the logging level for all subsystems.
+		// Validate and change the logging level for all subsystems.
 		return SetLogLevelsString(logLevel)
 	}
 
@@ -177,12 +171,6 @@ func ParseAndSetLogLevels(logLevel string) error {
 			str := "The specified subsystem [%s] is invalid -- " +
 				"supported subsytems %s"
 			return errors.Errorf(str, subsysID, strings.Join(SupportedSubsystems(), ", "))
-		}
-
-		// Validate log level.
-		if !validLogLevel(logLevel) {
-			str := "The specified debug level [%s] is invalid"
-			return errors.Errorf(str, logLevel)
 		}
 
 		err := SetLogLevel(subsysID, logLevel)

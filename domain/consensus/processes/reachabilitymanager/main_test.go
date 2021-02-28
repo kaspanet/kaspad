@@ -11,6 +11,6 @@ const logLevel = logger.LevelWarn
 
 func TestMain(m *testing.M) {
 	logger.SetLogLevels(logLevel)
-	logger.InitLogStdoutOnly(logLevel)
+	logger.InitLogStdout(logLevel)
 	os.Exit(m.Run())
 }
