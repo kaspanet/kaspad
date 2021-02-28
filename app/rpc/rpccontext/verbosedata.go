@@ -49,6 +49,9 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 	}
 
 	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(hash)
+	if err != nil {
+		return nil, err
+	}
 
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
