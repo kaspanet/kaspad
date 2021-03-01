@@ -45,8 +45,7 @@ func serializeHashes(hashes []*externalapi.DomainHash) []byte {
 	for i, hash := range hashes {
 		start := hashesLengthSize + externalapi.DomainHashSize*i
 		end := start + externalapi.DomainHashSize
-		copy(serializedHashes[start:end],
-			hash.ByteSlice())
+		copy(serializedHashes[start:end], hash.ByteSlice())
 	}
 	return serializedHashes
 }
@@ -63,12 +62,11 @@ func deserializeHashes(serializedHashes []byte) ([]*externalapi.DomainHash, erro
 		}
 
 		var err error
-		hashes[i], err = externalapi.
-			NewDomainHashFromByteSlice(serializedHashes[start:end])
+		hashes[i], err = externalapi.NewDomainHashFromByteSlice(serializedHashes[start:end])
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return nil, nil
+	return hashes, nil
 }
