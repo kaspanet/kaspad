@@ -1,5 +1,7 @@
 package ldb
 
-import "github.com/kaspanet/kaspad/infrastructure/logger"
+import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+)
 
-var log, _ = logger.Get(logger.SubsystemTags.KSDB)
+var log = logger.RegisterSubSystem("KSDB")

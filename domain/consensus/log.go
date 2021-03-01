@@ -5,5 +5,5 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.BDAG)
+var log = logger.RegisterSubSystem("BDAG")
 var spawn = panics.GoroutineWrapperFunc(log)

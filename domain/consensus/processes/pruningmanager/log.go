@@ -2,4 +2,4 @@ package pruningmanager
 
 import "github.com/kaspanet/kaspad/infrastructure/logger"
 
-var log, _ = logger.Get(logger.SubsystemTags.PRNM)
+var log = logger.RegisterSubSystem("PRNM")

@@ -5,5 +5,5 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.NTAR)
+var log = logger.RegisterSubSystem("NTAR")
 var spawn = panics.GoroutineWrapperFunc(log)

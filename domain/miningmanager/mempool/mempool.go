@@ -20,7 +20,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -229,9 +228,7 @@ func (mp *mempool) limitNumOrphans() error {
 
 		numOrphans := len(mp.orphans)
 		if numExpired := origNumOrphans - numOrphans; numExpired > 0 {
-			log.Debugf("Expired %d %s (remaining: %d)", numExpired,
-				logger.PickNoun(uint64(numExpired), "orphan", "orphans"),
-				numOrphans)
+			log.Debugf("Expired %d orphans (remaining: %d)", numExpired, numOrphans)
 		}
 	}
 
