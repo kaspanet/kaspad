@@ -21,7 +21,7 @@ func (c *GRPCClient) PostJSON(requestJSON string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	responseBytes, err := protojson.Marshal(response)
+	responseBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(response)
 	if err != nil {
 		return "", errors.Wrapf(err, "error parsing the response from the RPC server")
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/pkg/errors"
 )
 
 var bucket = database.MakeBucket([]byte("blocks"))
@@ -214,18 +215,28 @@ func (bs *blockStore) serializeBlockCount(count uint64) ([]byte, error) {
 }
 
 type allBlockHashesIterator struct {
-	cursor model.DBCursor
+	cursor   model.DBCursor
+	isClosed bool
 }
 
 func (a allBlockHashesIterator) First() bool {
+	if a.isClosed {
+		panic("Tried using a closed AllBlockHashesIterator")
+	}
 	return a.cursor.First()
 }
 
 func (a allBlockHashesIterator) Next() bool {
+	if a.isClosed {
+		panic("Tried using a closed AllBlockHashesIterator")
+	}
 	return a.cursor.Next()
 }
 
 func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
+	if a.isClosed {
+		return nil, errors.New("Tried using a closed AllBlockHashesIterator")
+	}
 	key, err := a.cursor.Key()
 	if err != nil {
 		return nil, err
@@ -233,6 +244,19 @@ func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
 
 	blockHashBytes := key.Suffix()
 	return externalapi.NewDomainHashFromByteSlice(blockHashBytes)
+}
+
+func (a allBlockHashesIterator) Close() error {
+	if a.isClosed {
+		return errors.New("Tried using a closed AllBlockHashesIterator")
+	}
+	a.isClosed = true
+	err := a.cursor.Close()
+	if err != nil {
+		return err
+	}
+	a.cursor = nil
+	return nil
 }
 
 func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
