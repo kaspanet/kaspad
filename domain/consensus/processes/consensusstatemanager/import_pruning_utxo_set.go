@@ -88,6 +88,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	if err != nil {
 		return err
 	}
+	defer importedPruningPointUTXOIterator.Close()
 
 	// Clone the pruningPoint block here because validateBlockTransactionsAgainstPastUTXO
 	// assumes that the block UTXOEntries are pre-filled during further validations
@@ -176,6 +177,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	if err != nil {
 		return err
 	}
+	defer pruningPointUTXOSetIterator.Close()
 
 	log.Debugf("Importing the virtual UTXO set")
 	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(csm.databaseContext, pruningPointUTXOSetIterator)

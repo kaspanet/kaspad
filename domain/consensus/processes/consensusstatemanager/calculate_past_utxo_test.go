@@ -86,6 +86,7 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 	if err != nil {
 		t.Fatalf("Error restoring past UTXO of block %s: %+v", blockName, err)
 	}
+	defer utxoSetIterator.Close()
 
 	// Build a Multiset
 	ms := multiset.New()

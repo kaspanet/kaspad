@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 var importedPruningPointUTXOsBucket = database.MakeBucket([]byte("imported-pruning-point-utxos"))
@@ -16,6 +17,7 @@ func (ps *pruningStore) ClearImportedPruningPointUTXOs(dbContext model.DBWriter)
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
 
 	for ok := cursor.First(); ok; ok = cursor.Next() {
 		key, err := cursor.Key()
@@ -60,7 +62,8 @@ func (ps *pruningStore) ImportedPruningPointUTXOIterator(dbContext model.DBReade
 }
 
 type utxoSetIterator struct {
-	cursor model.DBCursor
+	cursor   model.DBCursor
+	isClosed bool
 }
 
 func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) externalapi.ReadOnlyUTXOSetIterator {
@@ -68,14 +71,23 @@ func (ps *pruningStore) newCursorUTXOSetIterator(cursor model.DBCursor) external
 }
 
 func (u *utxoSetIterator) First() bool {
+	if u.isClosed {
+		panic("Tried using a closed utxoSetIterator")
+	}
 	return u.cursor.First()
 }
 
 func (u *utxoSetIterator) Next() bool {
+	if u.isClosed {
+		panic("Tried using a closed utxoSetIterator")
+	}
 	return u.cursor.Next()
 }
 
 func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry, err error) {
+	if u.isClosed {
+		return nil, nil, errors.New("Tried using a closed utxoSetIterator")
+	}
 	key, err := u.cursor.Key()
 	if err != nil {
 		panic(err)
@@ -97,6 +109,19 @@ func (u *utxoSetIterator) Get() (outpoint *externalapi.DomainOutpoint, utxoEntry
 	}
 
 	return outpoint, utxoEntry, nil
+}
+
+func (u *utxoSetIterator) Close() error {
+	if u.isClosed {
+		return errors.New("Tried using a closed utxoSetIterator")
+	}
+	u.isClosed = true
+	err := u.cursor.Close()
+	if err != nil {
+		return err
+	}
+	u.cursor = nil
+	return nil
 }
 
 func (ps *pruningStore) importedPruningPointUTXOKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
@@ -175,6 +200,7 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 	if err != nil {
 		return err
 	}
+	defer deleteCursor.Close()
 	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
 		key, err := deleteCursor.Key()
 		if err != nil {
@@ -191,6 +217,7 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 	if err != nil {
 		return err
 	}
+	defer insertCursor.Close()
 	for ok := insertCursor.First(); ok; ok = insertCursor.Next() {
 		importedPruningPointUTXOSetKey, err := insertCursor.Key()
 		if err != nil {
