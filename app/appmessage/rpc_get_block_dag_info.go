@@ -27,6 +27,7 @@ type GetBlockDAGInfoResponseMessage struct {
 	VirtualParentHashes []string
 	Difficulty          float64
 	PastMedianTime      int64
+	PruningPointHash    string
 
 	Error *RPCError
 }
