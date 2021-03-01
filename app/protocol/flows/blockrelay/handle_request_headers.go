@@ -17,7 +17,7 @@ type RequestIBDBlocksContext interface {
 	Domain() domain.Domain
 }
 
-type handleRequestBlocksFlow struct {
+type handleRequestHeadersFlow struct {
 	RequestIBDBlocksContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peer.Peer
@@ -27,7 +27,7 @@ type handleRequestBlocksFlow struct {
 func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peer.Peer) error {
 
-	flow := &handleRequestBlocksFlow{
+	flow := &handleRequestHeadersFlow{
 		RequestIBDBlocksContext: context,
 		incomingRoute:           incomingRoute,
 		outgoingRoute:           outgoingRoute,
@@ -36,7 +36,7 @@ func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router
 	return flow.start()
 }
 
-func (flow *handleRequestBlocksFlow) start() error {
+func (flow *handleRequestHeadersFlow) start() error {
 	for {
 		lowHash, highHash, err := receiveRequestHeaders(flow.incomingRoute)
 		if err != nil {
