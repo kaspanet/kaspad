@@ -1,28 +1,25 @@
 package rpccontext
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/difficulty"
+
 	"encoding/hex"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"strconv"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/pkg/errors"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 // ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.
@@ -221,4 +218,113 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 	}
 
 	return outputs
+}
+
+// ConvertTransactionVerboseDataToDomainTransaction converts a appmessage.TransactionVerboseData to externalapi.DomainTransaction
+func ConvertTransactionVerboseDataToDomainTransaction(transactionVerbose *appmessage.TransactionVerboseData) (*externalapi.DomainTransaction, error) {
+	inputs := make([]*externalapi.DomainTransactionInput, len(transactionVerbose.TransactionVerboseInputs))
+	for inputIndex, input := range transactionVerbose.TransactionVerboseInputs {
+		previousTXID, err := externalapi.NewDomainTransactionIDFromString(input.TxID)
+		if err != nil {
+			return nil, err
+		}
+		scriptSig, err := hex.DecodeString(input.ScriptSig.Hex)
+		if err != nil {
+			return nil, err
+		}
+		inputs[inputIndex] = &externalapi.DomainTransactionInput{
+			PreviousOutpoint: externalapi.DomainOutpoint{
+				TransactionID: *previousTXID,
+				Index:         input.OutputIndex,
+			},
+			SignatureScript: scriptSig,
+			Sequence:        input.Sequence,
+		}
+	}
+	outputs := make([]*externalapi.DomainTransactionOutput, len(transactionVerbose.TransactionVerboseOutputs))
+	for outputIndex, output := range transactionVerbose.TransactionVerboseOutputs {
+		scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
+		if err != nil {
+			return nil, err
+		}
+		outputs[outputIndex] = &externalapi.DomainTransactionOutput{
+			Value: output.Value,
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  scriptPubKey,
+				Version: 0,
+			},
+		}
+	}
+	payload, err := hex.DecodeString(transactionVerbose.Payload)
+	if err != nil {
+		return nil, err
+	}
+	subnetworkID, err := subnetworks.FromString(transactionVerbose.SubnetworkID)
+	if err != nil {
+		return nil, err
+	}
+	payloadHash, err := externalapi.NewDomainHashFromString(transactionVerbose.PayloadHash)
+	if err != nil {
+		return nil, err
+	}
+	return &externalapi.DomainTransaction{
+		Version:      transactionVerbose.Version,
+		Inputs:       inputs,
+		Outputs:      outputs,
+		LockTime:     transactionVerbose.LockTime,
+		SubnetworkID: *subnetworkID,
+		Gas:          transactionVerbose.Gas,
+		PayloadHash:  *payloadHash,
+		Payload:      payload,
+	}, nil
+}
+
+// ConvertBlockVerboseDataToDomainBlock converts a appmessage.BlockVerboseData to externalapi.DomainBlock
+func ConvertBlockVerboseDataToDomainBlock(blockVerbose *appmessage.BlockVerboseData) (*externalapi.DomainBlock, error) {
+	var err error
+	parents := make([]*externalapi.DomainHash, len(blockVerbose.ParentHashes))
+	for parentIndex, parent := range blockVerbose.ParentHashes {
+		parents[parentIndex], err = externalapi.NewDomainHashFromString(parent)
+		if err != nil {
+			return nil, err
+		}
+	}
+	hashMerkleRoot, err := externalapi.NewDomainHashFromString(blockVerbose.HashMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	acceptedIDMerkleRoot, err := externalapi.NewDomainHashFromString(blockVerbose.AcceptedIDMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment, err := externalapi.NewDomainHashFromString(blockVerbose.UTXOCommitment)
+	if err != nil {
+		return nil, err
+	}
+	bits, err := strconv.ParseUint(blockVerbose.Bits, 16, 32)
+	if err != nil {
+		return nil, err
+	}
+	transactions := make([]*externalapi.DomainTransaction, len(blockVerbose.TransactionVerboseData))
+	for txIndex, verboseTransaction := range blockVerbose.TransactionVerboseData {
+		transaction, err := ConvertTransactionVerboseDataToDomainTransaction(verboseTransaction)
+		if err != nil {
+			return nil, err
+		}
+		transactions[txIndex] = transaction
+	}
+
+	return &externalapi.DomainBlock{
+		Header: blockheader.NewImmutableBlockHeader(
+			blockVerbose.Version,
+			parents,
+			hashMerkleRoot,
+			acceptedIDMerkleRoot,
+			utxoCommitment,
+			blockVerbose.Time,
+			uint32(bits),
+			blockVerbose.Nonce),
+		Transactions: transactions,
+	}, nil
+
 }
