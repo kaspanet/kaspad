@@ -4,4 +4,4 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.REAC)
+var log = logger.RegisterSubSystem("REAC")

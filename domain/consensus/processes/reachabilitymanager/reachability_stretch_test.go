@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 	"math"
 	"math/rand"
@@ -16,14 +15,10 @@ import (
 )
 
 // Test configuration
-const (
-	numBlocksExponent = 12
-	logLevel          = "warn"
-)
+const numBlocksExponent = 12
 
 func initializeTest(t *testing.T, testName string) (tc testapi.TestConsensus, teardown func(keepDataDir bool)) {
 	t.Parallel()
-	logger.SetLogLevels(logLevel)
 	params := dagconfig.SimnetParams
 	params.SkipProofOfWork = true
 	tc, teardown, err := consensus.NewFactory().NewTestConsensus(&params, false, testName)
