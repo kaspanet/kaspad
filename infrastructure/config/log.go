@@ -8,4 +8,4 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.CNFG)
+var log = logger.RegisterSubSystem("CNFG")

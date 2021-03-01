@@ -9,5 +9,5 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.TXMP)
+var log = logger.RegisterSubSystem("TXMP")
 var spawn = panics.GoroutineWrapperFunc(log)
