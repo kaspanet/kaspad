@@ -73,7 +73,7 @@ func (c *gRPCConnection) Start(router *router.Router) {
 					log.Errorf("status error from connectionLoops for %s: %s", c.address, err)
 				}
 			} else {
-				log.Errorf("unknown error from connectionLoops for %s: %s", c.address, err)
+				log.Errorf("unknown error from connectionLoops for %s: %+v", c.address, err)
 			}
 		}
 	})
