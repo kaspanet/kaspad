@@ -249,6 +249,7 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalap
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close()
 	utxoOutpointEntryPairs := make(UTXOOutpointEntryPairs)
 	for cursor.Next() {
 		key, err := cursor.Key()
@@ -297,6 +298,7 @@ func (uis *utxoIndexStore) deleteAll() error {
 	if err != nil {
 		return err
 	}
+	defer cursor.Close()
 	for cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {

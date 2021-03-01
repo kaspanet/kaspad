@@ -55,6 +55,7 @@ type BlockVerboseData struct {
 	Bits                   string
 	Difficulty             float64
 	ParentHashes           []string
+	ChildrenHashes         []string
 	SelectedParentHash     string
 	BlueScore              uint64
 	IsHeaderOnly           bool

@@ -129,6 +129,10 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
+}
+
 func (f *fakeRelayInvsContext) OnPruningPointUTXOSetOverride() error {
 	return nil
 }

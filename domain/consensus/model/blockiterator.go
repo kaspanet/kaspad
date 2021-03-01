@@ -7,4 +7,5 @@ type BlockIterator interface {
 	First() bool
 	Next() bool
 	Get() (*externalapi.DomainHash, error)
+	Close() error
 }

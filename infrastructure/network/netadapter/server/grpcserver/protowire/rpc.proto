@@ -261,6 +261,7 @@ message BlockVerboseData{
   string bits = 10;
   double difficulty = 11;
   repeated string parentHashes = 12;
+  repeated string childrenHashes = 17;
   string selectedParentHash = 13;
   repeated string transactionIDs = 14;
   bool isHeaderOnly = 15;

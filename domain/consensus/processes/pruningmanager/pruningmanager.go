@@ -133,6 +133,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	if err != nil {
 		return err
 	}
+	defer iterator.Close()
 
 	// Finding the next pruning point candidate: look for the latest
 	// selected child of the current candidate that is in depth of at
@@ -425,6 +426,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *extern
 	if err != nil {
 		return err
 	}
+	defer utxoSetIterator.Close()
 
 	utxoSetMultiset := multiset.New()
 	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
@@ -544,6 +546,7 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	if err != nil {
 		return err
 	}
+	defer utxoSetIterator.Close()
 
 	log.Debugf("Updating the pruning point UTXO set")
 	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
@@ -563,6 +566,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.Doma
 	if err != nil {
 		return err
 	}
+	defer iterator.Close()
 
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		blockHash, err := iterator.Get()
