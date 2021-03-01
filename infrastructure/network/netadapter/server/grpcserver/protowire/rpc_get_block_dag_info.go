@@ -26,6 +26,7 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) toAppMessage() (appmessage.Messa
 		VirtualParentHashes: x.GetBlockDagInfoResponse.VirtualParentHashes,
 		Difficulty:          x.GetBlockDagInfoResponse.Difficulty,
 		PastMedianTime:      x.GetBlockDagInfoResponse.PastMedianTime,
+		PruningPointHash:    x.GetBlockDagInfoResponse.PruningPointHash,
 		Error:               err,
 	}, nil
 }
@@ -43,6 +44,7 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) fromAppMessage(message *appmessa
 		VirtualParentHashes: message.VirtualParentHashes,
 		Difficulty:          message.Difficulty,
 		PastMedianTime:      message.PastMedianTime,
+		PruningPointHash:    message.PruningPointHash,
 		Error:               err,
 	}
 	return nil
