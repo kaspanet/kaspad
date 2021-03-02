@@ -2,42 +2,41 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func (x *KaspadMessage_PruningPointUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_PruningPointUtxoSetChunk is nil")
+	}
 	outpointAndUTXOEntryPairs := make([]*appmessage.OutpointAndUTXOEntryPair, len(x.PruningPointUtxoSetChunk.OutpointAndUtxoEntryPairs))
 	for i, outpointAndUTXOEntryPair := range x.PruningPointUtxoSetChunk.OutpointAndUtxoEntryPairs {
-		transactionID, err := outpointAndUTXOEntryPair.Outpoint.TransactionId.toDomain()
+		outpointEntryPairAppMessage, err := outpointAndUTXOEntryPair.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-		outpoint := &appmessage.Outpoint{
-			TxID:  *transactionID,
-			Index: outpointAndUTXOEntryPair.Outpoint.Index,
-		}
-		if outpointAndUTXOEntryPair.UtxoEntry.ScriptPublicKey.Version > math.MaxUint16 {
-			return nil, errors.Errorf("ScriptPublicKey version is bigger then uint16.")
-		}
-		scriptPublicKey := &externalapi.ScriptPublicKey{
-			Script:  outpointAndUTXOEntryPair.UtxoEntry.ScriptPublicKey.Script,
-			Version: uint16(outpointAndUTXOEntryPair.UtxoEntry.ScriptPublicKey.Version),
-		}
-		utxoEntry := &appmessage.UTXOEntry{
-			Amount:          outpointAndUTXOEntryPair.UtxoEntry.Amount,
-			ScriptPublicKey: scriptPublicKey,
-			BlockBlueScore:  outpointAndUTXOEntryPair.UtxoEntry.BlockBlueScore,
-			IsCoinbase:      outpointAndUTXOEntryPair.UtxoEntry.IsCoinbase,
-		}
-		outpointAndUTXOEntryPairs[i] = &appmessage.OutpointAndUTXOEntryPair{
-			Outpoint:  outpoint,
-			UTXOEntry: utxoEntry,
-		}
+		outpointAndUTXOEntryPairs[i] = outpointEntryPairAppMessage
 	}
 	return &appmessage.MsgPruningPointUTXOSetChunk{
 		OutpointAndUTXOEntryPairs: outpointAndUTXOEntryPairs,
+	}, nil
+}
+
+func (x *OutpointAndUtxoEntryPair) toAppMessage() (*appmessage.OutpointAndUTXOEntryPair, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "OutpointAndUtxoEntryPair is nil")
+	}
+	outpoint, err := x.Outpoint.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	utxoEntry, err := x.UtxoEntry.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.OutpointAndUTXOEntryPair{
+		Outpoint:  outpoint,
+		UTXOEntry: utxoEntry,
 	}, nil
 }
 

@@ -1,6 +1,9 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_NotifyBlockAddedRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.NotifyBlockAddedRequestMessage{}, nil
@@ -12,13 +15,10 @@ func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(_ *appmessage.Not
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.NotifyBlockAddedResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.NotifyBlockAddedResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyBlockAddedResponse is nil")
 	}
-	return &appmessage.NotifyBlockAddedResponseMessage{
-		Error: err,
-	}, nil
+	return x.NotifyBlockAddedResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmessage.NotifyBlockAddedResponseMessage) error {
@@ -32,19 +32,25 @@ func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmess
 	return nil
 }
 
-func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Message, error) {
-	block, err := x.BlockAddedNotification.Block.toAppMessage()
-	if err != nil {
+func (x *NotifyBlockAddedResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyBlockAddedResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
-	blockVerboseData, err := x.BlockAddedNotification.BlockVerboseData.toAppMessage()
-	if err != nil {
-		return nil, err
-	}
-	return &appmessage.BlockAddedNotificationMessage{
-		Block:            block,
-		BlockVerboseData: blockVerboseData,
+	return &appmessage.NotifyBlockAddedResponseMessage{
+		Error: rpcErr,
 	}, nil
+}
+
+func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockAddedNotification is nil")
+	}
+	return x.BlockAddedNotification.toAppMessage()
 }
 
 func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessage.BlockAddedNotificationMessage) error {
@@ -63,4 +69,22 @@ func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessag
 		BlockVerboseData: blockVerboseData,
 	}
 	return nil
+}
+
+func (x *BlockAddedNotificationMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "BlockAddedNotificationMessage is nil")
+	}
+	block, err := x.Block.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	blockVerboseData, err := x.BlockVerboseData.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.BlockAddedNotificationMessage{
+		Block:            block,
+		BlockVerboseData: blockVerboseData,
+	}, nil
 }
