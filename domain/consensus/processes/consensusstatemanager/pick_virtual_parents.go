@@ -70,19 +70,19 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			log.Tracef("Added block %s to the virtual parents set", candidate)
 			continue
 		}
-		// Remove all candidates in the future of newCandidate (https://github.com/golang/go/wiki/SliceTricks#filter-in-place)
-		i := 0
-		for _, candidate := range candidates {
-			isAncestor, err := csm.dagTopologyManager.IsAncestorOf(newCandidate, candidate)
-			if err != nil {
-				return nil, err
-			}
-			if !isAncestor {
-				candidates[i] = candidate
-				i++
-			}
+		// If we already have a candidate in the past of newCandidate then skip.
+		isInFutureOfCandidates, err := csm.dagTopologyManager.IsAnyAncestorOf(candidates, newCandidate)
+		if err != nil {
+			return nil, err
 		}
-		candidates = candidates[:i]
+		if isInFutureOfCandidates {
+			continue
+		}
+		// Remove all candidates in the future of newCandidate
+		candidates, err = csm.removeHashesInFutureOf(candidates, newCandidate)
+		if err != nil {
+			return nil, err
+		}
 		candidates = append(candidates, newCandidate)
 		log.Debugf("Cannot add block %s, instead added new candidate: %s", candidate, newCandidate)
 	}
@@ -106,6 +106,22 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	}
 	log.Tracef("The virtual parents resolved to be: %s", selectedVirtualParents)
 	return selectedVirtualParents, nil
+}
+
+func (csm *consensusStateManager) removeHashesInFutureOf(hashes []*externalapi.DomainHash, ancestor *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	// Source: https://github.com/golang/go/wiki/SliceTricks#filter-in-place
+	i := 0
+	for _, hash := range hashes {
+		isInFutureOfAncestor, err := csm.dagTopologyManager.IsAncestorOf(ancestor, hash)
+		if err != nil {
+			return nil, err
+		}
+		if !isInFutureOfAncestor {
+			hashes[i] = hash
+			i++
+		}
+	}
+	return hashes[:i], nil
 }
 
 func (csm *consensusStateManager) selectVirtualSelectedParent(
