@@ -2,10 +2,21 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
-	hashes, err := protoHashesToDomain(x.RequestIBDBlocks.Hashes)
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDBlocks is nil")
+	}
+	return x.RequestIBDBlocks.toAppMessage()
+}
+
+func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RequestIBDBlocksMessage is nil")
+	}
+	hashes, err := protoHashesToDomain(x.Hashes)
 	if err != nil {
 		return nil, err
 	}

@@ -2,12 +2,14 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.GetMempoolEntryRequestMessage{
-		TxID: x.GetMempoolEntryRequest.TxId,
-	}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntryRequest is nil")
+	}
+	return x.GetMempoolEntryRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessage.GetMempoolEntryRequestMessage) error {
@@ -17,23 +19,20 @@ func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessag
 	return nil
 }
 
-func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
-	var rpcErr *appmessage.RPCError
-	if x.GetMempoolEntryResponse.Error != nil {
-		rpcErr = &appmessage.RPCError{Message: x.GetMempoolEntryResponse.Error.Message}
+func (x *GetMempoolEntryRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetMempoolEntryRequestMessage is nil")
 	}
-	var entry *appmessage.MempoolEntry
-	if x.GetMempoolEntryResponse.Entry != nil {
-		var err error
-		entry, err = x.GetMempoolEntryResponse.Entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &appmessage.GetMempoolEntryResponseMessage{
-		Entry: entry,
-		Error: rpcErr,
+	return &appmessage.GetMempoolEntryRequestMessage{
+		TxID: x.TxId,
 	}, nil
+}
+
+func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntryResponse is nil")
+	}
+	return x.GetMempoolEntryResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
@@ -55,14 +54,39 @@ func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessa
 	return nil
 }
 
+func (x *GetMempoolEntryResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetMempoolEntryResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	entry, err := x.Entry.toAppMessage()
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	if rpcErr != nil && entry != nil {
+		return nil, errors.New("GetMempoolEntryResponseMessage contains both an error and a response")
+	}
+
+	return &appmessage.GetMempoolEntryResponseMessage{
+		Entry: entry,
+		Error: rpcErr,
+	}, nil
+}
+
 func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
-	var txVerboseData *appmessage.TransactionVerboseData
-	if x.TransactionVerboseData != nil {
-		var err error
-		txVerboseData, err = x.TransactionVerboseData.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "MempoolEntry is nil")
+	}
+	txVerboseData, err := x.TransactionVerboseData.toAppMessage()
+	// TransactionVerboseData is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
 	}
 	return &appmessage.MempoolEntry{
 		Fee:                    x.Fee,

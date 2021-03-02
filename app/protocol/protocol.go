@@ -59,8 +59,20 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
+
 		if err != nil {
-			m.handleError(err, netConnection, router.OutgoingRoute())
+			// non-blocking read from channel
+			select {
+			case innerError := <-errChan:
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					m.handleError(innerError, netConnection, router.OutgoingRoute())
+				} else {
+					log.Errorf("Peer %s sent invalid message: %s", netConnection, innerError)
+					m.handleError(err, netConnection, router.OutgoingRoute())
+				}
+			default:
+				m.handleError(err, netConnection, router.OutgoingRoute())
+			}
 			return
 		}
 		defer m.context.RemoveFromPeers(peer)

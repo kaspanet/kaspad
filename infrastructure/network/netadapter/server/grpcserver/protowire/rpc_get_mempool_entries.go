@@ -1,8 +1,14 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_GetMempoolEntriesRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
+	}
 	return &appmessage.GetMempoolEntriesRequestMessage{}, nil
 }
 
@@ -12,22 +18,10 @@ func (x *KaspadMessage_GetMempoolEntriesRequest) fromAppMessage(_ *appmessage.Ge
 }
 
 func (x *KaspadMessage_GetMempoolEntriesResponse) toAppMessage() (appmessage.Message, error) {
-	var rpcErr *appmessage.RPCError
-	if x.GetMempoolEntriesResponse.Error != nil {
-		rpcErr = &appmessage.RPCError{Message: x.GetMempoolEntriesResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesResponse is nil")
 	}
-	entries := make([]*appmessage.MempoolEntry, len(x.GetMempoolEntriesResponse.Entries))
-	for i, entry := range x.GetMempoolEntriesResponse.Entries {
-		var err error
-		entries[i], err = entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &appmessage.GetMempoolEntriesResponseMessage{
-		Entries: entries,
-		Error:   rpcErr,
-	}, nil
+	return x.GetMempoolEntriesResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetMempoolEntriesResponse) fromAppMessage(message *appmessage.GetMempoolEntriesResponseMessage) error {
@@ -48,4 +42,31 @@ func (x *KaspadMessage_GetMempoolEntriesResponse) fromAppMessage(message *appmes
 		Error:   rpcErr,
 	}
 	return nil
+}
+
+func (x *GetMempoolEntriesResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetMempoolEntriesResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	if rpcErr != nil && len(x.Entries) != 0 {
+		return nil, errors.New("GetMempoolEntriesResponseMessage contains both an error and a response")
+	}
+	entries := make([]*appmessage.MempoolEntry, len(x.Entries))
+	for i, entry := range x.Entries {
+		entries[i], err = entry.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &appmessage.GetMempoolEntriesResponseMessage{
+		Entries: entries,
+		Error:   rpcErr,
+	}, nil
 }

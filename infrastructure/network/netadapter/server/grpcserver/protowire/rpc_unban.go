@@ -2,12 +2,14 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_UnbanRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.UnbanRequestMessage{
-		IP: x.UnbanRequest.Ip,
-	}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_UnbanRequest is nil")
+	}
+	return x.UnbanRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_UnbanRequest) fromAppMessage(message *appmessage.UnbanRequestMessage) error {
@@ -15,14 +17,20 @@ func (x *KaspadMessage_UnbanRequest) fromAppMessage(message *appmessage.UnbanReq
 	return nil
 }
 
-func (x *KaspadMessage_UnbanResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.UnbanResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.UnbanResponse.Error.Message}
+func (x *UnbanRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "UnbanRequestMessage is nil")
 	}
-	return &appmessage.UnbanResponseMessage{
-		Error: err,
+	return &appmessage.UnbanRequestMessage{
+		IP: x.Ip,
 	}, nil
+}
+
+func (x *KaspadMessage_UnbanResponse) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_UnbanResponse is nil")
+	}
+	return x.UnbanResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_UnbanResponse) fromAppMessage(message *appmessage.UnbanResponseMessage) error {
@@ -34,4 +42,18 @@ func (x *KaspadMessage_UnbanResponse) fromAppMessage(message *appmessage.UnbanRe
 		Error: err,
 	}
 	return nil
+}
+
+func (x *UnbanResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "UnbanResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.UnbanResponseMessage{
+		Error: rpcErr,
+	}, nil
 }

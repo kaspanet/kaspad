@@ -1,8 +1,14 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest is nil")
+	}
 	return &appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage{}, nil
 }
 
@@ -12,13 +18,10 @@ func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest) fromAppMessage(
 }
 
 func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.NotifyPruningPointUTXOSetOverrideResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.NotifyPruningPointUTXOSetOverrideResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse is nil")
 	}
-	return &appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage{
-		Error: err,
-	}, nil
+	return x.NotifyPruningPointUTXOSetOverrideResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) fromAppMessage(message *appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage) error {
@@ -32,7 +35,24 @@ func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) fromAppMessage
 	return nil
 }
 
+func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyPruningPointUTXOSetOverrideResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage{
+		Error: rpcErr,
+	}, nil
+}
+
 func (x *KaspadMessage_PruningPointUTXOSetOverrideNotification) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_PruningPointUTXOSetOverrideNotification is nil")
+	}
 	return &appmessage.PruningPointUTXOSetOverrideNotificationMessage{}, nil
 }
 
@@ -42,6 +62,9 @@ func (x *KaspadMessage_PruningPointUTXOSetOverrideNotification) fromAppMessage(_
 }
 
 func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest is nil")
+	}
 	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}, nil
 }
 
@@ -51,13 +74,10 @@ func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest) fromAppM
 }
 
 func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.StopNotifyingPruningPointUTXOSetOverrideResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.StopNotifyingPruningPointUTXOSetOverrideResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse is nil")
 	}
-	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
-		Error: err,
-	}, nil
+	return x.StopNotifyingPruningPointUTXOSetOverrideResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) fromAppMessage(
@@ -71,4 +91,18 @@ func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) fromApp
 		Error: err,
 	}
 	return nil
+}
+
+func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "StopNotifyingPruningPointUTXOSetOverrideResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
+		Error: rpcErr,
+	}, nil
 }

@@ -1,8 +1,14 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_IbdBlock) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_IbdBlock is nil")
+	}
 	msgBlock, err := x.IbdBlock.toAppMessage()
 	if err != nil {
 		return nil, err
