@@ -8,6 +8,9 @@ import (
 )
 
 func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "BlockHeaderMessage is nil")
+	}
 	if len(x.ParentHashes) > appmessage.MaxBlockParents {
 		return nil, errors.Errorf("block header has %d parents, but the maximum allowed amount "+
 			"is %d", len(x.ParentHashes), appmessage.MaxBlockParents)
@@ -17,17 +20,14 @@ func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) 
 	if err != nil {
 		return nil, err
 	}
-
 	hashMerkleRoot, err := x.HashMerkleRoot.toDomain()
 	if err != nil {
 		return nil, err
 	}
-
 	acceptedIDMerkleRoot, err := x.AcceptedIdMerkleRoot.toDomain()
 	if err != nil {
 		return nil, err
 	}
-
 	utxoCommitment, err := x.UtxoCommitment.toDomain()
 	if err != nil {
 		return nil, err

@@ -15,6 +15,9 @@ import (
 var errorNil = errors.New("a required field is nil")
 
 func (x *Hash) toDomain() (*externalapi.DomainHash, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "Hash is nil")
+	}
 	return externalapi.NewDomainHashFromByteSlice(x.Bytes)
 }
 
@@ -45,6 +48,9 @@ func domainHashesToProto(hashes []*externalapi.DomainHash) []*Hash {
 }
 
 func (x *TransactionId) toDomain() (*externalapi.DomainTransactionID, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "TransactionId is nil")
+	}
 	return transactionid.FromBytes(x.Bytes)
 }
 
@@ -76,7 +82,7 @@ func wireTransactionIDsToProto(ids []*externalapi.DomainTransactionID) []*Transa
 
 func (x *SubnetworkId) toDomain() (*externalapi.DomainSubnetworkID, error) {
 	if x == nil {
-		return nil, nil
+		return nil, errors.Wrap(errorNil, "SubnetworkId is nil")
 	}
 	return subnetworks.FromBytes(x.Bytes)
 }
@@ -91,6 +97,9 @@ func domainSubnetworkIDToProto(id *externalapi.DomainSubnetworkID) *SubnetworkId
 }
 
 func (x *NetAddress) toAppMessage() (*appmessage.NetAddress, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "NetAddress is nil")
+	}
 	if x.Port > math.MaxUint16 {
 		return nil, errors.Errorf("port number is larger than %d", math.MaxUint16)
 	}
@@ -109,4 +118,47 @@ func appMessageNetAddressToProto(address *appmessage.NetAddress) *NetAddress {
 		Ip:        address.IP,
 		Port:      uint32(address.Port),
 	}
+}
+
+func (x *Outpoint) toAppMessage() (*appmessage.Outpoint, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "Outpoint is nil")
+	}
+	transactionID, err := x.TransactionId.toDomain()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.Outpoint{
+		TxID:  *transactionID,
+		Index: x.Index,
+	}, nil
+}
+
+func (x *UtxoEntry) toAppMessage() (*appmessage.UTXOEntry, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "UtxoEntry is nil")
+	}
+	scriptPublicKey, err := x.ScriptPublicKey.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.UTXOEntry{
+		Amount:          x.Amount,
+		ScriptPublicKey: scriptPublicKey,
+		BlockBlueScore:  x.BlockBlueScore,
+		IsCoinbase:      x.IsCoinbase,
+	}, nil
+}
+
+func (x *ScriptPublicKey) toAppMessage() (*externalapi.ScriptPublicKey, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "ScriptPublicKey is nil")
+	}
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("ScriptPublicKey version is bigger then uint16.")
+	}
+	return &externalapi.ScriptPublicKey{
+		Script:  x.Script,
+		Version: uint16(x.Version),
+	}, nil
 }

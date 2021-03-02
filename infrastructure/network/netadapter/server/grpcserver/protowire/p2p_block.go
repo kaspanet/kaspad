@@ -6,6 +6,9 @@ import (
 )
 
 func (x *KaspadMessage_Block) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "KaspadMessage_Block is nil")
+	}
 	return x.Block.toAppMessage()
 }
 
@@ -15,19 +18,12 @@ func (x *KaspadMessage_Block) fromAppMessage(msgBlock *appmessage.MsgBlock) erro
 }
 
 func (x *BlockMessage) toAppMessage() (*appmessage.MsgBlock, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "BlockMessage is nil")
+	}
 	if len(x.Transactions) > appmessage.MaxTxPerBlock {
 		return nil, errors.Errorf("too many transactions to fit into a block "+
 			"[count %d, max %d]", len(x.Transactions), appmessage.MaxTxPerBlock)
-	}
-
-	protoBlockHeader := x.Header
-	if protoBlockHeader == nil {
-		return nil, errors.New("block header field cannot be nil")
-	}
-
-	if len(protoBlockHeader.ParentHashes) > appmessage.MaxBlockParents {
-		return nil, errors.Errorf("block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(protoBlockHeader.ParentHashes), appmessage.MaxBlockParents)
 	}
 
 	header, err := x.Header.toAppMessage()
