@@ -193,14 +193,24 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 	}
 }
 
-func (csm *consensusStateManager) mergeSetIncrease(
-	candidate *externalapi.DomainHash, selectedVirtualParents []*externalapi.DomainHash, mergeSetSize uint64) (canBeParent bool, newCandidate *externalapi.DomainHash, mergeSetIncrease uint64, err error) {
-
+// mergeSetIncrease returns different things depending on the result:
+// If the candidate can be a virtual parent then canBeParent=true and mergeSetIncrease=The increase in merge set size
+// If the candidate can't be a virtual parent, then canBeParent=false and newCandidate is a new proposed candidate in the past of candidate.
+func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.DomainHash, selectedVirtualParents []*externalapi.DomainHash, mergeSetSize uint64,
+) (canBeParent bool, newCandidate *externalapi.DomainHash, mergeSetIncrease uint64, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "mergeSetIncrease")
 	defer onEnd()
 
 	visited := hashset.New()
-	queue := []*externalapi.DomainHash{candidate}
+	// Start with the parents in the queue as we already know the candidate isn't an ancestor of the parents.
+	parents, err := csm.dagTopologyManager.Parents(candidate)
+	if err != nil {
+		return false, nil, 0, err
+	}
+	for _, parent := range parents {
+		visited.Add(parent)
+	}
+	queue := parents
 	mergeSetIncrease = uint64(1) // starts with 1 for the candidate itself
 
 	var current *externalapi.DomainHash
