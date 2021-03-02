@@ -1,14 +1,15 @@
 package grpcserver
 
 import (
+	"net"
+	"sync"
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"net"
-	"sync"
-	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
 	"google.golang.org/grpc"
@@ -73,7 +74,7 @@ func (c *gRPCConnection) Start(router *router.Router) {
 					log.Errorf("status error from connectionLoops for %s: %s", c.address, err)
 				}
 			} else {
-				log.Errorf("unknown error from connectionLoops for %s: %+v", c.address, err)
+				log.Errorf("unknown error from connectionLoops for %s: %s", c.address, err)
 			}
 		}
 	})
