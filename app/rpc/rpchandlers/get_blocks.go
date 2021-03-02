@@ -37,6 +37,17 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 				Error: appmessage.RPCErrorf("Could not decode lowHash %s: %s", getBlocksRequest.LowHash, err),
 			}, nil
 		}
+
+		blockInfo, err := context.Domain.Consensus().GetBlockInfo(lowHash)
+		if err != nil {
+			return nil, err
+		}
+
+		if !blockInfo.Exists {
+			return &appmessage.GetBlocksResponseMessage{
+				Error: appmessage.RPCErrorf("Could not find lowHash %s", getBlocksRequest.LowHash),
+			}, nil
+		}
 	}
 
 	// Get hashes between lowHash and virtualSelectedParent
