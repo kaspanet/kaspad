@@ -87,6 +87,22 @@ func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash
 	return false, nil
 }
 
+// IsAnyAncestorOf returns true if at least one of `potentialAncestors` is an ancestor of `blockHash`
+func (dtm *dagTopologyManager) IsAnyAncestorOf(potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error) {
+	for _, potentialAncestor := range potentialAncestors {
+		isAncestorOf, err := dtm.IsAncestorOf(potentialAncestor, blockHash)
+		if err != nil {
+			return false, err
+		}
+
+		if isAncestorOf {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
