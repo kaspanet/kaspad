@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var errorNil = errors.New("a required field is nil")
+
 func (x *Hash) toDomain() (*externalapi.DomainHash, error) {
 	return externalapi.NewDomainHashFromByteSlice(x.Bytes)
 }
