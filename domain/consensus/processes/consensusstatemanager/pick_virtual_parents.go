@@ -46,6 +46,10 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			end--
 		}
 	}
+	// Limit to 30 candidates, that way we don't go over thousands of tips when the network isn't healthy.
+	if len(candidates) > int(csm.maxBlockParents)*3 {
+		candidates = candidates[:int(csm.maxBlockParents)*3]
+	}
 
 	mergeSetSize := uint64(1) // starts counting from 1 because selectedParent is already in the mergeSet
 
@@ -56,20 +60,31 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 		log.Debugf("Attempting to add %s to the virtual parents", candidate)
 		log.Debugf("The current merge set size is %d", mergeSetSize)
 
-		mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents)
+		canBeParent, newCandidate, mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents, mergeSetSize)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("The merge set would increase by %d with block %s", mergeSetIncrease, candidate)
-
-		if mergeSetSize+mergeSetIncrease > csm.mergeSetSizeLimit {
-			log.Debugf("Cannot add block %s since that would violate the merge set size limit", candidate)
+		if canBeParent {
+			mergeSetSize += mergeSetIncrease
+			selectedVirtualParents.Add(candidate)
+			log.Tracef("Added block %s to the virtual parents set", candidate)
 			continue
 		}
-
-		selectedVirtualParents.Add(candidate)
-		mergeSetSize += mergeSetIncrease
-		log.Tracef("Added block %s to the virtual parents set", candidate)
+		// Remove all candidates in the future of newCandidate (https://github.com/golang/go/wiki/SliceTricks#filter-in-place)
+		i := 0
+		for _, candidate := range candidates {
+			isAncestor, err := csm.dagTopologyManager.IsAncestorOf(newCandidate, candidate)
+			if err != nil {
+				return nil, err
+			}
+			if !isAncestor {
+				candidates[i] = candidate
+				i++
+			}
+		}
+		candidates = candidates[:i]
+		candidates = append(candidates, newCandidate)
+		log.Debugf("Cannot add block %s, instead added new candidate: %s", candidate, newCandidate)
 	}
 
 	boundedMergeBreakingParents, err := csm.boundedMergeBreakingParents(selectedVirtualParents.ToSlice())
@@ -154,54 +169,57 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 }
 
 func (csm *consensusStateManager) mergeSetIncrease(
-	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet) (uint64, error) {
+	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet, mergeSetSize uint64) (canBeParent bool, newCandidate *externalapi.DomainHash, mergeSetIncrease uint64, err error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "mergeSetIncrease")
 	defer onEnd()
 
 	visited := hashset.New()
 	queue := csm.dagTraversalManager.NewDownHeap()
-	err := queue.Push(candidate)
+	err = queue.Push(candidate)
 	if err != nil {
-		return 0, err
+		return false, nil, 0, err
 	}
-	mergeSetIncrease := uint64(1) // starts with 1 for the candidate itself
+	mergeSetIncrease = uint64(1) // starts with 1 for the candidate itself
 
 	for queue.Len() > 0 {
 		current := queue.Pop()
 		log.Tracef("Attempting to increment the merge set size increase for block %s", current)
 
-		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(
-			current, selectedVirtualParents.ToSlice())
+		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(current, selectedVirtualParents.ToSlice())
 		if err != nil {
-			return 0, err
+			return false, nil, 0, err
 		}
 		if isInPastOfSelectedVirtualParents {
-			log.Tracef("Skipping block %s because it's in the past of one "+
-				"(or more) of the selected virtual parents", current)
+			log.Tracef("Skipping block %s because it's in the past of one (or more) of the selected virtual parents", current)
 			continue
 		}
 
 		log.Tracef("Incrementing the merge set size increase")
 		mergeSetIncrease++
 
+		if (mergeSetSize + mergeSetIncrease) > csm.mergeSetSizeLimit {
+			log.Debugf("The merge set would increase by more than the limit with block %s", candidate)
+			return false, current, mergeSetIncrease, nil
+		}
+
 		parents, err := csm.dagTopologyManager.Parents(current)
 		if err != nil {
-			return 0, err
+			return false, nil, 0, err
 		}
 		for _, parent := range parents {
 			if !visited.Contains(parent) {
 				visited.Add(parent)
 				err = queue.Push(parent)
 				if err != nil {
-					return 0, err
+					return false, nil, 0, err
 				}
 			}
 		}
 	}
 	log.Debugf("The resolved merge set size increase is: %d", mergeSetIncrease)
 
-	return mergeSetIncrease, nil
+	return true, nil, mergeSetIncrease, nil
 }
 
 func (csm *consensusStateManager) boundedMergeBreakingParents(
