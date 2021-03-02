@@ -2,6 +2,7 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_GetInfoRequest) toAppMessage() (appmessage.Message, error) {
@@ -14,14 +15,10 @@ func (x *KaspadMessage_GetInfoRequest) fromAppMessage(_ *appmessage.GetInfoReque
 }
 
 func (x *KaspadMessage_GetInfoResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.GetInfoResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetInfoResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetInfoResponse is nil")
 	}
-	return &appmessage.GetInfoResponseMessage{
-		P2PID: x.GetInfoResponse.P2PId,
-		Error: err,
-	}, nil
+	return x.GetInfoResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetInfoResponseMessage) error {
@@ -34,4 +31,24 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		Error: err,
 	}
 	return nil
+}
+
+func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetInfoResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	if rpcErr != nil && len(x.P2PId) != 0 {
+		return nil, errors.New("GetInfoResponseMessage contains both an error and a response")
+	}
+
+	return &appmessage.GetInfoResponseMessage{
+		P2PID: x.P2PId,
+		Error: rpcErr,
+	}, nil
 }

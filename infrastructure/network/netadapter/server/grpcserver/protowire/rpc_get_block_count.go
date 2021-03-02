@@ -1,8 +1,14 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_GetBlockCountRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockCountRequest is nil")
+	}
 	return &appmessage.GetBlockCountRequestMessage{}, nil
 }
 
@@ -12,15 +18,10 @@ func (x *KaspadMessage_GetBlockCountRequest) fromAppMessage(_ *appmessage.GetBlo
 }
 
 func (x *KaspadMessage_GetBlockCountResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.GetBlockCountResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetBlockCountResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockCountResponse is nil")
 	}
-	return &appmessage.GetBlockCountResponseMessage{
-		BlockCount:  x.GetBlockCountResponse.BlockCount,
-		HeaderCount: x.GetBlockCountResponse.HeaderCount,
-		Error:       err,
-	}, nil
+	return x.GetBlockCountResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetBlockCountResponse) fromAppMessage(message *appmessage.GetBlockCountResponseMessage) error {
@@ -34,4 +35,23 @@ func (x *KaspadMessage_GetBlockCountResponse) fromAppMessage(message *appmessage
 		Error:       err,
 	}
 	return nil
+}
+
+func (x *GetBlockCountResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetBlockCountResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	if rpcErr != nil && (x.BlockCount != 0 || x.HeaderCount != 0) {
+		return nil, errors.New("GetBlockCountResponseMessage contains both an error and a response")
+	}
+	return &appmessage.GetBlockCountResponseMessage{
+		BlockCount:  x.BlockCount,
+		HeaderCount: x.HeaderCount,
+		Error:       rpcErr,
+	}, nil
 }

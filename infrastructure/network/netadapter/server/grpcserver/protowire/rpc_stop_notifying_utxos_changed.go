@@ -2,12 +2,14 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_StopNotifyingUtxosChangedRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.StopNotifyingUTXOsChangedRequestMessage{
-		Addresses: x.StopNotifyingUtxosChangedRequest.Addresses,
-	}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingUtxosChangedRequest is nil")
+	}
+	return x.StopNotifyingUtxosChangedRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_StopNotifyingUtxosChangedRequest) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedRequestMessage) error {
@@ -17,14 +19,20 @@ func (x *KaspadMessage_StopNotifyingUtxosChangedRequest) fromAppMessage(message 
 	return nil
 }
 
-func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.StopNotifyingUtxosChangedResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.StopNotifyingUtxosChangedResponse.Error.Message}
+func (x *StopNotifyingUtxosChangedRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "StopNotifyingUtxosChangedRequestMessage is nil")
 	}
-	return &appmessage.StopNotifyingUTXOsChangedResponseMessage{
-		Error: err,
+	return &appmessage.StopNotifyingUTXOsChangedRequestMessage{
+		Addresses: x.Addresses,
 	}, nil
+}
+
+func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingUtxosChangedResponse is nil")
+	}
+	return x.StopNotifyingUtxosChangedResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedResponseMessage) error {
@@ -36,4 +44,18 @@ func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) fromAppMessage(message
 		Error: err,
 	}
 	return nil
+}
+
+func (x *StopNotifyingUtxosChangedResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "StopNotifyingUtxosChangedResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.StopNotifyingUTXOsChangedResponseMessage{
+		Error: rpcErr,
+	}, nil
 }
