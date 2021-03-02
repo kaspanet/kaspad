@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -937,10 +939,14 @@ func (mp *mempool) ChainedCount() int {
 func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BlockCandidateTransactions")
+	defer onEnd()
+
 	descs := make([]*consensusexternalapi.DomainTransaction, len(mp.pool))
 	i := 0
 	for _, desc := range mp.pool {
-		descs[i] = desc.DomainTransaction
+		descs[i] = desc.DomainTransaction.Clone() // Clone the transaction to prevent data races. A shallow-copy might do as well
 		i++
 	}
 
