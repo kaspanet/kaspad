@@ -85,6 +85,7 @@ func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}
 	return &appmessage.GetBlocksResponseMessage{
 		BlockVerboseData: blocksVerboseData,
+		BlockHashes:      x.BlockHashes,
 		Error:            rpcErr,
 	}, nil
 }
