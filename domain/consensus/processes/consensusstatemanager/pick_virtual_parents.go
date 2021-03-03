@@ -45,7 +45,9 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			end--
 		}
 	}
-	// Limit to 30 candidates, that way we don't go over thousands of tips when the network isn't healthy.
+	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
+	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
+	// don't want to consider and calculate 3 times the amount of candidates for the set of parents.
 	if len(candidates) > int(csm.maxBlockParents)*3 {
 		candidates = candidates[:int(csm.maxBlockParents)*3]
 	}
@@ -84,7 +86,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			return nil, err
 		}
 		candidates = append(candidates, newCandidate)
-		log.Debugf("Cannot add block %s, instead added new candidate: %s", candidate, newCandidate)
+		log.Debugf("Block %s increases merge set too much, instead adding its ancestor %s", candidate, newCandidate)
 	}
 
 	boundedMergeBreakingParents, err := csm.boundedMergeBreakingParents(selectedVirtualParents)
@@ -104,7 +106,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			}
 		}
 	}
-	log.Tracef("The virtual parents resolved to be: %s", selectedVirtualParents)
+	log.Debugf("The virtual parents resolved to be: %s", selectedVirtualParents)
 	return selectedVirtualParents, nil
 }
 
@@ -202,7 +204,7 @@ func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.Domain
 	defer onEnd()
 
 	visited := hashset.New()
-	// Start with the parents in the queue as we already know the candidate isn't an ancestor of the parents.
+	// Start with the candidate's parents in the queue as we already know the candidate isn't an ancestor of the selectedVirtualParents.
 	parents, err := csm.dagTopologyManager.Parents(candidate)
 	if err != nil {
 		return false, nil, 0, err
