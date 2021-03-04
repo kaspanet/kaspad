@@ -1,11 +1,31 @@
+
+Kaspad v0.9.0 - 2021-03-04
+===========================
+
+* Merge big subdags in pick virtual parents (#1574)
+* Write in the reject message the tx rejection reason (#1573)
+* Add nil checks for protowire (#1570)
+* Increase getBlocks limit to 1000 (#1572)
+* Return RPC error if getBlock's lowHash doesn't exist (#1569)
+* Add default dns-seeder to testnet (#1568)
+* Fix utxoindex deserialization (#1566)
+* Add pruning point hash to GetBlockDagInfo response (#1565)
+* Use EmitUnpopulated so that kaspactl prints all fields, even the default ones (#1561)
+* Stop logging an error whenever an RPC/P2P connection is canceled  (#1562)
+* Cleanup the logger and make it asynchronous (#1524)
+* Close all iterators (#1542)
+* Add childrenHashes to GetBlock/s RPC commands (#1560)
+* Add ScriptPublicKey.Version to RPC (#1559)
+* Fix the target block rate to create less bursty mining (#1554)
+
 Kaspad v0.8.10 - 2021-02-25
 ===========================
 
-[*] Fix bug where invalid mempool transactions were not removed (#1551)
-[*] Add RPC reconnection to the miner (#1552)
-[*] Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
-[*] Fix UTXO index (#1548)
-[*] Prevent fast failing (#1545)
-[*] Increase the sleep time in kaspaminer when the node is not synced (#1544)
-[*] Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
-[*] Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)
+* Fix bug where invalid mempool transactions were not removed (#1551)
+* Add RPC reconnection to the miner (#1552)
+* Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
+* Fix UTXO index (#1548)
+* Prevent fast failing (#1545)
+* Increase the sleep time in kaspaminer when the node is not synced (#1544)
+* Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
+* Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)
