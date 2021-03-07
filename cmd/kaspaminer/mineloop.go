@@ -47,8 +47,8 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 		hasBlockRateTarget := targetBlocksPerSecond != 0
 		var windowTicker, blockTicker *time.Ticker
 		// We use tickers to limit the block rate:
-		// 1. windowTicker -> makes sure that the last windowSize blocks take at least 10*targetBlocksPerSecond.
-		// 2. blockTicker -> makes sure that each block takes at least targetBlocksPerSecond/10.
+		// 1. windowTicker -> makes sure that the last windowSize blocks take at least windowSize*targetBlocksPerSecond.
+		// 2. blockTicker -> makes sure that each block takes at least targetBlocksPerSecond/windowSize.
 		// that way we both allow for fluctuation in block rate but also make sure they're not too big (by an order of magnitude)
 		if hasBlockRateTarget {
 			windowRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond / windowSize))
