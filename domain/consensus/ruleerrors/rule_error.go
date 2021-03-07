@@ -139,9 +139,6 @@ var (
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
 
-	// ErrInvalidPayloadHash invalid hash of transaction's payload
-	ErrInvalidPayloadHash = newRuleError("ErrInvalidPayloadHash")
-
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
 	ErrSubnetworkRegistry = newRuleError("ErrSubnetworkRegistry")

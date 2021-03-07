@@ -258,7 +258,6 @@ func shallowCopyTx(tx *externalapi.DomainTransaction) externalapi.DomainTransact
 		LockTime:     tx.LockTime,
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
-		PayloadHash:  tx.PayloadHash,
 		Payload:      tx.Payload,
 	}
 	txIns := make([]externalapi.DomainTransactionInput, len(tx.Inputs))

@@ -9,7 +9,6 @@ const (
 	transcationHashDomain    = "TransactionHash"
 	transcationIDDomain      = "TransactionID"
 	transcationSigningDomain = "TransactionSigningHash"
-	payloadDomain            = "PayloadHash"
 	blockDomain              = "BlockHash"
 	proofOfWorkDomain        = "ProofOfWorkHash"
 	merkleBranchDomain       = "MerkleBranchHash"
@@ -38,15 +37,6 @@ func NewTransactionSigningHashWriter() HashWriter {
 	blake, err := blake2b.New256([]byte(transcationSigningDomain))
 	if err != nil {
 		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", transcationSigningDomain))
-	}
-	return HashWriter{blake}
-}
-
-// NewPayloadHashWriter Returns a new HashWriter used for hashing a transaction payload
-func NewPayloadHashWriter() HashWriter {
-	blake, err := blake2b.New256([]byte(payloadDomain))
-	if err != nil {
-		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", payloadDomain))
 	}
 	return HashWriter{blake}
 }

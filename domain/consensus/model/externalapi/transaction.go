@@ -15,7 +15,6 @@ type DomainTransaction struct {
 	LockTime     uint64
 	SubnetworkID DomainSubnetworkID
 	Gas          uint64
-	PayloadHash  DomainHash
 	Payload      []byte
 
 	Fee  uint64
@@ -53,7 +52,6 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 		LockTime:     tx.LockTime,
 		SubnetworkID: *tx.SubnetworkID.Clone(),
 		Gas:          tx.Gas,
-		PayloadHash:  tx.PayloadHash,
 		Payload:      payloadClone,
 		Fee:          tx.Fee,
 		Mass:         tx.Mass,
@@ -64,7 +62,7 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
 var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
-	DomainSubnetworkID{}, 0, DomainHash{}, []byte{}, 0, 0,
+	DomainSubnetworkID{}, 0, []byte{}, 0, 0,
 	&DomainTransactionID{}}
 
 // Equal returns whether tx equals to other
@@ -106,10 +104,6 @@ func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
 	}
 
 	if tx.Gas != other.Gas {
-		return false
-	}
-
-	if !tx.PayloadHash.Equal(&other.PayloadHash) {
 		return false
 	}
 
