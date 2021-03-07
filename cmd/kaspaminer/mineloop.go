@@ -44,34 +44,24 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 
 	spawn("blocksLoop", func() {
 		const windowSize = 10
-		var expectedDurationForWindow time.Duration
-		var windowExpectedEndTime time.Time
 		hasBlockRateTarget := targetBlocksPerSecond != 0
+		var windowTicker, blockTicker *time.Ticker
 		if hasBlockRateTarget {
-			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
-			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+			windowRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond / windowSize))
+			blockRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond * windowSize))
+			log.Infof("Minimum average time per %d blocks: %s, smaller minimum time per block: %s", windowSize, windowRate, blockRate)
+			windowTicker = time.NewTicker(windowRate)
+			blockTicker = time.NewTicker(blockRate)
+			defer windowTicker.Stop()
+			defer blockTicker.Stop()
 		}
-		blockInWindowIndex := 0
-
-		sleepTime := 0 * time.Second
-
-		for {
+		for blockInWindowIndex := 0; ; blockInWindowIndex++ {
 			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
-
 			if hasBlockRateTarget {
-				blockInWindowIndex++
-				if blockInWindowIndex == windowSize-1 {
-					deviation := windowExpectedEndTime.Sub(time.Now())
-					if deviation > 0 {
-						sleepTime = deviation / windowSize
-						log.Infof("Finished to mine %d blocks %s earlier than expected. Setting the miner "+
-							"to sleep %s between blocks to compensate",
-							windowSize, deviation, sleepTime)
-					}
-					blockInWindowIndex = 0
-					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+				<-blockTicker.C
+				if (blockInWindowIndex % windowSize) == 0 {
+					<-windowTicker.C
 				}
-				time.Sleep(sleepTime)
 			}
 		}
 	})
