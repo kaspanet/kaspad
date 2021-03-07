@@ -158,6 +158,8 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 }
 
 func (s *consensus) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
