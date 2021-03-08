@@ -100,7 +100,6 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 		LockTime:     x.LockTime,
 		SubnetworkID: x.SubnetworkId,
 		Gas:          x.Gas,
-		PayloadHash:  x.PayloadHash,
 		Payload:      x.Payload,
 	}, nil
 }
@@ -132,7 +131,6 @@ func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) 
 		LockTime:     transaction.LockTime,
 		SubnetworkId: transaction.SubnetworkID,
 		Gas:          transaction.Gas,
-		PayloadHash:  transaction.PayloadHash,
 		Payload:      transaction.Payload,
 	}
 }

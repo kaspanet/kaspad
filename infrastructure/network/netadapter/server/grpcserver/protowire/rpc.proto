@@ -276,7 +276,6 @@ message TransactionVerboseData{
   uint64 lockTime = 5;
   string subnetworkId = 6;
   uint64 gas = 7;
-  string payloadHash = 8;
   string payload = 9;
   repeated TransactionVerboseInput transactionVerboseInputs = 10;
   repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
@@ -474,7 +473,6 @@ message RpcTransaction {
   uint64 lockTime = 4;
   string subnetworkId = 5;
   uint64 gas = 6;
-  string payloadHash = 7;
   string payload = 8;
 }
 

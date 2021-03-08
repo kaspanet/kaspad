@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
@@ -24,10 +23,6 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 	err = v.checkCoinbaseLength(tx)
-	if err != nil {
-		return err
-	}
-	err = v.checkTransactionPayloadHash(tx)
 	if err != nil {
 		return err
 	}
@@ -127,18 +122,6 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 			payloadLen, v.maxCoinbasePayloadLength)
 	}
 
-	return nil
-}
-
-func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.DomainTransaction) error {
-	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash := hashes.PayloadHash(tx.Payload)
-		if !tx.PayloadHash.Equal(payloadHash) {
-			return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
-		}
-	} else if tx.PayloadHash != (externalapi.DomainHash{}) {
-		return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
-	}
 	return nil
 }
 
