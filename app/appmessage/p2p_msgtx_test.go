@@ -185,14 +185,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "cb1bdb4a83d4885535fb3cceb5c96597b7df903db83f0ffcd779d703affd8efd"
+	hash2Str := "8dafd1bec24527d8e3b443ceb0a3b92fffc0d60026317f890b2faf5e9afc177a"
 	wantHash2, err := externalapi.NewDomainHashFromString(hash2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	id2Str := "ca080073d4ddf5b84443a0964af633f3c70a5b290fd3bc35a7e6f93fd33f9330"
+	id2Str := "89ffb49474637502d9059af38b8a95fc2f0d3baef5c801d7a9b9c8830671b711"
 	wantID2, err := transactionid.FromString(id2Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)

@@ -47,7 +47,7 @@ func initTestAnotherTransactions() []*externalapi.DomainTransaction {
 		LockTime:     1,
 		SubnetworkID: externalapi.DomainSubnetworkID{0x01},
 		Gas:          1,
-		Payload:      []byte{0x01},
+		Payload:      []byte{0x02},
 		Fee:          0,
 		Mass:         1,
 		ID: externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{

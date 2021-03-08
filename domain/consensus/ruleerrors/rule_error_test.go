@@ -2,6 +2,8 @@ package ruleerrors
 
 import (
 	"errors"
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -45,9 +47,11 @@ func TestNewErrMissingTxOut(t *testing.T) {
 }
 
 func TestNewErrInvalidTransactionsInNewBlock(t *testing.T) {
-	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{&externalapi.DomainTransaction{Fee: 1337}, ErrNoTxInputs}})
+	tx := &externalapi.DomainTransaction{Fee: 1337}
+	txID := consensushashing.TransactionID(tx)
+	outer := NewErrInvalidTransactionsInNewBlock([]InvalidTransaction{{tx, ErrNoTxInputs}})
 	//TODO: Implement Stringer for `DomainTransaction`
-	expectedOuterErr := "ErrInvalidTransactionsInNewBlock: [(bbf6e84f5a6333948063aa45ea02ff5bb0355e11e41becf20245791f61179db1: ErrNoTxInputs)]"
+	expectedOuterErr := fmt.Sprintf("ErrInvalidTransactionsInNewBlock: [(%s: ErrNoTxInputs)]", txID)
 	inner := &ErrInvalidTransactionsInNewBlock{}
 	if !errors.As(outer, inner) {
 		t.Fatal("TestNewErrInvalidTransactionsInNewBlock: Outer should contain ErrInvalidTransactionsInNewBlock in it")
