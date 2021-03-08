@@ -2,7 +2,6 @@ package transactionhelper
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
 
@@ -11,7 +10,6 @@ func NewSubnetworkTransaction(version uint16, inputs []*externalapi.DomainTransa
 	outputs []*externalapi.DomainTransactionOutput, subnetworkID *externalapi.DomainSubnetworkID,
 	gas uint64, payload []byte) *externalapi.DomainTransaction {
 
-	payloadHash := hashes.PayloadHash(payload)
 	return &externalapi.DomainTransaction{
 		Version:      version,
 		Inputs:       inputs,
@@ -19,7 +17,6 @@ func NewSubnetworkTransaction(version uint16, inputs []*externalapi.DomainTransa
 		LockTime:     0,
 		SubnetworkID: *subnetworkID,
 		Gas:          gas,
-		PayloadHash:  *payloadHash,
 		Payload:      payload,
 		Fee:          0,
 		Mass:         0,

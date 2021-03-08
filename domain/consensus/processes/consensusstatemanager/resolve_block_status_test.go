@@ -371,7 +371,6 @@ func TestTransactionAcceptance(t *testing.T) {
 			LockTime:     0,
 			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 			Gas:          0,
-			PayloadHash:  finalTip.Transactions[0].PayloadHash,
 			Payload:      finalTip.Transactions[0].Payload,
 		}
 		if !finalTip.Transactions[transactionhelper.CoinbaseTransactionIndex].Equal(expectedCoinbase) {

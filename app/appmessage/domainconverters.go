@@ -83,7 +83,6 @@ func DomainTransactionToMsgTx(domainTransaction *externalapi.DomainTransaction) 
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: domainTransaction.SubnetworkID,
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  domainTransaction.PayloadHash,
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -133,7 +132,6 @@ func MsgTxToDomainTransaction(msgTx *MsgTx) *externalapi.DomainTransaction {
 		LockTime:     msgTx.LockTime,
 		SubnetworkID: msgTx.SubnetworkID,
 		Gas:          msgTx.Gas,
-		PayloadHash:  msgTx.PayloadHash,
 		Payload:      payload,
 	}
 }
@@ -198,10 +196,6 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	if err != nil {
 		return nil, err
 	}
-	payloadHash, err := externalapi.NewDomainHashFromString(rpcTransaction.PayloadHash)
-	if err != nil {
-		return nil, err
-	}
 	payload, err := hex.DecodeString(rpcTransaction.Payload)
 	if err != nil {
 		return nil, err
@@ -214,7 +208,6 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 		LockTime:     rpcTransaction.LockTime,
 		SubnetworkID: *subnetworkID,
 		Gas:          rpcTransaction.LockTime,
-		PayloadHash:  *payloadHash,
 		Payload:      payload,
 	}, nil
 }
@@ -244,7 +237,6 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		}
 	}
 	subnetworkID := transaction.SubnetworkID.String()
-	payloadHash := transaction.PayloadHash.String()
 	payload := hex.EncodeToString(transaction.Payload)
 	return &RPCTransaction{
 		Version:      transaction.Version,
@@ -253,7 +245,6 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		LockTime:     transaction.LockTime,
 		SubnetworkID: subnetworkID,
 		Gas:          transaction.LockTime,
-		PayloadHash:  payloadHash,
 		Payload:      payload,
 	}
 }

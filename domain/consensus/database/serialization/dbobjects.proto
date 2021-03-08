@@ -30,7 +30,6 @@ message DbTransaction {
   uint64 lockTime = 4;
   DbSubnetworkId subnetworkID = 5;
   uint64 gas = 6;
-  DbHash payloadHash = 7;
   bytes payload = 8;
 }
 

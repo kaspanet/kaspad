@@ -17,8 +17,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -128,11 +126,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildTransactionVerboseData")
 	defer onEnd()
 
-	var payloadHash string
-	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = tx.PayloadHash.String()
-	}
-
 	txReply := &appmessage.TransactionVerboseData{
 		TxID:                      txID,
 		Hash:                      consensushashing.TransactionHash(tx).String(),
@@ -143,7 +136,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 		LockTime:                  tx.LockTime,
 		SubnetworkID:              tx.SubnetworkID.String(),
 		Gas:                       tx.Gas,
-		PayloadHash:               payloadHash,
 		Payload:                   hex.EncodeToString(tx.Payload),
 	}
 

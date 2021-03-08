@@ -33,7 +33,6 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: DomainSubnetworkIDToDbSubnetworkID(&domainTransaction.SubnetworkID),
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  DomainHashToDbHash(&domainTransaction.PayloadHash),
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -41,10 +40,6 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 // DbTransactionToDomainTransaction converts DbTransaction to DomainTransaction
 func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalapi.DomainTransaction, error) {
 	domainSubnetworkID, err := DbSubnetworkIDToDomainSubnetworkID(dbTransaction.SubnetworkID)
-	if err != nil {
-		return nil, err
-	}
-	domainPayloadHash, err := DbHashToDomainHash(dbTransaction.PayloadHash)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +79,6 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 		LockTime:     dbTransaction.LockTime,
 		SubnetworkID: *domainSubnetworkID,
 		Gas:          dbTransaction.Gas,
-		PayloadHash:  *domainPayloadHash,
 		Payload:      dbTransaction.Payload,
 	}, nil
 }

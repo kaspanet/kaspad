@@ -2,7 +2,6 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"math"
 )
@@ -47,13 +46,6 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	payloadHash := &externalapi.DomainHash{}
-	if x.PayloadHash != nil {
-		payloadHash, err = x.PayloadHash.toDomain()
-		if err != nil {
-			return nil, err
-		}
-	}
 	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
 	}
@@ -64,7 +56,6 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		LockTime:     x.LockTime,
 		SubnetworkID: *subnetworkID,
 		Gas:          x.Gas,
-		PayloadHash:  *payloadHash,
 		Payload:      x.Payload,
 	}, nil
 }
@@ -125,7 +116,6 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkId: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  domainHashToProto(&msgTx.PayloadHash),
 		Payload:      msgTx.Payload,
 	}
 

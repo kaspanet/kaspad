@@ -664,6 +664,7 @@ GetBlockRequestMessage requests information about a specific block
 | bits | [string](#string) |  |  |
 | difficulty | [double](#double) |  |  |
 | parentHashes | [string](#string) | repeated |  |
+| childrenHashes | [string](#string) | repeated |  |
 | selectedParentHash | [string](#string) |  |  |
 | transactionIDs | [string](#string) | repeated |  |
 | isHeaderOnly | [bool](#bool) |  |  |
@@ -689,7 +690,6 @@ GetBlockRequestMessage requests information about a specific block
 | lockTime | [uint64](#uint64) |  |  |
 | subnetworkId | [string](#string) |  |  |
 | gas | [uint64](#uint64) |  |  |
-| payloadHash | [string](#string) |  |  |
 | payload | [string](#string) |  |  |
 | transactionVerboseInputs | [TransactionVerboseInput](#protowire.TransactionVerboseInput) | repeated |  |
 | transactionVerboseOutputs | [TransactionVerboseOutput](#protowire.TransactionVerboseOutput) | repeated |  |
@@ -765,6 +765,7 @@ GetBlockRequestMessage requests information about a specific block
 | hex | [string](#string) |  |  |
 | type | [string](#string) |  |  |
 | address | [string](#string) |  |  |
+| version | [uint32](#uint32) |  |  |
 
 
 
@@ -926,6 +927,7 @@ of this kaspad&#39;s DAG.
 | difficulty | [double](#double) |  |  |
 | pastMedianTime | [int64](#int64) |  |  |
 | virtualParentHashes | [string](#string) | repeated |  |
+| pruningPointHash | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1196,7 +1198,6 @@ See: UtxosChangedNotificationMessage
 | lockTime | [uint64](#uint64) |  |  |
 | subnetworkId | [string](#string) |  |  |
 | gas | [uint64](#uint64) |  |  |
-| payloadHash | [string](#string) |  |  |
 | payload | [string](#string) |  |  |
 
 
