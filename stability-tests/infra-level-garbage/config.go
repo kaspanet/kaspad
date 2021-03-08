@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"path/filepath"
 
-	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/automation/stability-tests/common"
 	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/stability-tests/common"
+
+	"github.com/jessevdk/go-flags"
 )
 
 const (

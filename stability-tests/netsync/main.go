@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/kaspanet/automation/stability-tests/common"
+	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 func main() {

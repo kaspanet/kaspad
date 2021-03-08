@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/automation/stability-tests/common"
 	"os"
 
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 

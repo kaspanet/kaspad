@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/profiling"
 	"os"
 	"time"
 
-	"github.com/kaspanet/automation/stability-tests/common"
+	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/kaspanet/kaspad/util/profiling"
 )
 
 const timeout = 5 * time.Second

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kaspanet/automation/stability-tests/common/rpc"
 	"time"
+
+	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
 
 	"github.com/pkg/errors"
 )

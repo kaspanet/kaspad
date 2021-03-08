@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/profiling"
 	"os"
 
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/standalone"
+	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
-
-	"github.com/kaspanet/automation/stability-tests/common"
+	"github.com/kaspanet/kaspad/util/profiling"
 )
 
 func main() {

@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/automation/stability-tests/common/rpc"
-	"github.com/pkg/errors"
 	"os"
 	"time"
 
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/pkg/errors"
 
-	"github.com/kaspanet/automation/stability-tests/common"
+	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
+	"github.com/kaspanet/kaspad/util/profiling"
 )
 
 var timeout = 30 * time.Second

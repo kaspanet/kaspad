@@ -1,5 +1,6 @@
 # Stability-Test Tools
-Create separate folder for every tool, and add a README to it, to explain usage
+This package provides some higher-level tests for kaspad.  
+These are tests that are beyond the scope of unit-tests, and some of them might take long time to run
 
 # Running
 1. Add and push tag in the format of `vX.X.X-rcX` in kaspad repository

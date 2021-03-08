@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kaspanet/automation/stability-tests/common"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
+	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"

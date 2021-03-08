@@ -3,11 +3,10 @@ package main
 import (
 	"time"
 
-	"github.com/kaspanet/automation/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/app/appmessage"
-
-	"github.com/kaspanet/automation/stability-tests/common"
 	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )

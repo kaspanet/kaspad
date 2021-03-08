@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kaspanet/automation/stability-tests/common/rpc"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
 	"github.com/pkg/errors"
 )
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaspanet/automation/stability-tests/common"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/pkg/errors"
 )
 
