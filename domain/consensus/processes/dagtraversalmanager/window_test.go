@@ -110,12 +110,12 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"C", "D"},
 				id:                               "E",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"C", "D"},
 				id:                               "F",
-				expectedWindowWithGenesisPadding: []string{"D", "C", "B", "A", "A", "A", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"C", "D", "B", "A", "A", "A", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"A"},
@@ -130,37 +130,37 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:                          []string{"H", "F"},
 				id:                               "I",
-				expectedWindowWithGenesisPadding: []string{"F", "D", "H", "C", "G", "B", "A", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"F", "C", "H", "D", "G", "B", "A", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"I"},
 				id:                               "J",
-				expectedWindowWithGenesisPadding: []string{"I", "F", "D", "H", "C", "G", "B", "A", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"I", "F", "C", "H", "D", "G", "B", "A", "A", "A"},
 			},
 			{
 				parents:                          []string{"J"},
 				id:                               "K",
-				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "D", "H", "C", "G", "B", "A", "A"},
+				expectedWindowWithGenesisPadding: []string{"J", "I", "F", "C", "H", "D", "G", "B", "A", "A"},
 			},
 			{
 				parents:                          []string{"K"},
 				id:                               "L",
-				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "D", "H", "C", "G", "B", "A"},
+				expectedWindowWithGenesisPadding: []string{"K", "J", "I", "F", "C", "H", "D", "G", "B", "A"},
 			},
 			{
 				parents:                          []string{"L"},
 				id:                               "M",
-				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "D", "H", "C", "G", "B"},
+				expectedWindowWithGenesisPadding: []string{"L", "K", "J", "I", "F", "C", "H", "D", "G", "B"},
 			},
 			{
 				parents:                          []string{"M"},
 				id:                               "N",
-				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "G"},
+				expectedWindowWithGenesisPadding: []string{"M", "L", "K", "J", "I", "F", "C", "H", "D", "G"},
 			},
 			{
 				parents:                          []string{"N"},
 				id:                               "O",
-				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "D", "H", "C"},
+				expectedWindowWithGenesisPadding: []string{"N", "M", "L", "K", "J", "I", "F", "C", "H", "D"},
 			},
 		},
 		dagconfig.DevnetParams.Name: {
