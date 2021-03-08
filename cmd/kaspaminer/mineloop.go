@@ -44,34 +44,32 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 
 	spawn("blocksLoop", func() {
 		const windowSize = 10
-		var expectedDurationForWindow time.Duration
-		var windowExpectedEndTime time.Time
 		hasBlockRateTarget := targetBlocksPerSecond != 0
+		var windowTicker, blockTicker *time.Ticker
+		// We use tickers to limit the block rate:
+		// 1. windowTicker -> makes sure that the last windowSize blocks take at least windowSize*targetBlocksPerSecond.
+		// 2. blockTicker -> makes sure that each block takes at least targetBlocksPerSecond/windowSize.
+		// that way we both allow for fluctuation in block rate but also make sure they're not too big (by an order of magnitude)
 		if hasBlockRateTarget {
-			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
-			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+			windowRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond / windowSize))
+			blockRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond * windowSize))
+			log.Infof("Minimum average time per %d blocks: %s, smaller minimum time per block: %s", windowSize, windowRate, blockRate)
+			windowTicker = time.NewTicker(windowRate)
+			blockTicker = time.NewTicker(blockRate)
+			defer windowTicker.Stop()
+			defer blockTicker.Stop()
 		}
-		blockInWindowIndex := 0
-
-		sleepTime := 0 * time.Second
-
-		for {
+		windowStart := time.Now()
+		for blockIndex := 1; ; blockIndex++ {
 			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
-
 			if hasBlockRateTarget {
-				blockInWindowIndex++
-				if blockInWindowIndex == windowSize-1 {
-					deviation := windowExpectedEndTime.Sub(time.Now())
-					if deviation > 0 {
-						sleepTime = deviation / windowSize
-						log.Infof("Finished to mine %d blocks %s earlier than expected. Setting the miner "+
-							"to sleep %s between blocks to compensate",
-							windowSize, deviation, sleepTime)
-					}
-					blockInWindowIndex = 0
-					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+				<-blockTicker.C
+				if (blockIndex % windowSize) == 0 {
+					tickerStart := time.Now()
+					<-windowTicker.C
+					log.Infof("Finished mining %d blocks in: %s. slept for: %s", windowSize, time.Since(windowStart), time.Since(tickerStart))
+					windowStart = time.Now()
 				}
-				time.Sleep(sleepTime)
 			}
 		}
 	})
