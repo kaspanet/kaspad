@@ -8,6 +8,10 @@ import (
 
 // HandleGetInfo handles the respectively named RPC command
 func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	response := appmessage.NewGetInfoResponseMessage(context.NetAdapter.ID().String())
+	response := appmessage.NewGetInfoResponseMessage(
+		context.NetAdapter.ID().String(),
+		uint64(len(context.Domain.MiningManager().AllTransactions())),
+	)
+
 	return response, nil
 }
