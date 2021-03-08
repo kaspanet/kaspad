@@ -1,0 +1,9 @@
+{
+	"myPrivateKey": "6d6fe7022e1c0d7756a85b2869dbfb5b3fa01c48e97c5480b2643251067661c8",
+	"myAddress": "kaspadev:qqdevxqedlz8d7a597upafdqwfs7fprakvv9nlydkg",
+	"spendAddresses": [
+		"kaspadev:qqrsmmnryctl7xfq9m690gclfsec7389ryxzaeqstx",
+		"kaspadev:qzqew3j5k7hnz94p23tnhs4s6luzfggvwsw2f7ml9w",
+		"kaspadev:qpm4zgfjz7jha38fv9lhhq42s6vhe2aegc4cnvgsjr"
+	]
+}
