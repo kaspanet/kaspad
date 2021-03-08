@@ -145,6 +145,13 @@ func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
 	return transactions
 }
 
+func (mp *mempool) Len() int {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return len(mp.pool) + len(mp.chainedTransactions)
+}
+
 // txDescriptor is a descriptor containing a transaction in the mempool along with
 // additional metadata.
 type txDescriptor struct {

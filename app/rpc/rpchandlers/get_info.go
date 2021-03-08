@@ -10,7 +10,7 @@ import (
 func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
 	response := appmessage.NewGetInfoResponseMessage(
 		context.NetAdapter.ID().String(),
-		uint64(len(context.Domain.MiningManager().AllTransactions())),
+		uint64(context.Domain.MiningManager().MempoolSize()),
 	)
 
 	return response, nil
