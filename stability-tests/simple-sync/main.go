@@ -43,14 +43,14 @@ func realMain() error {
 	}
 	defer teardown()
 
-	syncerRPCClient, err := rpc.ConnectToRPC(&rpc.RPCConfig{
+	syncerRPCClient, err := rpc.ConnectToRPC(&rpc.Config{
 		RPCServer: syncerRPCAddress,
 	}, activeConfig().NetParams())
 	if err != nil {
 		return errors.Wrap(err, "error connecting to RPC server")
 	}
 
-	syncedRPCClient, err := rpc.ConnectToRPC(&rpc.RPCConfig{
+	syncedRPCClient, err := rpc.ConnectToRPC(&rpc.Config{
 		RPCServer: syncedRPCAddress,
 	}, activeConfig().NetParams())
 	if err != nil {

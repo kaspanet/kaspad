@@ -23,7 +23,7 @@ var (
 )
 
 type configFlags struct {
-	rpc.RPCConfig
+	rpc.Config
 	DAGFile string `long:"dag-file" description:"Path to DAG JSON file"`
 	Profile string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	config.NetworkFlags
@@ -50,7 +50,7 @@ func parseConfig() error {
 		return err
 	}
 
-	err = rpc.ValidateRPCConfig(&cfg.RPCConfig)
+	err = rpc.ValidateRPCConfig(&cfg.Config)
 	if err != nil {
 		return err
 	}

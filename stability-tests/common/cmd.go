@@ -10,6 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// StartCmd runs a command as a separate process.
+// The `name` parameter is used for logs.
+// The command executable should be in args[0]
 func StartCmd(name string, args ...string) (*exec.Cmd, error) {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = NewLogWriter(log, logger.LevelTrace, fmt.Sprintf("%s-STDOUT", name))

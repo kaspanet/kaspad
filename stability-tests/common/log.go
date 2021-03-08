@@ -45,6 +45,7 @@ func UseLogger(backend *logger.Backend, level logger.Level) {
 	logger.SetLogLevels(level)
 }
 
+// InitBackend initializes the test log backend
 func InitBackend(backendLog *logger.Backend, logFile, errLogFile string) {
 	err := backendLog.AddLogFile(logFile, logger.LevelTrace)
 	if err != nil {

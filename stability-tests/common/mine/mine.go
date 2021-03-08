@@ -17,7 +17,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func MineFromFile(jsonFile string, dagParams *dagconfig.Params, rpcClient *rpc.RPCClient, dataDir string) error {
+// FromFile mines all blocks as described by `jsonFile`
+func FromFile(jsonFile string, dagParams *dagconfig.Params, rpcClient *rpc.Client, dataDir string) error {
 	log.Infof("Mining blocks from JSON file %s from data directory %s", jsonFile, dataDir)
 	blockChan, err := readBlocks(jsonFile)
 	if err != nil {
@@ -27,7 +28,7 @@ func MineFromFile(jsonFile string, dagParams *dagconfig.Params, rpcClient *rpc.R
 	return mineBlocks(dagParams, rpcClient, blockChan, dataDir)
 }
 
-func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.RPCClient, blockChan <-chan JSONBlock, dataDir string) error {
+func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.Client, blockChan <-chan JSONBlock, dataDir string) error {
 	mdb, err := newMiningDB(dataDir)
 	if err != nil {
 		return err
@@ -143,6 +144,7 @@ func mineOrFetchBlock(blockData JSONBlock, mdb *miningDB, testConsensus testapi.
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+// SolveBlock increments the given block's nonce until it matches the difficulty requirements in its bits field
 func SolveBlock(block *externalapi.DomainBlock) {
 	mining.SolveBlock(block, random)
 }

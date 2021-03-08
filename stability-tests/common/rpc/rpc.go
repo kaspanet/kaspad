@@ -11,26 +11,27 @@ import (
 
 const defaultRPCServer = "localhost"
 
-// RPCConfig are configurations common to all tests that need to connect to json-rpc
-type RPCConfig struct {
+// Config are configurations common to all tests that need to connect to json-rpc
+type Config struct {
 	RPCServer string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 }
 
-// ValidateRPCConfig makes sure that provided RPCConfig is valid or returns an error otherwise
-func ValidateRPCConfig(config *RPCConfig) error {
+// ValidateRPCConfig makes sure that provided Config is valid or returns an error otherwise
+func ValidateRPCConfig(config *Config) error {
 	if config.RPCServer == "" {
 		config.RPCServer = defaultRPCServer
 	}
 	return nil
 }
 
-type RPCClient struct {
+// Client wraps rpcclient.RPCClient with extra functionality needed for stability-tests
+type Client struct {
 	*rpcclient.RPCClient
 	OnBlockAdded chan struct{}
 }
 
 // ConnectToRPC connects to JSON-RPC server specified in the provided config
-func ConnectToRPC(config *RPCConfig, dagParams *dagconfig.Params) (*RPCClient, error) {
+func ConnectToRPC(config *Config, dagParams *dagconfig.Params) (*Client, error) {
 	rpcAddress, err := dagParams.NormalizeRPCServerAddress(config.RPCServer)
 	if err != nil {
 		return nil, err
@@ -41,10 +42,10 @@ func ConnectToRPC(config *RPCConfig, dagParams *dagconfig.Params) (*RPCClient, e
 	}
 	rpcClient.SetTimeout(time.Second * 120)
 	rpcClient.SetOnErrorHandler(func(err error) {
-		log.Errorf("Error from RPCClient: %+v", err)
+		log.Errorf("Error from Client: %+v", err)
 	})
 
-	client := &RPCClient{
+	client := &Client{
 		RPCClient:    rpcClient,
 		OnBlockAdded: make(chan struct{}),
 	}
@@ -52,7 +53,8 @@ func ConnectToRPC(config *RPCConfig, dagParams *dagconfig.Params) (*RPCClient, e
 	return client, nil
 }
 
-func (c *RPCClient) RegisterForBlockAddedNotifications() error {
+// RegisterForBlockAddedNotifications registers for block added notifications pushed by the node
+func (c *Client) RegisterForBlockAddedNotifications() error {
 	return c.RPCClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
 		c.OnBlockAdded <- struct{}{}
 	})

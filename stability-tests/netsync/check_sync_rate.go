@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkSyncRate(syncerClient, syncedClient *rpc.RPCClient) error {
+func checkSyncRate(syncerClient, syncedClient *rpc.Client) error {
 	log.Info("Checking the sync rate")
 	syncerBlockCountResponse, err := syncerClient.GetBlockCount()
 	if err != nil {

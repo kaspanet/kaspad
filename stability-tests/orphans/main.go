@@ -36,7 +36,7 @@ func main() {
 
 	routes := connectToNode()
 
-	rpcClient, err := rpc.ConnectToRPC(&cfg.RPCConfig, cfg.NetParams())
+	rpcClient, err := rpc.ConnectToRPC(&cfg.Config, cfg.NetParams())
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to JSON-RPC server"))
 	}

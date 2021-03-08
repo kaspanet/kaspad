@@ -22,7 +22,7 @@ func main() {
 	if cfg.Profile != "" {
 		profiling.Start(cfg.Profile, log)
 	}
-	rpcClient, err := rpc.ConnectToRPC(&cfg.RPCConfig, cfg.NetParams())
+	rpcClient, err := rpc.ConnectToRPC(&cfg.Config, cfg.NetParams())
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to JSON-RPC server"))
 	}
@@ -33,8 +33,8 @@ func main() {
 		panic(err)
 	}
 
-	err = mine.MineFromFile(cfg.DAGFile, cfg.NetParams(), rpcClient, dataDir)
+	err = mine.FromFile(cfg.DAGFile, cfg.NetParams(), rpcClient, dataDir)
 	if err != nil {
-		panic(errors.Wrap(err, "error in MineFromFile"))
+		panic(errors.Wrap(err, "error in mine.FromFile"))
 	}
 }

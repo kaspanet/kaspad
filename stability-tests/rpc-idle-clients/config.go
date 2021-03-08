@@ -22,7 +22,7 @@ var (
 )
 
 type configFlags struct {
-	rpc.RPCConfig
+	rpc.Config
 	config.NetworkFlags
 	NumClients uint32 `long:"numclients" short:"n" description:"Number of RPC clients to open"`
 	Profile    string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
@@ -49,7 +49,7 @@ func parseConfig() error {
 		return err
 	}
 
-	err = rpc.ValidateRPCConfig(&cfg.RPCConfig)
+	err = rpc.ValidateRPCConfig(&cfg.Config)
 	if err != nil {
 		return err
 	}

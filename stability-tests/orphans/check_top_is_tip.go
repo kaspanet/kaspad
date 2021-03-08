@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkTopBlockIsTip(rpcClient *rpc.RPCClient, topBlock *externalapi.DomainBlock) error {
+func checkTopBlockIsTip(rpcClient *rpc.Client, topBlock *externalapi.DomainBlock) error {
 	selectedTipHashResponse, err := rpcClient.GetSelectedTipHash()
 	if err != nil {
 		return err

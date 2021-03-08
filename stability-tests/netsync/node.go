@@ -86,7 +86,7 @@ func killWithSigkill(cmd *exec.Cmd, commandName string) {
 	}
 }
 
-func setupNodeWithRPC(name, listen, rpcListen, connect, profilePort, dataDir string) (*rpc.RPCClient, func(), error) {
+func setupNodeWithRPC(name, listen, rpcListen, connect, profilePort, dataDir string) (*rpc.Client, func(), error) {
 	_, teardown, err := startNode(name, rpcListen, listen, connect, profilePort, dataDir)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error in startNode")
@@ -102,7 +102,7 @@ func setupNodeWithRPC(name, listen, rpcListen, connect, profilePort, dataDir str
 	const initTime = 2 * time.Second
 	time.Sleep(initTime)
 
-	rpcClient, err := rpc.ConnectToRPC(&rpc.RPCConfig{
+	rpcClient, err := rpc.ConnectToRPC(&rpc.Config{
 		RPCServer: rpcListen,
 	}, activeConfig().NetParams())
 	if err != nil {
@@ -112,7 +112,7 @@ func setupNodeWithRPC(name, listen, rpcListen, connect, profilePort, dataDir str
 	return rpcClient, teardown, nil
 }
 
-func setupSyncee() (*rpc.RPCClient, func(), error) {
+func setupSyncee() (*rpc.Client, func(), error) {
 	const syncedProfilePort = "6061"
 
 	synceeDataDir, err := useDirOrCreateTemp(activeConfig().SynceeDataDirectory, "syncee-kaspad-data-dir")
@@ -124,7 +124,7 @@ func setupSyncee() (*rpc.RPCClient, func(), error) {
 		synceeDataDir)
 }
 
-func setupSyncer() (*rpc.RPCClient, func(), error) {
+func setupSyncer() (*rpc.Client, func(), error) {
 	const syncerProfilePort = "6062"
 
 	syncerDataDir, err := useDirOrCreateTemp(activeConfig().SyncerDataDirectory, "syncer-kaspad-data-dir")
@@ -149,9 +149,9 @@ func setupSyncer() (*rpc.RPCClient, func(), error) {
 		return nil, nil, err
 	}
 
-	err = mine.MineFromFile(cfg.DAGFile, activeConfig().NetParams(), rpcClient, miningDataDir)
+	err = mine.FromFile(cfg.DAGFile, activeConfig().NetParams(), rpcClient, miningDataDir)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "error in MineFromFile")
+		return nil, nil, errors.Wrap(err, "error in mine.FromFile")
 	}
 
 	log.Info("Mining on top of syncer tips")
@@ -174,7 +174,7 @@ func useDirOrCreateTemp(dataDir, tempName string) (string, error) {
 	return common.TempDir(tempName)
 }
 
-func mineOnTips(client *rpc.RPCClient) (appmessage.RejectReason, error) {
+func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 	fakePublicKeyHash := make([]byte, 20)
 	addr, err := util.NewAddressPubKeyHash(fakePublicKeyHash, activeConfig().NetParams().Prefix)
 	if err != nil {

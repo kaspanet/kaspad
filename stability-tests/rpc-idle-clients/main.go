@@ -25,9 +25,9 @@ func main() {
 	}
 
 	numRPCClients := cfg.NumClients
-	clients := make([]*rpc.RPCClient, numRPCClients)
+	clients := make([]*rpc.Client, numRPCClients)
 	for i := uint32(0); i < numRPCClients; i++ {
-		rpcClient, err := rpc.ConnectToRPC(&cfg.RPCConfig, cfg.NetParams())
+		rpcClient, err := rpc.ConnectToRPC(&cfg.Config, cfg.NetParams())
 		if err != nil {
 			panic(errors.Wrap(err, "error connecting to RPC server"))
 		}

@@ -24,7 +24,7 @@ var (
 )
 
 type configFlags struct {
-	rpc.RPCConfig
+	rpc.Config
 	NodeP2PAddress    string `long:"addr" short:"a" description:"node's P2P address"`
 	Profile           string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	OrphanChainLength int    `long:"num-orphans" short:"n" description:"Desired length of orphan chain"`

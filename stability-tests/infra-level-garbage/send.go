@@ -10,7 +10,7 @@ import (
 )
 
 func sendMessages(address string, messagesChan <-chan []byte) error {
-	connection, err := DialToNode(address)
+	connection, err := dialToNode(address)
 	if err != nil {
 		return err
 	}
@@ -19,15 +19,15 @@ func sendMessages(address string, messagesChan <-chan []byte) error {
 		hex.Encode(messageHex, message)
 		log.Infof("Sending message %s", messageHex)
 
-		err := SendMessage(connection, message)
+		err := sendMessage(connection, message)
 		if err != nil {
 			// if failed once, we might have been disconnected because of a previous message,
 			// so re-connect and retry before reporting error
-			connection, err = DialToNode(address)
+			connection, err = dialToNode(address)
 			if err != nil {
 				return err
 			}
-			err = SendMessage(connection, message)
+			err = sendMessage(connection, message)
 			if err != nil {
 				return err
 			}
@@ -37,7 +37,7 @@ func sendMessages(address string, messagesChan <-chan []byte) error {
 	return nil
 }
 
-func SendMessage(connection net.Conn, message []byte) error {
+func sendMessage(connection net.Conn, message []byte) error {
 	err := connection.SetDeadline(time.Now().Add(common.DefaultTimeout))
 	if err != nil {
 		return errors.Wrap(err, "Error setting connection deadline")
@@ -47,7 +47,7 @@ func SendMessage(connection net.Conn, message []byte) error {
 	return err
 }
 
-func DialToNode(address string) (net.Conn, error) {
+func dialToNode(address string) (net.Conn, error) {
 	connection, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error connecting to node")

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func mineLoop(syncerRPCClient, syncedRPCClient *rpc.RPCClient) error {
+func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 	miningAddr, err := generateAddress()
 	if err != nil {
 		return err

@@ -19,6 +19,7 @@ func (clw LogWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// NewLogWriter returns a new LogWriter that forwards to `log` all data written to it using at `level` level
 func NewLogWriter(log *logger.Logger, level logger.Level, prefix string) LogWriter {
 	return LogWriter{
 		log:    log,
