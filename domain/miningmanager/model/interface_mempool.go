@@ -13,4 +13,5 @@ type Mempool interface {
 	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) error
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
 	AllTransactions() []*consensusexternalapi.DomainTransaction
+	TransactionCount() int
 }
