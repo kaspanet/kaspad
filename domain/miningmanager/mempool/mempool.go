@@ -145,6 +145,13 @@ func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
 	return transactions
 }
 
+func (mp *mempool) TransactionCount() int {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return len(mp.pool) + len(mp.chainedTransactions)
+}
+
 // txDescriptor is a descriptor containing a transaction in the mempool along with
 // additional metadata.
 type txDescriptor struct {
@@ -771,7 +778,7 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 // no transactions were moved from the orphan pool to the mempool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) []*txDescriptor {
+func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) ([]*txDescriptor, error) {
 	var acceptedTxns []*txDescriptor
 
 	// Start with processing at least the passed transaction.
@@ -806,6 +813,11 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 				missing, txD, err := mp.maybeAcceptTransaction(
 					tx, false)
 				if err != nil {
+					if !errors.As(err, &RuleError{}) {
+						return nil, err
+					}
+
+					log.Warnf("Invalid orphan transaction: %s", err)
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
 					// redeem any of its outputs can be
@@ -847,7 +859,7 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 		mp.removeOrphanDoubleSpends(txDescriptor.DomainTransaction)
 	}
 
-	return acceptedTxns
+	return acceptedTxns, nil
 }
 
 // ProcessTransaction is the main workhorse for handling insertion of new
@@ -879,7 +891,11 @@ func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainT
 		// transaction (they may no longer be orphans if all inputs
 		// are now available) and repeat for those accepted
 		// transactions until there are no more.
-		newTxs := mp.processOrphans(tx)
+		newTxs, err := mp.processOrphans(tx)
+		if err != nil {
+			return err
+		}
+
 		acceptedTxs := make([]*txDescriptor, len(newTxs)+1)
 
 		// Add the parent transaction first so remote nodes
@@ -980,7 +996,11 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 			return nil, errors.Wrapf(err, "Failed removing tx from mempool: %s", consensushashing.TransactionID(tx))
 		}
 		mp.removeOrphan(tx, false)
-		acceptedOrphans := mp.processOrphans(tx)
+		acceptedOrphans, err := mp.processOrphans(tx)
+		if err != nil {
+			return nil, err
+		}
+
 		for _, acceptedOrphan := range acceptedOrphans {
 			acceptedTxs = append(acceptedTxs, acceptedOrphan.DomainTransaction)
 		}

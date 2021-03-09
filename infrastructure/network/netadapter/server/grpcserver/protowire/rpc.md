@@ -1546,6 +1546,7 @@ GetInfoRequestMessage returns info about the node.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | p2pId | [string](#string) |  |  |
+| mempoolSize | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
