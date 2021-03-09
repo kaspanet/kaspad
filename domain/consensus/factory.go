@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocks"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -126,6 +127,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -172,6 +174,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagManager,
 		ghostdagDataStore,
 		blockHeaderStore,
+		daaBlocksStore,
 		dagTopologyManager,
 		dagTraversalManager,
 		dagParams.PowMax,
@@ -345,7 +348,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headersSelectedTipStore,
 		finalityStore,
-		headersSelectedChainStore)
+		headersSelectedChainStore,
+		daaBlocksStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},

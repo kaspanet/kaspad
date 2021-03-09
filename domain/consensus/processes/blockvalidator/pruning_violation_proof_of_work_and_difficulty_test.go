@@ -254,7 +254,7 @@ func TestValidateDifficulty(t *testing.T) {
 		factory := consensus.NewFactory()
 		mocDifficulty := &mocDifficultyManager{}
 		factory.SetTestDifficultyManager(func(model.DBReader, model.GHOSTDAGManager, model.GHOSTDAGDataStore,
-			model.BlockHeaderStore, model.DAGTopologyManager, model.DAGTraversalManager, *big.Int, int, bool, time.Duration,
+			model.BlockHeaderStore, model.DAABlocksStore, model.DAGTopologyManager, model.DAGTraversalManager, *big.Int, int, bool, time.Duration,
 			*externalapi.DomainHash) model.DifficultyManager {
 			return mocDifficulty
 		})
