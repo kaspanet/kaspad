@@ -199,7 +199,11 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("BlockHeader: %+v", err)
 		}
 
-		// Check that red blocks affect the difficulty
+		// Here we create two chains: a chain of blue blocks with very high timestamps, and
+		// a chain of red blocks with very low timestamps. Because the red blocks should be
+		// part of the difficulty window, their low timestamps should lower the difficulty,
+		// and we check it by comparing the bits of two blocks with the same blue score, one
+		// with the red blocks in its past and one without.
 		splitChainTimeDiff := 10000 * params.TargetTimePerBlock.Milliseconds()
 		_, splitBlockHash := addBlock(tipHeader.TimeInMilliseconds()+splitChainTimeDiff, tipHash)
 		blueTipHash := splitBlockHash
@@ -221,7 +225,9 @@ func TestDifficulty(t *testing.T) {
 				" blocks have very low timestamp and should lower the difficulty")
 		}
 
-		// Check that blocks that are not inside the window doesn't affect the difficulty
+		// We repeat the test, but now we make the blue chain longer in order to filter
+		// out the red blocks from the window, and check that the red blocks don't
+		// affect the difficulty.
 		blueTipHash = splitBlockHash
 		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
