@@ -193,22 +193,50 @@ func TestDifficulty(t *testing.T) {
 				" rate, so the difficulty should decrease as well")
 		}
 
-		_, tipHash = addBlock(0, tipHash)
+		// Here we create two chains: a chain of blue blocks, and a chain of red blocks with
+		// very low timestamps. Because the red blocks should be part of the difficulty
+		// window, their low timestamps should lower the difficulty, and we check it by
+		// comparing the bits of two blocks with the same blue score, one with the red
+		// blocks in its past and one without.
 		splitBlockHash := tipHash
-		for i := 0; i < 100; i++ {
-			_, tipHash = addBlock(0, tipHash)
+		blueTipHash := splitBlockHash
+		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
+			_, blueTipHash = addBlock(0, blueTipHash)
 		}
-		blueTipHash := tipHash
 
 		redChainTipHash := splitBlockHash
-		for i := 0; i < 10; i++ {
+		const redChainLength = 10
+		for i := 0; i < redChainLength; i++ {
 			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
 		}
-		tipWithRedPast, _ := addBlock(0, redChainTipHash, blueTipHash)
+		_, splitMergingBlock := addBlock(0, redChainTipHash, blueTipHash)
+		tipWithRedPast, _ := addBlock(0, splitMergingBlock)
+		_, blueTipHash = addBlock(0, blueTipHash)
 		tipWithoutRedPast, _ := addBlock(0, blueTipHash)
-		if tipWithoutRedPast.Header.Bits() != tipWithRedPast.Header.Bits() {
-			t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because red blocks" +
-				" shouldn't affect the difficulty")
+		if tipWithRedPast.Header.Bits() <= tipWithoutRedPast.Header.Bits() {
+			t.Fatalf("tipWithRedPast.bits should be greater than tipWithoutRedPast.bits because the red blocks" +
+				" blocks have very low timestamp and should lower the difficulty")
+		}
+
+		// We repeat the test, but now we make the blue chain longer in order to filter
+		// out the red blocks from the window, and check that the red blocks don't
+		// affect the difficulty.
+		blueTipHash = splitBlockHash
+		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength+1; i++ {
+			_, blueTipHash = addBlock(0, blueTipHash)
+		}
+
+		redChainTipHash = splitBlockHash
+		for i := 0; i < redChainLength; i++ {
+			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
+		}
+		_, splitMergingBlock = addBlock(0, redChainTipHash, blueTipHash)
+		tipWithRedPast, _ = addBlock(0, splitMergingBlock)
+		_, blueTipHash = addBlock(0, blueTipHash)
+		tipWithoutRedPast, _ = addBlock(0, blueTipHash)
+		if tipWithRedPast.Header.Bits() != tipWithoutRedPast.Header.Bits() {
+			t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because the red blocks" +
+				" are not part of the difficulty window")
 		}
 	})
 }
