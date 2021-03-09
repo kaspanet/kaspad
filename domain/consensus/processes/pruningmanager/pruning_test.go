@@ -33,10 +33,10 @@ func TestPruning(t *testing.T) {
 			dagconfig.SimnetParams.Name:  "1582",
 		},
 		"dag-for-test-pruning.json": {
-			dagconfig.MainnetParams.Name: "503",
+			dagconfig.MainnetParams.Name: "502",
 			dagconfig.TestnetParams.Name: "502",
 			dagconfig.DevnetParams.Name:  "502",
-			dagconfig.SimnetParams.Name:  "502",
+			dagconfig.SimnetParams.Name:  "503",
 		},
 	}
 

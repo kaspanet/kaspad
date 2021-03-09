@@ -103,7 +103,7 @@ func TestDifficulty(t *testing.T) {
 		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() != params.GenesisBlock.Header.Bits() {
-				t.Fatalf("As long as the bluest parent's blue score is less then the difficulty adjustment " +
+				t.Fatalf("As long as the block blue score is less then the difficulty adjustment " +
 					"window size, the difficulty should be the same as genesis'")
 			}
 		}
@@ -116,14 +116,9 @@ func TestDifficulty(t *testing.T) {
 
 		blockInThePast, tipHash := addBlockWithMinimumTime(tipHash)
 		if blockInThePast.Header.Bits() != tip.Header.Bits() {
-			t.Fatalf("The difficulty should only change when blockInThePast is in the past of a block bluest parent")
+			t.Fatalf("The difficulty should only change when blockInThePast is in the past of a block")
 		}
 		tip = blockInThePast
-
-		tip, tipHash = addBlock(0, tipHash)
-		if tip.Header.Bits() != blockInThePast.Header.Bits() {
-			t.Fatalf("The difficulty should only change when blockInThePast is in the past of a block bluest parent")
-		}
 
 		tip, tipHash = addBlock(0, tipHash)
 		if compareBits(tip.Header.Bits(), blockInThePast.Header.Bits()) >= 0 {
@@ -178,15 +173,11 @@ func TestDifficulty(t *testing.T) {
 		slowBlockTime := tip.Header.TimeInMilliseconds() + params.TargetTimePerBlock.Milliseconds() + 1000
 		slowBlock, tipHash := addBlock(slowBlockTime, tipHash)
 		if slowBlock.Header.Bits() != tip.Header.Bits() {
-			t.Fatalf("The difficulty should only change when slowBlock is in the past of a block bluest parent")
+			t.Fatalf("The difficulty should only change when slowBlock is in the past of a block")
 		}
 
 		tip = slowBlock
 
-		tip, tipHash = addBlock(0, tipHash)
-		if tip.Header.Bits() != slowBlock.Header.Bits() {
-			t.Fatalf("The difficulty should only change when slowBlock is in the past of a block bluest parent")
-		}
 		tip, tipHash = addBlock(0, tipHash)
 		if compareBits(tip.Header.Bits(), slowBlock.Header.Bits()) <= 0 {
 			t.Fatalf("tip.bits should be smaller than slowBlock.bits because slowBlock decreased the block" +
@@ -209,9 +200,7 @@ func TestDifficulty(t *testing.T) {
 		for i := 0; i < redChainLength; i++ {
 			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
 		}
-		_, splitMergingBlock := addBlock(0, redChainTipHash, blueTipHash)
-		tipWithRedPast, _ := addBlock(0, splitMergingBlock)
-		_, blueTipHash = addBlock(0, blueTipHash)
+		tipWithRedPast, _ := addBlock(0, redChainTipHash, blueTipHash)
 		tipWithoutRedPast, _ := addBlock(0, blueTipHash)
 		if tipWithRedPast.Header.Bits() <= tipWithoutRedPast.Header.Bits() {
 			t.Fatalf("tipWithRedPast.bits should be greater than tipWithoutRedPast.bits because the red blocks" +
@@ -230,9 +219,7 @@ func TestDifficulty(t *testing.T) {
 		for i := 0; i < redChainLength; i++ {
 			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
 		}
-		_, splitMergingBlock = addBlock(0, redChainTipHash, blueTipHash)
-		tipWithRedPast, _ = addBlock(0, splitMergingBlock)
-		_, blueTipHash = addBlock(0, blueTipHash)
+		tipWithRedPast, _ = addBlock(0, redChainTipHash, blueTipHash)
 		tipWithoutRedPast, _ = addBlock(0, blueTipHash)
 		if tipWithRedPast.Header.Bits() != tipWithoutRedPast.Header.Bits() {
 			t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because the red blocks" +
