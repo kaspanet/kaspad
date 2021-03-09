@@ -41,23 +41,7 @@ func New(timestampDeviationTolerance int,
 
 // PastMedianTime returns the past median time for some block
 func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
-	blockGHOSTDAGData, err := pmtm.ghostdagDataStore.Get(pmtm.databaseContext, blockHash)
-	if err != nil {
-		return 0, err
-	}
-	selectedParentHash := blockGHOSTDAGData.SelectedParent()
-
-	// Genesis block
-	if selectedParentHash == nil {
-		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, blockHash)
-		if err != nil {
-			return 0, err
-		}
-
-		return header.TimeInMilliseconds(), nil
-	}
-
-	window, err := pmtm.dagTraversalManager.BlockWindow(selectedParentHash, 2*pmtm.timestampDeviationTolerance-1)
+	window, err := pmtm.dagTraversalManager.BlockWindow(blockHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
 	}
