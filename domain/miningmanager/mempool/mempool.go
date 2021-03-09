@@ -145,7 +145,7 @@ func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
 	return transactions
 }
 
-func (mp *mempool) Len() int {
+func (mp *mempool) TransactionCount() int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
