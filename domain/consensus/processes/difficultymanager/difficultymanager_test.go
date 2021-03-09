@@ -229,7 +229,7 @@ func TestDifficulty(t *testing.T) {
 		// out the red blocks from the window, and check that the red blocks don't
 		// affect the difficulty.
 		blueTipHash = splitBlockHash
-		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength; i++ {
+		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength+1; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
 		}
 
