@@ -193,19 +193,12 @@ func TestDifficulty(t *testing.T) {
 				" rate, so the difficulty should decrease as well")
 		}
 
-		_, tipHash = addBlock(0, tipHash)
-		tipHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), tipHash)
-		if err != nil {
-			t.Fatalf("BlockHeader: %+v", err)
-		}
-
-		// Here we create two chains: a chain of blue blocks with very high timestamps, and
-		// a chain of red blocks with very low timestamps. Because the red blocks should be
-		// part of the difficulty window, their low timestamps should lower the difficulty,
-		// and we check it by comparing the bits of two blocks with the same blue score, one
-		// with the red blocks in its past and one without.
-		splitChainTimeDiff := 10000 * params.TargetTimePerBlock.Milliseconds()
-		_, splitBlockHash := addBlock(tipHeader.TimeInMilliseconds()+splitChainTimeDiff, tipHash)
+		// Here we create two chains: a chain of blue blocks, and a chain of red blocks with
+		// very low timestamps. Because the red blocks should be part of the difficulty
+		// window, their low timestamps should lower the difficulty, and we check it by
+		// comparing the bits of two blocks with the same blue score, one with the red
+		// blocks in its past and one without.
+		splitBlockHash := tipHash
 		blueTipHash := splitBlockHash
 		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
