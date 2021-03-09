@@ -194,21 +194,50 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		_, tipHash = addBlock(0, tipHash)
-		splitBlockHash := tipHash
-		for i := 0; i < 100; i++ {
-			_, tipHash = addBlock(0, tipHash)
+		tipHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), tipHash)
+		if err != nil {
+			t.Fatalf("BlockHeader: %+v", err)
 		}
-		blueTipHash := tipHash
+
+		// Check that red blocks affect the difficulty
+		splitChainTimeDiff := 10000 * params.TargetTimePerBlock.Milliseconds()
+		_, splitBlockHash := addBlock(tipHeader.TimeInMilliseconds()+splitChainTimeDiff, tipHash)
+		blueTipHash := splitBlockHash
+		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
+			_, blueTipHash = addBlock(0, blueTipHash)
+		}
 
 		redChainTipHash := splitBlockHash
-		for i := 0; i < 10; i++ {
+		const redChainLength = 10
+		for i := 0; i < redChainLength; i++ {
 			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
 		}
-		tipWithRedPast, _ := addBlock(0, redChainTipHash, blueTipHash)
+		_, splitMergingBlock := addBlock(0, redChainTipHash, blueTipHash)
+		tipWithRedPast, _ := addBlock(0, splitMergingBlock)
+		_, blueTipHash = addBlock(0, blueTipHash)
 		tipWithoutRedPast, _ := addBlock(0, blueTipHash)
-		if tipWithoutRedPast.Header.Bits() != tipWithRedPast.Header.Bits() {
-			t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because red blocks" +
-				" shouldn't affect the difficulty")
+		if tipWithRedPast.Header.Bits() <= tipWithoutRedPast.Header.Bits() {
+			t.Fatalf("tipWithRedPast.bits should be greater than tipWithoutRedPast.bits because the red blocks" +
+				" blocks have very low timestamp and should lower the difficulty")
+		}
+
+		// Check that blocks that are not inside the window doesn't affect the difficulty
+		blueTipHash = splitBlockHash
+		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength; i++ {
+			_, blueTipHash = addBlock(0, blueTipHash)
+		}
+
+		redChainTipHash = splitBlockHash
+		for i := 0; i < redChainLength; i++ {
+			_, redChainTipHash = addBlockWithMinimumTime(redChainTipHash)
+		}
+		_, splitMergingBlock = addBlock(0, redChainTipHash, blueTipHash)
+		tipWithRedPast, _ = addBlock(0, splitMergingBlock)
+		_, blueTipHash = addBlock(0, blueTipHash)
+		tipWithoutRedPast, _ = addBlock(0, blueTipHash)
+		if tipWithRedPast.Header.Bits() != tipWithoutRedPast.Header.Bits() {
+			t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because the red blocks" +
+				" are not part of the difficulty window")
 		}
 	})
 }
