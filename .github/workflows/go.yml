@@ -63,6 +63,9 @@ jobs:
         with:
           go-version: 1.16
 
+      - name: Delete the stability tests from coverage
+        run: rm -r stability-tests
+
       - name: Create coverage file
         run: go test -v -covermode=atomic -coverpkg=./... -coverprofile coverage.txt ./...
 
