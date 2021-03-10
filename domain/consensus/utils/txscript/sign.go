@@ -16,10 +16,10 @@ import (
 
 // RawTxInSignature returns the serialized Schnorr signature for the input idx of
 // the given transaction, with hashType appended to it.
-func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script *externalapi.ScriptPublicKey,
-	hashType consensushashing.SigHashType, key *secp256k1.SchnorrKeyPair) ([]byte, error) {
+func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	key *secp256k1.SchnorrKeyPair, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
 
-	hash, err := consensushashing.CalcSignatureHash(script, hashType, tx, idx)
+	hash, err := consensushashing.CalculateSignatureHash(tx, idx, hashType, sighashReusedValues)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +40,9 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, script *extern
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
-func SignatureScript(tx *externalapi.DomainTransaction, idx int, script *externalapi.ScriptPublicKey, hashType consensushashing.SigHashType, privKey *secp256k1.SchnorrKeyPair) ([]byte, error) {
-	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
+func SignatureScript(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	privKey *secp256k1.SchnorrKeyPair, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
+	sig, err := RawTxInSignature(tx, idx, hashType, privKey, sighashReusedValues)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +60,11 @@ func SignatureScript(tx *externalapi.DomainTransaction, idx int, script *externa
 }
 
 func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	script *externalapi.ScriptPublicKey, hashType consensushashing.SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
-	ScriptClass, util.Address, error) {
+	script *externalapi.ScriptPublicKey, hashType consensushashing.SigHashType,
+	sighashReusedValues *consensushashing.SighashReusedValues, kdb KeyDB, sdb ScriptDB) (
+	[]byte, ScriptClass, util.Address, error) {
 
-	class, address, err := ExtractScriptPubKeyAddress(script,
-		dagParams)
+	class, address, err := ExtractScriptPubKeyAddress(script, dagParams)
 	if err != nil {
 		return nil, NonStandardTy, nil, err
 	}
@@ -76,7 +77,7 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 			return nil, class, nil, err
 		}
 
-		signedScript, err := SignatureScript(tx, idx, script, hashType, key)
+		signedScript, err := SignatureScript(tx, idx, hashType, key, sighashReusedValues)
 		if err != nil {
 			return nil, class, nil, err
 		}
@@ -196,11 +197,12 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
 func SignTxOutput(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
-	scriptPublicKey *externalapi.ScriptPublicKey, hashType consensushashing.SigHashType, kdb KeyDB, sdb ScriptDB,
+	scriptPublicKey *externalapi.ScriptPublicKey, hashType consensushashing.SigHashType,
+	sighashReusedValues *consensushashing.SighashReusedValues, kdb KeyDB, sdb ScriptDB,
 	previousScript *externalapi.ScriptPublicKey) ([]byte, error) {
 
 	sigScript, class, _, err := sign(dagParams, tx,
-		idx, scriptPublicKey, hashType, kdb, sdb)
+		idx, scriptPublicKey, hashType, sighashReusedValues, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +214,7 @@ func SignTxOutput(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction
 		}
 
 		realSigScript, _, _, err := sign(dagParams, tx, idx,
-			scriptHashPreimageScriptPublicKey, hashType, kdb, sdb)
+			scriptHashPreimageScriptPublicKey, hashType, sighashReusedValues, kdb, sdb)
 		if err != nil {
 			return nil, err
 		}

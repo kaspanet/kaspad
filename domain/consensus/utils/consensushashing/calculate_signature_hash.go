@@ -43,24 +43,24 @@ type SighashReusedValues struct {
 	payloadHash         *externalapi.DomainHash
 }
 
-// CalcSignatureHash will, given a script and hash type calculate the signature hash
+// CalculateSignatureHash will, given a script and hash type calculate the signature hash
 // to be used for signing and verification.
-// This returns error only if one of the provided parameters are invalid.
-func CalcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
-	reusedValues *SighashReusedValues) (*externalapi.DomainHash, *SighashReusedValues, error) {
+// This returns error only if one of the provided parameters are consensus-invalid.
+func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
+	reusedValues *SighashReusedValues) (*externalapi.DomainHash, error) {
 
 	txIn := tx.Inputs[inputIndex]
 	prevScriptPublicKey := txIn.UTXOEntry.ScriptPublicKey()
 
 	if prevScriptPublicKey.Version > constants.MaxScriptPublicKeyVersion {
-		return nil, nil, errors.Errorf("Script version is unkown.")
+		return nil, errors.Errorf("Script version is unkown.")
 	}
-	return calcSignatureHash_BIP143(tx, inputIndex, txIn, prevScriptPublicKey, hashType, reusedValues)
+	return calculateSignatureHash(tx, inputIndex, txIn, prevScriptPublicKey, hashType, reusedValues)
 }
 
-func calcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int, txIn *externalapi.DomainTransactionInput,
+func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, txIn *externalapi.DomainTransactionInput,
 	prevScriptPublicKey *externalapi.ScriptPublicKey, hashType SigHashType, reusedValues *SighashReusedValues) (
-	*externalapi.DomainHash, *SighashReusedValues, error) {
+	*externalapi.DomainHash, error) {
 
 	hashWriter := hashes.NewTransactionSigningHashWriter()
 	infallibleWriteElement(hashWriter, tx.Version)
@@ -90,7 +90,7 @@ func calcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int,
 
 	infallibleWriteElement(hashWriter, hashType)
 
-	return hashWriter.Finalize(), nil, nil
+	return hashWriter.Finalize(), nil
 }
 
 func getPreviousOutputsHash(tx *externalapi.DomainTransaction, hashType SigHashType, reusedValues *SighashReusedValues) *externalapi.DomainHash {

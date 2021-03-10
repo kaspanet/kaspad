@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"golang.org/x/crypto/blake2b"
@@ -2035,17 +2033,8 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	script, err := unparseScript(vm.currentScript())
-	if err != nil {
-		return err
-	}
-	scriptPublicKey := &externalapi.ScriptPublicKey{
-		Script:  script,
-		Version: vm.scriptVersion,
-	}
-
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := consensushashing.CalcSignatureHash(scriptPublicKey, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2179,14 +2168,6 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	script, err := unparseScript(vm.currentScript())
-	if err != nil {
-		return err
-	}
-	scriptPublicKey := &externalapi.ScriptPublicKey{
-		Script:  script,
-		Version: vm.scriptVersion,
-	}
 	success := true
 	numPubKeys++
 	pubKeyIdx := -1
@@ -2259,7 +2240,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := consensushashing.CalcSignatureHash(scriptPublicKey, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 		if err != nil {
 			return err
 		}
