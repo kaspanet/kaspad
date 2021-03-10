@@ -203,7 +203,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 
 			_, _, err = tc.AddBlock(blockParents, nil, []*externalapi.DomainTransaction{tx})
 			if (shouldPass && err != nil) || (!shouldPass && !errors.Is(err, ruleerrors.ErrUnfinalizedTx)) {
-				t.Fatalf("ShouldPass: %t Unexpected error: %+v", shouldPass, err)
+				t.Fatalf("shouldPass: %t Unexpected error: %+v", shouldPass, err)
 			}
 		}
 
