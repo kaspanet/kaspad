@@ -66,6 +66,7 @@ type TestConsensus interface {
 	ReachabilityDataStore() model.ReachabilityDataStore
 	UTXODiffStore() model.UTXODiffStore
 	HeadersSelectedChainStore() model.HeadersSelectedChainStore
+	DAABlocksStore() model.DAABlocksStore
 
 	BlockBuilder() TestBlockBuilder
 	BlockProcessor() model.BlockProcessor

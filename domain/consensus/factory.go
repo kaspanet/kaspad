@@ -387,6 +387,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore:             utxoDiffStore,
 		finalityStore:             finalityStore,
 		headersSelectedChainStore: headersSelectedChainStore,
+		daaBlocksStore:            daaBlocksStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
