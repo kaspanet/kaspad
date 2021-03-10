@@ -21,11 +21,6 @@ func (x *BlockMessage) toAppMessage() (*appmessage.MsgBlock, error) {
 	if x == nil {
 		return nil, errors.Wrap(errorNil, "BlockMessage is nil")
 	}
-	if len(x.Transactions) > appmessage.MaxTxPerBlock {
-		return nil, errors.Errorf("too many transactions to fit into a block "+
-			"[count %d, max %d]", len(x.Transactions), appmessage.MaxTxPerBlock)
-	}
-
 	header, err := x.Header.toAppMessage()
 	if err != nil {
 		return nil, err
@@ -47,16 +42,6 @@ func (x *BlockMessage) toAppMessage() (*appmessage.MsgBlock, error) {
 }
 
 func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
-	if len(msgBlock.Transactions) > appmessage.MaxTxPerBlock {
-		return errors.Errorf("too many transactions to fit into a block "+
-			"[count %d, max %d]", len(msgBlock.Transactions), appmessage.MaxTxPerBlock)
-	}
-
-	if len(msgBlock.Header.ParentHashes) > appmessage.MaxBlockParents {
-		return errors.Errorf("block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(msgBlock.Header.ParentHashes), appmessage.MaxBlockParents)
-	}
-
 	protoHeader := new(BlockHeaderMessage)
 	err := protoHeader.fromAppMessage(&msgBlock.Header)
 	if err != nil {

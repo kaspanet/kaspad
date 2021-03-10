@@ -57,7 +57,7 @@ func (s *gRPCServer) listenOn(listenAddr string) error {
 		}
 	})
 
-	log.Infof("%s Server listening on %s", s.name, listenAddr)
+	log.Infof("%s Server listening on %s", s.name, listener.Addr())
 	return nil
 }
 
