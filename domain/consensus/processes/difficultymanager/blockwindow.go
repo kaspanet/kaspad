@@ -1,13 +1,10 @@
 package difficultymanager
 
 import (
-	"math"
-	"math/big"
-	"sort"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/pkg/errors"
+	"math"
+	"math/big"
 )
 
 type difficultyBlock struct {
@@ -80,16 +77,4 @@ func (window blockWindow) averageTarget() *big.Int {
 		averageTarget.Add(averageTarget, targetTmp)
 	}
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
-}
-
-func (window blockWindow) medianTimestamp() (int64, error) {
-	if len(window) == 0 {
-		return 0, errors.New("Cannot calculate median timestamp for an empty block window")
-	}
-	timestamps := make([]int64, len(window))
-	for i, node := range window {
-		timestamps[i] = node.timeInMilliseconds
-	}
-	sort.Sort(timeSorter(timestamps))
-	return timestamps[len(timestamps)/2], nil
 }

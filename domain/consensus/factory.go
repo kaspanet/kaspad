@@ -149,13 +149,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		reachabilityDataStore,
 		ghostdagManager,
-		consensusStateStore)
+		consensusStateStore,
+		dagParams.GenesisHash)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
 		blockHeaderStore,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		dagParams.GenesisHash)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.MassPerTxByte,
