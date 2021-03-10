@@ -26,6 +26,7 @@ func (tc *testConsensus) convertToDot() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer blocksIterator.Close()
 
 	for ok := blocksIterator.First(); ok; ok = blocksIterator.Next() {
 		hash, err := blocksIterator.Get()

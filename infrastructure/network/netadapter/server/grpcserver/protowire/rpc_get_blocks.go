@@ -1,13 +1,15 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_GetBlocksRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.GetBlocksRequestMessage{
-		LowHash:                       x.GetBlocksRequest.LowHash,
-		IncludeBlockVerboseData:       x.GetBlocksRequest.IncludeBlockVerboseData,
-		IncludeTransactionVerboseData: x.GetBlocksRequest.IncludeTransactionVerboseData,
-	}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlocksRequest is nil")
+	}
+	return x.GetBlocksRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetBlocksRequestMessage) error {
@@ -19,27 +21,22 @@ func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetB
 	return nil
 }
 
-func (x *KaspadMessage_GetBlocksResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.GetBlocksResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetBlocksResponse.Error.Message}
+func (x *GetBlocksRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetBlocksRequestMessage is nil")
 	}
-	appMessage := &appmessage.GetBlocksResponseMessage{
-		BlockHashes: x.GetBlocksResponse.BlockHashes,
-		Error:       err,
-	}
-	if x.GetBlocksResponse.BlockVerboseData != nil {
-		appMessage.BlockVerboseData = make([]*appmessage.BlockVerboseData, len(x.GetBlocksResponse.BlockVerboseData))
-		for i, blockVerboseDatum := range x.GetBlocksResponse.BlockVerboseData {
-			appBlockVerboseDatum, err := blockVerboseDatum.toAppMessage()
-			if err != nil {
-				return nil, err
-			}
-			appMessage.BlockVerboseData[i] = appBlockVerboseDatum
-		}
-	}
+	return &appmessage.GetBlocksRequestMessage{
+		LowHash:                       x.LowHash,
+		IncludeBlockVerboseData:       x.IncludeBlockVerboseData,
+		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
+	}, nil
+}
 
-	return appMessage, nil
+func (x *KaspadMessage_GetBlocksResponse) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlocksResponse is nil")
+	}
+	return x.GetBlocksResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.GetBlocksResponseMessage) error {
@@ -63,4 +60,32 @@ func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.Get
 		}
 	}
 	return nil
+}
+
+func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetBlocksResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	// Return verbose data only if there's no error
+	if rpcErr != nil && len(x.BlockVerboseData) != 0 {
+		return nil, errors.New("GetBlocksResponseMessage contains both an error and a response")
+	}
+	blocksVerboseData := make([]*appmessage.BlockVerboseData, len(x.BlockVerboseData))
+	for i, blockVerboseDatum := range x.BlockVerboseData {
+		appBlockVerboseDatum, err := blockVerboseDatum.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		blocksVerboseData[i] = appBlockVerboseDatum
+	}
+	return &appmessage.GetBlocksResponseMessage{
+		BlockVerboseData: blocksVerboseData,
+		BlockHashes:      x.BlockHashes,
+		Error:            rpcErr,
+	}, nil
 }

@@ -8,9 +8,19 @@ import (
 )
 
 func (x *KaspadMessage_GetBlockRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockRequest is nil")
+	}
+	return x.GetBlockRequest.toAppMessage()
+}
+
+func (x *GetBlockRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetBlockRequestMessage is nil")
+	}
 	return &appmessage.GetBlockRequestMessage{
-		Hash:                          x.GetBlockRequest.Hash,
-		IncludeTransactionVerboseData: x.GetBlockRequest.IncludeTransactionVerboseData,
+		Hash:                          x.Hash,
+		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
 	}, nil
 }
 
@@ -23,21 +33,35 @@ func (x *KaspadMessage_GetBlockRequest) fromAppMessage(message *appmessage.GetBl
 }
 
 func (x *KaspadMessage_GetBlockResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.GetBlockResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetBlockResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockResponse is nil")
+	}
+	return x.GetBlockResponse.toAppMessage()
+}
+
+func (x *GetBlockResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetBlockResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
 	}
 	var blockVerboseData *appmessage.BlockVerboseData
-	if x.GetBlockResponse.BlockVerboseData != nil {
-		appBlockVerboseData, err := x.GetBlockResponse.BlockVerboseData.toAppMessage()
+	// Return verbose data only if there's no error
+	if rpcErr != nil && x.BlockVerboseData != nil {
+		return nil, errors.New("GetBlockResponseMessage contains both an error and a response")
+	}
+	if rpcErr == nil {
+		blockVerboseData, err = x.BlockVerboseData.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-		blockVerboseData = appBlockVerboseData
 	}
 	return &appmessage.GetBlockResponseMessage{
 		BlockVerboseData: blockVerboseData,
-		Error:            err,
+		Error:            rpcErr,
 	}, nil
 }
 
@@ -63,6 +87,9 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 }
 
 func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "BlockVerboseData is nil")
+	}
 	transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(x.TransactionVerboseData))
 	for i, transactionVerboseDatum := range x.TransactionVerboseData {
 		appTransactionVerboseDatum, err := transactionVerboseDatum.toAppMessage()
@@ -90,6 +117,7 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		Bits:                   x.Bits,
 		Difficulty:             x.Difficulty,
 		ParentHashes:           x.ParentHashes,
+		ChildrenHashes:         x.ChildrenHashes,
 		SelectedParentHash:     x.SelectedParentHash,
 		IsHeaderOnly:           x.IsHeaderOnly,
 		BlueScore:              x.BlueScore,
@@ -120,6 +148,7 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 		Bits:                   message.Bits,
 		Difficulty:             message.Difficulty,
 		ParentHashes:           message.ParentHashes,
+		ChildrenHashes:         message.ChildrenHashes,
 		SelectedParentHash:     message.SelectedParentHash,
 		IsHeaderOnly:           message.IsHeaderOnly,
 		BlueScore:              message.BlueScore,
@@ -128,31 +157,24 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 }
 
 func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseData, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionVerboseData is nil")
+	}
 	inputs := make([]*appmessage.TransactionVerboseInput, len(x.TransactionVerboseInputs))
 	for j, item := range x.TransactionVerboseInputs {
-		scriptSig := &appmessage.ScriptSig{
-			Asm: item.ScriptSig.Asm,
-			Hex: item.ScriptSig.Hex,
+		input, err := item.toAppMessage()
+		if err != nil {
+			return nil, err
 		}
-		inputs[j] = &appmessage.TransactionVerboseInput{
-			TxID:        item.TxId,
-			OutputIndex: item.OutputIndex,
-			ScriptSig:   scriptSig,
-			Sequence:    item.Sequence,
-		}
+		inputs[j] = input
 	}
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
 	for j, item := range x.TransactionVerboseOutputs {
-		scriptPubKey := &appmessage.ScriptPubKeyResult{
-			Hex:     item.ScriptPublicKey.Hex,
-			Type:    item.ScriptPublicKey.Type,
-			Address: item.ScriptPublicKey.Address,
+		output, err := item.toAppMessage()
+		if err != nil {
+			return nil, err
 		}
-		outputs[j] = &appmessage.TransactionVerboseOutput{
-			Value:        item.Value,
-			Index:        item.Index,
-			ScriptPubKey: scriptPubKey,
-		}
+		outputs[j] = output
 	}
 	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
@@ -165,7 +187,6 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 		LockTime:                  x.LockTime,
 		SubnetworkID:              x.SubnetworkId,
 		Gas:                       x.Gas,
-		PayloadHash:               x.PayloadHash,
 		Payload:                   x.Payload,
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
@@ -195,6 +216,7 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 			Hex:     item.ScriptPubKey.Hex,
 			Type:    item.ScriptPubKey.Type,
 			Address: item.ScriptPubKey.Address,
+			Version: uint32(item.ScriptPubKey.Version),
 		}
 		outputs[j] = &TransactionVerboseOutput{
 			Value:           item.Value,
@@ -210,7 +232,6 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		LockTime:                  message.LockTime,
 		SubnetworkId:              message.SubnetworkID,
 		Gas:                       message.Gas,
-		PayloadHash:               message.PayloadHash,
 		Payload:                   message.Payload,
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
@@ -219,4 +240,58 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		BlockTime:                 message.BlockTime,
 	}
 	return nil
+}
+
+func (x *TransactionVerboseInput) toAppMessage() (*appmessage.TransactionVerboseInput, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionVerboseInput is nil")
+	}
+	scriptSig, err := x.ScriptSig.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.TransactionVerboseInput{
+		TxID:        x.TxId,
+		OutputIndex: x.OutputIndex,
+		ScriptSig:   scriptSig,
+		Sequence:    x.Sequence,
+	}, nil
+}
+
+func (x *TransactionVerboseOutput) toAppMessage() (*appmessage.TransactionVerboseOutput, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionVerboseOutput is nil")
+	}
+	scriptPubKey, err := x.ScriptPublicKey.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.TransactionVerboseOutput{
+		Value:        x.Value,
+		Index:        x.Index,
+		ScriptPubKey: scriptPubKey,
+	}, nil
+}
+
+func (x *ScriptSig) toAppMessage() (*appmessage.ScriptSig, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "ScriptSig is nil")
+	}
+	return &appmessage.ScriptSig{
+		Asm: x.Asm,
+		Hex: x.Hex,
+	}, nil
+}
+
+func (x *ScriptPublicKeyResult) toAppMessage() (*appmessage.ScriptPubKeyResult, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "ScriptPublicKeyResult is nil")
+	}
+	return &appmessage.ScriptPubKeyResult{
+		Hex:     x.Hex,
+		Type:    x.Type,
+		Address: x.Address,
+		Version: uint16(x.Version),
+	}, nil
+
 }

@@ -6,7 +6,6 @@ package appmessage
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"strconv"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -133,7 +132,6 @@ type MsgTx struct {
 	LockTime     uint64
 	SubnetworkID externalapi.DomainSubnetworkID
 	Gas          uint64
-	PayloadHash  externalapi.DomainHash
 	Payload      []byte
 }
 
@@ -179,7 +177,6 @@ func (msg *MsgTx) Copy() *MsgTx {
 		LockTime:     msg.LockTime,
 		SubnetworkID: msg.SubnetworkID,
 		Gas:          msg.Gas,
-		PayloadHash:  msg.PayloadHash,
 	}
 
 	if msg.Payload != nil {
@@ -280,18 +277,12 @@ func newMsgTx(version uint16, txIn []*TxIn, txOut []*TxOut, subnetworkID *extern
 		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
 	}
 
-	var payloadHash externalapi.DomainHash
-	if *subnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = *hashes.PayloadHash(payload)
-	}
-
 	return &MsgTx{
 		Version:      version,
 		TxIn:         txIn,
 		TxOut:        txOut,
 		SubnetworkID: *subnetworkID,
 		Gas:          gas,
-		PayloadHash:  payloadHash,
 		Payload:      payload,
 		LockTime:     lockTime,
 	}

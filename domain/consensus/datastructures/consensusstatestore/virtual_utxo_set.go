@@ -3,6 +3,7 @@ package consensusstatestore
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +22,7 @@ func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext mod
 }
 
 func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext model.DBWriter,
-	pruningPointUTXOSetIterator model.ReadOnlyUTXOSetIterator) error {
+	pruningPointUTXOSetIterator externalapi.ReadOnlyUTXOSetIterator) error {
 
 	if css.virtualUTXODiffStaging != nil {
 		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
@@ -44,6 +45,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 	if err != nil {
 		return err
 	}
+	defer deleteCursor.Close()
 	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
 		key, err := deleteCursor.Key()
 		if err != nil {

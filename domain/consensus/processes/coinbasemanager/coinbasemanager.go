@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 )
 
@@ -48,8 +47,6 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	payloadHash := hashes.PayloadHash(payload)
-
 	return &externalapi.DomainTransaction{
 		Version:      constants.MaxTransactionVersion,
 		Inputs:       []*externalapi.DomainTransactionInput{},
@@ -57,7 +54,6 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		LockTime:     0,
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 		Gas:          0,
-		PayloadHash:  *payloadHash,
 		Payload:      payload,
 	}, nil
 }

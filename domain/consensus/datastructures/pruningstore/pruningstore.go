@@ -117,13 +117,14 @@ func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
 }
 
 func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
-	utxoSetIterator model.ReadOnlyUTXOSetIterator) error {
+	utxoSetIterator externalapi.ReadOnlyUTXOSetIterator) error {
 
 	// Delete all the old UTXOs from the database
 	deleteCursor, err := dbContext.Cursor(pruningPointUTXOSetBucket)
 	if err != nil {
 		return err
 	}
+	defer deleteCursor.Close()
 	for ok := deleteCursor.First(); ok; ok = deleteCursor.Next() {
 		key, err := deleteCursor.Key()
 		if err != nil {
@@ -215,6 +216,7 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close()
 
 	if fromOutpoint != nil {
 		serializedFromOutpoint, err := serializeOutpoint(fromOutpoint)
@@ -229,6 +231,7 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	}
 
 	pruningPointUTXOIterator := ps.newCursorUTXOSetIterator(cursor)
+	defer pruningPointUTXOIterator.Close()
 
 	outpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0, limit)
 	for len(outpointAndUTXOEntryPairs) < limit && pruningPointUTXOIterator.Next() {

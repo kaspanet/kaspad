@@ -77,14 +77,8 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	log.Debugf("Deleting all existing virtual diff parents")
-	csm.consensusStateStore.StageVirtualDiffParents(nil)
-
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
-	err = csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
-	if err != nil {
-		return err
-	}
+	csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
 
 	log.Debugf("Staging the new pruning point %s", newPruningPointHash)
 	csm.pruningStore.StagePruningPoint(newPruningPointHash)
@@ -94,6 +88,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	if err != nil {
 		return err
 	}
+	defer importedPruningPointUTXOIterator.Close()
 
 	// Clone the pruningPoint block here because validateBlockTransactionsAgainstPastUTXO
 	// assumes that the block UTXOEntries are pre-filled during further validations
@@ -182,6 +177,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	if err != nil {
 		return err
 	}
+	defer pruningPointUTXOSetIterator.Close()
 
 	log.Debugf("Importing the virtual UTXO set")
 	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(csm.databaseContext, pruningPointUTXOSetIterator)

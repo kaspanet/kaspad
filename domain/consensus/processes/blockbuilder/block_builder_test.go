@@ -71,7 +71,6 @@ func TestBuildBlockErrorCases(t *testing.T) {
 						LockTime:     0,
 						SubnetworkID: subnetworks.SubnetworkIDNative,
 						Gas:          0,
-						PayloadHash:  externalapi.DomainHash{},
 						Payload:      []byte{0},
 					},
 					{
@@ -86,7 +85,6 @@ func TestBuildBlockErrorCases(t *testing.T) {
 						LockTime:     0,
 						SubnetworkID: subnetworks.SubnetworkIDNative,
 						Gas:          0,
-						PayloadHash:  externalapi.DomainHash{},
 						Payload:      []byte{1},
 					},
 				},

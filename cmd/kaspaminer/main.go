@@ -26,6 +26,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s\n", err)
 		os.Exit(1)
 	}
+	defer backendLog.Close()
 
 	// Show version at startup.
 	log.Infof("Version %s", version.Version())
@@ -39,7 +40,7 @@ func main() {
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
-	defer client.Disconnect()
+	defer client.safeRPCClient().Disconnect()
 
 	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
 	if err != nil {

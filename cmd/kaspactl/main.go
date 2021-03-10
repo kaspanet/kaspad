@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"os"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -67,7 +68,7 @@ func postCommand(cfg *configFlags, client *grpcclient.GRPCClient, responseChan c
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error posting the request to the RPC server: %s", err))
 	}
-	responseBytes, err := protojson.Marshal(response)
+	responseBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(response)
 	if err != nil {
 		printErrorAndExit(errors.Wrapf(err, "error parsing the response from the RPC server").Error())
 	}
@@ -92,6 +93,7 @@ func prettifyResponse(response string) string {
 
 	marshalOptions := &protojson.MarshalOptions{}
 	marshalOptions.Indent = "    "
+	marshalOptions.EmitUnpopulated = true
 	return marshalOptions.Format(kaspadMessage)
 }
 

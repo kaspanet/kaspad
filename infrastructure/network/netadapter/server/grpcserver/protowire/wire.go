@@ -11,6 +11,9 @@ type converter interface {
 
 // ToAppMessage converts a KaspadMessage to its appmessage.Message representation
 func (x *KaspadMessage) ToAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage is nil")
+	}
 	converter, ok := x.Payload.(converter)
 	if !ok {
 		return nil, errors.Errorf("received invalid message")
@@ -743,6 +746,34 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.GetInfoResponseMessage:
 		payload := new(KaspadMessage_GetInfoResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage:
+		payload := new(KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage:
+		payload := new(KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.PruningPointUTXOSetOverrideNotificationMessage:
+		payload := new(KaspadMessage_PruningPointUTXOSetOverrideNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage:
+		payload := new(KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

@@ -1,7 +1,6 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -16,7 +15,7 @@ func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction
 // from the virtual's UTXO set combined with the provided utxoDiff.
 // If utxoDiff == nil UTXO entries are taken from the virtual's UTXO set only
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
-	transaction *externalapi.DomainTransaction, utxoDiff model.UTXODiff) error {
+	transaction *externalapi.DomainTransaction, utxoDiff externalapi.UTXODiff) error {
 
 	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("populateTransactionWithUTXOEntriesFromVirtualOrDiff start for transaction %s", transactionID)
@@ -77,7 +76,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 }
 
 func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromUTXOSet(
-	pruningPoint *externalapi.DomainBlock, iterator model.ReadOnlyUTXOSetIterator) error {
+	pruningPoint *externalapi.DomainBlock, iterator externalapi.ReadOnlyUTXOSetIterator) error {
 
 	// Collect the required outpoints from the block
 	outpointsForPopulation := make(map[externalapi.DomainOutpoint]interface{})

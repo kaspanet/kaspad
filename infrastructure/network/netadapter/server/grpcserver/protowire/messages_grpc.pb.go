@@ -11,7 +11,7 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion7
+const _ = grpc.SupportPackageIsVersion6
 
 // P2PClient is the client API for P2P service.
 //
@@ -71,19 +71,12 @@ type P2PServer interface {
 type UnimplementedP2PServer struct {
 }
 
-func (UnimplementedP2PServer) MessageStream(P2P_MessageStreamServer) error {
+func (*UnimplementedP2PServer) MessageStream(P2P_MessageStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
 }
-func (UnimplementedP2PServer) mustEmbedUnimplementedP2PServer() {}
+func (*UnimplementedP2PServer) mustEmbedUnimplementedP2PServer() {}
 
-// UnsafeP2PServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to P2PServer will
-// result in compilation errors.
-type UnsafeP2PServer interface {
-	mustEmbedUnimplementedP2PServer()
-}
-
-func RegisterP2PServer(s grpc.ServiceRegistrar, srv P2PServer) {
+func RegisterP2PServer(s *grpc.Server, srv P2PServer) {
 	s.RegisterService(&_P2P_serviceDesc, srv)
 }
 
@@ -186,19 +179,12 @@ type RPCServer interface {
 type UnimplementedRPCServer struct {
 }
 
-func (UnimplementedRPCServer) MessageStream(RPC_MessageStreamServer) error {
+func (*UnimplementedRPCServer) MessageStream(RPC_MessageStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
 }
-func (UnimplementedRPCServer) mustEmbedUnimplementedRPCServer() {}
+func (*UnimplementedRPCServer) mustEmbedUnimplementedRPCServer() {}
 
-// UnsafeRPCServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RPCServer will
-// result in compilation errors.
-type UnsafeRPCServer interface {
-	mustEmbedUnimplementedRPCServer()
-}
-
-func RegisterRPCServer(s grpc.ServiceRegistrar, srv RPCServer) {
+func RegisterRPCServer(s *grpc.Server, srv RPCServer) {
 	s.RegisterService(&_RPC_serviceDesc, srv)
 }
 

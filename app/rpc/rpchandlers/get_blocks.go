@@ -11,7 +11,7 @@ import (
 const (
 	// maxBlocksInGetBlocksResponse is the max amount of blocks that are
 	// allowed in a GetBlocksResult.
-	maxBlocksInGetBlocksResponse = 100
+	maxBlocksInGetBlocksResponse = 1000
 )
 
 // HandleGetBlocks handles the respectively named RPC command
@@ -35,6 +35,17 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		if err != nil {
 			return &appmessage.GetBlocksResponseMessage{
 				Error: appmessage.RPCErrorf("Could not decode lowHash %s: %s", getBlocksRequest.LowHash, err),
+			}, nil
+		}
+
+		blockInfo, err := context.Domain.Consensus().GetBlockInfo(lowHash)
+		if err != nil {
+			return nil, err
+		}
+
+		if !blockInfo.Exists {
+			return &appmessage.GetBlocksResponseMessage{
+				Error: appmessage.RPCErrorf("Could not find lowHash %s", getBlocksRequest.LowHash),
 			}, nil
 		}
 	}

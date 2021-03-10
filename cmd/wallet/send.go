@@ -177,7 +177,6 @@ func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*app
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 		Gas:          0,
 		Payload:      nil,
-		PayloadHash:  externalapi.DomainHash{},
 	}
 
 	for i, input := range domainTransaction.Inputs {

@@ -19,12 +19,7 @@ type txEncoding uint8
 const (
 	txEncodingFull txEncoding = 0
 
-	// TODO: Consider if we need to ever exclude the payload, or use a different approach to partial nodes
-	// where we'll get rid of PayloadHash field, never exclude the payload when hashing, and provide
-	// partial nodes with their relevant block region with a merkle proof.
-	txEncodingExcludePayload txEncoding = 1 << iota
-
-	txEncodingExcludeSignatureScript
+	txEncodingExcludeSignatureScript = 1 << iota
 )
 
 // TransactionHashForSigning hashes the transaction and the given hash type in a way that is intended for
@@ -33,7 +28,7 @@ func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint3
 	// Encode the header and hash everything prior to the number of
 	// transactions.
 	writer := hashes.NewTransactionSigningHashWriter()
-	err := serializeTransaction(writer, tx, txEncodingExcludePayload)
+	err := serializeTransaction(writer, tx, txEncodingFull)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
@@ -54,7 +49,7 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 	// Encode the header and hash everything prior to the number of
 	// transactions.
 	writer := hashes.NewTransactionHashWriter()
-	err := serializeTransaction(writer, tx, txEncodingExcludePayload)
+	err := serializeTransaction(writer, tx, txEncodingFull)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
@@ -76,7 +71,7 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 	// payload and hash the result.
 	var encodingFlags txEncoding
 	if !transactionhelper.IsCoinBase(tx) {
-		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
+		encodingFlags = txEncodingExcludeSignatureScript
 	}
 	writer := hashes.NewTransactionIDWriter()
 	err := serializeTransaction(writer, tx, encodingFlags)
@@ -139,21 +134,9 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
-	err = serialization.WriteElement(w, &tx.PayloadHash)
+	err = writeVarBytes(w, tx.Payload)
 	if err != nil {
 		return err
-	}
-
-	if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
-		err = writeVarBytes(w, tx.Payload)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = writeVarBytes(w, []byte{})
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

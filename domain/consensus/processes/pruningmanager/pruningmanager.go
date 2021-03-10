@@ -133,6 +133,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	if err != nil {
 		return err
 	}
+	defer iterator.Close()
 
 	// Finding the next pruning point candidate: look for the latest
 	// selected child of the current candidate that is in depth of at
@@ -256,11 +257,6 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 		return err
 	}
 
-	err = pm.pruneVirtualDiffParents(pruningPoint, virtualParents)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -289,26 +285,6 @@ func (pm *pruningManager) deleteBlocksDownward(queue model.BlockHeap) error {
 			}
 		}
 	}
-	return nil
-}
-
-func (pm *pruningManager) pruneVirtualDiffParents(pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) error {
-	virtualDiffParents, err := pm.consensusStateStore.VirtualDiffParents(pm.databaseContext)
-	if err != nil {
-		return err
-	}
-	validVirtualDiffParents := make([]*externalapi.DomainHash, 0, len(virtualParents))
-	for _, parent := range virtualDiffParents {
-		isInPruningFutureOrInVirtualPast, err := pm.isInPruningFutureOrInVirtualPast(parent, pruningPoint, virtualParents)
-		if err != nil {
-			return err
-		}
-		if isInPruningFutureOrInVirtualPast {
-			validVirtualDiffParents = append(validVirtualDiffParents, parent)
-		}
-	}
-	pm.consensusStateStore.StageVirtualDiffParents(validVirtualDiffParents)
-
 	return nil
 }
 
@@ -450,6 +426,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *extern
 	if err != nil {
 		return err
 	}
+	defer utxoSetIterator.Close()
 
 	utxoSetMultiset := multiset.New()
 	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
@@ -569,6 +546,7 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	if err != nil {
 		return err
 	}
+	defer utxoSetIterator.Close()
 
 	log.Debugf("Updating the pruning point UTXO set")
 	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
@@ -588,6 +566,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.Doma
 	if err != nil {
 		return err
 	}
+	defer iterator.Close()
 
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		blockHash, err := iterator.Get()

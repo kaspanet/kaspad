@@ -2,12 +2,14 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_NotifyUtxosChangedRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.NotifyUTXOsChangedRequestMessage{
-		Addresses: x.NotifyUtxosChangedRequest.Addresses,
-	}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyUtxosChangedRequest is nil")
+	}
+	return x.NotifyUtxosChangedRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_NotifyUtxosChangedRequest) fromAppMessage(message *appmessage.NotifyUTXOsChangedRequestMessage) error {
@@ -17,14 +19,20 @@ func (x *KaspadMessage_NotifyUtxosChangedRequest) fromAppMessage(message *appmes
 	return nil
 }
 
-func (x *KaspadMessage_NotifyUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.NotifyUtxosChangedResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.NotifyUtxosChangedResponse.Error.Message}
+func (x *NotifyUtxosChangedRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyUtxosChangedRequestMessage is nil")
 	}
-	return &appmessage.NotifyUTXOsChangedResponseMessage{
-		Error: err,
+	return &appmessage.NotifyUTXOsChangedRequestMessage{
+		Addresses: x.Addresses,
 	}, nil
+}
+
+func (x *KaspadMessage_NotifyUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyUtxosChangedResponseMessage is nil")
+	}
+	return x.NotifyUtxosChangedResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_NotifyUtxosChangedResponse) fromAppMessage(message *appmessage.NotifyUTXOsChangedResponseMessage) error {
@@ -38,29 +46,25 @@ func (x *KaspadMessage_NotifyUtxosChangedResponse) fromAppMessage(message *appme
 	return nil
 }
 
-func (x *KaspadMessage_UtxosChangedNotification) toAppMessage() (appmessage.Message, error) {
-	added := make([]*appmessage.UTXOsByAddressesEntry, len(x.UtxosChangedNotification.Added))
-	for i, entry := range x.UtxosChangedNotification.Added {
-		entryAsAppMessage, err := entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		added[i] = entryAsAppMessage
+func (x *NotifyUtxosChangedResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyUtxosChangedResponseMessage is nil")
 	}
-
-	removed := make([]*appmessage.UTXOsByAddressesEntry, len(x.UtxosChangedNotification.Removed))
-	for i, entry := range x.UtxosChangedNotification.Removed {
-		entryAsAppMessage, err := entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		removed[i] = entryAsAppMessage
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
 	}
-
-	return &appmessage.UTXOsChangedNotificationMessage{
-		Added:   added,
-		Removed: removed,
+	return &appmessage.NotifyUTXOsChangedResponseMessage{
+		Error: rpcErr,
 	}, nil
+}
+
+func (x *KaspadMessage_UtxosChangedNotification) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_UtxosChangedNotification is nil")
+	}
+	return x.UtxosChangedNotification.toAppMessage()
 }
 
 func (x *KaspadMessage_UtxosChangedNotification) fromAppMessage(message *appmessage.UTXOsChangedNotificationMessage) error {
@@ -83,28 +87,55 @@ func (x *KaspadMessage_UtxosChangedNotification) fromAppMessage(message *appmess
 	return nil
 }
 
-func (x *UtxosByAddressesEntry) toAppMessage() (*appmessage.UTXOsByAddressesEntry, error) {
-	outpoint := &appmessage.RPCOutpoint{
-		TransactionID: x.Outpoint.TransactionId,
-		Index:         x.Outpoint.Index,
+func (x *UtxosChangedNotificationMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "UtxosChangedNotificationMessage is nil")
 	}
-	var utxoEntry *appmessage.RPCUTXOEntry
-	if x.UtxoEntry != nil {
-		scriptPubKey, err := ConvertFromAppMsgRPCScriptPubKeyToRPCScriptPubKey(x.UtxoEntry.ScriptPublicKey)
+	added := make([]*appmessage.UTXOsByAddressesEntry, len(x.Added))
+	for i, entry := range x.Added {
+		entryAsAppMessage, err := entry.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-		utxoEntry = &appmessage.RPCUTXOEntry{
-			Amount:          x.UtxoEntry.Amount,
-			ScriptPublicKey: scriptPubKey,
-			BlockBlueScore:  x.UtxoEntry.BlockBlueScore,
-			IsCoinbase:      x.UtxoEntry.IsCoinbase,
+		// UTXOEntry is optional in other places, but here it's required.
+		if entryAsAppMessage.UTXOEntry == nil {
+			return nil, errors.Wrapf(errorNil, "UTXOEntry is nil in UTXOsByAddressesEntry.Added")
 		}
+		added[i] = entryAsAppMessage
+	}
+
+	removed := make([]*appmessage.UTXOsByAddressesEntry, len(x.Removed))
+	for i, entry := range x.Removed {
+		entryAsAppMessage, err := entry.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		removed[i] = entryAsAppMessage
+	}
+
+	return &appmessage.UTXOsChangedNotificationMessage{
+		Added:   added,
+		Removed: removed,
+	}, nil
+}
+
+func (x *UtxosByAddressesEntry) toAppMessage() (*appmessage.UTXOsByAddressesEntry, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "UtxosByAddressesEntry is nil")
+	}
+	outpoint, err := x.Outpoint.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	entry, err := x.UtxoEntry.toAppMessage()
+	// entry is an optional field sometimes
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
 	}
 	return &appmessage.UTXOsByAddressesEntry{
 		Address:   x.Address,
 		Outpoint:  outpoint,
-		UTXOEntry: utxoEntry,
+		UTXOEntry: entry,
 	}, nil
 }
 
@@ -127,4 +158,30 @@ func (x *UtxosByAddressesEntry) fromAppMessage(entry *appmessage.UTXOsByAddresse
 		Outpoint:  outpoint,
 		UtxoEntry: utxoEntry,
 	}
+}
+
+func (x *RpcOutpoint) toAppMessage() (*appmessage.RPCOutpoint, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcOutpoint is nil")
+	}
+	return &appmessage.RPCOutpoint{
+		TransactionID: x.TransactionId,
+		Index:         x.Index,
+	}, nil
+}
+
+func (x *RpcUtxoEntry) toAppMessage() (*appmessage.RPCUTXOEntry, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcUtxoEntry is nil")
+	}
+	scriptPubKey, err := x.ScriptPublicKey.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.RPCUTXOEntry{
+		Amount:          x.Amount,
+		ScriptPublicKey: scriptPubKey,
+		BlockBlueScore:  x.BlockBlueScore,
+		IsCoinbase:      x.IsCoinbase,
+	}, nil
 }

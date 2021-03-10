@@ -34,7 +34,6 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	}
 	log.Debugf("The selected parent of the virtual is: %s", virtualSelectedParent)
 
-	selectedVirtualParents := hashset.NewFromSlice(virtualSelectedParent)
 	candidates := candidatesHeap.ToSlice()
 	// prioritize half the blocks with highest blueWork and half with lowest, so the network will merge splits faster.
 	if len(candidates) >= int(csm.maxBlockParents) {
@@ -46,7 +45,14 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			end--
 		}
 	}
+	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
+	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
+	// don't want to consider and calculate 3 times the amount of candidates for the set of parents.
+	if len(candidates) > int(csm.maxBlockParents)*3 {
+		candidates = candidates[:int(csm.maxBlockParents)*3]
+	}
 
+	selectedVirtualParents := []*externalapi.DomainHash{virtualSelectedParent}
 	mergeSetSize := uint64(1) // starts counting from 1 because selectedParent is already in the mergeSet
 
 	for len(candidates) > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
@@ -56,32 +62,68 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 		log.Debugf("Attempting to add %s to the virtual parents", candidate)
 		log.Debugf("The current merge set size is %d", mergeSetSize)
 
-		mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents)
+		canBeParent, newCandidate, mergeSetIncrease, err := csm.mergeSetIncrease(candidate, selectedVirtualParents, mergeSetSize)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("The merge set would increase by %d with block %s", mergeSetIncrease, candidate)
-
-		if mergeSetSize+mergeSetIncrease > csm.mergeSetSizeLimit {
-			log.Debugf("Cannot add block %s since that would violate the merge set size limit", candidate)
+		if canBeParent {
+			mergeSetSize += mergeSetIncrease
+			selectedVirtualParents = append(selectedVirtualParents, candidate)
+			log.Tracef("Added block %s to the virtual parents set", candidate)
 			continue
 		}
-
-		selectedVirtualParents.Add(candidate)
-		mergeSetSize += mergeSetIncrease
-		log.Tracef("Added block %s to the virtual parents set", candidate)
+		// If we already have a candidate in the past of newCandidate then skip.
+		isInFutureOfCandidates, err := csm.dagTopologyManager.IsAnyAncestorOf(candidates, newCandidate)
+		if err != nil {
+			return nil, err
+		}
+		if isInFutureOfCandidates {
+			continue
+		}
+		// Remove all candidates in the future of newCandidate
+		candidates, err = csm.removeHashesInFutureOf(candidates, newCandidate)
+		if err != nil {
+			return nil, err
+		}
+		candidates = append(candidates, newCandidate)
+		log.Debugf("Block %s increases merge set too much, instead adding its ancestor %s", candidate, newCandidate)
 	}
 
-	boundedMergeBreakingParents, err := csm.boundedMergeBreakingParents(selectedVirtualParents.ToSlice())
+	boundedMergeBreakingParents, err := csm.boundedMergeBreakingParents(selectedVirtualParents)
 	if err != nil {
 		return nil, err
 	}
 	log.Tracef("The following parents are omitted for "+
 		"breaking the bounded merge set: %s", boundedMergeBreakingParents)
 
-	virtualParents := selectedVirtualParents.Subtract(boundedMergeBreakingParents).ToSlice()
-	log.Tracef("The virtual parents resolved to be: %s", virtualParents)
-	return virtualParents, nil
+	// Remove all boundedMergeBreakingParents from selectedVirtualParents
+	for _, breakingParent := range boundedMergeBreakingParents {
+		for i, parent := range selectedVirtualParents {
+			if parent.Equal(breakingParent) {
+				selectedVirtualParents[i] = selectedVirtualParents[len(selectedVirtualParents)-1]
+				selectedVirtualParents = selectedVirtualParents[:len(selectedVirtualParents)-1]
+				break
+			}
+		}
+	}
+	log.Debugf("The virtual parents resolved to be: %s", selectedVirtualParents)
+	return selectedVirtualParents, nil
+}
+
+func (csm *consensusStateManager) removeHashesInFutureOf(hashes []*externalapi.DomainHash, ancestor *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	// Source: https://github.com/golang/go/wiki/SliceTricks#filter-in-place
+	i := 0
+	for _, hash := range hashes {
+		isInFutureOfAncestor, err := csm.dagTopologyManager.IsAncestorOf(ancestor, hash)
+		if err != nil {
+			return nil, err
+		}
+		if !isInFutureOfAncestor {
+			hashes[i] = hash
+			i++
+		}
+	}
+	return hashes[:i], nil
 }
 
 func (csm *consensusStateManager) selectVirtualSelectedParent(
@@ -153,59 +195,66 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 	}
 }
 
-func (csm *consensusStateManager) mergeSetIncrease(
-	candidate *externalapi.DomainHash, selectedVirtualParents hashset.HashSet) (uint64, error) {
-
+// mergeSetIncrease returns different things depending on the result:
+// If the candidate can be a virtual parent then canBeParent=true and mergeSetIncrease=The increase in merge set size
+// If the candidate can't be a virtual parent, then canBeParent=false and newCandidate is a new proposed candidate in the past of candidate.
+func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.DomainHash, selectedVirtualParents []*externalapi.DomainHash, mergeSetSize uint64,
+) (canBeParent bool, newCandidate *externalapi.DomainHash, mergeSetIncrease uint64, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "mergeSetIncrease")
 	defer onEnd()
 
 	visited := hashset.New()
-	queue := csm.dagTraversalManager.NewDownHeap()
-	err := queue.Push(candidate)
+	// Start with the candidate's parents in the queue as we already know the candidate isn't an ancestor of the selectedVirtualParents.
+	parents, err := csm.dagTopologyManager.Parents(candidate)
 	if err != nil {
-		return 0, err
+		return false, nil, 0, err
 	}
-	mergeSetIncrease := uint64(1) // starts with 1 for the candidate itself
+	for _, parent := range parents {
+		visited.Add(parent)
+	}
+	queue := parents
+	mergeSetIncrease = uint64(1) // starts with 1 for the candidate itself
 
-	for queue.Len() > 0 {
-		current := queue.Pop()
+	var current *externalapi.DomainHash
+	for len(queue) > 0 {
+		current, queue = queue[0], queue[1:]
 		log.Tracef("Attempting to increment the merge set size increase for block %s", current)
 
-		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(
-			current, selectedVirtualParents.ToSlice())
+		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(current, selectedVirtualParents)
 		if err != nil {
-			return 0, err
+			return false, nil, 0, err
 		}
 		if isInPastOfSelectedVirtualParents {
-			log.Tracef("Skipping block %s because it's in the past of one "+
-				"(or more) of the selected virtual parents", current)
+			log.Tracef("Skipping block %s because it's in the past of one (or more) of the selected virtual parents", current)
 			continue
 		}
 
 		log.Tracef("Incrementing the merge set size increase")
 		mergeSetIncrease++
 
+		if (mergeSetSize + mergeSetIncrease) > csm.mergeSetSizeLimit {
+			log.Debugf("The merge set would increase by more than the limit with block %s", candidate)
+			return false, current, mergeSetIncrease, nil
+		}
+
 		parents, err := csm.dagTopologyManager.Parents(current)
 		if err != nil {
-			return 0, err
+			return false, nil, 0, err
 		}
 		for _, parent := range parents {
 			if !visited.Contains(parent) {
 				visited.Add(parent)
-				err = queue.Push(parent)
-				if err != nil {
-					return 0, err
-				}
+				queue = append(queue, parent)
 			}
 		}
 	}
 	log.Debugf("The resolved merge set size increase is: %d", mergeSetIncrease)
 
-	return mergeSetIncrease, nil
+	return true, nil, mergeSetIncrease, nil
 }
 
 func (csm *consensusStateManager) boundedMergeBreakingParents(
-	parents []*externalapi.DomainHash) (hashset.HashSet, error) {
+	parents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "boundedMergeBreakingParents")
 	defer onEnd()
@@ -271,7 +320,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 		}
 	}
 
-	boundedMergeBreakingParents := hashset.New()
+	var boundedMergeBreakingParents []*externalapi.DomainHash
 	for _, parent := range parents {
 		log.Debugf("Checking whether parent %s breaks the bounded merge set", parent)
 		isBadRedInPast := false
@@ -287,7 +336,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 		}
 		if isBadRedInPast {
 			log.Debugf("Adding parent %s to the bounded merge breaking parents set", parent)
-			boundedMergeBreakingParents.Add(parent)
+			boundedMergeBreakingParents = append(boundedMergeBreakingParents, parent)
 		}
 	}
 

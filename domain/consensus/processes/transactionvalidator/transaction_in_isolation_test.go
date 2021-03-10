@@ -3,8 +3,6 @@ package transactionvalidator_test
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -103,20 +101,6 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 					tx.Payload = []byte{1}
 				},
 				ruleerrors.ErrInvalidPayload},
-			{"invalid payload hash", 1, 1, 0,
-				externalapi.DomainSubnetworkID{123},
-				&txSubnetworkData{externalapi.DomainSubnetworkID{123}, 0, []byte{1}},
-				func(tx *externalapi.DomainTransaction) {
-					tx.PayloadHash = externalapi.DomainHash{}
-				},
-				ruleerrors.ErrInvalidPayloadHash},
-			{"invalid payload hash in native subnetwork", 1, 1, 0,
-				subnetworks.SubnetworkIDNative,
-				nil,
-				func(tx *externalapi.DomainTransaction) {
-					tx.PayloadHash = *hashes.PayloadHash(tx.Payload)
-				},
-				ruleerrors.ErrInvalidPayloadHash},
 		}
 
 		for _, test := range tests {

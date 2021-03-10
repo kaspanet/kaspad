@@ -157,6 +157,17 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	return blockInfo, nil
 }
 
+func (s *consensus) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return blockRelation.Children, nil
+}
+
 func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -221,6 +232,30 @@ func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.D
 		return nil, err
 	}
 	return pruningPointUTXOs, nil
+}
+
+func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.DomainHash,
+	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	virtualParents, err := s.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	if !externalapi.HashesEqual(expectedVirtualParents, virtualParents) {
+		return nil, errors.Wrapf(ruleerrors.ErrGetVirtualUTXOsWrongVirtualParents, "expected virtual parents %s but got %s",
+			expectedVirtualParents,
+			virtualParents)
+	}
+
+	virtualUTXOs, err := s.consensusStateStore.VirtualUTXOs(s.databaseContext, fromOutpoint, limit)
+	if err != nil {
+		return nil, err
+	}
+	return virtualUTXOs, nil
 }
 
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {

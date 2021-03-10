@@ -3,20 +3,19 @@ package rpccontext
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
+	"math/big"
+	"strconv"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math"
-	"math/big"
-	"strconv"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -47,6 +46,11 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 			"invalid block")
 	}
 
+	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(hash)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &appmessage.BlockVerboseData{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version(),
@@ -55,6 +59,7 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot().String(),
 		UTXOCommitment:       blockHeader.UTXOCommitment().String(),
 		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes()),
+		ChildrenHashes:       hashes.ToStrings(childrenHashes),
 		Nonce:                blockHeader.Nonce(),
 		Time:                 blockHeader.TimeInMilliseconds(),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits()), 16),
@@ -121,11 +126,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildTransactionVerboseData")
 	defer onEnd()
 
-	var payloadHash string
-	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash = tx.PayloadHash.String()
-	}
-
 	txReply := &appmessage.TransactionVerboseData{
 		TxID:                      txID,
 		Hash:                      consensushashing.TransactionHash(tx).String(),
@@ -136,7 +136,6 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 		LockTime:                  tx.LockTime,
 		SubnetworkID:              tx.SubnetworkID.String(),
 		Gas:                       tx.Gas,
-		PayloadHash:               payloadHash,
 		Payload:                   hex.EncodeToString(tx.Payload),
 	}
 
@@ -205,6 +204,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 		output.Index = uint32(i)
 		output.Value = transactionOutput.Value
 		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
+			Version: transactionOutput.ScriptPublicKey.Version,
 			Address: encodedAddr,
 			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey.Script),
 			Type:    scriptClass.String(),

@@ -390,6 +390,9 @@ func (dt *DAGTopologyManagerImpl) IsAncestorOf(hashBlockA *externalapi.DomainHas
 func (dt *DAGTopologyManagerImpl) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
+func (dt *DAGTopologyManagerImpl) IsAnyAncestorOf([]*externalapi.DomainHash, *externalapi.DomainHash) (bool, error) {
+	panic("unimplemented")
+}
 func (dt *DAGTopologyManagerImpl) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }

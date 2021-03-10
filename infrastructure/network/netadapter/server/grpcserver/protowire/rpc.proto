@@ -261,6 +261,7 @@ message BlockVerboseData{
   string bits = 10;
   double difficulty = 11;
   repeated string parentHashes = 12;
+  repeated string childrenHashes = 17;
   string selectedParentHash = 13;
   repeated string transactionIDs = 14;
   bool isHeaderOnly = 15;
@@ -275,7 +276,6 @@ message TransactionVerboseData{
   uint64 lockTime = 5;
   string subnetworkId = 6;
   uint64 gas = 7;
-  string payloadHash = 8;
   string payload = 9;
   repeated TransactionVerboseInput transactionVerboseInputs = 10;
   repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
@@ -307,6 +307,7 @@ message ScriptPublicKeyResult{
   string hex = 2;
   string type = 3;
   string address = 4;
+  uint32 version = 5;
 }
 
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
@@ -375,6 +376,7 @@ message GetBlockDagInfoResponseMessage{
   double difficulty = 5;
   int64 pastMedianTime = 6;
   repeated string virtualParentHashes = 7;
+  string pruningPointHash = 8;
   RPCError error = 1000;
 }
 
@@ -471,7 +473,6 @@ message RpcTransaction {
   uint64 lockTime = 4;
   string subnetworkId = 5;
   uint64 gas = 6;
-  string payloadHash = 7;
   string payload = 8;
 }
 
@@ -546,6 +547,40 @@ message VirtualSelectedParentBlueScoreChangedNotificationMessage {
   uint64 virtualSelectedParentBlueScore = 1;
 }
 
+// NotifyPruningPointUTXOSetOverrideRequestMessage registers this connection for
+// pruning point UTXO set override notifications.
+//
+// This call is only available when this kaspad was started with `--utxoindex`
+//
+// See: NotifyPruningPointUTXOSetOverrideResponseMessage
+message NotifyPruningPointUTXOSetOverrideRequestMessage {
+}
+
+
+message NotifyPruningPointUTXOSetOverrideResponseMessage {
+  RPCError error = 1000;
+}
+
+// PruningPointUTXOSetOverrideNotificationMessage is sent whenever the UTXO index
+// resets due to pruning point change via IBD.
+//
+// See NotifyPruningPointUTXOSetOverrideRequestMessage
+message PruningPointUTXOSetOverrideNotificationMessage {
+}
+
+// StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
+// pruning point UTXO set override notifications.
+//
+// This call is only available when this kaspad was started with `--utxoindex`
+//
+// See: PruningPointUTXOSetOverrideNotificationMessage
+message StopNotifyingPruningPointUTXOSetOverrideRequestMessage {
+}
+
+message StopNotifyingPruningPointUTXOSetOverrideResponseMessage {
+  RPCError error = 1000;
+}
+
 // BanRequestMessage bans the given ip.
 message BanRequestMessage{
   string ip = 1;
@@ -570,5 +605,6 @@ message GetInfoRequestMessage{
 
 message GetInfoResponseMessage{
   string p2pId = 1;
+  uint64 mempoolSize = 2;
   RPCError error = 1000;
 }

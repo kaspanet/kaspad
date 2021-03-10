@@ -139,9 +139,6 @@ var (
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
 
-	// ErrInvalidPayloadHash invalid hash of transaction's payload
-	ErrInvalidPayloadHash = newRuleError("ErrInvalidPayloadHash")
-
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
 	ErrSubnetworkRegistry = newRuleError("ErrSubnetworkRegistry")
@@ -192,6 +189,8 @@ var (
 
 	// ErrPrunedBlock indicates that the block currently being validated had already been pruned.
 	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
+
+	ErrGetVirtualUTXOsWrongVirtualParents = newRuleError("ErrGetVirtualUTXOsWrongVirtualParents")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

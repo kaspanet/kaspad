@@ -49,7 +49,6 @@ type RPCTransaction struct {
 	LockTime     uint64
 	SubnetworkID string
 	Gas          uint64
-	PayloadHash  string
 	Payload      string
 }
 

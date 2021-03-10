@@ -14,14 +14,21 @@ type selectedChildIterator struct {
 	highHash, lowHash     *externalapi.DomainHash
 	current               *externalapi.DomainHash
 	err                   error
+	isClosed              bool
 }
 
 func (s *selectedChildIterator) First() bool {
+	if s.isClosed {
+		panic("Tried using a closed SelectedChildIterator")
+	}
 	s.current = s.lowHash
 	return s.Next()
 }
 
 func (s *selectedChildIterator) Next() bool {
+	if s.isClosed {
+		panic("Tried using a closed SelectedChildIterator")
+	}
 	if s.err != nil {
 		return true
 	}
@@ -50,7 +57,25 @@ func (s *selectedChildIterator) Next() bool {
 }
 
 func (s *selectedChildIterator) Get() (*externalapi.DomainHash, error) {
+	if s.isClosed {
+		return nil, errors.New("Tried using a closed SelectedChildIterator")
+	}
 	return s.current, s.err
+}
+
+func (s *selectedChildIterator) Close() error {
+	if s.isClosed {
+		return errors.New("Tried using a closed SelectedChildIterator")
+	}
+	s.isClosed = true
+	s.databaseContext = nil
+	s.dagTopologyManager = nil
+	s.reachabilityDataStore = nil
+	s.highHash = nil
+	s.lowHash = nil
+	s.current = nil
+	s.err = nil
+	return nil
 }
 
 // SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over

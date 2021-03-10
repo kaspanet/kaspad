@@ -2,12 +2,14 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"math"
 )
 
 func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_Transaction is nil")
+	}
 	return x.Transaction.toAppMessage()
 }
 
@@ -18,30 +20,25 @@ func (x *KaspadMessage_Transaction) fromAppMessage(msgTx *appmessage.MsgTx) erro
 }
 
 func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionMessage is nil")
+	}
 	inputs := make([]*appmessage.TxIn, len(x.Inputs))
 	for i, protoInput := range x.Inputs {
-		prevTxID, err := protoInput.PreviousOutpoint.TransactionId.toDomain()
+		input, err := protoInput.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-
-		outpoint := appmessage.NewOutpoint(prevTxID, protoInput.PreviousOutpoint.Index)
-		inputs[i] = appmessage.NewTxIn(outpoint, protoInput.SignatureScript, protoInput.Sequence)
+		inputs[i] = input
 	}
 
 	outputs := make([]*appmessage.TxOut, len(x.Outputs))
 	for i, protoOutput := range x.Outputs {
-		if protoOutput.ScriptPublicKey.Version > math.MaxUint16 {
-			return nil, errors.Errorf("The version on ScriptPublicKey is bigger then uint16.")
+		output, err := protoOutput.toAppMessage()
+		if err != nil {
+			return nil, err
 		}
-		outputs[i] = &appmessage.TxOut{
-			Value:        protoOutput.Value,
-			ScriptPubKey: &externalapi.ScriptPublicKey{protoOutput.ScriptPublicKey.Script, uint16(protoOutput.ScriptPublicKey.Version)},
-		}
-	}
-
-	if x.SubnetworkId == nil {
-		return nil, errors.New("transaction subnetwork field cannot be nil")
+		outputs[i] = output
 	}
 
 	subnetworkID, err := x.SubnetworkId.toDomain()
@@ -49,13 +46,6 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	payloadHash := &externalapi.DomainHash{}
-	if x.PayloadHash != nil {
-		payloadHash, err = x.PayloadHash.toDomain()
-		if err != nil {
-			return nil, err
-		}
-	}
 	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
 	}
@@ -66,8 +56,32 @@ func (x *TransactionMessage) toAppMessage() (appmessage.Message, error) {
 		LockTime:     x.LockTime,
 		SubnetworkID: *subnetworkID,
 		Gas:          x.Gas,
-		PayloadHash:  *payloadHash,
 		Payload:      x.Payload,
+	}, nil
+}
+
+func (x *TransactionInput) toAppMessage() (*appmessage.TxIn, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionInput is nil")
+	}
+	outpoint, err := x.PreviousOutpoint.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return appmessage.NewTxIn(outpoint, x.SignatureScript, x.Sequence), nil
+}
+
+func (x *TransactionOutput) toAppMessage() (*appmessage.TxOut, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "TransactionOutput is nil")
+	}
+	scriptPublicKey, err := x.ScriptPublicKey.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
+	return &appmessage.TxOut{
+		Value:        x.Value,
+		ScriptPubKey: scriptPublicKey,
 	}, nil
 }
 
@@ -102,7 +116,6 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		LockTime:     msgTx.LockTime,
 		SubnetworkId: domainSubnetworkIDToProto(&msgTx.SubnetworkID),
 		Gas:          msgTx.Gas,
-		PayloadHash:  domainHashToProto(&msgTx.PayloadHash),
 		Payload:      msgTx.Payload,
 	}
 

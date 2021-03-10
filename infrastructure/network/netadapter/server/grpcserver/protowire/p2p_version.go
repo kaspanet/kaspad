@@ -4,38 +4,46 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
-	// Address is optional for non-listening nodes
-	var address *appmessage.NetAddress
-	if x.Version.Address != nil {
-		var err error
-		address, err = x.Version.Address.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_Version is nil")
 	}
+	return x.Version.toAppMessage()
+}
 
-	subnetworkID, err := x.Version.SubnetworkId.toDomain()
-	if err != nil {
+func (x *VersionMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "VersionMessage is nil")
+	}
+	address, err := x.Address.toAppMessage()
+	// Address is optional for non-listening nodes
+	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
 
-	err = appmessage.ValidateUserAgent(x.Version.UserAgent)
+	subnetworkID, err := x.SubnetworkId.toDomain()
+	//  Full kaspa nodes set SubnetworkId==nil
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	err = appmessage.ValidateUserAgent(x.UserAgent)
 	if err != nil {
 		return nil, err
 	}
 
 	return &appmessage.MsgVersion{
-		ProtocolVersion: x.Version.ProtocolVersion,
-		Network:         x.Version.Network,
-		Services:        appmessage.ServiceFlag(x.Version.Services),
-		Timestamp:       mstime.UnixMilliseconds(x.Version.Timestamp),
+		ProtocolVersion: x.ProtocolVersion,
+		Network:         x.Network,
+		Services:        appmessage.ServiceFlag(x.Services),
+		Timestamp:       mstime.UnixMilliseconds(x.Timestamp),
 		Address:         address,
-		ID:              id.FromBytes(x.Version.Id),
-		UserAgent:       x.Version.UserAgent,
-		DisableRelayTx:  x.Version.DisableRelayTx,
+		ID:              id.FromBytes(x.Id),
+		UserAgent:       x.UserAgent,
+		DisableRelayTx:  x.DisableRelayTx,
 		SubnetworkID:    subnetworkID,
 	}, nil
 }

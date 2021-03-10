@@ -1,9 +1,10 @@
 package protocol
 
 import (
+	"sync/atomic"
+
 	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
@@ -58,8 +59,20 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
+
 		if err != nil {
-			m.handleError(err, netConnection, router.OutgoingRoute())
+			// non-blocking read from channel
+			select {
+			case innerError := <-errChan:
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					m.handleError(innerError, netConnection, router.OutgoingRoute())
+				} else {
+					log.Errorf("Peer %s sent invalid message: %s", netConnection, innerError)
+					m.handleError(err, netConnection, router.OutgoingRoute())
+				}
+			default:
+				m.handleError(err, netConnection, router.OutgoingRoute())
+			}
 			return
 		}
 		defer m.context.RemoveFromPeers(peer)
@@ -75,7 +88,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 }
 
 func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection, outgoingRoute *routerpkg.Route) {
-	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
@@ -89,7 +102,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 				panic(err)
 			}
 		}
-		log.Debugf("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
+		log.Infof("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
 		netConnection.Disconnect()
 		return
 	}

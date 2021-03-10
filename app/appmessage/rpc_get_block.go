@@ -55,6 +55,7 @@ type BlockVerboseData struct {
 	Bits                   string
 	Difficulty             float64
 	ParentHashes           []string
+	ChildrenHashes         []string
 	SelectedParentHash     string
 	BlueScore              uint64
 	IsHeaderOnly           bool
@@ -69,7 +70,6 @@ type TransactionVerboseData struct {
 	LockTime                  uint64
 	SubnetworkID              string
 	Gas                       uint64
-	PayloadHash               string
 	Payload                   string
 	TransactionVerboseInputs  []*TransactionVerboseInput
 	TransactionVerboseOutputs []*TransactionVerboseOutput
@@ -104,4 +104,5 @@ type ScriptPubKeyResult struct {
 	Hex     string
 	Type    string
 	Address string
+	Version uint16
 }

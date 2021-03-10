@@ -64,32 +64,22 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-	parents, err := dm.dagTopologyManager.Parents(blockHash)
-	if err != nil {
-		return 0, err
-	}
-	// Genesis block or network that doesn't have difficulty adjustment (such as simnet)
-	if len(parents) == 0 || dm.disableDifficultyAdjustment {
+	if dm.disableDifficultyAdjustment {
 		return dm.genesisBits()
 	}
 
-	// find bluestParent
-	bluestParent, err := dm.ghostdagManager.ChooseSelectedParent(parents...)
-	if err != nil {
-		return 0, err
-	}
-	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
+	ghostDAGData, err := dm.ghostdagStore.Get(dm.databaseContext, blockHash)
 	if err != nil {
 		return 0, err
 	}
 
 	// Not enough blocks for building a difficulty window.
-	if bluestGhostDAG.BlueScore() < uint64(dm.difficultyAdjustmentWindowSize)+1 {
+	if ghostDAGData.BlueScore() < uint64(dm.difficultyAdjustmentWindowSize)+1 {
 		return dm.genesisBits()
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, err := dm.blockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {
 		return 0, err
 	}

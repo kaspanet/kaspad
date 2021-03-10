@@ -1,15 +1,18 @@
 package consensusstatemanager
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Debugf("resolveBlockStatus start for block %s", blockHash)
-	defer log.Debugf("resolveBlockStatus end for block %s", blockHash)
+	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveBlockStatus for %s", blockHash))
+	defer onEnd()
 
 	log.Debugf("Getting a list of all blocks in the selected "+
 		"parent chain of %s that have no yet resolved their status", blockHash)
@@ -56,7 +59,8 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 
 		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
-		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks", unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
+		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks",
+			unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
 	}
 
 	return blockStatus, nil
@@ -121,8 +125,8 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	log.Debugf("resolveSingleBlockStatus start for block %s", blockHash)
-	defer log.Debugf("resolveSingleBlockStatus end for block %s", blockHash)
+	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveSingleBlockStatus for %s", blockHash))
+	defer onEnd()
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
 	pastUTXODiff, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(blockHash)
@@ -152,72 +156,63 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(blockHash, multiset)
 
-	log.Tracef("Staging the utxoDiff of block %s", blockHash)
-	err = csm.stageDiff(blockHash, pastUTXODiff, nil)
+	if csm.genesisHash.Equal(blockHash) {
+		log.Tracef("Staging the utxoDiff of genesis")
+		csm.stageDiff(blockHash, pastUTXODiff, nil)
+		return externalapi.StatusUTXOValid, nil
+	}
+
+	oldSelectedTip, err := csm.selectedTip()
 	if err != nil {
 		return 0, err
 	}
 
-	log.Tracef("Remove block ancestors from virtual diff parents and assign %s as their diff child", blockHash)
-	err = csm.removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(blockHash, pastUTXODiff)
+	isNewSelectedTip, err := csm.isNewSelectedTip(blockHash, oldSelectedTip)
 	if err != nil {
 		return 0, err
+	}
+	oldSelectedTipUTXOSet, err := csm.restorePastUTXO(oldSelectedTip)
+	if err != nil {
+		return 0, err
+	}
+	if isNewSelectedTip {
+		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
+		oldSelectedTipUTXOSet, err := pastUTXODiff.DiffFrom(oldSelectedTipUTXOSet.ToImmutable())
+		if err != nil {
+			return 0, err
+		}
+		csm.stageDiff(oldSelectedTip, oldSelectedTipUTXOSet, blockHash)
+
+		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		csm.stageDiff(blockHash, pastUTXODiff, nil)
+	} else {
+		log.Debugf("Block %s is not the new SelectedTip, therefore setting old selectedTip as it's diffChild", blockHash)
+		pastUTXODiff, err = oldSelectedTipUTXOSet.DiffFrom(pastUTXODiff)
+		if err != nil {
+			return 0, err
+		}
+
+		log.Tracef("Staging the utxoDiff of block %s", blockHash)
+		csm.stageDiff(blockHash, pastUTXODiff, oldSelectedTip)
 	}
 
 	return externalapi.StatusUTXOValid, nil
 }
 
-func (csm *consensusStateManager) removeAncestorsFromVirtualDiffParentsAndAssignDiffChild(
-	blockHash *externalapi.DomainHash, pastUTXODiff model.UTXODiff) error {
-
-	log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild start for block %s", blockHash)
-	defer log.Tracef("removeAncestorsFromVirtualDiffParentsAndAssignDiffChild end for block %s", blockHash)
-
-	if blockHash.Equal(csm.genesisHash) {
-		log.Tracef("Genesis block doesn't have ancestors to remove from the virtual diff parents")
-		return nil
-	}
-
-	virtualDiffParents, err := csm.consensusStateStore.VirtualDiffParents(csm.databaseContext)
+func (csm *consensusStateManager) isNewSelectedTip(blockHash, oldSelectedTip *externalapi.DomainHash) (bool, error) {
+	newSelectedTip, err := csm.ghostdagManager.ChooseSelectedParent(blockHash, oldSelectedTip)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	for _, virtualDiffParent := range virtualDiffParents {
-		if virtualDiffParent.Equal(blockHash) {
-			log.Tracef("Skipping updating virtual diff parent %s "+
-				"because it was updated before.", virtualDiffParent)
-			continue
-		}
+	return blockHash.Equal(newSelectedTip), nil
+}
 
-		isAncestorOfBlock, err := csm.dagTopologyManager.IsAncestorOf(virtualDiffParent, blockHash)
-		if err != nil {
-			return err
-		}
-
-		if !isAncestorOfBlock {
-			log.Tracef("Skipping block %s because it's not an "+
-				"ancestor of %s", virtualDiffParent, blockHash)
-			continue
-		}
-
-		// parents that didn't have a utxo-diff child until now were actually virtual's diffParents.
-		// Update them to have the new block as their utxo-diff child
-		log.Tracef("Updating %s to be the diff child of %s", blockHash, virtualDiffParent)
-		currentDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, virtualDiffParent)
-		if err != nil {
-			return err
-		}
-		newDiff, err := pastUTXODiff.DiffFrom(currentDiff)
-		if err != nil {
-			return err
-		}
-
-		err = csm.stageDiff(virtualDiffParent, newDiff, blockHash)
-		if err != nil {
-			return err
-		}
+func (csm *consensusStateManager) selectedTip() (*externalapi.DomainHash, error) {
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return virtualGHOSTDAGData.SelectedParent(), nil
 }

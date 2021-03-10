@@ -191,7 +191,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				continue
 			}
 
-			return protocolerrors.Errorf(true, "rejected transaction %s", txID)
+			return protocolerrors.Errorf(true, "rejected transaction %s: %s", txID, ruleErr)
 		}
 		err = flow.broadcastAcceptedTransactions([]*externalapi.DomainTransactionID{txID})
 		if err != nil {

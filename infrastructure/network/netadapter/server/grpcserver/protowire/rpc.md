@@ -58,31 +58,36 @@
     - [ResolveFinalityConflictResponseMessage](#protowire.ResolveFinalityConflictResponseMessage)
     - [NotifyFinalityConflictsRequestMessage](#protowire.NotifyFinalityConflictsRequestMessage)
     - [NotifyFinalityConflictsResponseMessage](#protowire.NotifyFinalityConflictsResponseMessage)
-  - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
-  - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
-  - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
-  - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
-  - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
-  - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
-  - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
-  - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
-  - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
-  - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
-  - [StopNotifyingUtxosChangedRequestMessage](#protowire.StopNotifyingUtxosChangedRequestMessage)
-  - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
-  - [RpcTransaction](#protowire.RpcTransaction)
-  - [RpcTransactionInput](#protowire.RpcTransactionInput)
-  - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
-  - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
-  - [RpcOutpoint](#protowire.RpcOutpoint)
-  - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
-  - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
-  - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
-  - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
-  - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
+    - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
+    - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
+    - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
+    - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
+    - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
+    - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
+    - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
+    - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
+    - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
+    - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
+    - [StopNotifyingUtxosChangedRequestMessage](#protowire.StopNotifyingUtxosChangedRequestMessage)
+    - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
+    - [RpcTransaction](#protowire.RpcTransaction)
+    - [RpcTransactionInput](#protowire.RpcTransactionInput)
+    - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
+    - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
+    - [RpcOutpoint](#protowire.RpcOutpoint)
+    - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
+    - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
+    - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
+    - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
+    - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
     - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+    - [NotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.NotifyPruningPointUTXOSetOverrideRequestMessage)
+    - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
+    - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
     - [BanRequestMessage](#protowire.BanRequestMessage)
     - [BanResponseMessage](#protowire.BanResponseMessage)
     - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
@@ -659,6 +664,7 @@ GetBlockRequestMessage requests information about a specific block
 | bits | [string](#string) |  |  |
 | difficulty | [double](#double) |  |  |
 | parentHashes | [string](#string) | repeated |  |
+| childrenHashes | [string](#string) | repeated |  |
 | selectedParentHash | [string](#string) |  |  |
 | transactionIDs | [string](#string) | repeated |  |
 | isHeaderOnly | [bool](#bool) |  |  |
@@ -684,7 +690,6 @@ GetBlockRequestMessage requests information about a specific block
 | lockTime | [uint64](#uint64) |  |  |
 | subnetworkId | [string](#string) |  |  |
 | gas | [uint64](#uint64) |  |  |
-| payloadHash | [string](#string) |  |  |
 | payload | [string](#string) |  |  |
 | transactionVerboseInputs | [TransactionVerboseInput](#protowire.TransactionVerboseInput) | repeated |  |
 | transactionVerboseOutputs | [TransactionVerboseOutput](#protowire.TransactionVerboseOutput) | repeated |  |
@@ -760,6 +765,7 @@ GetBlockRequestMessage requests information about a specific block
 | hex | [string](#string) |  |  |
 | type | [string](#string) |  |  |
 | address | [string](#string) |  |  |
+| version | [uint32](#uint32) |  |  |
 
 
 
@@ -921,6 +927,7 @@ of this kaspad&#39;s DAG.
 | difficulty | [double](#double) |  |  |
 | pastMedianTime | [int64](#int64) |  |  |
 | virtualParentHashes | [string](#string) | repeated |  |
+| pruningPointHash | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1129,38 +1136,59 @@ See: NotifyUtxosChangedRequestMessage
 
 ### UtxosByAddressesEntry
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | address | [string](#string) |  |  |
 | outpoint | [RpcOutpoint](#protowire.RpcOutpoint) |  |  |
 | utxoEntry | [RpcUtxoEntry](#protowire.RpcUtxoEntry) |  |  |
 
+
+
+
+
+
 <a name="protowire.StopNotifyingUtxosChangedRequestMessage"></a>
 
 ### StopNotifyingUtxosChangedRequestMessage
-
-StopNotifyingUtxosChangedRequestMessage unregisters this connection for utxoChanged notifications for the given
-addresses.
+StopNotifyingUtxosChangedRequestMessage unregisters this connection for utxoChanged notifications
+for the given addresses.
 
 This call is only available when this kaspad was started with `--utxoindex`
 
 See: UtxosChangedNotificationMessage
 
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
+
+
+
+
+
 
 <a name="protowire.StopNotifyingUtxosChangedResponseMessage"></a>
 
 ### StopNotifyingUtxosChangedResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransaction"></a>
 
 ### RpcTransaction
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -1170,7 +1198,6 @@ See: UtxosChangedNotificationMessage
 | lockTime | [uint64](#uint64) |  |  |
 | subnetworkId | [string](#string) |  |  |
 | gas | [uint64](#uint64) |  |  |
-| payloadHash | [string](#string) |  |  |
 | payload | [string](#string) |  |  |
 
 
@@ -1367,6 +1394,79 @@ See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 
 
+<a name="protowire.NotifyPruningPointUTXOSetOverrideRequestMessage"></a>
+
+### NotifyPruningPointUTXOSetOverrideRequestMessage
+NotifyPruningPointUTXOSetOverrideRequestMessage registers this connection for
+pruning point UTXO set override notifications.
+
+This call is only available when this kaspad was started with `--utxoindex`
+
+See: NotifyPruningPointUTXOSetOverrideResponseMessage
+
+
+
+
+
+
+<a name="protowire.NotifyPruningPointUTXOSetOverrideResponseMessage"></a>
+
+### NotifyPruningPointUTXOSetOverrideResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.PruningPointUTXOSetOverrideNotificationMessage"></a>
+
+### PruningPointUTXOSetOverrideNotificationMessage
+PruningPointUTXOSetOverrideNotificationMessage is sent whenever the UTXO index
+resets due to pruning point change via IBD.
+
+See NotifyPruningPointUTXOSetOverrideRequestMessage
+
+
+
+
+
+
+<a name="protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage"></a>
+
+### StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
+pruning point UTXO set override notifications.
+
+This call is only available when this kaspad was started with `--utxoindex`
+
+See: PruningPointUTXOSetOverrideNotificationMessage
+
+
+
+
+
+
+<a name="protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage"></a>
+
+### StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
 <a name="protowire.BanRequestMessage"></a>
 
 ### BanRequestMessage
@@ -1446,6 +1546,7 @@ GetInfoRequestMessage returns info about the node.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | p2pId | [string](#string) |  |  |
+| mempoolSize | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

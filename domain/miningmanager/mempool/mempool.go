@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -20,7 +22,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -144,6 +145,13 @@ func (mp *mempool) AllTransactions() []*consensusexternalapi.DomainTransaction {
 	return transactions
 }
 
+func (mp *mempool) TransactionCount() int {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return len(mp.pool) + len(mp.chainedTransactions)
+}
+
 // txDescriptor is a descriptor containing a transaction in the mempool along with
 // additional metadata.
 type txDescriptor struct {
@@ -229,9 +237,7 @@ func (mp *mempool) limitNumOrphans() error {
 
 		numOrphans := len(mp.orphans)
 		if numExpired := origNumOrphans - numOrphans; numExpired > 0 {
-			log.Debugf("Expired %d %s (remaining: %d)", numExpired,
-				logger.PickNoun(uint64(numExpired), "orphan", "orphans"),
-				numOrphans)
+			log.Debugf("Expired %d orphans (remaining: %d)", numExpired, numOrphans)
 		}
 	}
 
@@ -373,11 +379,11 @@ func (mp *mempool) haveTransaction(txID *consensusexternalapi.DomainTransactionI
 	return mp.isTransactionInPool(txID) || mp.isOrphanInPool(txID)
 }
 
-// removeBlockTransactionsFromPool removes the transactions that are found in the block
-// from the mempool, and move their chained mempool transactions (if any) to the main pool.
+// removeTransactionsFromPool removes given transactions from the mempool, and move their chained mempool
+// transactions (if any) to the main pool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) removeBlockTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
+func (mp *mempool) removeTransactionsFromPool(txs []*consensusexternalapi.DomainTransaction) error {
 	for _, tx := range txs[transactionhelper.CoinbaseTransactionIndex+1:] {
 		txID := consensushashing.TransactionID(tx)
 
@@ -772,7 +778,7 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 // no transactions were moved from the orphan pool to the mempool.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) []*txDescriptor {
+func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransaction) ([]*txDescriptor, error) {
 	var acceptedTxns []*txDescriptor
 
 	// Start with processing at least the passed transaction.
@@ -807,6 +813,11 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 				missing, txD, err := mp.maybeAcceptTransaction(
 					tx, false)
 				if err != nil {
+					if !errors.As(err, &RuleError{}) {
+						return nil, err
+					}
+
+					log.Warnf("Invalid orphan transaction: %s", err)
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
 					// redeem any of its outputs can be
@@ -848,7 +859,7 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 		mp.removeOrphanDoubleSpends(txDescriptor.DomainTransaction)
 	}
 
-	return acceptedTxns
+	return acceptedTxns, nil
 }
 
 // ProcessTransaction is the main workhorse for handling insertion of new
@@ -880,7 +891,11 @@ func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainT
 		// transaction (they may no longer be orphans if all inputs
 		// are now available) and repeat for those accepted
 		// transactions until there are no more.
-		newTxs := mp.processOrphans(tx)
+		newTxs, err := mp.processOrphans(tx)
+		if err != nil {
+			return err
+		}
+
 		acceptedTxs := make([]*txDescriptor, len(newTxs)+1)
 
 		// Add the parent transaction first so remote nodes
@@ -940,10 +955,14 @@ func (mp *mempool) ChainedCount() int {
 func (mp *mempool) BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BlockCandidateTransactions")
+	defer onEnd()
+
 	descs := make([]*consensusexternalapi.DomainTransaction, len(mp.pool))
 	i := 0
 	for _, desc := range mp.pool {
-		descs[i] = desc.DomainTransaction
+		descs[i] = desc.DomainTransaction.Clone() // Clone the transaction to prevent data races. A shallow-copy might do as well
 		i++
 	}
 
@@ -966,7 +985,7 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.removeBlockTransactionsFromPool(txs)
+	err := mp.removeTransactionsFromPool(txs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed removing txs from pool")
 	}
@@ -977,7 +996,11 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 			return nil, errors.Wrapf(err, "Failed removing tx from mempool: %s", consensushashing.TransactionID(tx))
 		}
 		mp.removeOrphan(tx, false)
-		acceptedOrphans := mp.processOrphans(tx)
+		acceptedOrphans, err := mp.processOrphans(tx)
+		if err != nil {
+			return nil, err
+		}
+
 		for _, acceptedOrphan := range acceptedOrphans {
 			acceptedTxs = append(acceptedTxs, acceptedOrphan.DomainTransaction)
 		}
@@ -986,16 +1009,10 @@ func (mp *mempool) HandleNewBlockTransactions(txs []*consensusexternalapi.Domain
 	return acceptedTxs, nil
 }
 
-func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) {
+func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	for _, tx := range txs {
-		err := mp.removeDoubleSpends(tx)
-		if err != nil {
-			log.Infof("Failed removing tx from mempool: %s, '%s'", consensushashing.TransactionID(tx), err)
-		}
-		mp.removeOrphan(tx, true)
-	}
+	return mp.removeTransactionsFromPool(txs)
 }

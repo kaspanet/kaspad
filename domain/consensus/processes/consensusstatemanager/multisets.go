@@ -38,8 +38,7 @@ func (csm *consensusStateManager) calculateMultiset(
 			isCoinbase := i == 0
 			log.Tracef("Is transaction %s a coinbase transaction: %t", transactionID, isCoinbase)
 
-			var err error
-			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
+			err := addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
 			if err != nil {
 				return nil, err
 			}

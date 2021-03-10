@@ -44,32 +44,33 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 
 	spawn("blocksLoop", func() {
 		const windowSize = 10
-		var expectedDurationForWindow time.Duration
-		var windowExpectedEndTime time.Time
 		hasBlockRateTarget := targetBlocksPerSecond != 0
+		var windowTicker, blockTicker *time.Ticker
+		// We use tickers to limit the block rate:
+		// 1. windowTicker -> makes sure that the last windowSize blocks take at least windowSize*targetBlocksPerSecond.
+		// 2. blockTicker -> makes sure that each block takes at least targetBlocksPerSecond/windowSize.
+		// that way we both allow for fluctuation in block rate but also make sure they're not too big (by an order of magnitude)
 		if hasBlockRateTarget {
-			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
-			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+			windowRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond / windowSize))
+			blockRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond * windowSize))
+			log.Infof("Minimum average time per %d blocks: %s, smaller minimum time per block: %s", windowSize, windowRate, blockRate)
+			windowTicker = time.NewTicker(windowRate)
+			blockTicker = time.NewTicker(blockRate)
+			defer windowTicker.Stop()
+			defer blockTicker.Stop()
 		}
-		blockInWindowIndex := 0
-
-		for {
+		windowStart := time.Now()
+		for blockIndex := 1; ; blockIndex++ {
 			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
-
 			if hasBlockRateTarget {
-				blockInWindowIndex++
-				if blockInWindowIndex == windowSize-1 {
-					deviation := windowExpectedEndTime.Sub(time.Now())
-					if deviation > 0 {
-						log.Infof("Finished to mine %d blocks %s earlier than expected. Sleeping %s to compensate",
-							windowSize, deviation, deviation)
-						time.Sleep(deviation)
-					}
-					blockInWindowIndex = 0
-					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+				<-blockTicker.C
+				if (blockIndex % windowSize) == 0 {
+					tickerStart := time.Now()
+					<-windowTicker.C
+					log.Infof("Finished mining %d blocks in: %s. slept for: %s", windowSize, time.Since(windowStart), time.Since(tickerStart))
+					windowStart = time.Now()
 				}
 			}
-
 		}
 	})
 
@@ -113,12 +114,13 @@ func logHashRate() {
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Submitting block %s to %s", blockHash, client.Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 
-	rejectReason, err := client.SubmitBlock(block)
+	rejectReason, err := client.safeRPCClient().SubmitBlock(block)
 	if err != nil {
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
+			client.reconnect()
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
@@ -127,7 +129,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			time.Sleep(waitTime)
 			return nil
 		}
-		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
+		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 	}
 	return nil
 }
@@ -186,13 +188,14 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 
 func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan error) {
 	getBlockTemplate := func() {
-		template, err := client.GetBlockTemplate(miningAddr.String())
+		template, err := client.safeRPCClient().GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.safeRPCClient().Address(), err)
+			client.reconnect()
 			return
 		}
 		if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
+			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
 			return
 		}
 		templatemanager.Set(template)
