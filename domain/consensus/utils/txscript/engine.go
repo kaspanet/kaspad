@@ -6,7 +6,9 @@ package txscript
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
@@ -358,9 +360,9 @@ func (vm *Engine) currentScript() []parsedOpcode {
 
 // checkHashTypeEncoding returns whether or not the passed hashtype adheres to
 // the strict encoding requirements if enabled.
-func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
-	sigHashType := hashType & ^SigHashAnyOneCanPay
-	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
+func (vm *Engine) checkHashTypeEncoding(hashType consensushashing.SigHashType) error {
+	sigHashType := hashType & ^consensushashing.SigHashAnyOneCanPay
+	if sigHashType < consensushashing.SigHashAll || sigHashType > consensushashing.SigHashSingle {
 		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
 		return scriptError(ErrInvalidSigHashType, str)
 	}

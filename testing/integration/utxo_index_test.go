@@ -2,14 +2,16 @@ package integration
 
 import (
 	"encoding/hex"
+	"testing"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"testing"
 )
 
 func TestUTXOIndex(t *testing.T) {
@@ -190,7 +192,7 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 		&externalapi.ScriptPublicKey{
 			Script:  fromScript,
 			Version: 0,
-		}, txscript.SigHashAll, privateKey)
+		}, consensushashing.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

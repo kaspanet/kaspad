@@ -12,6 +12,10 @@ import (
 	"fmt"
 	"hash"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -2019,7 +2023,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// the data stack. This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
-	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	hashType := consensushashing.SigHashType(fullSigBytes[len(fullSigBytes)-1])
 	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
 	if err := vm.checkHashTypeEncoding(hashType); err != nil {
 		return err
@@ -2031,10 +2035,17 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	script := vm.currentScript()
+	script, err := unparseScript(vm.currentScript())
+	if err != nil {
+		return err
+	}
+	scriptPublicKey := &externalapi.ScriptPublicKey{
+		Script:  script,
+		Version: vm.scriptVersion,
+	}
 
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := consensushashing.CalcSignatureHash(scriptPublicKey, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2168,12 +2179,19 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	script := vm.currentScript()
-
+	script, err := unparseScript(vm.currentScript())
+	if err != nil {
+		return err
+	}
+	scriptPublicKey := &externalapi.ScriptPublicKey{
+		Script:  script,
+		Version: vm.scriptVersion,
+	}
 	success := true
 	numPubKeys++
 	pubKeyIdx := -1
 	signatureIdx := 0
+
 	for numSignatures > 0 {
 		// When there are more signatures than public keys remaining,
 		// there is no way to succeed since too many signatures are
@@ -2199,7 +2217,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Split the signature into hash type and signature components.
-		hashType := SigHashType(rawSig[len(rawSig)-1])
+		hashType := consensushashing.SigHashType(rawSig[len(rawSig)-1])
 		signature := rawSig[:len(rawSig)-1]
 
 		// Only parse and check the signature encoding once.
@@ -2241,7 +2259,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := consensushashing.CalcSignatureHash(scriptPublicKey, hashType, &vm.tx, vm.txIdx)
 		if err != nil {
 			return err
 		}

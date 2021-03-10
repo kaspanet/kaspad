@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -66,7 +68,7 @@ func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScr
 }
 
 func signAndCheck(msg string, tx *externalapi.DomainTransaction, idx int, scriptPubKey *externalapi.ScriptPublicKey,
-	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
+	hashType consensushashing.SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
 
 	sigScript, err := SignTxOutput(&dagconfig.TestnetParams, tx, idx,
@@ -84,13 +86,13 @@ func TestSignTxOutput(t *testing.T) {
 	// make key
 	// make script based on key.
 	// sign with magic pixie dust.
-	hashTypes := []SigHashType{
-		SigHashAll,
-		SigHashNone,
-		SigHashSingle,
-		SigHashAll | SigHashAnyOneCanPay,
-		SigHashNone | SigHashAnyOneCanPay,
-		SigHashSingle | SigHashAnyOneCanPay,
+	hashTypes := []consensushashing.SigHashType{
+		consensushashing.SigHashAll,
+		consensushashing.SigHashNone,
+		consensushashing.SigHashSingle,
+		consensushashing.SigHashAll | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashNone | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashSingle | consensushashing.SigHashAnyOneCanPay,
 	}
 	inputs := []*externalapi.DomainTransactionInput{
 		{
@@ -505,7 +507,7 @@ type tstInput struct {
 type tstSigScript struct {
 	name               string
 	inputs             []tstInput
-	hashType           SigHashType
+	hashType           consensushashing.SigHashType
 	scriptAtWrongIndex bool
 }
 
@@ -552,7 +554,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -577,7 +579,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -593,7 +595,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -618,7 +620,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -634,7 +636,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -659,7 +661,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -675,7 +677,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashNone,
+		hashType:           consensushashing.SigHashNone,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -691,7 +693,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashSingle,
+		hashType:           consensushashing.SigHashSingle,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -707,7 +709,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll | SigHashAnyOneCanPay,
+		hashType:           consensushashing.SigHashAll | consensushashing.SigHashAnyOneCanPay,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -723,7 +725,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAnyOneCanPay,
+		hashType:           consensushashing.SigHashAnyOneCanPay,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -754,7 +756,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -779,7 +781,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: true,
 	},
 	{
@@ -804,7 +806,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: true,
 	},
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -147,7 +148,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			LockTime:     0}
 
 		for i, input := range validTx.Inputs {
-			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, txscript.SigHashAll, privateKey)
+			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, consensushashing.SigHashAll, privateKey)
 			if err != nil {
 				t.Fatalf("Failed to create a sigScript: %v", err)
 			}
