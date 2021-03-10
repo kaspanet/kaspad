@@ -260,7 +260,7 @@ func TestOrphanTransactions(t *testing.T) {
 		for _, transactionFromBlock := range block.Transactions[1:] {
 			isContained := false
 			for _, childTransaction := range childTransactions {
-				if consensushashing.TransactionID(transactionFromBlock) == consensushashing.TransactionID(childTransaction) {
+				if *consensushashing.TransactionID(transactionFromBlock) == *consensushashing.TransactionID(childTransaction) {
 					isContained = true
 					break
 				}
