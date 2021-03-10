@@ -1,6 +1,7 @@
 package pastmediantimemanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -63,9 +64,7 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.D
 		timestamps[i] = blockHeader.TimeInMilliseconds()
 	}
 
-	sort.Slice(timestamps, func(i, j int) bool {
-		return timestamps[i] < timestamps[j]
-	})
+	sort.Sort(sorters.Int64Slice(timestamps))
 
 	return timestamps[len(timestamps)/2], nil
 }
