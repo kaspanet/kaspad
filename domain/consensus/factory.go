@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocks"
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -284,6 +284,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStore,
 		blockHeaderStore,
 		utxoDiffStore,
+		daaBlocksStore,
 		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),

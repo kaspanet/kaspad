@@ -15,6 +15,8 @@ var daaAddedBlocksBucket = database.MakeBucket([]byte("daa-added-blocks"))
 type daaBlocksStore struct {
 	daaScoreStaging        map[externalapi.DomainHash]uint64
 	daaAddedBlocksStaging  map[externalapi.DomainHash][]*externalapi.DomainHash
+	daaScoreToDelete       map[externalapi.DomainHash]struct{}
+	daaAddedBlocksToDelete map[externalapi.DomainHash]struct{}
 	daaScoreLRUCache       *lrucache.LRUCache
 	daaAddedBlocksLRUCache *lrucache.LRUCache
 }
@@ -39,12 +41,17 @@ func (daas *daaBlocksStore) StageBlockDAAAddedBlocks(blockHash *externalapi.Doma
 }
 
 func (daas *daaBlocksStore) IsAnythingStaged() bool {
-	return len(daas.daaScoreStaging) != 0 || len(daas.daaAddedBlocksStaging) != 0
+	return len(daas.daaScoreStaging) != 0 ||
+		len(daas.daaAddedBlocksStaging) != 0 ||
+		len(daas.daaScoreToDelete) != 0 ||
+		len(daas.daaAddedBlocksToDelete) != 0
 }
 
 func (daas *daaBlocksStore) Discard() {
 	daas.daaScoreStaging = make(map[externalapi.DomainHash]uint64)
 	daas.daaAddedBlocksStaging = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
+	daas.daaScoreToDelete = make(map[externalapi.DomainHash]struct{})
+	daas.daaAddedBlocksToDelete = make(map[externalapi.DomainHash]struct{})
 }
 
 func (daas *daaBlocksStore) Commit(dbTx model.DBTransaction) error {
@@ -64,6 +71,22 @@ func (daas *daaBlocksStore) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		daas.daaAddedBlocksLRUCache.Add(&hash, addedBlocks)
+	}
+
+	for hash := range daas.daaScoreToDelete {
+		err := dbTx.Delete(daas.daaScoreHashAsKey(&hash))
+		if err != nil {
+			return err
+		}
+		daas.daaScoreLRUCache.Remove(&hash)
+	}
+
+	for hash := range daas.daaAddedBlocksToDelete {
+		err := dbTx.Delete(daas.daaAddedBlocksHashAsKey(&hash))
+		if err != nil {
+			return err
+		}
+		daas.daaAddedBlocksLRUCache.Remove(&hash)
 	}
 
 	daas.Discard()
@@ -120,4 +143,18 @@ func (daas *daaBlocksStore) daaScoreHashAsKey(hash *externalapi.DomainHash) mode
 
 func (daas *daaBlocksStore) daaAddedBlocksHashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return daaAddedBlocksBucket.Key(hash.ByteSlice())
+}
+
+func (daas *daaBlocksStore) Delete(blockHash *externalapi.DomainHash) {
+	if _, ok := daas.daaScoreStaging[*blockHash]; ok {
+		delete(daas.daaScoreStaging, *blockHash)
+	} else {
+		daas.daaAddedBlocksToDelete[*blockHash] = struct{}{}
+	}
+
+	if _, ok := daas.daaAddedBlocksStaging[*blockHash]; ok {
+		delete(daas.daaAddedBlocksStaging, *blockHash)
+	} else {
+		daas.daaAddedBlocksToDelete[*blockHash] = struct{}{}
+	}
 }
