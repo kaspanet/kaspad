@@ -67,7 +67,8 @@ func calcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int,
 
 	// TODO: PreviousOutputsHash
 
-	// TODO: SequencesHash
+	sequencesHash := getSequencesHash(tx, hashType, reusedValues)
+	infallibleWriteElement(hashWriter, sequencesHash)
 
 	infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.TransactionID)
 	infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.Index)
@@ -75,7 +76,7 @@ func calcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int,
 	infallibleWriteElement(hashWriter, prevScriptPublicKey.Version)
 	infallibleWriteElement(hashWriter, prevScriptPublicKey.Script)
 
-	// TODO: Previous output value
+	infallibleWriteElement(hashWriter, txIn.UTXOEntry.Amount())
 
 	infallibleWriteElement(hashWriter, txIn.Sequence)
 
@@ -90,6 +91,22 @@ func calcSignatureHash_BIP143(tx *externalapi.DomainTransaction, inputIndex int,
 	infallibleWriteElement(hashWriter, hashType)
 
 	return hashWriter.Finalize(), nil, nil
+}
+
+func getSequencesHash(tx *externalapi.DomainTransaction, hashType SigHashType, reusedValues *SighashReusedValues) *externalapi.DomainHash {
+	if hashType.isSigHashSingle() || hashType.isSigHashAnyOneCanPay() || hashType.isSigHashNone() {
+		return externalapi.NewZeroHash()
+	}
+
+	if reusedValues.sequencesHash == nil {
+
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txIn := range tx.Inputs {
+			infallibleWriteElement(hashWriter, txIn.Sequence)
+		}
+		reusedValues.sequencesHash = hashWriter.Finalize()
+	}
+	return reusedValues.sequencesHash
 }
 
 func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType, reusedValues *SighashReusedValues) *externalapi.DomainHash {
