@@ -8,21 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SigHashType represents hash type bits at the end of a signature.
-type SigHashType uint32
-
-// Hash type bits from the end of a signature.
-const (
-	SigHashAll          SigHashType = 0x1
-	SigHashNone         SigHashType = 0x2
-	SigHashSingle       SigHashType = 0x3
-	SigHashAnyOneCanPay SigHashType = 0x80
-
-	// SigHashMask defines the number of bits of the hash type which is used
-	// to identify which outputs are signed.
-	SigHashMask = 0x1f
-)
-
 // CalcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
