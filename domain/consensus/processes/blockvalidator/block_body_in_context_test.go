@@ -2,7 +2,6 @@ package blockvalidator_test
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -154,18 +153,47 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		}
 		defer teardown(false)
 
-		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
+		// Build a small DAG
+		outerParents := []*externalapi.DomainHash{params.GenesisHash}
+		for i := 0; i < 5; i++ {
+			var innerParents []*externalapi.DomainHash
+			for i := 0; i < 4; i++ {
+				blockHash, _, err := tc.AddBlock(outerParents, nil, nil)
+				if err != nil {
+					t.Fatalf("AddBlock: %+v", err)
+				}
+				innerParents = append(innerParents, blockHash)
+			}
+			outerParents = []*externalapi.DomainHash{}
+			for i := 0; i < 3; i++ {
+				blockHash, _, err := tc.AddBlock(innerParents, nil, nil)
+				if err != nil {
+					t.Fatalf("AddBlock: %+v", err)
+				}
+				outerParents = append(outerParents, blockHash)
+			}
 		}
 
-		block1, err := tc.GetBlock(block1Hash)
+		block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{&externalapi.ScriptPublicKey{}, nil}, nil)
+		if err != nil {
+			t.Fatalf("Error getting block: %+v", err)
+		}
+		_, err = tc.ValidateAndInsertBlock(block)
+		if err != nil {
+			t.Fatalf("Error Inserting block: %+v", err)
+		}
+		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), consensushashing.BlockHash(block))
+		if err != nil {
+			t.Fatalf("Error getting GhostDAG Data: %+v", err)
+		}
+		blockParents := block.Header.ParentHashes()
+		parentToSpend, err := tc.GetBlock(blockParents[0])
 		if err != nil {
 			t.Fatalf("Error getting block1: %+v", err)
 		}
 
 		checkForLockTimeAndSequence := func(lockTime, sequence uint64, shouldPass bool) {
-			tx, err := testutils.CreateTransaction(block1.Transactions[0])
+			tx, err := testutils.CreateTransaction(parentToSpend.Transactions[0])
 			if err != nil {
 				t.Fatalf("Error creating tx: %+v", err)
 			}
@@ -173,23 +201,22 @@ func TestIsFinalizedTransaction(t *testing.T) {
 			tx.LockTime = lockTime
 			tx.Inputs[0].Sequence = sequence
 
-			_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{tx})
+			_, _, err = tc.AddBlock(blockParents, nil, []*externalapi.DomainTransaction{tx})
 			if (shouldPass && err != nil) || (!shouldPass && !errors.Is(err, ruleerrors.ErrUnfinalizedTx)) {
-				t.Fatalf("Unexpected error: %+v", err)
+				t.Fatalf("ShouldPass: %t Unexpected error: %+v", shouldPass, err)
 			}
 		}
 
-		// The next block blue score is 2, so we check if we see the expected
-		// behaviour when the lock time blue score is higher, lower or equal
-		// to it.
-		checkForLockTimeAndSequence(3, 0, false)
-		checkForLockTimeAndSequence(2, 0, false)
-		checkForLockTimeAndSequence(1, 0, true)
+		// Check that the same blueScore or higher fails, but lower passes.
+		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()+1, 0, false)
+		checkForLockTimeAndSequence(blockGhostDAG.BlueScore(), 0, false)
+		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()-1, 0, true)
 
-		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(model.VirtualBlockHash)
+		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(consensushashing.BlockHash(block))
 		if err != nil {
 			t.Fatalf("PastMedianTime: %+v", err)
 		}
+		// Check that the same pastMedianTime or higher fails, but lower passes.
 		checkForLockTimeAndSequence(uint64(pastMedianTime)+1, 0, false)
 		checkForLockTimeAndSequence(uint64(pastMedianTime), 0, false)
 		checkForLockTimeAndSequence(uint64(pastMedianTime)-1, 0, true)
