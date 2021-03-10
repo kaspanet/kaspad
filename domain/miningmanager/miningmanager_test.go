@@ -48,7 +48,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
 		}
-		// The utxoEntry was filled manually for those transactions, so the transactions won't be considered orphans.
+		// The UTXOEntry was filled manually for those transactions, so the transactions won't be considered orphans.
 		// Therefore, all the transactions expected to be contained in the mempool.
 		transactionsFromMempool := miningManager.AllTransactions()
 		if len(transactionsToInsert) != len(transactionsFromMempool) {
@@ -314,7 +314,6 @@ func createTransactionWithUTXOEntry(t *testing.T, params *dagconfig.Params, i in
 		Inputs:       []*externalapi.DomainTransactionInput{&txInputWithMaxSequence},
 		Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
-		PayloadHash:  externalapi.DomainHash{},
 		Gas:          0,
 		Fee:          289,
 		Mass:         1,
@@ -424,7 +423,6 @@ func createParentAndChildrenTransaction(params *dagconfig.Params, tc testapi.Tes
 		Inputs:       []*externalapi.DomainTransactionInput{&txInputForChild},
 		Outputs:      []*externalapi.DomainTransactionOutput{&txOutForChild},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
-		PayloadHash:  externalapi.DomainHash{},
 		Gas:          0,
 		Fee:          289,
 		Mass:         1,
