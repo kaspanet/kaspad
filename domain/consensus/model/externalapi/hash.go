@@ -15,6 +15,10 @@ type DomainHash struct {
 	hashArray [DomainHashSize]byte
 }
 
+func NewZeroHash() *DomainHash {
+	return &DomainHash{hashArray: [32]byte{}}
+}
+
 // NewDomainHashFromByteArray constructs a new DomainHash out of a byte array
 func NewDomainHashFromByteArray(hashBytes *[DomainHashSize]byte) *DomainHash {
 	return &DomainHash{
