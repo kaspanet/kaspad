@@ -1,12 +1,15 @@
 package grpcserver
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
 	"google.golang.org/grpc"
@@ -27,7 +30,6 @@ type gRPCConnection struct {
 	streamLock sync.RWMutex
 
 	stopChan                chan struct{}
-	clientConn              grpc.ClientConn
 	onDisconnectedHandler   server.OnDisconnectedHandler
 	onInvalidMessageHandler server.OnInvalidMessageHandler
 
@@ -58,16 +60,22 @@ func (c *gRPCConnection) Start(router *router.Router) {
 		panic(errors.New("onDisconnectedHandler is nil"))
 	}
 
-	if c.onInvalidMessageHandler == nil {
-		panic(errors.New("onInvalidMessageHandler is nil"))
-	}
-
 	c.router = router
 
 	spawn("gRPCConnection.Start-connectionLoops", func() {
 		err := c.connectionLoops()
 		if err != nil {
-			log.Errorf("error from connectionLoops for %s: %s", c.address, err)
+			status, isStatus := status.FromError(err)
+			if isStatus {
+				switch status.Code() {
+				case codes.Canceled:
+					log.Debugf("connectionLoop canceled connection for %s: %s", c.address, err)
+				default:
+					log.Errorf("status error from connectionLoops for %s: %s", c.address, err)
+				}
+			} else {
+				log.Errorf("unknown error from connectionLoops for %s: %s", c.address, err)
+			}
 		}
 	})
 }

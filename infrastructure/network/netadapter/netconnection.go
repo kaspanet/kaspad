@@ -16,7 +16,6 @@ type NetConnection struct {
 	connection            server.Connection
 	id                    *id.ID
 	router                *routerpkg.Router
-	invalidMessageChan    chan error
 	onDisconnectedHandler server.OnDisconnectedHandler
 	isRouterClosed        uint32
 }
@@ -25,24 +24,18 @@ func newNetConnection(connection server.Connection, routerInitializer RouterInit
 	router := routerpkg.NewRouter()
 
 	netConnection := &NetConnection{
-		connection:         connection,
-		router:             router,
-		invalidMessageChan: make(chan error),
+		connection: connection,
+		router:     router,
 	}
 
 	netConnection.connection.SetOnDisconnectedHandler(func() {
+		log.Infof("Disconnected from %s", netConnection)
 		// If the disconnection came because of a network error and not because of the application layer, we
 		// need to close the router as well.
 		if atomic.AddUint32(&netConnection.isRouterClosed, 1) == 1 {
 			netConnection.router.Close()
 		}
-
-		close(netConnection.invalidMessageChan)
 		netConnection.onDisconnectedHandler()
-	})
-
-	netConnection.connection.SetOnInvalidMessageHandler(func(err error) {
-		netConnection.invalidMessageChan <- err
 	})
 
 	routerInitializer(router, netConnection)
@@ -98,8 +91,7 @@ func (c *NetConnection) Disconnect() {
 	}
 }
 
-// DequeueInvalidMessage dequeues the next invalid message
-func (c *NetConnection) DequeueInvalidMessage() (isOpen bool, err error) {
-	err, isOpen = <-c.invalidMessageChan
-	return isOpen, err
+// SetOnInvalidMessageHandler sets the invalid message handler for this connection
+func (c *NetConnection) SetOnInvalidMessageHandler(onInvalidMessageHandler server.OnInvalidMessageHandler) {
+	c.connection.SetOnInvalidMessageHandler(onInvalidMessageHandler)
 }

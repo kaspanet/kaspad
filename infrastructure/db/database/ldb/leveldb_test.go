@@ -15,7 +15,7 @@ func prepareDatabaseForTest(t *testing.T, testName string) (ldb *LevelDB, teardo
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)
 	}
-	ldb, err = NewLevelDB(path)
+	ldb, err = NewLevelDB(path, 8)
 	if err != nil {
 		t.Fatalf("%s: NewLevelDB unexpectedly "+
 			"failed: %s", testName, err)
@@ -35,7 +35,7 @@ func TestLevelDBSanity(t *testing.T) {
 	defer teardownFunc()
 
 	// Put something into the db
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	putData := []byte("Hello world!")
 	err := ldb.Put(key, putData)
 	if err != nil {
@@ -71,7 +71,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 	}
 
 	// Put something into the transaction
-	key := database.MakeBucket().Key([]byte("key"))
+	key := database.MakeBucket(nil).Key([]byte("key"))
 	putData := []byte("Hello world!")
 	err = tx.Put(key, putData)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestLevelDBTransactionSanity(t *testing.T) {
 
 	// Case 2. Write directly to the DB and then read from a tx
 	// Put something into the db
-	key = database.MakeBucket().Key([]byte("key2"))
+	key = database.MakeBucket(nil).Key([]byte("key2"))
 	putData = []byte("Goodbye world!")
 	err = ldb.Put(key, putData)
 	if err != nil {

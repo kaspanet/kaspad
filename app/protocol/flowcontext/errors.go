@@ -18,11 +18,11 @@ import (
 func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error) {
 	isErrRouteClosed := errors.Is(err, router.ErrRouteClosed)
 	if !isErrRouteClosed {
-		if protocolErr := &(protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
+		if protocolErr := (protocolerrors.ProtocolError{}); !errors.As(err, &protocolErr) {
 			panic(err)
 		}
 
-		log.Errorf("error from %s: %+v", flowName, err)
+		log.Errorf("error from %s: %s", flowName, err)
 	}
 
 	if atomic.AddUint32(isStopping, 1) == 1 {

@@ -6,11 +6,17 @@ import (
 )
 
 func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
-	if len(x.RequestIBDBlocks.Hashes) > appmessage.MaxRequestIBDBlocksHashes {
-		return nil, errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestIBDBlocks.Hashes), appmessage.MaxRequestIBDBlocksHashes)
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDBlocks is nil")
 	}
-	hashes, err := protoHashesToDomain(x.RequestIBDBlocks.Hashes)
+	return x.RequestIBDBlocks.toAppMessage()
+}
+
+func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RequestIBDBlocksMessage is nil")
+	}
+	hashes, err := protoHashesToDomain(x.Hashes)
 	if err != nil {
 		return nil, err
 	}
@@ -18,11 +24,6 @@ func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, err
 }
 
 func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
-	if len(msgRequestIBDBlocks.Hashes) > appmessage.MaxRequestIBDBlocksHashes {
-		return errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(msgRequestIBDBlocks.Hashes), appmessage.MaxRequestIBDBlocksHashes)
-	}
-
 	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
 		Hashes: domainHashesToProto(msgRequestIBDBlocks.Hashes),
 	}

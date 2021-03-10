@@ -6,46 +6,51 @@ import (
 )
 
 func (x *KaspadMessage_Addresses) toAppMessage() (appmessage.Message, error) {
-	protoAddresses := x.Addresses
-	if len(x.Addresses.AddressList) > appmessage.MaxAddressesPerMsg {
-		return nil, errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(x.Addresses.AddressList), appmessage.MaxAddressesPerMsg)
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "KaspadMessage_Addresses is nil")
 	}
-
-	subnetworkID, err := protoAddresses.SubnetworkID.toDomain()
+	addressList, err := x.Addresses.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
+	return &appmessage.MsgAddresses{
+		AddressList: addressList,
+	}, nil
+}
 
-	addressList := make([]*appmessage.NetAddress, len(protoAddresses.AddressList))
-	for i, address := range protoAddresses.AddressList {
+func (x *AddressesMessage) toAppMessage() ([]*appmessage.NetAddress, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "AddressesMessage is nil")
+	}
+
+	if len(x.AddressList) > appmessage.MaxAddressesPerMsg {
+		return nil, errors.Errorf("too many addresses for message "+
+			"[count %d, max %d]", len(x.AddressList), appmessage.MaxAddressesPerMsg)
+	}
+	addressList := make([]*appmessage.NetAddress, len(x.AddressList))
+	for i, address := range x.AddressList {
+		var err error
 		addressList[i], err = address.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &appmessage.MsgAddresses{
-		IncludeAllSubnetworks: protoAddresses.IncludeAllSubnetworks,
-		SubnetworkID:          subnetworkID,
-		AddrList:              addressList,
-	}, nil
+	return addressList, nil
 }
 
 func (x *KaspadMessage_Addresses) fromAppMessage(msgAddresses *appmessage.MsgAddresses) error {
-	if len(msgAddresses.AddrList) > appmessage.MaxAddressesPerMsg {
+	if len(msgAddresses.AddressList) > appmessage.MaxAddressesPerMsg {
 		return errors.Errorf("too many addresses for message "+
-			"[count %d, max %d]", len(msgAddresses.AddrList), appmessage.MaxAddressesPerMsg)
+			"[count %d, max %d]", len(msgAddresses.AddressList), appmessage.MaxAddressesPerMsg)
 	}
 
-	addressList := make([]*NetAddress, len(msgAddresses.AddrList))
-	for i, address := range msgAddresses.AddrList {
+	addressList := make([]*NetAddress, len(msgAddresses.AddressList))
+	for i, address := range msgAddresses.AddressList {
 		addressList[i] = appMessageNetAddressToProto(address)
 	}
 
 	x.Addresses = &AddressesMessage{
-		IncludeAllSubnetworks: msgAddresses.IncludeAllSubnetworks,
-		SubnetworkID:          domainSubnetworkIDToProto(msgAddresses.SubnetworkID),
-		AddressList:           addressList,
+		AddressList: addressList,
 	}
 	return nil
 }

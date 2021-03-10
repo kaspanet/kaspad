@@ -7,58 +7,63 @@ import (
 )
 
 type syncManager struct {
-	databaseContext    model.DBReader
-	genesisBlockHash   *externalapi.DomainHash
-	targetTimePerBlock int64
+	databaseContext  model.DBReader
+	genesisBlockHash *externalapi.DomainHash
 
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManager    model.DAGTopologyManager
-	ghostdagManager       model.GHOSTDAGManager
-	consensusStateManager model.ConsensusStateManager
+	dagTraversalManager model.DAGTraversalManager
+	dagTopologyManager  model.DAGTopologyManager
+	ghostdagManager     model.GHOSTDAGManager
+	pruningManager      model.PruningManager
 
-	ghostdagDataStore model.GHOSTDAGDataStore
-	blockStatusStore  model.BlockStatusStore
-	blockHeaderStore  model.BlockHeaderStore
-	headerTipsStore   model.HeaderTipsStore
+	ghostdagDataStore         model.GHOSTDAGDataStore
+	blockStatusStore          model.BlockStatusStore
+	blockHeaderStore          model.BlockHeaderStore
+	blockStore                model.BlockStore
+	pruningStore              model.PruningStore
+	headersSelectedChainStore model.HeadersSelectedChainStore
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
-	targetTimePerBlock int64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
-	consensusStateManager model.ConsensusStateManager,
+	pruningManager model.PruningManager,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockStatusStore model.BlockStatusStore,
 	blockHeaderStore model.BlockHeaderStore,
-	headerTipsStore model.HeaderTipsStore) model.SyncManager {
+	blockStore model.BlockStore,
+	pruningStore model.PruningStore,
+	headersSelectedChainStore model.HeadersSelectedChainStore) model.SyncManager {
 
 	return &syncManager{
-		databaseContext:    databaseContext,
-		genesisBlockHash:   genesisBlockHash,
-		targetTimePerBlock: targetTimePerBlock,
+		databaseContext:  databaseContext,
+		genesisBlockHash: genesisBlockHash,
 
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManager:    dagTopologyManager,
-		ghostdagManager:       ghostdagManager,
-		consensusStateManager: consensusStateManager,
+		dagTraversalManager:       dagTraversalManager,
+		dagTopologyManager:        dagTopologyManager,
+		ghostdagManager:           ghostdagManager,
+		pruningManager:            pruningManager,
+		headersSelectedChainStore: headersSelectedChainStore,
 
 		ghostdagDataStore: ghostdagDataStore,
 		blockStatusStore:  blockStatusStore,
 		blockHeaderStore:  blockHeaderStore,
-		headerTipsStore:   headerTipsStore,
+		blockStore:        blockStore,
+		pruningStore:      pruningStore,
 	}
 }
 
-func (sm *syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (sm *syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
+	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetHashesBetween")
 	defer onEnd()
 
-	return sm.antiPastHashesBetween(lowHash, highHash)
+	return sm.antiPastHashesBetween(lowHash, highHash, maxBlueScoreDifference)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -68,25 +73,20 @@ func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHas
 	return sm.missingBlockBodyHashes(highHash)
 }
 
-func (sm *syncManager) IsBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "IsBlockInHeaderPruningPointFuture")
-	defer onEnd()
-
-	return sm.isBlockInHeaderPruningPointFuture(blockHash)
-}
-
-func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
 	defer onEnd()
 
-	return sm.createBlockLocator(lowHash, highHash)
+	return sm.createBlockLocator(lowHash, highHash, limit)
 }
 
-func (sm *syncManager) FindNextBlockLocatorBoundaries(blockLocator externalapi.BlockLocator) (lowHash, highHash *externalapi.DomainHash, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "FindNextBlockLocatorBoundaries")
+func (sm *syncManager) CreateHeadersSelectedChainBlockLocator(lowHash,
+	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateHeadersSelectedChainBlockLocator")
 	defer onEnd()
 
-	return sm.findNextBlockLocatorBoundaries(blockLocator)
+	return sm.createHeadersSelectedChainBlockLocator(lowHash, highHash)
 }
 
 func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {

@@ -1,169 +1,245 @@
 package syncmanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/pkg/errors"
 )
 
-const maxHashesInAntiPastHashesBetween = 1 << 17
-
 // antiPastHashesBetween returns the hashes of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to
-// maxHashesInAntiPastHashesBetween.
-func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+// `maxBlueScoreDifference`, if non-zero.
+// The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
+func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash,
+	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+
+	// If lowHash is not in the selectedParentChain of highHash - SelectedChildIterator will fail.
+	// Therefore, we traverse down lowHash's selectedParentChain until we reach a block that is in
+	// highHash's selectedParentChain.
+	// We keep originalLowHash to filter out blocks in it's past later down the road
+	originalLowHash := lowHash
+	var err error
+	lowHash, err = sm.findLowHashInHighHashSelectedParentChain(lowHash, highHash)
+	if err != nil {
+		return nil, err
+	}
+
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
 		return nil, err
 	}
-	lowBlockBlueScore := lowBlockGHOSTDAGData.BlueScore
 	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
 	if err != nil {
 		return nil, err
 	}
-	highBlockBlueScore := highBlockGHOSTDAGData.BlueScore
-	if lowBlockBlueScore >= highBlockBlueScore {
-		return nil, errors.Errorf("low hash blueScore >= high hash blueScore (%d >= %d)",
-			lowBlockBlueScore, highBlockBlueScore)
+	if lowBlockGHOSTDAGData.BlueScore() > highBlockGHOSTDAGData.BlueScore() {
+		return nil, errors.Errorf("low hash blueScore > high hash blueScore (%d > %d)",
+			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
 	}
 
-	// In order to get no more then maxHashesInAntiPastHashesBetween
-	// blocks from th future of the lowHash (including itself),
-	// we iterate the selected parent chain of the highNode and
-	// stop once we reach
-	// highBlockBlueScore-lowBlockBlueScore+1 <= maxHashesInAntiPastHashesBetween.
-	// That stop point becomes the new highHash.
-	// Using blueScore as an approximation is considered to be
-	// fairly accurate because we presume that most DAG blocks are
-	// blue.
-	for highBlockBlueScore-lowBlockBlueScore+1 > maxHashesInAntiPastHashesBetween {
-		highHash = highBlockGHOSTDAGData.SelectedParent
+	if maxBlueScoreDifference != 0 {
+		// In order to get no more then maxBlueScoreDifference
+		// blocks from the future of the lowHash (including itself),
+		// we iterate the selected parent chain of the highNode and
+		// stop once we reach
+		// highBlockBlueScore-lowBlockBlueScore+1 <= maxBlueScoreDifference.
+		// That stop point becomes the new highHash.
+		// Using blueScore as an approximation is considered to be
+		// fairly accurate because we presume that most DAG blocks are
+		// blue.
+		highHash, err = sm.findHighHashAccordingToMaxBlueScoreDifference(lowHash, highHash, maxBlueScoreDifference, highBlockGHOSTDAGData, lowBlockGHOSTDAGData)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Collect every node in highHash's past (including itself) but
-	// NOT in the lowHash's past (excluding itself) into an up-heap
-	// (a heap sorted by blueScore from lowest to greatest).
-	visited := hashset.New()
-	candidateHashes := sm.dagTraversalManager.NewUpHeap()
-	queue := sm.dagTraversalManager.NewDownHeap()
-	err = queue.Push(highHash)
+	// Collect all hashes by concatenating the merge-sets of all blocks between highHash and lowHash
+	blockHashes := []*externalapi.DomainHash{}
+	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
 	if err != nil {
 		return nil, err
 	}
-	for queue.Len() > 0 {
-		current := queue.Pop()
-		if visited.Contains(current) {
-			continue
-		}
-		visited.Add(current)
-		var isCurrentAncestorOfLowHash bool
-		if current == lowHash {
-			isCurrentAncestorOfLowHash = false
-		} else {
-			var err error
-			isCurrentAncestorOfLowHash, err = sm.dagTopologyManager.IsAncestorOf(current, lowHash)
-			if err != nil {
-				return nil, err
-			}
-		}
-		if isCurrentAncestorOfLowHash {
-			continue
-		}
-		err = candidateHashes.Push(current)
+	defer iterator.Close()
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		current, err := iterator.Get()
 		if err != nil {
 			return nil, err
 		}
-		parents, err := sm.dagTopologyManager.Parents(current)
+		// Both blue and red merge sets are topologically sorted, but not the concatenation of the two.
+		// We require the blocks to be topologically sorted. In addition,  for optimal performance,
+		// we want the selectedParent to be first.
+		// Since the rest of the merge set is in the anticone of selectedParent, it's position in the list does not
+		// matter, even though it's blue score is the highest, we can arbitrarily decide it comes first.
+		// Therefore we first append the selectedParent, then the rest of blocks in ghostdag order.
+		sortedMergeSet, err := sm.getSortedMergeSet(current)
 		if err != nil {
 			return nil, err
 		}
-		for _, parent := range parents {
-			err := queue.Push(parent)
+
+		// append to blockHashes all blocks in sortedMergeSet which are not in the past of originalLowHash
+		for _, blockHash := range sortedMergeSet {
+			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(blockHash, originalLowHash)
 			if err != nil {
 				return nil, err
 			}
+			if isInPastOfOriginalLowHash {
+				continue
+			}
+			blockHashes = append(blockHashes, blockHash)
 		}
 	}
 
-	// Pop candidateHashes into a slice. Since candidateHashes is
-	// an up-heap, it's guaranteed to be ordered from low to high
-	hashesLength := maxHashesInAntiPastHashesBetween
-	if candidateHashes.Len() < hashesLength {
-		hashesLength = candidateHashes.Len()
+	// The process above doesn't return highHash, so include it explicitly, unless highHash == lowHash
+	if !lowHash.Equal(highHash) {
+		blockHashes = append(blockHashes, highHash)
 	}
-	hashes := make([]*externalapi.DomainHash, hashesLength)
-	for i := 0; i < hashesLength; i++ {
-		hashes[i] = candidateHashes.Pop()
+
+	return blockHashes, nil
+}
+
+func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	currentGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, current)
+	if err != nil {
+		return nil, err
 	}
-	return hashes, nil
+
+	blueMergeSet := currentGhostdagData.MergeSetBlues()
+	redMergeSet := currentGhostdagData.MergeSetReds()
+	sortedMergeSet := make([]*externalapi.DomainHash, 0, len(blueMergeSet)+len(redMergeSet))
+	selectedParent, blueMergeSet := blueMergeSet[0], blueMergeSet[1:]
+	sortedMergeSet = append(sortedMergeSet, selectedParent)
+	i, j := 0, 0
+	for i < len(blueMergeSet) && j < len(redMergeSet) {
+		currentBlue := blueMergeSet[i]
+		currentBlueGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, currentBlue)
+		if err != nil {
+			return nil, err
+		}
+		currentRed := redMergeSet[j]
+		currentRedGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, currentRed)
+		if err != nil {
+			return nil, err
+		}
+		if sm.ghostdagManager.Less(currentBlue, currentBlueGhostdagData, currentRed, currentRedGhostdagData) {
+			sortedMergeSet = append(sortedMergeSet, currentBlue)
+			i++
+		} else {
+			sortedMergeSet = append(sortedMergeSet, currentRed)
+			j++
+		}
+	}
+	sortedMergeSet = append(sortedMergeSet, blueMergeSet[i:]...)
+	sortedMergeSet = append(sortedMergeSet, redMergeSet[j:]...)
+
+	return sortedMergeSet, nil
+}
+
+func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *externalapi.DomainHash,
+	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *model.BlockGHOSTDAGData,
+	lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
+
+	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() <= maxBlueScoreDifference {
+		return highHash, nil
+	}
+
+	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		highHashCandidate, err := iterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHashCandidate)
+		if err != nil {
+			return nil, err
+		}
+		if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() > maxBlueScoreDifference {
+			break
+		}
+		highHash = highHashCandidate
+	}
+	return highHash, nil
+}
+
+func (sm *syncManager) findLowHashInHighHashSelectedParentChain(
+	lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	for {
+		isInSelectedParentChain, err := sm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
+		if err != nil {
+			return nil, err
+		}
+		if isInSelectedParentChain {
+			break
+		}
+		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
+		if err != nil {
+			return nil, err
+		}
+		lowHash = lowBlockGHOSTDAGData.SelectedParent()
+	}
+	return lowHash, nil
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
+	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
 
-	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, headerTipsPruningPoint)
+	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
+	defer selectedChildIterator.Close()
 
-	lowHash := headerTipsPruningPoint
-	for selectedChildIterator.Next() {
-		selectedChild := selectedChildIterator.Get()
-		selectedChildStatus, err := sm.blockStatusStore.Get(sm.databaseContext, selectedChild)
+	lowHash := pruningPoint
+	foundHeaderOnlyBlock := false
+	for ok := selectedChildIterator.First(); ok; ok = selectedChildIterator.Next() {
+		selectedChild, err := selectedChildIterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, selectedChild)
 		if err != nil {
 			return nil, err
 		}
 
-		if selectedChildStatus != externalapi.StatusHeaderOnly {
-			lowHash = selectedChild
+		if !hasBlock {
+			foundHeaderOnlyBlock = true
 			break
 		}
+		lowHash = selectedChild
+	}
+	if !foundHeaderOnlyBlock {
+		if lowHash == highHash {
+			// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
+			// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
+			// In these cases - return an empty list of blocks to sync
+			return []*externalapi.DomainHash{}, nil
+		}
+		// TODO: Once block children are fixed (https://github.com/kaspanet/kaspad/issues/1499),
+		// this error should be returned rather the logged
+		log.Errorf("no header-only blocks between %s and %s",
+			lowHash, highHash)
 	}
 
-	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash)
+	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	lowHashAnticone, err := sm.dagTraversalManager.AnticoneFromContext(highHash, lowHash)
-	if err != nil {
-		return nil, err
-	}
-
-	blockToRemoveFromHashesBetween := hashset.New()
-	for _, blockHash := range lowHashAnticone {
-		isHeaderOnlyBlock, err := sm.isHeaderOnlyBlock(blockHash)
+	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween))
+	for _, blockHash := range hashesBetween {
+		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, blockHash)
 		if err != nil {
 			return nil, err
 		}
-
-		if !isHeaderOnlyBlock {
-			blockToRemoveFromHashesBetween.Add(blockHash)
+		if blockStatus == externalapi.StatusHeaderOnly {
+			missingBlocks = append(missingBlocks, blockHash)
 		}
-	}
-
-	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween)-len(lowHashAnticone))
-	for i, blockHash := range hashesBetween {
-		// If blockToRemoveFromHashesBetween is empty, no more blocks should be
-		// filtered, so we can copy the rest of hashesBetween into missingBlocks
-		if blockToRemoveFromHashesBetween.Length() == 0 {
-			missingBlocks = append(missingBlocks, hashesBetween[i:]...)
-			break
-		}
-
-		if blockToRemoveFromHashesBetween.Contains(blockHash) {
-			blockToRemoveFromHashesBetween.Remove(blockHash)
-			continue
-		}
-
-		missingBlocks = append(missingBlocks, blockHash)
-	}
-
-	if blockToRemoveFromHashesBetween.Length() != 0 {
-		return nil, errors.Errorf("blockToRemoveFromHashesBetween.Length() is expected to be 0")
 	}
 
 	return missingBlocks, nil
@@ -185,21 +261,4 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 	}
 
 	return status == externalapi.StatusHeaderOnly, nil
-}
-
-func (sm *syncManager) isBlockInHeaderPruningPointFuture(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
-	if err != nil {
-		return false, err
-	}
-	if !exists {
-		return false, nil
-	}
-
-	headerTipsPruningPoint, err := sm.consensusStateManager.HeaderTipsPruningPoint()
-	if err != nil {
-		return false, err
-	}
-
-	return sm.dagTopologyManager.IsAncestorOf(headerTipsPruningPoint, blockHash)
 }

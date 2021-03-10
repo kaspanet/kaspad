@@ -1,14 +1,16 @@
 package blockbuilder
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/pkg/errors"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/mstime"
 )
@@ -21,6 +23,7 @@ type blockBuilder struct {
 	coinbaseManager       model.CoinbaseManager
 	consensusStateManager model.ConsensusStateManager
 	ghostdagManager       model.GHOSTDAGManager
+	transactionValidator  model.TransactionValidator
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -37,6 +40,7 @@ func New(
 	coinbaseManager model.CoinbaseManager,
 	consensusStateManager model.ConsensusStateManager,
 	ghostdagManager model.GHOSTDAGManager,
+	transactionValidator model.TransactionValidator,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -51,10 +55,12 @@ func New(
 		coinbaseManager:       coinbaseManager,
 		consensusStateManager: consensusStateManager,
 		ghostdagManager:       ghostdagManager,
-		acceptanceDataStore:   acceptanceDataStore,
-		blockRelationStore:    blockRelationStore,
-		multisetStore:         multisetStore,
-		ghostdagDataStore:     ghostdagDataStore,
+		transactionValidator:  transactionValidator,
+
+		acceptanceDataStore: acceptanceDataStore,
+		blockRelationStore:  blockRelationStore,
+		multisetStore:       multisetStore,
+		ghostdagDataStore:   ghostdagDataStore,
 	}
 }
 
@@ -71,6 +77,11 @@ func (bb *blockBuilder) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+
+	err := bb.validateTransactions(transactions)
+	if err != nil {
+		return nil, err
+	}
 
 	coinbase, err := bb.newBlockCoinbaseTransaction(coinbaseData)
 	if err != nil {
@@ -89,18 +100,61 @@ func (bb *blockBuilder) buildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	}, nil
 }
 
+func (bb *blockBuilder) validateTransactions(transactions []*externalapi.DomainTransaction) error {
+	invalidTransactions := make([]ruleerrors.InvalidTransaction, 0)
+	for _, transaction := range transactions {
+		err := bb.validateTransaction(transaction)
+		if err != nil {
+			if !errors.As(err, &ruleerrors.RuleError{}) {
+				return err
+			}
+			invalidTransactions = append(invalidTransactions,
+				ruleerrors.InvalidTransaction{Transaction: transaction, Error: err})
+		}
+	}
+
+	if len(invalidTransactions) > 0 {
+		return ruleerrors.NewErrInvalidTransactionsInNewBlock(invalidTransactions)
+	}
+
+	return nil
+}
+
+func (bb *blockBuilder) validateTransaction(transaction *externalapi.DomainTransaction) error {
+	originalEntries := make([]externalapi.UTXOEntry, len(transaction.Inputs))
+	for i, input := range transaction.Inputs {
+		originalEntries[i] = input.UTXOEntry
+		input.UTXOEntry = nil
+	}
+
+	defer func() {
+		for i, input := range transaction.Inputs {
+			input.UTXOEntry = originalEntries[i]
+		}
+	}()
+
+	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(transaction)
+	if err != nil {
+		return err
+	}
+
+	virtualSelectedParentMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
+		model.VirtualBlockHash, virtualSelectedParentMedianTime)
+}
+
 func (bb *blockBuilder) newBlockCoinbaseTransaction(
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
 }
 
-func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockHeader, error) {
+func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 	parentHashes, err := bb.newBlockParentHashes()
-	if err != nil {
-		return nil, err
-	}
-	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +162,7 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 	if err != nil {
 		return nil, err
 	}
-	bits, err := bb.newBlockDifficulty(virtualGHOSTDAGData)
+	bits, err := bb.newBlockDifficulty()
 	if err != nil {
 		return nil, err
 	}
@@ -122,15 +176,16 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 		return nil, err
 	}
 
-	return &externalapi.DomainBlockHeader{
-		Version:              constants.BlockVersion,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   timeInMilliseconds,
-		Bits:                 bits,
-	}, nil
+	return blockheader.NewImmutableBlockHeader(
+		constants.MaxBlockVersion,
+		parentHashes,
+		hashMerkleRoot,
+		acceptedIDMerkleRoot,
+		utxoCommitment,
+		timeInMilliseconds,
+		bits,
+		0,
+	), nil
 }
 
 func (bb *blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
@@ -149,8 +204,8 @@ func (bb *blockBuilder) newBlockTime() (int64, error) {
 	// timestamp is truncated to a millisecond boundary before comparison since a
 	// block timestamp does not supported a precision greater than one
 	// millisecond.
-	newTimestamp := mstime.Now().UnixMilliseconds() + 1
-	minTimestamp, err := bb.pastMedianTimeManager.PastMedianTime(model.VirtualBlockHash)
+	newTimestamp := mstime.Now().UnixMilliseconds()
+	minTimestamp, err := bb.minBlockTime(model.VirtualBlockHash)
 	if err != nil {
 		return 0, err
 	}
@@ -160,12 +215,17 @@ func (bb *blockBuilder) newBlockTime() (int64, error) {
 	return newTimestamp, nil
 }
 
-func (bb *blockBuilder) newBlockDifficulty(virtualGHOSTDAGData *model.BlockGHOSTDAGData) (uint32, error) {
-	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
+func (bb *blockBuilder) minBlockTime(hash *externalapi.DomainHash) (int64, error) {
+	pastMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(hash)
 	if err != nil {
 		return 0, err
 	}
-	return bb.difficultyManager.RequiredDifficulty(virtualGHOSTDAGData.SelectedParent)
+
+	return pastMedianTime + 1, nil
+}
+
+func (bb *blockBuilder) newBlockDifficulty() (uint32, error) {
+	return bb.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
 }
 
 func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
@@ -181,7 +241,7 @@ func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash,
 	return bb.calculateAcceptedIDMerkleRoot(newBlockAcceptanceData)
 }
 
-func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.AcceptanceData) (*externalapi.DomainHash, error) {
+func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi.AcceptanceData) (*externalapi.DomainHash, error) {
 	var acceptedTransactions []*externalapi.DomainTransaction
 	for _, blockAcceptanceData := range acceptanceData {
 		for _, transactionAcceptance := range blockAcceptanceData.TransactionAcceptanceData {
@@ -192,9 +252,9 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData model.Accep
 		}
 	}
 	sort.Slice(acceptedTransactions, func(i, j int) bool {
-		acceptedTransactionIID := consensusserialization.TransactionID(acceptedTransactions[i])
-		acceptedTransactionJID := consensusserialization.TransactionID(acceptedTransactions[j])
-		return transactionid.Less(acceptedTransactionIID, acceptedTransactionJID)
+		acceptedTransactionIID := consensushashing.TransactionID(acceptedTransactions[i])
+		acceptedTransactionJID := consensushashing.TransactionID(acceptedTransactions[j])
+		return acceptedTransactionIID.Less(acceptedTransactionJID)
 	})
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions), nil

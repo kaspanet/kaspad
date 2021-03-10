@@ -5,21 +5,19 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 )
 
 func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
+	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
+	headerForMining := block.Header.ToMutable()
 	initialNonce := rand.Uint64()
 	for i := initialNonce; i != initialNonce-1; i++ {
-		block.Header.Nonce = i
-		hash := consensusserialization.BlockHash(block)
-		if hashes.ToBig(hash).Cmp(targetDifficulty) <= 0 {
+		headerForMining.SetNonce(i)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
 			return block
 		}
 	}
@@ -37,7 +35,7 @@ func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
 
 	solveBlock(block)
 
-	err = harness.rpcClient.SubmitBlock(block)
+	_, err = harness.rpcClient.SubmitBlock(block)
 	if err != nil {
 		t.Fatalf("Error submitting block: %s", err)
 	}

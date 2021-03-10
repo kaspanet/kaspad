@@ -7,8 +7,6 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-
 	"github.com/pkg/errors"
 )
 
@@ -28,6 +26,11 @@ func (e RuleError) Error() string {
 		return "<nil>"
 	}
 	return e.Err.Error()
+}
+
+// Unwrap unwraps the wrapped error
+func (e RuleError) Unwrap() error {
+	return e.Err
 }
 
 // RejectCode represents a numeric value by which a remote peer indicates
@@ -94,6 +97,12 @@ func txRuleError(c RejectCode, desc string) RuleError {
 	}
 }
 
+func newRuleError(err error) RuleError {
+	return RuleError{
+		Err: err,
+	}
+}
+
 // extractRejectCode attempts to return a relevant reject code for a given error
 // by examining the error for known types. It will return true if a code
 // was successfully extracted.
@@ -104,40 +113,9 @@ func extractRejectCode(err error) (RejectCode, bool) {
 		err = ruleErr.Err
 	}
 
-	var dagRuleErr ruleerrors.RuleError
-	if errors.As(err, &dagRuleErr) {
-		// Convert the DAG error to a reject code.
-		var code RejectCode
-		switch dagRuleErr {
-		// Rejected due to duplicate.
-		case ruleerrors.ErrDuplicateBlock:
-			code = RejectDuplicate
-
-		// Rejected due to obsolete version.
-		case ruleerrors.ErrBlockVersionTooOld:
-			code = RejectObsolete
-
-		// Rejected due to being earlier than the last finality point.
-		case ruleerrors.ErrFinalityPointTimeTooOld:
-			code = RejectFinality
-		case ruleerrors.ErrDifficultyTooLow:
-			code = RejectDifficulty
-
-		// Everything else is due to the block or transaction being invalid.
-		default:
-			code = RejectInvalid
-		}
-
-		return code, true
-	}
-
 	var trErr TxRuleError
 	if errors.As(err, &trErr) {
 		return trErr.RejectCode, true
-	}
-
-	if err == nil {
-		return RejectInvalid, false
 	}
 
 	return RejectInvalid, false

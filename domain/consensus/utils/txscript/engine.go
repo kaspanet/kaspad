@@ -7,6 +7,7 @@ package txscript
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
@@ -38,6 +39,7 @@ const (
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
+	scriptVersion   uint16
 	scripts         [][]parsedOpcode
 	scriptIdx       int
 	scriptOff       int
@@ -313,6 +315,10 @@ func (vm *Engine) Step() (done bool, err error) {
 // Execute will execute all scripts in the script engine and return either nil
 // for successful validation or an error if one occurred.
 func (vm *Engine) Execute() (err error) {
+	if vm.scriptVersion > constants.MaxScriptPublicKeyVersion {
+		log.Tracef("The version of the scriptPublicKey is higher than the known version - the Execute function returns true.")
+		return nil
+	}
 	done := false
 	for !done {
 		log.Tracef("%s", logger.NewLogClosure(func() string {
@@ -364,12 +370,7 @@ func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
 // checkPubKeyEncoding returns whether or not the passed public key adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
-	if len(pubKey) == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03) {
-		// Compressed
-		return nil
-	}
-	if len(pubKey) == 65 && pubKey[0] == 0x04 {
-		// Uncompressed
+	if len(pubKey) == 32 {
 		return nil
 	}
 
@@ -434,7 +435,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // NewEngine returns a new script engine for the provided public key script,
 // transaction, and input index. The flags modify the behavior of the script
 // engine according to the description provided by each flag.
-func NewEngine(scriptPubKey []byte, tx *externalapi.DomainTransaction, txIdx int, flags ScriptFlags,
+func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.DomainTransaction, txIdx int, flags ScriptFlags,
 	sigCache *SigCache) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
@@ -449,13 +450,15 @@ func NewEngine(scriptPubKey []byte, tx *externalapi.DomainTransaction, txIdx int
 	// result is necessarily an error since the stack would end up being
 	// empty which is equivalent to a false top element. Thus, just return
 	// the relevant error now as an optimization.
-	if len(scriptSig) == 0 && len(scriptPubKey) == 0 {
+	if len(scriptSig) == 0 && len(scriptPubKey.Script) == 0 {
 		return nil, scriptError(ErrEvalFalse,
 			"false stack entry at end of script execution")
 	}
+	vm := Engine{scriptVersion: scriptPubKey.Version, flags: flags, sigCache: sigCache}
 
-	vm := Engine{flags: flags, sigCache: sigCache}
-
+	if vm.scriptVersion > constants.MaxScriptPublicKeyVersion {
+		return &vm, nil
+	}
 	parsedScriptSig, err := parseScriptAndVerifySize(scriptSig)
 	if err != nil {
 		return nil, err
@@ -466,7 +469,7 @@ func NewEngine(scriptPubKey []byte, tx *externalapi.DomainTransaction, txIdx int
 			"signature script is not push only")
 	}
 
-	parsedScriptPubKey, err := parseScriptAndVerifySize(scriptPubKey)
+	parsedScriptPubKey, err := parseScriptAndVerifySize(scriptPubKey.Script)
 	if err != nil {
 		return nil, err
 	}

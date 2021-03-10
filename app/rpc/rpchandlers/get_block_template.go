@@ -33,5 +33,10 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	}
 	msgBlock := appmessage.DomainBlockToMsgBlock(templateBlock)
 
-	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock), nil
+	isSynced, err := context.ProtocolManager.ShouldMine()
+	if err != nil {
+		return nil, err
+	}
+
+	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock, isSynced), nil
 }

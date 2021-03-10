@@ -1,9 +1,21 @@
 package consensus
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+)
+
+func (tc *testConsensus) DatabaseContext() model.DBManager {
+	return tc.databaseContext
+}
+
+func (tc *testConsensus) Database() database.Database {
+	return tc.database
+}
 
 func (tc *testConsensus) AcceptanceDataStore() model.AcceptanceDataStore {
-	return tc.AcceptanceDataStore()
+	return tc.acceptanceDataStore
 }
 
 func (tc *testConsensus) BlockHeaderStore() model.BlockHeaderStore {
@@ -30,8 +42,8 @@ func (tc *testConsensus) GHOSTDAGDataStore() model.GHOSTDAGDataStore {
 	return tc.ghostdagDataStore
 }
 
-func (tc *testConsensus) HeaderTipsStore() model.HeaderTipsStore {
-	return tc.headerTipsStore
+func (tc *testConsensus) HeaderTipsStore() model.HeaderSelectedTipStore {
+	return tc.headersSelectedTipStore
 }
 
 func (tc *testConsensus) MultisetStore() model.MultisetStore {
@@ -50,8 +62,8 @@ func (tc *testConsensus) UTXODiffStore() model.UTXODiffStore {
 	return tc.utxoDiffStore
 }
 
-func (tc *testConsensus) BlockBuilder() model.BlockBuilder {
-	return tc.blockBuilder
+func (tc *testConsensus) BlockBuilder() testapi.TestBlockBuilder {
+	return tc.testBlockBuilder
 }
 
 func (tc *testConsensus) BlockProcessor() model.BlockProcessor {
@@ -66,8 +78,8 @@ func (tc *testConsensus) CoinbaseManager() model.CoinbaseManager {
 	return tc.coinbaseManager
 }
 
-func (tc *testConsensus) ConsensusStateManager() model.ConsensusStateManager {
-	return tc.consensusStateManager
+func (tc *testConsensus) ConsensusStateManager() testapi.TestConsensusStateManager {
+	return tc.testConsensusStateManager
 }
 
 func (tc *testConsensus) DAGTopologyManager() model.DAGTopologyManager {
@@ -86,7 +98,7 @@ func (tc *testConsensus) GHOSTDAGManager() model.GHOSTDAGManager {
 	return tc.ghostdagManager
 }
 
-func (tc *testConsensus) HeaderTipsManager() model.HeaderTipsManager {
+func (tc *testConsensus) HeaderTipsManager() model.HeadersSelectedTipManager {
 	return tc.headerTipsManager
 }
 
@@ -102,14 +114,26 @@ func (tc *testConsensus) PruningManager() model.PruningManager {
 	return tc.pruningManager
 }
 
-func (tc *testConsensus) ReachabilityManager() model.ReachabilityManager {
-	return tc.reachabilityManager
+func (tc *testConsensus) ReachabilityManager() testapi.TestReachabilityManager {
+	return tc.testReachabilityManager
 }
 
 func (tc *testConsensus) SyncManager() model.SyncManager {
 	return tc.syncManager
 }
 
-func (tc *testConsensus) TransactionValidator() model.TransactionValidator {
-	return tc.transactionValidator
+func (tc *testConsensus) TransactionValidator() testapi.TestTransactionValidator {
+	return tc.testTransactionValidator
+}
+
+func (tc *testConsensus) FinalityManager() model.FinalityManager {
+	return tc.finalityManager
+}
+
+func (tc *testConsensus) FinalityStore() model.FinalityStore {
+	return tc.finalityStore
+}
+
+func (tc *testConsensus) HeadersSelectedChainStore() model.HeadersSelectedChainStore {
+	return tc.headersSelectedChainStore
 }

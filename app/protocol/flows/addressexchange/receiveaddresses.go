@@ -5,14 +5,12 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
 // ReceiveAddressesContext is the interface for the context needed for the ReceiveAddresses flow.
 type ReceiveAddressesContext interface {
-	Config() *config.Config
 	AddressManager() *addressmanager.AddressManager
 }
 
@@ -33,20 +31,9 @@ func ReceiveAddresses(context ReceiveAddressesContext, incomingRoute *router.Rou
 	}
 
 	msgAddresses := message.(*appmessage.MsgAddresses)
-	if len(msgAddresses.AddrList) > addressmanager.GetAddressesMax {
+	if len(msgAddresses.AddressList) > addressmanager.GetAddressesMax {
 		return protocolerrors.Errorf(true, "address count exceeded %d", addressmanager.GetAddressesMax)
 	}
 
-	if msgAddresses.IncludeAllSubnetworks {
-		return protocolerrors.Errorf(true, "got unexpected "+
-			"IncludeAllSubnetworks=true in [%s] command", msgAddresses.Command())
-	}
-	if msgAddresses.SubnetworkID != nil && *msgAddresses.SubnetworkID != *context.Config().SubnetworkID {
-		return protocolerrors.Errorf(false, "only full nodes and %s subnetwork IDs "+
-			"are allowed in [%s] command, but got subnetwork ID %s",
-			context.Config().SubnetworkID, msgAddresses.Command(), msgAddresses.SubnetworkID)
-	}
-
-	context.AddressManager().AddAddresses(msgAddresses.AddrList...)
-	return nil
+	return context.AddressManager().AddAddresses(msgAddresses.AddressList...)
 }

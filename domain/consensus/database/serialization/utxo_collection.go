@@ -1,32 +1,43 @@
 package serialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
-func utxoCollectionToDBUTXOCollection(utxoCollection model.UTXOCollection) []*DbUtxoCollectionItem {
-	items := make([]*DbUtxoCollectionItem, len(utxoCollection))
+func utxoCollectionToDBUTXOCollection(utxoCollection externalapi.UTXOCollection) ([]*DbUtxoCollectionItem, error) {
+	items := make([]*DbUtxoCollectionItem, utxoCollection.Len())
 	i := 0
-	for outpoint, entry := range utxoCollection {
+	utxoIterator := utxoCollection.Iterator()
+	defer utxoIterator.Close()
+	for ok := utxoIterator.First(); ok; ok = utxoIterator.Next() {
+		outpoint, entry, err := utxoIterator.Get()
+		if err != nil {
+			return nil, err
+		}
+
 		items[i] = &DbUtxoCollectionItem{
-			Outpoint:  DomainOutpointToDbOutpoint(&outpoint),
+			Outpoint:  DomainOutpointToDbOutpoint(outpoint),
 			UtxoEntry: UTXOEntryToDBUTXOEntry(entry),
 		}
 		i++
 	}
 
-	return items
+	return items, nil
 }
 
-func dbUTXOCollectionToUTXOCollection(items []*DbUtxoCollectionItem) (model.UTXOCollection, error) {
-	collection := make(model.UTXOCollection)
+func dbUTXOCollectionToUTXOCollection(items []*DbUtxoCollectionItem) (externalapi.UTXOCollection, error) {
+	utxoMap := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry, len(items))
 	for _, item := range items {
 		outpoint, err := DbOutpointToDomainOutpoint(item.Outpoint)
 		if err != nil {
 			return nil, err
 		}
-
-		collection[*outpoint] = DBUTXOEntryToUTXOEntry(item.UtxoEntry)
+		utxoEntry, err := DBUTXOEntryToUTXOEntry(item.UtxoEntry)
+		if err != nil {
+			return nil, err
+		}
+		utxoMap[*outpoint] = utxoEntry
 	}
-	return collection, nil
+	return utxo.NewUTXOCollection(utxoMap), nil
 }

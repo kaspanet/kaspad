@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+	"runtime"
 	"time"
 )
 
@@ -14,4 +16,29 @@ func LogAndMeasureExecutionTime(log *Logger, functionName string) (onEnd func())
 	return func() {
 		log.Debugf("%s end. Took: %s", functionName, time.Since(start))
 	}
+}
+
+// LogMemoryStats logs memory stats for `functionName`
+func LogMemoryStats(log *Logger, functionName string) {
+	log.Debug(NewLogClosure(func() string {
+		stats := runtime.MemStats{}
+		runtime.ReadMemStats(&stats)
+		return fmt.Sprintf("%s: used memory: %d bytes, total: %d bytes", functionName,
+			stats.Alloc, stats.HeapIdle-stats.HeapReleased+stats.HeapInuse)
+	}))
+}
+
+// LogClosure is a closure that can be printed with %s to be used to
+// generate expensive-to-create data for a detailed log level and avoid doing
+// the work if the data isn't printed.
+type LogClosure func() string
+
+func (c LogClosure) String() string {
+	return c()
+}
+
+// NewLogClosure casts a function to a LogClosure.
+// See LogClosure for details.
+func NewLogClosure(c func() string) LogClosure {
+	return c
 }

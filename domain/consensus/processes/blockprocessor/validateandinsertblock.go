@@ -1,178 +1,187 @@
 package blockprocessor
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/util/difficulty"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock) error {
-	syncInfo, err := bp.syncManager.GetSyncInfo()
+func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.DomainBlock, isPruningPoint bool) error {
+	blockHash := consensushashing.BlockHash(block)
+
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
-
-	if isHeaderOnlyBlock(block) && syncInfo.State != externalapi.SyncStateRelay {
-		syncInfo.State = externalapi.SyncStateHeadersFirst
-	}
-
-	hash := consensusserialization.HeaderHash(block.Header)
-	if syncInfo.State == externalapi.SyncStateMissingUTXOSet {
-		if isHeaderOnlyBlock(block) {
-			// Allow processing headers while in state SyncStateMissingUTXOSet
-			syncInfo.State = externalapi.SyncStateHeadersFirst
-		} else {
-			headerTipsPruningPoint, err := bp.consensusStateManager.HeaderTipsPruningPoint()
-			if err != nil {
-				return err
-			}
-
-			if *hash != *headerTipsPruningPoint {
-				return errors.Errorf("cannot insert blocks other than the header pruning point "+
-					"while in %s mode", syncInfo.State)
-			}
-
-			syncInfo.State = externalapi.SyncStateMissingBlockBodies
-		}
-	}
-
-	if syncInfo.State == externalapi.SyncStateHeadersFirst && !isHeaderOnlyBlock(block) {
-		syncInfo.State = externalapi.SyncStateRelay
-		log.Warnf("block %s contains transactions while validating in header only mode", hash)
-	}
-
-	if syncInfo.State == externalapi.SyncStateMissingBlockBodies {
-		headerTips, err := bp.headerTipsStore.Tips(bp.databaseContext)
+	if exists {
+		status, err := bp.blockStatusStore.Get(bp.databaseContext, blockHash)
 		if err != nil {
 			return err
 		}
-		selectedHeaderTip, err := bp.ghostdagManager.ChooseSelectedParent(headerTips...)
-		if err != nil {
-			return err
-		}
-		if *selectedHeaderTip == *hash {
-			syncInfo.State = externalapi.SyncStateRelay
+
+		if status == externalapi.StatusUTXOValid {
+			// A block cannot have status StatusUTXOValid just after finishing bp.validateBlock, because
+			// if it's the case it should have been rejected as duplicate block.
+			// The only exception is the pruning point because its status is manually set before inserting
+			// the block.
+			if !isPruningPoint {
+				return errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
+					"before adding to to the consensus state manager", blockHash)
+			}
+			log.Debugf("Block %s is the pruning point and has status %s, so leaving its status untouched",
+				blockHash, status)
+			return nil
 		}
 	}
 
-	err = bp.checkBlockStatus(hash, syncInfo)
-	if err != nil {
-		return err
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if isHeaderOnlyBlock {
+		log.Debugf("Block %s is a header-only block so setting its status as %s",
+			blockHash, externalapi.StatusHeaderOnly)
+		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+	} else {
+		log.Debugf("Block %s has body so setting its status as %s",
+			blockHash, externalapi.StatusUTXOPendingVerification)
+		bp.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
 	}
 
-	err = bp.validateBlock(block, syncInfo)
+	return nil
+}
+
+func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock, isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
+	blockHash := consensushashing.HeaderHash(block.Header)
+	err := bp.validateBlock(block, isPruningPoint)
 	if err != nil {
 		bp.discardAllChanges()
-		return err
+		return nil, err
 	}
 
-	hasHeader, err := bp.hasHeader(hash)
+	err = bp.setBlockStatusAfterBlockValidation(block, isPruningPoint)
 	if err != nil {
-		return err
-	}
-
-	if !hasHeader {
-		if syncInfo.State == externalapi.SyncStateMissingBlockBodies {
-			return errors.Wrapf(ruleerrors.ErrMissingBlockHeaderInIBD, "no block header is stored for block %s. "+
-				"Every block we get during %s mode should have a pre-stored header", syncInfo.State, hash)
-		}
-		err = bp.reachabilityManager.AddBlock(hash)
-		if err != nil {
-			return err
-		}
-	}
-
-	if syncInfo.State == externalapi.SyncStateHeadersFirst {
-		bp.blockStatusStore.Stage(hash, externalapi.StatusHeaderOnly)
-	} else {
-		bp.blockStatusStore.Stage(hash, externalapi.StatusUTXOPendingVerification)
-	}
-
-	// Block validations passed, save whatever DAG data was
-	// collected so far
-	err = bp.commitAllChanges()
-	if err != nil {
-		return err
-	}
-
-	hasTips, err := bp.headerTipsStore.HasTips(bp.databaseContext)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
-	if hasTips {
+	isGenesis := blockHash.Equal(bp.genesisHash)
+	if !isGenesis {
 		var err error
-		oldHeadersSelectedTip, err = bp.headerTipsManager.SelectedTip()
+		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	if syncInfo.State == externalapi.SyncStateHeadersFirst {
-		err = bp.headerTipsManager.AddHeaderTip(hash)
-		if err != nil {
-			return err
-		}
-	} else if syncInfo.State == externalapi.SyncStateRelay || syncInfo.State == externalapi.SyncStateMissingGenesis {
-		// Attempt to add the block to the virtual
-		err = bp.consensusStateManager.AddBlockToVirtual(hash)
-		if err != nil {
-			return err
-		}
-
-		tips, err := bp.consensusStateStore.Tips(bp.databaseContext)
-		if err != nil {
-			return err
-		}
-		err = bp.headerTipsStore.Stage(tips)
-		if err != nil {
-			return err
-		}
-	}
-
-	if syncInfo.State != externalapi.SyncStateMissingGenesis {
-		err = bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
-		if err != nil {
-			return err
-		}
-	}
-
-	if syncInfo.State == externalapi.SyncStateRelay {
-		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-		err = bp.pruningManager.FindNextPruningPoint()
-		if err != nil {
-			return err
-		}
-	}
-
-	return bp.commitAllChanges()
-}
-
-func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-	headersSelectedTip, err := bp.headerTipsManager.SelectedTip()
+	err = bp.headerTipsManager.AddHeaderTip(blockHash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if *headersSelectedTip == *oldHeadersSelectedTip {
-		return nil
+	var selectedParentChainChanges *externalapi.SelectedChainPath
+	var virtualUTXODiff externalapi.UTXODiff
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if !isHeaderOnlyBlock {
+		// There's no need to update the consensus state manager when
+		// processing the pruning point since it was already handled
+		// in consensusStateManager.ImportPruningPoint
+		if !isPruningPoint {
+			// Attempt to add the block to the virtual
+			selectedParentChainChanges, virtualUTXODiff, err = bp.consensusStateManager.AddBlock(blockHash)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
+	if !isGenesis {
+		err := bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !isHeaderOnlyBlock {
+		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
+		err = bp.pruningManager.UpdatePruningPointByVirtual()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = bp.commitAllChanges()
+	if err != nil {
+		return nil, err
+	}
+
+	err = bp.pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug(logger.NewLogClosure(func() string {
+		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock)
+		return fmt.Sprintf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)
+	}))
+
+	var logClosureErr error
+	log.Debug(logger.NewLogClosure(func() string {
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+		if err != nil {
+			logClosureErr = err
+			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
+		}
+		headerCount := bp.blockHeaderStore.Count()
+		blockCount := bp.blockStore.Count()
+		return fmt.Sprintf("New virtual's blue score: %d. Block count: %d. Header count: %d",
+			virtualGhostDAGData.BlueScore(), blockCount, headerCount)
+	}))
+	if logClosureErr != nil {
+		return nil, logClosureErr
+	}
+
+	virtualParents, err := bp.dagTopologyManager.Parents(model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	bp.blockLogger.LogBlock(block)
+
+	return &externalapi.BlockInsertionResult{
+		VirtualSelectedParentChainChanges: selectedParentChainChanges,
+		VirtualUTXODiff:                   virtualUTXODiff,
+		VirtualParents:                    virtualParents,
+	}, nil
 }
 
 func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
 	return len(block.Transactions) == 0
 }
 
-func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *externalapi.SyncInfo) error {
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, hash)
+func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
+	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
 	if err != nil {
 		return err
 	}
 
+	if headersSelectedTip.Equal(oldHeadersSelectedTip) {
+		return nil
+	}
+
+	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
+}
+
+func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error {
+	hash := consensushashing.BlockHash(block)
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, hash)
+	if err != nil {
+		return err
+	}
 	if !exists {
 		return nil
 	}
@@ -186,72 +195,37 @@ func (bp *blockProcessor) checkBlockStatus(hash *externalapi.DomainHash, mode *e
 		return errors.Wrapf(ruleerrors.ErrKnownInvalid, "block %s is a known invalid block", hash)
 	}
 
-	if mode.State == externalapi.SyncStateHeadersFirst || status != externalapi.StatusHeaderOnly {
-		return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
-	}
-
-	return nil
-}
-
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	blockHash := consensusserialization.HeaderHash(block.Header)
-	hasHeader, err := bp.hasHeader(blockHash)
-	if err != nil {
-		return err
-	}
-
-	if !hasHeader {
-		err = bp.blockHeaderStore.Stage(blockHash, block.Header)
+	if !isHeaderOnlyBlock {
+		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext, hash)
 		if err != nil {
 			return err
 		}
-
-		err = bp.dagTopologyManager.SetParents(blockHash, block.Header.ParentHashes)
+		if hasBlock {
+			return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
+		}
+	} else {
+		hasHeader, err := bp.blockHeaderStore.HasBlockHeader(bp.databaseContext, hash)
 		if err != nil {
 			return err
 		}
-	}
-
-	// If any validation until (included) proof-of-work fails, simply
-	// return an error without writing anything in the database.
-	// This is to prevent spamming attacks.
-	err = bp.validatePreProofOfWork(block)
-	if err != nil {
-		return err
-	}
-
-	err = bp.blockValidator.ValidateProofOfWorkAndDifficulty(blockHash)
-	if err != nil {
-		return err
-	}
-
-	// If in-context validations fail, discard all changes and store the
-	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block, mode)
-	if err != nil {
-		if errors.As(err, &ruleerrors.RuleError{}) {
-			bp.discardAllChanges()
-			hash := consensusserialization.BlockHash(block)
-			bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
-			commitErr := bp.commitAllChanges()
-			if commitErr != nil {
-				return commitErr
-			}
+		if hasHeader {
+			return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s header already exists", hash)
 		}
-		return err
 	}
+
 	return nil
 }
 
 func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
-	blockHash := consensusserialization.BlockHash(block)
+	blockHash := consensushashing.BlockHash(block)
 
-	hasHeader, err := bp.hasHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if hasHeader {
+	if hasValidatedHeader {
+		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork", blockHash)
 		return nil
 	}
 
@@ -262,37 +236,46 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, mode *externalapi.SyncInfo) error {
-	blockHash := consensusserialization.BlockHash(block)
+func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, isPruningPoint bool) error {
+	blockHash := consensushashing.BlockHash(block)
 
-	if mode.State != externalapi.SyncStateHeadersFirst {
-		err := bp.blockStore.Stage(blockHash, block)
-		if err != nil {
-			return err
-		}
-
-		err = bp.blockValidator.ValidateBodyInIsolation(blockHash)
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if !isHeaderOnlyBlock {
+		bp.blockStore.Stage(blockHash, block)
+		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
-	hasHeader, err := bp.hasHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
 	if err != nil {
 		return err
 	}
 
-	if !hasHeader {
+	if !hasValidatedHeader {
 		err = bp.blockValidator.ValidateHeaderInContext(blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
+	if !isHeaderOnlyBlock {
+		err = bp.blockValidator.ValidateBodyInContext(blockHash, isPruningPoint)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Debugf("Skipping ValidateBodyInContext for block %s because it's header only", blockHash)
+	}
+
 	return nil
 }
 
-func (bp *blockProcessor) hasHeader(blockHash *externalapi.DomainHash) (bool, error) {
+// hasValidatedHeader returns whether the block header was validated. It returns
+// true in any case the block header was validated, whether it was validated as a
+// header-only block or as a block with body.
+func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
 	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
 	if err != nil {
 		return false, err
@@ -307,7 +290,7 @@ func (bp *blockProcessor) hasHeader(blockHash *externalapi.DomainHash) (bool, er
 		return false, err
 	}
 
-	return status == externalapi.StatusHeaderOnly, nil
+	return status != externalapi.StatusInvalid, nil
 }
 
 func (bp *blockProcessor) discardAllChanges() {
@@ -317,6 +300,9 @@ func (bp *blockProcessor) discardAllChanges() {
 }
 
 func (bp *blockProcessor) commitAllChanges() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "commitAllChanges")
+	defer onEnd()
+
 	dbTx, err := bp.databaseContext.Begin()
 	if err != nil {
 		return err

@@ -108,12 +108,10 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 	if err != nil {
 		return err
 	}
-
 	versionMessage, ok := msg.(*appmessage.MsgVersion)
 	if !ok {
 		return errors.Errorf("expected first message to be of type %s, but got %s", appmessage.CmdVersion, msg.Command())
 	}
-
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgVersion{
 		ProtocolVersion: versionMessage.ProtocolVersion,
 		Network:         mna.cfg.ActiveNetParams.Name,
@@ -122,7 +120,6 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		Address:         nil,
 		ID:              ourID,
 		UserAgent:       "/net-adapter-mock/",
-		SelectedTipHash: versionMessage.SelectedTipHash,
 		DisableRelayTx:  true,
 		SubnetworkID:    nil,
 	})
@@ -134,22 +131,56 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 	if err != nil {
 		return err
 	}
-
 	_, ok = msg.(*appmessage.MsgVerAck)
 	if !ok {
 		return errors.Errorf("expected second message to be of type %s, but got %s", appmessage.CmdVerAck, msg.Command())
 	}
-
 	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgVerAck{})
 	if err != nil {
 		return err
+	}
+
+	msg, err = routes.addressesRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+	_, ok = msg.(*appmessage.MsgRequestAddresses)
+	if !ok {
+		return errors.Errorf("expected third message to be of type %s, but got %s", appmessage.CmdRequestAddresses, msg.Command())
+	}
+	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgAddresses{
+		AddressList: []*appmessage.NetAddress{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = routes.OutgoingRoute.Enqueue(&appmessage.MsgRequestAddresses{
+		IncludeAllSubnetworks: true,
+		SubnetworkID:          nil,
+	})
+	if err != nil {
+		return err
+	}
+	msg, err = routes.addressesRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+	_, ok = msg.(*appmessage.MsgAddresses)
+	if !ok {
+		return errors.Errorf("expected fourth message to be of type %s, but got %s", appmessage.CmdAddresses, msg.Command())
 	}
 
 	return nil
 }
 
 func generateRouteInitializer() (netadapter.RouterInitializer, <-chan *Routes) {
-	cmdsWithBuiltInRoutes := []appmessage.MessageCommand{appmessage.CmdVerAck, appmessage.CmdVersion, appmessage.CmdPing}
+	cmdsWithBuiltInRoutes := []appmessage.MessageCommand{
+		appmessage.CmdVersion,
+		appmessage.CmdVerAck,
+		appmessage.CmdRequestAddresses,
+		appmessage.CmdAddresses,
+		appmessage.CmdPing}
 
 	everythingElse := make([]appmessage.MessageCommand, 0, len(appmessage.ProtocolMessageCommandToString)-len(cmdsWithBuiltInRoutes))
 outerLoop:
@@ -170,11 +201,14 @@ outerLoop:
 		if err != nil {
 			panic(errors.Wrap(err, "error registering handshake route"))
 		}
+		addressesRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdRequestAddresses, appmessage.CmdAddresses})
+		if err != nil {
+			panic(errors.Wrap(err, "error registering addresses route"))
+		}
 		pingRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdPing})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering ping route"))
 		}
-
 		everythingElseRoute, err := router.AddIncomingRoute(everythingElse)
 		if err != nil {
 			panic(errors.Wrap(err, "error registering everythingElseRoute"))
@@ -186,6 +220,7 @@ outerLoop:
 				OutgoingRoute:  router.OutgoingRoute(),
 				IncomingRoute:  everythingElseRoute,
 				handshakeRoute: handshakeRoute,
+				addressesRoute: addressesRoute,
 				pingRoute:      pingRoute,
 			}
 		})

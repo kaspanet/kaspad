@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -41,10 +42,17 @@ func ReceiveVersion(context HandleHandshakeContext, incomingRoute *router.Route,
 }
 
 func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveVersionFlow.start")
+	defer onEnd()
+
+	log.Debugf("Starting receiveVersionFlow with %s", flow.peer.Address())
+
 	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("Got version message")
 
 	msgVersion, ok := message.(*appmessage.MsgVersion)
 	if !ok {
@@ -52,7 +60,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	}
 
 	if !allowSelfConnections && flow.NetAdapter().ID().IsEqual(msgVersion.ID) {
-		return nil, protocolerrors.New(true, "connected to self")
+		return nil, protocolerrors.New(false, "connected to self")
 	}
 
 	// Disconnect and ban peers from a different network
@@ -84,7 +92,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	isRemoteNodeFull := msgVersion.SubnetworkID == nil
 	isOutbound := flow.peer.Connection().IsOutbound()
 	if (isLocalNodeFull && !isRemoteNodeFull && isOutbound) ||
-		(!isLocalNodeFull && !isRemoteNodeFull && *msgVersion.SubnetworkID != *localSubnetworkID) {
+		(!isLocalNodeFull && !isRemoteNodeFull && !msgVersion.SubnetworkID.Equal(localSubnetworkID)) {
 
 		return nil, protocolerrors.New(false, "incompatible subnetworks")
 	}

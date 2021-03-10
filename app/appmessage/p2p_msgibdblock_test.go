@@ -25,7 +25,7 @@ func TestIBDBlock(t *testing.T) {
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
-	wantCmd := MessageCommand(17)
+	wantCmd := MessageCommand(15)
 	msg := NewMsgIBDBlock(NewMsgBlock(bh))
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgIBDBlock: wrong command - got %v want %v",

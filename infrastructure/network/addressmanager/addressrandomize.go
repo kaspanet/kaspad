@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
-// AddressRandomize implement AddressRandomizer interface
+// AddressRandomize implement addressRandomizer interface
 type AddressRandomize struct {
 	random *rand.Rand
 }
@@ -31,12 +31,15 @@ func (amc *AddressRandomize) RandomAddress(addresses []*appmessage.NetAddress) *
 
 // RandomAddresses returns count addresses at random from input list
 func (amc *AddressRandomize) RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress {
+	if len(addresses) < count {
+		count = len(addresses)
+	}
+
 	result := make([]*appmessage.NetAddress, 0, count)
-	if len(addresses) > 0 {
-		randomIndexes := rand.Perm(len(addresses))
-		for i := 0; i < count; i++ {
-			result = append(result, addresses[randomIndexes[i]])
-		}
+
+	randomIndexes := rand.Perm(len(addresses))
+	for i := 0; i < count; i++ {
+		result = append(result, addresses[randomIndexes[i]])
 	}
 
 	return result

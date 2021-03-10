@@ -2,17 +2,21 @@ package consensusstatestore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 )
 
-var tipsKey = dbkeys.MakeBucket().Key([]byte("tips"))
+var tipsKey = database.MakeBucket(nil).Key([]byte("tips"))
 
-func (c *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if c.stagedTips != nil {
-		return c.stagedTips, nil
+func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	if css.tipsStaging != nil {
+		return externalapi.CloneHashes(css.tipsStaging), nil
+	}
+
+	if css.tipsCache != nil {
+		return externalapi.CloneHashes(css.tipsCache), nil
 	}
 
 	tipsBytes, err := dbContext.Get(tipsKey)
@@ -20,39 +24,44 @@ func (c *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.Dom
 		return nil, err
 	}
 
-	return c.deserializeTips(tipsBytes)
+	tips, err := css.deserializeTips(tipsBytes)
+	if err != nil {
+		return nil, err
+	}
+	css.tipsCache = tips
+	return externalapi.CloneHashes(tips), nil
 }
 
-func (c *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) error {
-	clone, err := c.cloneTips(tipHashes)
+func (css *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
+	css.tipsStaging = externalapi.CloneHashes(tipHashes)
+}
+
+func (css *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
+	if css.tipsStaging == nil {
+		return nil
+	}
+
+	tipsBytes, err := css.serializeTips(css.tipsStaging)
 	if err != nil {
 		return err
 	}
-
-	c.stagedTips = clone
-	return nil
-}
-
-func (c *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
-	tipsBytes, err := c.serializeTips(c.stagedTips)
-	if err != nil {
-		return err
-	}
-
 	err = dbTx.Put(tipsKey, tipsBytes)
 	if err != nil {
 		return err
 	}
+	css.tipsCache = css.tipsStaging
 
+	// Note: we don't discard the staging here since that's
+	// being done at the end of Commit()
 	return nil
 }
 
-func (c *consensusStateStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
+func (css *consensusStateStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
 	dbTips := serialization.TipsToDBTips(tips)
 	return proto.Marshal(dbTips)
 }
 
-func (c *consensusStateStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash,
+func (css *consensusStateStore) deserializeTips(tipsBytes []byte) ([]*externalapi.DomainHash,
 	error) {
 
 	dbTips := &serialization.DbTips{}
@@ -62,15 +71,4 @@ func (c *consensusStateStore) deserializeTips(tipsBytes []byte) ([]*externalapi.
 	}
 
 	return serialization.DBTipsToTips(dbTips)
-}
-
-func (c *consensusStateStore) cloneTips(tips []*externalapi.DomainHash,
-) ([]*externalapi.DomainHash, error) {
-
-	serialized, err := c.serializeTips(tips)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.deserializeTips(serialized)
 }

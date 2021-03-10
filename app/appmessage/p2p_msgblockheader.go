@@ -7,7 +7,7 @@ package appmessage
 import (
 	"math"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensusserialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
@@ -37,7 +37,7 @@ type MsgBlockHeader struct {
 	baseMessage
 
 	// Version of the block. This is not the same as the protocol version.
-	Version int32
+	Version uint16
 
 	// Hashes of the parent block headers in the blockDAG.
 	ParentHashes []*externalapi.DomainHash
@@ -73,7 +73,7 @@ func (h *MsgBlockHeader) NumParentBlocks() byte {
 
 // BlockHash computes the block identifier hash for the given block header.
 func (h *MsgBlockHeader) BlockHash() *externalapi.DomainHash {
-	return consensusserialization.HeaderHash(BlockHeaderToDomainBlockHeader(h))
+	return consensushashing.HeaderHash(BlockHeaderToDomainBlockHeader(h))
 }
 
 // IsGenesis returns true iff this block is a genesis block
@@ -90,7 +90,7 @@ func (h *MsgBlockHeader) Command() MessageCommand {
 // NewBlockHeader returns a new MsgBlockHeader using the provided version, previous
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
+func NewBlockHeader(version uint16, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
 	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64) *MsgBlockHeader {
 
 	// Limit the timestamp to one millisecond precision since the protocol

@@ -1,14 +1,13 @@
 package grpcserver
 
 import (
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"io"
 	"time"
 
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 )
@@ -67,7 +66,9 @@ func (c *gRPCConnection) receiveLoop() error {
 		}
 		message, err := protoMessage.ToAppMessage()
 		if err != nil {
-			c.onInvalidMessageHandler(err)
+			if c.onInvalidMessageHandler != nil {
+				c.onInvalidMessageHandler(err)
+			}
 			return err
 		}
 
@@ -88,7 +89,15 @@ func (c *gRPCConnection) receiveLoop() error {
 			if errors.Is(err, routerpkg.ErrRouteClosed) {
 				return nil
 			}
-			c.onInvalidMessageHandler(err)
+
+			// ErrRouteCapacityReached isn't an invalid message error, so
+			// we return it in order to log it later on.
+			if errors.Is(err, routerpkg.ErrRouteCapacityReached) {
+				return err
+			}
+			if c.onInvalidMessageHandler != nil {
+				c.onInvalidMessageHandler(err)
+			}
 			return err
 		}
 	}

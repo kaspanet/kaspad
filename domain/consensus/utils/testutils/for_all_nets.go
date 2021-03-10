@@ -8,7 +8,7 @@ import (
 
 // ForAllNets runs the passed testFunc with all available networks
 // if setDifficultyToMinumum = true - will modify the net params to have minimal difficulty, like in SimNet
-func ForAllNets(t *testing.T, setDifficultyToMinimum bool, testFunc func(*testing.T, *dagconfig.Params)) {
+func ForAllNets(t *testing.T, skipPow bool, testFunc func(*testing.T, *dagconfig.Params)) {
 	allParams := []dagconfig.Params{
 		dagconfig.MainnetParams,
 		dagconfig.TestnetParams,
@@ -17,11 +17,12 @@ func ForAllNets(t *testing.T, setDifficultyToMinimum bool, testFunc func(*testin
 	}
 
 	for _, params := range allParams {
-		if setDifficultyToMinimum {
-			params.DisableDifficultyAdjustment = dagconfig.SimnetParams.DisableDifficultyAdjustment
-			params.TargetTimePerBlock = dagconfig.SimnetParams.TargetTimePerBlock
-		}
-
-		testFunc(t, &params)
+		paramsCopy := params
+		t.Run(paramsCopy.Name, func(t *testing.T) {
+			t.Parallel()
+			paramsCopy.SkipProofOfWork = skipPow
+			t.Logf("Running test for %s", paramsCopy.Name)
+			testFunc(t, &paramsCopy)
+		})
 	}
 }

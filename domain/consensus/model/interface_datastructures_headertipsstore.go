@@ -2,11 +2,11 @@ package model
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-// HeaderTipsStore represents a store of the header tips
-type HeaderTipsStore interface {
+// HeaderSelectedTipStore represents a store of the headers selected tip
+type HeaderSelectedTipStore interface {
 	Store
-	Stage(tips []*externalapi.DomainHash) error
+	Stage(selectedTip *externalapi.DomainHash)
 	IsStaged() bool
-	Tips(dbContext DBReader) ([]*externalapi.DomainHash, error)
-	HasTips(dbContext DBReader) (bool, error)
+	HeadersSelectedTip(dbContext DBReader) (*externalapi.DomainHash, error)
+	Has(dbContext DBReader) (bool, error)
 }

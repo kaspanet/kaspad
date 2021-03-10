@@ -5,9 +5,10 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -31,8 +32,8 @@ var (
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// testnetPowMax is the highest proof of work value a Kaspa block
-	// can have for the test network. It is the value 2^239 - 1.
-	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	// can have for the test network. It is the value 2^255 - 1.
+	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// simnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the simulation test network. It is the value 2^255 - 1.
@@ -40,16 +41,8 @@ var (
 
 	// devnetPowMax is the highest proof of work value a Kaspa block
 	// can have for the development network. It is the value
-	// 2^239 - 1.
-	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
-)
-
-const (
-	ghostdagK                      = 18
-	difficultyAdjustmentWindowSize = 2640
-	timestampDeviationTolerance    = 132
-	finalityDuration               = 24 * time.Hour
-	targetTimePerBlock             = 1 * time.Second
+	// 2^255 - 1.
+	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
@@ -61,7 +54,7 @@ type KType uint8
 type Params struct {
 	// K defines the K parameter for GHOSTDAG consensus algorithm.
 	// See ghostdag.go for further details.
-	K KType
+	K model.KType
 
 	// Name defines a human-readable identifier for the network.
 	Name string
@@ -78,6 +71,10 @@ type Params struct {
 	// DNSSeeds defines a list of DNS seeds for the network that are used
 	// as one method to discover peers.
 	DNSSeeds []string
+
+	// GRPCSeeds defines a list of GRPC seeds for the network that are used
+	// as one method to discover peers.
+	GRPCSeeds []string
 
 	// GenesisBlock defines the first block of the DAG.
 	GenesisBlock *externalapi.DomainBlock
@@ -106,11 +103,11 @@ type Params struct {
 
 	// TimestampDeviationTolerance is the maximum offset a block timestamp
 	// is allowed to be in the future before it gets delayed
-	TimestampDeviationTolerance uint64
+	TimestampDeviationTolerance int
 
 	// DifficultyAdjustmentWindowSize is the size of window that is inspected
 	// to calculate the required difficulty of each block.
-	DifficultyAdjustmentWindowSize uint64
+	DifficultyAdjustmentWindowSize int
 
 	// These fields are related to voting on consensus rule changes as
 	// defined by BIP0009.
@@ -146,6 +143,42 @@ type Params struct {
 
 	// DisableDifficultyAdjustment determine whether to use difficulty
 	DisableDifficultyAdjustment bool
+
+	// SkipProofOfWork indicates whether proof of work should be checked.
+	SkipProofOfWork bool
+
+	// MaxCoinbasePayloadLength is the maximum length in bytes allowed for a block's coinbase's payload
+	MaxCoinbasePayloadLength uint64
+
+	// MaxBlockSize is the maximum size in bytes a block is allowed
+	MaxBlockSize uint64
+
+	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
+	MaxBlockParents model.KType
+
+	// MassPerTxByte is the number of grams that any byte
+	// adds to a transaction.
+	MassPerTxByte uint64
+
+	// MassPerScriptPubKeyByte is the number of grams that any
+	// scriptPubKey byte adds to a transaction.
+	MassPerScriptPubKeyByte uint64
+
+	// MassPerSigOp is the number of grams that any
+	// signature operation adds to a transaction.
+	MassPerSigOp uint64
+
+	// MergeSetSizeLimit is the maximum number of blocks in a block's merge set
+	MergeSetSizeLimit uint64
+
+	// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
+	MaxMassAcceptedByBlock uint64
+
+	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
+	CoinbasePayloadScriptPublicKeyMaxLength uint8
+
+	// BaseSubsidy is the starting subsidy amount for mined blocks.
+	BaseSubsidy uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -161,28 +194,27 @@ func (p *Params) FinalityDepth() uint64 {
 
 // PruningDepth returns the pruning duration represented in blocks
 func (p *Params) PruningDepth() uint64 {
-	return 2*p.FinalityDepth() + 4*constants.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
+	return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 }
 
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-mainnet",
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{"dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
-	GenesisHash:                    &genesisHash,
+	GenesisHash:                    genesisHash,
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -208,27 +240,38 @@ var MainnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
-	K:           ghostdagK,
-	Name:        "kaspa-testnet",
+	K:           defaultGHOSTDAGK,
+	Name:        "kaspa-testnet-2",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-dnsseed.kas.pa"},
+	DNSSeeds:    []string{"testnet-2-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    &testnetGenesisHash,
+	GenesisHash:                    testnetGenesisHash,
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -254,6 +297,17 @@ var TestnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -264,7 +318,7 @@ var TestnetParams = Params{
 // following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
 var SimnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-simnet",
 	Net:         appmessage.Simnet,
 	RPCPort:     "16510",
@@ -273,14 +327,14 @@ var SimnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    &simnetGenesisHash,
+	GenesisHash:                    simnetGenesisHash,
 	PowMax:                         simnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Millisecond,
 	FinalityDuration:               time.Minute,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -304,11 +358,22 @@ var SimnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: true,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
 var DevnetParams = Params{
-	K:           ghostdagK,
+	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-devnet",
 	Net:         appmessage.Devnet,
 	RPCPort:     "16610",
@@ -317,14 +382,14 @@ var DevnetParams = Params{
 
 	// DAG parameters
 	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    &devnetGenesisHash,
+	GenesisHash:                    devnetGenesisHash,
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             targetTimePerBlock,
-	FinalityDuration:               finalityDuration,
-	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	TargetTimePerBlock:             defaultTargetTimePerBlock,
+	FinalityDuration:               defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -350,6 +415,17 @@ var DevnetParams = Params{
 	EnableNonNativeSubnetworks: false,
 
 	DisableDifficultyAdjustment: false,
+
+	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
+	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockParents:                         defaultMaxBlockParents,
+	MassPerTxByte:                           defaultMassPerTxByte,
+	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
+	MassPerSigOp:                            defaultMassPerSigOp,
+	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
+	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
+	BaseSubsidy:                             defaultBaseSubsidy,
+	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
 
 var (

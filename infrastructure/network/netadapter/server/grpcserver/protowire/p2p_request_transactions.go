@@ -6,12 +6,21 @@ import (
 )
 
 func (x *KaspadMessage_RequestTransactions) toAppMessage() (appmessage.Message, error) {
-	if len(x.RequestTransactions.Ids) > appmessage.MaxInvPerRequestTransactionsMsg {
-		return nil, errors.Errorf("too many hashes for message "+
-			"[count %d, max %d]", len(x.RequestTransactions.Ids), appmessage.MaxInvPerRequestTransactionsMsg)
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestTransactions is nil")
 	}
+	return x.RequestTransactions.toAppMessage()
+}
 
-	ids, err := protoTransactionIDsToDomain(x.RequestTransactions.Ids)
+func (x *RequestTransactionsMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RequestTransactionsMessage is nil")
+	}
+	if len(x.Ids) > appmessage.MaxInvPerRequestTransactionsMsg {
+		return nil, errors.Errorf("too many hashes for message "+
+			"[count %d, max %d]", len(x.Ids), appmessage.MaxInvPerRequestTransactionsMsg)
+	}
+	ids, err := protoTransactionIDsToDomain(x.Ids)
 	if err != nil {
 		return nil, err
 	}
