@@ -127,7 +127,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
-	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, int(dagParams.FinalityDepth()), preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(

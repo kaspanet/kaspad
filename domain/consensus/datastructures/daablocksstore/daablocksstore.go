@@ -21,13 +21,13 @@ type daaBlocksStore struct {
 	daaAddedBlocksLRUCache *lrucache.LRUCache
 }
 
-// New instantiates a new BlockRelationStore
-func New(cacheSize int, preallocate bool) model.DAABlocksStore {
+// New instantiates a new DAABlocksStore
+func New(daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
 	return &daaBlocksStore{
 		daaScoreStaging:        make(map[externalapi.DomainHash]uint64),
 		daaAddedBlocksStaging:  make(map[externalapi.DomainHash][]*externalapi.DomainHash),
-		daaScoreLRUCache:       lrucache.New(cacheSize, preallocate),
-		daaAddedBlocksLRUCache: lrucache.New(cacheSize, preallocate),
+		daaScoreLRUCache:       lrucache.New(daaScoreCacheSize, preallocate),
+		daaAddedBlocksLRUCache: lrucache.New(daaAddedBlocksCacheSize, preallocate),
 	}
 }
 
