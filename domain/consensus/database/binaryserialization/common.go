@@ -9,7 +9,7 @@ const uint64Length = 8
 
 // SerializeUint64 serializes a uint64
 func SerializeUint64(value uint64) []byte {
-	var keyBytes [8]byte
+	var keyBytes [uint64Length]byte
 	binary.LittleEndian.PutUint64(keyBytes[:], value)
 	return keyBytes[:]
 }
