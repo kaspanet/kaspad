@@ -66,7 +66,7 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 		if utxoEntry == nil {
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
-			originBlueScore := utxoEntry.BlockBlueScore()
+			originBlueScore := utxoEntry.BlockDAAScore()
 			blueScoreSincePrev := txBlueScore - originBlueScore
 			if blueScoreSincePrev < v.blockCoinbaseMaturity {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
@@ -241,7 +241,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputBlueScore := utxoEntry.BlockBlueScore()
+		inputBlueScore := utxoEntry.BlockDAAScore()
 
 		// Given a sequence number, we apply the relative time lock
 		// mask in order to obtain the time lock delta required before

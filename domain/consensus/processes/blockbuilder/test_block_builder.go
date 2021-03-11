@@ -69,7 +69,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.D
 		return nil, err
 	}
 
-	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
+	bits, err := bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +136,11 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
+	_, err = bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
 	if err != nil {
 		return nil, nil, err
@@ -193,6 +198,11 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 
 	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}

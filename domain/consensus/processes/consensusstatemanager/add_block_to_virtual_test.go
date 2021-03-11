@@ -59,7 +59,7 @@ func TestVirtualDiff(t *testing.T) {
 			block.Transactions[0].Outputs[0].Value,
 			block.Transactions[0].Outputs[0].ScriptPublicKey,
 			true,
-			2, //Expected virtual blue score
+			1, //Expected virtual DAA score
 		)) {
 			t.Fatalf("Unexpected entry %s", entry)
 		}

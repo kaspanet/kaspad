@@ -8,18 +8,18 @@ import (
 type utxoEntry struct {
 	amount          uint64
 	scriptPublicKey *externalapi.ScriptPublicKey
-	blockBlueScore  uint64
+	blockDAAScore   uint64
 	isCoinbase      bool
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(amount uint64, scriptPubKey *externalapi.ScriptPublicKey, isCoinbase bool, blockBlueScore uint64) externalapi.UTXOEntry {
+func NewUTXOEntry(amount uint64, scriptPubKey *externalapi.ScriptPublicKey, isCoinbase bool, blockDAAScore uint64) externalapi.UTXOEntry {
 	scriptPubKeyClone := externalapi.ScriptPublicKey{Script: make([]byte, len(scriptPubKey.Script)), Version: scriptPubKey.Version}
 	copy(scriptPubKeyClone.Script, scriptPubKey.Script)
 	return &utxoEntry{
 		amount:          amount,
 		scriptPublicKey: &scriptPubKeyClone,
-		blockBlueScore:  blockBlueScore,
+		blockDAAScore:   blockDAAScore,
 		isCoinbase:      isCoinbase,
 	}
 }
@@ -34,8 +34,8 @@ func (u *utxoEntry) ScriptPublicKey() *externalapi.ScriptPublicKey {
 	return &clone
 }
 
-func (u *utxoEntry) BlockBlueScore() uint64 {
-	return u.blockBlueScore
+func (u *utxoEntry) BlockDAAScore() uint64 {
+	return u.blockDAAScore
 }
 
 func (u *utxoEntry) IsCoinbase() bool {
@@ -68,7 +68,7 @@ func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
 		return false
 	}
 
-	if u.BlockBlueScore() != other.BlockBlueScore() {
+	if u.BlockDAAScore() != other.BlockDAAScore() {
 		return false
 	}
 

@@ -31,6 +31,6 @@ type OutpointAndUTXOEntryPair struct {
 type UTXOEntry struct {
 	Amount          uint64
 	ScriptPublicKey *externalapi.ScriptPublicKey
-	BlockBlueScore  uint64
+	BlockDAAScore   uint64
 	IsCoinbase      bool
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const unacceptedBlueScore = math.MaxUint64
+const unacceptedDAAScore = math.MaxUint64
 
 func newMempoolUTXOSet() *mempoolUTXOSet {
 	return &mempoolUTXOSet{
@@ -70,7 +70,7 @@ func (mpus *mempoolUTXOSet) addTx(tx *consensusexternalapi.DomainTransaction) er
 			return errors.Errorf("outpoint %s already exists", outpoint)
 		}
 		mpus.poolUnspentOutputs[outpoint] =
-			utxo.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, false, unacceptedBlueScore)
+			utxo.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, false, unacceptedDAAScore)
 	}
 	return nil
 }

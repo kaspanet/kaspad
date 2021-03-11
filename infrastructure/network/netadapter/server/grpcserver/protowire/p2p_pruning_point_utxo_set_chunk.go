@@ -55,7 +55,7 @@ func (x *KaspadMessage_PruningPointUtxoSetChunk) fromAppMessage(message *appmess
 		utxoEntry := &UtxoEntry{
 			Amount:          outpointAndUTXOEntryPair.UTXOEntry.Amount,
 			ScriptPublicKey: scriptPublicKey,
-			BlockBlueScore:  outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore,
+			BlockDaaScore:   outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore,
 			IsCoinbase:      outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
 		}
 		outpointAndUTXOEntryPairs[i] = &OutpointAndUtxoEntryPair{

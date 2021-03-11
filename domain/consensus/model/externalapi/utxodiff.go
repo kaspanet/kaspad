@@ -27,5 +27,5 @@ type MutableUTXODiff interface {
 	ToRemove() UTXOCollection
 
 	WithDiffInPlace(other UTXODiff) error
-	AddTransaction(transaction *DomainTransaction, blockBlueScore uint64) error
+	AddTransaction(transaction *DomainTransaction, blockDAAScore uint64) error
 }

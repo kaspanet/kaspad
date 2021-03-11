@@ -85,6 +85,6 @@ type RPCOutpoint struct {
 type RPCUTXOEntry struct {
 	Amount          uint64
 	ScriptPublicKey *RPCScriptPublicKey
-	BlockBlueScore  uint64
+	BlockDAAScore   uint64
 	IsCoinbase      bool
 }

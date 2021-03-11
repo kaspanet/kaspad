@@ -38,18 +38,24 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, blockHash)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
 	log.Debugf("Restored the past UTXO of block %s with selectedParent %s. "+
 		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
 		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
-	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData)
+	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	log.Debugf("Calculating the multiset of %s", blockHash)
-	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData)
+	multiset, err := csm.calculateMultiset(acceptanceData, blockGHOSTDAGData, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -115,7 +121,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff externalapi.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData) (
+	selectedParentPastUTXODiff externalapi.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
@@ -156,7 +162,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 				transactionID, mergeSetBlockHash)
 
 			isAccepted, accumulatedMass, err = csm.maybeAcceptTransaction(transaction, blockHash, isSelectedParent,
-				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, ghostdagData.BlueScore())
+				accumulatedUTXODiff, accumulatedMass, selectedParentMedianTime, daaScore)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -186,7 +192,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.Dom
 
 func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalapi.DomainTransaction,
 	blockHash *externalapi.DomainHash, isSelectedParent bool, accumulatedUTXODiff externalapi.MutableUTXODiff,
-	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockBlueScore uint64) (
+	accumulatedMassBefore uint64, selectedParentPastMedianTime int64, blockDAAScore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64, err error) {
 
 	transactionID := consensushashing.TransactionID(transaction)
@@ -237,7 +243,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(transaction *externalap
 	}
 
 	log.Tracef("Adding transaction %s in block %s to the accumulated diff", transactionID, blockHash)
-	err = accumulatedUTXODiff.AddTransaction(transaction, blockBlueScore)
+	err = accumulatedUTXODiff.AddTransaction(transaction, blockDAAScore)
 	if err != nil {
 		return false, 0, err
 	}

@@ -68,7 +68,7 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 }
 
 // RequiredDifficulty returns the difficulty required for some block
-func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
+func (dm *difficultyManager) UpdateDAADataAndReturnDifficultyBits(blockHash *externalapi.DomainHash) (uint32, error) {
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
 	targetsWindow, windowHashes, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {

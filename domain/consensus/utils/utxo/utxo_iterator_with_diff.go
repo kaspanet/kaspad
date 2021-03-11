@@ -63,7 +63,7 @@ func (r *readOnlyUTXOIteratorWithDiff) First() bool {
 	}
 
 	r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()
-	if r.diff.mutableUTXODiff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore()) {
+	if r.diff.mutableUTXODiff.toRemove.containsWithDAAScore(r.currentOutpoint, r.currentUTXOEntry.BlockDAAScore()) {
 		return r.Next()
 	}
 	return true
@@ -75,7 +75,7 @@ func (r *readOnlyUTXOIteratorWithDiff) Next() bool {
 	}
 	for r.baseIterator.Next() { // keep looping until we reach an outpoint/entry pair that is not in r.diff.toRemove
 		r.currentOutpoint, r.currentUTXOEntry, r.currentErr = r.baseIterator.Get()
-		if !r.diff.mutableUTXODiff.toRemove.containsWithBlueScore(r.currentOutpoint, r.currentUTXOEntry.BlockBlueScore()) {
+		if !r.diff.mutableUTXODiff.toRemove.containsWithDAAScore(r.currentOutpoint, r.currentUTXOEntry.BlockDAAScore()) {
 			return true
 		}
 	}

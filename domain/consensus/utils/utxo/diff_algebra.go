@@ -42,20 +42,20 @@ func minInt(a, b int) int {
 	return b
 }
 
-// intersectionWithRemainderHavingBlueScore calculates an intersection between two utxoCollections
-// having same blue score, returns the result and the remainder from collection1
-func intersectionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
+// intersectionWithRemainderHavingDAAScore calculates an intersection between two utxoCollections
+// having same DAA score, returns the result and the remainder from collection1
+func intersectionWithRemainderHavingDAAScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
 	result = make(utxoCollection, minInt(len(collection1), len(collection2)))
 	remainder = make(utxoCollection, len(collection1))
-	intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
+	intersectionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder)
 	return
 }
 
-// intersectionWithRemainderHavingBlueScoreInPlace calculates an intersection between two utxoCollections
-// having same blue score, puts it into result and into remainder from collection1
-func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+// intersectionWithRemainderHavingDAAScoreInPlace calculates an intersection between two utxoCollections
+// having same DAA score, puts it into result and into remainder from collection1
+func intersectionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
+		if collection2.containsWithDAAScore(&outpoint, utxoEntry.BlockDAAScore()) {
 			result.add(&outpoint, utxoEntry)
 		} else {
 			remainder.add(&outpoint, utxoEntry)
@@ -63,40 +63,40 @@ func intersectionWithRemainderHavingBlueScoreInPlace(collection1, collection2, r
 	}
 }
 
-// subtractionHavingBlueScore calculates a subtraction between collection1 and collection2
-// having same blue score, returns the result
-func subtractionHavingBlueScore(collection1, collection2 utxoCollection) (result utxoCollection) {
+// subtractionHavingDAAScore calculates a subtraction between collection1 and collection2
+// having same DAA score, returns the result
+func subtractionHavingDAAScore(collection1, collection2 utxoCollection) (result utxoCollection) {
 	result = make(utxoCollection, len(collection1))
 
-	subtractionHavingBlueScoreInPlace(collection1, collection2, result)
+	subtractionHavingDAAScoreInPlace(collection1, collection2, result)
 	return
 }
 
-// subtractionHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
-// having same blue score, puts it into result
-func subtractionHavingBlueScoreInPlace(collection1, collection2, result utxoCollection) {
+// subtractionHavingDAAScoreInPlace calculates a subtraction between collection1 and collection2
+// having same DAA score, puts it into result
+func subtractionHavingDAAScoreInPlace(collection1, collection2, result utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
+		if !collection2.containsWithDAAScore(&outpoint, utxoEntry.BlockDAAScore()) {
 			result.add(&outpoint, utxoEntry)
 		}
 	}
 }
 
-// subtractionWithRemainderHavingBlueScore calculates a subtraction between collection1 and collection2
-// having same blue score, returns the result and the remainder from collection1
-func subtractionWithRemainderHavingBlueScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
+// subtractionWithRemainderHavingDAAScore calculates a subtraction between collection1 and collection2
+// having same DAA score, returns the result and the remainder from collection1
+func subtractionWithRemainderHavingDAAScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
 	result = make(utxoCollection, len(collection1))
 	remainder = make(utxoCollection, len(collection1))
 
-	subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder)
+	subtractionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder)
 	return
 }
 
-// subtractionWithRemainderHavingBlueScoreInPlace calculates a subtraction between collection1 and collection2
-// having same blue score, puts it into result and into remainder from collection1
-func subtractionWithRemainderHavingBlueScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
+// subtractionWithRemainderHavingDAAScoreInPlace calculates a subtraction between collection1 and collection2
+// having same DAA score, puts it into result and into remainder from collection1
+func subtractionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
 	for outpoint, utxoEntry := range collection1 {
-		if !collection2.containsWithBlueScore(&outpoint, utxoEntry.BlockBlueScore()) {
+		if !collection2.containsWithDAAScore(&outpoint, utxoEntry.BlockDAAScore()) {
 			result.add(&outpoint, utxoEntry)
 		} else {
 			remainder.add(&outpoint, utxoEntry)
@@ -138,40 +138,40 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	// - if utxoEntry is in this.toAdd and other.toRemove
 	// - if utxoEntry is in this.toRemove and other.toAdd
 
-	// check that NOT (entries with unequal blue scores AND utxoEntry is in this.toAdd and/or other.toRemove) -> Error
-	isNotAddedOutputRemovedWithBlueScore := func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
-		return !(diffEntry.BlockBlueScore() != utxoEntry.BlockBlueScore() &&
-			(this.toAdd.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore()) ||
-				other.toRemove.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore())))
+	// check that NOT (entries with unequal DAA scores AND utxoEntry is in this.toAdd and/or other.toRemove) -> Error
+	isNotAddedOutputRemovedWithDAAScore := func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
+		return !(diffEntry.BlockDAAScore() != utxoEntry.BlockDAAScore() &&
+			(this.toAdd.containsWithDAAScore(outpoint, diffEntry.BlockDAAScore()) ||
+				other.toRemove.containsWithDAAScore(outpoint, utxoEntry.BlockDAAScore())))
 	}
 
 	if offendingOutpoint, ok :=
-		checkIntersectionWithRule(this.toRemove, other.toAdd, isNotAddedOutputRemovedWithBlueScore); ok {
+		checkIntersectionWithRule(this.toRemove, other.toAdd, isNotAddedOutputRemovedWithDAAScore); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.toAdd and in other.toRemove", offendingOutpoint)
 	}
 
-	//check that NOT (entries with unequal blue score AND utxoEntry is in this.toRemove and/or other.toAdd) -> Error
-	isNotRemovedOutputAddedWithBlueScore :=
+	//check that NOT (entries with unequal DAA score AND utxoEntry is in this.toRemove and/or other.toAdd) -> Error
+	isNotRemovedOutputAddedWithDAAScore :=
 		func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
 
-			return !(diffEntry.BlockBlueScore() != utxoEntry.BlockBlueScore() &&
-				(this.toRemove.containsWithBlueScore(outpoint, diffEntry.BlockBlueScore()) ||
-					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.BlockBlueScore())))
+			return !(diffEntry.BlockDAAScore() != utxoEntry.BlockDAAScore() &&
+				(this.toRemove.containsWithDAAScore(outpoint, diffEntry.BlockDAAScore()) ||
+					other.toAdd.containsWithDAAScore(outpoint, utxoEntry.BlockDAAScore())))
 		}
 
 	if offendingOutpoint, ok :=
-		checkIntersectionWithRule(this.toAdd, other.toRemove, isNotRemovedOutputAddedWithBlueScore); ok {
+		checkIntersectionWithRule(this.toAdd, other.toRemove, isNotRemovedOutputAddedWithDAAScore); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.toRemove and in other.toAdd", offendingOutpoint)
 	}
 
 	// if have the same entry in this.toRemove and other.toRemove
-	// and existing entry is with different blue score, in this case - this is an error
+	// and existing entry is with different DAA score, in this case - this is an error
 	if offendingOutpoint, ok := checkIntersectionWithRule(this.toRemove, other.toRemove,
 		func(outpoint *externalapi.DomainOutpoint, utxoEntry, diffEntry externalapi.UTXOEntry) bool {
-			return utxoEntry.BlockBlueScore() != diffEntry.BlockBlueScore()
+			return utxoEntry.BlockDAAScore() != diffEntry.BlockDAAScore()
 		}); ok {
 		return nil, errors.Errorf("diffFrom: outpoint %s both in this.toRemove and other.toRemove with different "+
-			"blue scores, with no corresponding entry in this.toAdd", offendingOutpoint)
+			"DAA scores, with no corresponding entry in this.toAdd", offendingOutpoint)
 	}
 
 	result := &mutableUTXODiff{
@@ -182,7 +182,7 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	// All transactions in this.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
 	inBothToAdd := make(utxoCollection, len(this.toAdd))
-	subtractionWithRemainderHavingBlueScoreInPlace(this.toAdd, other.toAdd, result.toRemove, inBothToAdd)
+	subtractionWithRemainderHavingDAAScoreInPlace(this.toAdd, other.toAdd, result.toRemove, inBothToAdd)
 	// If they are in other.toRemove - base utxoSet is not the same
 	if checkIntersection(inBothToAdd, this.toRemove) != checkIntersection(inBothToAdd, other.toRemove) {
 		return nil, errors.New(
@@ -191,15 +191,15 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 
 	// All transactions in other.toRemove:
 	// If they are not in this.toRemove - should be added in result.toRemove
-	subtractionHavingBlueScoreInPlace(other.toRemove, this.toRemove, result.toRemove)
+	subtractionHavingDAAScoreInPlace(other.toRemove, this.toRemove, result.toRemove)
 
 	// All transactions in this.toRemove:
 	// If they are not in other.toRemove - should be added in result.toAdd
-	subtractionHavingBlueScoreInPlace(this.toRemove, other.toRemove, result.toAdd)
+	subtractionHavingDAAScoreInPlace(this.toRemove, other.toRemove, result.toAdd)
 
 	// All transactions in other.toAdd:
 	// If they are not in this.toAdd - should be added in result.toAdd
-	subtractionHavingBlueScoreInPlace(other.toAdd, this.toAdd, result.toAdd)
+	subtractionHavingDAAScoreInPlace(other.toAdd, this.toAdd, result.toAdd)
 
 	return result, nil
 }
@@ -209,7 +209,7 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 	if offendingOutpoint, ok := checkIntersectionWithRule(other.toRemove, this.toRemove,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry externalapi.UTXOEntry) bool {
-			return !this.toAdd.containsWithBlueScore(outpoint, entryToAdd.BlockBlueScore())
+			return !this.toAdd.containsWithDAAScore(outpoint, entryToAdd.BlockDAAScore())
 		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.toRemove and in other.toRemove", offendingOutpoint)
@@ -217,7 +217,7 @@ func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 
 	if offendingOutpoint, ok := checkIntersectionWithRule(other.toAdd, this.toAdd,
 		func(outpoint *externalapi.DomainOutpoint, entryToAdd, existingEntry externalapi.UTXOEntry) bool {
-			return !other.toRemove.containsWithBlueScore(outpoint, existingEntry.BlockBlueScore())
+			return !other.toRemove.containsWithDAAScore(outpoint, existingEntry.BlockDAAScore())
 		}); ok {
 		return errors.Errorf(
 			"withDiffInPlace: outpoint %s both in this.toAdd and in other.toAdd", offendingOutpoint)
@@ -225,14 +225,14 @@ func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 
 	intersection := make(utxoCollection, minInt(len(other.toRemove), len(this.toAdd)))
 	// If not exists neither in toAdd nor in toRemove - add to toRemove
-	intersectionWithRemainderHavingBlueScoreInPlace(other.toRemove, this.toAdd, intersection, this.toRemove)
-	// If already exists in toAdd with the same blueScore - remove from toAdd
+	intersectionWithRemainderHavingDAAScoreInPlace(other.toRemove, this.toAdd, intersection, this.toRemove)
+	// If already exists in toAdd with the same DAA score - remove from toAdd
 	this.toAdd.removeMultiple(intersection)
 
 	intersection = make(utxoCollection, minInt(len(other.toAdd), len(this.toRemove)))
-	// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different blueScore - add to toAdd
-	intersectionWithRemainderHavingBlueScoreInPlace(other.toAdd, this.toRemove, intersection, this.toAdd)
-	// If already exists in toRemove with the same blueScore - remove from toRemove
+	// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different DAA score - add to toAdd
+	intersectionWithRemainderHavingDAAScoreInPlace(other.toAdd, this.toRemove, intersection, this.toAdd)
+	// If already exists in toRemove with the same DAA score - remove from toRemove
 	this.toRemove.removeMultiple(intersection)
 
 	return nil
