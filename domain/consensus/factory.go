@@ -168,7 +168,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		daaBlocksStore)
 	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
