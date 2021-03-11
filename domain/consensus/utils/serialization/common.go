@@ -97,6 +97,13 @@ func WriteElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
+	case externalapi.DomainTransactionID:
+		_, err := w.Write(e.ByteSlice())
+		if err != nil {
+			return err
+		}
+		return nil
+
 	case externalapi.DomainSubnetworkID:
 		_, err := w.Write(e[:])
 		if err != nil {
