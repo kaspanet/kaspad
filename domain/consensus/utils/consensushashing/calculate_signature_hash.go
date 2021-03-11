@@ -140,7 +140,7 @@ func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType 
 
 	// SigHashSingle: If the relevant output exists - return it's hash, otherwise return zero-hash
 	if hashType.isSigHashSingle() {
-		if len(tx.Outputs) >= inputIndex {
+		if inputIndex >= len(tx.Outputs) {
 			return externalapi.NewZeroHash()
 		}
 		hashWriter := hashes.NewTransactionSigningHashWriter()
