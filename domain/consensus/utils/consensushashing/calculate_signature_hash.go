@@ -89,6 +89,9 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 
 	infallibleWriteElement(hashWriter, tx.LockTime)
 
+	infallibleWriteElement(hashWriter, tx.SubnetworkID)
+	infallibleWriteElement(hashWriter, tx.Gas)
+
 	payloadHash := getPayloadHash(tx, reusedValues)
 	infallibleWriteElement(hashWriter, payloadHash)
 
