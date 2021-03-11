@@ -10,8 +10,8 @@ func isUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualSelectedPar
 	if !entry.UTXOEntry.IsCoinbase {
 		return true
 	}
-	// TODO: DECIDE HOW TO HANDLE COINBASE MATURITY
-	blockBlueScore := entry.UTXOEntry.BlockBlueScore
+	blockBlueScore := entry.UTXOEntry.BlockDAAScore
+	// TODO: Check for a better alternative than virtualSelectedParentBlueScore
 	return blockBlueScore+coinbaseMaturity < virtualSelectedParentBlueScore
 }
 

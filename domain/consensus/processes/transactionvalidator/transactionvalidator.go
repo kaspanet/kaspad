@@ -14,6 +14,7 @@ type transactionValidator struct {
 	databaseContext            model.DBReader
 	pastMedianTimeManager      model.PastMedianTimeManager
 	ghostdagDataStore          model.GHOSTDAGDataStore
+	daaBlocksStore             model.DAABlocksStore
 	enableNonNativeSubnetworks bool
 	massPerTxByte              uint64
 	massPerScriptPubKeyByte    uint64

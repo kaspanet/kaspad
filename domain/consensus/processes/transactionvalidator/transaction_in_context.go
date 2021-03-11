@@ -54,26 +54,25 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
 	if err != nil {
 		return err
 	}
 
-	txBlueScore := ghostdagData.BlueScore()
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
-			originBlueScore := utxoEntry.BlockDAAScore()
-			blueScoreSincePrev := txBlueScore - originBlueScore
-			if blueScoreSincePrev < v.blockCoinbaseMaturity {
+			originDAAScore := utxoEntry.BlockDAAScore()
+			daaScoreSincePrev := povDAAScore - originDAAScore
+			if daaScoreSincePrev < v.blockCoinbaseMaturity {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
-					"transaction output %s from blue score %d "+
-					"to blue score %d before required maturity "+
+					"transaction output %s from DAA score %d "+
+					"to DAA score %d before required maturity "+
 					"of %d", input.PreviousOutpoint,
-					originBlueScore, txBlueScore,
+					originDAAScore, povDAAScore,
 					v.blockCoinbaseMaturity)
 			}
 		}
