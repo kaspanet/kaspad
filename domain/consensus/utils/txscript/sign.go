@@ -42,6 +42,7 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType conse
 // used to generate the payment address, or the script validation will fail.
 func SignatureScript(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
 	privKey *secp256k1.SchnorrKeyPair, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
+
 	sig, err := RawTxInSignature(tx, idx, hashType, privKey, sighashReusedValues)
 	if err != nil {
 		return nil, err
