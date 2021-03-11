@@ -1,6 +1,7 @@
 package pastmediantimemanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -19,6 +20,8 @@ type pastMedianTimeManager struct {
 
 	blockHeaderStore  model.BlockHeaderStore
 	ghostdagDataStore model.GHOSTDAGDataStore
+
+	genesisHash *externalapi.DomainHash
 }
 
 // New instantiates a new PastMedianTimeManager
@@ -26,7 +29,8 @@ func New(timestampDeviationTolerance int,
 	databaseContext model.DBReader,
 	dagTraversalManager model.DAGTraversalManager,
 	blockHeaderStore model.BlockHeaderStore,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.PastMedianTimeManager {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	genesisHash *externalapi.DomainHash) model.PastMedianTimeManager {
 
 	return &pastMedianTimeManager{
 		timestampDeviationTolerance: timestampDeviationTolerance,
@@ -36,30 +40,22 @@ func New(timestampDeviationTolerance int,
 
 		blockHeaderStore:  blockHeaderStore,
 		ghostdagDataStore: ghostdagDataStore,
+		genesisHash:       genesisHash,
 	}
 }
 
 // PastMedianTime returns the past median time for some block
 func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
-	blockGHOSTDAGData, err := pmtm.ghostdagDataStore.Get(pmtm.databaseContext, blockHash)
+	window, err := pmtm.dagTraversalManager.BlockWindow(blockHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
 	}
-	selectedParentHash := blockGHOSTDAGData.SelectedParent()
-
-	// Genesis block
-	if selectedParentHash == nil {
-		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, blockHash)
+	if len(window) == 0 {
+		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, pmtm.genesisHash)
 		if err != nil {
 			return 0, err
 		}
-
 		return header.TimeInMilliseconds(), nil
-	}
-
-	window, err := pmtm.dagTraversalManager.BlockWindow(selectedParentHash, 2*pmtm.timestampDeviationTolerance-1)
-	if err != nil {
-		return 0, err
 	}
 
 	return pmtm.windowMedianTimestamp(window)
@@ -79,9 +75,7 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.D
 		timestamps[i] = blockHeader.TimeInMilliseconds()
 	}
 
-	sort.Slice(timestamps, func(i, j int) bool {
-		return timestamps[i] < timestamps[j]
-	})
+	sort.Sort(sorters.Int64Slice(timestamps))
 
 	return timestamps[len(timestamps)/2], nil
 }

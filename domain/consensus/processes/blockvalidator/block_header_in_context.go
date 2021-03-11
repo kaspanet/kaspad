@@ -27,11 +27,6 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	}
 
 	if !hasValidatedHeader {
-		err = v.ghostdagManager.GHOSTDAG(blockHash)
-		if err != nil {
-			return err
-		}
-
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
 			var ghostdagData *model.BlockGHOSTDAGData

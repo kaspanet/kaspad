@@ -1,6 +1,7 @@
 package difficultymanager
 
 import (
+	"github.com/kaspanet/kaspad/util/math"
 	"math/big"
 	"time"
 
@@ -64,37 +65,21 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-	parents, err := dm.dagTopologyManager.Parents(blockHash)
-	if err != nil {
-		return 0, err
-	}
-	// Genesis block or network that doesn't have difficulty adjustment (such as simnet)
-	if len(parents) == 0 || dm.disableDifficultyAdjustment {
+	if dm.disableDifficultyAdjustment {
 		return dm.genesisBits()
 	}
-
-	// find bluestParent
-	bluestParent, err := dm.ghostdagManager.ChooseSelectedParent(parents...)
-	if err != nil {
-		return 0, err
-	}
-	bluestGhostDAG, err := dm.ghostdagStore.Get(dm.databaseContext, bluestParent)
-	if err != nil {
-		return 0, err
-	}
-
-	// Not enough blocks for building a difficulty window.
-	if bluestGhostDAG.BlueScore() < uint64(dm.difficultyAdjustmentWindowSize)+1 {
-		return dm.genesisBits()
-	}
-
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, err := dm.blockWindow(bluestParent, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {
 		return 0, err
+	}
+	// We need at least 2 blocks to get a timestamp interval
+	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
+	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
+	if len(targetsWindow) < 2 {
+		return dm.genesisBits()
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
-
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
 	targetsWindow.remove(windowsMinIndex)
 
@@ -105,9 +90,10 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	div := new(big.Int)
 	newTarget := targetsWindow.averageTarget()
 	newTarget.
-		Mul(newTarget, div.SetInt64(windowMaxTimeStamp-windowMinTimestamp)).
+		// We need to clamp the timestamp difference to 1 so that we'll never get a 0 target.
+		Mul(newTarget, div.SetInt64(math.MaxInt64(windowMaxTimeStamp-windowMinTimestamp, 1))).
 		Div(newTarget, div.SetInt64(dm.targetTimePerBlock.Milliseconds())).
-		Div(newTarget, div.SetUint64(uint64(dm.difficultyAdjustmentWindowSize)))
+		Div(newTarget, div.SetUint64(uint64(len(targetsWindow))))
 	if newTarget.Cmp(dm.powMax) > 0 {
 		return difficulty.BigToCompact(dm.powMax), nil
 	}

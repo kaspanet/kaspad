@@ -54,6 +54,12 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 }
 
 func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
+	// We need to calculate GHOSTDAG for the block in order to check its difficulty
+	err := v.ghostdagManager.GHOSTDAG(blockHash)
+	if err != nil {
+		return err
+	}
+
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.

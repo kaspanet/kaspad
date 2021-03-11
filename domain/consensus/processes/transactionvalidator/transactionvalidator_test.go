@@ -37,7 +37,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		factory := consensus.NewFactory()
 		pastMedianManager := &mocPastMedianTimeManager{}
 		factory.SetTestPastMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
-			model.GHOSTDAGDataStore) model.PastMedianTimeManager {
+			model.GHOSTDAGDataStore, *externalapi.DomainHash) model.PastMedianTimeManager {
 			return pastMedianManager
 		})
 		tc, tearDown, err := factory.NewTestConsensus(params, false,

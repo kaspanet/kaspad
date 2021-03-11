@@ -47,19 +47,19 @@ func TestPastMedianTime(t *testing.T) {
 		}{
 			{
 				blockNumber:                      263,
-				expectedMillisecondsSinceGenesis: 130000,
+				expectedMillisecondsSinceGenesis: 132000,
 			},
 			{
 				blockNumber:                      271,
-				expectedMillisecondsSinceGenesis: 138000,
+				expectedMillisecondsSinceGenesis: 139000,
 			},
 			{
 				blockNumber:                      241,
-				expectedMillisecondsSinceGenesis: 108000,
+				expectedMillisecondsSinceGenesis: 121000,
 			},
 			{
 				blockNumber:                      5,
-				expectedMillisecondsSinceGenesis: 0,
+				expectedMillisecondsSinceGenesis: 3000,
 			},
 		}
 

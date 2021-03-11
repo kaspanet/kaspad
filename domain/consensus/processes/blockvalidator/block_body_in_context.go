@@ -120,19 +120,14 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 		return err
 	}
 
-	blockTime := block.Header.TimeInMilliseconds()
-
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	// If it's not genesis
-	if len(block.Header.ParentHashes()) != 0 {
-		blockTime, err = v.pastMedianTimeManager.PastMedianTime(blockHash)
-		if err != nil {
-			return err
-		}
+	blockTime, err := v.pastMedianTimeManager.PastMedianTime(blockHash)
+	if err != nil {
+		return err
 	}
 
 	// Ensure all transactions in the block are finalized.
