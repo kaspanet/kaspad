@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
 )
 
@@ -161,6 +162,10 @@ func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType 
 }
 
 func getPayloadHash(tx *externalapi.DomainTransaction, reusedValues *SighashReusedValues) *externalapi.DomainHash {
+	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+		return externalapi.NewZeroHash()
+	}
+
 	if reusedValues.payloadHash == nil {
 		hashWriter := hashes.NewTransactionSigningHashWriter()
 		infallibleWriteElement(hashWriter, tx.Payload)
