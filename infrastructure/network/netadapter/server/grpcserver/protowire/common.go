@@ -145,7 +145,7 @@ func (x *UtxoEntry) toAppMessage() (*appmessage.UTXOEntry, error) {
 	return &appmessage.UTXOEntry{
 		Amount:          x.Amount,
 		ScriptPublicKey: scriptPublicKey,
-		BlockBlueScore:  x.BlockBlueScore,
+		BlockDAAScore:   x.BlockDaaScore,
 		IsCoinbase:      x.IsCoinbase,
 	}, nil
 }

@@ -225,7 +225,7 @@ func (bb *blockBuilder) minBlockTime(hash *externalapi.DomainHash) (int64, error
 }
 
 func (bb *blockBuilder) newBlockDifficulty() (uint32, error) {
-	return bb.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
+	return bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(model.VirtualBlockHash)
 }
 
 func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {

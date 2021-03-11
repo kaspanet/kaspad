@@ -157,7 +157,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
 		genesisHash := params.GenesisHash
 		tc.GHOSTDAGDataStore().Stage(model.VirtualBlockHash, model.NewBlockGHOSTDAGData(
-			params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockBlueScore(),
+			params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore(),
 			new(big.Int),
 			genesisHash,
 			make([]*externalapi.DomainHash, 1000),

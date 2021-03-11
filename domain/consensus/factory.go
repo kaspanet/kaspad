@@ -253,6 +253,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
+		difficultyManager,
 
 		blockStatusStore,
 		ghostdagDataStore,
@@ -264,7 +265,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore,
 		blockHeaderStore,
 		headersSelectedTipStore,
-		pruningStore)
+		pruningStore,
+		daaBlocksStore)
 	if err != nil {
 		return nil, err
 	}
