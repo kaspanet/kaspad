@@ -32,7 +32,9 @@ func New(blockCoinbaseMaturity uint64,
 	maxCoinbasePayloadLength uint64,
 	databaseContext model.DBReader,
 	pastMedianTimeManager model.PastMedianTimeManager,
-	ghostdagDataStore model.GHOSTDAGDataStore) model.TransactionValidator {
+	ghostdagDataStore model.GHOSTDAGDataStore,
+	daaBlocksStore model.DAABlocksStore) model.TransactionValidator {
+
 	return &transactionValidator{
 		blockCoinbaseMaturity:      blockCoinbaseMaturity,
 		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
@@ -43,6 +45,7 @@ func New(blockCoinbaseMaturity uint64,
 		databaseContext:            databaseContext,
 		pastMedianTimeManager:      pastMedianTimeManager,
 		ghostdagDataStore:          ghostdagDataStore,
+		daaBlocksStore:             daaBlocksStore,
 		sigCache:                   txscript.NewSigCache(sigCacheSize),
 	}
 }
