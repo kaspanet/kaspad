@@ -189,7 +189,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.BaseSubsidy,
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
-		acceptanceDataStore)
+		acceptanceDataStore,
+		daaBlocksStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash

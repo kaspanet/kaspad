@@ -15,6 +15,7 @@ type coinbaseManager struct {
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
+	daaBlocksStore      model.DAABlocksStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
@@ -110,13 +111,13 @@ func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (u
 		return c.baseSubsidy, nil
 	}
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
+	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, blockHash)
 	if err != nil {
 		return 0, err
 	}
 
-	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
-	return c.baseSubsidy >> uint(ghostdagData.BlueScore()/c.subsidyReductionInterval), nil
+	// Equivalent to: baseSubsidy / 2^(daaScore/subsidyHalvingInterval)
+	return c.baseSubsidy >> uint(daaScore/c.subsidyReductionInterval), nil
 }
 
 // New instantiates a new CoinbaseManager
@@ -128,7 +129,8 @@ func New(
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	acceptanceDataStore model.AcceptanceDataStore) model.CoinbaseManager {
+	acceptanceDataStore model.AcceptanceDataStore,
+	daaBlocksStore model.DAABlocksStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -139,5 +141,6 @@ func New(
 
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
+		daaBlocksStore:      daaBlocksStore,
 	}
 }
