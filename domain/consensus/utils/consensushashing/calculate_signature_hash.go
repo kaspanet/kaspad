@@ -36,6 +36,9 @@ func (sht SigHashType) isSigHashAnyOneCanPay() bool {
 	return sht&SigHashAnyOneCanPay == SigHashAnyOneCanPay
 }
 
+// SighashReusedValues holds all fields used in the calculation of a transaction's sigHash, that are
+// the same for all transaction inputs.
+// Reuse of such values prevents the quadratic hashing problem.
 type SighashReusedValues struct {
 	previousOutputsHash *externalapi.DomainHash
 	sequencesHash       *externalapi.DomainHash

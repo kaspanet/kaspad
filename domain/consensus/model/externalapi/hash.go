@@ -15,6 +15,7 @@ type DomainHash struct {
 	hashArray [DomainHashSize]byte
 }
 
+// NewZeroHash returns a DomainHash that represents the zero value (0x000000...000)
 func NewZeroHash() *DomainHash {
 	return &DomainHash{hashArray: [32]byte{}}
 }
