@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -101,9 +103,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 
 	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(firstBlockCoinbase.Outputs[0].Value-1000, toScript)}
 
-	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
-
-	tx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
+	msgTx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {
@@ -114,12 +114,17 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}
 
-	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(tx), 0,
-		fromScript, consensushashing.SigHashAll, privateKey)
+	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
+	fromAmount := firstBlockCoinbase.Outputs[0].Value
+
+	tx := appmessage.MsgTxToDomainTransaction(msgTx)
+	tx.Inputs[0].UTXOEntry = utxo.NewUTXOEntry(fromAmount, fromScript, false, 500)
+	signatureScript, err := txscript.SignatureScript(tx, 0, consensushashing.SigHashAll, privateKey,
+		&consensushashing.SighashReusedValues{})
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}
-	tx.TxIn[0].SignatureScript = signatureScript
+	msgTx.TxIn[0].SignatureScript = signatureScript
 
-	return tx
+	return msgTx
 }

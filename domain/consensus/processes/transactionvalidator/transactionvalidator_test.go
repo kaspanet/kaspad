@@ -148,7 +148,9 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			LockTime:     0}
 
 		for i, input := range validTx.Inputs {
-			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, consensushashing.SigHashAll, privateKey)
+			signatureScript, err := txscript.SignatureScript(&validTx, i, consensushashing.SigHashAll, privateKey,
+				&consensushashing.SighashReusedValues{})
+
 			if err != nil {
 				t.Fatalf("Failed to create a sigScript: %v", err)
 			}
