@@ -12,8 +12,6 @@ package protowire;
 
 option go_package = "github.com/kaspanet/kaspad/protowire";
 
-import "p2p.proto";
-
 // RPCError represents a generic non-internal error.
 //
 // Receivers of any ResponseMessage are expected to check whether its error field is not null.
@@ -37,7 +35,23 @@ message GetCurrentNetworkResponseMessage{
 //
 // See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
-  BlockMessage block = 1;
+  RpcBlock block = 2;
+}
+
+message RpcBlock {
+  RpcBlockHeader header = 1;
+  repeated RpcTransaction transactions = 2;
+}
+
+message RpcBlockHeader {
+  uint32 version = 1;
+  repeated string parentHashes = 2;
+  string hashMerkleRoot = 3;
+  string acceptedIdMerkleRoot = 4;
+  string utxoCommitment = 5;
+  int64 timestamp = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
 }
 
 message SubmitBlockResponseMessage{
@@ -60,7 +74,7 @@ message GetBlockTemplateRequestMessage{
 }
 
 message GetBlockTemplateResponseMessage{
-  BlockMessage blockMessage = 1;
+  RpcBlock block = 3;
 
   // Whether kaspad thinks that it's synced.
   // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
@@ -86,7 +100,6 @@ message NotifyBlockAddedResponseMessage{
 //
 // See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
-  BlockMessage block = 1;
   BlockVerboseData blockVerboseData = 2;
 }
 
@@ -250,17 +263,9 @@ message GetBlockResponseMessage{
 
 message BlockVerboseData{
   string hash = 1;
-  uint32 version = 2;
-  string versionHex = 3;
-  string hashMerkleRoot = 4;
-  string acceptedIDMerkleRoot = 5;
-  string utxoCommitment = 6;
+  RpcBlock block = 18;
   repeated TransactionVerboseData transactionVerboseData = 7;
-  int64 time = 8;
-  uint64 nonce = 9;
-  string bits = 10;
   double difficulty = 11;
-  repeated string parentHashes = 12;
   repeated string childrenHashes = 17;
   string selectedParentHash = 13;
   repeated string transactionIDs = 14;
