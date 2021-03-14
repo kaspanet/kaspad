@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 
@@ -39,6 +40,10 @@ func NewManager(cfg *config.Config, domain domain.Domain, netAdapter *netadapter
 // Close closes the protocol manager and waits until all p2p flows
 // finish.
 func (m *Manager) Close() {
+	if !atomic.CompareAndSwapUint32(&m.isClosed, 0, 1) {
+		panic(errors.New("The logger is already running"))
+	}
+
 	atomic.StoreUint32(&m.isClosed, 1)
 	m.context.Close()
 	m.routersWg.Wait()
