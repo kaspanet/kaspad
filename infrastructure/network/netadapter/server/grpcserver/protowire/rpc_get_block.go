@@ -90,6 +90,10 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "BlockVerboseData is nil")
 	}
+	block, err := x.Block.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
 	transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(x.TransactionVerboseData))
 	for i, transactionVerboseDatum := range x.TransactionVerboseData {
 		appTransactionVerboseDatum, err := transactionVerboseDatum.toAppMessage()
@@ -98,25 +102,12 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		}
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
-
-	if x.Version > math.MaxUint16 {
-		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
-	}
-
 	return &appmessage.BlockVerboseData{
 		Hash:                   x.Hash,
-		Version:                uint16(x.Version),
-		VersionHex:             x.VersionHex,
-		HashMerkleRoot:         x.HashMerkleRoot,
-		AcceptedIDMerkleRoot:   x.AcceptedIDMerkleRoot,
-		UTXOCommitment:         x.UtxoCommitment,
+		Block:                  block,
 		TxIDs:                  x.TransactionIDs,
 		TransactionVerboseData: transactionVerboseData,
-		Time:                   x.Time,
-		Nonce:                  x.Nonce,
-		Bits:                   x.Bits,
 		Difficulty:             x.Difficulty,
-		ParentHashes:           x.ParentHashes,
 		ChildrenHashes:         x.ChildrenHashes,
 		SelectedParentHash:     x.SelectedParentHash,
 		IsHeaderOnly:           x.IsHeaderOnly,
@@ -125,6 +116,11 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 }
 
 func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) error {
+	block := &RpcBlock{}
+	err := block.fromAppMessage(message.Block)
+	if err != nil {
+		return err
+	}
 	transactionVerboseData := make([]*TransactionVerboseData, len(message.TransactionVerboseData))
 	for i, transactionVerboseDatum := range message.TransactionVerboseData {
 		protoTransactionVerboseDatum := &TransactionVerboseData{}
@@ -136,18 +132,10 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	}
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
-		Version:                uint32(message.Version),
-		VersionHex:             message.VersionHex,
-		HashMerkleRoot:         message.HashMerkleRoot,
-		AcceptedIDMerkleRoot:   message.AcceptedIDMerkleRoot,
-		UtxoCommitment:         message.UTXOCommitment,
+		Block:                  block,
 		TransactionIDs:         message.TxIDs,
 		TransactionVerboseData: transactionVerboseData,
-		Time:                   message.Time,
-		Nonce:                  message.Nonce,
-		Bits:                   message.Bits,
 		Difficulty:             message.Difficulty,
-		ParentHashes:           message.ParentHashes,
 		ChildrenHashes:         message.ChildrenHashes,
 		SelectedParentHash:     message.SelectedParentHash,
 		IsHeaderOnly:           message.IsHeaderOnly,

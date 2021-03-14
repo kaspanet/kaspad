@@ -43,18 +43,10 @@ func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 // BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
-	Version                uint16
-	VersionHex             string
-	HashMerkleRoot         string
-	AcceptedIDMerkleRoot   string
-	UTXOCommitment         string
+	Block                  *RPCBlock
 	TxIDs                  []string
 	TransactionVerboseData []*TransactionVerboseData
-	Time                   int64
-	Nonce                  uint64
-	Bits                   string
 	Difficulty             float64
-	ParentHashes           []string
 	ChildrenHashes         []string
 	SelectedParentHash     string
 	BlueScore              uint64

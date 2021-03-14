@@ -3,6 +3,7 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
+	"math"
 )
 
 func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, error) {
@@ -13,7 +14,7 @@ func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, e
 }
 
 func (x *KaspadMessage_SubmitBlockRequest) fromAppMessage(message *appmessage.SubmitBlockRequestMessage) error {
-	x.SubmitBlockRequest = &SubmitBlockRequestMessage{Block: &BlockMessage{}}
+	x.SubmitBlockRequest = &SubmitBlockRequestMessage{Block: &RpcBlock{}}
 	return x.SubmitBlockRequest.Block.fromAppMessage(message.Block)
 }
 
@@ -63,4 +64,59 @@ func (x *SubmitBlockResponseMessage) toAppMessage() (appmessage.Message, error) 
 		RejectReason: appmessage.RejectReason(x.RejectReason),
 		Error:        rpcErr,
 	}, nil
+}
+
+func (x *RpcBlock) toAppMessage() (*appmessage.RPCBlock, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcBlock is nil")
+	}
+	if x.Header.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
+	}
+	header := &appmessage.RPCBlockHeader{
+		Version:              x.Header.Version,
+		ParentHashes:         x.Header.ParentHashes,
+		HashMerkleRoot:       x.Header.HashMerkleRoot,
+		AcceptedIDMerkleRoot: x.Header.AcceptedIdMerkleRoot,
+		UTXOCommitment:       x.Header.UtxoCommitment,
+		Timestamp:            x.Header.Timestamp,
+		Bits:                 x.Header.Bits,
+		Nonce:                x.Header.Nonce,
+	}
+	transactions := make([]*appmessage.RPCTransaction, len(x.Transactions))
+	for i, transaction := range x.Transactions {
+		appTransaction, err := transaction.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		transactions[i] = appTransaction
+	}
+	return &appmessage.RPCBlock{
+		Header:       header,
+		Transactions: transactions,
+	}, nil
+}
+
+func (x *RpcBlock) fromAppMessage(message *appmessage.RPCBlock) error {
+	header := &RpcBlockHeader{
+		Version:              message.Header.Version,
+		ParentHashes:         message.Header.ParentHashes,
+		HashMerkleRoot:       message.Header.HashMerkleRoot,
+		AcceptedIdMerkleRoot: message.Header.AcceptedIDMerkleRoot,
+		UtxoCommitment:       message.Header.UTXOCommitment,
+		Timestamp:            message.Header.Timestamp,
+		Bits:                 message.Header.Bits,
+		Nonce:                message.Header.Nonce,
+	}
+	transactions := make([]*RpcTransaction, len(message.Transactions))
+	for i, transaction := range message.Transactions {
+		rpcTransaction := &RpcTransaction{}
+		rpcTransaction.fromAppMessage(transaction)
+		transactions[i] = rpcTransaction
+	}
+	*x = RpcBlock{
+		Header:       header,
+		Transactions: transactions,
+	}
+	return nil
 }

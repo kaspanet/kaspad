@@ -24,7 +24,7 @@ func Get() (*externalapi.DomainBlock, bool) {
 
 // Set sets the current template to work on
 func Set(template *appmessage.GetBlockTemplateResponseMessage) {
-	block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+	block := appmessage.MsgBlockToDomainBlock(template.Block)
 	lock.Lock()
 	defer lock.Unlock()
 	currentTemplate = block

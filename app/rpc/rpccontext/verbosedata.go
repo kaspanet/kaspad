@@ -2,15 +2,12 @@ package rpccontext
 
 import (
 	"encoding/hex"
-	"fmt"
-	"math"
-	"math/big"
-	"strconv"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
+	"math"
+	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
@@ -26,7 +23,7 @@ import (
 // ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.
 var ErrBuildBlockVerboseDataInvalidBlock = errors.New("ErrBuildBlockVerboseDataInvalidBlock")
 
-// BuildBlockVerboseData builds a BlockVerboseData from the given blockHeader.
+// BuildBlockVerboseData builds a BlockVerboseData from the given block.
 // A block may optionally also be given if it's available in the calling context.
 func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, block *externalapi.DomainBlock,
 	includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
@@ -52,48 +49,44 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 	}
 
 	result := &appmessage.BlockVerboseData{
-		Hash:                 hash.String(),
-		Version:              blockHeader.Version(),
-		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version()),
-		HashMerkleRoot:       blockHeader.HashMerkleRoot().String(),
-		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot().String(),
-		UTXOCommitment:       blockHeader.UTXOCommitment().String(),
-		ParentHashes:         hashes.ToStrings(blockHeader.ParentHashes()),
-		ChildrenHashes:       hashes.ToStrings(childrenHashes),
-		Nonce:                blockHeader.Nonce(),
-		Time:                 blockHeader.TimeInMilliseconds(),
-		Bits:                 strconv.FormatInt(int64(blockHeader.Bits()), 16),
-		Difficulty:           ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
-		BlueScore:            blockInfo.BlueScore,
-		IsHeaderOnly:         blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
+		Hash:           hash.String(),
+		ChildrenHashes: hashes.ToStrings(childrenHashes),
+		Difficulty:     ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
+		BlueScore:      blockInfo.BlueScore,
+		IsHeaderOnly:   blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
 	}
 
-	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		if block == nil {
-			block, err = ctx.Domain.Consensus().GetBlock(hash)
+	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		block := &externalapi.DomainBlock{Header: blockHeader}
+		result.Block = appmessage.DomainBlockToRPCBlock(block)
+		return result, nil
+	}
+
+	if block == nil {
+		block, err = ctx.Domain.Consensus().GetBlock(hash)
+		if err != nil {
+			return nil, err
+		}
+	}
+	result.Block = appmessage.DomainBlockToRPCBlock(block)
+
+	txIDs := make([]string, len(block.Transactions))
+	for i, tx := range block.Transactions {
+		txIDs[i] = consensushashing.TransactionID(tx).String()
+	}
+	result.TxIDs = txIDs
+
+	if includeTransactionVerboseData {
+		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
+		for i, tx := range block.Transactions {
+			txID := consensushashing.TransactionID(tx).String()
+			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
 			if err != nil {
 				return nil, err
 			}
+			transactionVerboseData[i] = data
 		}
-
-		txIDs := make([]string, len(block.Transactions))
-		for i, tx := range block.Transactions {
-			txIDs[i] = consensushashing.TransactionID(tx).String()
-		}
-		result.TxIDs = txIDs
-
-		if includeTransactionVerboseData {
-			transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
-			for i, tx := range block.Transactions {
-				txID := consensushashing.TransactionID(tx).String()
-				data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
-				if err != nil {
-					return nil, err
-				}
-				transactionVerboseData[i] = data
-			}
-			result.TransactionVerboseData = transactionVerboseData
-		}
+		result.TransactionVerboseData = transactionVerboseData
 	}
 
 	return result, nil
