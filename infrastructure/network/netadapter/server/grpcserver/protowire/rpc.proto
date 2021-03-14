@@ -277,42 +277,21 @@ message TransactionVerboseData{
   string txId = 1;
   string hash = 2;
   uint64 size = 3;
-  uint32 version = 4;
-  uint64 lockTime = 5;
-  string subnetworkId = 6;
-  uint64 gas = 7;
-  string payload = 9;
   repeated TransactionVerboseInput transactionVerboseInputs = 10;
   repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
   string blockHash = 12;
-  uint64 time = 13;
   uint64 blockTime = 14;
+  RpcTransaction transaction = 15;
 }
 
 message TransactionVerboseInput{
-  string txId = 1;
-  uint32 outputIndex = 2;
-  ScriptSig scriptSig = 3;
-  uint64 sequence = 4;
-}
-
-message ScriptSig{
-  string asm = 1;
-  string hex = 2;
+  string scriptSignatureDisassembly = 5;
 }
 
 message TransactionVerboseOutput{
-  uint64 value = 1;
-  uint32 index = 2;
-  ScriptPublicKeyResult scriptPublicKey = 3;
-}
-
-message ScriptPublicKeyResult{
-  string asm = 1;
-  string hex = 2;
-  string type = 3;
-  string address = 4;
-  uint32 version = 5;
+  string scriptPublicKeyDisassembly = 4;
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
 }
 
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
