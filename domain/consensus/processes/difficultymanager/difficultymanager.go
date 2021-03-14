@@ -1,6 +1,7 @@
 package difficultymanager
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/math"
 	"math/big"
 	"time"
@@ -18,6 +19,7 @@ type difficultyManager struct {
 	ghostdagManager                model.GHOSTDAGManager
 	ghostdagStore                  model.GHOSTDAGDataStore
 	headerStore                    model.BlockHeaderStore
+	daaBlocksStore                 model.DAABlocksStore
 	dagTopologyManager             model.DAGTopologyManager
 	dagTraversalManager            model.DAGTraversalManager
 	genesisHash                    *externalapi.DomainHash
@@ -32,6 +34,7 @@ func New(databaseContext model.DBReader,
 	ghostdagManager model.GHOSTDAGManager,
 	ghostdagStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
+	daaBlocksStore model.DAABlocksStore,
 	dagTopologyManager model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	powMax *big.Int,
@@ -44,6 +47,7 @@ func New(databaseContext model.DBReader,
 		ghostdagManager:                ghostdagManager,
 		ghostdagStore:                  ghostdagStore,
 		headerStore:                    headerStore,
+		daaBlocksStore:                 daaBlocksStore,
 		dagTopologyManager:             dagTopologyManager,
 		dagTraversalManager:            dagTraversalManager,
 		powMax:                         powMax,
@@ -65,14 +69,21 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
-	if dm.disableDifficultyAdjustment {
-		return dm.genesisBits()
-	}
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, windowHashes, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {
 		return 0, err
 	}
+
+	err = dm.updateDaaScoreAndAddedBlocks(blockHash, windowHashes)
+	if err != nil {
+		return 0, err
+	}
+
+	if dm.disableDifficultyAdjustment {
+		return dm.genesisBits()
+	}
+
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
@@ -99,4 +110,57 @@ func (dm *difficultyManager) RequiredDifficulty(blockHash *externalapi.DomainHas
 	}
 	newTargetBits := difficulty.BigToCompact(newTarget)
 	return newTargetBits, nil
+}
+
+func (dm *difficultyManager) updateDaaScoreAndAddedBlocks(blockHash *externalapi.DomainHash,
+	windowHashes []*externalapi.DomainHash) error {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updateDaaScoreAndAddedBlocks")
+	defer onEnd()
+
+	daaScore, addedBlocks, err := dm.calculateDaaScoreAndAddedBlocks(blockHash, windowHashes)
+	if err != nil {
+		return err
+	}
+
+	dm.daaBlocksStore.StageDAAScore(blockHash, daaScore)
+	dm.daaBlocksStore.StageBlockDAAAddedBlocks(blockHash, addedBlocks)
+	return nil
+}
+
+func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(blockHash *externalapi.DomainHash,
+	windowHashes []*externalapi.DomainHash) (uint64, []*externalapi.DomainHash, error) {
+
+	if blockHash.Equal(dm.genesisHash) {
+		return 0, nil, nil
+	}
+
+	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, blockHash)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	mergeSet := make(map[externalapi.DomainHash]struct{}, len(ghostdagData.MergeSet()))
+	for _, hash := range ghostdagData.MergeSet() {
+		mergeSet[*hash] = struct{}{}
+	}
+
+	// TODO: Consider optimizing by breaking the loop once you arrive to the
+	// window block with blue work higher than all non-added merge set blocks.
+	daaAddedBlocks := make([]*externalapi.DomainHash, 0, len(mergeSet))
+	for _, hash := range windowHashes {
+		if _, exists := mergeSet[*hash]; exists {
+			daaAddedBlocks = append(daaAddedBlocks, hash)
+			if len(daaAddedBlocks) == len(mergeSet) {
+				break
+			}
+		}
+	}
+
+	selectedParentDAAScore, err := dm.daaBlocksStore.DAAScore(dm.databaseContext, ghostdagData.SelectedParent())
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return selectedParentDAAScore + uint64(len(daaAddedBlocks)), daaAddedBlocks, nil
 }
