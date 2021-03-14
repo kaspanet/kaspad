@@ -318,6 +318,7 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 	}
 }
 
+// RPCBlockToDomainBlock converts RPCBlocks to DomainBlocks
 func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	parentHashes := make([]*externalapi.DomainHash, len(block.Header.ParentHashes))
 	for i, parentHash := range block.Header.ParentHashes {
