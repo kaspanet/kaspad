@@ -18,11 +18,11 @@ func TestReachabilityIsDAGAncestorOf(t *testing.T) {
 		}
 		defer teardown(false)
 
-		//				 	A	<-	B	---
-		//				/	  \				\
-		//		genesis			\			 \ sharedBlock
-		//				\		  \			 /
-		//					C	<-	D	--- /
+		//                A  <-  B  - - - -
+		//               /  \               \
+		//      genesis       \              \  sharedBlock
+		//              \       \            /
+		//                C  <-  D  - - - - /
 		genesisHash := params.GenesisHash
 		blockHashA, _, err := tc.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
 		if err != nil {
