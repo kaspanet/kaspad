@@ -1,10 +1,10 @@
 package protocol
 
 import (
-	"sync/atomic"
-
 	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
+	"sync"
+	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
@@ -41,6 +41,13 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
 	// and start receiving messages
 	spawn("routerInitializer-runFlows", func() {
+		m.routersWg.Add(1)
+		defer m.routersWg.Done()
+
+		if atomic.LoadUint32(&m.isClosed) == 1 {
+			panic(errors.Errorf("tried to initialize router when the protocol manager is closed"))
+		}
+
 		isBanned, err := m.context.ConnectionManager().IsBanned(netConnection)
 		if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
 			panic(err)
@@ -79,11 +86,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		removeHandshakeRoutes(router)
 
-		err = m.runFlows(flows, peer, errChan)
+		flowsWaitGroup := &sync.WaitGroup{}
+		err = m.runFlows(flows, peer, errChan, flowsWaitGroup)
 		if err != nil {
 			m.handleError(err, netConnection, router.OutgoingRoute())
+			flowsWaitGroup.Wait()
 			return
 		}
+		flowsWaitGroup.Wait()
 	})
 }
 
