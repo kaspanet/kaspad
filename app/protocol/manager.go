@@ -20,9 +20,9 @@ import (
 
 // Manager manages the p2p protocol
 type Manager struct {
-	context   *flowcontext.FlowContext
-	routersWg sync.WaitGroup
-	isClosed  uint32
+	context          *flowcontext.FlowContext
+	routersWaitGroup sync.WaitGroup
+	isClosed         uint32
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -46,7 +46,7 @@ func (m *Manager) Close() {
 
 	atomic.StoreUint32(&m.isClosed, 1)
 	m.context.Close()
-	m.routersWg.Wait()
+	m.routersWaitGroup.Wait()
 }
 
 // Peers returns the currently active peers

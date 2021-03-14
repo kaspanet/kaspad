@@ -41,8 +41,8 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
 	// and start receiving messages
 	spawn("routerInitializer-runFlows", func() {
-		m.routersWg.Add(1)
-		defer m.routersWg.Done()
+		m.routersWaitGroup.Add(1)
+		defer m.routersWaitGroup.Done()
 
 		if atomic.LoadUint32(&m.isClosed) == 1 {
 			panic(errors.Errorf("tried to initialize router when the protocol manager is closed"))
@@ -90,6 +90,9 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		err = m.runFlows(flows, peer, errChan, flowsWaitGroup)
 		if err != nil {
 			m.handleError(err, netConnection, router.OutgoingRoute())
+			// We call `flowsWaitGroup.Wait()` in two places instead of deferring, because
+			// we already defer `m.routersWaitGroup.Done()`, so we try to avoid error prone
+			// and confusing use of multiple dependent defers.
 			flowsWaitGroup.Wait()
 			return
 		}
