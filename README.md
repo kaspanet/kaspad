@@ -56,7 +56,7 @@ $ kaspad
 ```
 
 ## Discord
-Join our discord server using the following link: https://discord.gg/WmGhhzk
+Join our discord server using the following link: https://discord.gg/YNYnNN5Pf2
 
 ## Issue Tracker
 
