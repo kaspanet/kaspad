@@ -238,7 +238,7 @@ func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopp
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerFlow("HandleRelayedTransactions", router,
+		m.registerFlowWithCapacity("HandleRelayedTransactions", 10_000, router,
 			[]appmessage.MessageCommand{appmessage.CmdInvTransaction, appmessage.CmdTx, appmessage.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return transactionrelay.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
@@ -273,6 +273,24 @@ func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTyp
 	if err != nil {
 		panic(err)
 	}
+
+	return m.registerFlowForRoute(route, name, isStopping, errChan, initializeFunc)
+}
+
+func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *routerpkg.Router,
+	messageTypes []appmessage.MessageCommand, isStopping *uint32,
+	errChan chan error, initializeFunc flowInitializeFunc) *flow {
+
+	route, err := router.AddIncomingRouteWithCapacity(capacity, messageTypes)
+	if err != nil {
+		panic(err)
+	}
+
+	return m.registerFlowForRoute(route, name, isStopping, errChan, initializeFunc)
+}
+
+func (m *Manager) registerFlowForRoute(route *routerpkg.Route, name string, isStopping *uint32,
+	errChan chan error, initializeFunc flowInitializeFunc) *flow {
 
 	return &flow{
 		name: name,
