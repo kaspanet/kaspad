@@ -42,6 +42,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		return nil, nil, err
 	}
 
+	// This is needed for `csm.CalculatePastUTXOAndAcceptanceData`
 	_, err = csm.difficultyManager.UpdateDAADataAndReturnDifficultyBits(model.VirtualBlockHash)
 	if err != nil {
 		return nil, nil, err
