@@ -80,11 +80,7 @@ func (c *coinbaseManager) daaAddedBlocksSet(blockHash *externalapi.DomainHash) (
 		return nil, err
 	}
 
-	daaAddedBlocksSet := hashset.New()
-	for _, block := range daaAddedBlocks {
-		daaAddedBlocksSet.Add(block)
-	}
-	return daaAddedBlocksSet, nil
+	return hashset.NewFromSlice(daaAddedBlocks...), nil
 }
 
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
