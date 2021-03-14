@@ -41,7 +41,7 @@ func NewManager(cfg *config.Config, domain domain.Domain, netAdapter *netadapter
 // finish.
 func (m *Manager) Close() {
 	if !atomic.CompareAndSwapUint32(&m.isClosed, 0, 1) {
-		panic(errors.New("The logger is already running"))
+		panic(errors.New("The protocol manager was already closed"))
 	}
 
 	atomic.StoreUint32(&m.isClosed, 1)
