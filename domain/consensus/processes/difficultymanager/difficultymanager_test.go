@@ -228,6 +228,124 @@ func TestDifficulty(t *testing.T) {
 	})
 }
 
+func TestDAAScore(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.DifficultyAdjustmentWindowSize = 264
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		// We create a small DAG in order to skip from block with blue score of 1 directly to 3
+		split1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+		block, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		blockBlueScore3, _, err := tc.AddBlock([]*externalapi.DomainHash{split1Hash, block}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		tipHash := blockBlueScore3
+		blockBlueScore3DAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+		if err != nil {
+			t.Fatalf("DAAScore: %+v", err)
+		}
+
+		blockBlueScore3ExpectedDAAScore := uint64(2)
+		if blockBlueScore3DAAScore != blockBlueScore3ExpectedDAAScore {
+			t.Fatalf("DAA score is expected to be %d but got %d", blockBlueScore3ExpectedDAAScore, blockBlueScore3ExpectedDAAScore)
+		}
+		tipDAAScore := blockBlueScore3ExpectedDAAScore
+
+		for i := uint64(0); i < 10; i++ {
+			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+			if err != nil {
+				t.Fatalf("DAAScore: %+v", err)
+			}
+
+			expectedDAAScore := blockBlueScore3ExpectedDAAScore + i + 1
+			if tipDAAScore != expectedDAAScore {
+				t.Fatalf("DAA score is expected to be %d but got %d", expectedDAAScore, tipDAAScore)
+			}
+		}
+
+		split2Hash := tipHash
+		split2DAAScore := tipDAAScore
+		for i := uint64(0); i < uint64(params.DifficultyAdjustmentWindowSize)-1; i++ {
+			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+			if err != nil {
+				t.Fatalf("DAAScore: %+v", err)
+			}
+
+			expectedDAAScore := split2DAAScore + i + 1
+			if tipDAAScore != expectedDAAScore {
+				t.Fatalf("DAA score is expected to be %d but got %d", expectedDAAScore, split2DAAScore)
+			}
+		}
+
+		// This block should have blue score of 2 so it shouldn't be added to the DAA window of a merging block
+		blockAboveSplit1, _, err := tc.AddBlock([]*externalapi.DomainHash{split1Hash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		// This block is in the anticone of params.DifficultyAdjustmentWindowSize-1 blocks, so it must be part
+		// of the DAA window of a merging block
+		blockAboveSplit2, _, err := tc.AddBlock([]*externalapi.DomainHash{split2Hash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		currentSelectedTipDAAScore := tipDAAScore
+		currentSelectedTip := tipHash
+		tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{blockAboveSplit1, blockAboveSplit2, tipHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+		if err != nil {
+			t.Fatalf("DAAScore: %+v", err)
+		}
+
+		// The DAA score should be increased only by 2, because 1 of the 3 merged blocks
+		// is not in the DAA window
+		expectedDAAScore := currentSelectedTipDAAScore + 2
+		if tipDAAScore != expectedDAAScore {
+			t.Fatalf("DAA score is expected to be %d but got %d", expectedDAAScore, tipDAAScore)
+		}
+
+		tipDAAAddedBlocks, err := tc.DAABlocksStore().DAAAddedBlocks(tc.DatabaseContext(), tipHash)
+		if err != nil {
+			t.Fatalf("DAAScore: %+v", err)
+		}
+
+		// blockAboveSplit2 should be excluded from the DAA added blocks because it's not in the tip's
+		// DAA window.
+		expectedDAABlocks := []*externalapi.DomainHash{blockAboveSplit2, currentSelectedTip}
+		if !externalapi.HashesEqual(tipDAAAddedBlocks, expectedDAABlocks) {
+			t.Fatalf("DAA added blocks are expected to be %s but got %s", expectedDAABlocks, tipDAAAddedBlocks)
+		}
+	})
+}
+
 func compareBits(a uint32, b uint32) int {
 	aTarget := difficulty.CompactToBig(a)
 	bTarget := difficulty.CompactToBig(b)

@@ -46,6 +46,7 @@ type consensus struct {
 	utxoDiffStore             model.UTXODiffStore
 	finalityStore             model.FinalityStore
 	headersSelectedChainStore model.HeadersSelectedChainStore
+	daaBlocksStore            model.DAABlocksStore
 }
 
 // BuildBlock builds a block over the current state, with the transactions

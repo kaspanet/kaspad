@@ -42,6 +42,7 @@ type blockProcessor struct {
 	headersSelectedTipStore   model.HeaderSelectedTipStore
 	finalityStore             model.FinalityStore
 	headersSelectedChainStore model.HeadersSelectedChainStore
+	daaBlocksStore            model.DAABlocksStore
 
 	stores []model.Store
 }
@@ -78,6 +79,7 @@ func New(
 	headersSelectedTipStore model.HeaderSelectedTipStore,
 	finalityStore model.FinalityStore,
 	headersSelectedChainStore model.HeadersSelectedChainStore,
+	daaBlocksStore model.DAABlocksStore,
 ) model.BlockProcessor {
 
 	return &blockProcessor{
@@ -111,6 +113,7 @@ func New(
 		headersSelectedTipStore:   headersSelectedTipStore,
 		finalityStore:             finalityStore,
 		headersSelectedChainStore: headersSelectedChainStore,
+		daaBlocksStore:            daaBlocksStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -128,6 +131,7 @@ func New(
 			headersSelectedTipStore,
 			finalityStore,
 			headersSelectedChainStore,
+			daaBlocksStore,
 		},
 	}
 }
