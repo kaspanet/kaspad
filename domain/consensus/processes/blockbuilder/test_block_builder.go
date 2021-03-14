@@ -202,11 +202,6 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	_, err = bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
 	// We use genesis transactions so we'll have something to build merkle root and coinbase with
 	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
 	header, err := bb.buildUTXOInvalidHeader(parentHashes, genesisTransactions)
