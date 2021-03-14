@@ -20,16 +20,16 @@
   - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
   - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
   - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
-    - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
-    - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
-    - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
-    - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
-    - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
-    - [MempoolEntry](#protowire.MempoolEntry)
-    - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
-    - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
-    - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
-    - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
+  - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
+  - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
+  - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
+  - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
+  - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
+  - [MempoolEntry](#protowire.MempoolEntry)
+  - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
+  - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
+  - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
+  - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
     - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
     - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
     - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
@@ -43,9 +43,7 @@
     - [BlockVerboseData](#protowire.BlockVerboseData)
     - [TransactionVerboseData](#protowire.TransactionVerboseData)
     - [TransactionVerboseInput](#protowire.TransactionVerboseInput)
-    - [ScriptSig](#protowire.ScriptSig)
     - [TransactionVerboseOutput](#protowire.TransactionVerboseOutput)
-    - [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult)
     - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
     - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
     - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
@@ -696,16 +694,11 @@ GetBlockRequestMessage requests information about a specific block
 | txId | [string](#string) |  |  |
 | hash | [string](#string) |  |  |
 | size | [uint64](#uint64) |  |  |
-| version | [uint32](#uint32) |  |  |
-| lockTime | [uint64](#uint64) |  |  |
-| subnetworkId | [string](#string) |  |  |
-| gas | [uint64](#uint64) |  |  |
-| payload | [string](#string) |  |  |
 | transactionVerboseInputs | [TransactionVerboseInput](#protowire.TransactionVerboseInput) | repeated |  |
 | transactionVerboseOutputs | [TransactionVerboseOutput](#protowire.TransactionVerboseOutput) | repeated |  |
 | blockHash | [string](#string) |  |  |
-| time | [uint64](#uint64) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
+| transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
 
 
 
@@ -718,30 +711,6 @@ GetBlockRequestMessage requests information about a specific block
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txId | [string](#string) |  |  |
-| outputIndex | [uint32](#uint32) |  |  |
-| scriptSig | [ScriptSig](#protowire.ScriptSig) |  |  |
-| sequence | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="protowire.ScriptSig"></a>
-
-### ScriptSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| asm | [string](#string) |  |  |
-| hex | [string](#string) |  |  |
-
-
 
 
 
@@ -750,32 +719,10 @@ GetBlockRequestMessage requests information about a specific block
 
 ### TransactionVerboseOutput
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [uint64](#uint64) |  |  |
-| index | [uint32](#uint32) |  |  |
-| scriptPublicKey | [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult) |  |  |
-
-
-
-
-
-
-<a name="protowire.ScriptPublicKeyResult"></a>
-
-### ScriptPublicKeyResult
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| asm | [string](#string) |  |  |
-| hex | [string](#string) |  |  |
-| type | [string](#string) |  |  |
-| address | [string](#string) |  |  |
-| version | [uint32](#uint32) |  |  |
+| scriptPublicKeyType | [string](#string) |  |  |
+| scriptPublicKeyAddress | [string](#string) |  |  |
 
 
 

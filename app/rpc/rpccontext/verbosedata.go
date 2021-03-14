@@ -1,8 +1,6 @@
 package rpccontext
 
 import (
-	"encoding/hex"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
@@ -125,15 +123,10 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
 		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
 		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(tx, nil),
-		Version:                   tx.Version,
-		LockTime:                  tx.LockTime,
-		SubnetworkID:              tx.SubnetworkID.String(),
-		Gas:                       tx.Gas,
-		Payload:                   hex.EncodeToString(tx.Payload),
+		Transaction:               appmessage.DomainTransactionToRPCTransaction(tx),
 	}
 
 	if blockHeader != nil {
-		txReply.Time = uint64(blockHeader.TimeInMilliseconds())
 		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds())
 		txReply.BlockHash = blockHash
 	}
@@ -143,21 +136,8 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 
 func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.TransactionVerboseInput {
 	inputs := make([]*appmessage.TransactionVerboseInput, len(tx.Inputs))
-	for i, transactionInput := range tx.Inputs {
-		// The disassembled string will contain [error] inline
-		// if the script doesn't fully parse, so ignore the
-		// error here.
-		disbuf, _ := txscript.DisasmString(constants.MaxScriptPublicKeyVersion, transactionInput.SignatureScript)
-
-		input := &appmessage.TransactionVerboseInput{}
-		input.TxID = transactionInput.PreviousOutpoint.TransactionID.String()
-		input.OutputIndex = transactionInput.PreviousOutpoint.Index
-		input.Sequence = transactionInput.Sequence
-		input.ScriptSig = &appmessage.ScriptSig{
-			Asm: disbuf,
-			Hex: hex.EncodeToString(transactionInput.SignatureScript),
-		}
-		inputs[i] = input
+	for i := range tx.Inputs {
+		inputs[i] = &appmessage.TransactionVerboseInput{}
 	}
 
 	return inputs
@@ -193,16 +173,10 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 			continue
 		}
 
-		output := &appmessage.TransactionVerboseOutput{}
-		output.Index = uint32(i)
-		output.Value = transactionOutput.Value
-		output.ScriptPubKey = &appmessage.ScriptPubKeyResult{
-			Version: transactionOutput.ScriptPublicKey.Version,
-			Address: encodedAddr,
-			Hex:     hex.EncodeToString(transactionOutput.ScriptPublicKey.Script),
-			Type:    scriptClass.String(),
+		outputs[i] = &appmessage.TransactionVerboseOutput{
+			ScriptPublicKeyType:    scriptClass.String(),
+			ScriptPublicKeyAddress: encodedAddr,
 		}
-		outputs[i] = output
 	}
 
 	return outputs

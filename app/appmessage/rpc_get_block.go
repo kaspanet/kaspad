@@ -58,43 +58,19 @@ type TransactionVerboseData struct {
 	TxID                      string
 	Hash                      string
 	Size                      uint64
-	Version                   uint16
-	LockTime                  uint64
-	SubnetworkID              string
-	Gas                       uint64
-	Payload                   string
 	TransactionVerboseInputs  []*TransactionVerboseInput
 	TransactionVerboseOutputs []*TransactionVerboseOutput
 	BlockHash                 string
-	Time                      uint64
 	BlockTime                 uint64
+	Transaction               *RPCTransaction
 }
 
 // TransactionVerboseInput holds data about a transaction input
 type TransactionVerboseInput struct {
-	TxID        string
-	OutputIndex uint32
-	ScriptSig   *ScriptSig
-	Sequence    uint64
-}
-
-// ScriptSig holds data about a script signature
-type ScriptSig struct {
-	Asm string
-	Hex string
 }
 
 // TransactionVerboseOutput holds data about a transaction output
 type TransactionVerboseOutput struct {
-	Value        uint64
-	Index        uint32
-	ScriptPubKey *ScriptPubKeyResult
-}
-
-// ScriptPubKeyResult holds data about a script public key
-type ScriptPubKeyResult struct {
-	Hex     string
-	Type    string
-	Address string
-	Version uint16
+	ScriptPublicKeyType    string
+	ScriptPublicKeyAddress string
 }

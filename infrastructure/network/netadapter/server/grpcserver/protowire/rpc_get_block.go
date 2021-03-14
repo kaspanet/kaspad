@@ -1,8 +1,6 @@
 package protowire
 
 import (
-	"math"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
@@ -148,138 +146,56 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "TransactionVerboseData is nil")
 	}
+	transaction, err := x.Transaction.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
 	inputs := make([]*appmessage.TransactionVerboseInput, len(x.TransactionVerboseInputs))
-	for j, item := range x.TransactionVerboseInputs {
-		input, err := item.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		inputs[j] = input
+	for j := range x.TransactionVerboseInputs {
+		inputs[j] = &appmessage.TransactionVerboseInput{}
 	}
 	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
 	for j, item := range x.TransactionVerboseOutputs {
-		output, err := item.toAppMessage()
-		if err != nil {
-			return nil, err
+		outputs[j] = &appmessage.TransactionVerboseOutput{
+			ScriptPublicKeyType:    item.ScriptPublicKeyType,
+			ScriptPublicKeyAddress: item.ScriptPublicKeyAddress,
 		}
-		outputs[j] = output
-	}
-	if x.Version > math.MaxUint16 {
-		return nil, errors.Errorf("Invalid transaction version - bigger then uint16")
 	}
 	return &appmessage.TransactionVerboseData{
 		TxID:                      x.TxId,
 		Hash:                      x.Hash,
 		Size:                      x.Size,
-		Version:                   uint16(x.Version),
-		LockTime:                  x.LockTime,
-		SubnetworkID:              x.SubnetworkId,
-		Gas:                       x.Gas,
-		Payload:                   x.Payload,
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 x.BlockHash,
-		Time:                      x.Time,
 		BlockTime:                 x.BlockTime,
+		Transaction:               transaction,
 	}, nil
 }
 
 func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionVerboseData) error {
+	transaction := &RpcTransaction{}
+	transaction.fromAppMessage(message.Transaction)
 	inputs := make([]*TransactionVerboseInput, len(message.TransactionVerboseInputs))
-	for j, item := range message.TransactionVerboseInputs {
-		scriptSig := &ScriptSig{
-			Asm: item.ScriptSig.Asm,
-			Hex: item.ScriptSig.Hex,
-		}
-		inputs[j] = &TransactionVerboseInput{
-			TxId:        item.TxID,
-			OutputIndex: item.OutputIndex,
-			ScriptSig:   scriptSig,
-			Sequence:    item.Sequence,
-		}
+	for j := range message.TransactionVerboseInputs {
+		inputs[j] = &TransactionVerboseInput{}
 	}
 	outputs := make([]*TransactionVerboseOutput, len(message.TransactionVerboseOutputs))
 	for j, item := range message.TransactionVerboseOutputs {
-		scriptPubKey := &ScriptPublicKeyResult{
-			Hex:     item.ScriptPubKey.Hex,
-			Type:    item.ScriptPubKey.Type,
-			Address: item.ScriptPubKey.Address,
-			Version: uint32(item.ScriptPubKey.Version),
-		}
 		outputs[j] = &TransactionVerboseOutput{
-			Value:           item.Value,
-			Index:           item.Index,
-			ScriptPublicKey: scriptPubKey,
+			ScriptPublicKeyType:    item.ScriptPublicKeyType,
+			ScriptPublicKeyAddress: item.ScriptPublicKeyAddress,
 		}
 	}
 	*x = TransactionVerboseData{
 		TxId:                      message.TxID,
 		Hash:                      message.Hash,
 		Size:                      message.Size,
-		Version:                   uint32(message.Version),
-		LockTime:                  message.LockTime,
-		SubnetworkId:              message.SubnetworkID,
-		Gas:                       message.Gas,
-		Payload:                   message.Payload,
 		TransactionVerboseInputs:  inputs,
 		TransactionVerboseOutputs: outputs,
 		BlockHash:                 message.BlockHash,
-		Time:                      message.Time,
 		BlockTime:                 message.BlockTime,
+		Transaction:               transaction,
 	}
 	return nil
-}
-
-func (x *TransactionVerboseInput) toAppMessage() (*appmessage.TransactionVerboseInput, error) {
-	if x == nil {
-		return nil, errors.Wrapf(errorNil, "TransactionVerboseInput is nil")
-	}
-	scriptSig, err := x.ScriptSig.toAppMessage()
-	if err != nil {
-		return nil, err
-	}
-	return &appmessage.TransactionVerboseInput{
-		TxID:        x.TxId,
-		OutputIndex: x.OutputIndex,
-		ScriptSig:   scriptSig,
-		Sequence:    x.Sequence,
-	}, nil
-}
-
-func (x *TransactionVerboseOutput) toAppMessage() (*appmessage.TransactionVerboseOutput, error) {
-	if x == nil {
-		return nil, errors.Wrapf(errorNil, "TransactionVerboseOutput is nil")
-	}
-	scriptPubKey, err := x.ScriptPublicKey.toAppMessage()
-	if err != nil {
-		return nil, err
-	}
-	return &appmessage.TransactionVerboseOutput{
-		Value:        x.Value,
-		Index:        x.Index,
-		ScriptPubKey: scriptPubKey,
-	}, nil
-}
-
-func (x *ScriptSig) toAppMessage() (*appmessage.ScriptSig, error) {
-	if x == nil {
-		return nil, errors.Wrap(errorNil, "ScriptSig is nil")
-	}
-	return &appmessage.ScriptSig{
-		Asm: x.Asm,
-		Hex: x.Hex,
-	}, nil
-}
-
-func (x *ScriptPublicKeyResult) toAppMessage() (*appmessage.ScriptPubKeyResult, error) {
-	if x == nil {
-		return nil, errors.Wrap(errorNil, "ScriptPublicKeyResult is nil")
-	}
-	return &appmessage.ScriptPubKeyResult{
-		Hex:     x.Hex,
-		Type:    x.Type,
-		Address: x.Address,
-		Version: uint16(x.Version),
-	}, nil
-
 }

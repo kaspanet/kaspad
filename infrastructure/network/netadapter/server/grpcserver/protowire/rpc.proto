@@ -285,11 +285,9 @@ message TransactionVerboseData{
 }
 
 message TransactionVerboseInput{
-  string scriptSignatureDisassembly = 5;
 }
 
 message TransactionVerboseOutput{
-  string scriptPublicKeyDisassembly = 4;
   string scriptPublicKeyType = 5;
   string scriptPublicKeyAddress = 6;
 }
