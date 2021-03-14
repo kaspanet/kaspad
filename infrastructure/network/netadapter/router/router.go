@@ -35,13 +35,32 @@ func NewRouter() *Router {
 // be routed to the given `route`
 func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Route, error) {
 	route := NewRoute()
+	err := r.initializeIncomingRoute(route, messageTypes)
+	if err != nil {
+		return nil, err
+	}
+	return route, nil
+}
+
+// AddIncomingRouteWithCapacity registers the messages of types `messageTypes` to
+// be routed to the given `route` with a capacity of `capacity`
+func (r *Router) AddIncomingRouteWithCapacity(capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
+	route := newRouteWithCapacity(capacity)
+	err := r.initializeIncomingRoute(route, messageTypes)
+	if err != nil {
+		return nil, err
+	}
+	return route, nil
+}
+
+func (r *Router) initializeIncomingRoute(route *Route, messageTypes []appmessage.MessageCommand) error {
 	for _, messageType := range messageTypes {
 		if r.doesIncomingRouteExist(messageType) {
-			return nil, errors.Errorf("a route for '%s' already exists", messageType)
+			return errors.Errorf("a route for '%s' already exists", messageType)
 		}
 		r.setIncomingRoute(messageType, route)
 	}
-	return route, nil
+	return nil
 }
 
 // RemoveRoute unregisters the messages of types `messageTypes` from
