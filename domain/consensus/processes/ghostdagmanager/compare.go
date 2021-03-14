@@ -3,7 +3,6 @@ package ghostdagmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 )
 
 func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
@@ -53,16 +52,15 @@ func (gm *ghostdagManager) ChooseSelectedParent(blockHashes ...*externalapi.Doma
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData,
-	blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
-
+func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData,
+	blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
 	switch ghostdagDataA.BlueWork().Cmp(ghostdagDataB.BlueWork()) {
 	case -1:
 		return true
 	case 1:
 		return false
 	case 0:
-		return hashes.Less(blockHashA, blockHashB)
+		return blockHashA.Less(blockHashB)
 	default:
 		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
 	}

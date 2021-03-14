@@ -36,5 +36,11 @@ func HandleGetBlockDAGInfo(context *rpccontext.Context, _ *router.Router, _ appm
 	response.Difficulty = context.GetDifficultyRatio(virtualInfo.Bits, context.Config.ActiveNetParams)
 	response.PastMedianTime = virtualInfo.PastMedianTime
 
+	pruningPoint, err := context.Domain.Consensus().PruningPoint()
+	if err != nil {
+		return nil, err
+	}
+	response.PruningPointHash = pruningPoint.String()
+
 	return response, nil
 }

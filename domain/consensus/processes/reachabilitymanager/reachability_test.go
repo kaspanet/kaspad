@@ -2,15 +2,16 @@ package reachabilitymanager
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type reachabilityDataStoreMock struct {
-	reachabilityDataStaging        map[externalapi.DomainHash]*model.ReachabilityData
+	reachabilityDataStaging        map[externalapi.DomainHash]model.ReachabilityData
 	recorder                       map[externalapi.DomainHash]struct{}
 	reachabilityReindexRootStaging *externalapi.DomainHash
 }
@@ -23,7 +24,9 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(blockHash *externalapi.DomainHash, reachabilityData *model.ReachabilityData) {
+func (r *reachabilityDataStoreMock) StageReachabilityData(
+	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
+
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
 }
@@ -36,7 +39,9 @@ func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (*model.ReachabilityData, error) {
+func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
+	model.ReachabilityData, error) {
+
 	return r.reachabilityDataStaging[*blockHash], nil
 }
 
@@ -69,7 +74,7 @@ func (r *reachabilityDataStoreMock) resetRecorder() {
 
 func newReachabilityDataStoreMock() *reachabilityDataStoreMock {
 	return &reachabilityDataStoreMock{
-		reachabilityDataStaging:        make(map[externalapi.DomainHash]*model.ReachabilityData),
+		reachabilityDataStaging:        make(map[externalapi.DomainHash]model.ReachabilityData),
 		recorder:                       make(map[externalapi.DomainHash]struct{}),
 		reachabilityReindexRootStaging: nil,
 	}
@@ -87,19 +92,15 @@ type testHelper struct {
 }
 
 func (th *testHelper) generateHash() *externalapi.DomainHash {
-	var hash externalapi.DomainHash
-	binary.LittleEndian.PutUint64(hash[:], th.hashCounter)
+	var hashArray [externalapi.DomainHashSize]byte
+	binary.LittleEndian.PutUint64(hashArray[:], th.hashCounter)
 	th.hashCounter++
-	return &hash
+	return externalapi.NewDomainHashFromByteArray(&hashArray)
 }
 
 func (th *testHelper) newNode() *externalapi.DomainHash {
 	node := th.generateHash()
-	err := th.stageTreeNode(node, newReachabilityTreeNode())
-	if err != nil {
-		th.t.Fatalf("stageTreeNode: %s", err)
-	}
-
+	th.stageData(node, newReachabilityTreeData())
 	return node
 }
 
@@ -245,6 +246,11 @@ func TestAddChild(t *testing.T) {
 		}
 	}
 
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Scenario 2: test addChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
@@ -305,6 +311,11 @@ func TestAddChild(t *testing.T) {
 			t.Fatalf("TestAddChild: childNode is not a descendant of root")
 		}
 	}
+
+	err = manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
@@ -332,6 +343,11 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 
 	if !helper.isReachabilityTreeAncestorOf(root, root) {
 		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is expected to be an ancestor of root")
+	}
+
+	err := manager.validateIntervals(root)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -792,7 +808,7 @@ func TestInsertToFutureCoveringSet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("futureCoveringSet: %s", err)
 		}
-		if !reflect.DeepEqual(model.FutureCoveringTreeNodeSet(resultFutureCoveringTreeNodeSet), test.expectedResult) {
+		if !reflect.DeepEqual(resultFutureCoveringTreeNodeSet, test.expectedResult) {
 			t.Errorf("TestInsertToFutureCoveringSet: unexpected result in test #%d. Want: %s, got: %s",
 				i, test.expectedResult, resultFutureCoveringTreeNodeSet)
 		}
@@ -950,7 +966,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			currentTreeNode = childTreeNode
 		}
 
-		originalRemainingInterval := *helper.remainingIntervalAfter(root)
+		originalRemainingInterval := helper.remainingIntervalAfter(root).Clone()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
 		fullReindexTriggeringNode := helper.newNode()
@@ -961,7 +977,7 @@ func BenchmarkReindexInterval(b *testing.B) {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if *helper.remainingIntervalAfter(root) == originalRemainingInterval {
+		if helper.remainingIntervalAfter(root).Equal(originalRemainingInterval) {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}
@@ -977,19 +993,19 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	treeNodeB2 := helper.newNodeWithInterval(newReachabilityInterval(150, 199))
 	treeNodeC := helper.newNodeWithInterval(newReachabilityInterval(100, 149))
 
-	err := helper.addChildAndStage(treeNodeA, treeNodeB1)
+	err := helper.stageAddChild(treeNodeA, treeNodeB1)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeA, treeNodeB2)
+	err = helper.stageAddChild(treeNodeA, treeNodeB2)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.addChildAndStage(treeNodeB2, treeNodeC)
+	err = helper.stageAddChild(treeNodeB2, treeNodeC)
 	if err != nil {
-		t.Fatalf("addChildAndStage: %s", err)
+		t.Fatalf("stageAddChild: %s", err)
 	}
 
 	str, err := manager.String(treeNodeA)

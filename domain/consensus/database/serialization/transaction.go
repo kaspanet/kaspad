@@ -2,6 +2,8 @@ package serialization
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
+	"math"
 )
 
 // DomainTransactionToDbTransaction converts DomainTransaction to DbTransaction
@@ -17,20 +19,20 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 
 	dbOutputs := make([]*DbTransactionOutput, len(domainTransaction.Outputs))
 	for i, domainTransactionOutput := range domainTransaction.Outputs {
+		dbScriptPublicKey := ScriptPublicKeyToDBScriptPublicKey(domainTransactionOutput.ScriptPublicKey)
 		dbOutputs[i] = &DbTransactionOutput{
 			Value:           domainTransactionOutput.Value,
-			ScriptPublicKey: domainTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: dbScriptPublicKey,
 		}
 	}
 
 	return &DbTransaction{
-		Version:      domainTransaction.Version,
+		Version:      uint32(domainTransaction.Version),
 		Inputs:       dbInputs,
 		Outputs:      dbOutputs,
 		LockTime:     domainTransaction.LockTime,
 		SubnetworkID: DomainSubnetworkIDToDbSubnetworkID(&domainTransaction.SubnetworkID),
 		Gas:          domainTransaction.Gas,
-		PayloadHash:  DomainHashToDbHash(&domainTransaction.PayloadHash),
 		Payload:      domainTransaction.Payload,
 	}
 }
@@ -38,10 +40,6 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 // DbTransactionToDomainTransaction converts DbTransaction to DomainTransaction
 func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalapi.DomainTransaction, error) {
 	domainSubnetworkID, err := DbSubnetworkIDToDomainSubnetworkID(dbTransaction.SubnetworkID)
-	if err != nil {
-		return nil, err
-	}
-	domainPayloadHash, err := DbHashToDomainHash(dbTransaction.PayloadHash)
 	if err != nil {
 		return nil, err
 	}
@@ -61,20 +59,26 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 
 	domainOutputs := make([]*externalapi.DomainTransactionOutput, len(dbTransaction.Outputs))
 	for i, dbTransactionOutput := range dbTransaction.Outputs {
+		scriptPublicKey, err := DBScriptPublicKeyToScriptPublicKey(dbTransactionOutput.ScriptPublicKey)
+		if err != nil {
+			return nil, err
+		}
 		domainOutputs[i] = &externalapi.DomainTransactionOutput{
 			Value:           dbTransactionOutput.Value,
-			ScriptPublicKey: dbTransactionOutput.ScriptPublicKey,
+			ScriptPublicKey: scriptPublicKey,
 		}
 	}
 
+	if dbTransaction.Version > math.MaxUint16 {
+		return nil, errors.Errorf("The transaction version is bigger then uint16.")
+	}
 	return &externalapi.DomainTransaction{
-		Version:      dbTransaction.Version,
+		Version:      uint16(dbTransaction.Version),
 		Inputs:       domainInputs,
 		Outputs:      domainOutputs,
 		LockTime:     dbTransaction.LockTime,
 		SubnetworkID: *domainSubnetworkID,
 		Gas:          dbTransaction.Gas,
-		PayloadHash:  *domainPayloadHash,
 		Payload:      dbTransaction.Payload,
 	}, nil
 }

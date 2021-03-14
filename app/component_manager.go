@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/domain/utxoindex"
+
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 
 	"github.com/kaspanet/kaspad/domain"
@@ -78,7 +80,7 @@ func (a *ComponentManager) Stop() {
 func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database, interrupt chan<- struct{}) (
 	*ComponentManager, error) {
 
-	domain, err := domain.New(cfg.ActiveNetParams, db)
+	domain, err := domain.New(cfg.ActiveNetParams, db, cfg.IsArchivalNode)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +90,19 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		return nil, err
 	}
 
-	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg))
+	addressManager, err := addressmanager.New(addressmanager.NewConfig(cfg), db)
 	if err != nil {
 		return nil, err
+	}
+
+	var utxoIndex *utxoindex.UTXOIndex
+	if cfg.UTXOIndex {
+		utxoIndex, err = utxoindex.New(domain.Consensus(), db)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Infof("UTXO index started")
 	}
 
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
@@ -101,7 +113,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -121,12 +133,22 @@ func setupRPC(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
 
 	rpcManager := rpc.NewManager(
-		cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, shutDownChan)
+		cfg,
+		domain,
+		netAdapter,
+		protocolManager,
+		connectionManager,
+		addressManager,
+		utxoIndex,
+		shutDownChan,
+	)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
+	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 
 	return rpcManager
 }
@@ -140,9 +162,7 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				// source. So we'll take first returned address as source.
 				a.addressManager.AddAddresses(addresses...)
 			})
-	}
 
-	if a.cfg.GRPCSeed != "" {
 		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
 			func(addresses []*appmessage.NetAddress) {
 				a.addressManager.AddAddresses(addresses...)

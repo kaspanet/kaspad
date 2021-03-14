@@ -2,14 +2,14 @@ package multisetstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("multisets"))
+var bucket = database.MakeBucket([]byte("multisets"))
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
@@ -19,11 +19,11 @@ type multisetStore struct {
 }
 
 // New instantiates a new MultisetStore
-func New(cacheSize int) model.MultisetStore {
+func New(cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
 		staging:  make(map[externalapi.DomainHash]model.Multiset),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 }
 
@@ -99,7 +99,7 @@ func (ms *multisetStore) Delete(blockHash *externalapi.DomainHash) {
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (ms *multisetStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {

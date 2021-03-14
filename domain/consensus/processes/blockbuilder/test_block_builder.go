@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -16,8 +17,8 @@ type testBlockBuilder struct {
 	nonceCounter  uint64
 }
 
-var tempBlockHash = &externalapi.DomainHash{
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+var tempBlockHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})
 
 // NewTestBlockBuilder creates an instance of a TestBlockBuilder
 func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus testapi.TestConsensus) testapi.TestBlockBuilder {
@@ -27,21 +28,41 @@ func NewTestBlockBuilder(baseBlockBuilder model.BlockBuilder, testConsensus test
 	}
 }
 
+func cleanBlockPrefilledFields(block *externalapi.DomainBlock) {
+	for _, tx := range block.Transactions {
+		tx.Fee = 0
+		tx.Mass = 0
+		tx.ID = nil
+
+		for _, input := range tx.Inputs {
+			input.UTXOEntry = nil
+		}
+	}
+}
+
 // BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
 // and returns the block together with its past UTXO-diff from the virtual.
 func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (
-	*externalapi.DomainBlock, model.UTXODiff, error) {
+	*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockWithParents")
 	defer onEnd()
 
-	return bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
+	block, diff, err := bb.buildBlockWithParents(parentHashes, coinbaseData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// It's invalid to insert a block with prefilled fields to consensus, so we
+	// clean them before returning the block.
+	cleanBlockPrefilledFields(block)
+
+	return block, diff, nil
 }
 
-func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
-	transactions []*externalapi.DomainTransaction, acceptanceData model.AcceptanceData, multiset model.Multiset) (
-	*externalapi.DomainBlockHeader, error) {
+func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.DomainHash,
+	transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(tempBlockHash)
 	if err != nil {
@@ -52,6 +73,31 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	if err != nil {
 		return nil, err
 	}
+
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
+
+	bb.nonceCounter++
+	return blockheader.NewImmutableBlockHeader(
+		constants.MaxBlockVersion,
+		parentHashes,
+		hashMerkleRoot,
+		&externalapi.DomainHash{},
+		&externalapi.DomainHash{},
+		timeInMilliseconds,
+		bits,
+		bb.nonceCounter,
+	), nil
+}
+
+func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
+	transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
+	externalapi.BlockHeader, error) {
+
+	header, err := bb.buildUTXOInvalidHeader(parentHashes, transactions)
+	if err != nil {
+		return nil, err
+	}
+
 	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
 	acceptedIDMerkleRoot, err := bb.calculateAcceptedIDMerkleRoot(acceptanceData)
 	if err != nil {
@@ -59,20 +105,19 @@ func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.D
 	}
 	utxoCommitment := multiset.Hash()
 
-	bb.nonceCounter++
-	return &externalapi.DomainBlockHeader{
-		Version:              constants.BlockVersion,
-		ParentHashes:         parentHashes,
-		HashMerkleRoot:       *hashMerkleRoot,
-		AcceptedIDMerkleRoot: *acceptedIDMerkleRoot,
-		UTXOCommitment:       *utxoCommitment,
-		TimeInMilliseconds:   timeInMilliseconds,
-		Bits:                 bits,
-		Nonce:                bb.nonceCounter,
-	}, nil
+	return blockheader.NewImmutableBlockHeader(
+		header.Version(),
+		header.ParentHashes(),
+		hashMerkleRoot,
+		acceptedIDMerkleRoot,
+		utxoCommitment,
+		header.TimeInMilliseconds(),
+		header.Bits(),
+		header.Nonce(),
+	), nil
 }
 
-func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, model.UTXODiff, error) {
+func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData, transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 
 	defer bb.testConsensus.DiscardAllStores()
 
@@ -127,4 +172,40 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		Header:       header,
 		Transactions: transactionsWithCoinbase,
 	}, pastUTXO, nil
+}
+
+func (bb *testBlockBuilder) BuildUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader,
+	error) {
+
+	block, err := bb.BuildUTXOInvalidBlock(parentHashes)
+	if err != nil {
+		return nil, err
+	}
+
+	return block.Header, nil
+}
+
+func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock,
+	error) {
+
+	defer bb.testConsensus.DiscardAllStores()
+
+	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+
+	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// We use genesis transactions so we'll have something to build merkle root and coinbase with
+	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
+	header, err := bb.buildUTXOInvalidHeader(parentHashes, genesisTransactions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainBlock{
+		Header:       header,
+		Transactions: genesisTransactions,
+	}, nil
 }

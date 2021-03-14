@@ -2,14 +2,14 @@ package blockstatusstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-statuses"))
+var bucket = database.MakeBucket([]byte("block-statuses"))
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
@@ -18,10 +18,10 @@ type blockStatusStore struct {
 }
 
 // New instantiates a new BlockStatusStore
-func New(cacheSize int) model.BlockStatusStore {
+func New(cacheSize int, preallocate bool) model.BlockStatusStore {
 	return &blockStatusStore{
 		staging: make(map[externalapi.DomainHash]externalapi.BlockStatus),
-		cache:   lrucache.New(cacheSize),
+		cache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 
@@ -111,5 +111,5 @@ func (bss *blockStatusStore) deserializeBlockStatus(statusBytes []byte) (externa
 }
 
 func (bss *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }

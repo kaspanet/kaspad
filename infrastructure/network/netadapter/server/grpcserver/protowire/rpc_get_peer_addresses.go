@@ -1,8 +1,14 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/pkg/errors"
+)
 
 func (x *KaspadMessage_GetPeerAddressesRequest) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetPeerAddressesRequest is nil")
+	}
 	return &appmessage.GetPeerAddressesRequestMessage{}, nil
 }
 
@@ -11,23 +17,10 @@ func (x *KaspadMessage_GetPeerAddressesRequest) fromAppMessage(_ *appmessage.Get
 }
 
 func (x *KaspadMessage_GetPeerAddressesResponse) toAppMessage() (appmessage.Message, error) {
-	var err *appmessage.RPCError
-	if x.GetPeerAddressesResponse.Error != nil {
-		err = &appmessage.RPCError{Message: x.GetPeerAddressesResponse.Error.Message}
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetPeerAddressesResponse is nil")
 	}
-	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(x.GetPeerAddressesResponse.Addresses))
-	for i, address := range x.GetPeerAddressesResponse.Addresses {
-		addresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
-	}
-	bannedAddresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(x.GetPeerAddressesResponse.BannedAddresses))
-	for i, address := range x.GetPeerAddressesResponse.BannedAddresses {
-		bannedAddresses[i] = &appmessage.GetPeerAddressesKnownAddressMessage{Addr: address.Addr}
-	}
-	return &appmessage.GetPeerAddressesResponseMessage{
-		Addresses:       addresses,
-		BannedAddresses: bannedAddresses,
-		Error:           err,
-	}, nil
+	return x.GetPeerAddressesResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetPeerAddressesResponse) fromAppMessage(message *appmessage.GetPeerAddressesResponseMessage) error {
@@ -49,4 +42,48 @@ func (x *KaspadMessage_GetPeerAddressesResponse) fromAppMessage(message *appmess
 		Error:           err,
 	}
 	return nil
+}
+
+func (x *GetPeerAddressesResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetPeerAddressesResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+
+	addresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(x.Addresses))
+	for i, address := range x.Addresses {
+		appAddress, err := address.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		addresses[i] = appAddress
+	}
+	bannedAddresses := make([]*appmessage.GetPeerAddressesKnownAddressMessage, len(x.BannedAddresses))
+	for i, address := range x.BannedAddresses {
+		bannedAddress, err := address.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		bannedAddresses[i] = bannedAddress
+	}
+
+	if rpcErr != nil && (len(addresses) != 0 || len(bannedAddresses) != 0) {
+		return nil, errors.New("GetPeerAddressesResponseMessage contains both an error and a response")
+	}
+	return &appmessage.GetPeerAddressesResponseMessage{
+		Addresses:       addresses,
+		BannedAddresses: bannedAddresses,
+		Error:           rpcErr,
+	}, nil
+}
+
+func (x *GetPeerAddressesKnownAddressMessage) toAppMessage() (*appmessage.GetPeerAddressesKnownAddressMessage, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "GetPeerAddressesKnownAddressMessage is nil")
+	}
+	return &appmessage.GetPeerAddressesKnownAddressMessage{Addr: x.Addr}, nil
 }

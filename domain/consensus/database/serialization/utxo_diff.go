@@ -1,12 +1,12 @@
 package serialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
 // UTXODiffToDBUTXODiff converts UTXODiff to DbUtxoDiff
-func UTXODiffToDBUTXODiff(diff model.UTXODiff) (*DbUtxoDiff, error) {
+func UTXODiffToDBUTXODiff(diff externalapi.UTXODiff) (*DbUtxoDiff, error) {
 	toAdd, err := utxoCollectionToDBUTXOCollection(diff.ToAdd())
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func UTXODiffToDBUTXODiff(diff model.UTXODiff) (*DbUtxoDiff, error) {
 }
 
 // DBUTXODiffToUTXODiff converts DbUtxoDiff to UTXODiff
-func DBUTXODiffToUTXODiff(diff *DbUtxoDiff) (model.UTXODiff, error) {
+func DBUTXODiffToUTXODiff(diff *DbUtxoDiff) (externalapi.UTXODiff, error) {
 	toAdd, err := dbUTXOCollectionToUTXOCollection(diff.ToAdd)
 	if err != nil {
 		return nil, err

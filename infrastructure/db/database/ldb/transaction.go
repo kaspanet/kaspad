@@ -4,41 +4,28 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 // LevelDBTransaction is a thin wrapper around native leveldb
-// batches and snapshots. It supports both get and put.
+// batches. It supports both get and put.
 //
-// Snapshots provide a frozen view of the database at the moment
-// the transaction begins. On the other hand, batches provide a
-// mechanism to combine several database writes into one write,
-// which seamlessly rolls back the database in case any individual
-// write fails. Together the two forms a logic unit similar
-// to what one might expect from a classic database transaction.
+// Note that reads are done from the Database directly, so if another transaction changed the data,
+// you will read the new data, and not the one from the time the transaction was opened/
 //
-// Note: Transactions provide data consistency over the state of
-// the database as it was when the transaction started. As it's
-// currently implemented, if one puts data into the transaction
+// Note: As it's currently implemented, if one puts data into the transaction
 // then it will not be available to get within the same transaction.
 type LevelDBTransaction struct {
 	db       *LevelDB
-	snapshot *leveldb.Snapshot
 	batch    *leveldb.Batch
 	isClosed bool
 }
 
 // Begin begins a new transaction.
 func (db *LevelDB) Begin() (database.Transaction, error) {
-	snapshot, err := db.ldb.GetSnapshot()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
 	batch := new(leveldb.Batch)
 
 	transaction := &LevelDBTransaction{
 		db:       db,
-		snapshot: snapshot,
 		batch:    batch,
 		isClosed: false,
 	}
@@ -53,8 +40,7 @@ func (tx *LevelDBTransaction) Commit() error {
 	}
 
 	tx.isClosed = true
-	tx.snapshot.Release()
-	return errors.WithStack(tx.db.ldb.Write(tx.batch, &opt.WriteOptions{Sync: true}))
+	return errors.WithStack(tx.db.ldb.Write(tx.batch, nil))
 }
 
 // Rollback rolls back whatever changes were made to the
@@ -65,7 +51,6 @@ func (tx *LevelDBTransaction) Rollback() error {
 	}
 
 	tx.isClosed = true
-	tx.snapshot.Release()
 	tx.batch.Reset()
 	return nil
 }
@@ -97,16 +82,7 @@ func (tx *LevelDBTransaction) Get(key *database.Key) ([]byte, error) {
 	if tx.isClosed {
 		return nil, errors.New("cannot get from a closed transaction")
 	}
-
-	data, err := tx.snapshot.Get(key.Bytes(), nil)
-	if err != nil {
-		if errors.Is(err, leveldb.ErrNotFound) {
-			return nil, errors.Wrapf(database.ErrNotFound,
-				"key %s not found", key)
-		}
-		return nil, errors.WithStack(err)
-	}
-	return data, nil
+	return tx.db.Get(key)
 }
 
 // Has returns true if the database does contains the
@@ -115,9 +91,7 @@ func (tx *LevelDBTransaction) Has(key *database.Key) (bool, error) {
 	if tx.isClosed {
 		return false, errors.New("cannot has from a closed transaction")
 	}
-
-	res, err := tx.snapshot.Has(key.Bytes(), nil)
-	return res, errors.WithStack(err)
+	return tx.db.Has(key)
 }
 
 // Delete deletes the value for the given key. Will not

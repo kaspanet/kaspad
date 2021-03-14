@@ -1,12 +1,12 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -35,11 +35,12 @@ type blockValidator struct {
 	pruningStore          model.PruningStore
 	reachabilityManager   model.ReachabilityManager
 
-	blockStore        model.BlockStore
-	ghostdagDataStore model.GHOSTDAGDataStore
-	blockHeaderStore  model.BlockHeaderStore
-	blockStatusStore  model.BlockStatusStore
-	reachabilityStore model.ReachabilityDataStore
+	blockStore          model.BlockStore
+	ghostdagDataStore   model.GHOSTDAGDataStore
+	blockHeaderStore    model.BlockHeaderStore
+	blockStatusStore    model.BlockStatusStore
+	reachabilityStore   model.ReachabilityDataStore
+	consensusStateStore model.ConsensusStateStore
 }
 
 // New instantiates a new BlockValidator
@@ -72,6 +73,7 @@ func New(powMax *big.Int,
 	blockHeaderStore model.BlockHeaderStore,
 	blockStatusStore model.BlockStatusStore,
 	reachabilityStore model.ReachabilityDataStore,
+	consensusStateStore model.ConsensusStateStore,
 ) model.BlockValidator {
 
 	return &blockValidator{
@@ -79,7 +81,7 @@ func New(powMax *big.Int,
 		skipPoW:                    skipPoW,
 		genesisHash:                genesisHash,
 		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
-		powMaxBits:                 util.BigToCompact(powMax),
+		powMaxBits:                 difficulty.BigToCompact(powMax),
 		maxBlockSize:               maxBlockSize,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
@@ -97,11 +99,12 @@ func New(powMax *big.Int,
 		mergeDepthManager:           mergeDepthManager,
 		reachabilityManager:         reachabilityManager,
 
-		pruningStore:      pruningStore,
-		blockStore:        blockStore,
-		ghostdagDataStore: ghostdagDataStore,
-		blockHeaderStore:  blockHeaderStore,
-		blockStatusStore:  blockStatusStore,
-		reachabilityStore: reachabilityStore,
+		pruningStore:        pruningStore,
+		blockStore:          blockStore,
+		ghostdagDataStore:   ghostdagDataStore,
+		blockHeaderStore:    blockHeaderStore,
+		blockStatusStore:    blockStatusStore,
+		reachabilityStore:   reachabilityStore,
+		consensusStateStore: consensusStateStore,
 	}
 }

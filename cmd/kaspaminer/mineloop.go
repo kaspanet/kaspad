@@ -2,11 +2,13 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -19,39 +21,68 @@ import (
 	"github.com/pkg/errors"
 )
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 var hashesTried uint64
 
 const logHashRateInterval = 10 * time.Second
 
-func mineLoop(client *minerClient, numberOfBlocks uint64, blockDelay uint64, mineWhenNotSynced bool,
+func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
 	miningAddr util.Address) error {
+	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
-
-	templateStopChan := make(chan struct{})
-
 	doneChan := make(chan struct{})
-	spawn("mineLoop-internalLoop", func() {
-		wg := sync.WaitGroup{}
-		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
-			foundBlock := make(chan *externalapi.DomainBlock)
-			mineNextBlock(client, miningAddr, foundBlock, mineWhenNotSynced, templateStopChan, errChan)
-			block := <-foundBlock
-			templateStopChan <- struct{}{}
-			wg.Add(1)
-			spawn("mineLoop-handleFoundBlock", func() {
-				if blockDelay != 0 {
-					time.Sleep(time.Duration(blockDelay) * time.Millisecond)
-				}
-				err := handleFoundBlock(client, block)
-				if err != nil {
-					errChan <- err
-				}
-				wg.Done()
-			})
+
+	// We don't want to send router.DefaultMaxMessages blocks at once because there's
+	// a high chance we'll get disconnected from the node, so we make the channel
+	// capacity router.DefaultMaxMessages/2 (we give some slack for getBlockTemplate
+	// requests)
+	foundBlockChan := make(chan *externalapi.DomainBlock, router.DefaultMaxMessages/2)
+
+	spawn("templatesLoop", func() {
+		templatesLoop(client, miningAddr, errChan)
+	})
+
+	spawn("blocksLoop", func() {
+		const windowSize = 10
+		hasBlockRateTarget := targetBlocksPerSecond != 0
+		var windowTicker, blockTicker *time.Ticker
+		// We use tickers to limit the block rate:
+		// 1. windowTicker -> makes sure that the last windowSize blocks take at least windowSize*targetBlocksPerSecond.
+		// 2. blockTicker -> makes sure that each block takes at least targetBlocksPerSecond/windowSize.
+		// that way we both allow for fluctuation in block rate but also make sure they're not too big (by an order of magnitude)
+		if hasBlockRateTarget {
+			windowRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond / windowSize))
+			blockRate := time.Duration(float64(time.Second) / (targetBlocksPerSecond * windowSize))
+			log.Infof("Minimum average time per %d blocks: %s, smaller minimum time per block: %s", windowSize, windowRate, blockRate)
+			windowTicker = time.NewTicker(windowRate)
+			blockTicker = time.NewTicker(blockRate)
+			defer windowTicker.Stop()
+			defer blockTicker.Stop()
 		}
-		wg.Wait()
+		windowStart := time.Now()
+		for blockIndex := 1; ; blockIndex++ {
+			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
+			if hasBlockRateTarget {
+				<-blockTicker.C
+				if (blockIndex % windowSize) == 0 {
+					tickerStart := time.Now()
+					<-windowTicker.C
+					log.Infof("Finished mining %d blocks in: %s. slept for: %s", windowSize, time.Since(windowStart), time.Since(tickerStart))
+					windowStart = time.Now()
+				}
+			}
+		}
+	})
+
+	spawn("handleFoundBlock", func() {
+		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
+			block := <-foundBlockChan
+			err := handleFoundBlock(client, block)
+			if err != nil {
+				errChan <- err
+				return
+			}
+		}
 		doneChan <- struct{}{}
 	})
 
@@ -69,7 +100,7 @@ func logHashRate() {
 	spawn("logHashRate", func() {
 		lastCheck := time.Now()
 		for range time.Tick(logHashRateInterval) {
-			currentHashesTried := hashesTried
+			currentHashesTried := atomic.LoadUint64(&hashesTried)
 			currentTime := time.Now()
 			kiloHashesTried := float64(currentHashesTried) / 1000.0
 			hashRate := kiloHashesTried / currentTime.Sub(lastCheck).Seconds()
@@ -81,92 +112,105 @@ func logHashRate() {
 	})
 }
 
-func mineNextBlock(client *minerClient, miningAddr util.Address, foundBlock chan *externalapi.DomainBlock, mineWhenNotSynced bool,
-	templateStopChan chan struct{}, errChan chan error) {
-
-	newTemplateChan := make(chan *appmessage.GetBlockTemplateResponseMessage)
-	spawn("templatesLoop", func() {
-		templatesLoop(client, miningAddr, newTemplateChan, errChan, templateStopChan)
-	})
-	spawn("solveLoop", func() {
-		solveLoop(newTemplateChan, foundBlock, mineWhenNotSynced, errChan)
-	})
-}
-
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Found block %s with parents %s. Submitting to %s", blockHash, block.Header.ParentHashes, client.Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 
-	err := client.SubmitBlock(block)
+	rejectReason, err := client.safeRPCClient().SubmitBlock(block)
 	if err != nil {
-		return errors.Errorf("Error submitting block %s to %s: %s", blockHash, client.Address(), err)
+		if nativeerrors.Is(err, router.ErrTimeout) {
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
+			client.reconnect()
+			return nil
+		}
+		if rejectReason == appmessage.RejectReasonIsInIBD {
+			const waitTime = 1 * time.Second
+			log.Warnf("Block %s was rejected because the node is in IBD. Waiting for %s", blockHash, waitTime)
+			time.Sleep(waitTime)
+			return nil
+		}
+		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.safeRPCClient().Address())
 	}
 	return nil
 }
 
-func solveBlock(block *externalapi.DomainBlock, stopChan chan struct{}, foundBlock chan *externalapi.DomainBlock) {
-	targetDifficulty := util.CompactToBig(block.Header.Bits)
-	initialNonce := random.Uint64()
-	for i := initialNonce; i != initialNonce-1; i++ {
-		select {
-		case <-stopChan:
-			return
-		default:
-			block.Header.Nonce = i
-			atomic.AddUint64(&hashesTried, 1)
-			if pow.CheckProofOfWorkWithTarget(block.Header, targetDifficulty) {
-				foundBlock <- block
-				return
-			}
+func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
+	nonce := rand.Uint64() // Use the global concurrent-safe random source.
+	for {
+		nonce++
+		// For each nonce we try to build a block from the most up to date
+		// block template.
+		// In the rare case where the nonce space is exhausted for a specific
+		// block, it'll keep looping the nonce until a new block template
+		// is discovered.
+		block := getBlockForMining(mineWhenNotSynced)
+		targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
+		headerForMining := block.Header.ToMutable()
+		headerForMining.SetNonce(nonce)
+		atomic.AddUint64(&hashesTried, 1)
+		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+			block.Header = headerForMining.ToImmutable()
+			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block), block.Header.ParentHashes())
+			return block
 		}
 	}
 }
 
-func templatesLoop(client *minerClient, miningAddr util.Address,
-	newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, errChan chan error, stopChan chan struct{}) {
+func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
+	tryCount := 0
 
+	const sleepTime = 500 * time.Millisecond
+	const sleepTimeWhenNotSynced = 5 * time.Second
+
+	for {
+		tryCount++
+
+		shouldLog := (tryCount-1)%10 == 0
+		template, isSynced := templatemanager.Get()
+		if template == nil {
+			if shouldLog {
+				log.Info("Waiting for the initial template")
+			}
+			time.Sleep(sleepTime)
+			continue
+		}
+		if !isSynced && !mineWhenNotSynced {
+			if shouldLog {
+				log.Warnf("Kaspad is not synced. Skipping current block template")
+			}
+			time.Sleep(sleepTimeWhenNotSynced)
+			continue
+		}
+
+		return template
+	}
+}
+
+func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan error) {
 	getBlockTemplate := func() {
-		template, err := client.GetBlockTemplate(miningAddr.String())
+		template, err := client.safeRPCClient().GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Infof("Got timeout while requesting block template from %s", client.Address())
-			return
-		} else if err != nil {
-			errChan <- errors.Errorf("Error getting block template from %s: %s", client.Address(), err)
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.safeRPCClient().Address(), err)
+			client.reconnect()
 			return
 		}
-		newTemplateChan <- template
+		if err != nil {
+			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
+			return
+		}
+		templatemanager.Set(template)
 	}
+
 	getBlockTemplate()
+	const tickerTime = 500 * time.Millisecond
+	ticker := time.NewTicker(tickerTime)
 	for {
 		select {
-		case <-stopChan:
-			close(newTemplateChan)
-			return
 		case <-client.blockAddedNotificationChan:
 			getBlockTemplate()
-		case <-time.Tick(500 * time.Millisecond):
+			ticker.Reset(tickerTime)
+		case <-ticker.C:
 			getBlockTemplate()
 		}
-	}
-}
-
-func solveLoop(newTemplateChan chan *appmessage.GetBlockTemplateResponseMessage, foundBlock chan *externalapi.DomainBlock,
-	mineWhenNotSynced bool, errChan chan error) {
-
-	var stopOldTemplateSolving chan struct{}
-	for template := range newTemplateChan {
-		if stopOldTemplateSolving != nil {
-			close(stopOldTemplateSolving)
-		}
-
-		stopOldTemplateSolving = make(chan struct{})
-		block := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
-
-		spawn("solveBlock", func() {
-			solveBlock(block, stopOldTemplateSolving, foundBlock)
-		})
-	}
-	if stopOldTemplateSolving != nil {
-		close(stopOldTemplateSolving)
 	}
 }

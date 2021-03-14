@@ -5,7 +5,6 @@ package appmessage
 type GetBlockRequestMessage struct {
 	baseMessage
 	Hash                          string
-	SubnetworkID                  string
 	IncludeTransactionVerboseData bool
 }
 
@@ -15,10 +14,9 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockRequestMessage returns a instance of the message
-func NewGetBlockRequestMessage(hash string, subnetworkID string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
+func NewGetBlockRequestMessage(hash string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
 		Hash:                          hash,
-		SubnetworkID:                  subnetworkID,
 		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }
@@ -45,7 +43,7 @@ func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 // BlockVerboseData holds verbose data about a block
 type BlockVerboseData struct {
 	Hash                   string
-	Version                int32
+	Version                uint16
 	VersionHex             string
 	HashMerkleRoot         string
 	AcceptedIDMerkleRoot   string
@@ -57,8 +55,10 @@ type BlockVerboseData struct {
 	Bits                   string
 	Difficulty             float64
 	ParentHashes           []string
+	ChildrenHashes         []string
 	SelectedParentHash     string
 	BlueScore              uint64
+	IsHeaderOnly           bool
 }
 
 // TransactionVerboseData holds verbose data about a transaction
@@ -66,11 +66,10 @@ type TransactionVerboseData struct {
 	TxID                      string
 	Hash                      string
 	Size                      uint64
-	Version                   int32
+	Version                   uint16
 	LockTime                  uint64
 	SubnetworkID              string
 	Gas                       uint64
-	PayloadHash               string
 	Payload                   string
 	TransactionVerboseInputs  []*TransactionVerboseInput
 	TransactionVerboseOutputs []*TransactionVerboseOutput
@@ -102,8 +101,8 @@ type TransactionVerboseOutput struct {
 
 // ScriptPubKeyResult holds data about a script public key
 type ScriptPubKeyResult struct {
-	Asm     string
 	Hex     string
 	Type    string
 	Address string
+	Version uint16
 }

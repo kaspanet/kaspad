@@ -12,8 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ()
-
 // SetLimits raises some process limits to values which allow kaspad and
 // associated utilities to run.
 func SetLimits(desiredLimits *DesiredLimits) error {

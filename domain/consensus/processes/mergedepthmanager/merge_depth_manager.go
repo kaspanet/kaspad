@@ -79,7 +79,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 	return nil
 }
 
-func (mdm mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
@@ -87,8 +87,12 @@ func (mdm mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *exter
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
+	if err != nil {
+		return nil, err
+	}
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		notViolatingFinality, err := mdm.hasFinalityPointInOthersSelectedChain(blockHash, blue)
+		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, blue)
 		if err != nil {
 			return nil, err
 		}
@@ -99,13 +103,4 @@ func (mdm mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *exter
 	}
 
 	return nonBoundedMergeDepthViolatingBlues, nil
-}
-
-func (mdm *mergeDepthManager) hasFinalityPointInOthersSelectedChain(this, other *externalapi.DomainHash) (bool, error) {
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(this)
-	if err != nil {
-		return false, err
-	}
-
-	return mdm.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, other)
 }

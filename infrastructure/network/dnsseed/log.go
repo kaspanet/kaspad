@@ -9,6 +9,5 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.CMGR)
+var log = logger.RegisterSubSystem("CMGR")
 var spawn = panics.GoroutineWrapperFunc(log)
-var spawnAfter = panics.AfterFuncWrapperFunc(log)

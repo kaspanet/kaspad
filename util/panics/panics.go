@@ -70,9 +70,8 @@ func exit(log *logger.Logger, reason string, currentThreadStackTrace []byte, gor
 		fmt.Fprintln(os.Stderr, "Couldn't exit gracefully.")
 	case <-exitHandlerDone:
 	}
-	fmt.Print("Exiting...")
+	fmt.Println("Exiting...")
 	os.Exit(1)
-	fmt.Print("After os.Exit(1)")
 }
 
 func handleSpawnedFunction(log *logger.Logger, stackTrace []byte, spawnedFunctionName string, spawnedFunction func()) {

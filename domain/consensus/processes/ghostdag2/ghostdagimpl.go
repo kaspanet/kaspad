@@ -1,14 +1,13 @@
 package ghostdag2
 
 import (
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"sort"
 
-	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util"
-	"math/big"
 )
 
 type ghostdagHelper struct {
@@ -92,7 +91,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 
 	for _, mergeSetBlock := range mergeSetArr {
-		if *mergeSetBlock == *selectedParent {
+		if mergeSetBlock.Equal(selectedParent) {
 			if !contains(selectedParent, mergeSetBlues) {
 				mergeSetBlues = append(mergeSetBlues, selectedParent)
 				blueSet = append(blueSet, selectedParent)
@@ -112,22 +111,24 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 		if err != nil {
 			return err
 		}
-		myWork.Add(myWork, util.CalcWork(header.Bits))
+		myWork.Add(myWork, difficulty.CalcWork(header.Bits()))
 	}
 
-	e := ghostdagmanager.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
+	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
 	gh.dataStore.Stage(blockCandidate, e)
 	return nil
 }
 
 /* --------isMoreHash(w, selectedParent)----------------*/
 func ismoreHash(parent *externalapi.DomainHash, selectedParent *externalapi.DomainHash) bool {
+	parentByteArray := parent.ByteArray()
+	selectedParentByteArray := selectedParent.ByteArray()
 	//Check if parentHash is more then selectedParentHash
-	for i := len(parent) - 1; i >= 0; i-- {
+	for i := 0; i < len(parentByteArray); i++ {
 		switch {
-		case parent[i] < selectedParent[i]:
+		case parentByteArray[i] < selectedParentByteArray[i]:
 			return false
-		case parent[i] > selectedParent[i]:
+		case parentByteArray[i] > selectedParentByteArray[i]:
 			return true
 		}
 	}
@@ -252,7 +253,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 /*----------------contains-------------------------- */
 func contains(item *externalapi.DomainHash, items []*externalapi.DomainHash) bool {
 	for _, r := range items {
-		if *r == *item {
+		if r.Equal(item) {
 			return true
 		}
 	}
@@ -294,7 +295,7 @@ func (gh *ghostdagHelper) findMergeSet(parents []*externalapi.DomainHash, select
 	for len(blockQueue) > 0 {
 		block := blockQueue[0]
 		blockQueue = blockQueue[1:]
-		if *selectedParent == *block {
+		if selectedParent.Equal(block) {
 			if !contains(block, allMergeSet) {
 				allMergeSet = append(allMergeSet, block)
 			}
@@ -388,13 +389,13 @@ func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (model.BlockGHOSTDAGData, error) {
+func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB model.BlockGHOSTDAGData) bool {
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }

@@ -1,8 +1,10 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
@@ -44,6 +46,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			panic(err)
 		}
 		if isBanned {
+			log.Infof("Peer %s is banned. Disconnecting...", netConnection)
 			netConnection.Disconnect()
 			return
 		}
@@ -56,8 +59,20 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
+
 		if err != nil {
-			m.handleError(err, netConnection, router.OutgoingRoute())
+			// non-blocking read from channel
+			select {
+			case innerError := <-errChan:
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					m.handleError(innerError, netConnection, router.OutgoingRoute())
+				} else {
+					log.Errorf("Peer %s sent invalid message: %s", netConnection, innerError)
+					m.handleError(err, netConnection, router.OutgoingRoute())
+				}
+			default:
+				m.handleError(err, netConnection, router.OutgoingRoute())
+			}
 			return
 		}
 		defer m.context.RemoveFromPeers(peer)
@@ -73,12 +88,12 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 }
 
 func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection, outgoingRoute *routerpkg.Route) {
-	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		if !m.context.Config().DisableBanning && protocolErr.ShouldBan {
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
 			err := m.context.ConnectionManager().Ban(netConnection)
-			if err != nil && !errors.Is(err, addressmanager.ErrAddressNotFound) {
+			if !errors.Is(err, connmanager.ErrCannotBanPermanent) {
 				panic(err)
 			}
 
@@ -87,6 +102,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 				panic(err)
 			}
 		}
+		log.Infof("Disconnecting from %s (reason: %s)", netConnection, protocolErr.Cause)
 		netConnection.Disconnect()
 		return
 	}
@@ -133,11 +149,17 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
+		m.registerOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
+			isStopping, errChan, func(route *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.SendVirtualSelectedParentInv(m.context, outgoingRoute, peer)
+			}),
+
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdIBDBlock,
-			appmessage.CmdDoneHeaders, appmessage.CmdIBDRootNotFound, appmessage.CmdIBDRootUTXOSetAndBlock,
-			appmessage.CmdHeader}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
+			appmessage.CmdBlockHeaders, appmessage.CmdPruningPointHash, appmessage.CmdIBDBlockLocatorHighestHash,
+			appmessage.CmdIBDBlockLocatorHighestHashNotFound, appmessage.CmdDonePruningPointUTXOSetChunks},
+			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
 					outgoingRoute, peer)
 			},
@@ -159,14 +181,15 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 		m.registerFlow("HandleRequestHeaders", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestHeaders, appmessage.CmdRequestNextHeaders}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 
-		m.registerFlow("HandleRequestIBDRootUTXOSetAndBlock", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestIBDRootUTXOSetAndBlock}, isStopping, errChan,
+		m.registerFlow("HandleRequestPruningPointUTXOSetAndBlock", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointUTXOSetAndBlock,
+				appmessage.CmdRequestNextPruningPointUTXOSetChunk}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestIBDRootUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestPruningPointUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 
@@ -174,6 +197,20 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.registerFlow("HandlePruningPointHashRequests", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointHash}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandlePruningPointHashRequests(m.context, incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.registerFlow("HandleIBDBlockLocator", router,
+			[]appmessage.MessageCommand{appmessage.CmdIBDBlockLocator}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleIBDBlockLocator(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 	}
@@ -201,7 +238,7 @@ func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopp
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*flow{
-		m.registerFlow("HandleRelayedTransactions", router,
+		m.registerFlowWithCapacity("HandleRelayedTransactions", 10_000, router,
 			[]appmessage.MessageCommand{appmessage.CmdInvTransaction, appmessage.CmdTx, appmessage.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return transactionrelay.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
@@ -236,6 +273,24 @@ func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTyp
 	if err != nil {
 		panic(err)
 	}
+
+	return m.registerFlowForRoute(route, name, isStopping, errChan, initializeFunc)
+}
+
+func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *routerpkg.Router,
+	messageTypes []appmessage.MessageCommand, isStopping *uint32,
+	errChan chan error, initializeFunc flowInitializeFunc) *flow {
+
+	route, err := router.AddIncomingRouteWithCapacity(capacity, messageTypes)
+	if err != nil {
+		panic(err)
+	}
+
+	return m.registerFlowForRoute(route, name, isStopping, errChan, initializeFunc)
+}
+
+func (m *Manager) registerFlowForRoute(route *routerpkg.Route, name string, isStopping *uint32,
+	errChan chan error, initializeFunc flowInitializeFunc) *flow {
 
 	return &flow{
 		name: name,

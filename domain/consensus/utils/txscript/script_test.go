@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"testing"
 )
@@ -3363,17 +3364,17 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			expectedErr: scriptError(ErrInternal, ""),
 		},
 		{
-			name: "OP_HASH256",
+			name: "OP_BLAKE2B",
 			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash256],
+				opcode: &opcodeArray[OpBlake2b],
 				data:   nil,
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "OP_HASH256 long",
+			name: "OP_BLAKE2B long",
 			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash256],
+				opcode: &opcodeArray[OpBlake2b],
 				data:   make([]byte, 1),
 			},
 			expectedErr: scriptError(ErrInternal, ""),
@@ -3705,7 +3706,7 @@ func TestPushedData(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		data, err := PushedData(script)
 		if test.valid && err != nil {
 			t.Errorf("TestPushedData failed test #%d: %v\n", i, err)
@@ -3722,6 +3723,17 @@ func TestPushedData(t *testing.T) {
 	}
 }
 
+// isPushOnlyScript returns whether or not the passed script only pushes data.
+//
+// False will be returned when the script does not parse.
+func isPushOnlyScript(script []byte) (bool, error) {
+	pops, err := parseScript(script)
+	if err != nil {
+		return false, err
+	}
+	return isPushOnly(pops), nil
+}
+
 // TestHasCanonicalPush ensures the canonicalPush function works as expected.
 func TestHasCanonicalPush(t *testing.T) {
 	t.Parallel()
@@ -3733,8 +3745,8 @@ func TestHasCanonicalPush(t *testing.T) {
 				err)
 			continue
 		}
-		if result, _ := IsPushOnlyScript(script); !result {
-			t.Errorf("IsPushOnlyScript: test #%d failed: %x\n", i,
+		if result, _ := isPushOnlyScript(script); !result {
+			t.Errorf("isPushOnlyScript: test #%d failed: %x\n", i,
 				script)
 			continue
 		}
@@ -3759,8 +3771,8 @@ func TestHasCanonicalPush(t *testing.T) {
 			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
 			continue
 		}
-		if result, _ := IsPushOnlyScript(script); !result {
-			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
+		if result, _ := isPushOnlyScript(script); !result {
+			t.Errorf("StandardPushesTests isPushOnlyScript test #%d failed: %x\n", i, script)
 			continue
 		}
 		pops, err := parseScript(script)
@@ -3789,11 +3801,11 @@ func TestGetPreciseSigOps(t *testing.T) {
 	}{
 		{
 			name:      "scriptSig doesn't parse",
-			scriptSig: mustParseShortForm("PUSHDATA1 0x02"),
+			scriptSig: mustParseShortForm("PUSHDATA1 0x02", 0),
 		},
 		{
 			name:      "scriptSig isn't push only",
-			scriptSig: mustParseShortForm("1 DUP"),
+			scriptSig: mustParseShortForm("1 DUP", 0),
 			nSigOps:   0,
 		},
 		{
@@ -3804,20 +3816,21 @@ func TestGetPreciseSigOps(t *testing.T) {
 		{
 			name: "No script at the end",
 			// No script at end but still push only.
-			scriptSig: mustParseShortForm("1 1"),
+			scriptSig: mustParseShortForm("1 1", 0),
 			nSigOps:   0,
 		},
 		{
 			name:      "pushed script doesn't parse",
-			scriptSig: mustParseShortForm("DATA_2 PUSHDATA1 0x02"),
+			scriptSig: mustParseShortForm("DATA_2 PUSHDATA1 0x02", 0),
 		},
 	}
 
 	// The signature in the p2sh script is nonsensical for the tests since
 	// this script will never be executed. What matters is that it matches
 	// the right pattern.
-	scriptPubKey := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
-		"27f564529c57197f9ae88 EQUAL")
+	scriptOnly := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0"+
+		"27f564529c57197f9ae88 EQUAL", 0)
+	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
 	for _, test := range tests {
 		count := GetPreciseSigOpCount(test.scriptSig, scriptPubKey, true)
 		if count != test.nSigOps {
@@ -3834,7 +3847,7 @@ func TestIsPayToScriptHash(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range scriptClassTests {
-		script := mustParseShortForm(test.script)
+		script := &externalapi.ScriptPublicKey{mustParseShortForm(test.script, 0), 0}
 		shouldBe := (test.class == ScriptHashTy)
 		p2sh := IsPayToScriptHash(script)
 		if p2sh != shouldBe {
@@ -3868,7 +3881,7 @@ func TestHasCanonicalPushes(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		script := mustParseShortForm(test.script)
+		script := mustParseShortForm(test.script, 0)
 		pops, err := parseScript(script)
 		if err != nil {
 			if test.expected {
@@ -3887,9 +3900,9 @@ func TestHasCanonicalPushes(t *testing.T) {
 	}
 }
 
-// TestIsPushOnlyScript ensures the IsPushOnlyScript function returns the
+// TestIsPushOnly ensures the isPushOnly function returns the
 // expected results.
-func TestIsPushOnlyScript(t *testing.T) {
+func TestIsPushOnly(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -3900,39 +3913,39 @@ func TestIsPushOnlyScript(t *testing.T) {
 	}{
 		{
 			name: "does not parse",
-			script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130" +
-				"b7105cd6a828e03909a67962e0ea1f61d"),
+			script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130"+
+				"b7105cd6a828e03909a67962e0ea1f61d", 0),
 			expectedResult: false,
 			shouldFail:     true,
 		},
 		{
 			name:           "non push only script",
-			script:         mustParseShortForm("0x515293"), //OP_1 OP_2 OP_ADD
+			script:         mustParseShortForm("0x515293", 0), //OP_1 OP_2 OP_ADD
 			expectedResult: false,
 			shouldFail:     false,
 		},
 		{
 			name:           "push only script",
-			script:         mustParseShortForm("0x5152"), //OP_1 OP_2
+			script:         mustParseShortForm("0x5152", 0), //OP_1 OP_2
 			expectedResult: true,
 			shouldFail:     false,
 		},
 	}
 
 	for _, test := range tests {
-		isPushOnly, err := IsPushOnlyScript(test.script)
+		isPushOnly, err := isPushOnlyScript(test.script)
 
 		if isPushOnly != test.expectedResult {
-			t.Errorf("IsPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
+			t.Errorf("isPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
 				"%v", test.name, isPushOnly, test.expectedResult)
 		}
 
 		if test.shouldFail && err == nil {
-			t.Errorf("IsPushOnlyScript (%s) expected an error but got <nil>", test.name)
+			t.Errorf("isPushOnlyScript (%s) expected an error but got <nil>", test.name)
 		}
 
 		if !test.shouldFail && err != nil {
-			t.Errorf("IsPushOnlyScript (%s) expected no error but got: %v", test.name, err)
+			t.Errorf("isPushOnlyScript (%s) expected no error but got: %v", test.name, err)
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package flowcontext
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 
@@ -20,7 +21,11 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
+
+// OnPruningPointUTXOSetOverrideHandler is a handle function that's triggered whenever the UTXO set
+// resets due to pruning point change via IBD.
+type OnPruningPointUTXOSetOverrideHandler func() error
 
 // OnTransactionAddedToMempoolHandler is a handler function that's triggered
 // when a transaction is added to the mempool
@@ -35,8 +40,11 @@ type FlowContext struct {
 	addressManager    *addressmanager.AddressManager
 	connectionManager *connmanager.ConnectionManager
 
-	onBlockAddedToDAGHandler           OnBlockAddedToDAGHandler
-	onTransactionAddedToMempoolHandler OnTransactionAddedToMempoolHandler
+	timeStarted int64
+
+	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
+	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
+	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
 	transactionsToRebroadcastLock sync.Mutex
 	transactionsToRebroadcast     map[externalapi.DomainTransactionID]*externalapi.DomainTransaction
@@ -45,7 +53,8 @@ type FlowContext struct {
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
-	isInIBD uint32
+	ibdPeer      *peerpkg.Peer
+	ibdPeerMutex sync.RWMutex
 
 	peers      map[id.ID]*peerpkg.Peer
 	peersMutex sync.RWMutex
@@ -69,12 +78,18 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		peers:                       make(map[id.ID]*peerpkg.Peer),
 		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
 		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		timeStarted:                 mstime.Now().UnixMilliseconds(),
 	}
 }
 
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
 	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
+}
+
+// SetOnPruningPointUTXOSetOverrideHandler sets the onPruningPointUTXOSetOverrideHandler handler
+func (f *FlowContext) SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler) {
+	f.onPruningPointUTXOSetOverrideHandler = onPruningPointUTXOSetOverrideHandler
 }
 
 // SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler

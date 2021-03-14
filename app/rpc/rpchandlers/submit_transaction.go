@@ -13,9 +13,15 @@ import (
 func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitTransactionRequest := request.(*appmessage.SubmitTransactionRequestMessage)
 
-	domainTransaction := appmessage.MsgTxToDomainTransaction(submitTransactionRequest.Transaction)
+	domainTransaction, err := appmessage.RPCTransactionToDomainTransaction(submitTransactionRequest.Transaction)
+	if err != nil {
+		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse transaction: %s", err)
+		return errorMessage, nil
+	}
+
 	transactionID := consensushashing.TransactionID(domainTransaction)
-	err := context.ProtocolManager.AddTransaction(domainTransaction)
+	err = context.ProtocolManager.AddTransaction(domainTransaction)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {
 			return nil, err

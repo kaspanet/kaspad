@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
@@ -27,10 +26,6 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if err != nil {
 		return err
 	}
-	err = v.checkTransactionPayloadHash(tx)
-	if err != nil {
-		return err
-	}
 	err = v.checkGasInBuiltInOrNativeTransactions(tx)
 	if err != nil {
 		return err
@@ -45,11 +40,16 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 		return err
 	}
 
-	// TODO: fill it with the right subnetwork id.
+	// TODO: fill it with the node's subnetwork id.
 	err = v.checkTransactionSubnetwork(tx, nil)
 	if err != nil {
 		return err
 	}
+
+	if tx.Version > constants.MaxTransactionVersion {
+		return errors.Wrapf(ruleerrors.ErrTransactionVersionIsUnknown, "validation failed: unknown transaction version. ")
+	}
+
 	return nil
 }
 
@@ -125,18 +125,6 @@ func (v *transactionValidator) checkCoinbaseLength(tx *externalapi.DomainTransac
 	return nil
 }
 
-func (v *transactionValidator) checkTransactionPayloadHash(tx *externalapi.DomainTransaction) error {
-	if tx.SubnetworkID != subnetworks.SubnetworkIDNative {
-		payloadHash := hashes.HashData(tx.Payload)
-		if tx.PayloadHash != *payloadHash {
-			return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "invalid payload hash")
-		}
-	} else if tx.PayloadHash != (externalapi.DomainHash{}) {
-		return errors.Wrapf(ruleerrors.ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
-	}
-	return nil
-}
-
 func (v *transactionValidator) checkGasInBuiltInOrNativeTransactions(tx *externalapi.DomainTransaction) error {
 	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) && tx.Gas > 0 {
@@ -167,7 +155,7 @@ func (v *transactionValidator) checkNativeTransactionPayload(tx *externalapi.Dom
 }
 
 func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.DomainTransaction,
-	subnetworkID *externalapi.DomainSubnetworkID) error {
+	localNodeSubnetworkID *externalapi.DomainSubnetworkID) error {
 	if !v.enableNonNativeSubnetworks && tx.SubnetworkID != subnetworks.SubnetworkIDNative &&
 		tx.SubnetworkID != subnetworks.SubnetworkIDCoinbase {
 		return errors.Wrapf(ruleerrors.ErrSubnetworksDisabled, "transaction has non native or coinbase "+
@@ -176,8 +164,8 @@ func (v *transactionValidator) checkTransactionSubnetwork(tx *externalapi.Domain
 
 	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
-	isLocalNodeFull := subnetworkID == nil
-	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || subnetworks.IsEqual(&tx.SubnetworkID, subnetworkID)
+	isLocalNodeFull := localNodeSubnetworkID == nil
+	shouldTxBeFull := subnetworks.IsBuiltIn(tx.SubnetworkID) || tx.SubnetworkID.Equal(localNodeSubnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(tx.Payload) > 0 {
 		return errors.Wrapf(ruleerrors.ErrInvalidPayload,
 			"transaction that was expected to be partial has a payload "+

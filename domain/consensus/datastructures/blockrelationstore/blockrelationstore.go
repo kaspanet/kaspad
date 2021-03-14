@@ -2,14 +2,14 @@ package blockrelationstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("block-relations"))
+var bucket = database.MakeBucket([]byte("block-relations"))
 
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
@@ -18,10 +18,10 @@ type blockRelationStore struct {
 }
 
 // New instantiates a new BlockRelationStore
-func New(cacheSize int) model.BlockRelationStore {
+func New(cacheSize int, preallocate bool) model.BlockRelationStore {
 	return &blockRelationStore{
 		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
-		cache:   lrucache.New(cacheSize),
+		cache:   lrucache.New(cacheSize, preallocate),
 	}
 }
 
@@ -89,7 +89,7 @@ func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *external
 }
 
 func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (brs *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) ([]byte, error) {

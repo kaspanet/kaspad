@@ -42,12 +42,14 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
-	tx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
-	response, err := payer.rpcClient.SubmitTransaction(tx)
+	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
+	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
-	txID := response.TxID
+	txID := response.TransactionID
 
 	txAddedToMempoolChan := make(chan struct{})
 
@@ -58,7 +60,7 @@ func TestTxRelay(t *testing.T) {
 		for range ticker.C {
 			_, err := payee.rpcClient.GetMempoolEntry(txID)
 			if err != nil {
-				if strings.Contains(err.Error(), "transaction is not in the pool") {
+				if strings.Contains(err.Error(), "not found") {
 					continue
 				}
 
@@ -86,7 +88,7 @@ func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessa
 
 func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction, payer, payee *appHarness) *appmessage.MsgTx {
 	txIns := make([]*appmessage.TxIn, 1)
-	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{})
+	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{}, 0)
 
 	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
 	if err != nil {
@@ -101,7 +103,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 
 	fromScript := firstBlockCoinbase.Outputs[0].ScriptPublicKey
 
-	tx := appmessage.NewNativeMsgTx(constants.TransactionVersion, txIns, txOuts)
+	tx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
 	privateKeyBytes, err := hex.DecodeString(payer.miningAddressPrivateKey)
 	if err != nil {

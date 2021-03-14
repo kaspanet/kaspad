@@ -14,7 +14,7 @@ import (
 // TestIPTypes ensures the various functions which determine the type of an IP
 // address based on RFCs work as intended.
 func TestIPTypes(t *testing.T) {
-	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP")
+	amgr, teardown := newAddressManagerForTest(t, "TestAddAddressByIP")
 	defer teardown()
 	type ipTest struct {
 		in       appmessage.NetAddress
@@ -146,7 +146,7 @@ func TestIPTypes(t *testing.T) {
 // TestGroupKey tests the GroupKey function to ensure it properly groups various
 // IP addresses.
 func TestGroupKey(t *testing.T) {
-	amgr, teardown := newAddrManagerForTest(t, "TestAddAddressByIP")
+	amgr, teardown := newAddressManagerForTest(t, "TestAddAddressByIP")
 	defer teardown()
 
 	tests := []struct {

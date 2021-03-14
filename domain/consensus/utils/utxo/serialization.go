@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const uint32Size = 4
-
 // SerializeUTXO returns the byte-slice representation for given UTXOEntry-outpoint pair
 func SerializeUTXO(entry externalapi.UTXOEntry, outpoint *externalapi.DomainOutpoint) ([]byte, error) {
 	w := &bytes.Buffer{}
@@ -46,7 +44,7 @@ func DeserializeUTXO(utxoBytes []byte) (entry externalapi.UTXOEntry, outpoint *e
 }
 
 func serializeOutpoint(w io.Writer, outpoint *externalapi.DomainOutpoint) error {
-	_, err := w.Write(outpoint.TransactionID[:])
+	_, err := w.Write(outpoint.TransactionID.ByteSlice())
 	if err != nil {
 		return err
 	}
@@ -71,12 +69,6 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 		return nil, err
 	}
 
-	indexBytes := make([]byte, uint32Size)
-	_, err = io.ReadFull(r, indexBytes)
-	if err != nil {
-		return nil, err
-	}
-
 	var index uint32
 	err = serialization.ReadElement(r, &index)
 	if err != nil {
@@ -94,14 +86,17 @@ func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
 	if err != nil {
 		return err
 	}
-
-	count := uint64(len(entry.ScriptPublicKey()))
+	err = serialization.WriteElement(w, entry.ScriptPublicKey().Version)
+	if err != nil {
+		return err
+	}
+	count := uint64(len(entry.ScriptPublicKey().Script))
 	err = serialization.WriteElement(w, count)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.Write(entry.ScriptPublicKey())
+	_, err = w.Write(entry.ScriptPublicKey().Script)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -113,22 +108,29 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	var blockBlueScore uint64
 	var amount uint64
 	var isCoinbase bool
-	err := serialization.ReadElements(r, blockBlueScore, amount, isCoinbase)
+	err := serialization.ReadElements(r, &blockBlueScore, &amount, &isCoinbase)
 	if err != nil {
 		return nil, err
 	}
 
-	var scriptPubKeyLen int
-	err = serialization.ReadElement(r, scriptPubKeyLen)
+	var version uint16
+	err = serialization.ReadElement(r, &version)
 	if err != nil {
 		return nil, err
 	}
 
-	scriptPubKey := make([]byte, scriptPubKeyLen)
-	_, err = r.Read(scriptPubKey)
+	var scriptPubKeyLen uint64
+	err = serialization.ReadElement(r, &scriptPubKeyLen)
+	if err != nil {
+		return nil, err
+	}
+
+	scriptPubKeyScript := make([]byte, scriptPubKeyLen)
+	_, err = io.ReadFull(r, scriptPubKeyScript)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	scriptPubKey := externalapi.ScriptPublicKey{scriptPubKeyScript, version}
 
-	return NewUTXOEntry(amount, scriptPubKey, isCoinbase, blockBlueScore), nil
+	return NewUTXOEntry(amount, &scriptPubKey, isCoinbase, blockBlueScore), nil
 }

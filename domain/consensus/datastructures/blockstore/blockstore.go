@@ -2,15 +2,16 @@ package blockstore
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/dbkeys"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/pkg/errors"
 )
 
-var bucket = dbkeys.MakeBucket([]byte("blocks"))
-var countKey = dbkeys.MakeBucket().Key([]byte("blocks-count"))
+var bucket = database.MakeBucket([]byte("blocks"))
+var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
@@ -21,11 +22,11 @@ type blockStore struct {
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, cacheSize int) (model.BlockStore, error) {
+func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize),
+		cache:    lrucache.New(cacheSize, preallocate),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -178,7 +179,7 @@ func (bs *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBl
 }
 
 func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash[:])
+	return bucket.Key(hash.ByteSlice())
 }
 
 func (bs *blockStore) Count() uint64 {
@@ -211,4 +212,58 @@ func (bs *blockStore) commitCount(dbTx model.DBTransaction) error {
 func (bs *blockStore) serializeBlockCount(count uint64) ([]byte, error) {
 	dbBlockCount := &serialization.DbBlockCount{Count: count}
 	return proto.Marshal(dbBlockCount)
+}
+
+type allBlockHashesIterator struct {
+	cursor   model.DBCursor
+	isClosed bool
+}
+
+func (a allBlockHashesIterator) First() bool {
+	if a.isClosed {
+		panic("Tried using a closed AllBlockHashesIterator")
+	}
+	return a.cursor.First()
+}
+
+func (a allBlockHashesIterator) Next() bool {
+	if a.isClosed {
+		panic("Tried using a closed AllBlockHashesIterator")
+	}
+	return a.cursor.Next()
+}
+
+func (a allBlockHashesIterator) Get() (*externalapi.DomainHash, error) {
+	if a.isClosed {
+		return nil, errors.New("Tried using a closed AllBlockHashesIterator")
+	}
+	key, err := a.cursor.Key()
+	if err != nil {
+		return nil, err
+	}
+
+	blockHashBytes := key.Suffix()
+	return externalapi.NewDomainHashFromByteSlice(blockHashBytes)
+}
+
+func (a allBlockHashesIterator) Close() error {
+	if a.isClosed {
+		return errors.New("Tried using a closed AllBlockHashesIterator")
+	}
+	a.isClosed = true
+	err := a.cursor.Close()
+	if err != nil {
+		return err
+	}
+	a.cursor = nil
+	return nil
+}
+
+func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
+	cursor, err := dbContext.Cursor(bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	return &allBlockHashesIterator{cursor: cursor}, nil
 }

@@ -1,10 +1,11 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"io/ioutil"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
 func TestNewConsensus(t *testing.T) {
@@ -17,12 +18,12 @@ func TestNewConsensus(t *testing.T) {
 		return
 	}
 
-	db, err := ldb.NewLevelDB(tmpDir)
+	db, err := ldb.NewLevelDB(tmpDir, 8)
 	if err != nil {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, err = f.NewConsensus(dagParams, db)
+	_, err = f.NewConsensus(dagParams, db, false)
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}

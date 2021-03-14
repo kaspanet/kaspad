@@ -7,20 +7,20 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
-
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
-
-	"github.com/kaspanet/kaspad/util/panics"
-
-	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/os/execenv"
 	"github.com/kaspanet/kaspad/infrastructure/os/limits"
+	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
+	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/kaspanet/kaspad/version"
 )
+
+const leveldbCacheSizeMiB = 256
 
 var desiredLimits = &limits.DesiredLimits{
 	FileLimitWant: 2048,
@@ -49,6 +49,7 @@ func StartApp() error {
 		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
+	defer logger.BackendLog.Close()
 	defer panics.HandlePanic(log, "MAIN", nil)
 
 	app := &kaspadApp{cfg: cfg}
@@ -181,5 +182,5 @@ func removeDatabase(cfg *config.Config) error {
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 	log.Infof("Loading database from '%s'", dbPath)
-	return ldb.NewLevelDB(dbPath)
+	return ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 }

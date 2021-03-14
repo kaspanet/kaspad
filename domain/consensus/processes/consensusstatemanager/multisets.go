@@ -6,17 +6,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxoserialization"
 )
 
 func (csm *consensusStateManager) calculateMultiset(
-	acceptanceData model.AcceptanceData, blockGHOSTDAGData model.BlockGHOSTDAGData) (model.Multiset, error) {
+	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
 
-	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
-	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	defer log.Debugf("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 
 	if blockGHOSTDAGData.SelectedParent() == nil {
-		log.Tracef("Selected parent is nil, which could only happen for the genesis. " +
+		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
 			"The genesis, by definition, has an empty multiset")
 		return multiset.New(), nil
 	}
@@ -25,7 +24,7 @@ func (csm *consensusStateManager) calculateMultiset(
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent(), ms.Hash())
+	log.Debugf("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent(), ms.Hash())
 
 	for _, blockAcceptanceData := range acceptanceData {
 		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -39,8 +38,7 @@ func (csm *consensusStateManager) calculateMultiset(
 			isCoinbase := i == 0
 			log.Tracef("Is transaction %s a coinbase transaction: %t", transactionID, isCoinbase)
 
-			var err error
-			err = addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
+			err := addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
 			if err != nil {
 				return nil, err
 			}
@@ -106,12 +104,4 @@ func removeUTXOFromMultiset(multiset model.Multiset, entry externalapi.UTXOEntry
 	multiset.Remove(serializedUTXO)
 
 	return nil
-}
-
-func calcMultisetFromProtoUTXOSet(protoUTXOSet *utxoserialization.ProtoUTXOSet) (model.Multiset, error) {
-	ms := multiset.New()
-	for _, utxo := range protoUTXOSet.Utxos {
-		ms.Add(utxo.EntryOutpointPair)
-	}
-	return ms, nil
 }

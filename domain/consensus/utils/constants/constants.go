@@ -3,12 +3,15 @@ package constants
 import "math"
 
 const (
-	// BlockVersion represents the current version of blocks mined and the maximum block version
+	// MaxBlockVersion represents the current version of blocks mined and the maximum block version
 	// this node is able to validate
-	BlockVersion = 1
+	MaxBlockVersion uint16 = 0
 
-	// TransactionVersion is the current latest supported transaction version.
-	TransactionVersion = 1
+	// MaxTransactionVersion is the current latest supported transaction version.
+	MaxTransactionVersion uint16 = 0
+
+	// MaxScriptPublicKeyVersion is the current latest supported public key script version.
+	MaxScriptPublicKeyVersion uint16 = 0
 
 	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).
 	SompiPerKaspa = 100_000_000

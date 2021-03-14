@@ -15,7 +15,7 @@ import (
 )
 
 func prepareCursorForTest(t *testing.T, db database.Database, testName string) database.Cursor {
-	cursor, err := db.Cursor(database.MakeBucket())
+	cursor, err := db.Cursor(database.MakeBucket(nil))
 	if err != nil {
 		t.Fatalf("%s: Cursor unexpectedly "+
 			"failed: %s", testName, err)
@@ -241,7 +241,7 @@ func testCursorSeek(t *testing.T, db database.Database, testName string) {
 
 	// Seek to a value that doesn't exist and make sure that
 	// the returned error is ErrNotFound
-	err = cursor.Seek(database.MakeBucket().Key([]byte("doesn't exist")))
+	err = cursor.Seek(database.MakeBucket(nil).Key([]byte("doesn't exist")))
 	if err == nil {
 		t.Fatalf("%s: Seek unexpectedly "+
 			"succeeded", testName)
@@ -274,7 +274,7 @@ func testCursorCloseErrors(t *testing.T, db database.Database, testName string) 
 		{
 			name: "Seek",
 			function: func() error {
-				return cursor.Seek(database.MakeBucket().Key([]byte{}))
+				return cursor.Seek(database.MakeBucket(nil).Key([]byte{}))
 			},
 		},
 		{

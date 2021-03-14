@@ -40,7 +40,7 @@ func TestBech32(t *testing.T) {
 		if !test.valid {
 			// Invalid string decoding should result in error.
 			if err == nil {
-				t.Error("expected decoding to fail for "+
+				t.Errorf("expected decoding to fail for "+
 					"invalid string %v", test.str)
 			}
 			continue

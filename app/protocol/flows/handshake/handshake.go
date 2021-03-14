@@ -82,14 +82,17 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 
 	err := context.AddToPeers(peer)
 	if err != nil {
-		if errors.As(err, &common.ErrPeerWithSameIDExists) {
+		if errors.Is(err, common.ErrPeerWithSameIDExists) {
 			return nil, protocolerrors.Wrap(false, err, "peer already exists")
 		}
 		return nil, err
 	}
 
 	if peerAddress != nil {
-		context.AddressManager().AddAddresses(peerAddress)
+		err := context.AddressManager().AddAddresses(peerAddress)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return peer, nil
 }
@@ -104,7 +107,7 @@ func handleError(err error, flowName string, isStopping *uint32, errChan chan er
 		return
 	}
 
-	if protocolErr := &(protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
+	if protocolErr := (protocolerrors.ProtocolError{}); errors.As(err, &protocolErr) {
 		log.Errorf("Handshake protocol error from %s: %s", flowName, err)
 		if atomic.AddUint32(isStopping, 1) == 1 {
 			errChan <- err

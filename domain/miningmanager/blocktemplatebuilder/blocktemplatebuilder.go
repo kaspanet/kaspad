@@ -4,11 +4,12 @@ import (
 	"math"
 	"sort"
 
+	"github.com/kaspanet/kaspad/util/difficulty"
+
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	miningmanagerapi "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -105,7 +106,7 @@ func New(consensus consensusexternalapi.Consensus, mempool miningmanagerapi.Memp
 //   -----------------------------------  --
 
 func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
-	mempoolTransactions := btb.mempool.Transactions()
+	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for _, tx := range mempoolTransactions {
 		// Calculate the tx value
@@ -138,7 +139,13 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
 		}
-		btb.mempool.RemoveTransactions(invalidTxs)
+		err = btb.mempool.RemoveTransactions(invalidTxs)
+		if err != nil {
+			// mempool.RemoveTransactions might return errors in situations that are perfectly fine in this context.
+			// TODO: Once the mempool invariants are clear, this should be converted back `return nil, err`:
+			// https://github.com/kaspanet/kaspad/issues/1553
+			log.Criticalf("Error from mempool.RemoveTransactions: %+v", err)
+		}
 		// We can call this recursively without worry because this should almost never happen
 		return btb.GetBlockTemplate(coinbaseData)
 	}
@@ -148,7 +155,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
-		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, util.CompactToBig(blk.Header.Bits))
+		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
 	return blk, nil
 }

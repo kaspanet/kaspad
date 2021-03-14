@@ -3,9 +3,9 @@ package finalitymanager
 import (
 	"errors"
 
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 type finalityManager struct {
@@ -35,53 +35,28 @@ func New(databaseContext model.DBReader,
 	}
 }
 
-func (fm *finalityManager) IsViolatingFinality(blockHash *externalapi.DomainHash) (bool, error) {
-	if *blockHash == *fm.genesisHash {
-		log.Tracef("Block %s is the genesis block, "+
-			"and does not violate finality by definition", blockHash)
-		return false, nil
-	}
-	log.Tracef("isViolatingFinality start for block %s", blockHash)
-	defer log.Tracef("isViolatingFinality end for block %s", blockHash)
-
-	virtualFinalityPoint, err := fm.VirtualFinalityPoint()
-	if err != nil {
-		return false, err
-	}
-	log.Tracef("The virtual finality point is: %s", virtualFinalityPoint)
-
-	isInSelectedParentChain, err := fm.dagTopologyManager.IsInSelectedParentChainOf(virtualFinalityPoint, blockHash)
-	if err != nil {
-		return false, err
-	}
-	log.Tracef("Is the virtual finality point %s "+
-		"in the selected parent chain of %s: %t", virtualFinalityPoint, blockHash, isInSelectedParentChain)
-
-	return !isInSelectedParentChain, nil
-}
-
 func (fm *finalityManager) VirtualFinalityPoint() (*externalapi.DomainHash, error) {
-	log.Tracef("virtualFinalityPoint start")
-	defer log.Tracef("virtualFinalityPoint end")
+	log.Debugf("virtualFinalityPoint start")
+	defer log.Debugf("virtualFinalityPoint end")
 
 	virtualFinalityPoint, err := fm.calculateFinalityPoint(model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("The current virtual finality block is: %s", virtualFinalityPoint)
+	log.Debugf("The current virtual finality block is: %s", virtualFinalityPoint)
 
 	return virtualFinalityPoint, nil
 }
 
 func (fm *finalityManager) FinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	log.Tracef("FinalityPoint start")
-	defer log.Tracef("FinalityPoint end")
-	if *blockHash == *model.VirtualBlockHash {
+	log.Debugf("FinalityPoint start")
+	defer log.Debugf("FinalityPoint end")
+	if blockHash.Equal(model.VirtualBlockHash) {
 		return fm.VirtualFinalityPoint()
 	}
 	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, blockHash)
 	if err != nil {
-		log.Tracef("%s finality point not found in store - calculating", blockHash)
+		log.Debugf("%s finality point not found in store - calculating", blockHash)
 		if errors.Is(err, database.ErrNotFound) {
 			return fm.calculateAndStageFinalityPoint(blockHash)
 		}
@@ -100,20 +75,20 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(blockHash *externalapi
 }
 
 func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	log.Tracef("calculateFinalityPoint start")
-	defer log.Tracef("calculateFinalityPoint end")
+	log.Debugf("calculateFinalityPoint start")
+	defer log.Debugf("calculateFinalityPoint end")
 	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
 	if ghostdagData.BlueScore() < fm.finalityDepth {
-		log.Tracef("%s blue score lower then finality depth - returning genesis as finality point", blockHash)
+		log.Debugf("%s blue score lower then finality depth - returning genesis as finality point", blockHash)
 		return fm.genesisHash, nil
 	}
 
 	selectedParent := ghostdagData.SelectedParent()
-	if *selectedParent == *fm.genesisHash {
+	if selectedParent.Equal(fm.genesisHash) {
 		return fm.genesisHash, nil
 	}
 
@@ -122,7 +97,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 		return nil, err
 	}
 	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
-	log.Tracef("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
+	log.Debugf("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
 
 	var next *externalapi.DomainHash
 	for {
@@ -135,7 +110,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 			return nil, err
 		}
 		if nextGHOSTDAGData.BlueScore() >= requiredBlueScore {
-			log.Tracef("%s's finality point is %s", blockHash, current)
+			log.Debugf("%s's finality point is %s", blockHash, current)
 			return current, nil
 		}
 

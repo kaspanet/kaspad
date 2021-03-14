@@ -3,7 +3,6 @@ package utxo
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -18,7 +17,7 @@ type mutableUTXODiff struct {
 }
 
 // NewMutableUTXODiff creates an empty mutable UTXO-Diff
-func NewMutableUTXODiff() model.MutableUTXODiff {
+func NewMutableUTXODiff() externalapi.MutableUTXODiff {
 	return newMutableUTXODiff()
 }
 
@@ -29,7 +28,7 @@ func newMutableUTXODiff() *mutableUTXODiff {
 	}
 }
 
-func (mud *mutableUTXODiff) ToImmutable() model.UTXODiff {
+func (mud *mutableUTXODiff) ToImmutable() externalapi.UTXODiff {
 	immutableReference := &immutableUTXODiff{
 		mutableUTXODiff: mud,
 		isInvalidated:   false,
@@ -48,7 +47,7 @@ func (mud *mutableUTXODiff) invalidateImmutableReferences() {
 	mud.immutableReferences = nil
 }
 
-func (mud *mutableUTXODiff) WithDiff(other model.UTXODiff) (model.UTXODiff, error) {
+func (mud *mutableUTXODiff) WithDiff(other externalapi.UTXODiff) (externalapi.UTXODiff, error) {
 	o, ok := other.(*immutableUTXODiff)
 	if !ok {
 		return nil, errors.New("other is not of type *immutableUTXODiff")
@@ -62,7 +61,7 @@ func (mud *mutableUTXODiff) WithDiff(other model.UTXODiff) (model.UTXODiff, erro
 	return result.ToImmutable(), nil
 }
 
-func (mud *mutableUTXODiff) WithDiffInPlace(other model.UTXODiff) error {
+func (mud *mutableUTXODiff) WithDiffInPlace(other externalapi.UTXODiff) error {
 	o, ok := other.(*immutableUTXODiff)
 	if !ok {
 		return errors.New("other is not of type *immutableUTXODiff")
@@ -73,7 +72,7 @@ func (mud *mutableUTXODiff) WithDiffInPlace(other model.UTXODiff) error {
 	return withDiffInPlace(mud, o.mutableUTXODiff)
 }
 
-func (mud *mutableUTXODiff) DiffFrom(other model.UTXODiff) (model.UTXODiff, error) {
+func (mud *mutableUTXODiff) DiffFrom(other externalapi.UTXODiff) (externalapi.UTXODiff, error) {
 	o, ok := other.(*immutableUTXODiff)
 	if !ok {
 		return nil, errors.New("other is not of type *immutableUTXODiff")
@@ -87,11 +86,11 @@ func (mud *mutableUTXODiff) DiffFrom(other model.UTXODiff) (model.UTXODiff, erro
 	return result.ToImmutable(), nil
 }
 
-func (mud *mutableUTXODiff) ToAdd() model.UTXOCollection {
+func (mud *mutableUTXODiff) ToAdd() externalapi.UTXOCollection {
 	return mud.toAdd
 }
 
-func (mud *mutableUTXODiff) ToRemove() model.UTXOCollection {
+func (mud *mutableUTXODiff) ToRemove() externalapi.UTXOCollection {
 	return mud.toRemove
 }
 func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {

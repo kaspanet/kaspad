@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"path/filepath"
 	"testing"
 
@@ -21,6 +22,8 @@ type appHarness struct {
 	miningAddressPrivateKey string
 	config                  *config.Config
 	database                database.Database
+	utxoIndex               bool
+	overrideDAGParams       *dagconfig.Params
 }
 
 type harnessParams struct {
@@ -28,6 +31,8 @@ type harnessParams struct {
 	rpcAddress              string
 	miningAddress           string
 	miningAddressPrivateKey string
+	utxoIndex               bool
+	overrideDAGParams       *dagconfig.Params
 }
 
 // setupHarness creates a single appHarness with given parameters
@@ -37,6 +42,8 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		rpcAddress:              params.rpcAddress,
 		miningAddress:           params.miningAddress,
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
+		utxoIndex:               params.utxoIndex,
+		overrideDAGParams:       params.overrideDAGParams,
 	}
 
 	setConfig(t, harness)
@@ -127,5 +134,5 @@ func setDatabaseContext(t *testing.T, harness *appHarness) {
 
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := filepath.Join(cfg.DataDir, "db")
-	return ldb.NewLevelDB(dbPath)
+	return ldb.NewLevelDB(dbPath, 8)
 }

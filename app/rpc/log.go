@@ -5,5 +5,5 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.RPCS)
+var log = logger.RegisterSubSystem("RPCS")
 var spawn = panics.GoroutineWrapperFunc(log)

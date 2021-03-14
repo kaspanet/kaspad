@@ -1,9 +1,12 @@
 package consensus
 
 import (
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/finalitymanager"
@@ -17,7 +20,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headertipsstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedtipstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
@@ -32,7 +35,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/headertipsmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/headersselectedtipmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pastmediantimemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningmanager"
@@ -44,45 +47,87 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 )
 
+const (
+	defaultTestLeveldbCacheSizeMiB = 8
+	defaultPreallocateCaches       = true
+	defaultTestPreallocateCaches   = false
+)
+
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, testName string) (tc testapi.TestConsensus, teardown func(), err error)
-	NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
-		tc testapi.TestConsensus, teardown func(), err error)
+	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+		externalapi.Consensus, error)
+	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
+		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
+
+	SetTestDataDir(dataDir string)
+	SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor)
+	SetTestLevelDBCacheSize(cacheSizeMiB int)
+	SetTestPreAllocateCache(preallocateCaches bool)
+	SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor)
+	SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor)
 }
 
-type factory struct{}
+type factory struct {
+	dataDir                  string
+	ghostdagConstructor      GHOSTDAGManagerConstructor
+	pastMedianTimeConsructor PastMedianTimeManagerConstructor
+	difficultyConstructor    DifficultyManagerConstructor
+	cacheSizeMiB             *int
+	preallocateCaches        *bool
+}
 
 // NewFactory creates a new Consensus factory
 func NewFactory() Factory {
-	return &factory{}
+	return &factory{
+		ghostdagConstructor:      ghostdagmanager.New,
+		pastMedianTimeConsructor: pastmediantimemanager.New,
+		difficultyConstructor:    difficultymanager.New,
+	}
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database) (externalapi.Consensus, error) {
+func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+	externalapi.Consensus, error) {
+
 	dbManager := consensusdatabase.New(db)
 
+	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
+
+	var preallocateCaches bool
+	if f.preallocateCaches != nil {
+		preallocateCaches = *f.preallocateCaches
+	} else {
+		preallocateCaches = defaultPreallocateCaches
+	}
+
+	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
+	// the previous pruning point.
+	pruningWindowSizePlusFinalityDepthForCache := int(dagParams.PruningDepth() + dagParams.FinalityDepth())
+
 	// Data Structures
-	acceptanceDataStore := acceptancedatastore.New(200)
-	blockStore, err := blockstore.New(dbManager, 200)
+	acceptanceDataStore := acceptancedatastore.New(200, preallocateCaches)
+	blockStore, err := blockstore.New(dbManager, 200, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, 10_000)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, 10_000, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(200)
-	blockStatusStore := blockstatusstore.New(200)
-	multisetStore := multisetstore.New(200)
+	blockRelationStore := blockrelationstore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+
+	blockStatusStore := blockstatusstore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	multisetStore := multisetstore.New(200, preallocateCaches)
 	pruningStore := pruningstore.New()
-	reachabilityDataStore := reachabilitydatastore.New(200)
-	utxoDiffStore := utxodiffstore.New(200)
-	consensusStateStore := consensusstatestore.New()
-	ghostdagDataStore := ghostdagdatastore.New(10_000)
-	headerTipsStore := headertipsstore.New()
-	finalityStore := finalitystore.New(200)
+	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	utxoDiffStore := utxodiffstore.New(200, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(10_000, preallocateCaches)
+	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches, preallocateCaches)
+	headersSelectedTipStore := headersselectedtipstore.New()
+	finalityStore := finalitystore.New(200, preallocateCaches)
+	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, int(dagParams.FinalityDepth()), preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -94,7 +139,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager,
 		blockRelationStore,
 		ghostdagDataStore)
-	ghostdagManager := ghostdagmanager.New(
+	ghostdagManager := f.ghostdagConstructor(
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
@@ -104,13 +149,17 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		dagTopologyManager,
 		ghostdagDataStore,
-		ghostdagManager)
-	pastMedianTimeManager := pastmediantimemanager.New(
+		reachabilityDataStore,
+		ghostdagManager,
+		consensusStateStore,
+		dagParams.GenesisHash)
+	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
 		blockHeaderStore,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		dagParams.GenesisHash)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.MassPerTxByte,
@@ -120,11 +169,12 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore)
-	difficultyManager := difficultymanager.New(
+	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
 		ghostdagDataStore,
 		blockHeaderStore,
+		daaBlocksStore,
 		dagTopologyManager,
 		dagTraversalManager,
 		dagParams.PowMax,
@@ -139,7 +189,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore)
-	headerTipsManager := headertipsmanager.New(dbManager, dagTopologyManager, ghostdagManager, headerTipsStore)
+	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
+		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash
 	finalityManager := finalitymanager.New(
 		dbManager,
@@ -182,6 +233,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		blockStatusStore,
 		reachabilityDataStore,
+		consensusStateStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
@@ -211,7 +263,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockRelationStore,
 		acceptanceDataStore,
 		blockHeaderStore,
-		headerTipsStore)
+		headersSelectedTipStore,
+		pruningStore)
 	if err != nil {
 		return nil, err
 	}
@@ -225,10 +278,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		pruningStore,
 		blockStatusStore,
+		headersSelectedTipStore,
 		multisetStore,
 		acceptanceDataStore,
 		blockStore,
+		blockHeaderStore,
 		utxoDiffStore,
+		daaBlocksStore,
+		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),
 		dagParams.PruningDepth())
@@ -236,17 +293,17 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	syncManager := syncmanager.New(
 		dbManager,
 		genesisHash,
-		dagParams.TargetTimePerBlock.Milliseconds(),
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagManager,
-		consensusStateManager,
+		pruningManager,
 
 		ghostdagDataStore,
 		blockStatusStore,
 		blockHeaderStore,
-		headerTipsStore,
-		blockStore)
+		blockStore,
+		pruningStore,
+		headersSelectedChainStore)
 
 	blockBuilder := blockbuilder.New(
 		dbManager,
@@ -255,6 +312,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		consensusStateManager,
 		ghostdagManager,
+		transactionValidator,
+
 		acceptanceDataStore,
 		blockRelationStore,
 		multisetStore,
@@ -263,6 +322,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
+		dagParams.TargetTimePerBlock,
 		dbManager,
 		consensusStateManager,
 		pruningManager,
@@ -287,8 +347,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityDataStore,
 		utxoDiffStore,
 		blockHeaderStore,
-		headerTipsStore,
-		finalityStore)
+		headersSelectedTipStore,
+		finalityStore,
+		headersSelectedChainStore,
+		daaBlocksStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
@@ -312,19 +374,21 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityManager:   reachabilityManager,
 		finalityManager:       finalityManager,
 
-		acceptanceDataStore:   acceptanceDataStore,
-		blockStore:            blockStore,
-		blockHeaderStore:      blockHeaderStore,
-		pruningStore:          pruningStore,
-		ghostdagDataStore:     ghostdagDataStore,
-		blockStatusStore:      blockStatusStore,
-		blockRelationStore:    blockRelationStore,
-		consensusStateStore:   consensusStateStore,
-		headerTipsStore:       headerTipsStore,
-		multisetStore:         multisetStore,
-		reachabilityDataStore: reachabilityDataStore,
-		utxoDiffStore:         utxoDiffStore,
-		finalityStore:         finalityStore,
+		acceptanceDataStore:       acceptanceDataStore,
+		blockStore:                blockStore,
+		blockHeaderStore:          blockHeaderStore,
+		pruningStore:              pruningStore,
+		ghostdagDataStore:         ghostdagDataStore,
+		blockStatusStore:          blockStatusStore,
+		blockRelationStore:        blockRelationStore,
+		consensusStateStore:       consensusStateStore,
+		headersSelectedTipStore:   headersSelectedTipStore,
+		multisetStore:             multisetStore,
+		reachabilityDataStore:     reachabilityDataStore,
+		utxoDiffStore:             utxoDiffStore,
+		finalityStore:             finalityStore,
+		headersSelectedChainStore: headersSelectedChainStore,
+		daaBlocksStore:            daaBlocksStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
@@ -333,56 +397,101 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	}
 
 	if !genesisInfo.Exists {
-		err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
+		_, err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	err = consensusStateManager.RecoverUTXOIfRequired()
+	if err != nil {
+		return nil, err
+	}
+	err = pruningManager.ClearImportedPruningPointData()
+	if err != nil {
+		return nil, err
+	}
+	err = pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	if err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, testName string) (
-	tc testapi.TestConsensus, teardown func(), err error) {
-
-	dataDir, err := ioutil.TempDir("", testName)
+func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
+	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
+	datadir := f.dataDir
+	if datadir == "" {
+		datadir, err = ioutil.TempDir("", testName)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	var cacheSizeMiB int
+	if f.cacheSizeMiB != nil {
+		cacheSizeMiB = *f.cacheSizeMiB
+	} else {
+		cacheSizeMiB = defaultTestLeveldbCacheSizeMiB
+	}
+	if f.preallocateCaches == nil {
+		f.SetTestPreAllocateCache(defaultTestPreallocateCaches)
+	}
+	db, err := ldb.NewLevelDB(datadir, cacheSizeMiB)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	return f.NewTestConsensusWithDataDir(dagParams, dataDir)
-}
-
-func (f *factory) NewTestConsensusWithDataDir(dagParams *dagconfig.Params, dataDir string) (
-	tc testapi.TestConsensus, teardown func(), err error) {
-
-	db, err := ldb.NewLevelDB(dataDir)
-	if err != nil {
-		return nil, nil, err
-	}
-	consensusAsInterface, err := f.NewConsensus(dagParams, db)
+	consensusAsInterface, err := f.NewConsensus(dagParams, db, isArchivalNode)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
-
 	testConsensusStateManager := consensusstatemanager.NewTestConsensusStateManager(consensusAsImplementation.consensusStateManager)
-
 	testTransactionValidator := transactionvalidator.NewTestTransactionValidator(consensusAsImplementation.transactionValidator)
 
 	tstConsensus := &testConsensus{
+		dagParams:                 dagParams,
 		consensus:                 consensusAsImplementation,
+		database:                  db,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
 			reachabilityManager),
 		testTransactionValidator: testTransactionValidator,
 	}
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
-	teardown = func() {
+	teardown = func(keepDataDir bool) {
 		db.Close()
-		os.RemoveAll(dataDir)
+		if !keepDataDir {
+			err := os.RemoveAll(f.dataDir)
+			if err != nil {
+				log.Errorf("Error removing data directory for test consensus: %s", err)
+			}
+		}
 	}
-
 	return tstConsensus, teardown, nil
+}
+
+func (f *factory) SetTestDataDir(dataDir string) {
+	f.dataDir = dataDir
+}
+
+func (f *factory) SetTestGHOSTDAGManager(ghostdagConstructor GHOSTDAGManagerConstructor) {
+	f.ghostdagConstructor = ghostdagConstructor
+}
+
+func (f *factory) SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor) {
+	f.pastMedianTimeConsructor = medianTimeConstructor
+}
+
+// SetTestDifficultyManager is a setter for the difficultyManager field on the factory.
+func (f *factory) SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor) {
+	f.difficultyConstructor = difficultyConstructor
+}
+
+func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
+	f.cacheSizeMiB = &cacheSizeMiB
+}
+func (f *factory) SetTestPreAllocateCache(preallocateCaches bool) {
+	f.preallocateCaches = &preallocateCaches
 }

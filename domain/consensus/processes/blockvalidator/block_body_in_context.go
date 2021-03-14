@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -12,8 +13,105 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash) error {
-	return v.checkBlockTransactionsFinalized(blockHash)
+func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash, isPruningPoint bool) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
+	defer onEnd()
+
+	err := v.checkBlockIsNotPruned(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkBlockTransactionsFinalized(blockHash)
+	if err != nil {
+		return err
+	}
+
+	if !isPruningPoint {
+		err := v.checkParentBlockBodiesExist(blockHash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkBlockIsNotPruned Checks we don't add block bodies to pruned blocks
+func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash) error {
+	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
+	if err != nil {
+		return err
+	}
+
+	// If we don't add block body to a header only block it can't be in the past
+	// of the tips, because it'll be a new tip.
+	if !hasValidatedHeader {
+		return nil
+	}
+
+	tips, err := v.consensusStateStore.Tips(v.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(blockHash, tips)
+	if err != nil {
+		return err
+	}
+
+	// A header only block in the past of one of the tips has to be pruned
+	if isAncestorOfSomeTips {
+		return errors.Wrapf(ruleerrors.ErrPrunedBlock, "cannot add block body to a pruned block %s", blockHash)
+	}
+
+	return nil
+}
+
+func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.DomainHash) error {
+	missingParentHashes := []*externalapi.DomainHash{}
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	if err != nil {
+		return err
+	}
+	for _, parent := range header.ParentHashes() {
+		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		if err != nil {
+			return err
+		}
+
+		if !hasBlock {
+			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+			if err != nil {
+				return err
+			}
+
+			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+			if err != nil {
+				return err
+			}
+
+			// If a block parent is in the past of the pruning point
+			// it means its body will never be used, so it's ok if
+			// it's missing.
+			// This will usually happen during IBD when getting the blocks
+			// in the pruning point anticone.
+			if isInPastOfPruningPoint {
+				log.Debugf("Block %s parent %s is missing a body, but is in the past of the pruning point",
+					blockHash, parent)
+				continue
+			}
+
+			log.Debugf("Block %s parent %s is missing a body", blockHash, parent)
+
+			missingParentHashes = append(missingParentHashes, parent)
+		}
+	}
+
+	if len(missingParentHashes) > 0 {
+		return ruleerrors.NewErrMissingParents(missingParentHashes)
+	}
+
+	return nil
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {
@@ -22,19 +120,14 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 		return err
 	}
 
-	blockTime := block.Header.TimeInMilliseconds
-
 	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
 	if err != nil {
 		return err
 	}
 
-	// If it's not genesis
-	if len(block.Header.ParentHashes) != 0 {
-		blockTime, err = v.pastMedianTimeManager.PastMedianTime(blockHash)
-		if err != nil {
-			return err
-		}
+	blockTime, err := v.pastMedianTimeManager.PastMedianTime(blockHash)
+	if err != nil {
+		return err
 	}
 
 	// Ensure all transactions in the block are finalized.

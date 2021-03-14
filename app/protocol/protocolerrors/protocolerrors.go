@@ -12,18 +12,19 @@ type ProtocolError struct {
 	Cause     error
 }
 
-func (e *ProtocolError) Error() string {
+func (e ProtocolError) Error() string {
 	return e.Cause.Error()
 }
 
-func (e *ProtocolError) Unwrap() error {
+// Unwrap returns the cause of ProtocolError, to be used with `errors.Unwrap()`
+func (e ProtocolError) Unwrap() error {
 	return e.Cause
 }
 
 // Errorf formats according to a format specifier and returns the string
 // as a ProtocolError.
 func Errorf(shouldBan bool, format string, args ...interface{}) error {
-	return &ProtocolError{
+	return ProtocolError{
 		ShouldBan: shouldBan,
 		Cause:     errors.Errorf(format, args...),
 	}
@@ -32,7 +33,7 @@ func Errorf(shouldBan bool, format string, args ...interface{}) error {
 // New returns a ProtocolError with the supplied message.
 // New also records the stack trace at the point it was called.
 func New(shouldBan bool, message string) error {
-	return &ProtocolError{
+	return ProtocolError{
 		ShouldBan: shouldBan,
 		Cause:     errors.New(message),
 	}
@@ -40,7 +41,7 @@ func New(shouldBan bool, message string) error {
 
 // Wrap wraps the given error and returns it as a ProtocolError.
 func Wrap(shouldBan bool, err error, message string) error {
-	return &ProtocolError{
+	return ProtocolError{
 		ShouldBan: shouldBan,
 		Cause:     errors.Wrap(err, message),
 	}
@@ -48,7 +49,7 @@ func Wrap(shouldBan bool, err error, message string) error {
 
 // Wrapf wraps the given error with the given format and returns it as a ProtocolError.
 func Wrapf(shouldBan bool, err error, format string, args ...interface{}) error {
-	return &ProtocolError{
+	return ProtocolError{
 		ShouldBan: shouldBan,
 		Cause:     errors.Wrapf(err, format, args...),
 	}

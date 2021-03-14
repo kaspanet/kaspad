@@ -19,11 +19,11 @@ func TestUTXOCommitment(t *testing.T) {
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Build the following DAG:
 		// G <- A <- B <- C <- E
@@ -32,13 +32,13 @@ func TestUTXOCommitment(t *testing.T) {
 		genesisHash := params.GenesisHash
 
 		// Block A:
-		blockAHash, err := consensus.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
+		blockAHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}
 		checkBlockUTXOCommitment(t, consensus, blockAHash, "A")
 		// Block B:
-		blockBHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
+		blockBHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block B: %+v", err)
 		}
@@ -48,7 +48,7 @@ func TestUTXOCommitment(t *testing.T) {
 		}
 		checkBlockUTXOCommitment(t, consensus, blockBHash, "B")
 		// Block C:
-		blockCHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
+		blockCHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block C: %+v", err)
 		}
@@ -59,14 +59,14 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating transaction: %+v", err)
 		}
-		blockDHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil,
+		blockDHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil,
 			[]*externalapi.DomainTransaction{blockDTransaction})
 		if err != nil {
 			t.Fatalf("Error creating block D: %+v", err)
 		}
 		checkBlockUTXOCommitment(t, consensus, blockDHash, "D")
 		// Block E:
-		blockEHash, err := consensus.AddBlock([]*externalapi.DomainHash{blockCHash, blockDHash}, nil, nil)
+		blockEHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{blockCHash, blockDHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block E: %+v", err)
 		}
@@ -86,10 +86,11 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 	if err != nil {
 		t.Fatalf("Error restoring past UTXO of block %s: %+v", blockName, err)
 	}
+	defer utxoSetIterator.Close()
 
 	// Build a Multiset
 	ms := multiset.New()
-	for utxoSetIterator.Next() {
+	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
 		outpoint, entry, err := utxoSetIterator.Get()
 		if err != nil {
 			t.Fatalf("Error getting from UTXOSet iterator: %+v", err)
@@ -104,10 +105,10 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 	utxoCommitment := ms.Hash()
 
 	// Make sure that the two commitments are equal
-	if *utxoCommitment != block.Header.UTXOCommitment {
+	if !utxoCommitment.Equal(block.Header.UTXOCommitment()) {
 		t.Fatalf("TestUTXOCommitment: calculated UTXO commitment for block %s and "+
 			"actual UTXO commitment don't match. Want: %s, got: %s", blockName,
-			utxoCommitment, block.Header.UTXOCommitment)
+			utxoCommitment, block.Header.UTXOCommitment())
 	}
 }
 
@@ -115,16 +116,16 @@ func TestPastUTXOMultiset(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		defer teardown()
+		defer teardown(false)
 
 		// Build a short chain
 		currentHash := params.GenesisHash
 		for i := 0; i < 3; i++ {
-			currentHash, err = consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
+			currentHash, _, err = consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating block A: %+v", err)
 			}
@@ -141,7 +142,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		firstMultisetHash := firstMultiset.Hash()
 
 		// Add another block on top of testedBlock
-		_, err = consensus.AddBlock([]*externalapi.DomainHash{testedBlockHash}, nil, nil)
+		_, _, err = consensus.AddBlock([]*externalapi.DomainHash{testedBlockHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating block A: %+v", err)
 		}
@@ -154,7 +155,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		secondMultisetHash := secondMultiset.Hash()
 
 		// Make sure the multiset hasn't changed
-		if *firstMultisetHash != *secondMultisetHash {
+		if !firstMultisetHash.Equal(secondMultisetHash) {
 			t.Fatalf("TestPastUTXOMultiSet: selectedParentMultiset appears to have changed!")
 		}
 	})
