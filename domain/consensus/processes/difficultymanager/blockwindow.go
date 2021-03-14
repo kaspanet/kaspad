@@ -29,21 +29,23 @@ func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHas
 // blocks in the past of startindNode, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dm *difficultyManager) blockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow, error) {
+func (dm *difficultyManager) blockWindow(startingNode *externalapi.DomainHash, windowSize int) (blockWindow,
+	[]*externalapi.DomainHash, error) {
+
 	window := make(blockWindow, 0, windowSize)
 	windowHashes, err := dm.dagTraversalManager.BlockWindow(startingNode, windowSize)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, hash := range windowHashes {
 		block, err := dm.getDifficultyBlock(hash)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		window = append(window, block)
 	}
-	return window, nil
+	return window, windowHashes, nil
 }
 
 func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex, maxIndex int) {
