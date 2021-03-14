@@ -137,3 +137,7 @@ func (tc *testConsensus) FinalityStore() model.FinalityStore {
 func (tc *testConsensus) HeadersSelectedChainStore() model.HeadersSelectedChainStore {
 	return tc.headersSelectedChainStore
 }
+
+func (tc *testConsensus) DAABlocksStore() model.DAABlocksStore {
+	return tc.daaBlocksStore
+}

@@ -28,6 +28,7 @@ type pruningManager struct {
 	blocksStore         model.BlockStore
 	blockHeaderStore    model.BlockHeaderStore
 	utxoDiffStore       model.UTXODiffStore
+	daaBlocksStore      model.DAABlocksStore
 
 	isArchivalNode   bool
 	genesisHash      *externalapi.DomainHash
@@ -42,17 +43,18 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	consensusStateManager model.ConsensusStateManager,
+
 	consensusStateStore model.ConsensusStateStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
 	headerSelectedTipStore model.HeaderSelectedTipStore,
-
 	multiSetStore model.MultisetStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	blocksStore model.BlockStore,
 	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
+	daaBlocksStore model.DAABlocksStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -75,6 +77,7 @@ func New(
 		blockHeaderStore:       blockHeaderStore,
 		utxoDiffStore:          utxoDiffStore,
 		headerSelectedTipStore: headerSelectedTipStore,
+		daaBlocksStore:         daaBlocksStore,
 		isArchivalNode:         isArchivalNode,
 		genesisHash:            genesisHash,
 		pruningDepth:           pruningDepth,
@@ -348,6 +351,7 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	pm.acceptanceDataStore.Delete(blockHash)
 	pm.blocksStore.Delete(blockHash)
 	pm.utxoDiffStore.Delete(blockHash)
+	pm.daaBlocksStore.Delete(blockHash)
 
 	return false, nil
 }
