@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/pkg/errors"
 )
 
 type coinbaseManager struct {
@@ -163,6 +164,11 @@ func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (u
 
 func (c *coinbaseManager) calcMergedBlockReward(blockHash *externalapi.DomainHash,
 	blockAcceptanceData *externalapi.BlockAcceptanceData, mergingBlockDAAAddedBlocksSet hashset.HashSet) (uint64, error) {
+
+	if !blockHash.Equal(blockAcceptanceData.BlockHash) {
+		return 0, errors.Errorf("blockAcceptanceData.BlockHash is expected to be %s but got %s",
+			blockHash, blockAcceptanceData.BlockHash)
+	}
 
 	if !mergingBlockDAAAddedBlocksSet.Contains(blockHash) {
 		return 0, nil
