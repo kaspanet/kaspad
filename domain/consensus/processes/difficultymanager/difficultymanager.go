@@ -70,10 +70,10 @@ func (dm *difficultyManager) genesisBits() (uint32, error) {
 // StageDAADataAndReturnRequiredDifficulty calculates the DAA window, stages the DAA score and DAA added
 // blocks, and returns the required difficulty for the given block.
 // The reason this function both stages DAA data and returns the difficulty is because in order to calculate
-// both of them we need to calculate the DAA window, which is a relatively heavy operation, so reuse the block
-// window instead of recalculating it for the two purposes.
-// For cases where no staging should be happen and the caller only needs to know the difficulty RequiredDifficulty
-// should be used.
+// both of them we need to calculate the DAA window, which is a relatively heavy operation, so we reuse the
+// block window instead of recalculating it for the two purposes.
+// For cases where no staging should happen and the caller only needs to know the difficulty he should
+// use RequiredDifficulty.
 func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
 	targetsWindow, windowHashes, err := dm.blockWindow(blockHash, dm.difficultyAdjustmentWindowSize+1)
