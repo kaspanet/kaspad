@@ -2,6 +2,9 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
+	"sync"
+	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain"
 
@@ -17,7 +20,9 @@ import (
 
 // Manager manages the p2p protocol
 type Manager struct {
-	context *flowcontext.FlowContext
+	context          *flowcontext.FlowContext
+	routersWaitGroup sync.WaitGroup
+	isClosed         uint32
 }
 
 // NewManager creates a new instance of the p2p protocol manager
@@ -30,6 +35,18 @@ func NewManager(cfg *config.Config, domain domain.Domain, netAdapter *netadapter
 
 	netAdapter.SetP2PRouterInitializer(manager.routerInitializer)
 	return &manager, nil
+}
+
+// Close closes the protocol manager and waits until all p2p flows
+// finish.
+func (m *Manager) Close() {
+	if !atomic.CompareAndSwapUint32(&m.isClosed, 0, 1) {
+		panic(errors.New("The protocol manager was already closed"))
+	}
+
+	atomic.StoreUint32(&m.isClosed, 1)
+	m.context.Close()
+	m.routersWaitGroup.Wait()
 }
 
 // Peers returns the currently active peers
@@ -53,11 +70,13 @@ func (m *Manager) AddBlock(block *externalapi.DomainBlock) error {
 	return m.context.AddBlock(block)
 }
 
-func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error) error {
+func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error, flowsWaitGroup *sync.WaitGroup) error {
+	flowsWaitGroup.Add(len(flows))
 	for _, flow := range flows {
 		executeFunc := flow.executeFunc // extract to new variable so that it's not overwritten
 		spawn(fmt.Sprintf("flow-%s", flow.name), func() {
 			executeFunc(peer)
+			flowsWaitGroup.Done()
 		})
 	}
 
