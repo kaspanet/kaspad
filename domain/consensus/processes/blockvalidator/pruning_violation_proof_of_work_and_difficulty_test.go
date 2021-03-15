@@ -246,8 +246,8 @@ func TestCheckPruningPointViolation(t *testing.T) {
 // TestValidateDifficulty verifies that in case of a block with an unexpected difficulty,
 // an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
 // function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The required difficulty is
-// "calculated" by the function (dm *mocDifficultyManager) UpdateDAADataAndReturnDifficultyBits ,
-// where mocDifficultyManager is special implementation of the type DifficultyManager for this test (defined below).
+// "calculated" by the mocDifficultyManager, where mocDifficultyManager is special implementation
+// of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
@@ -299,8 +299,13 @@ type mocDifficultyManager struct {
 	daaBlocksStore  model.DAABlocksStore
 }
 
-// UpdateDAADataAndReturnDifficultyBits returns the difficulty required for the test
-func (dm *mocDifficultyManager) UpdateDAADataAndReturnDifficultyBits(blockHash *externalapi.DomainHash) (uint32, error) {
+// RequiredDifficulty returns the difficulty required for the test
+func (dm *mocDifficultyManager) RequiredDifficulty(*externalapi.DomainHash) (uint32, error) {
+	return dm.testDifficulty, nil
+}
+
+// StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
+func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
 	// Populate daaBlocksStore with fake values
 	dm.daaBlocksStore.StageDAAScore(blockHash, 0)
 	dm.daaBlocksStore.StageBlockDAAAddedBlocks(blockHash, nil)

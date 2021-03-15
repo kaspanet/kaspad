@@ -69,7 +69,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.D
 		return nil, err
 	}
 
-	bits, err := bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
+	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	_, err = bb.difficultyManager.UpdateDAADataAndReturnDifficultyBits(tempBlockHash)
+	_, err = bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}
