@@ -62,14 +62,9 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 }
 
 func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.DomainHash,
-	transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
+	bits uint32, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(tempBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -89,11 +84,11 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(parentHashes []*externalapi.D
 	), nil
 }
 
-func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash,
+func (bb *testBlockBuilder) buildHeaderWithParents(parentHashes []*externalapi.DomainHash, bits uint32,
 	transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
 	externalapi.BlockHeader, error) {
 
-	header, err := bb.buildUTXOInvalidHeader(parentHashes, transactions)
+	header, err := bb.buildUTXOInvalidHeader(parentHashes, bits, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +131,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	_, err = bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(tempBlockHash)
+	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -168,7 +163,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
-	header, err := bb.buildHeaderWithParents(parentHashes, transactionsWithCoinbase, acceptanceData, multiset)
+	header, err := bb.buildHeaderWithParents(parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -204,7 +199,13 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 
 	// We use genesis transactions so we'll have something to build merkle root and coinbase with
 	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
-	header, err := bb.buildUTXOInvalidHeader(parentHashes, genesisTransactions)
+
+	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := bb.buildUTXOInvalidHeader(parentHashes, bits, genesisTransactions)
 	if err != nil {
 		return nil, err
 	}
