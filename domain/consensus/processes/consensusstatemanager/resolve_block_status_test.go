@@ -261,7 +261,12 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating tip: %+v", err)
 		}
 
-		finalTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash}, nil,
+		finalTipScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{4}, Version: 0}
+		finalTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash},
+			&externalapi.DomainCoinbaseData{
+				ScriptPublicKey: finalTipScriptPublicKey,
+				ExtraData:       nil,
+			},
 			nil)
 		if err != nil {
 			t.Fatalf("Error creating finalTip: %+v", err)
@@ -354,7 +359,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 
 		// We expect the coinbase transaction to pay reward for the selected parent, the
-		// blue block, and not for the red block.
+		// blue block, and bestow the red block reward to the merging block.
 		expectedCoinbase := &externalapi.DomainTransaction{
 			Version: constants.MaxTransactionVersion,
 			Inputs:  nil,
@@ -366,6 +371,10 @@ func TestTransactionAcceptance(t *testing.T) {
 				{
 					Value:           50*constants.SompiPerKaspa + 1, // testutils.CreateTransaction pays a fee of 1 sompi
 					ScriptPublicKey: blueScriptPublicKey,
+				},
+				{
+					Value:           50*constants.SompiPerKaspa + 1,
+					ScriptPublicKey: finalTipScriptPublicKey,
 				},
 			},
 			LockTime:     0,
