@@ -226,9 +226,12 @@ func TestSignTxOutput(t *testing.T) {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
-			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType, mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
-				address.EncodeAddress(): key,
-			}), mkGetScript(nil)); err != nil {
+			err = signAndCheck(msg, tx, i, scriptPubKey, hashType,
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
+					address.EncodeAddress(): key,
+				}),
+				mkGetScript(nil))
+			if err != nil {
 				t.Error(err)
 				break
 			}
