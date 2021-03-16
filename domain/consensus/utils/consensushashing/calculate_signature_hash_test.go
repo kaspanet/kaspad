@@ -1,8 +1,11 @@
 package consensushashing_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
+
+	"github.com/kaspanet/go-secp256k1"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -275,4 +278,114 @@ func generateTxs() (nativeTx, subnetworkTx *externalapi.DomainTransaction, err e
 	}
 
 	return nativeTx, subnetworkTx, nil
+}
+
+func BenchmarkCalculateSignatureHash(b *testing.B) {
+	sigHashTypes := []consensushashing.SigHashType{
+		consensushashing.SigHashAll,
+		consensushashing.SigHashNone,
+		consensushashing.SigHashSingle,
+		consensushashing.SigHashAll | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashNone | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashSingle | consensushashing.SigHashAnyOneCanPay}
+
+	for _, size := range []int{10, 100, 1000} {
+		tx := generateTransaction(b, sigHashTypes, size)
+
+		b.Run(fmt.Sprintf("%d-inputs-and-outputs", size), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				reusedValues := &consensushashing.SighashReusedValues{}
+				sigHashType := sigHashTypes[i%len(sigHashTypes)]
+				for idx := 0; idx < len(tx.Inputs); idx++ {
+					_, err := consensushashing.CalculateSignatureHash(tx, idx, sigHashType, reusedValues)
+					if err != nil {
+						b.Fatalf("Error from CalculateSignatureHash: %+v", err)
+					}
+				}
+			}
+		})
+	}
+}
+
+func generateTransaction(b *testing.B, sigHashTypes []consensushashing.SigHashType, inputAndOutputSizes int) *externalapi.DomainTransaction {
+	sourceScript := getSourceScript(b)
+	tx := &externalapi.DomainTransaction{
+		Version:      1,
+		Inputs:       generateInputs(inputAndOutputSizes, sourceScript),
+		Outputs:      generateOutputs(inputAndOutputSizes, sourceScript),
+		LockTime:     123456789,
+		SubnetworkID: externalapi.DomainSubnetworkID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		Gas:          125,
+		Payload:      []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
+		Fee:          0,
+		Mass:         0,
+		ID:           nil,
+	}
+	signTx(b, tx, sigHashTypes)
+	return tx
+}
+
+func signTx(b *testing.B, tx *externalapi.DomainTransaction, sigHashTypes []consensushashing.SigHashType) {
+	sourceAddressPKStr := "a4d85b7532123e3dd34e58d7ce20895f7ca32349e29b01700bb5a3e72d2570eb"
+	privateKeyBytes, err := hex.DecodeString(sourceAddressPKStr)
+	if err != nil {
+		b.Fatalf("Error parsing private key hex: %+v", err)
+	}
+	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	if err != nil {
+		b.Fatalf("Error deserializing private key: %+v", err)
+	}
+	for i, txIn := range tx.Inputs {
+		signatureScript, err := txscript.SignatureScript(
+			tx, i, sigHashTypes[i%len(sigHashTypes)], keyPair, &consensushashing.SighashReusedValues{})
+		if err != nil {
+			b.Fatalf("Error from SignatureScript: %+v", err)
+		}
+		txIn.SignatureScript = signatureScript
+	}
+
+}
+
+func generateInputs(size int, sourceScript *externalapi.ScriptPublicKey) []*externalapi.DomainTransactionInput {
+	inputs := make([]*externalapi.DomainTransactionInput, size)
+
+	for i := 0; i < size; i++ {
+		inputs[i] = &externalapi.DomainTransactionInput{
+			PreviousOutpoint: *externalapi.NewDomainOutpoint(
+				externalapi.NewDomainTransactionIDFromByteArray(&[32]byte{12, 3, 4, 5}), 1),
+			SignatureScript: nil,
+			Sequence:        uint64(i),
+			UTXOEntry:       utxo.NewUTXOEntry(uint64(i), sourceScript, false, 12),
+		}
+	}
+
+	return inputs
+}
+
+func getSourceScript(b *testing.B) *externalapi.ScriptPublicKey {
+	sourceAddressStr := "kaspasim:qz6f9z6l3x4v3lf9mgf0t934th4nx5kgzu663x9yjh"
+
+	sourceAddress, err := util.DecodeAddress(sourceAddressStr, util.Bech32PrefixKaspaSim)
+	if err != nil {
+		b.Fatalf("Error from DecodeAddress: %+v", err)
+	}
+
+	sourceScript, err := txscript.PayToAddrScript(sourceAddress)
+	if err != nil {
+		b.Fatalf("Error from PayToAddrScript: %+v", err)
+	}
+	return sourceScript
+}
+
+func generateOutputs(size int, script *externalapi.ScriptPublicKey) []*externalapi.DomainTransactionOutput {
+	outputs := make([]*externalapi.DomainTransactionOutput, size)
+
+	for i := 0; i < size; i++ {
+		outputs[i] = &externalapi.DomainTransactionOutput{
+			Value:           uint64(i),
+			ScriptPublicKey: script,
+		}
+	}
+
+	return outputs
 }
