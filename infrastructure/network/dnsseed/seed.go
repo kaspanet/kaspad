@@ -94,7 +94,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 					// between 3 and 7 days ago.
 					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
 						randSource.Int31n(secondsIn4Days))),
-					0, peer, uint16(intPort))
+					peer, uint16(intPort))
 			}
 
 			seedFn(addresses)
@@ -159,7 +159,7 @@ func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, reqServices ap
 					// between 3 and 7 days ago.
 					mstime.Now().Add(-1*time.Second*time.Duration(secondsIn3Days+
 						randSource.Int31n(secondsIn4Days))),
-					0, peer, uint16(intPort))
+					peer, uint16(intPort))
 			}
 
 			seedFn(addresses)
