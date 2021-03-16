@@ -1,9 +1,10 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"path/filepath"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 
@@ -133,6 +134,6 @@ func setDatabaseContext(t *testing.T, harness *appHarness) {
 }
 
 func openDB(cfg *config.Config) (database.Database, error) {
-	dbPath := filepath.Join(cfg.DataDir, "db")
+	dbPath := filepath.Join(cfg.HomeDir, "db")
 	return ldb.NewLevelDB(dbPath, 8)
 }
