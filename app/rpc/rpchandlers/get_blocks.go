@@ -55,7 +55,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	if err != nil {
 		return nil, err
 	}
-	blockHashes, err := context.Domain.Consensus().GetHashesBetween(
+	blockHashes, highHash, err := context.Domain.Consensus().GetHashesBetween(
 		lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
 	if err != nil {
 		return nil, err
@@ -64,9 +64,10 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	// prepend low hash to make it inclusive
 	blockHashes = append([]*externalapi.DomainHash{lowHash}, blockHashes...)
 
-	// If there are no maxBlocksInGetBlocksResponse between lowHash and virtualSelectedParent -
-	// add virtualSelectedParent's anticone
-	if len(blockHashes) < maxBlocksInGetBlocksResponse {
+	// If the high hash is equal to virtualSelectedParent it means GetHashesBetween didn't skip any hashes, and
+	// there's space to add the virtualSelectedParent's anticone, otherwise you can't add the anticone because
+	// there's no guarantee that all of the anticone root ancestors will be present.
+	if highHash.Equal(virtualSelectedParent) {
 		virtualSelectedParentAnticone, err := context.Domain.Consensus().Anticone(virtualSelectedParent)
 		if err != nil {
 			return nil, err
