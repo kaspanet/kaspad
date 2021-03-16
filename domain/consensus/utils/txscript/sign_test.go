@@ -368,11 +368,10 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType, mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
-				address.EncodeAddress(): key,
-			}), mkGetScript(map[string][]byte{
-				scriptAddr.EncodeAddress(): scriptPubKey.Script,
-			})); err != nil {
+			err = signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{address.EncodeAddress(): key}),
+				mkGetScript(map[string][]byte{scriptAddr.EncodeAddress(): scriptPubKey.Script}))
+			if err != nil {
 				t.Error(err)
 				break
 			}
