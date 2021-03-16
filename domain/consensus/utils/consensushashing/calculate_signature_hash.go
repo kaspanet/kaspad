@@ -94,7 +94,7 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 	sequencesHash := getSequencesHash(tx, hashType, reusedValues)
 	infallibleWriteElement(hashWriter, sequencesHash)
 
-	hashOutpoint(hashWriter, txIn)
+	hashOutpoint(hashWriter, txIn.PreviousOutpoint)
 
 	infallibleWriteElement(hashWriter, prevScriptPublicKey.Version)
 	infallibleWriteElement(hashWriter, prevScriptPublicKey.Script)
@@ -127,7 +127,7 @@ func getPreviousOutputsHash(tx *externalapi.DomainTransaction, hashType SigHashT
 	if reusedValues.previousOutputsHash == nil {
 		hashWriter := hashes.NewTransactionSigningHashWriter()
 		for _, txIn := range tx.Inputs {
-			hashOutpoint(hashWriter, txIn)
+			hashOutpoint(hashWriter, txIn.PreviousOutpoint)
 		}
 		reusedValues.previousOutputsHash = hashWriter.Finalize()
 	}
@@ -198,9 +198,9 @@ func hashTxOut(hashWriter hashes.HashWriter, txOut *externalapi.DomainTransactio
 	infallibleWriteElement(hashWriter, txOut.ScriptPublicKey.Script)
 }
 
-func hashOutpoint(hashWriter hashes.HashWriter, txIn *externalapi.DomainTransactionInput) {
-	infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.TransactionID)
-	infallibleWriteElement(hashWriter, txIn.PreviousOutpoint.Index)
+func hashOutpoint(hashWriter hashes.HashWriter, outpoint externalapi.DomainOutpoint) {
+	infallibleWriteElement(hashWriter, outpoint.TransactionID)
+	infallibleWriteElement(hashWriter, outpoint.Index)
 }
 
 func infallibleWriteElement(hashWriter hashes.HashWriter, element interface{}) {
