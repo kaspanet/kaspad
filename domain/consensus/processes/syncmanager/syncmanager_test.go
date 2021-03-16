@@ -55,7 +55,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		}
 
 		for i, blockHash := range expectedOrder {
-			empty, err := tc.SyncManager().GetHashesBetween(blockHash, blockHash, math.MaxUint64)
+			empty, _, err := tc.SyncManager().GetHashesBetween(blockHash, blockHash, math.MaxUint64)
 			if err != nil {
 				t.Fatalf("TestSyncManager_GetHashesBetween failed returning 0 hashes on the %d'th block: %v", i, err)
 			}
@@ -64,7 +64,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 			}
 		}
 
-		actualOrder, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
+		actualOrder, _, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
 		if err != nil {
 			t.Fatalf("TestSyncManager_GetHashesBetween failed returning actualOrder: %v", err)
 		}

@@ -182,18 +182,18 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.validateBlockHashExists(lowHash)
+	err = s.validateBlockHashExists(lowHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = s.validateBlockHashExists(highHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return s.syncManager.GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
