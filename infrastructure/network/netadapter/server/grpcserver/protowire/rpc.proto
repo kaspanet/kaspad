@@ -19,6 +19,90 @@ message RPCError{
   string message = 1;
 }
 
+message RpcBlock {
+  RpcBlockHeader header = 1;
+  repeated RpcTransaction transactions = 2;
+  RpcBlockVerboseData verboseData = 3;
+}
+
+message RpcBlockHeader {
+  uint32 version = 1;
+  repeated string parentHashes = 2;
+  string hashMerkleRoot = 3;
+  string acceptedIdMerkleRoot = 4;
+  string utxoCommitment = 5;
+  int64 timestamp = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+}
+
+message RpcBlockVerboseData{
+  string hash = 1;
+  double difficulty = 11;
+  string selectedParentHash = 13;
+  repeated string transactionIDs = 14;
+  bool isHeaderOnly = 15;
+  uint64 blueScore = 16;
+  repeated string childrenHashes = 17;
+}
+
+message RpcTransaction {
+  uint32 version = 1;
+  repeated RpcTransactionInput inputs = 2;
+  repeated RpcTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payload = 8;
+  RpcTransactionVerboseData verboseData = 9;
+}
+
+message RpcTransactionInput {
+  RpcOutpoint previousOutpoint = 1;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+  RpcTransactionInputVerboseData verboseData = 4;
+}
+
+message RpcScriptPublicKey {
+  uint32 version = 1;
+  string scriptPublicKey = 2;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  RpcScriptPublicKey scriptPublicKey = 2;
+  RpcTransactionOutputVerboseData verboseData = 3;
+}
+
+message RpcOutpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message RpcUtxoEntry {
+  uint64 amount = 1;
+  RpcScriptPublicKey scriptPublicKey = 2;
+  uint64 blockBlueScore = 3;
+  bool isCoinbase = 4;
+}
+
+message RpcTransactionVerboseData{
+  string txId = 1;
+  string hash = 2;
+  uint64 size = 3;
+  string blockHash = 12;
+  uint64 blockTime = 14;
+}
+
+message RpcTransactionInputVerboseData{
+}
+
+message RpcTransactionOutputVerboseData{
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
+}
+
 // GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
 //
 // Possible networks are: Mainnet, Testnet, Simnet, Devnet
@@ -36,22 +120,6 @@ message GetCurrentNetworkResponseMessage{
 // See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
   RpcBlock block = 2;
-}
-
-message RpcBlock {
-  RpcBlockHeader header = 1;
-  repeated RpcTransaction transactions = 2;
-}
-
-message RpcBlockHeader {
-  uint32 version = 1;
-  repeated string parentHashes = 2;
-  string hashMerkleRoot = 3;
-  string acceptedIdMerkleRoot = 4;
-  string utxoCommitment = 5;
-  int64 timestamp = 6;
-  uint32 bits = 7;
-  uint64 nonce = 8;
 }
 
 message SubmitBlockResponseMessage{
@@ -100,7 +168,7 @@ message NotifyBlockAddedResponseMessage{
 //
 // See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
-  BlockVerboseData blockVerboseData = 2;
+  RpcBlock block = 3;
 }
 
 // GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
@@ -154,7 +222,7 @@ message GetMempoolEntriesResponseMessage{
 
 message MempoolEntry{
   uint64 fee = 1;
-  TransactionVerboseData transactionVerboseData = 2;
+  RpcTransaction transaction = 3;
 }
 
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
@@ -256,40 +324,8 @@ message GetBlockRequestMessage{
 }
 
 message GetBlockResponseMessage{
-  string blockHash = 1;
-  BlockVerboseData blockVerboseData = 2;
+  RpcBlock block = 3;
   RPCError error = 1000;
-}
-
-message BlockVerboseData{
-  string hash = 1;
-  RpcBlock block = 18;
-  repeated TransactionVerboseData transactionVerboseData = 7;
-  double difficulty = 11;
-  repeated string childrenHashes = 17;
-  string selectedParentHash = 13;
-  repeated string transactionIDs = 14;
-  bool isHeaderOnly = 15;
-  uint64 blueScore = 16;
-}
-
-message TransactionVerboseData{
-  string txId = 1;
-  string hash = 2;
-  uint64 size = 3;
-  repeated TransactionVerboseInput transactionVerboseInputs = 10;
-  repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
-  string blockHash = 12;
-  uint64 blockTime = 14;
-  RpcTransaction transaction = 15;
-}
-
-message TransactionVerboseInput{
-}
-
-message TransactionVerboseOutput{
-  string scriptPublicKeyType = 5;
-  string scriptPublicKeyAddress = 6;
 }
 
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
@@ -329,8 +365,7 @@ message GetBlocksRequestMessage{
 }
 
 message GetBlocksResponseMessage{
-  repeated string blockHashes = 1;
-  repeated BlockVerboseData blockVerboseData = 2;
+  repeated RpcBlock blocks = 3;
   RPCError error = 1000;
 }
 
@@ -446,44 +481,6 @@ message StopNotifyingUtxosChangedRequestMessage {
 
 message StopNotifyingUtxosChangedResponseMessage {
   RPCError error = 1000;
-}
-
-message RpcTransaction {
-  uint32 version = 1;
-  repeated RpcTransactionInput inputs = 2;
-  repeated RpcTransactionOutput outputs = 3;
-  uint64 lockTime = 4;
-  string subnetworkId = 5;
-  uint64 gas = 6;
-  string payload = 8;
-}
-
-message RpcTransactionInput {
-  RpcOutpoint previousOutpoint = 1;
-  string signatureScript = 2;
-  uint64 sequence = 3;
-}
-
-message RpcScriptPublicKey {
-  uint32 version = 1;
-  string scriptPublicKey = 2;
-}
-
-message RpcTransactionOutput {
-  uint64 amount = 1;
-  RpcScriptPublicKey scriptPublicKey = 2;
-}
-
-message RpcOutpoint {
-  string transactionId = 1;
-  uint32 index = 2;
-}
-
-message RpcUtxoEntry {
-  uint64 amount = 1;
-  RpcScriptPublicKey scriptPublicKey = 2;
-  uint64 blockBlueScore = 3;
-  bool isCoinbase = 4;
 }
 
 // GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
