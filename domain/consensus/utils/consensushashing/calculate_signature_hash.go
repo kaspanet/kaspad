@@ -14,15 +14,25 @@ type SigHashType uint32
 
 // Hash type bits from the end of a signature.
 const (
-	SigHashAll          SigHashType = 0x1
-	SigHashNone         SigHashType = 0x2
-	SigHashSingle       SigHashType = 0x3
-	SigHashAnyOneCanPay SigHashType = 0x80
+	SigHashAll          SigHashType = 0b00000001
+	SigHashNone         SigHashType = 0b00000010
+	SigHashSingle       SigHashType = 0b00000100
+	SigHashAnyOneCanPay SigHashType = 0b10000000
 
 	// SigHashMask defines the number of bits of the hash type which is used
 	// to identify which outputs are signed.
-	SigHashMask = 0x1f
+	SigHashMask = 0b00000111
 )
+
+func (sht SigHashType) isStandardSigHashType() bool {
+	switch sht {
+	case SigHashAll, SigHashNone, SigHashSingle,
+		SigHashAll | SigHashAnyOneCanPay, SigHashNone | SigHashAnyOneCanPay, SigHashSingle | SigHashAnyOneCanPay:
+		return true
+	default:
+		return false
+	}
+}
 
 func (sht SigHashType) isSigHashAll() bool {
 	return sht&SigHashMask == SigHashAll
@@ -52,6 +62,10 @@ type SighashReusedValues struct {
 // This returns error only if one of the provided parameters are consensus-invalid.
 func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
 	reusedValues *SighashReusedValues) (*externalapi.DomainHash, error) {
+
+	if !hashType.isStandardSigHashType() {
+		return nil, errors.Errorf("SigHashType %d is not a valid SigHash type", hashType)
+	}
 
 	txIn := tx.Inputs[inputIndex]
 	prevScriptPublicKey := txIn.UTXOEntry.ScriptPublicKey()
