@@ -295,9 +295,9 @@ func BenchmarkCalculateSignatureHash(b *testing.B) {
 		b.Run(fmt.Sprintf("%d-inputs-and-outputs", size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				reusedValues := &consensushashing.SighashReusedValues{}
-				sigHashType := sigHashTypes[i%len(sigHashTypes)]
-				for idx := 0; idx < len(tx.Inputs); idx++ {
-					_, err := consensushashing.CalculateSignatureHash(tx, idx, sigHashType, reusedValues)
+				for inputIndex := range tx.Inputs {
+					sigHashType := sigHashTypes[inputIndex%len(sigHashTypes)]
+					_, err := consensushashing.CalculateSignatureHash(tx, inputIndex, sigHashType, reusedValues)
 					if err != nil {
 						b.Fatalf("Error from CalculateSignatureHash: %+v", err)
 					}
