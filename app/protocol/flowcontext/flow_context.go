@@ -61,6 +61,8 @@ type FlowContext struct {
 
 	orphans      map[externalapi.DomainHash]*externalapi.DomainBlock
 	orphansMutex sync.RWMutex
+
+	shutdownChan chan struct{}
 }
 
 // New returns a new instance of FlowContext.
@@ -79,7 +81,19 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
 		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		timeStarted:                 mstime.Now().UnixMilliseconds(),
+		shutdownChan:                make(chan struct{}),
 	}
+}
+
+// Close signals to all flows the the protocol manager is closed.
+func (f *FlowContext) Close() {
+	close(f.shutdownChan)
+}
+
+// ShutdownChan is a chan where flows can subscribe to shutdown
+// event.
+func (f *FlowContext) ShutdownChan() <-chan struct{} {
+	return f.shutdownChan
 }
 
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler

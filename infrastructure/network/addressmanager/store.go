@@ -199,13 +199,12 @@ func (as *addressStore) deserializeAddressKey(serializedKey []byte) addressKey {
 }
 
 func (as *addressStore) serializeNetAddress(netAddress *appmessage.NetAddress) []byte {
-	serializedSize := 16 + 2 + 8 + 8 // ipv6 + port + timestamp + services
+	serializedSize := 16 + 2 + 8 // ipv6 + port + timestamp
 	serializedNetAddress := make([]byte, serializedSize)
 
 	copy(serializedNetAddress[:], netAddress.IP[:])
 	binary.LittleEndian.PutUint16(serializedNetAddress[16:], netAddress.Port)
 	binary.LittleEndian.PutUint64(serializedNetAddress[18:], uint64(netAddress.Timestamp.UnixMilliseconds()))
-	binary.LittleEndian.PutUint64(serializedNetAddress[26:], uint64(netAddress.Services))
 
 	return serializedNetAddress
 }
@@ -216,12 +215,10 @@ func (as *addressStore) deserializeNetAddress(serializedNetAddress []byte) *appm
 
 	port := binary.LittleEndian.Uint16(serializedNetAddress[16:])
 	timestamp := mstime.UnixMilliseconds(int64(binary.LittleEndian.Uint64(serializedNetAddress[18:])))
-	services := appmessage.ServiceFlag(binary.LittleEndian.Uint64(serializedNetAddress[26:]))
 
 	return &appmessage.NetAddress{
 		IP:        ip,
 		Port:      port,
 		Timestamp: timestamp,
-		Services:  services,
 	}
 }

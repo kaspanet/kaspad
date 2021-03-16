@@ -72,6 +72,8 @@ func (a *ComponentManager) Stop() {
 		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
+	a.protocolManager.Close()
+
 	return
 }
 

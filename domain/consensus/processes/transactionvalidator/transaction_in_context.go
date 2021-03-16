@@ -55,26 +55,25 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
 	if err != nil {
 		return err
 	}
 
-	txBlueScore := ghostdagData.BlueScore()
 	var missingOutpoints []*externalapi.DomainOutpoint
 	for _, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 		if utxoEntry == nil {
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
-			originBlueScore := utxoEntry.BlockBlueScore()
-			blueScoreSincePrev := txBlueScore - originBlueScore
-			if blueScoreSincePrev < v.blockCoinbaseMaturity {
+			originDAAScore := utxoEntry.BlockDAAScore()
+			daaScoreSincePrev := povDAAScore - originDAAScore
+			if daaScoreSincePrev < v.blockCoinbaseMaturity {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
-					"transaction output %s from blue score %d "+
-					"to blue score %d before required maturity "+
+					"transaction output %s from DAA score %d "+
+					"to DAA score %d before required maturity "+
 					"of %d", input.PreviousOutpoint,
-					originBlueScore, txBlueScore,
+					originDAAScore, povDAAScore,
 					v.blockCoinbaseMaturity)
 			}
 		}
@@ -162,12 +161,12 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
 	if err != nil {
 		return err
 	}
 
-	if !v.sequenceLockActive(sequenceLock, ghostdagData.BlueScore(), medianTime) {
+	if !v.sequenceLockActive(sequenceLock, daaScore, medianTime) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -223,7 +222,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &sequenceLock{Milliseconds: -1, BlockBlueScore: -1}
+	sequenceLock := &sequenceLock{Milliseconds: -1, BlockDAAScore: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -240,10 +239,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			continue
 		}
 
-		// If the input blue score is set to the mempool blue score, then we
-		// assume the transaction makes it into the next block when
-		// evaluating its sequence blocks.
-		inputBlueScore := utxoEntry.BlockBlueScore()
+		inputDAAScore := utxoEntry.BlockDAAScore()
 
 		// Given a sequence number, we apply the relative time lock
 		// mask in order to obtain the time lock delta required before
@@ -271,14 +267,19 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			baseHash := povBlockHash
 
 			for {
-				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
-					baseGHOSTDAGData.SelectedParent())
+				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
 				if err != nil {
 					return nil, err
 				}
 
-				if selectedParentGHOSTDAGData.BlueScore() <= inputBlueScore {
+				if selectedParentDAAScore <= inputDAAScore {
 					break
+				}
+
+				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
+					baseGHOSTDAGData.SelectedParent())
+				if err != nil {
+					return nil, err
 				}
 
 				baseHash = baseGHOSTDAGData.SelectedParent()
@@ -303,12 +304,12 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 		default:
 			// The relative lock-time for this input is expressed
 			// in blocks so we calculate the relative offset from
-			// the input's blue score as its converted absolute
+			// the input's DAA score as its converted absolute
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
-			blockBlueScore := int64(inputBlueScore) + relativeLock - 1
-			if blockBlueScore > sequenceLock.BlockBlueScore {
-				sequenceLock.BlockBlueScore = blockBlueScore
+			blockDAAScore := int64(inputDAAScore) + relativeLock - 1
+			if blockDAAScore > sequenceLock.BlockDAAScore {
+				sequenceLock.BlockDAAScore = blockDAAScore
 			}
 		}
 	}
@@ -320,27 +321,27 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 }
 
 // sequenceLock represents the converted relative lock-time in seconds, and
-// absolute block-blue-score for a transaction input's relative lock-times.
+// absolute block-daa-score for a transaction input's relative lock-times.
 // According to sequenceLock, after the referenced input has been confirmed
 // within a block, a transaction spending that input can be included into a
 // block either after 'seconds' (according to past median time), or once the
-// 'BlockBlueScore' has been reached.
+// 'BlockDAAScore' has been reached.
 type sequenceLock struct {
-	Milliseconds   int64
-	BlockBlueScore int64
+	Milliseconds  int64
+	BlockDAAScore int64
 }
 
 // sequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
-// blue score or time sufficient for their relative lock-time maturity.
-func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, blockBlueScore uint64,
+// DAA score or time sufficient for their relative lock-time maturity.
+func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, blockDAAScore uint64,
 	medianTimePast int64) bool {
 
-	// If either the milliseconds, or blue score relative-lock time has not yet
+	// If either the milliseconds, or DAA score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
 	if sequenceLock.Milliseconds >= medianTimePast ||
-		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
+		sequenceLock.BlockDAAScore >= int64(blockDAAScore) {
 		return false
 	}
 

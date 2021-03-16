@@ -24,6 +24,7 @@ type consensusStateManager struct {
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
+	difficultyManager     model.DifficultyManager
 
 	headersSelectedTipStore model.HeaderSelectedTipStore
 	blockStatusStore        model.BlockStatusStore
@@ -36,6 +37,7 @@ type consensusStateManager struct {
 	acceptanceDataStore     model.AcceptanceDataStore
 	blockHeaderStore        model.BlockHeaderStore
 	pruningStore            model.PruningStore
+	daaBlocksStore          model.DAABlocksStore
 
 	stores []model.Store
 }
@@ -59,6 +61,7 @@ func New(
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
 	finalityManager model.FinalityManager,
+	difficultyManager model.DifficultyManager,
 
 	blockStatusStore model.BlockStatusStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -70,7 +73,8 @@ func New(
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockHeaderStore model.BlockHeaderStore,
 	headersSelectedTipStore model.HeaderSelectedTipStore,
-	pruningStore model.PruningStore) (model.ConsensusStateManager, error) {
+	pruningStore model.PruningStore,
+	daaBlocksStore model.DAABlocksStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
 		pruningDepth:           pruningDepth,
@@ -90,6 +94,7 @@ func New(
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,
+		difficultyManager:     difficultyManager,
 
 		multisetStore:           multisetStore,
 		blockStore:              blockStore,
@@ -102,6 +107,7 @@ func New(
 		blockHeaderStore:        blockHeaderStore,
 		headersSelectedTipStore: headersSelectedTipStore,
 		pruningStore:            pruningStore,
+		daaBlocksStore:          daaBlocksStore,
 
 		stores: []model.Store{
 			consensusStateStore,

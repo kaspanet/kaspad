@@ -11,29 +11,28 @@ import (
 // `maxBlueScoreDifference`, if non-zero.
 // The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
 func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	// If lowHash is not in the selectedParentChain of highHash - SelectedChildIterator will fail.
 	// Therefore, we traverse down lowHash's selectedParentChain until we reach a block that is in
 	// highHash's selectedParentChain.
 	// We keep originalLowHash to filter out blocks in it's past later down the road
 	originalLowHash := lowHash
-	var err error
 	lowHash, err = sm.findLowHashInHighHashSelectedParentChain(lowHash, highHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if lowBlockGHOSTDAGData.BlueScore() > highBlockGHOSTDAGData.BlueScore() {
-		return nil, errors.Errorf("low hash blueScore > high hash blueScore (%d > %d)",
+		return nil, nil, errors.Errorf("low hash blueScore > high hash blueScore (%d > %d)",
 			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
 	}
 
@@ -49,7 +48,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		// blue.
 		highHash, err = sm.findHighHashAccordingToMaxBlueScoreDifference(lowHash, highHash, maxBlueScoreDifference, highBlockGHOSTDAGData, lowBlockGHOSTDAGData)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -57,13 +56,13 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 	blockHashes := []*externalapi.DomainHash{}
 	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer iterator.Close()
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		current, err := iterator.Get()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		// Both blue and red merge sets are topologically sorted, but not the concatenation of the two.
 		// We require the blocks to be topologically sorted. In addition,  for optimal performance,
@@ -73,14 +72,14 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		// Therefore we first append the selectedParent, then the rest of blocks in ghostdag order.
 		sortedMergeSet, err := sm.getSortedMergeSet(current)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// append to blockHashes all blocks in sortedMergeSet which are not in the past of originalLowHash
 		for _, blockHash := range sortedMergeSet {
 			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(blockHash, originalLowHash)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			if isInPastOfOriginalLowHash {
 				continue
@@ -94,7 +93,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		blockHashes = append(blockHashes, highHash)
 	}
 
-	return blockHashes, nil
+	return blockHashes, highHash, nil
 }
 
 func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -226,7 +225,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 			lowHash, highHash)
 	}
 
-	hashesBetween, err := sm.antiPastHashesBetween(lowHash, highHash, 0)
+	hashesBetween, _, err := sm.antiPastHashesBetween(lowHash, highHash, 0)
 	if err != nil {
 		return nil, err
 	}

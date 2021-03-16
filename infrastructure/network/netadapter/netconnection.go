@@ -77,7 +77,7 @@ func (c *NetConnection) IsOutbound() bool {
 
 // NetAddress returns the NetAddress associated with this connection
 func (c *NetConnection) NetAddress() *appmessage.NetAddress {
-	return appmessage.NewNetAddress(c.connection.Address(), 0)
+	return appmessage.NewNetAddress(c.connection.Address())
 }
 
 func (c *NetConnection) setOnDisconnectedHandler(onDisconnectedHandler server.OnDisconnectedHandler) {

@@ -132,7 +132,7 @@ func TestUTXOIndex(t *testing.T) {
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
 		}
-		if notificationEntry.UTXOEntry.BlockBlueScore != foundResponseEntry.UTXOEntry.BlockBlueScore {
+		if notificationEntry.UTXOEntry.BlockDAAScore != foundResponseEntry.UTXOEntry.BlockDAAScore {
 			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)

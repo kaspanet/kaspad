@@ -4,7 +4,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/pkg/errors"
 )
 
 type coinbaseManager struct {
@@ -15,6 +17,7 @@ type coinbaseManager struct {
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
+	daaBlocksStore      model.DAABlocksStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
@@ -30,9 +33,14 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		return nil, err
 	}
 
+	daaAddedBlocksSet, err := c.daaAddedBlocksSet(blockHash)
+	if err != nil {
+		return nil, err
+	}
+
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
 	for i, blue := range ghostdagData.MergeSetBlues() {
-		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i])
+		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i], daaAddedBlocksSet)
 		if err != nil {
 			return nil, err
 		}
@@ -40,6 +48,15 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		if hasReward {
 			txOuts = append(txOuts, txOut)
 		}
+	}
+
+	txOut, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasReward {
+		txOuts = append(txOuts, txOut)
 	}
 
 	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData)
@@ -58,24 +75,25 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 	}, nil
 }
 
+func (c *coinbaseManager) daaAddedBlocksSet(blockHash *externalapi.DomainHash) (hashset.HashSet, error) {
+	daaAddedBlocks, err := c.daaBlocksStore.DAAAddedBlocks(c.databaseContext, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return hashset.NewFromSlice(daaAddedBlocks...), nil
+}
+
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
 func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
-	blockAcceptanceData *externalapi.BlockAcceptanceData) (*externalapi.DomainTransactionOutput, bool, error) {
+	blockAcceptanceData *externalapi.BlockAcceptanceData,
+	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, bool, error) {
 
-	totalFees := uint64(0)
-	for _, txAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-		if txAcceptanceData.IsAccepted {
-			totalFees += txAcceptanceData.Fee
-		}
-	}
-
-	subsidy, err := c.calcBlockSubsidy(blueBlock)
+	totalReward, err := c.calcMergedBlockReward(blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
 	if err != nil {
 		return nil, false, err
 	}
-
-	totalReward := subsidy + totalFees
 
 	if totalReward == 0 {
 		return nil, false, nil
@@ -95,6 +113,31 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Doma
 	return txOut, true, nil
 }
 
+func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(ghostdagData *model.BlockGHOSTDAGData,
+	acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
+	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, bool, error) {
+
+	totalReward := uint64(0)
+	mergeSetBluesCount := len(ghostdagData.MergeSetBlues())
+	for i, red := range ghostdagData.MergeSetReds() {
+		reward, err := c.calcMergedBlockReward(red, acceptanceData[mergeSetBluesCount+i], daaAddedBlocksSet)
+		if err != nil {
+			return nil, false, err
+		}
+
+		totalReward += reward
+	}
+
+	if totalReward == 0 {
+		return nil, false, nil
+	}
+
+	return &externalapi.DomainTransactionOutput{
+		Value:           totalReward,
+		ScriptPublicKey: coinbaseData.ScriptPublicKey,
+	}, true, nil
+}
+
 // calcBlockSubsidy returns the subsidy amount a block at the provided blue score
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
@@ -110,13 +153,40 @@ func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (u
 		return c.baseSubsidy, nil
 	}
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
+	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, blockHash)
 	if err != nil {
 		return 0, err
 	}
 
-	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
-	return c.baseSubsidy >> uint(ghostdagData.BlueScore()/c.subsidyReductionInterval), nil
+	// Equivalent to: baseSubsidy / 2^(daaScore/subsidyHalvingInterval)
+	return c.baseSubsidy >> uint(daaScore/c.subsidyReductionInterval), nil
+}
+
+func (c *coinbaseManager) calcMergedBlockReward(blockHash *externalapi.DomainHash,
+	blockAcceptanceData *externalapi.BlockAcceptanceData, mergingBlockDAAAddedBlocksSet hashset.HashSet) (uint64, error) {
+
+	if !blockHash.Equal(blockAcceptanceData.BlockHash) {
+		return 0, errors.Errorf("blockAcceptanceData.BlockHash is expected to be %s but got %s",
+			blockHash, blockAcceptanceData.BlockHash)
+	}
+
+	if !mergingBlockDAAAddedBlocksSet.Contains(blockHash) {
+		return 0, nil
+	}
+
+	totalFees := uint64(0)
+	for _, txAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+		if txAcceptanceData.IsAccepted {
+			totalFees += txAcceptanceData.Fee
+		}
+	}
+
+	subsidy, err := c.calcBlockSubsidy(blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	return subsidy + totalFees, nil
 }
 
 // New instantiates a new CoinbaseManager
@@ -128,7 +198,8 @@ func New(
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
-	acceptanceDataStore model.AcceptanceDataStore) model.CoinbaseManager {
+	acceptanceDataStore model.AcceptanceDataStore,
+	daaBlocksStore model.DAABlocksStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -139,5 +210,6 @@ func New(
 
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
+		daaBlocksStore:      daaBlocksStore,
 	}
 }

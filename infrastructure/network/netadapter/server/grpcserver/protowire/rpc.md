@@ -1280,7 +1280,7 @@ See: UtxosChangedNotificationMessage
 | ----- | ---- | ----- | ----------- |
 | amount | [uint64](#uint64) |  |  |
 | scriptPublicKey | [RpcScriptPublicKey](#protowire.RpcScriptPublicKey) |  |  |
-| blockBlueScore | [uint64](#uint64) |  |  |
+| blockDaaScore | [uint64](#uint64) |  |  |
 | isCoinbase | [bool](#bool) |  |  |
 
 
