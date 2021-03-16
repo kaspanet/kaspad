@@ -19,7 +19,7 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// type assertions first.
 	switch e := element.(type) {
 	case []byte:
-		err := WriteElement(w, len(e))
+		err := WriteElement(w, uint64(len(e)))
 		if err != nil {
 			return err
 		}

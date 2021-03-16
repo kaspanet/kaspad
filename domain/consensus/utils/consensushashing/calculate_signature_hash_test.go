@@ -310,7 +310,7 @@ func BenchmarkCalculateSignatureHash(b *testing.B) {
 func generateTransaction(b *testing.B, sigHashTypes []consensushashing.SigHashType, inputAndOutputSizes int) *externalapi.DomainTransaction {
 	sourceScript := getSourceScript(b)
 	tx := &externalapi.DomainTransaction{
-		Version:      1,
+		Version:      0,
 		Inputs:       generateInputs(inputAndOutputSizes, sourceScript),
 		Outputs:      generateOutputs(inputAndOutputSizes, sourceScript),
 		LockTime:     123456789,

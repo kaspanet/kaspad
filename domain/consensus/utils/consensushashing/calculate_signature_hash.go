@@ -71,11 +71,11 @@ func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, h
 	prevScriptPublicKey := txIn.UTXOEntry.ScriptPublicKey()
 
 	if tx.Version > constants.MaxTransactionVersion {
-		return nil, errors.Errorf("Transaction version is unkown.")
+		return nil, errors.Errorf("Transaction version is unknown.")
 	}
 
 	if prevScriptPublicKey.Version > constants.MaxScriptPublicKeyVersion {
-		return nil, errors.Errorf("Script version is unkown.")
+		return nil, errors.Errorf("Script version is unknown.")
 	}
 
 	return calculateSignatureHash(tx, inputIndex, txIn, prevScriptPublicKey, hashType, reusedValues)
