@@ -2183,24 +2183,6 @@
   ],
   [
     "0",
-    "SHA256",
-    "",
-    "OK"
-  ],
-  [
-    "0",
-    "SHA256",
-    "",
-    "OK"
-  ],
-  [
-    "0",
-    "BLAKE2B",
-    "",
-    "OK"
-  ],
-  [
-    "0",
     "BLAKE2B",
     "",
     "OK"
@@ -4750,18 +4732,6 @@
   [
     "1 1",
     "WITHIN",
-    "",
-    "INVALID_STACK_OPERATION"
-  ],
-  [
-    "",
-    "SHA256 1",
-    "",
-    "INVALID_STACK_OPERATION"
-  ],
-  [
-    "",
-    "SHA256 1",
     "",
     "INVALID_STACK_OPERATION"
   ],
