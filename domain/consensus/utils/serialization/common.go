@@ -18,6 +18,16 @@ func WriteElement(w io.Writer, element interface{}) error {
 	// Attempt to write the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
+	case []byte:
+		err := WriteElement(w, uint64(len(e)))
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(e)
+		if err != nil {
+			return err
+		}
+		return nil
 	case int16:
 		err := binaryserializer.PutUint16(w, uint16(e))
 		if err != nil {
@@ -85,6 +95,13 @@ func WriteElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case *externalapi.DomainHash:
+		_, err := w.Write(e.ByteSlice())
+		if err != nil {
+			return err
+		}
+		return nil
+
+	case externalapi.DomainTransactionID:
 		_, err := w.Write(e.ByteSlice())
 		if err != nil {
 			return err
