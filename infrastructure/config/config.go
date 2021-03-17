@@ -58,10 +58,9 @@ var (
 	DefaultHomeDir = util.AppDataDir("kaspad", false)
 
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
-	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
+	defaultDataDir     = filepath.Join(DefaultHomeDir)
 	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
 	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
-	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
 )
 
 // RunServiceCommand is only set to a real function on Windows. It is used
@@ -74,7 +73,7 @@ var RunServiceCommand func(string) error
 type Flags struct {
 	ShowVersion          bool          `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
-	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
+	HomeDir              string        `short:"b" long:"homedir" description:"Directory to store data"`
 	LogDir               string        `long:"logdir" description:"Directory to log output."`
 	AddPeers             []string      `short:"a" long:"addpeer" description:"Add a peer to connect with at startup"`
 	ConnectPeers         []string      `long:"connect" description:"Connect only to the specified peers at startup"`
@@ -174,8 +173,7 @@ func defaultFlags() *Flags {
 		RPCMaxClients:        defaultMaxRPCClients,
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
-		DataDir:              defaultDataDir,
-		LogDir:               defaultLogDir,
+		HomeDir:              defaultDataDir,
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
 		BlockMaxMass:         defaultBlockMaxMass,
@@ -311,19 +309,19 @@ func LoadConfig() (*Config, error) {
 	}
 	cfg.RelayNonStd = relayNonStd
 
-	// Append the network type to the data directory so it is "namespaced"
-	// per network. In addition to the block database, there are other
-	// pieces of data that are saved to disk such as address manager state.
+	cfg.HomeDir = cleanAndExpandPath(cfg.HomeDir)
+	// Append the network type to the home directory so it is "namespaced"
+	// per network.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
-	cfg.DataDir = filepath.Join(cfg.DataDir, cfg.NetParams().Name)
+	cfg.HomeDir = filepath.Join(cfg.HomeDir, cfg.NetParams().Name)
 
-	// Append the network type to the log directory so it is "namespaced"
-	// per network in the same fashion as the data directory.
+	// Logs directory is usually under the home directory, unless otherwise specified
+	if cfg.LogDir == "" {
+		cfg.LogDir = filepath.Join(cfg.HomeDir, defaultLogDirname)
+	}
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
-	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.NetParams().Name)
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.LogLevel == "show" {
