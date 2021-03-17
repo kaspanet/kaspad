@@ -13,12 +13,12 @@ import (
 	"unicode"
 )
 
-// appDataDir returns an operating system specific directory to be used for
-// storing application data for an application. See AppDataDir for more
+// appDir returns an operating system specific directory to be used for
+// storing application data for an application. See AppDir for more
 // details. This unexported version takes an operating system argument
 // primarily to enable the testing package to properly test the function by
 // forcing an operating system that is not the currently one.
-func appDataDir(goos, appName string, roaming bool) string {
+func appDir(goos, appName string, roaming bool) string {
 	if appName == "" || appName == "." {
 		return "."
 	}
@@ -79,7 +79,7 @@ func appDataDir(goos, appName string, roaming bool) string {
 	return "."
 }
 
-// AppDataDir returns an operating system specific directory to be used for
+// AppDir returns an operating system specific directory to be used for
 // storing application data for an application.
 //
 // The appName parameter is the name of the application the data directory is
@@ -95,11 +95,11 @@ func appDataDir(goos, appName string, roaming bool) string {
 // (%LOCALAPPDATA%) that is used by default.
 //
 // Example results:
-//  dir := AppDataDir("myapp", false)
+//  dir := AppDir("myapp", false)
 //   POSIX (Linux/BSD): ~/.myapp
 //   Mac OS: $HOME/Library/Application Support/Myapp
 //   Windows: %LOCALAPPDATA%\Myapp
 //   Plan 9: $home/myapp
-func AppDataDir(appName string, roaming bool) string {
-	return appDataDir(runtime.GOOS, appName, roaming)
+func AppDir(appName string, roaming bool) string {
+	return appDir(runtime.GOOS, appName, roaming)
 }

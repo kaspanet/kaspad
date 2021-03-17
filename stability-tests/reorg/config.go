@@ -17,8 +17,8 @@ const (
 
 var (
 	// Default configuration options
-	defaultLogFile    = filepath.Join(common.DefaultHomeDir, defaultLogFilename)
-	defaultErrLogFile = filepath.Join(common.DefaultHomeDir, defaultErrLogFilename)
+	defaultLogFile    = filepath.Join(common.DefaultAppDir, defaultLogFilename)
+	defaultErrLogFile = filepath.Join(common.DefaultAppDir, defaultErrLogFilename)
 )
 
 type configFlags struct {

@@ -6,7 +6,9 @@ package txscript
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
@@ -39,20 +41,21 @@ const (
 
 // Engine is the virtual machine that executes scripts.
 type Engine struct {
-	scriptVersion   uint16
-	scripts         [][]parsedOpcode
-	scriptIdx       int
-	scriptOff       int
-	dstack          stack // data stack
-	astack          stack // alt stack
-	tx              externalapi.DomainTransaction
-	txIdx           int
-	condStack       []int
-	numOps          int
-	flags           ScriptFlags
-	sigCache        *SigCache
-	isP2SH          bool     // treat execution as pay-to-script-hash
-	savedFirstStack [][]byte // stack from first script for ps2h scripts
+	scriptVersion       uint16
+	scripts             [][]parsedOpcode
+	scriptIdx           int
+	scriptOff           int
+	dstack              stack // data stack
+	astack              stack // alt stack
+	tx                  externalapi.DomainTransaction
+	txIdx               int
+	condStack           []int
+	numOps              int
+	flags               ScriptFlags
+	sigCache            *SigCache
+	sigHashReusedValues *consensushashing.SighashReusedValues
+	isP2SH              bool     // treat execution as pay-to-script-hash
+	savedFirstStack     [][]byte // stack from first script for ps2h scripts
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -356,17 +359,6 @@ func (vm *Engine) currentScript() []parsedOpcode {
 	return vm.scripts[vm.scriptIdx]
 }
 
-// checkHashTypeEncoding returns whether or not the passed hashtype adheres to
-// the strict encoding requirements if enabled.
-func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
-	sigHashType := hashType & ^SigHashAnyOneCanPay
-	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
-		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
-		return scriptError(ErrInvalidSigHashType, str)
-	}
-	return nil
-}
-
 // checkPubKeyEncoding returns whether or not the passed public key adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
@@ -436,7 +428,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // transaction, and input index. The flags modify the behavior of the script
 // engine according to the description provided by each flag.
 func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.DomainTransaction, txIdx int, flags ScriptFlags,
-	sigCache *SigCache) (*Engine, error) {
+	sigCache *SigCache, sighashReusedValues *consensushashing.SighashReusedValues) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
 	if txIdx < 0 || txIdx >= len(tx.Inputs) {
@@ -498,6 +490,8 @@ func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.Domain
 
 	vm.tx = *tx
 	vm.txIdx = txIdx
+
+	vm.sigHashReusedValues = sighashReusedValues
 
 	return &vm, nil
 }

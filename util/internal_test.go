@@ -16,10 +16,10 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-// TstAppDataDir makes the internal appDataDir function available to the test
+// TstAppDataDir makes the internal appDir function available to the test
 // package.
 func TstAppDataDir(goos, appName string, roaming bool) string {
-	return appDataDir(goos, appName, roaming)
+	return appDir(goos, appName, roaming)
 }
 
 func TstAddressPubKeyHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *AddressPubKeyHash {

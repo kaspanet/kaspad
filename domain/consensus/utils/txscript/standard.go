@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
@@ -265,7 +266,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // as public keys which are invalid will return a nil address.
 func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
 	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
-		return NonStandardTy, nil, errors.Errorf("Script version is unkown.")
+		return NonStandardTy, nil, errors.Errorf("Script version is unknown.")
 	}
 	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey.Script)

@@ -24,9 +24,9 @@ const (
 
 var (
 	// Default configuration options
-	defaultHomeDir    = util.AppDataDir("kaspaminer", false)
-	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
-	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
+	defaultAppDir     = util.AppDir("kaspaminer", false)
+	defaultLogFile    = filepath.Join(defaultAppDir, defaultLogFilename)
+	defaultErrLogFile = filepath.Join(defaultAppDir, defaultErrLogFilename)
 	defaultRPCServer  = "localhost"
 )
 
