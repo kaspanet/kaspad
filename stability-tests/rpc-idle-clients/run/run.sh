@@ -2,7 +2,7 @@
 rm -rf /tmp/kaspad-temp
 
 NUM_CLIENTS=1000
-kaspad --devnet --datadir=/tmp/kaspad-temp --profile=6061 --rpcmaxwebsockets=$NUM_CLIENTS &
+kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 --rpcmaxwebsockets=$NUM_CLIENTS &
 KASPAD_PID=$!
 KASPAD_KILLED=0
 function killKaspadIfNotKilled() {

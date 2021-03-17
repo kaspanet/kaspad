@@ -31,7 +31,7 @@ func startNode(name string, rpcAddress, listen, connect, profilePort, dataDir st
 	args := []string{
 		"kaspad",
 		common.NetworkCliArgumentFromNetParams(activeConfig().NetParams()),
-		"--datadir", dataDir,
+		"--appdir", dataDir,
 		"--logdir", dataDir,
 		"--rpclisten", rpcAddress,
 		"--listen", listen,
