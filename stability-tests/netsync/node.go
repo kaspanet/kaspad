@@ -35,9 +35,11 @@ func startNode(name string, rpcAddress, listen, connect, profilePort, dataDir st
 		"--logdir", dataDir,
 		"--rpclisten", rpcAddress,
 		"--listen", listen,
-		"--connect", connect,
 		"--profile", profilePort,
 		"--loglevel", "debug",
+	}
+	if connect != "" {
+		args = append(args, "--connect", connect)
 	}
 
 	if activeConfig().OverrideDAGParamsFile != "" {
@@ -132,7 +134,7 @@ func setupSyncer() (*rpc.Client, func(), error) {
 		return nil, nil, err
 	}
 
-	rpcClient, teardown, err := setupNodeWithRPC("SYNCER", syncerListen, syncerRPCAddress, syncedListen,
+	rpcClient, teardown, err := setupNodeWithRPC("SYNCER", syncerListen, syncerRPCAddress, "",
 		syncerProfilePort, syncerDataDir)
 	if err != nil {
 		return nil, nil, err
