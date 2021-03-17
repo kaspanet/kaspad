@@ -10,7 +10,7 @@ import (
 )
 
 // SigHashType represents hash type bits at the end of a signature.
-type SigHashType uint32
+type SigHashType uint8
 
 // Hash type bits from the end of a signature.
 const (
@@ -114,7 +114,7 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 	payloadHash := getPayloadHash(tx, reusedValues)
 	infallibleWriteElement(hashWriter, payloadHash)
 
-	infallibleWriteElement(hashWriter, uint32(hashType))
+	infallibleWriteElement(hashWriter, uint8(hashType))
 
 	return hashWriter.Finalize(), nil
 }
