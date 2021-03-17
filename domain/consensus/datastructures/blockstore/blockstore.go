@@ -11,22 +11,77 @@ import (
 )
 
 var bucket = database.MakeBucket([]byte("blocks"))
-var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
+var countKey = database.MakeBucket(nil).Key([]byte("blocks-countCached"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
-	staging  map[externalapi.DomainHash]*externalapi.DomainBlock
-	toDelete map[externalapi.DomainHash]struct{}
-	cache    *lrucache.LRUCache
-	count    uint64
+	cache       *lrucache.LRUCache
+	countCached uint64
+}
+
+type blockStagingShard struct {
+	blockStore     *blockStore
+	blocksToAdd    map[externalapi.DomainHash]*externalapi.DomainBlock
+	blocksToDelete map[externalapi.DomainHash]struct{}
+}
+
+func (bss blockStagingShard) Commit(dbTx model.DBTransaction) error {
+	for hash, block := range bss.blocksToAdd {
+		blockBytes, err := bss.blockStore.serializeBlock(block)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(bss.blockStore.hashAsKey(&hash), blockBytes)
+		if err != nil {
+			return err
+		}
+		bss.blockStore.cache.Add(&hash, block)
+	}
+
+	for hash := range bss.blocksToDelete {
+		err := dbTx.Delete(bss.blockStore.hashAsKey(&hash))
+		if err != nil {
+			return err
+		}
+		bss.blockStore.cache.Remove(&hash)
+	}
+
+	err := bss.commitCount(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bss *blockStagingShard) commitCount(dbTx model.DBTransaction) error {
+	count := bss.blockStore.count(bss)
+	countBytes, err := bss.blockStore.serializeBlockCount(count)
+	if err != nil {
+		return err
+	}
+	err = dbTx.Put(countKey, countBytes)
+	if err != nil {
+		return err
+	}
+	bss.blockStore.countCached = count
+	return nil
+}
+
+func (bs *blockStore) stagingShard(stagingArea model.StagingArea) *blockStagingShard {
+	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
+		return &blockStagingShard{
+			blockStore:     bs,
+			blocksToAdd:    make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+			blocksToDelete: make(map[externalapi.DomainHash]struct{}),
+		}
+	}).(*blockStagingShard)
 }
 
 // New instantiates a new BlockStore
 func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
-		staging:  make(map[externalapi.DomainHash]*externalapi.DomainBlock),
-		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -53,57 +108,30 @@ func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 			return err
 		}
 	}
-	bs.count = count
+	bs.countCached = count
 	return nil
 }
 
 // Stage stages the given block for the given blockHash
-func (bs *blockStore) Stage(blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
-	bs.staging[*blockHash] = block.Clone()
+func (bs *blockStore) Stage(stagingArea model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
+	stagingShard := bs.stagingShard(stagingArea)
+	stagingShard.blocksToAdd[*blockHash] = block.Clone()
 }
 
-func (bs *blockStore) IsStaged() bool {
-	return len(bs.staging) != 0 || len(bs.toDelete) != 0
-}
-
-func (bs *blockStore) Discard() {
-	bs.staging = make(map[externalapi.DomainHash]*externalapi.DomainBlock)
-	bs.toDelete = make(map[externalapi.DomainHash]struct{})
-}
-
-func (bs *blockStore) Commit(dbTx model.DBTransaction) error {
-	for hash, block := range bs.staging {
-		blockBytes, err := bs.serializeBlock(block)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(bs.hashAsKey(&hash), blockBytes)
-		if err != nil {
-			return err
-		}
-		bs.cache.Add(&hash, block)
-	}
-
-	for hash := range bs.toDelete {
-		err := dbTx.Delete(bs.hashAsKey(&hash))
-		if err != nil {
-			return err
-		}
-		bs.cache.Remove(&hash)
-	}
-
-	err := bs.commitCount(dbTx)
-	if err != nil {
-		return err
-	}
-
-	bs.Discard()
-	return nil
+func (bs *blockStore) IsStaged(stagingArea model.StagingArea) bool {
+	stagingShard := bs.stagingShard(stagingArea)
+	return len(stagingShard.blocksToAdd) != 0 || len(stagingShard.blocksToDelete) != 0
 }
 
 // Block gets the block associated with the given blockHash
-func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	if block, ok := bs.staging[*blockHash]; ok {
+func (bs *blockStore) Block(dbContext model.DBReader, stagingArea model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	stagingShard := bs.stagingShard(stagingArea)
+
+	return bs.block(dbContext, stagingShard, blockHash)
+}
+
+func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStagingShard, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	if block, ok := stagingShard.blocksToAdd[*blockHash]; ok {
 		return block.Clone(), nil
 	}
 
@@ -125,8 +153,10 @@ func (bs *blockStore) Block(dbContext model.DBReader, blockHash *externalapi.Dom
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.
-func (bs *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
-	if _, ok := bs.staging[*blockHash]; ok {
+func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	stagingShard := bs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.blocksToAdd[*blockHash]; ok {
 		return true, nil
 	}
 
@@ -143,11 +173,13 @@ func (bs *blockStore) HasBlock(dbContext model.DBReader, blockHash *externalapi.
 }
 
 // Blocks gets the blocks associated with the given blockHashes
-func (bs *blockStore) Blocks(dbContext model.DBReader, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea model.StagingArea, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+	stagingShard := bs.stagingShard(stagingArea)
+
 	blocks := make([]*externalapi.DomainBlock, len(blockHashes))
 	for i, hash := range blockHashes {
 		var err error
-		blocks[i], err = bs.Block(dbContext, hash)
+		blocks[i], err = bs.block(dbContext, stagingShard, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -156,12 +188,14 @@ func (bs *blockStore) Blocks(dbContext model.DBReader, blockHashes []*externalap
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bs *blockStore) Delete(blockHash *externalapi.DomainHash) {
-	if _, ok := bs.staging[*blockHash]; ok {
-		delete(bs.staging, *blockHash)
+func (bs *blockStore) Delete(stagingArea model.StagingArea, blockHash *externalapi.DomainHash) {
+	stagingShard := bs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.blocksToAdd[*blockHash]; ok {
+		delete(stagingShard.blocksToAdd, *blockHash)
 		return
 	}
-	bs.toDelete[*blockHash] = struct{}{}
+	stagingShard.blocksToDelete[*blockHash] = struct{}{}
 }
 
 func (bs *blockStore) serializeBlock(block *externalapi.DomainBlock) ([]byte, error) {
@@ -182,8 +216,13 @@ func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash.ByteSlice())
 }
 
-func (bs *blockStore) Count() uint64 {
-	return bs.count + uint64(len(bs.staging)) - uint64(len(bs.toDelete))
+func (bs *blockStore) Count(stagingArea model.StagingArea) uint64 {
+	stagingShard := bs.stagingShard(stagingArea)
+	return bs.count(stagingShard)
+}
+
+func (bs *blockStore) count(stagingShard *blockStagingShard) uint64 {
+	return bs.countCached + uint64(len(stagingShard.blocksToAdd)) - uint64(len(stagingShard.blocksToDelete))
 }
 
 func (bs *blockStore) deserializeBlockCount(countBytes []byte) (uint64, error) {
@@ -193,20 +232,6 @@ func (bs *blockStore) deserializeBlockCount(countBytes []byte) (uint64, error) {
 		return 0, err
 	}
 	return dbBlockCount.Count, nil
-}
-
-func (bs *blockStore) commitCount(dbTx model.DBTransaction) error {
-	count := bs.Count()
-	countBytes, err := bs.serializeBlockCount(count)
-	if err != nil {
-		return err
-	}
-	err = dbTx.Put(countKey, countBytes)
-	if err != nil {
-		return err
-	}
-	bs.count = count
-	return nil
 }
 
 func (bs *blockStore) serializeBlockCount(count uint64) ([]byte, error) {

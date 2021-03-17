@@ -196,7 +196,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 	}
 
 	if !isHeaderOnlyBlock {
-		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext, hash)
+		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext,, hash)
 		if err != nil {
 			return err
 		}
@@ -241,7 +241,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
-		bp.blockStore.Stage(blockHash, block)
+		bp.blockStore.Stage(
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err

@@ -178,7 +178,7 @@ func TestPruning(t *testing.T) {
 
 				}
 
-				hasBlock, err := tc.BlockStore().HasBlock(tc.DatabaseContext(), blockHash)
+				hasBlock, err := tc.BlockStore().HasBlock(tc.DatabaseContext(),, blockHash)
 				if err != nil {
 					t.Fatalf("HasBlock: %+v", err)
 				}

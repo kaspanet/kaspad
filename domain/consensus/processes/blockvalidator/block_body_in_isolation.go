@@ -18,7 +18,7 @@ func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHa
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	block, err := v.blockStore.Block(v.databaseContext,, blockHash)
 	if err != nil {
 		return err
 	}

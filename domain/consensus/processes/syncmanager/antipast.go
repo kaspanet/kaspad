@@ -201,7 +201,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		if err != nil {
 			return nil, err
 		}
-		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, selectedChild)
+		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext,, selectedChild)
 		if err != nil {
 			return nil, err
 		}

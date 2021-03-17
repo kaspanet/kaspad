@@ -74,7 +74,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 		return err
 	}
 	for _, parent := range header.ParentHashes() {
-		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		hasBlock, err := v.blockStore.HasBlock(v.databaseContext,, parent)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	block, err := v.blockStore.Block(v.databaseContext,, blockHash)
 	if err != nil {
 		return err
 	}

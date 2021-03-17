@@ -41,7 +41,7 @@ func TestVirtualDiff(t *testing.T) {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
 
-		blockB, err := tc.BlockStore().Block(tc.DatabaseContext(), blockBHash)
+		blockB, err := tc.BlockStore().Block(tc.DatabaseContext(),, blockBHash)
 		if err != nil {
 			t.Fatalf("Block: %+v", err)
 		}

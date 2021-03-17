@@ -281,7 +281,7 @@ func TestValidateDifficulty(t *testing.T) {
 			t.Fatalf("TestValidateDifficulty: Failed build block with parents: %v.", err)
 		}
 		blockHash := consensushashing.BlockHash(block)
-		tc.BlockStore().Stage(blockHash, block)
+		tc.BlockStore().Stage(
 		tc.BlockHeaderStore().Stage(blockHash, block.Header)
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty

@@ -98,7 +98,7 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	block, err := s.blockStore.Block(s.databaseContext, blockHash)
+	block, err := s.blockStore.Block(s.databaseContext,, blockHash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
