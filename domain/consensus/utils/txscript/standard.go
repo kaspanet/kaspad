@@ -278,7 +278,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 	switch scriptClass {
 	case PubKeyHashTy:
 		// A pay-to-pubkey-hash script is of the form:
-		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
+		//  OP_DUP OP_BLAKE2B <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
@@ -290,7 +290,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
-		//  OP_HASH160 <scripthash> OP_EQUAL
+		//  OP_BLAKE2B <scripthash> OP_EQUAL
 		// Therefore the script hash is the 2nd item on the stack.
 		// If the script hash ss invalid for some reason, return a nil address.
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
@@ -311,8 +311,8 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 
 // AtomicSwapDataPushes houses the data pushes found in atomic swap contracts.
 type AtomicSwapDataPushes struct {
-	RecipientHash160 [20]byte
-	RefundHash160    [20]byte
+	RecipientBlake2b [32]byte
+	RefundBlake2b    [32]byte
 	SecretHash       [32]byte
 	SecretSize       int64
 	LockTime         uint64
@@ -364,8 +364,8 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 
 	pushes := new(AtomicSwapDataPushes)
 	copy(pushes.SecretHash[:], pops[5].data)
-	copy(pushes.RecipientHash160[:], pops[9].data)
-	copy(pushes.RefundHash160[:], pops[16].data)
+	copy(pushes.RecipientBlake2b[:], pops[9].data)
+	copy(pushes.RefundBlake2b[:], pops[16].data)
 	if pops[2].data != nil {
 		locktime, err := makeScriptNum(pops[2].data, 5)
 		if err != nil {
