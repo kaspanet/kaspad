@@ -24,6 +24,7 @@ const (
 	SigHashMask = 0b00000111
 )
 
+// IsStandardSigHashType returns true if sht represents a standard SigHashType
 func (sht SigHashType) IsStandardSigHashType() bool {
 	switch sht {
 	case SigHashAll, SigHashNone, SigHashSingle,
