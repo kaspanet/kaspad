@@ -24,7 +24,7 @@ const (
 	SigHashMask = 0b00000111
 )
 
-func (sht SigHashType) isStandardSigHashType() bool {
+func (sht SigHashType) IsStandardSigHashType() bool {
 	switch sht {
 	case SigHashAll, SigHashNone, SigHashSingle,
 		SigHashAll | SigHashAnyOneCanPay, SigHashNone | SigHashAnyOneCanPay, SigHashSingle | SigHashAnyOneCanPay:
@@ -63,7 +63,7 @@ type SighashReusedValues struct {
 func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
 	reusedValues *SighashReusedValues) (*externalapi.DomainHash, error) {
 
-	if !hashType.isStandardSigHashType() {
+	if !hashType.IsStandardSigHashType() {
 		return nil, errors.Errorf("SigHashType %d is not a valid SigHash type", hashType)
 	}
 

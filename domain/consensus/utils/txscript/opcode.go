@@ -2023,8 +2023,8 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// requirements enabled by the flags.
 	hashType := consensushashing.SigHashType(fullSigBytes[len(fullSigBytes)-1])
 	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
-	if err := vm.checkHashTypeEncoding(hashType); err != nil {
-		return err
+	if !hashType.IsStandardSigHashType() {
+		return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
 	}
 	if err := vm.checkSignatureLength(sigBytes); err != nil {
 		return err
@@ -2204,8 +2204,8 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		// Only parse and check the signature encoding once.
 		var parsedSig *secp256k1.SchnorrSignature
 		if !sigInfo.parsed {
-			if err := vm.checkHashTypeEncoding(hashType); err != nil {
-				return err
+			if !hashType.IsStandardSigHashType() {
+				return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
 			}
 			if err := vm.checkSignatureLength(signature); err != nil {
 				return err

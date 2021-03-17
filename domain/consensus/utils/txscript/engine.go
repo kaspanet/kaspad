@@ -359,17 +359,6 @@ func (vm *Engine) currentScript() []parsedOpcode {
 	return vm.scripts[vm.scriptIdx]
 }
 
-// checkHashTypeEncoding returns whether or not the passed hashtype adheres to
-// the strict encoding requirements if enabled.
-func (vm *Engine) checkHashTypeEncoding(hashType consensushashing.SigHashType) error {
-	sigHashType := hashType & ^consensushashing.SigHashAnyOneCanPay
-	if sigHashType < consensushashing.SigHashAll || sigHashType > consensushashing.SigHashSingle {
-		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
-		return scriptError(ErrInvalidSigHashType, str)
-	}
-	return nil
-}
-
 // checkPubKeyEncoding returns whether or not the passed public key adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
