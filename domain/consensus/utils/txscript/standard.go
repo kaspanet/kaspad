@@ -47,8 +47,8 @@ func (t ScriptClass) String() string {
 func isPubkeyHash(pops []parsedOpcode) bool {
 	return len(pops) == 5 &&
 		pops[0].opcode.value == OpDup &&
-		pops[1].opcode.value == OpHash160 &&
-		pops[2].opcode.value == OpData20 &&
+		pops[1].opcode.value == OpBlake2b &&
+		pops[2].opcode.value == OpData32 &&
 		pops[3].opcode.value == OpEqualVerify &&
 		pops[4].opcode.value == OpCheckSig
 
@@ -172,7 +172,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
 func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OpDup).AddOp(OpHash160).
+	return NewScriptBuilder().AddOp(OpDup).AddOp(OpBlake2b).
 		AddData(pubKeyHash).AddOp(OpEqualVerify).AddOp(OpCheckSig).
 		Script()
 }
@@ -180,7 +180,7 @@ func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
 // payToScriptHashScript creates a new script to pay a transaction output to a
 // script hash. It is expected that the input is a valid hash.
 func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OpHash160).AddData(scriptHash).
+	return NewScriptBuilder().AddOp(OpBlake2b).AddData(scriptHash).
 		AddOp(OpEqual).Script()
 }
 
@@ -219,9 +219,9 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 
 // PayToScriptHashScript takes a script and returns an equivalent pay-to-script-hash script
 func PayToScriptHashScript(redeemScript []byte) ([]byte, error) {
-	redeemScriptHash := util.Hash160(redeemScript)
+	redeemScriptHash := util.HashBlake2b(redeemScript)
 	script, err := NewScriptBuilder().
-		AddOp(OpHash160).AddData(redeemScriptHash).
+		AddOp(OpBlake2b).AddData(redeemScriptHash).
 		AddOp(OpEqual).Script()
 	if err != nil {
 		return nil, err
@@ -345,15 +345,15 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 		pops[5].opcode.value == OpData32 &&
 		pops[6].opcode.value == OpEqualVerify &&
 		pops[7].opcode.value == OpDup &&
-		pops[8].opcode.value == OpHash160 &&
-		pops[9].opcode.value == OpData20 &&
+		pops[8].opcode.value == OpBlake2b &&
+		pops[9].opcode.value == OpData32 &&
 		pops[10].opcode.value == OpElse &&
 		canonicalPush(pops[11]) &&
 		pops[12].opcode.value == OpCheckLockTimeVerify &&
 		pops[13].opcode.value == OpDrop &&
 		pops[14].opcode.value == OpDup &&
-		pops[15].opcode.value == OpHash160 &&
-		pops[16].opcode.value == OpData20 &&
+		pops[15].opcode.value == OpBlake2b &&
+		pops[16].opcode.value == OpData32 &&
 		pops[17].opcode.value == OpEndIf &&
 		pops[18].opcode.value == OpEqualVerify &&
 		pops[19].opcode.value == OpCheckSig

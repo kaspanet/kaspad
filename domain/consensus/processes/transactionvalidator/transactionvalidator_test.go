@@ -115,6 +115,15 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
+
+		for i, input := range validTx.Inputs {
+			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, txscript.SigHashAll, privateKey)
+			if err != nil {
+				t.Fatalf("Failed to create a sigScript: %v", err)
+			}
+			input.SignatureScript = signatureScript
+		}
+
 		txWithImmatureCoinbase := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
@@ -143,14 +152,6 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-
-		for i, input := range validTx.Inputs {
-			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, txscript.SigHashAll, privateKey)
-			if err != nil {
-				t.Fatalf("Failed to create a sigScript: %v", err)
-			}
-			input.SignatureScript = signatureScript
-		}
 
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
 		tc.DAABlocksStore().StageDAAScore(povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
@@ -223,7 +224,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			if test.isValid {
 				if err != nil {
 					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateMassAndFee"+
-						" on test %v: %v", test.name, err)
+						" on test '%v': %v", test.name, err)
 				}
 			} else {
 				if err == nil || !errors.Is(err, test.expectedError) {

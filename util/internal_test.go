@@ -13,7 +13,7 @@ package util
 
 import (
 	"github.com/kaspanet/kaspad/util/bech32"
-	"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/blake2b"
 )
 
 // TstAppDataDir makes the internal appDataDir function available to the test
@@ -22,7 +22,7 @@ func TstAppDataDir(goos, appName string, roaming bool) string {
 	return appDataDir(goos, appName, roaming)
 }
 
-func TstAddressPubKeyHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *AddressPubKeyHash {
+func TstAddressPubKeyHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *AddressPubKeyHash {
 	return &AddressPubKeyHash{
 		prefix: prefix,
 		hash:   hash,
@@ -31,7 +31,7 @@ func TstAddressPubKeyHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *Addre
 
 // TstAddressScriptHash makes an AddressScriptHash, setting the
 // unexported fields with the parameters hash and netID.
-func TstAddressScriptHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *AddressScriptHash {
+func TstAddressScriptHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *AddressScriptHash {
 
 	return &AddressScriptHash{
 		prefix: prefix,
@@ -43,5 +43,5 @@ func TstAddressScriptHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *Addre
 // P2PKH and P2SH kaspa addresses.
 func TstAddressSAddr(addr string) []byte {
 	_, decoded, _, _ := bech32.Decode(addr)
-	return decoded[:ripemd160.Size]
+	return decoded[:blake2b.Size256]
 }

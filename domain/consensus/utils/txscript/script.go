@@ -51,8 +51,8 @@ func isSmallInt(op *opcode) bool {
 // transaction, false otherwise.
 func isScriptHash(pops []parsedOpcode) bool {
 	return len(pops) == 3 &&
-		pops[0].opcode.value == OpHash160 &&
-		pops[1].opcode.value == OpData20 &&
+		pops[0].opcode.value == OpBlake2b &&
+		pops[1].opcode.value == OpData32 &&
 		pops[2].opcode.value == OpEqual
 }
 

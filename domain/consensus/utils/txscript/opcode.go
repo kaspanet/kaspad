@@ -6,7 +6,6 @@ package txscript
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/go-secp256k1"
-	"golang.org/x/crypto/ripemd160"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -201,10 +199,10 @@ const (
 	OpMin                 = 0xa3 // 163
 	OpMax                 = 0xa4 // 164
 	OpWithin              = 0xa5 // 165
-	OpRipeMD160           = 0xa6 // 166
-	OpSHA1                = 0xa7 // 167
+	OpUnknown166          = 0xa6 // 166
+	OpUnknown167          = 0xa7 // 167
 	OpSHA256              = 0xa8 // 168
-	OpHash160             = 0xa9 // 169
+	OpUnknown169          = 0xa9 // 169
 	OpBlake2b             = 0xaa // 170
 	OpUnknown171          = 0xab // 171
 	OpCheckSig            = 0xac // 172
@@ -485,10 +483,7 @@ var opcodeArray = [256]opcode{
 	OpWithin:             {OpWithin, "OP_WITHIN", 1, opcodeWithin},
 
 	// Crypto opcodes.
-	OpRipeMD160:           {OpRipeMD160, "OP_RIPEMD160", 1, opcodeRipemd160},
-	OpSHA1:                {OpSHA1, "OP_SHA1", 1, opcodeSha1},
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
-	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
 	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
@@ -508,6 +503,9 @@ var opcodeArray = [256]opcode{
 	OpNop10: {OpNop10, "OP_NOP10", 1, opcodeNop},
 
 	// Undefined opcodes.
+	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
+	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
+	OpUnknown169: {OpUnknown169, "OP_UNKNOWN169", 1, opcodeInvalid},
 	OpUnknown171: {OpUnknown171, "OP_UNKNOWN171", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
@@ -1903,35 +1901,6 @@ func calcHash(buf []byte, hasher hash.Hash) []byte {
 	return hasher.Sum(nil)
 }
 
-// opcodeRipemd160 treats the top item of the data stack as raw bytes and
-// replaces it with ripemd160(data).
-//
-// Stack transformation: [... x1] -> [... ripemd160(x1)]
-func opcodeRipemd160(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	vm.dstack.PushByteArray(calcHash(buf, ripemd160.New()))
-	return nil
-}
-
-// opcodeSha1 treats the top item of the data stack as raw bytes and replaces it
-// with sha1(data).
-//
-// Stack transformation: [... x1] -> [... sha1(x1)]
-func opcodeSha1(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	hash := sha1.Sum(buf)
-	vm.dstack.PushByteArray(hash[:])
-	return nil
-}
-
 // opcodeSha256 treats the top item of the data stack as raw bytes and replaces
 // it with sha256(data).
 //
@@ -1944,21 +1913,6 @@ func opcodeSha256(op *parsedOpcode, vm *Engine) error {
 
 	hash := sha256.Sum256(buf)
 	vm.dstack.PushByteArray(hash[:])
-	return nil
-}
-
-// opcodeHash160 treats the top item of the data stack as raw bytes and replaces
-// it with ripemd160(sha256(data)).
-//
-// Stack transformation: [... x1] -> [... ripemd160(sha256(x1))]
-func opcodeHash160(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	hash := sha256.Sum256(buf)
-	vm.dstack.PushByteArray(calcHash(hash[:], ripemd160.New()))
 	return nil
 }
 
