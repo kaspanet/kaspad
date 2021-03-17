@@ -171,7 +171,7 @@ func doUpgrades() error {
 
 // dbPath returns the path to the block database given a database type.
 func databasePath(cfg *config.Config) string {
-	return filepath.Join(cfg.DataDir, "db")
+	return filepath.Join(cfg.AppDir, "data")
 }
 
 func removeDatabase(cfg *config.Config) error {
