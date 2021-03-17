@@ -134,6 +134,6 @@ func setDatabaseContext(t *testing.T, harness *appHarness) {
 }
 
 func openDB(cfg *config.Config) (database.Database, error) {
-	dbPath := filepath.Join(cfg.HomeDir, "db")
+	dbPath := filepath.Join(cfg.AppDir, "db")
 	return ldb.NewLevelDB(dbPath, 8)
 }
