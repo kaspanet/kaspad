@@ -1,7 +1,7 @@
 #!/bin/bash
 rm -rf /tmp/kaspad-temp
 
-kaspad --devnet --nobanning --datadir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
+kaspad --devnet --nobanning --appdir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
 KASPAD_PID=$!
 KASPAD_KILLED=0
 function killKaspadIfNotKilled() {
