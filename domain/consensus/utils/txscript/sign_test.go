@@ -491,7 +491,7 @@ func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externa
 		return nil, nil, nil, errors.Errorf("failed to serialize a pubkey for %s: %s", pubKey, err)
 	}
 	address, err := util.NewAddressPubKeyHash(
-		util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+		util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to make address for %s: %s", serializedPubKey, err)
 	}
