@@ -31,9 +31,6 @@ const (
 
 	// SubnetworkIDPrefixChar is the prefix of subnetworkID, when building a DNS seed request
 	SubnetworkIDPrefixChar byte = 'n'
-
-	// ServiceFlagPrefixChar is the prefix of service flag, when building a DNS seed request
-	ServiceFlagPrefixChar byte = 'x'
 )
 
 // OnSeed is the signature of the callback function which is invoked when DNS
@@ -44,7 +41,7 @@ type OnSeed func(addrs []*appmessage.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, includeAllSubnetworks bool,
 	subnetworkID *externalapi.DomainSubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	var dnsSeeds []string
@@ -55,12 +52,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 	}
 
 	for _, dnsseed := range dnsSeeds {
-		var host string
-		if reqServices == appmessage.SFNodeNetwork {
-			host = dnsseed
-		} else {
-			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed)
-		}
+		host := dnsseed
 
 		if !includeAllSubnetworks {
 			if subnetworkID != nil {
@@ -103,8 +95,9 @@ func SeedFromDNS(dagParams *dagconfig.Params, customSeed string, reqServices app
 }
 
 // SeedFromGRPC send gRPC request to get list of peers for a given host
-func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, reqServices appmessage.ServiceFlag, includeAllSubnetworks bool,
+func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, includeAllSubnetworks bool,
 	subnetworkID *externalapi.DomainSubnetworkID, seedFn OnSeed) {
+
 	var grpcSeeds []string
 	if customSeed != "" {
 		grpcSeeds = []string{customSeed}
@@ -130,7 +123,6 @@ func SeedFromGRPC(dagParams *dagconfig.Params, customSeed string, reqServices ap
 			}
 
 			req := &pb2.GetPeersListRequest{
-				ServiceFlag:           uint64(reqServices),
 				SubnetworkID:          subnetID,
 				IncludeAllSubnetworks: includeAllSubnetworks,
 			}
