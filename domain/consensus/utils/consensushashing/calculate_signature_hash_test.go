@@ -108,86 +108,86 @@ func TestCalculateSignatureHash(t *testing.T) {
 
 		// sigHashAll
 		{name: "native-all-0", tx: nativeTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "92889a2e79e692e485ca306cd322c2c1eaa7d9fb86a67d7e7a74df0c713e7018"},
+			expectedSignatureHash: "c899a5ea7414f0bbfd77e50674f46da34ce8722b928d4362a4b4b727c69c6499"},
 		{name: "native-all-0-modify-input-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // should change the hash
-			expectedSignatureHash: "6054721ae186b9b61ad315c2e8971160d37b875dbcff3b9e829651dbced4f4bc"},
+			expectedSignatureHash: "faf3b9db2e07b1c14b2df02002d3e40f1e430f177ac5cd3354c84dad8fbe72ce"},
 		{name: "native-all-0-modify-output-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // should change the hash
-			expectedSignatureHash: "9894a9b4a89de26313aa110e5bd4276c47e362db210d5de398f970a5a54e9913"},
+			expectedSignatureHash: "3a557c5b873aab72dcb81649642e1d7a63b75dcdcc74e19d340964a9e0eac76c"},
 		{name: "native-all-0-modify-sequence-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // should change the hash
-			expectedSignatureHash: "68784e57413bc8a101c66b8aa00955285ad213196e279c7cbe629e0bf6286dfa"},
+			expectedSignatureHash: "2dd5fe8f9fa4bf551ea2f080a26e07b2462083e12d3b2ed01cb9369a61920665"},
 		{name: "native-all-anyonecanpay-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "41c6e5720a6e7099fdac5a1128ac287d1ecb61aa2fcbce7ebd8086d57cd58b77"},
+			expectedSignatureHash: "19fe2e0db681017f318fda705a39bbbad9c1085514cfbcff6fac01e1725f758b"},
 		{name: "native-all-anyonecanpay-0-modify-input-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(0), // should change the hash
-			expectedSignatureHash: "73b72f972890556a6189067689da0d857ac9158146ec237319170eb2c0a3c404"},
+			expectedSignatureHash: "5b21d492560a1c794595f769b3ae3c151775b9cfc4029d17c53f1856e1005da4"},
 		{name: "native-all-anyonecanpay-0-modify-input-1", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // shouldn't change the hash
-			expectedSignatureHash: "41c6e5720a6e7099fdac5a1128ac287d1ecb61aa2fcbce7ebd8086d57cd58b77"},
+			expectedSignatureHash: "19fe2e0db681017f318fda705a39bbbad9c1085514cfbcff6fac01e1725f758b"},
 		{name: "native-all-anyonecanpay-0-modify-sequence", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "41c6e5720a6e7099fdac5a1128ac287d1ecb61aa2fcbce7ebd8086d57cd58b77"},
+			expectedSignatureHash: "19fe2e0db681017f318fda705a39bbbad9c1085514cfbcff6fac01e1725f758b"},
 
 		// sigHashNone
 		{name: "native-none-0", tx: nativeTx, hashType: none, inputIndex: 0,
-			expectedSignatureHash: "dfe67982cfccf245e29b94be260a9df08ffbfb88d3e91f814602549b0159cbfb"},
+			expectedSignatureHash: "fafabaabf6349fee4e18626b4eff015472f2317576a8f4bf7b0eea1df6f3e32b"},
 		{name: "native-none-0-modify-output-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "dfe67982cfccf245e29b94be260a9df08ffbfb88d3e91f814602549b0159cbfb"},
+			expectedSignatureHash: "fafabaabf6349fee4e18626b4eff015472f2317576a8f4bf7b0eea1df6f3e32b"},
 		{name: "native-none-0-modify-sequence-0", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "fd61e1c6750d23e5db6b026b0ea9cd4fe314d980280cb529cd1a37680a0fa8f0"},
+			expectedSignatureHash: "daee0700e0ed4ab9f50de24d83e0bfce62999474ec8ceeb537ea35980662b601"},
 		{name: "native-none-0-modify-sequence-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "dfe67982cfccf245e29b94be260a9df08ffbfb88d3e91f814602549b0159cbfb"},
+			expectedSignatureHash: "fafabaabf6349fee4e18626b4eff015472f2317576a8f4bf7b0eea1df6f3e32b"},
 		{name: "native-none-anyonecanpay-0", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "b8554c61787a17765b08d10149372681c983d2bf089052ddfc6f777217706eeb"},
+			expectedSignatureHash: "4e5c2d895f9711dc89c19d49ba478e9c8f4be0d82c9bd6b60d0361eb9b5296bc"},
 		{name: "native-none-anyonecanpay-0-modify-amount-spent", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyAmountSpent(0), // should change the hash
-			expectedSignatureHash: "d7f2ee72e63e19da3e6dbb88a49152e8d17d6807fb12315fe144701fd2dc17c3"},
+			expectedSignatureHash: "9ce2f75eafc85b8e19133942c3143d14b61f2e7cc479fbc6d2fca026e50897f1"},
 		{name: "native-none-anyonecanpay-0-modify-script-public-key", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyScriptPublicKey(0), // should change the hash
-			expectedSignatureHash: "d919065f5b09d2e9dfc4bca7434f902d7a313f798d306075fffb8ebbc2e4e052"},
+			expectedSignatureHash: "c6c364190520fe6c0419c2f45e25bf084356333b03ac7aaec28251126398bda3"},
 
 		// sigHashSingle
 		{name: "native-single-0", tx: nativeTx, hashType: single, inputIndex: 0,
-			expectedSignatureHash: "d630a0b36ef564b1de69fa5a36c33dd4faa243dac7d390d7ca4af15c9704eb0d"},
+			expectedSignatureHash: "6ff01d5d7cd82e24bc9ca0edec8bd6931ffb5aa1d303f07ca05dc89757343a92"},
 		{name: "native-single-0-modify-output-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(0), // should change the hash
-			expectedSignatureHash: "4c4aabc567542bf13f49c214d5322a7ea5f7d3c9786f9fada20ab197ae999ea7"},
+			expectedSignatureHash: "d62af956aea369365bacc7e7f1aac106836994f1648311e82dd38da822c8771e"},
 		{name: "native-single-0-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "d630a0b36ef564b1de69fa5a36c33dd4faa243dac7d390d7ca4af15c9704eb0d"},
+			expectedSignatureHash: "6ff01d5d7cd82e24bc9ca0edec8bd6931ffb5aa1d303f07ca05dc89757343a92"},
 		{name: "native-single-0-modify-sequence-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "0b6b2e51a1e7b8eb7d231e19aef9280b624d81e863af71d098e43be273311819"},
+			expectedSignatureHash: "46692229d45bf2ceacb18960faba29753e325c0ade26ecf94495b91daacb828d"},
 		{name: "native-single-0-modify-sequence-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "d630a0b36ef564b1de69fa5a36c33dd4faa243dac7d390d7ca4af15c9704eb0d"},
+			expectedSignatureHash: "6ff01d5d7cd82e24bc9ca0edec8bd6931ffb5aa1d303f07ca05dc89757343a92"},
 		{name: "native-single-2-no-corresponding-output", tx: nativeTx, hashType: single, inputIndex: 2,
-			expectedSignatureHash: "feeb7519d34aa26f3ed8b5d9adda9a6d615b1fba1d34bb8521e68e9c98a1e5c5"},
+			expectedSignatureHash: "d3cc385082a7f272ec2c8aae7f3a96ab2f49a4a4e1ed44d61af34058a7721281"},
 		{name: "native-single-2-no-corresponding-output-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 2,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "feeb7519d34aa26f3ed8b5d9adda9a6d615b1fba1d34bb8521e68e9c98a1e5c5"},
+			expectedSignatureHash: "d3cc385082a7f272ec2c8aae7f3a96ab2f49a4a4e1ed44d61af34058a7721281"},
 		{name: "native-single-anyonecanpay-0", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "65d10f4bf89837b4b4715e5303939baba232e0bf8717f74f4105ef41dd46ee14"},
+			expectedSignatureHash: "408fcfd8ceca135c0f54569ccf8ac727e1aa6b5a15f87ccca765f1d5808aa4ea"},
 		{name: "native-single-anyonecanpay-2-no-corresponding-output", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 2,
-			expectedSignatureHash: "b565addaad79a99c0c86f5ad55931c460c6f854b3db37cc7a2f3c024789c499c"},
+			expectedSignatureHash: "685fac0d0b9dd3c5556f266714c4f7f93475d49fa12befb18e8297bc062aeaba"},
 
 		// subnetwork transaction
 		{name: "subnetwork-all-0", tx: subnetworkTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "12f317cc543f200f42cf57e6ff398ffb4edabe90e3f574a29224a03dc57646c7"},
+			expectedSignatureHash: "0e8b1433b761a220a61c0dc1f0fda909d49cef120d98d9f87344fef52dac0d8b"},
 		{name: "subnetwork-all-modify-payload", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyPayload, // should change the hash
-			expectedSignatureHash: "f38e75bb5f3c956936b616fd9d3b695e725c51f3e314520b6bad59125c4ecd00"},
+			expectedSignatureHash: "087315acb9193eaa14929dbe3d0ace80238aebe13eab3bf8db6c0a0d7ddb782e"},
 		{name: "subnetwork-all-modify-gas", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyGas, // should change the hash
-			expectedSignatureHash: "a78ab950e51a9be1976d85ce98fa29accf195a9ab9eb1076bc7012fb76f98ba7"},
+			expectedSignatureHash: "07a90408ef45864ae8354b07a74cf826a4621391425ba417470a6e680af4ce70"},
 		{name: "subnetwork-all-subnetwork-id", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySubnetworkID, // should change the hash
-			expectedSignatureHash: "65d6642bb9b5eb4a86289b33e7618de1006e996b6d6ff45a8b29ed5370cc889a"},
+			expectedSignatureHash: "4ca44c2e35729ae5efe831a77027f1a58a41dbdd853459c26cbfe7d6c88783fb"},
 	}
 
 	for _, test := range tests {
@@ -214,7 +214,7 @@ func generateTxs() (nativeTx, subnetworkTx *externalapi.DomainTransaction, err e
 	genesisCoinbase := dagconfig.SimnetParams.GenesisBlock.Transactions[0]
 	genesisCoinbaseTransactionID := consensushashing.TransactionID(genesisCoinbase)
 
-	address1Str := "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfd"
+	address1Str := "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
 	address1, err := util.DecodeAddress(address1Str, util.Bech32PrefixKaspaSim)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error decoding address1: %+v", err)
@@ -224,7 +224,7 @@ func generateTxs() (nativeTx, subnetworkTx *externalapi.DomainTransaction, err e
 		return nil, nil, fmt.Errorf("error generating script: %+v", err)
 	}
 
-	address2Str := "kaspasim:qr7w7nqsdnc3zddm6u8s9fex4ysk95hm3v30q353ym"
+	address2Str := "kaspasim:qr7w7nqsdnc3zddm6u8s9fex4ysk95hm3v30q353ymuqpp32mzzws59e8fapc"
 	address2, err := util.DecodeAddress(address2Str, util.Bech32PrefixKaspaSim)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error decoding address2: %+v", err)

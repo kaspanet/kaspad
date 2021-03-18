@@ -273,7 +273,7 @@
   ],
   [
     "'' 1",
-    "IF SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ENDIF 0x14 0x68ca4fec736264c13b859bac43d5173df6871682 EQUAL",
+    "IF SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ENDIF 0x20 0x2c49a55fe0ca3e7a005420c19a527865df8f17e468d234f562ef238d4236a632 EQUAL",
     "",
     "OK"
   ],
@@ -304,7 +304,7 @@
   ],
   [
     "'' 0",
-    "NOTIF SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ELSE ELSE SHA1 ENDIF 0x14 0x68ca4fec736264c13b859bac43d5173df6871682 EQUAL",
+    "NOTIF SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ELSE ELSE SHA256 ENDIF 0x20 0x2c49a55fe0ca3e7a005420c19a527865df8f17e468d234f562ef238d4236a632 EQUAL",
     "",
     "OK"
   ],
@@ -1139,37 +1139,19 @@
   ],
   [
     "''",
-    "RIPEMD160 0x14 0x9c1185a5c5e9fc54612808977ee8f548b2258d31 EQUAL",
+    "SHA256 0x20 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 EQUAL",
     "",
     "OK"
   ],
   [
     "'a'",
-    "RIPEMD160 0x14 0x0bdc9d2d256b3ee9daae347be6f4dc835a467ffe EQUAL",
+    "SHA256 0x20 0xca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb EQUAL",
     "",
     "OK"
   ],
   [
     "'abcdefghijklmnopqrstuvwxyz'",
-    "RIPEMD160 0x14 0xf71c27109c692c1b56bbdceb5b9d2865b3708dbc EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "''",
-    "SHA1 0x14 0xda39a3ee5e6b4b0d3255bfef95601890afd80709 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "'a'",
-    "SHA1 0x14 0x86f7e437faa5a7fce15d1ddcb9eaeaea377667b8 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "'abcdefghijklmnopqrstuvwxyz'",
-    "SHA1 0x14 0x32d10c7b8cf96570ca04ce37f2a19d84240d3a89 EQUAL",
+    "SHA256 0x20 0x71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73 EQUAL",
     "",
     "OK"
   ],
@@ -1193,44 +1175,44 @@
   ],
   [
     "''",
-    "DUP HASH160 SWAP SHA256 RIPEMD160 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "''",
-    "NOP HASH160 0x14 0xb472a266d0bd89c13706a4132ccfb16f7c3b9fcb EQUAL",
+    "SHA256 0x20 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 EQUAL",
     "",
     "OK"
   ],
   [
     "'a'",
-    "HASH160 NOP 0x14 0x994355199e516ff76c4fa4aab39337b9d84cf12b EQUAL",
+    "SHA256 0x20 0xca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb EQUAL",
     "",
     "OK"
   ],
   [
     "'abcdefghijklmnopqrstuvwxyz'",
-    "NOP HASH160 0x14 0xc286a1af0947f58d1ad787385b1c2c4a976f9e71 EQUAL",
+    "SHA256 0x20 0x71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73 EQUAL",
+    "",
+    "OK"
+  ],
+  [
+    "''",
+    "NOP BLAKE2B 0x20 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8 EQUAL",
+    "",
+    "OK"
+  ],
+  [
+    "'a'",
+    "BLAKE2B NOP 0x20 0x8928aae63c84d87ea098564d1e03ad813f107add474e56aedd286349c0c03ea4 EQUAL",
+    "",
+    "OK"
+  ],
+  [
+    "'abcdefghijklmnopqrstuvwxyz'",
+    "NOP BLAKE2B 0x20 0x117ad6b940f5e8292c007d9c7e7350cd33cf85b5887e8da71c7957830f536e7c EQUAL",
     "",
     "OK",
     "The NOP is added so the script won't be interpreted as P2SH"
   ],
   [
-    "''",
-    "BLAKE2B 0x20 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8 EQUAL",
-    "",
-    "OK"
-  ],
-  [
     "'a'",
-    "BLAKE2B 0x20 0x8928aae63c84d87ea098564d1e03ad813f107add474e56aedd286349c0c03ea4 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "'abcdefghijklmnopqrstuvwxyz'",
-    "BLAKE2B 0x20 0x117ad6b940f5e8292c007d9c7e7350cd33cf85b5887e8da71c7957830f536e7c EQUAL",
+    "NOP BLAKE2B 0x20 0x8928aae63c84d87ea098564d1e03ad813f107add474e56aedd286349c0c03ea4 EQUAL",
     "",
     "OK"
   ],
@@ -2195,25 +2177,7 @@
   ],
   [
     "0",
-    "RIPEMD160",
-    "",
-    "OK"
-  ],
-  [
-    "0",
-    "SHA1",
-    "",
-    "OK"
-  ],
-  [
-    "0",
     "SHA256",
-    "",
-    "OK"
-  ],
-  [
-    "0",
-    "HASH160",
     "",
     "OK"
   ],
@@ -2592,7 +2556,7 @@
   ],
   [
     "0x01 1",
-    "HASH160 0x14 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
+    "BLAKE2B 0x20 0xce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d EQUAL",
     "",
     "OK",
     "Very basic P2SH"
@@ -3873,7 +3837,7 @@
   ],
   [
     "1 0x01 0xbb",
-    "HASH160 0x14 0x6b598ec091379f3d1a7f0532738e86accc36dc9f EQUAL",
+    "BLAKE2B 0x20 0x4324d0dc945c746e3be93be15b636ec1684108806912a479e8a34b2858be114a EQUAL",
     "DISCOURAGE_UPGRADABLE_NOPS",
     "DISCOURAGE_UPGRADABLE_NOPS",
     "Discouraged NOP10 in redeemScript"
@@ -4296,13 +4260,7 @@
   ],
   [
     "",
-    "RIPEMD160",
-    "",
-    "INVALID_STACK_OPERATION"
-  ],
-  [
-    "",
-    "SHA1",
+    "SHA256",
     "",
     "INVALID_STACK_OPERATION"
   ],
@@ -4314,7 +4272,13 @@
   ],
   [
     "",
-    "HASH160",
+    "SHA256",
+    "",
+    "INVALID_STACK_OPERATION"
+  ],
+  [
+    "",
+    "BLAKE2B",
     "",
     "INVALID_STACK_OPERATION"
   ],
@@ -4773,25 +4737,13 @@
   ],
   [
     "",
-    "RIPEMD160 1",
-    "",
-    "INVALID_STACK_OPERATION"
-  ],
-  [
-    "",
-    "SHA1 1",
-    "",
-    "INVALID_STACK_OPERATION"
-  ],
-  [
-    "",
     "SHA256 1",
     "",
     "INVALID_STACK_OPERATION"
   ],
   [
     "",
-    "HASH160 1",
+    "BLAKE2B 1",
     "",
     "INVALID_STACK_OPERATION"
   ],
@@ -4890,27 +4842,27 @@
   ],
   [
     "NOP 0x01 1",
-    "HASH160 0x14 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
+    "BLAKE2B 0x20 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
     "",
     "SIG_PUSHONLY",
     "Tests for Script.IsPushOnly()"
   ],
   [
     "NOP1 0x01 1",
-    "HASH160 0x14 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
+    "BLAKE2B 0x20 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
     "",
     "SIG_PUSHONLY"
   ],
   [
     "0 0x01 0x50",
-    "HASH160 0x14 0xece424a6bb6ddf4db592c0faed60685047a361b1 EQUAL",
+    "BLAKE2B 0x20 0xece424a6bb6ddf4db592c0faed60685047a361b1 EQUAL",
     "",
     "BAD_OPCODE",
     "OP_RESERVED in P2SH should fail"
   ],
   [
     "0 0x01",
-    "VER HASH160 0x14 0x0f4d7845db968f2a81b530b6f3c1d6246d4c7e01 EQUAL",
+    "VER BLAKE2B 0x20 0x0f4d7845db968f2a81b530b6f3c1d6246d4c7e01 EQUAL",
     "",
     "BAD_OPCODE",
     "OP_VER in P2SH should fail"

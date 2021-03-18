@@ -6,9 +6,9 @@ package util
 
 import (
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/kaspanet/kaspad/util/bech32"
-	"golang.org/x/crypto/ripemd160"
 )
 
 var (
@@ -79,11 +79,11 @@ func (prefix Bech32Prefix) String() string {
 }
 
 // encodeAddress returns a human-readable payment address given a network prefix
-// and a ripemd160 hash which encodes the kaspa network and address type. It is used
+// and a blake2b hash which encodes the kaspa network and address type. It is used
 // in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
 // encoding.
-func encodeAddress(prefix Bech32Prefix, hash160 []byte, version byte) string {
-	return bech32.Encode(prefix.String(), hash160[:ripemd160.Size], version)
+func encodeAddress(prefix Bech32Prefix, hash256 []byte, version byte) string {
+	return bech32.Encode(prefix.String(), hash256[:blake2b.Size256], version)
 }
 
 // Address is an interface type for any type of destination a transaction
@@ -141,7 +141,7 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 
 	// Switch on decoded length to determine the type.
 	switch len(decoded) {
-	case ripemd160.Size: // P2PKH or P2SH
+	case blake2b.Size256: // P2PKH or P2SH
 		switch version {
 		case pubKeyHashAddrID:
 			return newAddressPubKeyHash(prefix, decoded)
@@ -159,12 +159,12 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 // transaction.
 type AddressPubKeyHash struct {
 	prefix Bech32Prefix
-	hash   [ripemd160.Size]byte
+	hash   [blake2b.Size256]byte
 }
 
 // NewAddressPubKeyHashFromPublicKey returns a new AddressPubKeyHash from given public key
 func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
-	pkHash := Hash160(publicKey)
+	pkHash := HashBlake2b(publicKey)
 	return newAddressPubKeyHash(prefix, pkHash)
 }
 
@@ -177,12 +177,12 @@ func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHas
 // newAddressPubKeyHash is the internal API to create a pubkey hash address
 // with a known leading identifier byte for a network, rather than looking
 // it up through its parameters. This is useful when creating a new address
-// structure from a string encoding where the identifer byte is already
+// structure from a string encoding where the identifier byte is already
 // known.
 func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
 	// Check for a valid pubkey hash length.
-	if len(pkHash) != ripemd160.Size {
-		return nil, errors.New("pkHash must be 20 bytes")
+	if len(pkHash) != blake2b.Size256 {
+		return nil, errors.Errorf("pkHash must be %d bytes", blake2b.Size256)
 	}
 
 	addr := &AddressPubKeyHash{prefix: prefix}
@@ -220,10 +220,10 @@ func (a *AddressPubKeyHash) String() string {
 	return a.EncodeAddress()
 }
 
-// Hash160 returns the underlying array of the pubkey hash. This can be useful
+// HashBlake2b returns the underlying array of the pubkey hash. This can be useful
 // when an array is more appropiate than a slice (for example, when used as map
 // keys).
-func (a *AddressPubKeyHash) Hash160() *[ripemd160.Size]byte {
+func (a *AddressPubKeyHash) HashBlake2b() *[blake2b.Size256]byte {
 	return &a.hash
 }
 
@@ -231,12 +231,12 @@ func (a *AddressPubKeyHash) Hash160() *[ripemd160.Size]byte {
 // transaction.
 type AddressScriptHash struct {
 	prefix Bech32Prefix
-	hash   [ripemd160.Size]byte
+	hash   [blake2b.Size256]byte
 }
 
 // NewAddressScriptHash returns a new AddressScriptHash.
 func NewAddressScriptHash(serializedScript []byte, prefix Bech32Prefix) (*AddressScriptHash, error) {
-	scriptHash := Hash160(serializedScript)
+	scriptHash := HashBlake2b(serializedScript)
 	return newAddressScriptHashFromHash(prefix, scriptHash)
 }
 
@@ -253,8 +253,8 @@ func NewAddressScriptHashFromHash(scriptHash []byte, prefix Bech32Prefix) (*Addr
 // known.
 func newAddressScriptHashFromHash(prefix Bech32Prefix, scriptHash []byte) (*AddressScriptHash, error) {
 	// Check for a valid script hash length.
-	if len(scriptHash) != ripemd160.Size {
-		return nil, errors.New("scriptHash must be 20 bytes")
+	if len(scriptHash) != blake2b.Size256 {
+		return nil, errors.Errorf("scriptHash must be %d bytes", blake2b.Size256)
 	}
 
 	addr := &AddressScriptHash{prefix: prefix}
@@ -292,9 +292,9 @@ func (a *AddressScriptHash) String() string {
 	return a.EncodeAddress()
 }
 
-// Hash160 returns the underlying array of the script hash. This can be useful
+// HashBlake2b returns the underlying array of the script hash. This can be useful
 // when an array is more appropiate than a slice (for example, when used as map
 // keys).
-func (a *AddressScriptHash) Hash160() *[ripemd160.Size]byte {
+func (a *AddressScriptHash) HashBlake2b() *[blake2b.Size256]byte {
 	return &a.hash
 }

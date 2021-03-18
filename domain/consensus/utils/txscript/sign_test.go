@@ -214,7 +214,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -265,7 +265,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -343,7 +343,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -408,7 +408,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -491,7 +491,7 @@ func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externa
 		return nil, nil, nil, errors.Errorf("failed to serialize a pubkey for %s: %s", pubKey, err)
 	}
 	address, err := util.NewAddressPubKeyHash(
-		util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+		util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to make address for %s: %s", serializedPubKey, err)
 	}
@@ -534,9 +534,15 @@ var (
 	oldCompressedScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
 		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}, 0}
-	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x7e, 0x01, 0x76, 0xb6,
-		0x72, 0x08, 0xc0, 0x08, 0x98, 0x85, 0x97, 0x00, 0x4e, 0x1a, 0x8d,
-		0x60, 0x89, 0xfe, 0x42, 0x6f, 0x88, 0xac}, 0}
+	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xaa, 0x20,
+		0x51, 0x9c, 0x25, 0xca, 0x95, 0xa0, 0xd8, 0xcd,
+		0xf5, 0xb8, 0x3f, 0x96, 0xa1, 0x5e, 0x8c, 0x1a,
+		0xae, 0x33, 0xeb, 0x50, 0xc8, 0x66, 0xc9, 0xd0,
+		0xa5, 0xce, 0x3e, 0x5f, 0x6b, 0x3b, 0x38, 0x8d,
+		0x88, 0xac}, 0}
+	shortScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
+		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}, 0}
 )
 
 // Pretend output amounts.
