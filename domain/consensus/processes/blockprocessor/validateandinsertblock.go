@@ -130,7 +130,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
-		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, model.VirtualBlockHash)
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, nil, model.VirtualBlockHash)
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)

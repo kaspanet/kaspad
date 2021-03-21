@@ -79,7 +79,7 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 			"which by definition has status: %s", externalapi.StatusUTXOValid)
 		return externalapi.StatusUTXOValid, nil
 	}
-	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, lastUnverifiedBlock)
+	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, nil, lastUnverifiedBlock)
 	if err != nil {
 		return 0, err
 	}
@@ -109,7 +109,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 		log.Debugf("Block %s is unverified. Adding it to the unverified block collection", currentHash)
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
-		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, currentHash)
+		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, nil, currentHash)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +209,7 @@ func (csm *consensusStateManager) isNewSelectedTip(blockHash, oldSelectedTip *ex
 }
 
 func (csm *consensusStateManager) selectedTip() (*externalapi.DomainHash, error) {
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

@@ -53,7 +53,7 @@ func testReorg(cfg *configFlags) {
 		panic(err)
 	}
 
-	virtualSelectedParentGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), virtualSelectedParent)
+	virtualSelectedParentGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, virtualSelectedParent)
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +94,7 @@ func testReorg(cfg *configFlags) {
 		}
 
 		blockHash := consensushashing.BlockHash(block)
-		ghostdagData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), blockHash)
+		ghostdagData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), nil, blockHash)
 		if err != nil {
 			panic(err)
 		}
@@ -105,7 +105,7 @@ func testReorg(cfg *configFlags) {
 	}
 
 	sideChainTipHash := consensushashing.BlockHash(sideChain[len(sideChain)-1])
-	sideChainTipGHOSTDAGData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), sideChainTipHash)
+	sideChainTipGHOSTDAGData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), nil, sideChainTipHash)
 	if err != nil {
 		panic(err)
 	}
@@ -134,7 +134,7 @@ func testReorg(cfg *configFlags) {
 		fail("Adding the side chain took more than %s", timeout)
 	}
 
-	sideChainTipGHOSTDAGData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), sideChainTipHash)
+	sideChainTipGHOSTDAGData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, sideChainTipHash)
 	if err != nil {
 		panic(err)
 	}

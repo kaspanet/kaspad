@@ -157,7 +157,7 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(blockHash *external
 		return 0, nil, nil
 	}
 
-	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, blockHash)
+	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, nil, blockHash)
 	if err != nil {
 		return 0, nil, err
 	}

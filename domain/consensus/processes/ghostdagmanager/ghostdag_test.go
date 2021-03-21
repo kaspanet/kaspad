@@ -127,7 +127,7 @@ func TestGHOSTDAG(t *testing.T) {
 						t.Fatalf("Test failed: \n Impl: %s,FileName: %s \n error on GHOSTDAG - block %s: %s.",
 							factory.implName, info.Name(), testBlockData.ID, err)
 					}
-					ghostdagData, err := ghostdagDataStore.Get(nil, blockID)
+					ghostdagData, err := ghostdagDataStore.Get(nil, nil, blockID)
 					if err != nil {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: ghostdagDataStore error: %v.",
 							factory.implName, info.Name(), testBlockData.ID, err)
@@ -301,11 +301,11 @@ type GHOSTDAGDataStoreImpl struct {
 	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (ds *GHOSTDAGDataStoreImpl) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) IsStaged() bool {
+func (ds *GHOSTDAGDataStoreImpl) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
@@ -317,7 +317,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil

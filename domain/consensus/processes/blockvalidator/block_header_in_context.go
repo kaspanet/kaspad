@@ -31,7 +31,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
 			var ghostdagData *model.BlockGHOSTDAGData
-			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, blockHash)
+			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, nil, blockHash)
 			if err != nil {
 				return ""
 			}
@@ -142,7 +142,7 @@ func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) erro
 }
 
 func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error {
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, hash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, nil, hash)
 	if err != nil {
 		return err
 	}

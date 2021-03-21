@@ -120,7 +120,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

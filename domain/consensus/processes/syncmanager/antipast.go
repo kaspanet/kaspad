@@ -23,11 +23,11 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 		return nil, nil, err
 	}
 
-	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
+	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, lowHash)
 	if err != nil {
 		return nil, nil, err
 	}
-	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, highHash)
+	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, highHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,7 +97,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 }
 
 func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	currentGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, current)
+	currentGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, current)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +110,12 @@ func (sm *syncManager) getSortedMergeSet(current *externalapi.DomainHash) ([]*ex
 	i, j := 0, 0
 	for i < len(blueMergeSet) && j < len(redMergeSet) {
 		currentBlue := blueMergeSet[i]
-		currentBlueGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, currentBlue)
+		currentBlueGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, currentBlue)
 		if err != nil {
 			return nil, err
 		}
 		currentRed := redMergeSet[j]
-		currentRedGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, currentRed)
+		currentRedGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, currentRed)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +151,7 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 		if err != nil {
 			return nil, err
 		}
-		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, highHashCandidate)
+		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, nil, highHashCandidate)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +173,7 @@ func (sm *syncManager) findLowHashInHighHashSelectedParentChain(
 		if isInSelectedParentChain {
 			break
 		}
-		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
+		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, lowHash)
 		if err != nil {
 			return nil, err
 		}

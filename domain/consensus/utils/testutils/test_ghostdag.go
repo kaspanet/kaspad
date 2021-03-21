@@ -1,10 +1,11 @@
 package testutils
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"sort"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 )
 
 type testGhostDAGSorter struct {
@@ -27,11 +28,11 @@ func (sorter testGhostDAGSorter) Len() int {
 }
 
 func (sorter testGhostDAGSorter) Less(i, j int) bool {
-	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.slice[i])
+	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), nil, sorter.slice[i])
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}
-	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.slice[j])
+	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), nil, sorter.slice[j])
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}

@@ -23,7 +23,7 @@ type coinbaseManager struct {
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, blockHash)
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}

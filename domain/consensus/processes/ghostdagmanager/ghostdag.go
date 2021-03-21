@@ -89,7 +89,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	}
 
 	if !isGenesis {
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.selectedParent)
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, nil, newBlockData.selectedParent)
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.blueWork.SetUint64(0)
 	}
 
-	gm.ghostdagDataStore.Stage(blockHash, newBlockData.toModel())
+	gm.ghostdagDataStore.Stage(nil, blockHash, newBlockData.toModel())
 
 	return nil
 }
@@ -154,7 +154,7 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 			return false, 0, nil, nil
 		}
 
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, chainBlock.blockData.SelectedParent())
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, nil, chainBlock.blockData.SelectedParent())
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -241,7 +241,7 @@ func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, conte
 			break
 		}
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, current.SelectedParent())
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, nil, current.SelectedParent())
 		if err != nil {
 			return 0, err
 		}

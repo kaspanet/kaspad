@@ -13,51 +13,34 @@ var bucket = database.MakeBucket([]byte("block-ghostdag-data"))
 
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
-	staging map[externalapi.DomainHash]*model.BlockGHOSTDAGData
-	cache   *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new GHOSTDAGDataStore
 func New(cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
-		staging: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
-		cache:   lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
-	gds.staging[*blockHash] = blockGHOSTDAGData
+func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+	stagingShard := gds.stagingShard(stagingArea)
+
+	stagingShard.toAdd[*blockHash] = blockGHOSTDAGData
 }
 
-func (gds *ghostdagDataStore) IsStaged() bool {
-	return len(gds.staging) != 0
-}
+func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := gds.stagingShard(stagingArea)
 
-func (gds *ghostdagDataStore) Discard() {
-	gds.staging = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
-}
-
-func (gds *ghostdagDataStore) Commit(dbTx model.DBTransaction) error {
-	for hash, blockGHOSTDAGData := range gds.staging {
-		blockGhostdagDataBytes, err := gds.serializeBlockGHOSTDAGData(blockGHOSTDAGData)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(gds.hashAsKey(&hash), blockGhostdagDataBytes)
-		if err != nil {
-			return err
-		}
-		gds.cache.Add(&hash, blockGHOSTDAGData)
-	}
-
-	gds.Discard()
-	return nil
+	return len(stagingShard.toAdd) != 0
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
-	if blockGHOSTDAGData, ok := gds.staging[*blockHash]; ok {
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+	stagingShard := gds.stagingShard(stagingArea)
+
+	if blockGHOSTDAGData, ok := stagingShard.toAdd[*blockHash]; ok {
 		return blockGHOSTDAGData, nil
 	}
 

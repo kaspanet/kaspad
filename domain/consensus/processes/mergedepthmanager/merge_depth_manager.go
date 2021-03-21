@@ -40,7 +40,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 		return err
 	}
 
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, blockHash)
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 }
 
 func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, blockHash)
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}

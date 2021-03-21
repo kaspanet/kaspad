@@ -50,7 +50,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 	var selectedParent = blockParents[0]
 	for _, parent := range blockParents {
-		blockData, err := gh.dataStore.Get(gh.dbAccess, parent)
+		blockData, err := gh.dataStore.Get(gh.dbAccess, nil, parent)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	}
 
 	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
-	gh.dataStore.Stage(blockCandidate, e)
+	gh.dataStore.Stage(nil, blockCandidate, e)
 	return nil
 }
 
@@ -343,7 +343,7 @@ func (gh *ghostdagHelper) findBlueSet(blueSet *[]*externalapi.DomainHash, select
 		if !contains(selectedParent, *blueSet) {
 			*blueSet = append(*blueSet, selectedParent)
 		}
-		blockData, err := gh.dataStore.Get(gh.dbAccess, selectedParent)
+		blockData, err := gh.dataStore.Get(gh.dbAccess, nil, selectedParent)
 		if err != nil {
 			return err
 		}
@@ -365,13 +365,13 @@ func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 	var err error = nil
 	sort.Slice(arr, func(i, j int) bool {
 
-		blockLeft, error := gh.dataStore.Get(gh.dbAccess, arr[i])
+		blockLeft, error := gh.dataStore.Get(gh.dbAccess, nil, arr[i])
 		if error != nil {
 			err = error
 			return false
 		}
 
-		blockRight, error := gh.dataStore.Get(gh.dbAccess, arr[j])
+		blockRight, error := gh.dataStore.Get(gh.dbAccess, nil, arr[j])
 		if error != nil {
 			err = error
 			return false
@@ -391,7 +391,7 @@ func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 /* --------------------------------------------- */
 
 func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
-	return gh.dataStore.Get(gh.dbAccess, blockHash)
+	return gh.dataStore.Get(gh.dbAccess, nil, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")

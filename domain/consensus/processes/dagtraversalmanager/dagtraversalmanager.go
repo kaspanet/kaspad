@@ -44,7 +44,7 @@ func New(
 // of the block with the given highHash's selected parent chain.
 func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, d
 			return currentBlockHash, nil
 		}
 		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockHash)
+		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, d
 }
 
 func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, highHash)
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 
 	for currentBlockGHOSTDAGData.SelectedParent() != nil {
-		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentBlockGHOSTDAGData.SelectedParent())
+		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 		}
 		removed = append(removed, current)
 
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, current)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 	current = toBlockHash
 	for !current.Equal(commonAncestor) {
 		added = append(added, current)
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, current)
 		if err != nil {
 			return nil, err
 		}

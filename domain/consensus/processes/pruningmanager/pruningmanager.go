@@ -107,17 +107,17 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentCandidate)
+	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, currentCandidate)
 	if err != nil {
 		return err
 	}
 
-	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, model.VirtualBlockHash)
+	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, virtual.SelectedParent())
+	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, virtual.SelectedParent())
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, currentPruningPoint)
+	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, currentPruningPoint)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		if err != nil {
 			return err
 		}
-		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, selectedChild)
+		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, selectedChild)
 		if err != nil {
 			return err
 		}
@@ -367,7 +367,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 	}
 
 	// A pruning point has to be in the selected chain of the headers selected tip.
-	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, headersSelectedTip)
+	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, headersSelectedTip)
 	if err != nil {
 		return false, err
 	}
@@ -382,7 +382,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 		return false, nil
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, blockHash)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -392,7 +392,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 		return false, nil
 	}
 
-	selectedParentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, ghostdagData.SelectedParent())
+	selectedParentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, nil, ghostdagData.SelectedParent())
 	if err != nil {
 		return false, err
 	}

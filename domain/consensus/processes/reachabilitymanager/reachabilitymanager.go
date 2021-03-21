@@ -36,7 +36,7 @@ func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error
 	newReachabilityData := newReachabilityTreeData()
 	rt.stageData(blockHash, newReachabilityData)
 
-	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, blockHash)
+	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

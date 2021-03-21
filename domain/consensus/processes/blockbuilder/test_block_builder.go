@@ -136,7 +136,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, tempBlockHash)
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, nil, tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}

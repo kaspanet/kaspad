@@ -77,7 +77,7 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(blockHash *externalapi
 func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	log.Debugf("calculateFinalityPoint start")
 	defer log.Debugf("calculateFinalityPoint end")
-	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, blockHash)
+	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 		if err != nil {
 			return nil, err
 		}
-		nextGHOSTDAGData, err := fm.ghostdagDataStore.Get(fm.databaseContext, next)
+		nextGHOSTDAGData, err := fm.ghostdagDataStore.Get(fm.databaseContext, nil, next)
 		if err != nil {
 			return nil, err
 		}

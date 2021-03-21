@@ -27,7 +27,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
 	}
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}

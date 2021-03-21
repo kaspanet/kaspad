@@ -148,7 +148,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, blockHash)
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

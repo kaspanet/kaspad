@@ -3,15 +3,16 @@ package reachabilitymanager_test
 import (
 	"compress/gzip"
 	"fmt"
+	"math"
+	"math/rand"
+	"os"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"math"
-	"math/rand"
-	"os"
-	"testing"
 )
 
 // Test configuration
@@ -143,12 +144,12 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		t.Fatal(errors.Errorf("reindex root is not on any header tip chain, this is unexpected behavior"))
 	}
 
-	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), chainTip)
+	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, chainTip)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), reorgTip)
+	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, reorgTip)
 	if err != nil {
 		t.Fatal(err)
 	}

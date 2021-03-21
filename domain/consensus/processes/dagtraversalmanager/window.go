@@ -9,7 +9,7 @@ import (
 // If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
 func (dtm *dagTraversalManager) BlockWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
-	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, startingBlock)
+	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, startingBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func (dtm *dagTraversalManager) BlockWindow(startingBlock *externalapi.DomainHas
 	windowHeap := dtm.newSizedUpHeap(windowSize)
 
 	for windowHeap.len() <= windowSize && currentGHOSTDAGData.SelectedParent() != nil && !currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
-		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, currentGHOSTDAGData.SelectedParent())
+		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
 		}

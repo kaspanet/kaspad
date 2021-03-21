@@ -1,12 +1,13 @@
 package dagtraversalmanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 const commonChainSize = 5
@@ -28,7 +29,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 			t.Fatalf("Failed creating a Chain DAG In BlockAtDepthTEST: %+v", err)
 		}
 		currentBlockHash := highHash
-		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), currentBlockHash)
+		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, currentBlockHash)
 		if err != nil {
 			t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 		}
@@ -38,7 +39,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 				break
 			}
 			currentBlockHash = currentBlockData.SelectedParent()
-			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), currentBlockHash)
+			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, currentBlockHash)
 			if err != nil {
 				t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 			}
@@ -219,7 +220,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 		}
 
 		checkBlueScore := func(blockHash *externalapi.DomainHash, expectedBlueScoe uint64) {
-			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), blockHash)
+			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, blockHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore().Get: %+v", err)
 			}

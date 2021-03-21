@@ -10,7 +10,7 @@ import (
 // createBlockLocator creates a block locator for the passed high and low hashes.
 // See the BlockLocator type comments for more details.
 func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
-	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, lowHash)
+	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, lowHash)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 			break
 		}
 
-		currentBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, currentHash)
+		currentBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, nil, currentHash)
 		if err != nil {
 			return nil, err
 		}

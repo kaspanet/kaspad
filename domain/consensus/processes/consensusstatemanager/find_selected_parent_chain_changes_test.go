@@ -48,7 +48,7 @@ func TestCalculateChainPath(t *testing.T) {
 		}
 
 		// Figure out which among blocks A and B is NOT the virtual selected parent
-		virtualGHOSTDAGData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), model.VirtualBlockHash)
+		virtualGHOSTDAGData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), nil, model.VirtualBlockHash)
 		if err != nil {
 			t.Fatalf("Error getting virtual GHOSTDAG data: %+v", err)
 		}
