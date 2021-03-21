@@ -350,7 +350,7 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 	pm.multiSetStore.Delete(nil, blockHash)
 	pm.acceptanceDataStore.Delete(nil, blockHash)
 	pm.blocksStore.Delete(
-	pm.utxoDiffStore.Delete(blockHash)
+	pm.utxoDiffStore.Delete(nil, blockHash)
 	pm.daaBlocksStore.Delete(nil, blockHash)
 
 	return false, nil

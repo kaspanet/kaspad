@@ -102,7 +102,7 @@ func (csm *consensusStateManager) updateSelectedTipUTXODiff(virtualUTXODiff exte
 	}
 
 	log.Debugf("Calculating new UTXO diff for virtual diff parent %s", selectedTip)
-	selectedTipUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, selectedTip)
+	selectedTipUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nil, selectedTip)
 	if err != nil {
 		return err
 	}

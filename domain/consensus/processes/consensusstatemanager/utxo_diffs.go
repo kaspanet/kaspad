@@ -11,5 +11,5 @@ func (csm *consensusStateManager) stageDiff(blockHash *externalapi.DomainHash,
 	defer log.Debugf("stageDiff end for block %s", blockHash)
 
 	log.Debugf("Staging block %s as the diff child of %s", utxoDiffChild, blockHash)
-	csm.utxoDiffStore.Stage(blockHash, utxoDiff, utxoDiffChild)
+	csm.utxoDiffStore.Stage(nil, blockHash, utxoDiff, utxoDiffChild)
 }

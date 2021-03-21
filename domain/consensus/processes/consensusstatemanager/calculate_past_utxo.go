@@ -77,7 +77,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 	nextBlockHash := blockHash
 	for {
 		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
-		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nextBlockHash)
+		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, nil, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +85,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 		log.Debugf("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
 			nextBlockHash, utxoDiff.ToAdd().Len(), utxoDiff.ToRemove().Len())
 
-		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nextBlockHash)
+		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, nil, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 			break
 		}
 
-		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nextBlockHash)
+		nextBlockHash, err = csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, nil, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
