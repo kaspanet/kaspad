@@ -334,7 +334,7 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 }
 
 func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alreadyPruned bool, err error) {
-	status, err := pm.blockStatusStore.Get(pm.databaseContext, blockHash)
+	status, err := pm.blockStatusStore.Get(pm.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -342,7 +342,7 @@ func (pm *pruningManager) deleteBlock(blockHash *externalapi.DomainHash) (alread
 		return true, nil
 	}
 
-	pm.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+	pm.blockStatusStore.Stage(nil, blockHash, externalapi.StatusHeaderOnly)
 	if pm.isArchivalNode {
 		return false, nil
 	}

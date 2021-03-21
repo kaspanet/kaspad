@@ -13,51 +13,33 @@ var bucket = database.MakeBucket([]byte("block-statuses"))
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
-	staging map[externalapi.DomainHash]externalapi.BlockStatus
-	cache   *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new BlockStatusStore
 func New(cacheSize int, preallocate bool) model.BlockStatusStore {
 	return &blockStatusStore{
-		staging: make(map[externalapi.DomainHash]externalapi.BlockStatus),
-		cache:   lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given blockStatus for the given blockHash
-func (bss *blockStatusStore) Stage(blockHash *externalapi.DomainHash, blockStatus externalapi.BlockStatus) {
-	bss.staging[*blockHash] = blockStatus.Clone()
+func (bss *blockStatusStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockStatus externalapi.BlockStatus) {
+	stagingShard := bss.stagingShard(stagingArea)
+	stagingShard.toAdd[*blockHash] = blockStatus.Clone()
 }
 
-func (bss *blockStatusStore) IsStaged() bool {
-	return len(bss.staging) != 0
-}
+func (bss *blockStatusStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := bss.stagingShard(stagingArea)
 
-func (bss *blockStatusStore) Discard() {
-	bss.staging = make(map[externalapi.DomainHash]externalapi.BlockStatus)
-}
-
-func (bss *blockStatusStore) Commit(dbTx model.DBTransaction) error {
-	for hash, status := range bss.staging {
-		blockStatusBytes, err := bss.serializeBlockStatus(status)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(bss.hashAsKey(&hash), blockStatusBytes)
-		if err != nil {
-			return err
-		}
-		bss.cache.Add(&hash, status)
-	}
-
-	bss.Discard()
-	return nil
+	return len(stagingShard.toAdd) != 0
 }
 
 // Get gets the blockStatus associated with the given blockHash
-func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	if status, ok := bss.staging[*blockHash]; ok {
+func (bss *blockStatusStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
+	stagingShard := bss.stagingShard(stagingArea)
+
+	if status, ok := stagingShard.toAdd[*blockHash]; ok {
 		return status, nil
 	}
 
@@ -79,8 +61,10 @@ func (bss *blockStatusStore) Get(dbContext model.DBReader, blockHash *externalap
 }
 
 // Exists returns true if the blockStatus for the given blockHash exists
-func (bss *blockStatusStore) Exists(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
-	if _, ok := bss.staging[*blockHash]; ok {
+func (bss *blockStatusStore) Exists(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	stagingShard := bss.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		return true, nil
 	}
 

@@ -1,10 +1,11 @@
 package blockprocessor_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -26,7 +27,7 @@ func TestBlockStatus(t *testing.T) {
 		defer teardown(false)
 
 		checkStatus := func(hash *externalapi.DomainHash, expectedStatus externalapi.BlockStatus) {
-			blockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), hash)
+			blockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), nil, hash)
 			if err != nil {
 				t.Fatalf("BlockStatusStore().Get: %+v", err)
 			}

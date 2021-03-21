@@ -28,7 +28,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 	if len(unverifiedBlocks) == 0 {
 		log.Debugf("There are not unverified blocks in %s's selected parent chain. "+
 			"This means that the block already has a UTXO-verified status.", blockHash)
-		status, err := csm.blockStatusStore.Get(csm.databaseContext, blockHash)
+		status, err := csm.blockStatusStore.Get(csm.databaseContext, nil, blockHash)
 		if err != nil {
 			return 0, err
 		}
@@ -57,7 +57,7 @@ func (csm *consensusStateManager) resolveBlockStatus(blockHash *externalapi.Doma
 			}
 		}
 
-		csm.blockStatusStore.Stage(unverifiedBlockHash, blockStatus)
+		csm.blockStatusStore.Stage(nil, unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
 		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks",
 			unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
@@ -83,7 +83,7 @@ func (csm *consensusStateManager) findSelectedParentStatus(unverifiedBlocks []*e
 	if err != nil {
 		return 0, err
 	}
-	return csm.blockStatusStore.Get(csm.databaseContext, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
+	return csm.blockStatusStore.Get(csm.databaseContext, nil, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocks(
@@ -96,7 +96,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(
 	currentHash := blockHash
 	for {
 		log.Debugf("Getting status for block %s", currentHash)
-		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, currentHash)
+		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, nil, currentHash)
 		if err != nil {
 			return nil, err
 		}

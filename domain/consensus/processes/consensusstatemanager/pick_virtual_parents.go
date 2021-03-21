@@ -141,7 +141,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 		selectedParentCandidate := candidatesHeap.Pop()
 
 		log.Debugf("Checking block %s for selected parent eligibility", selectedParentCandidate)
-		selectedParentCandidateStatus, err := csm.blockStatusStore.Get(csm.databaseContext, selectedParentCandidate)
+		selectedParentCandidateStatus, err := csm.blockStatusStore.Get(csm.databaseContext, nil, selectedParentCandidate)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +172,7 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 					continue
 				}
 
-				parentChildStatus, err := csm.blockStatusStore.Get(csm.databaseContext, parentChild)
+				parentChildStatus, err := csm.blockStatusStore.Get(csm.databaseContext, nil, parentChild)
 				if err != nil {
 					return nil, err
 				}

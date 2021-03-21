@@ -128,7 +128,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockInfo := &externalapi.BlockInfo{}
 
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, blockHash)
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, blockHash)
+	blockStatus, err := s.blockStatusStore.Get(s.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 }
 
 func (s *consensus) validateBlockHashExists(blockHash *externalapi.DomainHash) error {
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, blockHash)
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

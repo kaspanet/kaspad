@@ -69,7 +69,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 				// Discard all changes so we save only the block status
 				bp.discardAllChanges()
 				hash := consensushashing.BlockHash(block)
-				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
+				bp.blockStatusStore.Stage(nil, hash, externalapi.StatusInvalid)
 				commitErr := bp.commitAllChanges()
 				if commitErr != nil {
 					return commitErr

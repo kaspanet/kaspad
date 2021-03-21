@@ -232,7 +232,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 
 	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween))
 	for _, blockHash := range hashesBetween {
-		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, blockHash)
+		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, nil, blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +245,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 }
 
 func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, blockHash)
+	exists, err := sm.blockStatusStore.Exists(sm.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -254,7 +254,7 @@ func (sm *syncManager) isHeaderOnlyBlock(blockHash *externalapi.DomainHash) (boo
 		return false, nil
 	}
 
-	status, err := sm.blockStatusStore.Get(sm.databaseContext, blockHash)
+	status, err := sm.blockStatusStore.Get(sm.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}

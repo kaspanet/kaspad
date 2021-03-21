@@ -70,7 +70,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding goodBlock1: %+v", err)
 		}
-		goodBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), goodBlock1Hash)
+		goodBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, goodBlock1Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock1: %+v", err)
 		}
@@ -85,7 +85,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock1: %+v", err)
 		}
-		doubleSpendingBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), doubleSpendingBlock1Hash)
+		doubleSpendingBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, doubleSpendingBlock1Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
@@ -102,7 +102,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock2: %+v", err)
 		}
-		doubleSpendingBlock2Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), doubleSpendingBlock2Hash)
+		doubleSpendingBlock2Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, doubleSpendingBlock2Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
@@ -400,7 +400,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		allHashes := []*externalapi.DomainHash{genesisHash}
 
 		// Make sure that the status of genesisHash is valid
-		genesisStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), genesisHash)
+		genesisStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, genesisHash)
 		if err != nil {
 			t.Fatalf("error getting genesis status: %s", err)
 		}
@@ -418,7 +418,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, addedBlockHash)
 			if err != nil {
 				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
 			}
@@ -438,7 +438,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, addedBlockHash)
 			if err != nil {
 				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
 			}
@@ -463,7 +463,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 
 		// Make sure that all the blocks in the DAG now have StatusUTXOValid
 		for _, hash := range allHashes {
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), hash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), nil, hash)
 			if err != nil {
 				t.Fatalf("error getting block %s status: %s", hash, err)
 			}

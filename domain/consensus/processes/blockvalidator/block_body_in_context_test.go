@@ -1,6 +1,8 @@
 package blockvalidator_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -9,7 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 func TestCheckBlockIsNotPruned(t *testing.T) {
@@ -59,8 +60,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		beforePruningBlockBlockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(),
-			consensushashing.BlockHash(beforePruningBlock))
+		beforePruningBlockBlockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), nil, consensushashing.BlockHash(beforePruningBlock))
 		if err != nil {
 			t.Fatalf("BlockStatusStore().Get: %+v", err)
 		}

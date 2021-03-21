@@ -78,7 +78,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 }
 
 func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := v.blockStatusStore.Exists(v.databaseContext, blockHash)
+	exists, err := v.blockStatusStore.Exists(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -87,7 +87,7 @@ func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (
 		return false, nil
 	}
 
-	status, err := v.blockStatusStore.Get(v.databaseContext, blockHash)
+	status, err := v.blockStatusStore.Get(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}

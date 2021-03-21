@@ -15,12 +15,12 @@ import (
 func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}
 	if exists {
-		status, err := bp.blockStatusStore.Get(bp.databaseContext, blockHash)
+		status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, blockHash)
 		if err != nil {
 			return err
 		}
@@ -44,11 +44,11 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 	if isHeaderOnlyBlock {
 		log.Debugf("Block %s is a header-only block so setting its status as %s",
 			blockHash, externalapi.StatusHeaderOnly)
-		bp.blockStatusStore.Stage(blockHash, externalapi.StatusHeaderOnly)
+		bp.blockStatusStore.Stage(nil, blockHash, externalapi.StatusHeaderOnly)
 	} else {
 		log.Debugf("Block %s has body so setting its status as %s",
 			blockHash, externalapi.StatusUTXOPendingVerification)
-		bp.blockStatusStore.Stage(blockHash, externalapi.StatusUTXOPendingVerification)
+		bp.blockStatusStore.Stage(nil, blockHash, externalapi.StatusUTXOPendingVerification)
 	}
 
 	return nil
@@ -178,7 +178,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error {
 	hash := consensushashing.BlockHash(block)
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, hash)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, hash)
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 		return nil
 	}
 
-	status, err := bp.blockStatusStore.Get(bp.databaseContext, hash)
+	status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, hash)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 // true in any case the block header was validated, whether it was validated as a
 // header-only block or as a block with body.
 func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, blockHash)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -285,7 +285,7 @@ func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) 
 		return false, nil
 	}
 
-	status, err := bp.blockStatusStore.Get(bp.databaseContext, blockHash)
+	status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, blockHash)
 	if err != nil {
 		return false, err
 	}
