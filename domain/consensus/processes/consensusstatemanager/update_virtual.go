@@ -58,7 +58,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
 	log.Debugf("Staging new acceptance data for the virtual block")
-	csm.acceptanceDataStore.Stage(model.VirtualBlockHash, virtualAcceptanceData)
+	csm.acceptanceDataStore.Stage(nil, model.VirtualBlockHash, virtualAcceptanceData)
 
 	log.Debugf("Staging new multiset for the virtual block")
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)

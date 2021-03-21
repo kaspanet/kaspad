@@ -13,62 +13,32 @@ var bucket = database.MakeBucket([]byte("acceptance-data"))
 
 // acceptanceDataStore represents a store of AcceptanceData
 type acceptanceDataStore struct {
-	staging  map[externalapi.DomainHash]externalapi.AcceptanceData
-	toDelete map[externalapi.DomainHash]struct{}
-	cache    *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new AcceptanceDataStore
 func New(cacheSize int, preallocate bool) model.AcceptanceDataStore {
 	return &acceptanceDataStore{
-		staging:  make(map[externalapi.DomainHash]externalapi.AcceptanceData),
-		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given acceptanceData for the given blockHash
-func (ads *acceptanceDataStore) Stage(blockHash *externalapi.DomainHash, acceptanceData externalapi.AcceptanceData) {
-	ads.staging[*blockHash] = acceptanceData.Clone()
+func (ads *acceptanceDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, acceptanceData externalapi.AcceptanceData) {
+	stagingShard := ads.stagingShard(stagingArea)
+	stagingShard.toAdd[*blockHash] = acceptanceData.Clone()
 }
 
-func (ads *acceptanceDataStore) IsStaged() bool {
-	return len(ads.staging) != 0 || len(ads.toDelete) != 0
-}
-
-func (ads *acceptanceDataStore) Discard() {
-	ads.staging = make(map[externalapi.DomainHash]externalapi.AcceptanceData)
-	ads.toDelete = make(map[externalapi.DomainHash]struct{})
-}
-
-func (ads *acceptanceDataStore) Commit(dbTx model.DBTransaction) error {
-	for hash, acceptanceData := range ads.staging {
-		acceptanceDataBytes, err := ads.serializeAcceptanceData(acceptanceData)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(ads.hashAsKey(&hash), acceptanceDataBytes)
-		if err != nil {
-			return err
-		}
-		ads.cache.Add(&hash, acceptanceData)
-	}
-
-	for hash := range ads.toDelete {
-		err := dbTx.Delete(ads.hashAsKey(&hash))
-		if err != nil {
-			return err
-		}
-		ads.cache.Remove(&hash)
-	}
-
-	ads.Discard()
-	return nil
+func (ads *acceptanceDataStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := ads.stagingShard(stagingArea)
+	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
 }
 
 // Get gets the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
-	if acceptanceData, ok := ads.staging[*blockHash]; ok {
+func (ads *acceptanceDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
+	stagingShard := ads.stagingShard(stagingArea)
+
+	if acceptanceData, ok := stagingShard.toAdd[*blockHash]; ok {
 		return acceptanceData.Clone(), nil
 	}
 
@@ -90,12 +60,14 @@ func (ads *acceptanceDataStore) Get(dbContext model.DBReader, blockHash *externa
 }
 
 // Delete deletes the acceptanceData associated with the given blockHash
-func (ads *acceptanceDataStore) Delete(blockHash *externalapi.DomainHash) {
-	if _, ok := ads.staging[*blockHash]; ok {
-		delete(ads.staging, *blockHash)
+func (ads *acceptanceDataStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
+	stagingShard := ads.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+		delete(stagingShard.toAdd, *blockHash)
 		return
 	}
-	ads.toDelete[*blockHash] = struct{}{}
+	stagingShard.toDelete[*blockHash] = struct{}{}
 }
 
 func (ads *acceptanceDataStore) serializeAcceptanceData(acceptanceData externalapi.AcceptanceData) ([]byte, error) {

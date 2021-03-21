@@ -135,7 +135,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(blockHash *externalap
 	}
 
 	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
-	csm.acceptanceDataStore.Stage(blockHash, acceptanceData)
+	csm.acceptanceDataStore.Stage(nil, blockHash, acceptanceData)
 
 	block, err := csm.blockStore.Block(csm.databaseContext,, blockHash)
 	if err != nil {

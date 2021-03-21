@@ -28,7 +28,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		return nil, err
 	}
 
-	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, blockHash)
+	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}

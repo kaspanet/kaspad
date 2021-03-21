@@ -178,7 +178,7 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 		return nil, err
 	}
 
-	return s.acceptanceDataStore.Get(s.databaseContext, blockHash)
+	return s.acceptanceDataStore.Get(s.databaseContext, nil, blockHash)
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,

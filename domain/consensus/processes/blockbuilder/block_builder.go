@@ -1,10 +1,11 @@
 package blockbuilder
 
 import (
+	"sort"
+
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/pkg/errors"
-	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -233,7 +234,7 @@ func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.Domai
 }
 
 func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot() (*externalapi.DomainHash, error) {
-	newBlockAcceptanceData, err := bb.acceptanceDataStore.Get(bb.databaseContext, model.VirtualBlockHash)
+	newBlockAcceptanceData, err := bb.acceptanceDataStore.Get(bb.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

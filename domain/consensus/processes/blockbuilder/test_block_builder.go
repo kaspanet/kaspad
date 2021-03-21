@@ -155,7 +155,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	bb.acceptanceDataStore.Stage(tempBlockHash, acceptanceData)
+	bb.acceptanceDataStore.Stage(nil, tempBlockHash, acceptanceData)
 
 	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(tempBlockHash, coinbaseData)
 	if err != nil {
