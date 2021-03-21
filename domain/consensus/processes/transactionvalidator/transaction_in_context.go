@@ -55,7 +55,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
-	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, nil, povBlockHash)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 		return err
 	}
 
-	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, nil, povBlockHash)
 	if err != nil {
 		return err
 	}
@@ -267,7 +267,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			baseHash := povBlockHash
 
 			for {
-				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, nil, povBlockHash)
 				if err != nil {
 					return nil, err
 				}

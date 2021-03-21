@@ -39,7 +39,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		return nil, nil, nil, err
 	}
 
-	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, blockHash)
+	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -156,8 +156,8 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			LockTime:     0}
 
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
-		tc.DAABlocksStore().StageDAAScore(povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
-		tc.DAABlocksStore().StageDAAScore(povBlockHash, 10)
+		tc.DAABlocksStore().StageDAAScore(nil, povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+		tc.DAABlocksStore().StageDAAScore(nil, povBlockHash, 10)
 
 		tests := []struct {
 			name                     string

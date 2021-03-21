@@ -76,7 +76,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 }
 
 func (c *coinbaseManager) daaAddedBlocksSet(blockHash *externalapi.DomainHash) (hashset.HashSet, error) {
-	daaAddedBlocks, err := c.daaBlocksStore.DAAAddedBlocks(c.databaseContext, blockHash)
+	daaAddedBlocks, err := c.daaBlocksStore.DAAAddedBlocks(c.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (u
 		return c.baseSubsidy, nil
 	}
 
-	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, blockHash)
+	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, nil, blockHash)
 	if err != nil {
 		return 0, err
 	}

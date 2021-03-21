@@ -145,8 +145,8 @@ func (dm *difficultyManager) stageDAAScoreAndAddedBlocks(blockHash *externalapi.
 		return err
 	}
 
-	dm.daaBlocksStore.StageDAAScore(blockHash, daaScore)
-	dm.daaBlocksStore.StageBlockDAAAddedBlocks(blockHash, addedBlocks)
+	dm.daaBlocksStore.StageDAAScore(nil, blockHash, daaScore)
+	dm.daaBlocksStore.StageBlockDAAAddedBlocks(nil, blockHash, addedBlocks)
 	return nil
 }
 
@@ -179,7 +179,7 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(blockHash *external
 		}
 	}
 
-	selectedParentDAAScore, err := dm.daaBlocksStore.DAAScore(dm.databaseContext, ghostdagData.SelectedParent())
+	selectedParentDAAScore, err := dm.daaBlocksStore.DAAScore(dm.databaseContext, nil, ghostdagData.SelectedParent())
 	if err != nil {
 		return 0, nil, err
 	}

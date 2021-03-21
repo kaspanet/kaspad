@@ -254,7 +254,7 @@ func TestDAAScore(t *testing.T) {
 		}
 
 		tipHash := blockBlueScore3
-		blockBlueScore3DAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+		blockBlueScore3DAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}
@@ -270,7 +270,7 @@ func TestDAAScore(t *testing.T) {
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
-			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
 			if err != nil {
 				t.Fatalf("DAAScore: %+v", err)
 			}
@@ -288,7 +288,7 @@ func TestDAAScore(t *testing.T) {
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
-			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
 			if err != nil {
 				t.Fatalf("DAAScore: %+v", err)
 			}
@@ -319,7 +319,7 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), tipHash)
+		tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}
@@ -331,7 +331,7 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("DAA score is expected to be %d but got %d", expectedDAAScore, tipDAAScore)
 		}
 
-		tipDAAAddedBlocks, err := tc.DAABlocksStore().DAAAddedBlocks(tc.DatabaseContext(), tipHash)
+		tipDAAAddedBlocks, err := tc.DAABlocksStore().DAAAddedBlocks(tc.DatabaseContext(), nil, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}
