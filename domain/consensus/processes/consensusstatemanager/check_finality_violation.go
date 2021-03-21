@@ -26,7 +26,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	// finality point from the virtual point-of-view is in the past of the pruning point.
 	// In such situation we override the finality point to be the pruning point to avoid situations where
 	// the virtual selected parent chain don't include the pruning point.
-	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext)
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, nil)
 	if err != nil {
 		return false, false, err
 	}

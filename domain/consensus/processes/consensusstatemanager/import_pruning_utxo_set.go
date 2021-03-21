@@ -81,7 +81,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	csm.stageDiff(newPruningPointHash, utxo.NewUTXODiff(), nil)
 
 	log.Debugf("Staging the new pruning point %s", newPruningPointHash)
-	csm.pruningStore.StagePruningPoint(newPruningPointHash)
+	csm.pruningStore.StagePruningPoint(nil, newPruningPointHash)
 
 	log.Debugf("Populating the pruning point with UTXO entries")
 	importedPruningPointUTXOIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)

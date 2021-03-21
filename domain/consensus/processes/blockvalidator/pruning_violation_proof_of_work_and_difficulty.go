@@ -141,7 +141,7 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader)
 func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
-	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, nil)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHead
 		return nil
 	}
 
-	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, nil)
 	if err != nil {
 		return err
 	}

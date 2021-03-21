@@ -90,7 +90,7 @@ func New(
 func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.UpdatePruningPointByVirtual")
 	defer onEnd()
-	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext)
+	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext, nil)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, nil)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 
 	if !newCandidate.Equal(currentCandidate) {
 		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
-		pm.pruningStore.StagePruningPointCandidate(newCandidate)
+		pm.pruningStore.StagePruningPointCandidate(nil, newCandidate)
 	}
 
 	// We move the pruning point every time the candidate's finality score is
@@ -327,8 +327,8 @@ func (pm *pruningManager) savePruningPoint(pruningPointHash *externalapi.DomainH
 		return err
 	}
 
-	pm.pruningStore.StagePruningPoint(pruningPointHash)
-	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet()
+	pm.pruningStore.StagePruningPoint(nil, pruningPointHash)
+	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet(nil)
 
 	return nil
 }
@@ -408,7 +408,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 }
 
 func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, error) {
-	hasPruningPointCandidate, err := pm.pruningStore.HasPruningPointCandidate(pm.databaseContext)
+	hasPruningPointCandidate, err := pm.pruningStore.HasPruningPointCandidate(pm.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func (pm *pruningManager) pruningPointCandidate() (*externalapi.DomainHash, erro
 		return pm.genesisHash, nil
 	}
 
-	return pm.pruningStore.PruningPointCandidate(pm.databaseContext)
+	return pm.pruningStore.PruningPointCandidate(pm.databaseContext, nil)
 }
 
 // validateUTXOSetFitsCommitment makes sure that the calculated UTXOSet of the new pruning point fits the commitment.
@@ -540,7 +540,7 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
 
 	log.Debugf("Getting the pruning point")
-	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext)
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, nil)
 	if err != nil {
 		return err
 	}

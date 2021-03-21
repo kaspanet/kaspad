@@ -107,7 +107,7 @@ func TestPruning(t *testing.T) {
 					return err
 				}
 
-				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext())
+				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext(), nil)
 				if err != nil {
 					return err
 				}

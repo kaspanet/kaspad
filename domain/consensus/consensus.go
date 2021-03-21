@@ -217,7 +217,7 @@ func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.D
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	pruningPointHash, err := s.pruningStore.PruningPoint(s.databaseContext)
+	pruningPointHash, err := s.pruningStore.PruningPoint(s.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningStore.PruningPoint(s.databaseContext)
+	return s.pruningStore.PruningPoint(s.databaseContext, nil)
 }
 
 func (s *consensus) ClearImportedPruningPointData() error {
@@ -354,7 +354,7 @@ func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.Bl
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	lowHash, err := s.pruningStore.PruningPoint(s.databaseContext)
+	lowHash, err := s.pruningStore.PruningPoint(s.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}

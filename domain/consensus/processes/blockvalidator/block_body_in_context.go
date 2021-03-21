@@ -80,7 +80,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 		}
 
 		if !hasBlock {
-			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, nil)
 			if err != nil {
 				return err
 			}

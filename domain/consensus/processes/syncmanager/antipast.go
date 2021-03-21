@@ -183,7 +183,7 @@ func (sm *syncManager) findLowHashInHighHashSelectedParentChain(
 }
 
 func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext)
+	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}

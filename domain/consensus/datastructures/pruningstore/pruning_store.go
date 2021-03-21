@@ -15,12 +15,8 @@ var updatingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("updati
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
-	pruningPointStaging          *externalapi.DomainHash
-	pruningPointCache            *externalapi.DomainHash
-	pruningPointCandidateStaging *externalapi.DomainHash
-	pruningPointCandidateCache   *externalapi.DomainHash
-
-	startUpdatingPruningPointUTXOSetStaging bool
+	pruningPointCache          *externalapi.DomainHash
+	pruningPointCandidateCache *externalapi.DomainHash
 }
 
 // New instantiates a new PruningStore
@@ -28,13 +24,17 @@ func New() model.PruningStore {
 	return &pruningStore{}
 }
 
-func (ps *pruningStore) StagePruningPointCandidate(candidate *externalapi.DomainHash) {
-	ps.pruningPointCandidateStaging = candidate
+func (ps *pruningStore) StagePruningPointCandidate(stagingArea *model.StagingArea, candidate *externalapi.DomainHash) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	stagingShard.newPruningPointCandidate = candidate
 }
 
-func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader) (*externalapi.DomainHash, error) {
-	if ps.pruningPointCandidateStaging != nil {
-		return ps.pruningPointCandidateStaging, nil
+func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader, stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	if stagingShard.newPruningPointCandidate != nil {
+		return stagingShard.newPruningPointCandidate, nil
 	}
 
 	if ps.pruningPointCandidateCache != nil {
@@ -54,8 +54,10 @@ func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader) (*extern
 	return candidate, nil
 }
 
-func (ps *pruningStore) HasPruningPointCandidate(dbContext model.DBReader) (bool, error) {
-	if ps.pruningPointCandidateStaging != nil {
+func (ps *pruningStore) HasPruningPointCandidate(dbContext model.DBReader, stagingArea *model.StagingArea) (bool, error) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	if stagingShard.newPruningPointCandidate != nil {
 		return true, nil
 	}
 
@@ -67,53 +69,16 @@ func (ps *pruningStore) HasPruningPointCandidate(dbContext model.DBReader) (bool
 }
 
 // Stage stages the pruning state
-func (ps *pruningStore) StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash) {
-	ps.pruningPointStaging = pruningPointBlockHash
+func (ps *pruningStore) StagePruningPoint(stagingArea *model.StagingArea, pruningPointBlockHash *externalapi.DomainHash) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	stagingShard.newPruningPoint = pruningPointBlockHash
 }
 
-func (ps *pruningStore) IsStaged() bool {
-	return ps.pruningPointStaging != nil || ps.startUpdatingPruningPointUTXOSetStaging
-}
+func (ps *pruningStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := ps.stagingShard(stagingArea)
 
-func (ps *pruningStore) Discard() {
-	ps.pruningPointStaging = nil
-	ps.startUpdatingPruningPointUTXOSetStaging = false
-}
-
-func (ps *pruningStore) Commit(dbTx model.DBTransaction) error {
-	if ps.pruningPointStaging != nil {
-		pruningPointBytes, err := ps.serializeHash(ps.pruningPointStaging)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(pruningBlockHashKey, pruningPointBytes)
-		if err != nil {
-			return err
-		}
-		ps.pruningPointCache = ps.pruningPointStaging
-	}
-
-	if ps.pruningPointCandidateStaging != nil {
-		candidateBytes, err := ps.serializeHash(ps.pruningPointCandidateStaging)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(candidatePruningPointHashKey, candidateBytes)
-		if err != nil {
-			return err
-		}
-		ps.pruningPointCandidateCache = ps.pruningPointCandidateStaging
-	}
-
-	if ps.startUpdatingPruningPointUTXOSetStaging {
-		err := dbTx.Put(updatingPruningPointUTXOSetKey, []byte{0})
-		if err != nil {
-			return err
-		}
-	}
-
-	ps.Discard()
-	return nil
+	return stagingShard.newPruningPoint != nil || stagingShard.startUpdatingPruningPointUTXOSet
 }
 
 func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
@@ -161,9 +126,11 @@ func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,
 }
 
 // PruningPoint gets the current pruning point
-func (ps *pruningStore) PruningPoint(dbContext model.DBReader) (*externalapi.DomainHash, error) {
-	if ps.pruningPointStaging != nil {
-		return ps.pruningPointStaging, nil
+func (ps *pruningStore) PruningPoint(dbContext model.DBReader, stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	if stagingShard.newPruningPoint != nil {
+		return stagingShard.newPruningPoint, nil
 	}
 
 	if ps.pruningPointCache != nil {
@@ -197,8 +164,10 @@ func (ps *pruningStore) deserializePruningPoint(pruningPointBytes []byte) (*exte
 	return serialization.DbHashToDomainHash(dbHash)
 }
 
-func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader) (bool, error) {
-	if ps.pruningPointStaging != nil {
+func (ps *pruningStore) HasPruningPoint(dbContext model.DBReader, stagingArea *model.StagingArea) (bool, error) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	if stagingShard.newPruningPoint != nil {
 		return true, nil
 	}
 
@@ -247,8 +216,10 @@ func (ps *pruningStore) PruningPointUTXOs(dbContext model.DBReader,
 	return outpointAndUTXOEntryPairs, nil
 }
 
-func (ps *pruningStore) StageStartUpdatingPruningPointUTXOSet() {
-	ps.startUpdatingPruningPointUTXOSetStaging = true
+func (ps *pruningStore) StageStartUpdatingPruningPointUTXOSet(stagingArea *model.StagingArea) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	stagingShard.startUpdatingPruningPointUTXOSet = true
 }
 
 func (ps *pruningStore) HadStartedUpdatingPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
