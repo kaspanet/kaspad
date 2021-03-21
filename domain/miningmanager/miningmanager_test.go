@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	"github.com/pkg/errors"
-	"reflect"
 	"strings"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -25,9 +24,8 @@ import (
 )
 
 const blockMaxMass uint64 = 10000000
-const coinbaseIndex = 0
 
-// TestValidateAndInsertTransaction verifies that valid transactions were successfully inserted into the memory pool.
+// TestValidateAndInsertTransaction verifies that valid transactions were successfully inserted into the mempool.
 func TestValidateAndInsertTransaction(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
@@ -62,7 +60,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, _, err := createParentAndChildrenTransaction(params, tc, 0)
+		transactionNotAnOrphan, _, err := createParentAndChildrenTransactions(params, tc, 0)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
@@ -77,8 +75,8 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 	})
 }
 
-//	TestInsertDoubleTransactionsToMempool verifies that an attempt to insert a transaction
-//	more than once into the mempool will result in raising an appropriate error.
+// TestInsertDoubleTransactionsToMempool verifies that an attempt to insert a transaction
+// more than once into the mempool will result in raising an appropriate error.
 func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
@@ -103,7 +101,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 	})
 }
 
-// TestHandleNewBlockTransactions verifies that all the transactions in the block were successfully removed from the memory pool.
+// TestHandleNewBlockTransactions verifies that all the transactions in the block were successfully removed from the mempool.
 func TestHandleNewBlockTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
@@ -117,7 +115,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
-		for i := range transactionsToInsert[(coinbaseIndex + 1):] {
+		for i := range transactionsToInsert[(transactionhelper.CoinbaseTransactionIndex + 1):] {
 			transaction := createTransactionWithUTXOEntry(t, params, i)
 			transactionsToInsert[i+1] = transaction
 			err = miningManager.ValidateAndInsertTransaction(transaction, true)
@@ -126,27 +124,30 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 			}
 		}
 
-		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[0:3])
+		const partialLength = 3
+		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[0:partialLength])
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
 		mempoolTransactions := miningManager.AllTransactions()
-		for _, RemovedTransaction := range transactionsToInsert[(coinbaseIndex + 1):3] {
-			if contains(RemovedTransaction, mempoolTransactions) {
-				t.Fatalf("This transaction shouldnt be in mempool: %v", RemovedTransaction)
+		for _, removedTransaction := range transactionsToInsert[(transactionhelper.CoinbaseTransactionIndex + 1):partialLength] {
+			if contains(removedTransaction, mempoolTransactions) {
+				t.Fatalf("This transaction shouldnt be in mempool: %v", removedTransaction)
 			}
 		}
 
 		// There are no chained/double-spends transactions, and hence it is expected that all the other
 		// transactions, will still be included in the mempool.
 		mempoolTransactions = miningManager.AllTransactions()
-		for i, transaction := range transactionsToInsert[3:] {
+		for i, transaction := range transactionsToInsert[partialLength:] {
 			if !contains(transaction, mempoolTransactions) {
 				t.Fatalf("This transaction %d should be in mempool: %v", i, transaction)
 			}
 		}
-
-		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[2:])
+		// The first index considers as coinbase, therefore in order that all the transactions will insert into
+		// the mempool, we will start one index less (partialLength - 1).
+		// Handle all the other transactions in the transactionsToInsert array.
+		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[(partialLength - 1):])
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
@@ -309,7 +310,7 @@ func createTransactionWithUTXOEntry(t *testing.T, params *dagconfig.Params, i in
 		Value:           10000,
 		ScriptPublicKey: scriptPublicKey,
 	}
-	validTx := externalapi.DomainTransaction{
+	tx := externalapi.DomainTransaction{
 		Version:      constants.MaxTransactionVersion,
 		Inputs:       []*externalapi.DomainTransactionInput{&txInputWithMaxSequence},
 		Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
@@ -319,22 +320,23 @@ func createTransactionWithUTXOEntry(t *testing.T, params *dagconfig.Params, i in
 		Mass:         1,
 		LockTime:     0}
 
-	signatureScript, err := txscript.SignatureScript(&validTx, 0, scriptPublicKey, txscript.SigHashAll, privateKey)
+	signatureScript, err := txscript.SignatureScript(&tx, 0, scriptPublicKey, txscript.SigHashAll, privateKey)
 	if err != nil {
 		t.Fatalf("Failed to create a sigScript: %v", err)
 	}
-	validTx.Inputs[0].SignatureScript = signatureScript
-	return &validTx
+	tx.Inputs[0].SignatureScript = signatureScript
+	return &tx
 }
 
 func createArraysOfParentAndChildrenTransactions(params *dagconfig.Params, tc testapi.TestConsensus) ([]*externalapi.DomainTransaction,
 	[]*externalapi.DomainTransaction, error) {
 
-	transactions := make([]*externalapi.DomainTransaction, 5)
+	const numOfTransactions = 5
+	transactions := make([]*externalapi.DomainTransaction, numOfTransactions)
 	parentTransactions := make([]*externalapi.DomainTransaction, len(transactions))
 	var err error
 	for i := range transactions {
-		parentTransactions[i], transactions[i], err = createParentAndChildrenTransaction(params, tc, i)
+		parentTransactions[i], transactions[i], err = createParentAndChildrenTransactions(params, tc, i)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -342,29 +344,8 @@ func createArraysOfParentAndChildrenTransactions(params *dagconfig.Params, tc te
 	return parentTransactions, transactions, nil
 }
 
-func createParentAndChildrenTransaction(params *dagconfig.Params, tc testapi.TestConsensus, i int) (*externalapi.DomainTransaction,
+func createParentAndChildrenTransactions(params *dagconfig.Params, tc testapi.TestConsensus, i int) (*externalapi.DomainTransaction,
 	*externalapi.DomainTransaction, error) {
-
-	privateKey, err := secp256k1.GeneratePrivateKey()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed generate private key: ")
-	}
-	publicKey, err := privateKey.SchnorrPublicKey()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed generate public key: ")
-	}
-	publicKeySerialized, err := publicKey.Serialize()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed serialize a public key:")
-	}
-	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "NewAddressPubKeyHashFromPublicKey: ")
-	}
-	scriptPublicKey, err := txscript.PayToAddrScript(addr)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed generate a scriptPublicKey:")
-	}
 
 	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 	if err != nil {
@@ -379,66 +360,24 @@ func createParentAndChildrenTransaction(params *dagconfig.Params, tc testapi.Tes
 		return nil, nil, errors.Wrap(err, "GetBlock: ")
 	}
 	fundingTransactionForParent := fundingBlockForParent.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	_, redeemScript := testutils.OpTrueScript()
 	// Change the value to get different ID transactions each time.
 	fundingTransactionForParent.Outputs[0].Value -= uint64(i)
-	signatureScriptCheck, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
+	txParent, err := testutils.CreateTransaction(fundingTransactionForParent)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	txInputForParent := externalapi.DomainTransactionInput{
-		PreviousOutpoint: externalapi.DomainOutpoint{TransactionID: *consensushashing.TransactionID(fundingTransactionForParent),
-			Index: 0},
-		SignatureScript: signatureScriptCheck,
-		Sequence:        constants.SequenceLockTimeIsSeconds,
-		UTXOEntry:       nil,
-	}
-	txOutForParent := externalapi.DomainTransactionOutput{
-		Value:           10000,
-		ScriptPublicKey: scriptPublicKey,
-	}
-	txParent := externalapi.DomainTransaction{
-		Version:      constants.MaxTransactionVersion,
-		Inputs:       []*externalapi.DomainTransactionInput{&txInputForParent},
-		Outputs:      []*externalapi.DomainTransactionOutput{&txOutForParent},
-		SubnetworkID: subnetworks.SubnetworkIDNative,
-		Payload:      []byte{},
-		Gas:          0,
-		Mass:         1,
-		LockTime:     0}
-
-	txInputForChild := externalapi.DomainTransactionInput{
-		PreviousOutpoint: externalapi.DomainOutpoint{TransactionID: *consensushashing.TransactionID(&txParent), Index: uint32(0)},
-		SignatureScript:  []byte{},
-		Sequence:         constants.SequenceLockTimeIsSeconds,
-		UTXOEntry:        nil,
-	}
-	txOutForChild := externalapi.DomainTransactionOutput{
-		Value:           9000,
-		ScriptPublicKey: scriptPublicKey,
-	}
-	txChild := externalapi.DomainTransaction{
-		Version:      constants.MaxTransactionVersion,
-		Inputs:       []*externalapi.DomainTransactionInput{&txInputForChild},
-		Outputs:      []*externalapi.DomainTransactionOutput{&txOutForChild},
-		SubnetworkID: subnetworks.SubnetworkIDNative,
-		Gas:          0,
-		Fee:          289,
-		Mass:         1,
-		LockTime:     0}
-	signatureScript, err := txscript.SignatureScript(&txChild, 0, scriptPublicKey, txscript.SigHashAll, privateKey)
+	// Change the value for getting a valid fees.
+	txParent.Outputs[0].Value = 10000
+	txChild, err := testutils.CreateTransaction(txParent)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed creating a signatureScript")
+		return nil, nil, err
 	}
-	txChild.Inputs[0].SignatureScript = signatureScript
-
-	return &txParent, &txChild, nil
+	return txParent, txChild, nil
 }
 
 func contains(transaction *externalapi.DomainTransaction, transactions []*externalapi.DomainTransaction) bool {
 	for _, candidateTransaction := range transactions {
-		if reflect.DeepEqual(candidateTransaction, transaction) {
+		if isEqual := candidateTransaction.Equal(transaction); isEqual {
 			return true
 		}
 	}
