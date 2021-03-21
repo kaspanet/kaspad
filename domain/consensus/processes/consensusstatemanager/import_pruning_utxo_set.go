@@ -130,7 +130,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	csm.blockStatusStore.Stage(nil, newPruningPointHash, externalapi.StatusUTXOValid)
 
 	log.Debugf("Staging the new pruning point multiset")
-	csm.multisetStore.Stage(newPruningPointHash, importedPruningPointMultiset)
+	csm.multisetStore.Stage(nil, newPruningPointHash, importedPruningPointMultiset)
 	return nil
 }
 

@@ -262,7 +262,7 @@ func (bb *blockBuilder) calculateAcceptedIDMerkleRoot(acceptanceData externalapi
 }
 
 func (bb *blockBuilder) newBlockUTXOCommitment() (*externalapi.DomainHash, error) {
-	newBlockMultiset, err := bb.multisetStore.Get(bb.databaseContext, model.VirtualBlockHash)
+	newBlockMultiset, err := bb.multisetStore.Get(bb.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

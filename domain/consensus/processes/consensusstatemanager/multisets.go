@@ -20,7 +20,7 @@ func (csm *consensusStateManager) calculateMultiset(
 		return multiset.New(), nil
 	}
 
-	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent())
+	ms, err := csm.multisetStore.Get(csm.databaseContext, nil, blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}

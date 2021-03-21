@@ -13,62 +13,34 @@ var bucket = database.MakeBucket([]byte("multisets"))
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
-	staging  map[externalapi.DomainHash]model.Multiset
-	toDelete map[externalapi.DomainHash]struct{}
-	cache    *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new MultisetStore
 func New(cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
-		staging:  make(map[externalapi.DomainHash]model.Multiset),
-		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given multiset for the given blockHash
-func (ms *multisetStore) Stage(blockHash *externalapi.DomainHash, multiset model.Multiset) {
-	ms.staging[*blockHash] = multiset.Clone()
+func (ms *multisetStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, multiset model.Multiset) {
+	stagingShard := ms.stagingShard(stagingArea)
+
+	stagingShard.toAdd[*blockHash] = multiset.Clone()
 }
 
-func (ms *multisetStore) IsStaged() bool {
-	return len(ms.staging) != 0 || len(ms.toDelete) != 0
-}
+func (ms *multisetStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := ms.stagingShard(stagingArea)
 
-func (ms *multisetStore) Discard() {
-	ms.staging = make(map[externalapi.DomainHash]model.Multiset)
-	ms.toDelete = make(map[externalapi.DomainHash]struct{})
-}
-
-func (ms *multisetStore) Commit(dbTx model.DBTransaction) error {
-	for hash, multiset := range ms.staging {
-		multisetBytes, err := ms.serializeMultiset(multiset)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(ms.hashAsKey(&hash), multisetBytes)
-		if err != nil {
-			return err
-		}
-		ms.cache.Add(&hash, multiset)
-	}
-
-	for hash := range ms.toDelete {
-		err := dbTx.Delete(ms.hashAsKey(&hash))
-		if err != nil {
-			return err
-		}
-		ms.cache.Remove(&hash)
-	}
-
-	ms.Discard()
-	return nil
+	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
 }
 
 // Get gets the multiset associated with the given blockHash
-func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (model.Multiset, error) {
-	if multiset, ok := ms.staging[*blockHash]; ok {
+func (ms *multisetStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.Multiset, error) {
+	stagingShard := ms.stagingShard(stagingArea)
+
+	if multiset, ok := stagingShard.toAdd[*blockHash]; ok {
 		return multiset.Clone(), nil
 	}
 
@@ -90,12 +62,14 @@ func (ms *multisetStore) Get(dbContext model.DBReader, blockHash *externalapi.Do
 }
 
 // Delete deletes the multiset associated with the given blockHash
-func (ms *multisetStore) Delete(blockHash *externalapi.DomainHash) {
-	if _, ok := ms.staging[*blockHash]; ok {
-		delete(ms.staging, *blockHash)
+func (ms *multisetStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
+	stagingShard := ms.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+		delete(stagingShard.toAdd, *blockHash)
 		return
 	}
-	ms.toDelete[*blockHash] = struct{}{}
+	stagingShard.toDelete[*blockHash] = struct{}{}
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

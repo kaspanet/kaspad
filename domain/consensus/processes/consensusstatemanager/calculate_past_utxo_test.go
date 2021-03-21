@@ -135,7 +135,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		testedBlockHash := currentHash
 
 		// Take testedBlock's multiset and hash
-		firstMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), testedBlockHash)
+		firstMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), nil, testedBlockHash)
 		if err != nil {
 			return
 		}
@@ -148,7 +148,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		}
 
 		// Take testedBlock's multiset and hash again
-		secondMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), testedBlockHash)
+		secondMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), nil, testedBlockHash)
 		if err != nil {
 			return
 		}
