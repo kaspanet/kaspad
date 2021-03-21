@@ -6,7 +6,7 @@ import (
 )
 
 func (rt *reachabilityManager) stageData(blockHash *externalapi.DomainHash, data model.ReachabilityData) {
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+	rt.reachabilityDataStore.StageReachabilityData(nil, blockHash, data)
 }
 
 func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.DomainHash, set model.FutureCoveringTreeNodeSet) error {
@@ -17,12 +17,12 @@ func (rt *reachabilityManager) stageFutureCoveringSet(blockHash *externalapi.Dom
 
 	data.SetFutureCoveringSet(set)
 
-	rt.reachabilityDataStore.StageReachabilityData(blockHash, data)
+	rt.reachabilityDataStore.StageReachabilityData(nil, blockHash, data)
 	return nil
 }
 
 func (rt *reachabilityManager) stageReindexRoot(blockHash *externalapi.DomainHash) {
-	rt.reachabilityDataStore.StageReachabilityReindexRoot(blockHash)
+	rt.reachabilityDataStore.StageReachabilityReindexRoot(nil, blockHash)
 }
 
 func (rt *reachabilityManager) stageAddChild(node, child *externalapi.DomainHash) error {

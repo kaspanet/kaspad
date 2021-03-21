@@ -58,7 +58,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	// since it's used to find a block's finality point.
 	// This might not be required if this block's header has previously been received during
 	// headers-first synchronization.
-	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, blockHash)
+	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

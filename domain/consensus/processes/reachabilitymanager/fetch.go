@@ -10,7 +10,7 @@ import (
 
 func (rt *reachabilityManager) reachabilityDataForInsertion(
 	blockHash *externalapi.DomainHash) (model.MutableReachabilityData, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
 	if err == nil {
 		return data.CloneMutable(), nil
 	}
@@ -22,7 +22,7 @@ func (rt *reachabilityManager) reachabilityDataForInsertion(
 }
 
 func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHa
 }
 
 func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*mod
 }
 
 func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*e
 }
 
 func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -58,5 +58,5 @@ func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*exter
 }
 
 func (rt *reachabilityManager) reindexRoot() (*externalapi.DomainHash, error) {
-	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext)
+	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext, nil)
 }

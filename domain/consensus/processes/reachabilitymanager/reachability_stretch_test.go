@@ -115,7 +115,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 	// Create alternating reorgs to test the cases where
 	// reindex root is out of current header selected tip chain
 
-	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
+	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

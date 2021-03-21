@@ -24,33 +24,31 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(
-	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
+func (r *reachabilityDataStoreMock) StageReachabilityData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
 
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
+func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(stagingArea *model.StagingArea, reachabilityReindexRoot *externalapi.DomainHash) {
 	r.reachabilityReindexRootStaging = reachabilityReindexRoot
 }
 
-func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
+func (r *reachabilityDataStoreMock) IsAnythingStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
-	model.ReachabilityData, error) {
+func (r *reachabilityDataStoreMock) ReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 
 	return r.reachabilityDataStaging[*blockHash], nil
 }
 
-func (r *reachabilityDataStoreMock) HasReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+func (r *reachabilityDataStoreMock) HasReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	_, ok := r.reachabilityDataStaging[*blockHash]
 	return ok, nil
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityReindexRoot(_ model.DBReader) (*externalapi.DomainHash, error) {
+func (r *reachabilityDataStoreMock) ReachabilityReindexRoot(dbContext model.DBReader, stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
 	return r.reachabilityReindexRootStaging, nil
 }
 

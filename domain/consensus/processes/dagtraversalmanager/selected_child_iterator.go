@@ -33,7 +33,7 @@ func (s *selectedChildIterator) Next() bool {
 		return true
 	}
 
-	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.current)
+	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, nil, s.current)
 	if err != nil {
 		s.current = nil
 		s.err = err
