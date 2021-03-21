@@ -476,7 +476,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			Sequence:        constants.MaxTxInSequenceNum,
 		}
 
-		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		outputs := make([]*externalapi.DomainTransactionOutput, 900)
 		for i := 0; i < len(outputs); i++ {
 			outputs[i] = &externalapi.DomainTransactionOutput{
 				ScriptPublicKey: scriptPublicKey,
@@ -619,7 +619,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 			SignatureScript: signatureScript,
 			Sequence:        constants.MaxTxInSequenceNum,
 		}
-		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		outputs := make([]*externalapi.DomainTransactionOutput, 900)
 		for i := 0; i < len(outputs); i++ {
 			outputs[i] = &externalapi.DomainTransactionOutput{
 				ScriptPublicKey: scriptPublicKey,

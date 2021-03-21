@@ -8,6 +8,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
@@ -50,7 +54,7 @@ func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScr
 	tx.Inputs[idx].SignatureScript = sigScript
 	var flags ScriptFlags
 	vm, err := NewEngine(scriptPubKey, tx, idx,
-		flags, nil)
+		flags, nil, &consensushashing.SighashReusedValues{})
 	if err != nil {
 		return errors.Errorf("failed to make script engine for %s: %v",
 			msg, err)
@@ -66,11 +70,11 @@ func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScr
 }
 
 func signAndCheck(msg string, tx *externalapi.DomainTransaction, idx int, scriptPubKey *externalapi.ScriptPublicKey,
-	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
-	previousScript []byte) error {
+	hashType consensushashing.SigHashType, kdb KeyDB, sdb ScriptDB) error {
 
 	sigScript, err := SignTxOutput(&dagconfig.TestnetParams, tx, idx,
-		scriptPubKey, hashType, kdb, sdb, &externalapi.ScriptPublicKey{Script: nil, Version: 0})
+		scriptPubKey, hashType, &consensushashing.SighashReusedValues{}, kdb, sdb,
+		&externalapi.ScriptPublicKey{Script: nil, Version: 0})
 	if err != nil {
 		return errors.Errorf("failed to sign output %s: %v", msg, err)
 	}
@@ -84,13 +88,13 @@ func TestSignTxOutput(t *testing.T) {
 	// make key
 	// make script based on key.
 	// sign with magic pixie dust.
-	hashTypes := []SigHashType{
-		SigHashAll,
-		SigHashNone,
-		SigHashSingle,
-		SigHashAll | SigHashAnyOneCanPay,
-		SigHashNone | SigHashAnyOneCanPay,
-		SigHashSingle | SigHashAnyOneCanPay,
+	hashTypes := []consensushashing.SigHashType{
+		consensushashing.SigHashAll,
+		consensushashing.SigHashNone,
+		consensushashing.SigHashSingle,
+		consensushashing.SigHashAll | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashNone | consensushashing.SigHashAnyOneCanPay,
+		consensushashing.SigHashSingle | consensushashing.SigHashAnyOneCanPay,
 	}
 	inputs := []*externalapi.DomainTransactionInput{
 		{
@@ -135,46 +139,20 @@ func TestSignTxOutput(t *testing.T) {
 		Outputs: outputs,
 	}
 
+	key, scriptPubKey, address, err := generateKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Pay to Pubkey Hash (merging with correct)
 	for _, hashType := range hashTypes {
+		for _, input := range tx.Inputs {
+			input.UTXOEntry = utxo.NewUTXOEntry(500, scriptPubKey, false, 100)
+		}
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
-			key, err := secp256k1.GeneratePrivateKey()
-			if err != nil {
-				t.Errorf("failed to make privKey for %s: %s",
-					msg, err)
-				break
-			}
-
-			pubKey, err := key.SchnorrPublicKey()
-			if err != nil {
-				t.Errorf("failed to make a publickey for %s: %s",
-					key, err)
-				break
-			}
-
-			serializedPubKey, err := pubKey.Serialize()
-			if err != nil {
-				t.Errorf("failed to make a pubkey for %s: %s",
-					key, err)
-				break
-			}
-			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
-			if err != nil {
-				t.Errorf("failed to make address for %s: %v",
-					msg, err)
-				break
-			}
-
-			scriptPubKey, err := PayToAddrScript(address)
-			if err != nil {
-				t.Errorf("failed to make scriptPubKey "+
-					"for %s: %v", msg, err)
-			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptPubKey, hashType,
+				tx, i, scriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(nil), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
@@ -187,7 +165,7 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptPubKey, hashType,
+				tx, i, scriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(nil), &externalapi.ScriptPublicKey{
@@ -236,7 +214,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -248,10 +226,12 @@ func TestSignTxOutput(t *testing.T) {
 				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
-			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
+			err = signAndCheck(msg, tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
-				}), mkGetScript(nil), nil); err != nil {
+				}),
+				mkGetScript(nil))
+			if err != nil {
 				t.Error(err)
 				break
 			}
@@ -285,7 +265,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -299,7 +279,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptPubKey, hashType,
+				tx, i, scriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(nil), &externalapi.ScriptPublicKey{Script: nil, Version: 0})
@@ -312,7 +292,7 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptPubKey, hashType,
+				tx, i, scriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(nil), &externalapi.ScriptPublicKey{
@@ -363,7 +343,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -391,12 +371,10 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
-				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
-					address.EncodeAddress(): key,
-				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): scriptPubKey.Script,
-				}), nil); err != nil {
+			err = signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
+				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{address.EncodeAddress(): key}),
+				mkGetScript(map[string][]byte{scriptAddr.EncodeAddress(): scriptPubKey.Script}))
+			if err != nil {
 				t.Error(err)
 				break
 			}
@@ -430,7 +408,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -458,7 +436,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 			_, err = SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptScriptPubKey, hashType,
+				tx, i, scriptScriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
@@ -473,7 +451,7 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err := SignTxOutput(&dagconfig.TestnetParams,
-				tx, i, scriptScriptPubKey, hashType,
+				tx, i, scriptScriptPubKey, hashType, &consensushashing.SighashReusedValues{},
 				mkGetKey(map[string]*secp256k1.SchnorrKeyPair{
 					address.EncodeAddress(): key,
 				}), mkGetScript(map[string][]byte{
@@ -495,6 +473,36 @@ func TestSignTxOutput(t *testing.T) {
 	}
 }
 
+func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externalapi.ScriptPublicKey,
+	addressPubKeyHash *util.AddressPubKeyHash, err error) {
+
+	key, err := secp256k1.GeneratePrivateKey()
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("failed to make privKey: %s", err)
+	}
+
+	pubKey, err := key.SchnorrPublicKey()
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("failed to make a publickey for %s: %s", key, err)
+	}
+
+	serializedPubKey, err := pubKey.Serialize()
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("failed to serialize a pubkey for %s: %s", pubKey, err)
+	}
+	address, err := util.NewAddressPubKeyHash(
+		util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("failed to make address for %s: %s", serializedPubKey, err)
+	}
+
+	scriptPubKey, err := PayToAddrScript(address)
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("failed to make scriptPubKey for %s: %s", address, err)
+	}
+	return key, scriptPubKey, address, err
+}
+
 type tstInput struct {
 	txout              *externalapi.DomainTransactionOutput
 	sigscriptGenerates bool
@@ -505,7 +513,7 @@ type tstInput struct {
 type tstSigScript struct {
 	name               string
 	inputs             []tstInput
-	hashType           SigHashType
+	hashType           consensushashing.SigHashType
 	scriptAtWrongIndex bool
 }
 
@@ -526,9 +534,12 @@ var (
 	oldCompressedScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
 		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}, 0}
-	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x7e, 0x01, 0x76, 0xb6,
-		0x72, 0x08, 0xc0, 0x08, 0x98, 0x85, 0x97, 0x00, 0x4e, 0x1a, 0x8d,
-		0x60, 0x89, 0xfe, 0x42, 0x6f, 0x88, 0xac}, 0}
+	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xaa, 0x20,
+		0x51, 0x9c, 0x25, 0xca, 0x95, 0xa0, 0xd8, 0xcd,
+		0xf5, 0xb8, 0x3f, 0x96, 0xa1, 0x5e, 0x8c, 0x1a,
+		0xae, 0x33, 0xeb, 0x50, 0xc8, 0x66, 0xc9, 0xd0,
+		0xa5, 0xce, 0x3e, 0x5f, 0x6b, 0x3b, 0x38, 0x8d,
+		0x88, 0xac}, 0}
 	shortScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
 		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}, 0}
@@ -552,7 +563,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -577,7 +588,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -593,7 +604,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -618,7 +629,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -634,7 +645,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -659,7 +670,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -675,7 +686,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashNone,
+		hashType:           consensushashing.SigHashNone,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -691,7 +702,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashSingle,
+		hashType:           consensushashing.SigHashSingle,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -707,7 +718,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll | SigHashAnyOneCanPay,
+		hashType:           consensushashing.SigHashAll | consensushashing.SigHashAnyOneCanPay,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -718,12 +729,12 @@ var sigScriptTests = []tstSigScript{
 					Value:           coinbaseVal,
 					ScriptPublicKey: p2pkhScriptPubKey,
 				},
-				sigscriptGenerates: true,
+				sigscriptGenerates: false,
 				inputValidates:     false,
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAnyOneCanPay,
+		hashType:           consensushashing.SigHashAnyOneCanPay,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -734,27 +745,12 @@ var sigScriptTests = []tstSigScript{
 					Value:           coinbaseVal,
 					ScriptPublicKey: p2pkhScriptPubKey,
 				},
-				sigscriptGenerates: true,
+				sigscriptGenerates: false,
 				inputValidates:     false,
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           0x04,
-		scriptAtWrongIndex: false,
-	},
-	{
-		name: "short ScriptPublicKey",
-		inputs: []tstInput{
-			{
-				txout: &externalapi.DomainTransactionOutput{
-					Value:           coinbaseVal,
-					ScriptPublicKey: shortScriptPubKey,
-				},
-				sigscriptGenerates: false,
-				indexOutOfRange:    false,
-			},
-		},
-		hashType:           SigHashAll,
+		hashType:           0b00000011,
 		scriptAtWrongIndex: false,
 	},
 	{
@@ -779,7 +775,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: true,
 	},
 	{
@@ -804,7 +800,7 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
-		hashType:           SigHashAll,
+		hashType:           consensushashing.SigHashAll,
 		scriptAtWrongIndex: true,
 	},
 }
@@ -826,9 +822,11 @@ nexttest:
 		}
 
 		inputs := []*externalapi.DomainTransactionInput{}
-		for range sigScriptTests[i].inputs {
+		for j := range sigScriptTests[i].inputs {
+			txOut := sigScriptTests[i].inputs[j].txout
 			inputs = append(inputs, &externalapi.DomainTransactionInput{
 				PreviousOutpoint: *coinbaseOutpoint,
+				UTXOEntry:        utxo.NewUTXOEntry(txOut.Value, txOut.ScriptPublicKey, false, 10),
 			})
 		}
 		tx := &externalapi.DomainTransaction{
@@ -847,9 +845,8 @@ nexttest:
 			} else {
 				idx = j
 			}
-			script, err = SignatureScript(tx, idx,
-				sigScriptTests[i].inputs[j].txout.ScriptPublicKey,
-				sigScriptTests[i].hashType, privKey)
+			script, err = SignatureScript(tx, idx, sigScriptTests[i].hashType, privKey,
+				&consensushashing.SighashReusedValues{})
 
 			if (err == nil) != sigScriptTests[i].inputs[j].sigscriptGenerates {
 				if err == nil {
@@ -880,8 +877,8 @@ nexttest:
 		// Validate tx input scripts
 		var scriptFlags ScriptFlags
 		for j := range tx.Inputs {
-			vm, err := NewEngine(sigScriptTests[i].
-				inputs[j].txout.ScriptPublicKey, tx, j, scriptFlags, nil)
+			vm, err := NewEngine(sigScriptTests[i].inputs[j].txout.ScriptPublicKey, tx, j, scriptFlags, nil,
+				&consensushashing.SighashReusedValues{})
 			if err != nil {
 				t.Errorf("cannot create script vm for test %v: %v",
 					sigScriptTests[i].name, err)

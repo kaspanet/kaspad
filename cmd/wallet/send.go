@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
@@ -178,9 +180,11 @@ func generateTransaction(keyPair *secp256k1.SchnorrKeyPair, selectedUTXOs []*app
 		Gas:          0,
 		Payload:      nil,
 	}
+	sighashReusedValues := &consensushashing.SighashReusedValues{}
 
 	for i, input := range domainTransaction.Inputs {
-		signatureScript, err := txscript.SignatureScript(domainTransaction, i, fromScript, txscript.SigHashAll, keyPair)
+		signatureScript, err := txscript.SignatureScript(
+			domainTransaction, i, consensushashing.SigHashAll, keyPair, sighashReusedValues)
 		if err != nil {
 			return nil, err
 		}

@@ -3,6 +3,7 @@ package transactionvalidator
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -177,6 +178,8 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
 
 	var missingOutpoints []*externalapi.DomainOutpoint
+	sighashReusedValues := &consensushashing.SighashReusedValues{}
+
 	for i, input := range tx.Inputs {
 		// Create a new script engine for the script pair.
 		sigScript := input.SignatureScript
@@ -187,8 +190,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 		}
 
 		scriptPubKey := utxoEntry.ScriptPublicKey()
-		vm, err := txscript.NewEngine(scriptPubKey, tx,
-			i, txscript.ScriptNoFlags, v.sigCache)
+		vm, err := txscript.NewEngine(scriptPubKey, tx, i, txscript.ScriptNoFlags, v.sigCache, sighashReusedValues)
 		if err != nil {
 			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
 				"%d which references output %s - "+
