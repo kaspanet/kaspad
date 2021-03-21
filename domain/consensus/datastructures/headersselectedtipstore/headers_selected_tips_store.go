@@ -38,7 +38,7 @@ func (hsts *headerSelectedTipStore) Stage(stagingArea *model.StagingArea, select
 	stagingShard.newSelectedTip = selectedTip
 }
 
-func (hsts *headerSelectedTipStore) IsStaged(*model.StagingArea) bool {
+func (hsts *headerSelectedTipStore) IsStaged(stagingArea *model.StagingArea) bool {
 	stagingShard := hsts.stagingShard(stagingArea)
 
 	return stagingShard.newSelectedTip != nil
