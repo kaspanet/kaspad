@@ -161,7 +161,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 func (s *consensus) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, blockHash)
+	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, model.VirtualBlockHash)
+	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

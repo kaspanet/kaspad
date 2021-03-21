@@ -22,7 +22,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 		defer teardown(false)
 
 		getSortedVirtualParents := func(tc testapi.TestConsensus) []*externalapi.DomainHash {
-			virtualRelations, err := tc.BlockRelationStore().BlockRelation(tc.DatabaseContext(), model.VirtualBlockHash)
+			virtualRelations, err := tc.BlockRelationStore().BlockRelation(tc.DatabaseContext(), nil, model.VirtualBlockHash)
 			if err != nil {
 				t.Fatalf("Failed getting virtual block virtualRelations: %v", err)
 			}

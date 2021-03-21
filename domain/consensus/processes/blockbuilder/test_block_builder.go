@@ -124,7 +124,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		}
 	}
 
-	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+	bb.blockRelationStore.StageBlockRelation(nil, tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 
 	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {
@@ -190,7 +190,7 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 
 	defer bb.testConsensus.DiscardAllStores()
 
-	bb.blockRelationStore.StageBlockRelation(tempBlockHash, &model.BlockRelations{Parents: parentHashes})
+	bb.blockRelationStore.StageBlockRelation(nil, tempBlockHash, &model.BlockRelations{Parents: parentHashes})
 
 	err := bb.ghostdagManager.GHOSTDAG(tempBlockHash)
 	if err != nil {

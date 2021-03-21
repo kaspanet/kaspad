@@ -43,7 +43,7 @@ func TestValidateMedianTime(t *testing.T) {
 
 		pastMedianTime := func(parents ...*externalapi.DomainHash) int64 {
 			var tempHash externalapi.DomainHash
-			tc.BlockRelationStore().StageBlockRelation(&tempHash, &model.BlockRelations{
+			tc.BlockRelationStore().StageBlockRelation(nil, &tempHash, &model.BlockRelations{
 				Parents:  parents,
 				Children: nil,
 			})

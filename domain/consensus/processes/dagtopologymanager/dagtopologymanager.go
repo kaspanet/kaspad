@@ -32,7 +32,7 @@ func New(
 
 // Parents returns the DAG parents of the given blockHash
 func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*ex
 
 // Children returns the DAG children of the given blockHash
 func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*e
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
 func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -59,7 +59,7 @@ func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, bl
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
 func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -118,7 +118,7 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 }
 
 func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, blockHash)
+	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -128,20 +128,20 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		// Note: In theory we should also remove the block from all its children, however, in practice no block
 		// ever has its relations updated after getting any children, therefore we skip this step
 
-		currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+		currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, blockHash)
 		if err != nil {
 			return err
 		}
 
 		for _, currentParent := range currentRelations.Parents {
-			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, currentParent)
+			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, currentParent)
 			if err != nil {
 				return err
 			}
 			for i, parentChild := range parentRelations.Children {
 				if parentChild.Equal(blockHash) {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
-					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
+					dtm.blockRelationStore.StageBlockRelation(nil, currentParent, parentRelations)
 					break
 				}
 			}
@@ -150,7 +150,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 
 	// Go over all new parents and add block as their child
 	for _, parent := range parentHashes {
-		parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, parent)
+		parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, nil, parent)
 		if err != nil {
 			return err
 		}
@@ -163,12 +163,12 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		}
 		if !isBlockAlreadyInChildren {
 			parentRelations.Children = append(parentRelations.Children, blockHash)
-			dtm.blockRelationStore.StageBlockRelation(parent, parentRelations)
+			dtm.blockRelationStore.StageBlockRelation(nil, parent, parentRelations)
 		}
 	}
 
 	// Finally - create the relations for the block itself
-	dtm.blockRelationStore.StageBlockRelation(blockHash, &model.BlockRelations{
+	dtm.blockRelationStore.StageBlockRelation(nil, blockHash, &model.BlockRelations{
 		Parents:  parentHashes,
 		Children: []*externalapi.DomainHash{},
 	})

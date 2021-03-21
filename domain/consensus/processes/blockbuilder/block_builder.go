@@ -190,7 +190,7 @@ func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransactio
 }
 
 func (bb *blockBuilder) newBlockParentHashes() ([]*externalapi.DomainHash, error) {
-	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, model.VirtualBlockHash)
+	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
