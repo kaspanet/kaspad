@@ -409,13 +409,13 @@ func (b *blockHeadersStore) Discard() { panic("unimplemented") }
 
 func (b *blockHeadersStore) Commit(_ model.DBTransaction) error { panic("unimplemented") }
 
-func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
+func (b *blockHeadersStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
 	b.dagMap[*blockHash] = blockHeader
 }
 
-func (b *blockHeadersStore) IsStaged() bool { panic("unimplemented") }
+func (b *blockHeadersStore) IsStaged(*model.StagingArea) bool { panic("unimplemented") }
 
-func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
+func (b *blockHeadersStore) BlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	header, ok := b.dagMap[*blockHash]
 	if ok {
 		return header, nil
@@ -423,15 +423,15 @@ func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi
 	return nil, errors.New("Header isn't in the store")
 }
 
-func (b *blockHeadersStore) HasBlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+func (b *blockHeadersStore) HasBlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	_, ok := b.dagMap[*blockHash]
 	return ok, nil
 }
 
-func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+func (b *blockHeadersStore) BlockHeaders(dbContext model.DBReader, stagingArea *model.StagingArea, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
 	res := make([]externalapi.BlockHeader, 0, len(blockHashes))
 	for _, hash := range blockHashes {
-		header, err := b.BlockHeader(nil, hash)
+		header, err := b.BlockHeader(nil, nil, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -440,10 +440,10 @@ func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*extern
 	return res, nil
 }
 
-func (b *blockHeadersStore) Delete(blockHash *externalapi.DomainHash) {
+func (b *blockHeadersStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	delete(b.dagMap, *blockHash)
 }
 
-func (b *blockHeadersStore) Count() uint64 {
+func (b *blockHeadersStore) Count(*model.StagingArea) uint64 {
 	return uint64(len(b.dagMap))
 }

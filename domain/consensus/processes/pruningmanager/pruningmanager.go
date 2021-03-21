@@ -446,7 +446,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *extern
 	}
 	utxoSetHash := utxoSetMultiset.Hash()
 
-	header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, pruningPointHash)
+	header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, nil, pruningPointHash)
 	if err != nil {
 		return err
 	}

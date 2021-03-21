@@ -6,40 +6,40 @@ import (
 )
 
 type blockStagingShard struct {
-	blockStore     *blockStore
-	blocksToAdd    map[externalapi.DomainHash]*externalapi.DomainBlock
-	blocksToDelete map[externalapi.DomainHash]struct{}
+	store    *blockStore
+	toAdd    map[externalapi.DomainHash]*externalapi.DomainBlock
+	toDelete map[externalapi.DomainHash]struct{}
 }
 
 func (bs *blockStore) stagingShard(stagingArea model.StagingArea) *blockStagingShard {
 	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
 		return &blockStagingShard{
-			blockStore:     bs,
-			blocksToAdd:    make(map[externalapi.DomainHash]*externalapi.DomainBlock),
-			blocksToDelete: make(map[externalapi.DomainHash]struct{}),
+			store:    bs,
+			toAdd:    make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+			toDelete: make(map[externalapi.DomainHash]struct{}),
 		}
 	}).(*blockStagingShard)
 }
 
 func (bss blockStagingShard) Commit(dbTx model.DBTransaction) error {
-	for hash, block := range bss.blocksToAdd {
-		blockBytes, err := bss.blockStore.serializeBlock(block)
+	for hash, block := range bss.toAdd {
+		blockBytes, err := bss.store.serializeBlock(block)
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(bss.blockStore.hashAsKey(&hash), blockBytes)
+		err = dbTx.Put(bss.store.hashAsKey(&hash), blockBytes)
 		if err != nil {
 			return err
 		}
-		bss.blockStore.cache.Add(&hash, block)
+		bss.store.cache.Add(&hash, block)
 	}
 
-	for hash := range bss.blocksToDelete {
-		err := dbTx.Delete(bss.blockStore.hashAsKey(&hash))
+	for hash := range bss.toDelete {
+		err := dbTx.Delete(bss.store.hashAsKey(&hash))
 		if err != nil {
 			return err
 		}
-		bss.blockStore.cache.Remove(&hash)
+		bss.store.cache.Remove(&hash)
 	}
 
 	err := bss.commitCount(dbTx)
@@ -51,8 +51,8 @@ func (bss blockStagingShard) Commit(dbTx model.DBTransaction) error {
 }
 
 func (bss *blockStagingShard) commitCount(dbTx model.DBTransaction) error {
-	count := bss.blockStore.count(bss)
-	countBytes, err := bss.blockStore.serializeBlockCount(count)
+	count := bss.store.count(bss)
+	countBytes, err := bss.store.serializeBlockCount(count)
 	if err != nil {
 		return err
 	}
@@ -60,6 +60,6 @@ func (bss *blockStagingShard) commitCount(dbTx model.DBTransaction) error {
 	if err != nil {
 		return err
 	}
-	bss.blockStore.countCached = count
+	bss.store.countCached = count
 	return nil
 }

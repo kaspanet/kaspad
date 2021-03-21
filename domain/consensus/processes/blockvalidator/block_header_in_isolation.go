@@ -16,7 +16,7 @@ func (v *blockValidator) ValidateHeaderInIsolation(blockHash *externalapi.Domain
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInIsolation")
 	defer onEnd()
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

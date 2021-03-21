@@ -1,8 +1,9 @@
 package pastmediantimemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -51,7 +52,7 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainH
 		return 0, err
 	}
 	if len(window) == 0 {
-		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, pmtm.genesisHash)
+		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, nil, pmtm.genesisHash)
 		if err != nil {
 			return 0, err
 		}
@@ -68,7 +69,7 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.D
 
 	timestamps := make([]int64, len(window))
 	for i, blockHash := range window {
-		blockHeader, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, blockHash)
+		blockHeader, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, nil, blockHash)
 		if err != nil {
 			return 0, err
 		}

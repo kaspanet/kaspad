@@ -2,6 +2,7 @@ package blockvalidator
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -16,7 +17,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
 	defer onEnd()
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

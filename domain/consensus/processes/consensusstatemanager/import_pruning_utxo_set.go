@@ -48,7 +48,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 		return err
 	}
 
-	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, newPruningPointHash)
+	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, nil, newPruningPointHash)
 	if err != nil {
 		return err
 	}

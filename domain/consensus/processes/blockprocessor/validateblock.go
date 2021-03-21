@@ -28,7 +28,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 
 	if !hasValidatedHeader {
 		log.Debugf("Staging block %s header", blockHash)
-		bp.blockHeaderStore.Stage(blockHash, block.Header)
+		bp.blockHeaderStore.Stage(nil, blockHash, block.Header)
 	} else {
 		log.Debugf("Block %s header is already known, so no need to stage it", blockHash)
 	}

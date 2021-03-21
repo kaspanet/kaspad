@@ -1,11 +1,12 @@
 package ghostdagmanager
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 type blockGHOSTDAGData struct {
@@ -97,7 +98,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.blueWork.Set(selectedParentGHOSTDAGData.BlueWork())
 		// Then we add up all the *work*(not blueWork) that all of newBlock merge set blues and selected parent did
 		for _, blue := range newBlockData.mergeSetBlues {
-			header, err := gm.headerStore.BlockHeader(gm.databaseContext, blue)
+			header, err := gm.headerStore.BlockHeader(gm.databaseContext, nil, blue)
 			if err != nil {
 				return err
 			}

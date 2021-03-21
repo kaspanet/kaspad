@@ -15,7 +15,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 		return err
 	}
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 	for _, parent := range header.ParentHashes() {
-		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, nil, parent)
 		if err != nil {
 			return err
 		}

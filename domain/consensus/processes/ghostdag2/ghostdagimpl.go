@@ -1,8 +1,9 @@
 package ghostdag2
 
 import (
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"sort"
+
+	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"math/big"
 
@@ -107,7 +108,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 
 	// We add up all the *work*(not blueWork) that all our blues and selected parent did
 	for _, blue := range mergeSetBlues {
-		header, err := gh.headerStore.BlockHeader(gh.dbAccess, blue)
+		header, err := gh.headerStore.BlockHeader(gh.dbAccess, nil, blue)
 		if err != nil {
 			return err
 		}

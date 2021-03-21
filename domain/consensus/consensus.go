@@ -112,7 +112,7 @@ func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externala
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	blockHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, blockHash)
+	blockHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, nil, blockHash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return nil, errors.Wrapf(err, "block header %s does not exist", blockHash)

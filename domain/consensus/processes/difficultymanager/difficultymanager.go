@@ -1,10 +1,11 @@
 package difficultymanager
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/math"
 	"math/big"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/math"
 
 	"github.com/kaspanet/kaspad/util/difficulty"
 
@@ -59,7 +60,7 @@ func New(databaseContext model.DBReader,
 }
 
 func (dm *difficultyManager) genesisBits() (uint32, error) {
-	header, err := dm.headerStore.BlockHeader(dm.databaseContext, dm.genesisHash)
+	header, err := dm.headerStore.BlockHeader(dm.databaseContext, nil, dm.genesisHash)
 	if err != nil {
 		return 0, err
 	}

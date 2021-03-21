@@ -135,7 +135,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
 		}
-		headerCount := bp.blockHeaderStore.Count()
+		headerCount := bp.blockHeaderStore.Count(nil)
 		blockCount := bp.blockStore.Count()
 		return fmt.Sprintf("New virtual's blue score: %d. Block count: %d. Header count: %d",
 			virtualGhostDAGData.BlueScore(), blockCount, headerCount)
@@ -204,7 +204,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 			return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 		}
 	} else {
-		hasHeader, err := bp.blockHeaderStore.HasBlockHeader(bp.databaseContext, hash)
+		hasHeader, err := bp.blockHeaderStore.HasBlockHeader(bp.databaseContext, nil, hash)
 		if err != nil {
 			return err
 		}

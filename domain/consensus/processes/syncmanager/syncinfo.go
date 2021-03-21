@@ -15,7 +15,7 @@ func (sm *syncManager) syncInfo() (*externalapi.SyncInfo, error) {
 }
 
 func (sm *syncManager) getHeaderCount() uint64 {
-	return sm.blockHeaderStore.Count()
+	return sm.blockHeaderStore.Count(nil)
 }
 
 func (sm *syncManager) getBlockCount() uint64 {

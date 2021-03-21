@@ -69,7 +69,7 @@ func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash
 
 func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.DomainHash) error {
 	missingParentHashes := []*externalapi.DomainHash{}
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
 	if err != nil {
 		return err
 	}

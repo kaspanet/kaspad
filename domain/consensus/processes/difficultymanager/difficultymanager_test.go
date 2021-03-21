@@ -47,7 +47,7 @@ func TestDifficulty(t *testing.T) {
 			}
 
 			if blockTime == 0 {
-				header, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), bluestParent)
+				header, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), nil, bluestParent)
 				if err != nil {
 					t.Fatalf("BlockHeader: %+v", err)
 				}
@@ -146,8 +146,7 @@ func TestDifficulty(t *testing.T) {
 				t.Fatalf("GHOSTDAGDataStore: %+v", err)
 			}
 
-			selectedParentHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(),
-				tipGHOSTDAGData.SelectedParent())
+			selectedParentHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), nil, tipGHOSTDAGData.SelectedParent())
 			if err != nil {
 				t.Fatalf("BlockHeader: %+v", err)
 			}

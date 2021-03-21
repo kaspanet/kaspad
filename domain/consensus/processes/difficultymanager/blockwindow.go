@@ -1,10 +1,11 @@
 package difficultymanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/big"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/difficulty"
 )
 
 type difficultyBlock struct {
@@ -15,7 +16,7 @@ type difficultyBlock struct {
 type blockWindow []difficultyBlock
 
 func (dm *difficultyManager) getDifficultyBlock(blockHash *externalapi.DomainHash) (difficultyBlock, error) {
-	header, err := dm.headerStore.BlockHeader(dm.databaseContext, blockHash)
+	header, err := dm.headerStore.BlockHeader(dm.databaseContext, nil, blockHash)
 	if err != nil {
 		return difficultyBlock{}, err
 	}

@@ -282,7 +282,7 @@ func TestValidateDifficulty(t *testing.T) {
 		}
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
-		tc.BlockHeaderStore().Stage(blockHash, block.Header)
+		tc.BlockHeaderStore().Stage(nil, blockHash, block.Header)
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
 

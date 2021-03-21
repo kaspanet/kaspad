@@ -56,12 +56,12 @@ func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 // Stage stages the given block for the given blockHash
 func (bs *blockStore) Stage(stagingArea model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
 	stagingShard := bs.stagingShard(stagingArea)
-	stagingShard.blocksToAdd[*blockHash] = block.Clone()
+	stagingShard.toAdd[*blockHash] = block.Clone()
 }
 
 func (bs *blockStore) IsStaged(stagingArea model.StagingArea) bool {
 	stagingShard := bs.stagingShard(stagingArea)
-	return len(stagingShard.blocksToAdd) != 0 || len(stagingShard.blocksToDelete) != 0
+	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
 }
 
 // Block gets the block associated with the given blockHash
@@ -72,7 +72,7 @@ func (bs *blockStore) Block(dbContext model.DBReader, stagingArea model.StagingA
 }
 
 func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStagingShard, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
-	if block, ok := stagingShard.blocksToAdd[*blockHash]; ok {
+	if block, ok := stagingShard.toAdd[*blockHash]; ok {
 		return block.Clone(), nil
 	}
 
@@ -97,7 +97,7 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	stagingShard := bs.stagingShard(stagingArea)
 
-	if _, ok := stagingShard.blocksToAdd[*blockHash]; ok {
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		return true, nil
 	}
 
@@ -132,11 +132,11 @@ func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea model.Staging
 func (bs *blockStore) Delete(stagingArea model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := bs.stagingShard(stagingArea)
 
-	if _, ok := stagingShard.blocksToAdd[*blockHash]; ok {
-		delete(stagingShard.blocksToAdd, *blockHash)
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+		delete(stagingShard.toAdd, *blockHash)
 		return
 	}
-	stagingShard.blocksToDelete[*blockHash] = struct{}{}
+	stagingShard.toDelete[*blockHash] = struct{}{}
 }
 
 func (bs *blockStore) serializeBlock(block *externalapi.DomainBlock) ([]byte, error) {
@@ -163,7 +163,7 @@ func (bs *blockStore) Count(stagingArea model.StagingArea) uint64 {
 }
 
 func (bs *blockStore) count(stagingShard *blockStagingShard) uint64 {
-	return bs.countCached + uint64(len(stagingShard.blocksToAdd)) - uint64(len(stagingShard.blocksToDelete))
+	return bs.countCached + uint64(len(stagingShard.toAdd)) - uint64(len(stagingShard.toDelete))
 }
 
 func (bs *blockStore) deserializeBlockCount(countBytes []byte) (uint64, error) {
