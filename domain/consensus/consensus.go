@@ -302,7 +302,7 @@ func (s *consensus) Tips() ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.consensusStateStore.Tips(s.databaseContext)
+	return s.consensusStateStore.Tips(nil, s.databaseContext)
 }
 
 func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {

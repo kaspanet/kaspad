@@ -101,7 +101,7 @@ func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (ne
 		return nil, err
 	}
 
-	csm.consensusStateStore.StageTips(newTips)
+	csm.consensusStateStore.StageTips(nil, newTips)
 	log.Debugf("Staged the new tips, len: %d", len(newTips))
 
 	return newTips, nil
@@ -116,7 +116,7 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 		return []*externalapi.DomainHash{newTipHash}, nil
 	}
 
-	currentTips, err := csm.consensusStateStore.Tips(csm.databaseContext)
+	currentTips, err := csm.consensusStateStore.Tips(nil, csm.databaseContext)
 	if err != nil {
 		return nil, err
 	}

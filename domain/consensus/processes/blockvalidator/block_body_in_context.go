@@ -49,7 +49,7 @@ func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash
 		return nil
 	}
 
-	tips, err := v.consensusStateStore.Tips(v.databaseContext)
+	tips, err := v.consensusStateStore.Tips(nil, v.databaseContext)
 	if err != nil {
 		return err
 	}

@@ -214,7 +214,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
 		spendingTransaction1UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction1.Inputs[0].PreviousOutpoint)
+			UTXOByOutpoint(testConsensus.DatabaseContext(), nil, &spendingTransaction1.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for spendingTransaction1: %s", err)
 		}
@@ -224,7 +224,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
 		spendingTransaction2UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction2.Inputs[0].PreviousOutpoint)
+			UTXOByOutpoint(testConsensus.DatabaseContext(), nil, &spendingTransaction2.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for spendingTransaction2: %s", err)
 		}

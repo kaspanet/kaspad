@@ -48,7 +48,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 		}
 
 		// Check for the input's outpoint in virtual's UTXO set.
-		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
+		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(csm.databaseContext, nil, &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 		log.Tracef("Populating outpoint %s:%d from the database",
 			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, &transactionInput.PreviousOutpoint)
+		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, nil, &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}

@@ -295,7 +295,7 @@ func (pm *pruningManager) pruneTips(pruningPoint *externalapi.DomainHash, virtua
 	prunedTips []*externalapi.DomainHash, err error) {
 
 	// Find P.AC that's not in V.Past
-	dagTips, err := pm.consensusStateStore.Tips(pm.databaseContext)
+	dagTips, err := pm.consensusStateStore.Tips(nil, pm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func (pm *pruningManager) pruneTips(pruningPoint *externalapi.DomainHash, virtua
 			newTips = append(newTips, tip)
 		}
 	}
-	pm.consensusStateStore.StageTips(newTips)
+	pm.consensusStateStore.StageTips(nil, newTips)
 
 	return prunedTips, nil
 }

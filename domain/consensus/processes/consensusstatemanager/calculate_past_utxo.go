@@ -299,7 +299,7 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(blockHash *external
 		return nil, err
 	}
 
-	virtualUTXOSetIterator, err := csm.consensusStateStore.VirtualUTXOSetIterator(csm.databaseContext)
+	virtualUTXOSetIterator, err := csm.consensusStateStore.VirtualUTXOSetIterator(csm.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}

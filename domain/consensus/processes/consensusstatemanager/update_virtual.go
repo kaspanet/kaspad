@@ -64,7 +64,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	csm.multisetStore.Stage(model.VirtualBlockHash, virtualMultiset)
 
 	log.Debugf("Staging new UTXO diff for the virtual block")
-	csm.consensusStateStore.StageVirtualUTXODiff(virtualUTXODiff)
+	csm.consensusStateStore.StageVirtualUTXODiff(nil, virtualUTXODiff)
 
 	log.Debugf("Updating the selected tip's utxo-diff after adding %s to the DAG", newBlockHash)
 	err = csm.updateSelectedTipUTXODiff(virtualUTXODiff)

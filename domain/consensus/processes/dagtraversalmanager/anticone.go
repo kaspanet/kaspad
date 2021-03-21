@@ -7,7 +7,7 @@ import (
 
 func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	anticone := []*externalapi.DomainHash{}
-	queue, err := dtm.consensusStateStore.Tips(dtm.databaseContext)
+	queue, err := dtm.consensusStateStore.Tips(nil, dtm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
